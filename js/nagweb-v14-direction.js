@@ -119,7 +119,7 @@ decorate('floatingcaption',{motion:true,mode:'composition',text:[
  {sel:'.scx-fc figcaption b',field:'eyebrow'},{sel:'.scx-fc figcaption h3',field:'title',part:'title'},{sel:'.scx-fc figcaption p',field:'text',multi:true}
 ],parts:[{sel:'.scx-fc-img',name:'image'},{sel:'.scx-fc figcaption',name:'caption-card'}]});
 decorate('bignumber',{motion:true,mode:'composition',text:[
- {sel:'.scx-bn-num',field:'number',part:'number'},{sel:'.scx-bn-copy b',field:'label'},{sel:'.scx-bn-copy p',field:'text',multi:true}
+ {sel:'.scx-bn-copy b',field:'label'},{sel:'.scx-bn-copy p',field:'text',multi:true}
 ]});
 decorate('pullquote',{motion:true,mode:'composition',text:[
  {sel:'.scx-pq p',field:'quote',multi:true,part:'quote'},{sel:'.scx-pq footer b',field:'author'},{sel:'.scx-pq footer span',field:'role'}
