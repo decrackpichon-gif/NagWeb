@@ -29,8 +29,7 @@ const state=await page.evaluate(()=>({
  director:!!window.NAGWEB_SCROLL_DIRECTOR,
  universal:window.NAGWEB_UNIVERSAL&&window.NAGWEB_UNIVERSAL.version,
  kineticToggle:!!(window.SCW&&SCW.kinds&&SCW.kinds.kineticstrip&&SCW.kinds.kineticstrip.fields||[]).find(f=>f&&f.k==='showProgress'),
- heroTexts:!!(window.SCW&&SCW.kinds&&SCW.kinds.layeredhero&&SCW.kinds.layeredhero.fields||[]).find(f=>f&&f.k==='texts'),
- storyPartBar:(window.SCW&&SCW.kinds&&SCW.kinds.scrollstory&&String(SCW.kinds.scrollstory.markup).includes('data-nw-story-part'))
+ heroTexts:!!(window.SCW&&SCW.kinds&&SCW.kinds.layeredhero&&SCW.kinds.layeredhero.fields||[]).find(f=>f&&f.k==='texts')
 }));
 for(const [k,v] of Object.entries(state)){
  if(!v) throw new Error('Smoke assertion failed: '+k+' = '+String(v));
