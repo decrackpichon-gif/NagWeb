@@ -22090,7 +22090,7 @@ if(!INSERT_CATS.some(c => c.key === 'vault')){
 const SC_CREATIVE_VARIANTS = (() => {
   let panel = null, activeId = '', activeKind = '', dismissedId = '', lastSelectionSig = '';
   const getEl = id => { try{ return sec().elements.find(e => e.id === id); }catch(e){ return null; } };
-  const selected = () => { if(selection.length !== 1) return null; const e = getEl(selection[0]); if(!e || e.type !== 'widget') return null; const K = window.SCW && SCW.kinds[e.wk]; return K && (K.cat === 'creative' || K.cat === 'interactive') && e.wk !== 'mousehalo' ? e : null; };
+  const selected = () => { if(selection.length !== 1) return null; const e = getEl(selection[0]); if(!e || e.type !== 'widget') return null; const K = window.SCW && SCW.kinds[e.wk]; return K && ['creative','interactive','composition','mockup','layout'].indexOf(K.cat) >= 0 && e.wk !== 'mousehalo' ? e : null; };
   const options = k => creativeVariantOptions(k);
   const ensure = () => {
     if(panel && panel.isConnected) return panel;
@@ -22761,4 +22761,5 @@ renderPages(); refresh(false); renderPreview();
 </body>
 </html>
 
+<script src="js/nagweb-v14-direction.js"></script>
 </body></html>
