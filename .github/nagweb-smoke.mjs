@@ -46,6 +46,20 @@ await rightButton.click();
 if(!(await page.evaluate(()=>document.body.classList.contains('nw-right-collapsed')))) throw new Error('Right panel did not collapse');
 await rightButton.click();
 
+// Persistencia + idempotencia del workspace: al recargar debe conservar el panel
+// izquierdo plegado y MutationObserver no debe duplicar controles.
+await leftButton.click();
+await page.reload({waitUntil:'domcontentloaded',timeout:60000});
+await page.waitForFunction(()=>window.NAGWEB_WORKSPACE16===1 && !!document.querySelector('.nw-dock-toggle.left') && !!document.querySelector('.nw-dock-toggle.right'),{timeout:30000});
+const workspaceState=await page.evaluate(()=>({
+ leftPersisted:document.body.classList.contains('nw-left-collapsed'),
+ leftToggles:document.querySelectorAll('.nw-dock-toggle.left').length,
+ rightToggles:document.querySelectorAll('.nw-dock-toggle.right').length
+}));
+if(!workspaceState.leftPersisted) throw new Error('Left panel collapse state did not persist after reload');
+if(workspaceState.leftToggles!==1||workspaceState.rightToggles!==1) throw new Error('Workspace controls duplicated after reload: '+JSON.stringify(workspaceState));
+await page.click('.nw-dock-toggle.left');
+
 if(pageErrors.length) throw new Error('Browser page errors:\n'+pageErrors.join('\n\n'));
 console.log('NagWeb smoke OK',state);
 await browser.close();
