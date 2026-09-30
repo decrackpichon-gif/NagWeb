@@ -217,7 +217,7 @@ function commitWidgetField(id,field,value){
 }
 function commitWidgetList(id,field,row,col,value){
  var e=currentWidget(id);if(!e)return;e.wp=e.wp||{};
- var ls=String(e.wp[field]||'').split(/\n/);
+ var K=W.kinds[e.wk],src=(e.wp[field]!=null?e.wp[field]:(K&&K.defaults?K.defaults[field]:''));var ls=String(src||'').split(/\n/);
  while(ls.length<=row)ls.push('');
  var p=ls[row].split('|');while(p.length<=col)p.push('');
  p[col]=value;ls[row]=p.join('|');
