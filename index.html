@@ -21946,7 +21946,7 @@ function widgetItems(cat){
     if(cat === 'creative' && k === 'mousehalo') return; /* retirado del catálogo en 1.2 */
     const K = SCW.kinds[k];
     const th = wp => { if(!K.thumbFn) return K.thumb || ''; try{ return K.thumbFn(Object.assign({}, K.defaults || {}, wp || {})); }catch(e){ return K.thumb || ''; } };
-    if(cat === 'creative' || cat === 'interactive'){
+    if(['creative','interactive','composition','mockup','layout'].includes(cat)){
       const variants = creativeVariantOptions(k);
       out.push({ label:K.label, desc:K.desc, thumb:th(), wicon:K.icon, group:K.group, scKind:k, vaultKey:'widget:' + k, variantCount:Math.max(0, variants.length - 1),
         run:() => { const e = insertWidget(k); if(e && variants.length > 1) setTimeout(() => SC_CREATIVE_VARIANTS.openFor(e.id, k), 0); return e; } });
