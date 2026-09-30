@@ -58,7 +58,7 @@ var PART='[data-wpart]{translate:var(--nw-tx,0px) var(--nw-ty,0px);rotate:var(--
 (function(){
  var old=W.kinds.kineticstrip;if(!old)return;
  var def=Object.assign({},old);
- def.defaults=Object.assign({},old.defaults,{perCard:52,cardW:36,cardH:68});
+ def.defaults=Object.assign({},old.defaults,{perCard:52,cardW:36,cardH:68,showProgress:true});
  var oldProjects=(old.fields||[]).find(function(f){return f.k==='projects';});
  def.fields=[
   oldProjects||{k:'projects',label:'Proyectos',type:'list',itemLabel:'title',add:{img:'',title:'Nuevo proyecto',href:'#'},item:[{k:'img',label:'Imagen',type:'image'},{k:'title',label:'Título',type:'text'},{k:'href',label:'Link',type:'url'}]},
@@ -67,6 +67,7 @@ var PART='[data-wpart]{translate:var(--nw-tx,0px) var(--nw-ty,0px);rotate:var(--
   {k:'cardW',label:'Ancho de tarjeta',type:'range',min:22,max:72,step:1,unit:'vw'},
   {k:'cardH',label:'Alto de tarjeta',type:'range',min:36,max:82,step:1,unit:'vh'},
   {k:'label',label:'Rótulo general',type:'text'},{k:'gap',label:'Separación',type:'range',min:0,max:60,step:1,unit:'px'},{k:'tilt',label:'Rotación alternada',type:'range',min:0,max:10,step:.5,unit:'°'},{k:'round',label:'Redondeo',type:'range',min:0,max:40,step:1,unit:'px'},
+  {k:'showProgress',label:'Mostrar barra de scroll',type:'bool'},
   {type:'group',label:'Colores'},{k:'bg',label:'Fondo',type:'color'},{k:'color',label:'Texto',type:'color'},{k:'accent',label:'Acento',type:'color'},
   {type:'hint',text:'La escena queda fija hasta que la última tarjeta haya pasado. Las tarjetas no se arrastran en la vista previa; el usuario solo las recorre con el scroll.'}
  ];
