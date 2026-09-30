@@ -7,6 +7,7 @@ if(!executablePath) throw new Error('No Chromium/Chrome executable found on runn
 
 const browser=await puppeteer.launch({headless:true,executablePath,args:['--no-sandbox','--disable-dev-shm-usage']});
 const page=await browser.newPage();
+await page.setViewport({width:1440,height:900,deviceScaleFactor:1});
 const pageErrors=[];
 page.on('pageerror',e=>pageErrors.push(String(e&&e.stack||e)));
 
