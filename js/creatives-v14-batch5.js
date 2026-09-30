@@ -110,26 +110,7 @@ X.reg('magneticmosaic',{
 function nw6Part(e,name){var p=e&&e.__parts&&e.__parts[name];if(!p)return '';return '--nw-tx:'+num(p.x,0,-4000,4000)+'px;--nw-ty:'+num(p.y,0,-4000,4000)+'px;--nw-pr:'+num(p.r,0,-720,720)+'deg;--nw-ps:'+num(p.s,1,.05,10)+';';}
 var NW6P='[data-wpart]{translate:var(--nw-tx,0px) var(--nw-ty,0px);rotate:var(--nw-pr,0deg);scale:var(--nw-ps,1)}';
 
-/* 1. Comparador antes / después */
-function beforeAfterRuntime(){
- scwBoot('__nwBeforeAfter','.nw-ba',function(el){
-  var after=el.querySelector('.nw-ba-after'),handle=el.querySelector('.nw-ba-handle'),drag=false;
-  function set(x){var r=el.getBoundingClientRect(),p=Math.max(0,Math.min(1,(x-r.left)/Math.max(1,r.width)));el.style.setProperty('--pos',(p*100)+'%');}
-  el.addEventListener('pointermove',function(ev){if(drag)set(ev.clientX);});
-  el.addEventListener('pointerdown',function(ev){if(ev.target===handle||ev.target.closest('.nw-ba-handle')){drag=true;set(ev.clientX);try{el.setPointerCapture(ev.pointerId);}catch(_){}}});
-  el.addEventListener('pointerup',function(){drag=false;});
-  el.addEventListener('dblclick',function(ev){if(!ev.target.closest('[data-wfield]'))set(ev.clientX);});
- });
-}
-X.reg('beforeafter',{
- label:'Comparador antes / después',cat:'creative',group:'Comparación interactiva',desc:'Dos imágenes superpuestas con divisor arrastrable para mostrar procesos, rediseños, retoques o estados',
- icon:ICO('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16"/><path d="m9 10 3-3 3 3M9 14l3 3 3-3"/>'),
- thumbFn:function(p){var bg=col(p.bg)||'#111217',a=col(p.accent)||'#C6F36B';return TH(bg,'<rect x="14" y="14" width="122" height="70" rx="7" fill="#7C8EA8"/><path d="M76 14v70" stroke="'+a+'" stroke-width="3"/><circle cx="76" cy="49" r="9" fill="'+a+'"/><path d="m73 49 3-3 3 3m-6 0 3 3 3-3" stroke="#111" fill="none"/>');},
- w:90,defaults:{before:'',after:'',labelBefore:'ANTES',labelAfter:'DESPUÉS',bg:'#111217',accent:'#C6F36B',pos:50,ratio:'16/9',round:18},
- fields:[{k:'before',label:'Imagen antes',type:'image'},{k:'after',label:'Imagen después',type:'image'},{k:'labelBefore',label:'Etiqueta antes',type:'text'},{k:'labelAfter',label:'Etiqueta después',type:'text'},{k:'pos',label:'Posición inicial',type:'range',min:10,max:90,step:1,unit:'%'},{k:'ratio',label:'Formato',type:'seg',options:[['16/9','16:9'],['4/3','4:3'],['1/1','1:1'],['3/4','3:4']]},{k:'round',label:'Redondeo',type:'range',min:0,max:40,step:1,unit:'px'},{type:'group',label:'Colores'},{k:'bg',label:'Fondo',type:'color'},{k:'accent',label:'Control',type:'color'}],
- variants:[{label:'Comparador · limpio',wp:{bg:'#F4F1EA',accent:'#111111',round:0}},{label:'Comparador · neón',wp:{bg:'#070914',accent:'#39FF88',round:24}},{label:'Comparador · vertical',wp:{ratio:'3/4',pos:42,round:10}}],
- markup:function(e,ctx){var esc=E(ctx),bg=col(e.bg)||'#111217',a=col(e.accent)||'#C6F36B';return '<figure class="nw-ba"'+cfgAttr(ctx,{})+' style="'+cssVars({'--bg':bg,'--ac':a,'--pos':num(e.pos,50,0,100)+'%','--ar':e.ratio||'16/9','--r':num(e.round,18,0,60)+'px'})+'"><div class="nw-ba-before" data-wpart="before" style="'+nw6Part(e,'before')+'background:'+bgImg(ctx,e.before,2)+'"></div><div class="nw-ba-after" data-wpart="after" style="'+nw6Part(e,'after')+'background:'+bgImg(ctx,e.after,7)+'"></div><b class="nw-ba-label nw-ba-l" data-wfield="labelBefore" data-wpart="label-before" style="'+nw6Part(e,'label-before')+'">'+esc(e.labelBefore||'')+'</b><b class="nw-ba-label nw-ba-r" data-wfield="labelAfter" data-wpart="label-after" style="'+nw6Part(e,'label-after')+'">'+esc(e.labelAfter||'')+'</b><button class="nw-ba-handle" type="button" aria-label="Mover comparación"><i></i></button></figure>'; }
-},NW6P+'.nw-ba{position:relative;width:100%;aspect-ratio:var(--ar);overflow:hidden;border-radius:var(--r);background:var(--bg);touch-action:none}.nw-ba-before,.nw-ba-after{position:absolute;inset:0;background-position:center!important;background-size:cover!important}.nw-ba-after{clip-path:inset(0 calc(100% - var(--pos)) 0 0)}.nw-ba-handle{position:absolute;z-index:5;left:var(--pos);top:0;bottom:0;width:34px;translate:-50% 0;border:0;background:transparent;cursor:ew-resize}.nw-ba-handle:before{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;background:var(--ac);translate:-50% 0}.nw-ba-handle i{position:absolute;left:50%;top:50%;width:28px;height:28px;border-radius:50%;background:var(--ac);translate:-50% -50%;box-shadow:0 8px 30px rgba(0,0,0,.25)}.nw-ba-handle i:after{content:"↔";position:absolute;inset:0;display:grid;place-items:center;color:#111;font:bold 15px/1 system-ui}.nw-ba-label{position:absolute;z-index:4;top:14px;padding:7px 9px;border-radius:999px;background:rgba(0,0,0,.55);backdrop-filter:blur(9px);color:#fff;font:700 9px/1 system-ui;letter-spacing:.12em}.nw-ba-l{left:14px}.nw-ba-r{right:14px}',RT(scwBoot,beforeAfterRuntime));
+/* Comparador v1.5 eliminado: se conserva el Antes y después original de Interactivos. */
 
 /* 2. Lupa de detalle */
 function magnifierRuntime(){
