@@ -7,6 +7,32 @@ if(typeof generateSite!=='function'||typeof paneSceneNew!=='function'||typeof pa
 
 var scrubState={},playRAF=0;
 
+var timelineStyle=document.createElement('style');
+timelineStyle.id='nw-scroll-director-timeline-css';
+timelineStyle.textContent=[
+ '.nw-sd-timeline{margin:10px 0 12px;padding:9px;border:1px solid var(--line);border-radius:10px;background:color-mix(in srgb,var(--panel) 88%,transparent)}',
+ '.nw-sd-timeline-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;font:700 9px/1 system-ui;letter-spacing:.08em;color:var(--muted)}',
+ '.nw-sd-timeline-grid{position:relative;display:grid;gap:5px}',
+ '.nw-sd-timeline-grid:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0,transparent calc(25% - 1px),color-mix(in srgb,var(--line) 75%,transparent) calc(25% - 1px),color-mix(in srgb,var(--line) 75%,transparent) 25%);pointer-events:none}',
+ '.nw-sd-trow{display:grid;grid-template-columns:72px minmax(0,1fr);gap:7px;align-items:center;min-height:16px}',
+ '.nw-sd-tname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 9px/1.1 system-ui;color:var(--ink-soft)}',
+ '.nw-sd-ttrack{position:relative;height:8px;border-radius:999px;background:color-mix(in srgb,var(--line) 55%,transparent);overflow:hidden}',
+ '.nw-sd-tbar{position:absolute;top:1px;bottom:1px;border-radius:999px;background:var(--accent)}',
+ '.nw-sd-playhead{position:absolute;z-index:3;top:-3px;bottom:-3px;width:1px;background:var(--ink);left:var(--sd-play,0%);pointer-events:none}',
+].join('\n');
+document.head.appendChild(timelineStyle);
+
+function timelineHTML(s,val){
+ var list=(s.elements||[]).filter(function(e){return e.type!=='light3d'&&!e.fixed&&!e.modal;});
+ if(!list.length)return '';
+ var rows=list.map(function(e,i){
+  elDefaults(e);var a=Math.max(0,Math.min(100,+e.sdStart||0)),b=Math.max(a,Math.min(100,+e.sdEnd||82));
+  var name=(e.name||e.label||e.text||e.type||('Elemento '+(i+1)))+'';name=name.replace(/[<>&"]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]});
+  return '<div class="nw-sd-trow"><span class="nw-sd-tname" title="'+name+'">'+name+'</span><span class="nw-sd-ttrack"><i class="nw-sd-tbar" style="left:'+a+'%;width:'+Math.max(1,b-a)+'%"></i></span></div>';
+ }).join('');
+ return '<div class="nw-sd-timeline" data-sd-timeline="'+s.id+'" style="--sd-play:'+Math.max(0,Math.min(100,val))+'%"><div class="nw-sd-timeline-head"><span>LÍNEA DE TIEMPO</span><span>0 · 25 · 50 · 75 · 100%</span></div><div class="nw-sd-timeline-grid"><i class="nw-sd-playhead"></i>'+rows+'</div></div>';
+}
+
 function secDefaults(s){
  if(!s)return s;
  if(s.sdEnabled==null)s.sdEnabled=false;
@@ -39,6 +65,7 @@ paneSceneNew=function(){
   body+=cRow('Duración',cNum('sec.sdLength',s.sdLength,'vh',{step:20,min:140,max:900}));
   body+=cRow('Sensación',cSeg('sec.sdEase',s.sdEase||'cinematic',[['linear','Directa'],['smooth','Suave'],['cinematic','Cinemática']]));
   body+='<div class="field cstack"><label>Ver un momento sin scrollear <span class="val" data-sd-val>'+Math.round(val)+'%</span></label><input type="range" class="crange" data-sd-scrub="'+s.id+'" min="0" max="100" step="1" value="'+val+'"></div>';
+  body+=timelineHTML(s,val);
   body+='<div class="row"><button type="button" class="btn tiny" data-sd-play="'+s.id+'">▶ Reproducir secuencia</button><button type="button" class="btn tiny" data-sd-live="'+s.id+'">↕ Volver al scroll real</button></div>';
   body+='<div class="row" style="margin-top:7px"><button type="button" class="btn tiny" data-sd-auto="'+s.id+'">Repartir elementos en etapas</button><button type="button" class="btn tiny" data-sd-reset="'+s.id+'">Mostrar todos toda la escena</button></div>';
   body+='<p class="hint gh">Después seleccioná cada elemento. En su panel aparece <b>Momento en la historia</b>, donde decidís cuándo entra, cuándo sale y qué recorrido hace.</p>';
@@ -83,6 +110,7 @@ if(pane){
   var t=ev.target.closest('[data-sd-scrub]');if(!t)return;
   var p=+t.value||0,id=t.dataset.sdScrub;scrubState[id]=p;
   var v=t.closest('.field')&&t.closest('.field').querySelector('[data-sd-val]');if(v)v.textContent=Math.round(p)+'%';
+  var tl=document.querySelector('[data-sd-timeline="'+id+'"]');if(tl)tl.style.setProperty('--sd-play',Math.max(0,Math.min(100,p))+'%');
   postScrub(id,p/100);
  });
  pane.addEventListener('click',function(ev){
@@ -101,7 +129,7 @@ if(pane){
   if(play){
    if(playRAF)cancelAnimationFrame(playRAF);
    var id=play.dataset.sdPlay,start=performance.now(),dur=9000;
-   function tick(t){var p=Math.min(1,(t-start)/dur),pct=p*100;scrubState[id]=pct;postScrub(id,p);var inp=document.querySelector('[data-sd-scrub="'+id+'"]');if(inp){inp.value=pct;var vv=inp.closest('.field')&&inp.closest('.field').querySelector('[data-sd-val]');if(vv)vv.textContent=Math.round(pct)+'%';}if(p<1)playRAF=requestAnimationFrame(tick);else playRAF=0;}
+   function tick(t){var p=Math.min(1,(t-start)/dur),pct=p*100;scrubState[id]=pct;postScrub(id,p);var inp=document.querySelector('[data-sd-scrub="'+id+'"]');if(inp){inp.value=pct;var vv=inp.closest('.field')&&inp.closest('.field').querySelector('[data-sd-val]');if(vv)vv.textContent=Math.round(pct)+'%';}var tl=document.querySelector('[data-sd-timeline="'+id+'"]');if(tl)tl.style.setProperty('--sd-play',pct+'%');if(p<1)playRAF=requestAnimationFrame(tick);else playRAF=0;}
    playRAF=requestAnimationFrame(tick);return;
   }
  });
