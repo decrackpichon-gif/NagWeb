@@ -69,7 +69,7 @@ generateSite=function(p,edit,minify,mobile){
  var html=_generateSite(p,edit,minify,mobile),uses=(p.sections||[]).some(function(s){return(s.elements||[]).some(isUniversal);});
  if(!uses)return html;
  html=html.replace('</head>','<style id="nw-universal-css">'+UC_CSS+'</style></head>');
- html=html.replace('</body>','<script>'+UC_RUNTIME+'<\\/script></body>');
+ html=html.replace('</body>','<script>'+UC_RUNTIME+'</script></body>');
  return html;
 };
 
