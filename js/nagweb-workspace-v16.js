@@ -43,16 +43,19 @@ function save(v){try{localStorage.setItem(KEY,JSON.stringify(v))}catch(_){}}
 var st=load();
 
 function setSide(side,on){
- document.body.classList.toggle('nw-'+side+'-collapsed',!!on);
- st[side]=!!on;save(st);
+ on=!!on;
+ var cls='nw-'+side+'-collapsed',changed=document.body.classList.contains(cls)!==on;
+ if(changed)document.body.classList.toggle(cls,on);
+ if(st[side]!==on){st[side]=on;save(st);}
  var b=document.querySelector('.nw-dock-toggle.'+side);
  if(b){
-  var collapsed=!!on;
-  b.textContent=side==='left'?(collapsed?'›':'‹'):(collapsed?'‹':'›');
-  b.setAttribute('aria-label',(collapsed?'Mostrar ':'Ocultar ')+(side==='left'?'panel izquierdo':'panel derecho'));
-  b.title=(collapsed?'Mostrar ':'Ocultar ')+(side==='left'?'panel izquierdo':'panel derecho');
+  var label=(on?'Mostrar ':'Ocultar ')+(side==='left'?'panel izquierdo':'panel derecho');
+  var glyph=side==='left'?(on?'›':'‹'):(on?'‹':'›');
+  if(b.textContent!==glyph)b.textContent=glyph;
+  if(b.getAttribute('aria-label')!==label)b.setAttribute('aria-label',label);
+  if(b.title!==label)b.title=label;
  }
- try{if(typeof layoutFrame==='function')setTimeout(layoutFrame,30);}catch(_){}
+ if(changed){try{if(typeof layoutFrame==='function')setTimeout(layoutFrame,30);}catch(_){}}
 }
 function installSides(){
  var left=document.querySelector('.col.scenes'),right=document.querySelector('.col.inspector');
@@ -103,7 +106,18 @@ function enhanceVariant(P){
 }
 function scanVariants(){document.querySelectorAll('.sc-varpanel').forEach(enhanceVariant);}
 scanVariants();
-new MutationObserver(function(){scanVariants();installSides();}).observe(document.body,{childList:true,subtree:true});
+var variantObserver=new MutationObserver(function(muts){
+ var needs=false;
+ for(var i=0;i<muts.length&&!needs;i++){
+  var added=muts[i].addedNodes||[];
+  for(var j=0;j<added.length;j++){
+   var n=added[j];
+   if(n&&n.nodeType===1&&(n.matches&&n.matches('.sc-varpanel')||n.querySelector&&n.querySelector('.sc-varpanel'))){needs=true;break;}
+  }
+ }
+ if(needs)scanVariants();
+});
+variantObserver.observe(document.body,{childList:true,subtree:true});
 
 console.info('[NagWeb] workspace v1.6: paneles plegables + variantes ajustables');
 })();
