@@ -115,7 +115,7 @@ var UC_CSS=[
 '.nw-uc--depth:before{opacity:calc(var(--nw-uc-int,.7)*.24);background:radial-gradient(circle at var(--nw-uc-x,50%) var(--nw-uc-y,50%),var(--nw-uc-a),transparent 45%);mix-blend-mode:screen}',
 '.nw-uc>.el{translate:var(--nw-uc-dx,0px) var(--nw-uc-dy,0px);scale:var(--nw-uc-scale,1);will-change:translate,scale;transition:translate .16s cubic-bezier(.2,.8,.2,1),scale .18s cubic-bezier(.2,.8,.2,1)}',
 '.nw-uc-emptyhint{position:absolute;inset:18px;z-index:5;display:grid;place-items:center;border:1.5px dashed color-mix(in srgb,currentColor 40%,transparent);border-radius:18px;padding:24px;text-align:center;font:700 10px/1.5 system-ui,sans-serif;letter-spacing:.12em;opacity:.55;pointer-events:none}',
-'@media(prefers-reduced-motion:reduce){.nw-uc>.el{translate:0 0!important;scale:1!important;transition:none!important}}'
+'@media(prefers-reduced-motion:reduce){.nw-uc>.el{--nw-uc-dx:0px!important;--nw-uc-dy:0px!important;--nw-uc-scale:1!important;transition:none!important}}'
 ].join('\n');
 
 var UC_RUNTIME="(function(){"+
