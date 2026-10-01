@@ -8,7 +8,7 @@ const contractState={
  heroPartSelector:feedbackSource.includes('data-nw-part'),
  storyChapterSelector:['data-nw-story-ch="1"','data-nw-story-ch="2"','data-nw-story-ch="3"'].every(x=>feedbackSource.includes(x)),
  storyFollowScroll:feedbackSource.includes('data-nw-story-live'),
- storyEditableParts:['k1','t1','c1','media-1','k2','t2','c2','media-2','k3','t3','c3','media-3'].every(x=>feedbackSource.includes(x)),
+ storyEditableParts:["data-wpart=\"k'+i+'\"","data-wpart=\"t'+i+'\"","data-wpart=\"c'+i+'\"","data-wpart=\"media-'+i+'\""].every(x=>feedbackSource.includes(x)),
  kineticSticky:['nw-ks-sticky','nw-ks-track','nw-ks-progress'].every(x=>feedbackSource.includes(x)),
  directorPanelMatchesEligibility:directorSource.includes("raw.type==='light3d'||raw.fixed||raw.modal"),
  directorExportMatchesTimelineEligibility:directorSource.includes("e.type!=='light3d'&&!e.fixed&&!e.modal"),
