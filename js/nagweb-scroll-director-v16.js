@@ -163,7 +163,7 @@ if(pane){
    saveProject();renderPane();schedulePreview();return;
   }
   var reset=ev.target.closest('[data-sd-reset]');
-  if(reset){var ss=sec();snapshot();ss.elements.forEach(function(e){if(e.type==='light3d')return;elDefaults(e);e.sdStart=0;e.sdEnd=100;e.sdSpan=6;e.sdEnter='none';e.sdExit='keep';e.sdMoveX=0;e.sdMoveY=0;e.sdRotate=0;e.sdScale=100;});saveProject();renderPane();schedulePreview();return;}
+  if(reset){var ss=sec();snapshot();ss.elements.forEach(function(e){if(e.type==='light3d'||e.fixed||e.modal)return;elDefaults(e);e.sdStart=0;e.sdEnd=100;e.sdSpan=6;e.sdEnter='none';e.sdExit='keep';e.sdMoveX=0;e.sdMoveY=0;e.sdRotate=0;e.sdScale=100;});saveProject();renderPane();schedulePreview();return;}
   var play=ev.target.closest('[data-sd-play]');
   if(play){
    if(playRAF)cancelAnimationFrame(playRAF);
