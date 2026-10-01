@@ -242,7 +242,7 @@ var SD_CSS=[
 '.nw-sd-stage{position:sticky;top:0;width:100%;height:100vh;min-height:100vh;box-sizing:border-box;display:flex;padding:13vh 8vw;overflow:hidden}',
 '.nw-sd-active.free .nw-sd-stage{padding:0}',
 '.nw-sd-active.free .nw-sd-stage>.inner{position:absolute;inset:0}',
-'[data-nw-sd-el]{translate:calc(var(--nw-sd-x,0px) + var(--nw-uc-dx,0px)) calc(var(--nw-sd-y,0px) + var(--nw-uc-dy,0px));scale:var(--nw-sd-scale,var(--nw-uc-scale,1));rotate:var(--nw-sd-rot,0deg);opacity:var(--nw-sd-opacity,1)!important;filter:blur(var(--nw-sd-blur,0px));will-change:translate,scale,rotate,opacity,filter}',
+'[data-nw-sd-el]{translate:calc(var(--nw-sd-x,0px) + var(--nw-uc-dx,0px)) calc(var(--nw-sd-y,0px) + var(--nw-uc-dy,0px));scale:calc(var(--nw-sd-scale,1) * var(--nw-uc-scale,1));rotate:var(--nw-sd-rot,0deg);opacity:var(--nw-sd-opacity,1)!important;filter:blur(var(--nw-sd-blur,0px));will-change:translate,scale,rotate,opacity,filter}',
 '@media(prefers-reduced-motion:reduce){[data-nw-sd-el]{transition:none!important}}'
 ].join('\n');
 
