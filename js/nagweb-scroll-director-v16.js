@@ -157,7 +157,7 @@ if(pane){
   if(live){delete scrubState[live.dataset.sdLive];postLive(live.dataset.sdLive);renderPane();return;}
   var auto=ev.target.closest('[data-sd-auto]');
   if(auto){
-   var s=sec();snapshot();var list=s.elements.filter(function(e){return !e.parent&&e.type!=='light3d'&&!e.fixed&&!e.modal;});
+   var s=sec();snapshot();function insideUniversal(e){var guard=0,p=e&&e.parent;while(p&&guard++<30){var host=(s.elements||[]).find(function(x){return x.id===p;});if(!host)return false;if(host.type==='container'&&host.universal)return true;p=host.parent;}return false;}var list=s.elements.filter(function(e){return (!e.parent||insideUniversal(e))&&e.type!=='light3d'&&!e.fixed&&!e.modal;});
    var n=Math.max(1,list.length),step=Math.min(22,72/n);
    list.forEach(function(e,i){elDefaults(e);e.sdStart=Math.round(5+i*step);e.sdEnd=Math.min(92,Math.round(e.sdStart+Math.max(18,step*1.35)));e.sdSpan=Math.max(4,Math.min(10,Math.round(step*.45)));e.sdEnter=i%3===0?'up':i%3===1?'fade':'depth';e.sdExit=i===list.length-1?'keep':'fade';});
    saveProject();renderPane();schedulePreview();return;
