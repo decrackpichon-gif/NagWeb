@@ -192,7 +192,7 @@ function rt(DATA){
   if(sec.classList.contains('a-center'))stage.style.justifyContent='center';else if(sec.classList.contains('a-right'))stage.style.justifyContent='flex-end';else stage.style.justifyContent='flex-start';
   while(sec.firstChild)stage.appendChild(sec.firstChild);sec.appendChild(stage);
   var els=[];
-  (cfg.elements||[]).forEach(function(c){var n=stage.querySelector('[data-id="'+c.id+'"]');if(!n)return;var baseOpacity=1,baseFilter='blur(0px)';try{var cs=getComputedStyle(n);baseOpacity=parseFloat(cs.opacity);if(!isFinite(baseOpacity))baseOpacity=1;baseFilter=cs.filter&&cs.filter!=='none'?cs.filter:'blur(0px)';}catch(_){}n.style.setProperty('--nw-sd-base-opacity',Math.max(0,Math.min(1,baseOpacity)).toFixed(4));n.style.setProperty('--nw-sd-base-filter',baseFilter);n.setAttribute('data-nw-sd-el','1');els.push({n:n,c:c});});
+  (cfg.elements||[]).forEach(function(c){var n=stage.querySelector('[data-id="'+c.id+'"]');if(!n)return;var baseOpacity=1,baseFilter='blur(0px)',basePointer='auto';try{var cs=getComputedStyle(n);baseOpacity=parseFloat(cs.opacity);if(!isFinite(baseOpacity))baseOpacity=1;baseFilter=cs.filter&&cs.filter!=='none'?cs.filter:'blur(0px)';basePointer=cs.pointerEvents||'auto';}catch(_){}n.style.setProperty('--nw-sd-base-opacity',Math.max(0,Math.min(1,baseOpacity)).toFixed(4));n.style.setProperty('--nw-sd-base-filter',baseFilter);n.setAttribute('data-nw-sd-el','1');els.push({n:n,c:c,basePointer:basePointer});});
   var manual=null,busy=0;
   function paint(force){
    busy=0;var r=sec.getBoundingClientRect(),span=Math.max(1,r.height-innerHeight),p=manual==null?clamp(-r.top/span,0,1):manual;
@@ -225,7 +225,7 @@ function rt(DATA){
     n.style.setProperty('--nw-sd-rot',rot.toFixed(2)+'deg');
     n.style.setProperty('--nw-sd-opacity',clamp(op,0,1).toFixed(4));
     n.style.setProperty('--nw-sd-blur',blur.toFixed(2)+'px');
-    n.style.pointerEvents=op<.025?'none':'';
+    n.style.pointerEvents=op<.025?'none':q.basePointer;
    });
    sec.style.setProperty('--nw-sd-progress',p.toFixed(4));
   }
