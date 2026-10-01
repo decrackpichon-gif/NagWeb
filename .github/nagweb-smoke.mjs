@@ -1,6 +1,29 @@
 import puppeteer from 'puppeteer-core';
 import fs from 'node:fs';
 
+const feedbackSource=fs.readFileSync(new URL('../js/nagweb-feedback-v16.js',import.meta.url),'utf8');
+const directorSource=fs.readFileSync(new URL('../js/nagweb-scroll-director-v16.js',import.meta.url),'utf8');
+const universalSource=fs.readFileSync(new URL('../js/nagweb-universal-container.js',import.meta.url),'utf8');
+const sourceState={
+ heroPartSelector:feedbackSource.includes('data-nw-part'),
+ storyChapterSelector:['data-nw-story-ch="1"','data-nw-story-ch="2"','data-nw-story-ch="3"'].every(x=>feedbackSource.includes(x)),
+ storyFollowScroll:feedbackSource.includes('data-nw-story-live'),
+ storyEditableParts:['k1','t1','c1','media-1','k2','t2','c2','media-2','k3','t3','c3','media-3'].every(x=>feedbackSource.includes(x)),
+ kineticSticky:['nw-ks-sticky','nw-ks-track','nw-ks-progress'].every(x=>feedbackSource.includes(x)),
+ directorPanelMatchesEligibility:directorSource.includes("raw.type==='light3d'||raw.fixed||raw.modal"),
+ directorExportMatchesTimelineEligibility:directorSource.includes("e.type!=='light3d'&&!e.fixed&&!e.modal"),
+ directorResetMatchesEligibility:directorSource.includes("if(e.type==='light3d'||e.fixed||e.modal)return"),
+ directorAutoIncludesUniversalChildren:directorSource.includes('insideUniversal(e)')&&directorSource.includes("host.type==='container'&&host.universal"),
+ directorAutoSkipsUniversalContainer:directorSource.includes("!(e.type==='container'&&e.universal)"),
+ directorCssVarsCompose:['--nw-uc-dx','--nw-uc-dy','--nw-uc-scale','--nw-sd-x','--nw-sd-y','--nw-sd-scale'].every(x=>directorSource.includes(x)),
+ directorScaleCompose:directorSource.includes('scale:calc(var(--nw-sd-scale,1) * var(--nw-uc-scale,1))'),
+ directorOpacityCompose:directorSource.includes('--nw-sd-base-opacity')&&directorSource.includes('opacity:calc(var(--nw-sd-base-opacity,1) * var(--nw-sd-opacity,1))!important'),
+ directorFilterCompose:directorSource.includes('--nw-sd-base-filter')&&directorSource.includes('filter:var(--nw-sd-base-filter,blur(0px)) blur(var(--nw-sd-blur,0px))'),
+ directorPointerEventsPreserved:directorSource.includes("basePointer=cs.pointerEvents||'auto'")&&directorSource.includes("n.style.pointerEvents=op<.025?'none':q.basePointer"),
+ directorDisablesUniversalTween:directorSource.includes('.nw-uc>[data-nw-sd-el]{transition:none!important}')&&!directorSource.includes('filter:blur(var(--nw-sd-blur,0px));transition:none!important;will-change:translate,scale,rotate,opacity,filter'),
+ reducedMotionKeepsDirector:universalSource.includes('--nw-uc-dx:0px!important')&&universalSource.includes('--nw-uc-dy:0px!important')&&universalSource.includes('--nw-uc-scale:1!important')&&!universalSource.includes('.nw-uc>.el{translate:0 0!important;scale:1!important')
+};
+
 const candidates=['/usr/bin/google-chrome-stable','/usr/bin/google-chrome','/usr/bin/chromium','/usr/bin/chromium-browser'];
 const executablePath=candidates.find(p=>fs.existsSync(p));
 if(!executablePath) throw new Error('No Chromium/Chrome executable found on runner');
@@ -62,7 +85,7 @@ const state=await page.evaluate(()=>({
  directorDisablesUniversalTween:(()=>{const scripts=Array.from(document.scripts).map(x=>x.textContent||'').join('\n');return scripts.includes('.nw-uc>[data-nw-sd-el]{transition:none!important}')&&!scripts.includes('filter:blur(var(--nw-sd-blur,0px));transition:none!important;will-change:translate,scale,rotate,opacity,filter');})(),
  reducedMotionKeepsDirector:(()=>{const scripts=Array.from(document.scripts).map(x=>x.textContent||'').join('\n');return scripts.includes('--nw-uc-dx:0px!important')&&scripts.includes('--nw-uc-dy:0px!important')&&scripts.includes('--nw-uc-scale:1!important')&&!scripts.includes('.nw-uc>.el{translate:0 0!important;scale:1!important');})(),
  directorUniversalLoaded:(()=>{const u=window.NAGWEB_UNIVERSAL,d=window.NAGWEB_SCROLL_DIRECTOR;return !!(u&&u.version&&d&&d.version);})()
-}));
+})),sourceState);
 for(const [k,v] of Object.entries(state)){
  if(!v) throw new Error('Smoke assertion failed: '+k+' = '+String(v));
 }
