@@ -373,8 +373,8 @@ function rt3DAnchor(){
   var mul=n(b.o.scale,1)*responsive*cssScale;
   if(obj.scale)setVec(obj.scale,b.baseScale.x*mul,b.baseScale.y*mul,b.baseScale.z*mul);
   if(obj.rotation){
-   var rz=b.o.followCssRotation===false?0:angleValue(cs);
-   setVec(obj.rotation,b.baseRotation.x+rad(b.o.rotationX),b.baseRotation.y+rad(b.o.rotationY),b.baseRotation.z+rad(b.o.rotationZ)+rad(rz));
+   var rz=b.o.followCssRotation===false?0:angleValue(cs),orbitY=b.orbit?((performance.now()-b.started)/1000)*b.orbitSpeed:0;
+   setVec(obj.rotation,b.baseRotation.x+rad(b.o.rotationX),b.baseRotation.y+rad(b.o.rotationY+orbitY),b.baseRotation.z+rad(b.o.rotationZ)+rad(rz));
   }
   b.last={anchorRect:ar,viewportRect:vr,ndcX:nx,ndcY:ny,world:out,scale:mul};
   return true;
@@ -396,8 +396,10 @@ function rt3DAnchor(){
   }
   if(!isFinite(dist)||dist<=0)dist=8;
   var id=o.id||('nw3da-'+(++seq));
+  var orbit=o.orbit==null?el.getAttribute('data-nw-3d-orbit')==='1':!!o.orbit;
+  var orbitSpeed=n(o.orbitSpeed,n(el.getAttribute('data-nw-3d-orbit-speed'),18));
   var b={
-   id:id,el:el,object:object,camera:camera,o:o,distance:dist,
+   id:id,el:el,object:object,camera:camera,o:o,distance:dist,orbit:orbit,orbitSpeed:orbitSpeed,started:performance.now(),
    baseW:Math.max(1,el.offsetWidth||r.width||1),baseH:Math.max(1,el.offsetHeight||r.height||1),
    baseScale:baseVec(object.scale,1),baseRotation:baseVec(object.rotation,0),last:null
   };
