@@ -89,7 +89,7 @@ var _paneElementNew=paneElementNew;
 paneElementNew=function(){
  var html=_paneElementNew(),s=sec();secDefaults(s);
  if(!s.sdEnabled||selection.length!==1)return html;
- var raw=s.elements[curEl];if(!raw||raw.type==='light3d')return html;
+ var raw=s.elements[curEl];if(!raw||raw.type==='light3d'||raw.fixed||raw.modal)return html;
  elDefaults(raw);
  var e=viewMobile?Object.assign({},raw,raw.mobile):raw;
  var timing=cRow('Visible desde / hasta',cNum('el.sdStart',e.sdStart,'%',{step:1,min:0,max:100})+cNum('el.sdEnd',e.sdEnd,'%',{step:1,min:0,max:100}));
