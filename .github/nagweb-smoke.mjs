@@ -52,6 +52,7 @@ const state=await page.evaluate(()=>({
  directorCssVarsCompose:(()=>{const scripts=Array.from(document.scripts).map(x=>x.textContent||'').join('\n');return scripts.includes('--nw-uc-dx')&&scripts.includes('--nw-uc-dy')&&scripts.includes('--nw-uc-scale')&&scripts.includes('--nw-sd-x')&&scripts.includes('--nw-sd-y')&&scripts.includes('--nw-sd-scale');})(),
  directorScaleCompose:(()=>{const scripts=Array.from(document.scripts).map(x=>x.textContent||'').join('\n');return scripts.includes('scale:calc(var(--nw-sd-scale,1) * var(--nw-uc-scale,1))');})(),
  directorDisablesUniversalTween:(()=>{const scripts=Array.from(document.scripts).map(x=>x.textContent||'').join('\n');return scripts.includes('transition:none!important;will-change:translate,scale,rotate,opacity,filter');})(),
+ reducedMotionKeepsDirector:(()=>{const scripts=Array.from(document.scripts).map(x=>x.textContent||'').join('\n');return scripts.includes('--nw-uc-dx:0px!important')&&scripts.includes('--nw-uc-dy:0px!important')&&scripts.includes('--nw-uc-scale:1!important')&&!scripts.includes('.nw-uc>.el{translate:0 0!important;scale:1!important');})(),
  directorUniversalLoaded:(()=>{const u=window.NAGWEB_UNIVERSAL,d=window.NAGWEB_SCROLL_DIRECTOR;return !!(u&&u.version&&d&&d.version);})()
 }));
 for(const [k,v] of Object.entries(state)){
