@@ -429,6 +429,8 @@ generateSite=function(p,edit,minify,mobile){
  return html;
 };
 
+try{if(typeof schedulePreview==='function')setTimeout(function(){schedulePreview();},0);}catch(_){}
+
 window.NAGWEB_SCROLL_DIRECTOR={version:'1.0',scrub:function(id,p){scrubState[id]=p*100;postScrub(id,p)},live:postLive};
 console.info('[NagWeb] Director de Scroll v1.0 activo');
 })();
