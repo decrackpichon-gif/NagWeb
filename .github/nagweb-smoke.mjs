@@ -42,7 +42,7 @@ await page.waitForFunction(()=>{
  return !!(f&&f.contentDocument&&f.contentDocument.body&&f.contentDocument.body.innerHTML.length>50);
 },{timeout:30000});
 
-const state=await page.evaluate(()=>({
+const state=Object.assign(await page.evaluate(()=>({
  title:document.title,
  main:!!document.querySelector('main'),
  left:!!document.querySelector('.col.scenes'),
