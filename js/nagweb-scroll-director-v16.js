@@ -79,9 +79,9 @@ paneSceneNew=function(){
   body+='<div class="row" style="margin-top:7px"><button type="button" class="btn tiny" data-sd-auto="'+s.id+'">Repartir elementos en etapas</button><button type="button" class="btn tiny" data-sd-reset="'+s.id+'">Mostrar todos toda la escena</button></div>';
   body+='<p class="hint gh">Después seleccioná cada elemento. En su panel aparece <b>Momento en la historia</b>, donde decidís cuándo entra, cuándo sale y qué recorrido hace.</p>';
  }
- var trans=cRow('Tipo',cSeg('sec.stType',s.stType||'cut',[['cut','Corte'],['fade','Fundido'],['overlay','Superposición'],['push','Empuje'],['zoom','Zoom']]));
+ var trans=cRow('Tipo',cSeg('sec.stType',s.stType||'cut',[['cut','Corte'],['fade','Fundido'],['overlay','Superposición'],['push','Empuje'],['zoom','Zoom'],['morph','Morph simple']]));
  if((s.stType||'cut')!=='cut')trans+=cRow('Duración',cNum('sec.stSpan',s.stSpan,'%',{step:1,min:8,max:60}));
- trans+='<p class="hint gh">Define cómo entra la escena siguiente. Corte cambia de una escena a otra, Fundido mezcla ambas, Superposición pone la siguiente por encima, Empuje desplaza ambas y Zoom hace que la siguiente avance desde profundidad. Morph se suma después.</p>';
+ trans+='<p class="hint gh">Define cómo entra la escena siguiente. Corte, Fundido, Superposición, Empuje y Zoom cubren cambios clásicos. Morph simple hace una transformación continua de forma visual entre ambas escenas mediante escala, opacidad y redondeo.</p>';
  return html+grp('s-scroll-director','Director de scroll',body)+grp('s-scene-transition','Transición a la siguiente escena',trans);
 };
 
@@ -274,12 +274,13 @@ function rtTransitions(DATA){
   if(q.c.type==='fade'){q.cur.style.setProperty('--nw-st-out-opacity',(1-p).toFixed(4));q.next.style.setProperty('--nw-st-in-opacity',p.toFixed(4));q.next.style.setProperty('--nw-st-in-y','0vh');}
   else if(q.c.type==='overlay'){q.cur.style.setProperty('--nw-st-out-opacity','1');q.cur.style.setProperty('--nw-st-out-x','0vw');q.next.style.setProperty('--nw-st-in-opacity',p.toFixed(4));q.next.style.setProperty('--nw-st-in-y',((1-p)*10).toFixed(3)+'vh');q.next.style.setProperty('--nw-st-in-x','0vw');}
   else if(q.c.type==='push'){q.cur.style.setProperty('--nw-st-out-opacity','1');q.next.style.setProperty('--nw-st-in-opacity','1');q.cur.style.setProperty('--nw-st-out-x',(-p*100).toFixed(3)+'vw');q.cur.style.setProperty('--nw-st-out-scale','1');q.next.style.setProperty('--nw-st-in-x',((1-p)*100).toFixed(3)+'vw');q.next.style.setProperty('--nw-st-in-y','0vh');q.next.style.setProperty('--nw-st-in-scale','1');}
-  else if(q.c.type==='zoom'){q.cur.style.setProperty('--nw-st-out-opacity',(1-p*.35).toFixed(4));q.cur.style.setProperty('--nw-st-out-x','0vw');q.cur.style.setProperty('--nw-st-out-scale',(1+p*.08).toFixed(4));q.next.style.setProperty('--nw-st-in-opacity',p.toFixed(4));q.next.style.setProperty('--nw-st-in-x','0vw');q.next.style.setProperty('--nw-st-in-y','0vh');q.next.style.setProperty('--nw-st-in-scale',(.86+p*.14).toFixed(4));}
+  else if(q.c.type==='zoom'){q.cur.style.setProperty('--nw-st-out-opacity',(1-p*.35).toFixed(4));q.cur.style.setProperty('--nw-st-out-x','0vw');q.cur.style.setProperty('--nw-st-out-scale',(1+p*.08).toFixed(4));q.cur.style.setProperty('--nw-st-radius','0px');q.next.style.setProperty('--nw-st-in-opacity',p.toFixed(4));q.next.style.setProperty('--nw-st-in-x','0vw');q.next.style.setProperty('--nw-st-in-y','0vh');q.next.style.setProperty('--nw-st-in-scale',(.86+p*.14).toFixed(4));q.next.style.setProperty('--nw-st-radius','0px');}
+  else if(q.c.type==='morph'){q.cur.style.setProperty('--nw-st-out-opacity',(1-p).toFixed(4));q.cur.style.setProperty('--nw-st-out-x','0vw');q.cur.style.setProperty('--nw-st-out-scale',(1-p*.08).toFixed(4));q.cur.style.setProperty('--nw-st-radius',(p*28).toFixed(2)+'px');q.next.style.setProperty('--nw-st-in-opacity',p.toFixed(4));q.next.style.setProperty('--nw-st-in-x','0vw');q.next.style.setProperty('--nw-st-in-y','0vh');q.next.style.setProperty('--nw-st-in-scale',(.92+p*.08).toFixed(4));q.next.style.setProperty('--nw-st-radius',((1-p)*28).toFixed(2)+'px');}
  });}
  function req(){if(!busy){busy=1;requestAnimationFrame(paint)}}
  addEventListener('scroll',req,{passive:true});addEventListener('resize',req);paint();
 }
-var ST_CSS='.nw-st-out{position:relative;z-index:1;opacity:var(--nw-st-out-opacity,1);translate:var(--nw-st-out-x,0) 0;scale:var(--nw-st-out-scale,1);transform-origin:center center;will-change:opacity,translate,scale}.nw-st-in{position:relative;z-index:2;opacity:var(--nw-st-in-opacity,1);translate:var(--nw-st-in-x,0) var(--nw-st-in-y,0);scale:var(--nw-st-in-scale,1);transform-origin:center center;will-change:opacity,translate,scale}';
+var ST_CSS='.nw-st-out{position:relative;z-index:1;opacity:var(--nw-st-out-opacity,1);translate:var(--nw-st-out-x,0) 0;scale:var(--nw-st-out-scale,1);border-radius:var(--nw-st-radius,0);overflow:hidden;transform-origin:center center;will-change:opacity,translate,scale,border-radius}.nw-st-in{position:relative;z-index:2;opacity:var(--nw-st-in-opacity,1);translate:var(--nw-st-in-x,0) var(--nw-st-in-y,0);scale:var(--nw-st-in-scale,1);border-radius:var(--nw-st-radius,0);overflow:hidden;transform-origin:center center;will-change:opacity,translate,scale,border-radius}';
 var _generateSiteTransitions=generateSite;
 generateSite=function(p,edit,minify,mobile){
  var html=_generateSiteTransitions(p,edit,minify,mobile),ss=p.sections||[],data=[];
