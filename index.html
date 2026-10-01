@@ -9275,6 +9275,11 @@ X.reg('scanbeam', {
 })();
 </script>
 
+<script src="js/creatives-v14-batch1.js"></script>
+<script src="js/creatives-v14-batch2.js"></script>
+<script src="js/creatives-v14-batch3.js"></script>
+<script src="js/creatives-v14-batch4.js"></script>
+
 <script>/* Scrollcraft widgets — pack 2: subgrupos para los componentes de siempre + orden de los grupos */
 (function () {
 'use strict';
@@ -21941,7 +21946,7 @@ function widgetItems(cat){
     if(cat === 'creative' && k === 'mousehalo') return; /* retirado del catálogo en 1.2 */
     const K = SCW.kinds[k];
     const th = wp => { if(!K.thumbFn) return K.thumb || ''; try{ return K.thumbFn(Object.assign({}, K.defaults || {}, wp || {})); }catch(e){ return K.thumb || ''; } };
-    if(cat === 'creative' || cat === 'interactive'){
+    if(['creative','interactive','composition','mockup','layout'].includes(cat)){
       const variants = creativeVariantOptions(k);
       out.push({ label:K.label, desc:K.desc, thumb:th(), wicon:K.icon, group:K.group, scKind:k, vaultKey:'widget:' + k, variantCount:Math.max(0, variants.length - 1),
         run:() => { const e = insertWidget(k); if(e && variants.length > 1) setTimeout(() => SC_CREATIVE_VARIANTS.openFor(e.id, k), 0); return e; } });
@@ -22085,7 +22090,7 @@ if(!INSERT_CATS.some(c => c.key === 'vault')){
 const SC_CREATIVE_VARIANTS = (() => {
   let panel = null, activeId = '', activeKind = '', dismissedId = '', lastSelectionSig = '';
   const getEl = id => { try{ return sec().elements.find(e => e.id === id); }catch(e){ return null; } };
-  const selected = () => { if(selection.length !== 1) return null; const e = getEl(selection[0]); if(!e || e.type !== 'widget') return null; const K = window.SCW && SCW.kinds[e.wk]; return K && (K.cat === 'creative' || K.cat === 'interactive') && e.wk !== 'mousehalo' ? e : null; };
+  const selected = () => { if(selection.length !== 1) return null; const e = getEl(selection[0]); if(!e || e.type !== 'widget') return null; const K = window.SCW && SCW.kinds[e.wk]; return K && ['creative','interactive','composition','mockup','layout'].indexOf(K.cat) >= 0 && e.wk !== 'mousehalo' ? e : null; };
   const options = k => creativeVariantOptions(k);
   const ensure = () => {
     if(panel && panel.isConnected) return panel;
@@ -22753,7 +22758,12 @@ async function agentSend(){
 layoutFrame();
 renderPages(); refresh(false); renderPreview();
 </script>
+<script src="js/creatives-v14-batch5.js"></script>
+<script src="js/nagweb-v14-direction.js"></script>
+<script src="js/nagweb-universal-container.js"></script>
+<script src="js/nagweb-feedback-v15.js"></script>
+<script src="js/nagweb-workspace-v16.js"></script>
+<script src="js/nagweb-scroll-director-v16.js"></script>
+<script src="js/nagweb-feedback-v16.js"></script>
 </body>
 </html>
-
-</body></html>
