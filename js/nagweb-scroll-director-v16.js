@@ -45,6 +45,8 @@ function secDefaults(s){
  if(s.sdEnabled==null)s.sdEnabled=false;
  if(s.sdLength==null)s.sdLength=320;
  if(s.sdEase==null)s.sdEase='cinematic';
+ if(s.stType==null)s.stType='cut';
+ if(s.stSpan==null)s.stSpan=24;
  return s;
 }
 function elDefaults(e){
@@ -77,7 +79,10 @@ paneSceneNew=function(){
   body+='<div class="row" style="margin-top:7px"><button type="button" class="btn tiny" data-sd-auto="'+s.id+'">Repartir elementos en etapas</button><button type="button" class="btn tiny" data-sd-reset="'+s.id+'">Mostrar todos toda la escena</button></div>';
   body+='<p class="hint gh">Después seleccioná cada elemento. En su panel aparece <b>Momento en la historia</b>, donde decidís cuándo entra, cuándo sale y qué recorrido hace.</p>';
  }
- return html+grp('s-scroll-director','Director de scroll',body);
+ var trans=cRow('Tipo',cSeg('sec.stType',s.stType||'cut',[['cut','Corte'],['fade','Fundido']]));
+ if((s.stType||'cut')!=='cut')trans+=cRow('Duración',cNum('sec.stSpan',s.stSpan,'%',{step:1,min:8,max:60}));
+ trans+='<p class="hint gh">Define cómo entra la escena siguiente. Por ahora esta primera capa admite Corte y Fundido; las variantes de superposición, empuje, zoom y morph se suman en micro-etapas posteriores.</p>';
+ return html+grp('s-scroll-director','Director de scroll',body)+grp('s-scene-transition','Transición a la siguiente escena',trans);
 };
 
 var _paneElementNew=paneElementNew;
@@ -249,6 +254,36 @@ generateSite=function(p,edit,minify,mobile){
  var data=secs.map(function(s){secDefaults(s);return{id:s.id,length:Math.max(140,Math.min(900,+s.sdLength||320)),ease:['linear','smooth','cinematic'].indexOf(s.sdEase)>=0?s.sdEase:'cinematic',elements:(s.elements||[]).filter(function(e){return e.type!=='light3d'&&!e.fixed;}).map(function(e){elDefaults(e);return{id:e.id,start:e.sdStart,end:e.sdEnd,span:e.sdSpan,enter:e.sdEnter,exit:e.sdExit,moveX:e.sdMoveX,moveY:e.sdMoveY,rotate:e.sdRotate,scale:e.sdScale};})};});
  html=html.replace('</head>','<style id="nw-scroll-director-css">'+SD_CSS+'</style></head>');
  html=html.replace('</body>','<script>('+rt.toString()+')('+JSON.stringify(data)+');</script></body>');
+ return html;
+};
+
+
+/* ---------- transiciones entre escenas v1 ---------- */
+function rtTransitions(DATA){
+ function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+ var rows=[];
+ (DATA||[]).forEach(function(c){
+  var cur=document.querySelector('.sc[data-id="'+c.id+'"]'),next=document.querySelector('.sc[data-id="'+c.next+'"]');
+  if(!cur||!next||c.type==='cut')return;
+  cur.classList.add('nw-st-out');next.classList.add('nw-st-in');rows.push({cur:cur,next:next,c:c});
+ });
+ if(!rows.length)return;
+ var busy=0;
+ function paint(){busy=0;rows.forEach(function(q){
+  var r=q.next.getBoundingClientRect(),span=Math.max(1,innerHeight*(Math.max(8,Math.min(60,+q.c.span||24))/100)),p=clamp((innerHeight-r.top)/span,0,1);
+  if(q.c.type==='fade'){q.cur.style.setProperty('--nw-st-out-opacity',(1-p).toFixed(4));q.next.style.setProperty('--nw-st-in-opacity',p.toFixed(4));}
+ });}
+ function req(){if(!busy){busy=1;requestAnimationFrame(paint)}}
+ addEventListener('scroll',req,{passive:true});addEventListener('resize',req);paint();
+}
+var ST_CSS='.nw-st-out{opacity:var(--nw-st-out-opacity,1)}.nw-st-in{opacity:var(--nw-st-in-opacity,1)}';
+var _generateSiteTransitions=generateSite;
+generateSite=function(p,edit,minify,mobile){
+ var html=_generateSiteTransitions(p,edit,minify,mobile),ss=p.sections||[],data=[];
+ ss.forEach(function(s,i){secDefaults(s);if(i>=ss.length-1||s.stType==='cut')return;data.push({id:s.id,next:ss[i+1].id,type:s.stType,span:Math.max(8,Math.min(60,+s.stSpan||24))});});
+ if(!data.length)return html;
+ html=html.replace('</head>','<style id="nw-scene-transitions-css">'+ST_CSS+'</style></head>');
+ html=html.replace('</body>','<script>('+rtTransitions.toString()+')('+JSON.stringify(data)+');</script></body>');
  return html;
 };
 
