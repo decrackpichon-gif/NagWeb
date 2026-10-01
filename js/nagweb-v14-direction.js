@@ -302,5 +302,185 @@ var preview=document.getElementById('preview');
 if(preview){preview.addEventListener('load',function(){setTimeout(installCanvasTools,40);});setTimeout(installCanvasTools,250);}
 var ob=new MutationObserver(function(){setTimeout(installCanvasTools,40);});if(preview)ob.observe(preview,{attributes:true,attributeFilter:['src','srcdoc']});
 
+
+/* ---------- catálogo de comportamientos abiertos ---------- */
+(function(){
+ if(window.NAGWEB_BEHAVIORS)return;
+
+ function current(){
+  try{
+   var s=sec(),e=selection&&selection.length===1?(s.elements||[]).find(function(x){return x.id===selection[0]}):null;
+   return{s:s,e:e};
+  }catch(_){return{s:null,e:null}}
+ }
+ function parentUniversal(s,e){
+  var guard=0,cur=e;
+  while(s&&cur&&cur.parent&&guard++<30){
+   cur=(s.elements||[]).find(function(x){return x.id===cur.parent});
+   if(cur&&cur.type==='container'&&cur.universal)return cur;
+  }
+  return null;
+ }
+ function notice(msg){
+  var n=document.getElementById('nw-behavior-notice');
+  if(!n){n=document.createElement('div');n.id='nw-behavior-notice';n.style.cssText='position:fixed;right:18px;bottom:18px;z-index:2147483600;max-width:340px;padding:10px 12px;border-radius:10px;background:#171820;color:#fff;font:600 11px/1.45 system-ui;box-shadow:0 14px 40px rgba(0,0,0,.28);transition:opacity .2s';document.body.appendChild(n);}
+  n.textContent=msg;n.style.opacity='1';clearTimeout(n.__t);n.__t=setTimeout(function(){n.style.opacity='0'},2600);
+ }
+ function persist(){
+  try{saveProject();renderPane();schedulePreview();}catch(_){}
+ }
+ function tag(e,id){
+  if(!e)return;e.nwBehaviors=Array.isArray(e.nwBehaviors)?e.nwBehaviors:[];
+  if(e.nwBehaviors.indexOf(id)<0)e.nwBehaviors.push(id);
+ }
+ function director(s,e){
+  if(!s||!e)return false;
+  s.sdEnabled=true;
+  if(s.sdLength==null)s.sdLength=320;
+  if(!s.sdEase)s.sdEase='cinematic';
+  return true;
+ }
+ function apply(id){
+  var q=current(),s=q.s,e=q.e,host;
+  try{
+   if(typeof snapshot==='function')snapshot();
+   if(id==='reveal'){
+    if(!director(s,e)){notice('Seleccioná un elemento para aplicar Revelar.');return false}
+    e.sdStart=12;e.sdEnd=Math.max(72,+e.sdEnd||82);e.sdSpan=8;e.sdEnter='fade';e.sdExit=e.sdExit||'keep';tag(e,id);
+   }else if(id==='hold'){
+    if(!director(s,e)){notice('Seleccioná un elemento para aplicar Mantener.');return false}
+    e.sdStart=0;e.sdEnd=100;e.sdSpan=6;e.sdEnter='none';e.sdExit='keep';tag(e,id);
+   }else if(id==='parallax'){
+    if(!e){notice('Seleccioná un elemento para aplicar Parallax.');return false}
+    host=parentUniversal(s,e);
+    if(host){e.ucScroll=e.ucScroll||80;e.ucReaction=e.ucReaction||'depth';e.ucStrength=e.ucStrength==null?55:e.ucStrength;}
+    else{director(s,e);e.sdStart=0;e.sdEnd=100;e.sdEnter='none';e.sdExit='keep';e.sdMoveY=e.sdMoveY||-120;}
+    tag(e,id);
+   }else if(id==='cursor'){
+    if(!e){notice('Seleccioná un elemento o una Escena universal.');return false}
+    if(e.type==='container'&&e.universal){e.ucFx='spotlight';e.ucIntensity=e.ucIntensity==null?.72:e.ucIntensity;tag(e,id);}
+    else{
+     host=parentUniversal(s,e);
+     if(!host){notice('Seguir cursor usa Escena universal. Meté el elemento dentro de una para aplicarlo.');return false}
+     e.ucReaction='magnet';e.ucStrength=35;e.ucAxis='both';tag(e,id);
+    }
+   }else if(id==='magnet'){
+    if(!e){notice('Seleccioná un elemento dentro de una Escena universal.');return false}
+    host=parentUniversal(s,e);
+    if(!host){notice('Magnetismo necesita que el elemento viva dentro de una Escena universal.');return false}
+    e.ucReaction='magnet';e.ucStrength=80;e.ucAxis='both';tag(e,id);
+   }else if(id==='videoScrub'){
+    if(!e){notice('Seleccioná un video para aplicar Scrub de video.');return false}
+    e.nwVideoScrub=true;e.nwVideoScrubSpan=e.nwVideoScrubSpan||100;tag(e,id);
+   }else if(id==='sticky'){
+    if(!s){notice('No hay una escena activa.');return false}
+    s.sdEnabled=true;s.sdLength=Math.max(260,+s.sdLength||320);s.sdEase=s.sdEase||'cinematic';
+    s.nwBehaviors=Array.isArray(s.nwBehaviors)?s.nwBehaviors:[];if(s.nwBehaviors.indexOf(id)<0)s.nwBehaviors.push(id);
+   }else if(id==='sceneTransition'){
+    if(!s){notice('No hay una escena activa.');return false}
+    s.stType=s.stType&&s.stType!=='cut'?s.stType:'fade';s.stSpan=s.stSpan||24;
+    s.nwBehaviors=Array.isArray(s.nwBehaviors)?s.nwBehaviors:[];if(s.nwBehaviors.indexOf(id)<0)s.nwBehaviors.push(id);
+   }else if(id==='depth'){
+    if(!e){notice('Seleccioná un elemento o una Escena universal.');return false}
+    if(e.type==='container'&&e.universal){e.ucFx='depth';e.ucDepth=e.ucDepth==null?28:e.ucDepth;tag(e,id);}
+    else{
+     host=parentUniversal(s,e);
+     if(!host){notice('Profundidad interactiva necesita una Escena universal.');return false}
+     e.ucReaction='depth';e.ucStrength=e.ucStrength==null?65:e.ucStrength;tag(e,id);
+    }
+   }else if(id==='orbit3d'){
+    if(!e){notice('Seleccioná el elemento DOM que querés usar como ancla 3D.');return false}
+    e.nw3dOrbit=true;e.nw3dOrbitSpeed=e.nw3dOrbitSpeed==null?18:e.nw3dOrbitSpeed;tag(e,id);
+   }else return false;
+   persist();notice((REGISTRY[id]&&REGISTRY[id].label||id)+' aplicado.');
+   return true;
+  }catch(err){console.warn('[NagWeb behaviors]',err);notice('No se pudo aplicar este comportamiento en la selección actual.');return false}
+ }
+
+ var REGISTRY={
+  reveal:{label:'Revelar',desc:'Hace entrar el elemento durante la narrativa de scroll.',icon:'eye',group:'Narrativa'},
+  hold:{label:'Mantener',desc:'Mantiene el elemento presente durante toda la escena.',icon:'pin',group:'Narrativa'},
+  parallax:{label:'Parallax',desc:'Desplazamiento relativo al scroll, compatible con Director y Escena universal.',icon:'arrows-down-up',group:'Narrativa'},
+  sticky:{label:'Sticky',desc:'Convierte la escena actual en un recorrido sticky controlado por scroll.',icon:'push-pin',group:'Narrativa'},
+  sceneTransition:{label:'Transición de escena',desc:'Activa una transición editable hacia la escena siguiente.',icon:'shuffle',group:'Narrativa'},
+  cursor:{label:'Seguir cursor',desc:'Seguimiento suave usando el sistema abierto de Escena universal.',icon:'cursor',group:'Interacción'},
+  magnet:{label:'Magnetismo',desc:'Atrae el elemento hacia el cursor dentro de una Escena universal.',icon:'magnet',group:'Interacción'},
+  depth:{label:'Profundidad',desc:'Agrega reacción de profundidad/parallax al cursor.',icon:'stack',group:'Interacción'},
+  videoScrub:{label:'Scrub de video',desc:'Vincula el tiempo del video al recorrido visible del elemento.',icon:'film-strip',group:'Media'},
+  orbit3d:{label:'Órbita 3D',desc:'Marca el elemento como ancla orbital para objetos vinculados con NAGWEB_3D_ANCHOR.',icon:'globe',group:'3D'}
+ };
+
+ try{
+  ensureCategory('behavior','Comportamientos','wand','creative');
+  var cat=INSERT_CATS.find(function(x){return x.key==='behavior'});
+  if(cat){
+   cat.res=false;
+   cat.items=function(){
+    return Object.keys(REGISTRY).map(function(id){
+     var b=REGISTRY[id];
+     return{label:b.label,desc:b.desc,icon:b.icon||'wand',group:b.group||'Comportamientos',vaultKey:'behavior-'+id,run:function(){return apply(id)}};
+    });
+   };
+  }
+ }catch(_){}
+
+ function rtBehaviors(DATA){
+  function esc(v){return String(v).replace(/\\/g,'\\\\').replace(/"/g,'\\"')}
+  function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+  var videos=[],busy=0;
+  (DATA||[]).forEach(function(c){
+   var el=document.querySelector('[data-id="'+esc(c.id)+'"]');if(!el)return;
+   if(c.orbit3d){el.setAttribute('data-nw-3d-orbit','1');el.setAttribute('data-nw-3d-orbit-speed',String(c.orbitSpeed||18));}
+   if(c.videoScrub){
+    var v=el.matches&&el.matches('video')?el:el.querySelector&&el.querySelector('video');
+    if(v){v.pause();videos.push({el:el,v:v,span:Math.max(20,Math.min(200,+c.videoSpan||100))});}
+   }
+  });
+  function paint(){
+   busy=0;
+   for(var i=0;i<videos.length;i++){
+    var q=videos[i],r=q.el.getBoundingClientRect(),vh=innerHeight||1,p=clamp((vh-r.top)/(vh+Math.max(1,r.height)*(q.span/100)),0,1),d=q.v.duration;
+    if(isFinite(d)&&d>0){try{q.v.currentTime=d*p}catch(_){}}
+   }
+  }
+  function req(){if(!busy){busy=1;requestAnimationFrame(paint)}}
+  if(videos.length){addEventListener('scroll',req,{passive:true});addEventListener('resize',req);for(var j=0;j<videos.length;j++)videos[j].v.addEventListener('loadedmetadata',req);paint();}
+ }
+ var _generateBehaviorSite=generateSite;
+ generateSite=function(p,edit,minify,mobile){
+  var html=_generateBehaviorSite(p,edit,minify,mobile),data=[];
+  (p.sections||[]).forEach(function(s){
+   (s.elements||[]).forEach(function(e){
+    if(!e.nwVideoScrub&&!e.nw3dOrbit)return;
+    data.push({id:e.id,videoScrub:!!e.nwVideoScrub,videoSpan:+e.nwVideoScrubSpan||100,orbit3d:!!e.nw3dOrbit,orbitSpeed:+e.nw3dOrbitSpeed||18});
+   });
+  });
+  if(!data.length)return html;
+  html=html.replace('</body>','<script id="nw-behaviors-runtime">('+rtBehaviors.toString()+')('+JSON.stringify(data)+');</script></body>');
+  return html;
+ };
+
+ var _paneBehaviors=paneElementNew;
+ paneElementNew=function(){
+  var html=_paneBehaviors(),q=current(),e=q.e;
+  if(!e)return html;
+  var active=Array.isArray(e.nwBehaviors)?e.nwBehaviors.filter(function(id){return !!REGISTRY[id]}):[];
+  if(!active.length)return html;
+  var body='<p class="hint">Estos comportamientos son recetas abiertas. Los controles finos siguen viviendo en Director de Scroll, Escena universal o el sistema 3D correspondiente.</p>';
+  body+='<div class="row" style="flex-wrap:wrap">'+active.map(function(id){return '<span class="btn tiny" style="pointer-events:none">'+REGISTRY[id].label+'</span>'}).join('')+'</div>';
+  if(e.nwVideoScrub)body+=cRow('Recorrido del scrub',cNum('el.nwVideoScrubSpan',e.nwVideoScrubSpan||100,'%',{step:5,min:20,max:200}));
+  if(e.nw3dOrbit)body+=cRow('Velocidad de órbita',cNum('el.nw3dOrbitSpeed',e.nw3dOrbitSpeed==null?18:e.nw3dOrbitSpeed,'°/s',{step:2,min:-180,max:180}));
+  return html+grp('nw-behaviors','Comportamientos aplicados',body);
+ };
+
+ window.NAGWEB_BEHAVIORS={
+  version:'1.0',
+  list:function(){return Object.keys(REGISTRY).map(function(id){return{id:id,label:REGISTRY[id].label,desc:REGISTRY[id].desc,group:REGISTRY[id].group}})},
+  apply:apply,
+  registry:REGISTRY
+ };
+ try{if(typeof schedulePreview==='function')setTimeout(function(){schedulePreview()},0)}catch(_){}
+})();
+
 console.info('[NagWeb] dirección v1.4: Creativos interactivos + Composiciones + Mockups + edición directa');
 })();
