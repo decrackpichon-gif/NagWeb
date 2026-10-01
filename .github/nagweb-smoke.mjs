@@ -28,7 +28,9 @@ const contractState={
  directorFilterCompose:directorSource.includes('--nw-sd-base-filter')&&directorSource.includes('filter:var(--nw-sd-base-filter,blur(0px)) blur(var(--nw-sd-blur,0px))'),
  directorPointerEventsPreserved:directorSource.includes("basePointer=cs.pointerEvents||'auto'")&&directorSource.includes("n.style.pointerEvents=op<.025?'none':q.basePointer"),
  directorDisablesUniversalTween:directorSource.includes('.nw-uc>[data-nw-sd-el]{transition:none!important}')&&!directorSource.includes('filter:blur(var(--nw-sd-blur,0px));transition:none!important;will-change:translate,scale,rotate,opacity,filter'),
- reducedMotionKeepsDirector:universalSource.includes('--nw-uc-dx:0px!important')&&universalSource.includes('--nw-uc-dy:0px!important')&&universalSource.includes('--nw-uc-scale:1!important')&&!universalSource.includes('.nw-uc>.el{translate:0 0!important;scale:1!important')
+ reducedMotionKeepsDirector:universalSource.includes('--nw-uc-dx:0px!important')&&universalSource.includes('--nw-uc-dy:0px!important')&&universalSource.includes('--nw-uc-scale:1!important')&&!universalSource.includes('.nw-uc>.el{translate:0 0!important;scale:1!important'),
+ anchor3dSource:['NAGWEB_3D_ANCHOR','getBoundingClientRect','unproject(cam)','followSize','followCssRotation'].every(x=>directorSource.includes(x)),
+ anchor3dExport:directorSource.includes('nw-3d-anchor-runtime')&&directorSource.includes('rt3DAnchor.toString()')
 };
 
 const candidates=['/usr/bin/google-chrome-stable','/usr/bin/google-chrome','/usr/bin/chromium','/usr/bin/chromium-browser'];
@@ -91,10 +93,40 @@ const state=Object.assign(await page.evaluate(()=>({
  directorPointerEventsPreserved:(()=>{const scripts=Array.from(document.scripts).map(x=>x.textContent||'').join('\n');return scripts.includes("basePointer=cs.pointerEvents||'auto'")&&scripts.includes("n.style.pointerEvents=op<.025?'none':q.basePointer");})(),
  directorDisablesUniversalTween:(()=>{const scripts=Array.from(document.scripts).map(x=>x.textContent||'').join('\n');return scripts.includes('.nw-uc>[data-nw-sd-el]{transition:none!important}')&&!scripts.includes('filter:blur(var(--nw-sd-blur,0px));transition:none!important;will-change:translate,scale,rotate,opacity,filter');})(),
  reducedMotionKeepsDirector:(()=>{const scripts=Array.from(document.scripts).map(x=>x.textContent||'').join('\n');return scripts.includes('--nw-uc-dx:0px!important')&&scripts.includes('--nw-uc-dy:0px!important')&&scripts.includes('--nw-uc-scale:1!important')&&!scripts.includes('.nw-uc>.el{translate:0 0!important;scale:1!important');})(),
- directorUniversalLoaded:(()=>{const u=window.NAGWEB_UNIVERSAL,d=window.NAGWEB_SCROLL_DIRECTOR;return !!(u&&u.version&&d&&d.version);})()
+ directorUniversalLoaded:(()=>{const u=window.NAGWEB_UNIVERSAL,d=window.NAGWEB_SCROLL_DIRECTOR;return !!(u&&u.version&&d&&d.version);})(),
+ anchor3dApi:(()=>{const a=window.NAGWEB_3D_ANCHOR;return !!(a&&a.version==='1.0'&&typeof a.bind==='function'&&typeof a.unbind==='function'&&typeof a.refresh==='function');})(),
+ anchor3dPreviewApi:(()=>{const f=document.querySelector('#preview'),a=f&&f.contentWindow&&f.contentWindow.NAGWEB_3D_ANCHOR;return !!(a&&a.version==='1.0'&&typeof a.bind==='function');})()
 })),contractState);
 for(const [k,v] of Object.entries(state)){
  if(!v) throw new Error('Smoke assertion failed: '+k+' = '+String(v));
+}
+
+const anchor3dState=await page.evaluate(()=>{
+ const host=document.createElement('div');
+ host.style.cssText='position:fixed;left:100px;top:120px;width:100px;height:50px;scale:1;rotate:0deg;pointer-events:none;';
+ document.body.appendChild(host);
+ function vec(x=0,y=0,z=0){return{x,y,z,set(a,b,c){this.x=a;this.y=b;this.z=c;}}}
+ const object={position:vec(),scale:vec(1,1,1),rotation:vec()};
+ const handle=window.NAGWEB_3D_ANCHOR.bind(host,object,{}, {
+  project:({ndcX,ndcY})=>({x:ndcX,y:ndcY,z:3}),
+  scale:2,rotationZ:15
+ });
+ const first={x:object.position.x,scale:object.scale.x,rot:object.rotation.z};
+ host.style.left='300px';host.style.width='200px';host.style.height='100px';host.style.scale='1.5';host.style.rotate='10deg';
+ handle.update();
+ const second={x:object.position.x,y:object.position.y,z:object.position.z,scale:object.scale.x,rot:object.rotation.z,snapshot:handle.snapshot()};
+ handle.destroy();host.remove();
+ return{
+  moved:Math.abs(second.x-first.x)>.05,
+  projected:second.z===3,
+  scaled:Math.abs(second.scale-6)<.05,
+  rotated:Math.abs(second.rot-(25*Math.PI/180))<.03,
+  snapshot:!!(second.snapshot&&second.snapshot.anchorRect&&second.snapshot.viewportRect),
+  cleaned:window.NAGWEB_3D_ANCHOR.count()===0
+ };
+});
+for(const [k,v] of Object.entries(anchor3dState)){
+ if(!v) throw new Error('3D anchor assertion failed: '+k+' = '+String(v));
 }
 
 const leftButton=await page.$('.nw-dock-toggle.left');
