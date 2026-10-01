@@ -4,6 +4,7 @@ import fs from 'node:fs';
 const feedbackSource=fs.readFileSync(new URL('../js/nagweb-feedback-v16.js',import.meta.url),'utf8');
 const directorSource=fs.readFileSync(new URL('../js/nagweb-scroll-director-v16.js',import.meta.url),'utf8');
 const universalSource=fs.readFileSync(new URL('../js/nagweb-universal-container.js',import.meta.url),'utf8');
+const directionSource=fs.readFileSync(new URL('../js/nagweb-v14-direction.js',import.meta.url),'utf8');
 const contractState={
  heroPartSelector:feedbackSource.includes('data-nw-part'),
  storyChapterSelector:['data-nw-story-ch="1"','data-nw-story-ch="2"','data-nw-story-ch="3"'].every(x=>feedbackSource.includes(x)),
@@ -30,7 +31,10 @@ const contractState={
  directorDisablesUniversalTween:directorSource.includes('.nw-uc>[data-nw-sd-el]{transition:none!important}')&&!directorSource.includes('filter:blur(var(--nw-sd-blur,0px));transition:none!important;will-change:translate,scale,rotate,opacity,filter'),
  reducedMotionKeepsDirector:universalSource.includes('--nw-uc-dx:0px!important')&&universalSource.includes('--nw-uc-dy:0px!important')&&universalSource.includes('--nw-uc-scale:1!important')&&!universalSource.includes('.nw-uc>.el{translate:0 0!important;scale:1!important'),
  anchor3dSource:['NAGWEB_3D_ANCHOR','getBoundingClientRect','unproject(cam)','followSize','followCssRotation'].every(x=>directorSource.includes(x)),
- anchor3dExport:directorSource.includes('nw-3d-anchor-runtime')&&directorSource.includes('rt3DAnchor.toString()')
+ anchor3dExport:directorSource.includes('nw-3d-anchor-runtime')&&directorSource.includes('rt3DAnchor.toString()'),
+ behaviorCatalogSource:directionSource.includes("ensureCategory('behavior','Comportamientos'")&&['reveal','hold','parallax','sticky','sceneTransition','cursor','magnet','depth','videoScrub','orbit3d'].every(x=>directionSource.includes(x+':{label:')),
+ behaviorRuntimeSource:directionSource.includes('function rtBehaviors(DATA)')&&directionSource.includes('nw-behaviors-runtime')&&directionSource.includes('nwVideoScrub')&&directionSource.includes('nw3dOrbit'),
+ behaviorOrbitBridge:directorSource.includes("data-nw-3d-orbit")&&directorSource.includes('orbitSpeed')&&directorSource.includes('performance.now()-b.started')
 };
 
 const candidates=['/usr/bin/google-chrome-stable','/usr/bin/google-chrome','/usr/bin/chromium','/usr/bin/chromium-browser'];
@@ -95,7 +99,9 @@ const state=Object.assign(await page.evaluate(()=>({
  reducedMotionKeepsDirector:(()=>{const scripts=Array.from(document.scripts).map(x=>x.textContent||'').join('\n');return scripts.includes('--nw-uc-dx:0px!important')&&scripts.includes('--nw-uc-dy:0px!important')&&scripts.includes('--nw-uc-scale:1!important')&&!scripts.includes('.nw-uc>.el{translate:0 0!important;scale:1!important');})(),
  directorUniversalLoaded:(()=>{const u=window.NAGWEB_UNIVERSAL,d=window.NAGWEB_SCROLL_DIRECTOR;return !!(u&&u.version&&d&&d.version);})(),
  anchor3dApi:(()=>{const a=window.NAGWEB_3D_ANCHOR;return !!(a&&a.version==='1.0'&&typeof a.bind==='function'&&typeof a.unbind==='function'&&typeof a.refresh==='function');})(),
- anchor3dPreviewApi:(()=>{const f=document.querySelector('#preview'),a=f&&f.contentWindow&&f.contentWindow.NAGWEB_3D_ANCHOR;return !!(a&&a.version==='1.0'&&typeof a.bind==='function');})()
+ anchor3dPreviewApi:(()=>{const f=document.querySelector('#preview'),a=f&&f.contentWindow&&f.contentWindow.NAGWEB_3D_ANCHOR;return !!(a&&a.version==='1.0'&&typeof a.bind==='function');})(),
+ behaviorApi:(()=>{const b=window.NAGWEB_BEHAVIORS,l=b&&typeof b.list==='function'?b.list():[];return !!(b&&b.version==='1.0'&&typeof b.apply==='function'&&l.length===10&&['Revelar','Mantener','Parallax','Seguir cursor','Magnetismo','Scrub de video','Sticky','Transición de escena','Profundidad','Órbita 3D'].every(n=>l.some(x=>x.label===n)));})(),
+ behaviorCategory:(()=>{try{const c=INSERT_CATS.find(x=>x.key==='behavior'),items=c&&c.items&&c.items();return !!(c&&c.label==='Comportamientos'&&Array.isArray(items)&&items.length===10);}catch(_){return false}})()
 })),contractState);
 for(const [k,v] of Object.entries(state)){
  if(!v) throw new Error('Smoke assertion failed: '+k+' = '+String(v));
