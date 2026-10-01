@@ -50,6 +50,7 @@ const state=await page.evaluate(()=>({
  directorQuickActions:(()=>{const s=String(window.paneSceneNew||'');return s.includes('data-sd-auto')&&s.includes('data-sd-reset');})(),
  directorResetMatchesEligibility:(()=>{const s=Array.from(document.scripts).map(x=>x.textContent||'').join('\n');return s.includes("if(e.type==='light3d'||e.fixed||e.modal)return");})(),
  directorAutoIncludesUniversalChildren:(()=>{const s=Array.from(document.scripts).map(x=>x.textContent||'').join('\n');return s.includes('insideUniversal(e)')&&s.includes("host.type==='container'&&host.universal");})(),
+ directorAutoSkipsUniversalContainer:(()=>{const s=Array.from(document.scripts).map(x=>x.textContent||'').join('\n');return s.includes("!(e.type==='container'&&e.universal)");})(),
  directorMotionControls:(()=>{const s=String(window.paneElementNew||'');return ['sdMoveX','sdMoveY','sdRotate','sdScale','sdSpan'].every(k=>s.includes(k));})(),
  directorTransitions:(()=>{const s=String(window.paneElementNew||'');return ['fade','up','down','left','right','zoom','blur','depth','keep'].every(k=>s.includes(k));})(),
  directorUniversalCompose:(()=>{const s=String(window.generateSite||'');return s.includes('nw-scroll-director-css')&&String(document.documentElement.innerHTML).includes('nagweb-universal-container.js');})(),
