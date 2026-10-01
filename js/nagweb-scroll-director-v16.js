@@ -17,7 +17,9 @@ timelineStyle.textContent=[
  '.nw-sd-trow{display:grid;grid-template-columns:72px minmax(0,1fr);gap:7px;align-items:center;min-height:16px}',
  '.nw-sd-tname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 9px/1.1 system-ui;color:var(--ink-soft)}',
  '.nw-sd-ttrack{position:relative;height:8px;border-radius:999px;background:color-mix(in srgb,var(--line) 55%,transparent);overflow:hidden}',
- '.nw-sd-tbar{position:absolute;top:1px;bottom:1px;border-radius:999px;background:var(--accent)}',
+ '.nw-sd-tbar{position:absolute;top:1px;bottom:1px;border-radius:999px;background:var(--accent);min-width:4px}',
+ '.nw-sd-thandle{position:absolute;z-index:4;top:50%;width:8px;height:14px;border:1px solid var(--panel);border-radius:4px;background:var(--accent);translate:0 -50%;cursor:ew-resize;box-shadow:0 1px 4px rgba(0,0,0,.25)}',
+ '.nw-sd-thandle.start{left:-4px}.nw-sd-thandle.end{right:-4px}',
  '.nw-sd-playhead{position:absolute;z-index:3;top:-3px;bottom:-3px;width:1px;background:var(--ink);left:var(--sd-play,0%);pointer-events:none}',
 ].join('\n');
 document.head.appendChild(timelineStyle);
@@ -28,7 +30,7 @@ function timelineHTML(s,val){
  var rows=list.map(function(e,i){
   elDefaults(e);var a=Math.max(0,Math.min(100,+e.sdStart||0)),b=Math.max(a,Math.min(100,+e.sdEnd||82));
   var name=(e.name||e.label||e.text||e.type||('Elemento '+(i+1)))+'';name=name.replace(/[<>&"]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]});
-  return '<div class="nw-sd-trow"><span class="nw-sd-tname" title="'+name+'">'+name+'</span><span class="nw-sd-ttrack"><i class="nw-sd-tbar" style="left:'+a+'%;width:'+Math.max(1,b-a)+'%"></i></span></div>';
+  return '<div class="nw-sd-trow" data-sd-row="'+e.id+'"><span class="nw-sd-tname" title="'+name+'">'+name+'</span><span class="nw-sd-ttrack"><i class="nw-sd-tbar" style="left:'+a+'%;width:'+Math.max(1,b-a)+'%"><button type="button" class="nw-sd-thandle start" data-sd-edge="start" aria-label="Mover inicio"></button><button type="button" class="nw-sd-thandle end" data-sd-edge="end" aria-label="Mover fin"></button></i></span></div>';
  }).join('');
  return '<div class="nw-sd-timeline" data-sd-timeline="'+s.id+'" style="--sd-play:'+Math.max(0,Math.min(100,val))+'%"><div class="nw-sd-timeline-head"><span>LÍNEA DE TIEMPO</span><span>0 · 25 · 50 · 75 · 100%</span></div><div class="nw-sd-timeline-grid"><i class="nw-sd-playhead"></i>'+rows+'</div></div>';
 }
@@ -106,6 +108,20 @@ function postLive(id){
 }
 var pane=document.getElementById('pane');
 if(pane){
+ pane.addEventListener('pointerdown',function(ev){
+  var h=ev.target.closest&&ev.target.closest('[data-sd-edge]');if(!h)return;
+  var row=h.closest('[data-sd-row]'),track=h.closest('.nw-sd-ttrack');if(!row||!track)return;
+  var s=sec(),e=(s.elements||[]).find(function(x){return x.id===row.dataset.sdRow;});if(!e)return;
+  ev.preventDefault();ev.stopPropagation();elDefaults(e);snapshot();
+  var edge=h.dataset.sdEdge,r=track.getBoundingClientRect(),bar=row.querySelector('.nw-sd-tbar');
+  try{h.setPointerCapture(ev.pointerId)}catch(_){}
+  function value(clientX){return Math.round(Math.max(0,Math.min(100,(clientX-r.left)/Math.max(1,r.width)*100)));}
+  function draw(){var a=Math.max(0,Math.min(100,+e.sdStart||0)),b=Math.max(a,Math.min(100,+e.sdEnd||82));bar.style.left=a+'%';bar.style.width=Math.max(1,b-a)+'%';}
+  function move(x){var v=value(x);if(edge==='start')e.sdStart=Math.min(v,Math.max(0,(+e.sdEnd||82)-1));else e.sdEnd=Math.max(v,Math.min(100,(+e.sdStart||0)+1));draw();}
+  function mv(e2){move(e2.clientX);}
+  function up(e2){move(e2.clientX);h.removeEventListener('pointermove',mv);h.removeEventListener('pointerup',up);h.removeEventListener('pointercancel',up);saveProject();renderPane();schedulePreview();}
+  h.addEventListener('pointermove',mv);h.addEventListener('pointerup',up);h.addEventListener('pointercancel',up);
+ });
  pane.addEventListener('input',function(ev){
   var t=ev.target.closest('[data-sd-scrub]');if(!t)return;
   var p=+t.value||0,id=t.dataset.sdScrub;scrubState[id]=p;
