@@ -45,6 +45,7 @@ const state=await page.evaluate(()=>({
  directorScenePanel:(()=>{const s=String(window.paneSceneNew||'');return s.includes('Director de scroll')&&s.includes('data-sd-scrub')&&s.includes('data-sd-play')&&s.includes('data-sd-live');})(),
  directorElementPanel:(()=>{const s=String(window.paneElementNew||'');return s.includes('Momento en la historia')&&s.includes('sdStart')&&s.includes('sdEnd')&&s.includes('sdEnter')&&s.includes('sdExit');})(),
  directorExportRuntime:(()=>{const s=String(window.generateSite||'');return s.includes('nw-scroll-director-css')&&s.includes('sdEnabled');})(),
+ directorExportMatchesTimelineEligibility:(()=>{const s=Array.from(document.scripts).map(x=>x.textContent||'').join('\n');return s.includes("e.type!=='light3d'&&!e.fixed&&!e.modal");})(),
  directorQuickActions:(()=>{const s=String(window.paneSceneNew||'');return s.includes('data-sd-auto')&&s.includes('data-sd-reset');})(),
  directorAutoIncludesUniversalChildren:(()=>{const s=Array.from(document.scripts).map(x=>x.textContent||'').join('\n');return s.includes('insideUniversal(e)')&&s.includes("host.type==='container'&&host.universal");})(),
  directorMotionControls:(()=>{const s=String(window.paneElementNew||'');return ['sdMoveX','sdMoveY','sdRotate','sdScale','sdSpan'].every(k=>s.includes(k));})(),
