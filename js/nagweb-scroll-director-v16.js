@@ -14,8 +14,11 @@ timelineStyle.textContent=[
  '.nw-sd-timeline-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;font:700 9px/1 system-ui;letter-spacing:.08em;color:var(--muted)}',
  '.nw-sd-timeline-grid{position:relative;display:grid;gap:5px}',
  '.nw-sd-timeline-grid:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0,transparent calc(25% - 1px),color-mix(in srgb,var(--line) 75%,transparent) calc(25% - 1px),color-mix(in srgb,var(--line) 75%,transparent) 25%);pointer-events:none}',
- '.nw-sd-trow{display:grid;grid-template-columns:72px minmax(0,1fr);gap:7px;align-items:center;min-height:16px}',
- '.nw-sd-tname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 9px/1.1 system-ui;color:var(--ink-soft)}',
+ '.nw-sd-trow{display:grid;grid-template-columns:72px minmax(0,1fr);gap:7px;align-items:center;min-height:16px;padding:2px 3px;border-radius:6px}',
+ '.nw-sd-trow.is-selected{background:color-mix(in srgb,var(--accent) 14%,transparent)}',
+ '.nw-sd-tname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 9px/1.1 system-ui;color:var(--ink-soft);cursor:pointer}',
+ '.nw-sd-trow.is-selected .nw-sd-tname{color:var(--ink)}',
+ '.nw-sd-tname{border:0;background:transparent;padding:0;text-align:left}',
  '.nw-sd-ttrack{position:relative;height:8px;border-radius:999px;background:color-mix(in srgb,var(--line) 55%,transparent);overflow:hidden}',
  '.nw-sd-tbar{position:absolute;top:1px;bottom:1px;border-radius:999px;background:var(--accent);min-width:4px;cursor:grab}',
  '.nw-sd-tbar:active{cursor:grabbing}',
@@ -31,7 +34,8 @@ function timelineHTML(s,val){
  var rows=list.map(function(e,i){
   elDefaults(e);var a=Math.max(0,Math.min(100,+e.sdStart||0)),b=Math.max(a,Math.min(100,+e.sdEnd||82));
   var name=(e.name||e.label||e.text||e.type||('Elemento '+(i+1)))+'';name=name.replace(/[<>&"]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]});
-  return '<div class="nw-sd-trow" data-sd-row="'+e.id+'"><span class="nw-sd-tname" title="'+name+'">'+name+'</span><span class="nw-sd-ttrack"><i class="nw-sd-tbar" data-sd-bar="1" style="left:'+a+'%;width:'+Math.max(1,b-a)+'%"><button type="button" class="nw-sd-thandle start" data-sd-edge="start" aria-label="Mover inicio"></button><button type="button" class="nw-sd-thandle end" data-sd-edge="end" aria-label="Mover fin"></button></i></span></div>';
+  var selected=Array.isArray(selection)&&selection.length===1&&selection[0]===e.id;
+  return '<div class="nw-sd-trow'+(selected?' is-selected':'')+'" data-sd-row="'+e.id+'"><button type="button" class="nw-sd-tname" data-sd-select="'+e.id+'" title="'+name+'">'+name+'</button><span class="nw-sd-ttrack"><i class="nw-sd-tbar" data-sd-bar="1" style="left:'+a+'%;width:'+Math.max(1,b-a)+'%"><button type="button" class="nw-sd-thandle start" data-sd-edge="start" aria-label="Mover inicio"></button><button type="button" class="nw-sd-thandle end" data-sd-edge="end" aria-label="Mover fin"></button></i></span></div>';
  }).join('');
  return '<div class="nw-sd-timeline" data-sd-timeline="'+s.id+'" style="--sd-play:'+Math.max(0,Math.min(100,val))+'%"><div class="nw-sd-timeline-head"><span>LÍNEA DE TIEMPO</span><span>0 · 25 · 50 · 75 · 100%</span></div><div class="nw-sd-timeline-grid"><i class="nw-sd-playhead"></i>'+rows+'</div></div>';
 }
@@ -137,6 +141,13 @@ if(pane){
   postScrub(id,p/100);
  });
  pane.addEventListener('click',function(ev){
+  var pick=ev.target.closest&&ev.target.closest('[data-sd-select]');
+  if(pick){
+   var id=pick.dataset.sdSelect,f=typeof findEl==='function'&&findEl(id);if(!f)return;
+   curSec=f[0];curEl=f[1];selection=[id];secFocus=false;if(curPane!=='agent')curPane='elements';
+   try{if(typeof unfoldTo==='function')unfoldTo(id)}catch(_){}
+   renderPane();try{if(typeof syncSelectionToFrame==='function')syncSelectionToFrame()}catch(_){}return;
+  }
   var live=ev.target.closest('[data-sd-live]');
   if(live){delete scrubState[live.dataset.sdLive];postLive(live.dataset.sdLive);renderPane();return;}
   var auto=ev.target.closest('[data-sd-auto]');
