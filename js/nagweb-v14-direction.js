@@ -479,7 +479,6 @@ var ob=new MutationObserver(function(){setTimeout(installCanvasTools,40);});if(p
   apply:apply,
   registry:REGISTRY
  };
- try{if(typeof schedulePreview==='function')setTimeout(function(){schedulePreview()},0)}catch(_){}
 })();
 
 console.info('[NagWeb] dirección v1.4: Creativos interactivos + Composiciones + Mockups + edición directa');
