@@ -292,6 +292,143 @@ generateSite=function(p,edit,minify,mobile){
  return html;
 };
 
+
+/* ---------- anclaje DOM -> Three.js v1 ---------- */
+function rt3DAnchor(){
+ if(window.NAGWEB_3D_ANCHOR&&window.NAGWEB_3D_ANCHOR.version)return;
+ var rows=new Map(),seq=0,raf=0,paused=false;
+ function n(v,d){v=+v;return isFinite(v)?v:d}
+ function rad(v){return n(v,0)*Math.PI/180}
+ function esc(v){return String(v).replace(/\\/g,'\\\\').replace(/"/g,'\\"')}
+ function resolveAnchor(ref){
+  if(ref&&ref.nodeType===1)return ref;
+  if(typeof ref!=='string'||!ref)return null;
+  return document.getElementById(ref)||document.querySelector('[data-id="'+esc(ref)+'"]')||document.querySelector(ref);
+ }
+ function baseVec(v,d){
+  return{x:v&&isFinite(+v.x)?+v.x:d,y:v&&isFinite(+v.y)?+v.y:d,z:v&&isFinite(+v.z)?+v.z:d};
+ }
+ function setVec(v,x,y,z){
+  if(!v)return;
+  if(typeof v.set==='function')v.set(x,y,z);
+  else{v.x=x;v.y=y;v.z=z}
+ }
+ function scaleValue(cs){
+  var s=cs&&cs.scale;
+  if(!s||s==='none')return 1;
+  var v=parseFloat(String(s).split(/\s+/)[0]);
+  return isFinite(v)&&v!==0?v:1;
+ }
+ function angleValue(cs){
+  var r=cs&&cs.rotate;
+  if(!r||r==='none')return 0;
+  var m=String(r).match(/(-?\d+(?:\.\d+)?)deg/);
+  return m?n(m[1],0):0;
+ }
+ function viewportRect(b){
+  var el=b.o.viewport||(b.o.renderer&&b.o.renderer.domElement);
+  if(el&&typeof el.getBoundingClientRect==='function'){
+   var r=el.getBoundingClientRect();
+   if(r.width&&r.height)return r;
+  }
+  return{left:0,top:0,width:innerWidth||1,height:innerHeight||1};
+ }
+ function defaultProject(b,ar,vr,nx,ny){
+  var T=window.THREE,cam=b.camera;
+  if(!T||!T.Vector3||!cam)return null;
+  try{
+   if(typeof cam.updateMatrixWorld==='function')cam.updateMatrixWorld();
+   var p=new T.Vector3(nx,ny,cam.isOrthographicCamera?0:.5);
+   if(typeof p.unproject!=='function')return null;
+   p.unproject(cam);
+   if(cam.isPerspectiveCamera){
+    var origin=new T.Vector3();
+    if(typeof cam.getWorldPosition!=='function')return null;
+    cam.getWorldPosition(origin);
+    p.sub(origin).normalize();
+    p=origin.add(p.multiplyScalar(b.distance));
+   }
+   return{x:p.x,y:p.y,z:p.z};
+  }catch(_){return null}
+ }
+ function update(b){
+  var el=b.el,obj=b.object,cam=b.camera;
+  if(!el||!el.isConnected||!obj||!cam)return false;
+  var ar=el.getBoundingClientRect(),vr=viewportRect(b);
+  if(!ar.width&&!ar.height)return true;
+  var cx=ar.left+ar.width/2,cy=ar.top+ar.height/2;
+  var nx=((cx-vr.left)/Math.max(1,vr.width))*2-1;
+  var ny=1-((cy-vr.top)/Math.max(1,vr.height))*2;
+  var out=null;
+  if(typeof b.o.project==='function'){
+   try{out=b.o.project({anchor:el,anchorRect:ar,viewportRect:vr,ndcX:nx,ndcY:ny,camera:cam,object:obj,binding:b})}catch(_){}
+  }else out=defaultProject(b,ar,vr,nx,ny);
+  if(out&&obj.position){
+   setVec(obj.position,n(out.x,0)+n(b.o.x,0),n(out.y,0)+n(b.o.y,0),n(out.z,0)+n(b.o.z,0));
+  }
+  var cs=null;try{cs=getComputedStyle(el)}catch(_){}
+  var layoutW=Math.max(1,el.offsetWidth||b.baseW||1),layoutH=Math.max(1,el.offsetHeight||b.baseH||1);
+  var responsive=b.o.followSize===false?1:Math.min(layoutW/Math.max(1,b.baseW),layoutH/Math.max(1,b.baseH));
+  var cssScale=b.o.followCssScale===false?1:scaleValue(cs);
+  var mul=n(b.o.scale,1)*responsive*cssScale;
+  if(obj.scale)setVec(obj.scale,b.baseScale.x*mul,b.baseScale.y*mul,b.baseScale.z*mul);
+  if(obj.rotation){
+   var rz=b.o.followCssRotation===false?0:angleValue(cs);
+   setVec(obj.rotation,b.baseRotation.x+rad(b.o.rotationX),b.baseRotation.y+rad(b.o.rotationY),b.baseRotation.z+rad(b.o.rotationZ)+rad(rz));
+  }
+  b.last={anchorRect:ar,viewportRect:vr,ndcX:nx,ndcY:ny,world:out,scale:mul};
+  return true;
+ }
+ function frame(){
+  raf=0;if(paused||!rows.size)return;
+  rows.forEach(function(b,key){if(!update(b)&&b.o.autoRemove!==false)rows.delete(key)});
+  if(rows.size)raf=requestAnimationFrame(frame);
+ }
+ function kick(){if(!paused&&!raf&&rows.size)raf=requestAnimationFrame(frame)}
+ function bind(anchor,object,camera,options){
+  var el=resolveAnchor(anchor),o=options||{};
+  if(!el)throw new Error('NagWeb 3D Anchor: no se encontró el ancla DOM');
+  if(!object||!object.position)throw new Error('NagWeb 3D Anchor: objeto 3D inválido');
+  if(!camera)throw new Error('NagWeb 3D Anchor: cámara requerida');
+  var r=el.getBoundingClientRect(),dist=n(o.distance,NaN);
+  if(!isFinite(dist)){
+   try{dist=camera.position&&typeof camera.position.distanceTo==='function'?camera.position.distanceTo(object.position):8}catch(_){dist=8}
+  }
+  if(!isFinite(dist)||dist<=0)dist=8;
+  var id=o.id||('nw3da-'+(++seq));
+  var b={
+   id:id,el:el,object:object,camera:camera,o:o,distance:dist,
+   baseW:Math.max(1,el.offsetWidth||r.width||1),baseH:Math.max(1,el.offsetHeight||r.height||1),
+   baseScale:baseVec(object.scale,1),baseRotation:baseVec(object.rotation,0),last:null
+  };
+  rows.set(id,b);update(b);kick();
+  return{id:id,update:function(){return update(b)},destroy:function(){rows.delete(id);if(!rows.size&&raf){cancelAnimationFrame(raf);raf=0}},snapshot:function(){return b.last}};
+ }
+ function unbind(ref){
+  var id=typeof ref==='string'?ref:ref&&ref.id;
+  if(!id)return false;
+  var ok=rows.delete(id);if(!rows.size&&raf){cancelAnimationFrame(raf);raf=0}return ok;
+ }
+ window.NAGWEB_3D_ANCHOR={
+  version:'1.0',
+  bind:bind,
+  unbind:unbind,
+  refresh:function(){rows.forEach(function(b){update(b)});kick()},
+  pause:function(){paused=true;if(raf){cancelAnimationFrame(raf);raf=0}},
+  resume:function(){paused=false;kick()},
+  count:function(){return rows.size}
+ };
+}
+rt3DAnchor();
+
+var _generateSite3DAnchor=generateSite;
+generateSite=function(p,edit,minify,mobile){
+ var html=_generateSite3DAnchor(p,edit,minify,mobile);
+ if(html.indexOf('nw-3d-anchor-runtime')>=0)return html;
+ html=html.replace('</body>','<script id="nw-3d-anchor-runtime">('+rt3DAnchor.toString()+')();</script></body>');
+ return html;
+};
+
 window.NAGWEB_SCROLL_DIRECTOR={version:'1.0',scrub:function(id,p){scrubState[id]=p*100;postScrub(id,p)},live:postLive};
 console.info('[NagWeb] Director de Scroll v1.0 activo');
 })();
