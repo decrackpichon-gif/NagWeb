@@ -68,7 +68,7 @@ var _paneSceneNew=paneSceneNew;
 paneSceneNew=function(){
  var html=_paneSceneNew(),s=sec();secDefaults(s);
  if(s.layout==='horizontal')return html;
- var val=scrubState[s.id]==null?0:scrubState[s.id];
+ var val=currentProgress(s.id);
  var body=cRow('Activar',cSeg('sec.sdEnabled',!!s.sdEnabled,[['false','No'],['true','Sí']],'bool'));
  if(s.sdEnabled){
   body+='<p class="hint gh">La escena se convierte en una pequeña película controlada por el scroll: queda fija mientras el recorrido avanza de 0% a 100%.</p>';
@@ -91,7 +91,7 @@ paneElementNew=function(){
  var html=_paneElementNew(),s=sec();secDefaults(s);
  if(!s.sdEnabled)return html;
  var editor=window.NAGWEB_STORY_EDITOR;
- if(selection.length>1&&editor)return html+grp('el-scroll-director','Secuencia seleccionada',editor.transport(s)+timelineHTML(s,scrubState[s.id]||0)+editor.staggerPanel(s));
+ if(selection.length>1&&editor)return html+grp('el-scroll-director','Secuencia seleccionada',editor.transport(s)+timelineHTML(s,currentProgress(s.id))+editor.staggerPanel(s));
  if(selection.length!==1)return html;
  var raw=s.elements[curEl];if(!raw||raw.type==='light3d'||raw.fixed||raw.modal||!model.eligible(raw,s))return html;
  elDefaults(raw);
@@ -120,6 +120,15 @@ function postScrub(id,p){
 }
 function postLive(id){
  try{preview.contentWindow.postMessage({sc:true,type:'nw-sd-live',secId:id},'*');}catch(_){}
+}
+function currentProgress(id){
+ if(scrubState[id]!=null)return scrubState[id];
+ try{var states=preview.contentWindow.__NAG_SCROLL_DIRECTOR;return states&&states[id]?states[id].progress()*100:0;}catch(_){return 0;}
+}
+function paintPlayhead(id,pct){
+ var inp=pane.querySelector('[data-sd-scrub="'+id+'"]'),tl=pane.querySelector('[data-sd-timeline="'+id+'"]');
+ if(inp){inp.value=pct;var val=inp.closest('.field').querySelector('[data-sd-val]');if(val)val.textContent=Math.round(pct)+'%';}
+ if(tl)tl.style.setProperty('--sd-play',pct+'%');
 }
 var pane=document.getElementById('pane');
 if(pane){
@@ -184,7 +193,14 @@ if(pane){
  });
 }
 var preview=document.getElementById('preview');
-if(preview)preview.addEventListener('load',function(){setTimeout(function(){Object.keys(scrubState).forEach(function(id){postScrub(id,(+scrubState[id]||0)/100);});},120);});
+if(preview)preview.addEventListener('load',function(){
+ var doc=preview.contentDocument;
+ if(doc&&!doc.__nwStoryProgressListening){
+  doc.__nwStoryProgressListening=true;
+  doc.addEventListener('nw-sd-progress',function(ev){var id=ev.target.getAttribute('data-id');if(scrubState[id]==null)paintPlayhead(id,ev.detail.progress*100);});
+ }
+ setTimeout(function(){Object.keys(scrubState).forEach(function(id){postScrub(id,(+scrubState[id]||0)/100);});paintPlayhead(sec().id,currentProgress(sec().id));},120);
+});
 
 /* ---------- export / preview runtime ---------- */
 function rt(DATA,createModel){
@@ -222,7 +238,7 @@ function rt(DATA,createModel){
     n.style.pointerEvents=op<.025?'none':q.basePointer;
    });
    sec.style.setProperty('--nw-sd-progress',p.toFixed(4));
-   sec.dispatchEvent(new CustomEvent('nw-sd-progress',{detail:{progress:p,reduced:motion.matches}}));
+   sec.dispatchEvent(new CustomEvent('nw-sd-progress',{bubbles:true,detail:{progress:p,reduced:motion.matches}}));
   }
   states[cfg.id]={set:function(p){manual=model.clamp(+p||0,0,1);paint();},live:function(){manual=null;paint();},progress:function(){return last;},update:function(c){var q=els.find(function(q){return q.c.id===c.id;});if(q){q.c=c;paint();}}};
   paints.push(paint);paint();
@@ -465,9 +481,9 @@ generateSite=function(p,edit,minify,mobile){
 try{if(typeof schedulePreview==='function')setTimeout(function(){schedulePreview();},0);}catch(_){}
 
 window.NAGWEB_SCROLL_DIRECTOR={version:'2.0',
- scrub:function(id,p){if(playRAF){cancelAnimationFrame(playRAF);playRAF=0;}p=model.clamp(+p||0,0,1);scrubState[id]=p*100;postScrub(id,p);var tl=pane.querySelector('[data-sd-timeline="'+id+'"]');if(tl)tl.style.setProperty('--sd-play',p*100+'%');},
+ scrub:function(id,p){if(playRAF){cancelAnimationFrame(playRAF);playRAF=0;}p=model.clamp(+p||0,0,1);scrubState[id]=p*100;postScrub(id,p);paintPlayhead(id,p*100);},
  live:function(id){if(playRAF){cancelAnimationFrame(playRAF);playRAF=0;}delete scrubState[id];postLive(id);},
- progress:function(id){return scrubState[id]||0;},
+ progress:currentProgress,
  update:function(id,e){try{preview.contentWindow.postMessage({sc:true,type:'nw-sd-update',secId:id,element:model.compile(e)},'*');}catch(_){}},
  evaluate:function(e,p,ease,reduce){return model.evaluate(model.compile(e),p,ease,reduce);}
 };

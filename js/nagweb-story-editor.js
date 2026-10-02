@@ -141,7 +141,7 @@ function transport(s){var val=D.progress(s.id);return '<div class="field cstack"
 function timeline(s,val){
  if(selected&&(selection.length!==1||selected.element!==selection[0]))selected=null;
  var list=(s.elements||[]).filter(function(e){return M.eligible(e,s);});
- 
+
  return '<div class="nw-sd-timeline" data-sd-timeline="'+s.id+'" style="--sd-play:'+val+'%"><div class="nw-sd-timeline-head"><span>LÍNEA DE TIEMPO</span><span>0 · 25 · 50 · 75 · 100%</span></div>'+beatsPanel(s)+'<div class="nw-sd-timeline-grid">'+list.map(function(e){
   var ks=frames(e),use=active(e),a=use?ks[0].at:M.clamp(M.number(e.sdStart,0),0,100),b=use?ks[ks.length-1].at:M.clamp(M.number(e.sdEnd,82),a,100);
   var name=esc(e.name||e.label||e.text||e.type),isSelected=selection.indexOf(e.id)>=0;
