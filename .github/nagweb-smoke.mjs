@@ -150,6 +150,19 @@ await rightButton.click();
 if(!(await page.evaluate(()=>document.body.classList.contains('nw-right-collapsed')))) throw new Error('Right panel did not collapse');
 await rightButton.click();
 
+const inspectorGrip=await page.$('.nw-inspector-resize');
+if(!inspectorGrip) throw new Error('Inspector resize grip missing');
+const inspectorBefore=await page.$eval('.col.inspector',n=>n.getBoundingClientRect().width);
+const gripBox=await inspectorGrip.boundingBox();
+await page.mouse.move(gripBox.x+gripBox.width/2,gripBox.y+80);
+await page.mouse.down();
+await page.mouse.move(gripBox.x-80,gripBox.y+80,{steps:5});
+await page.mouse.up();
+const inspectorAfter=await page.$eval('.col.inspector',n=>n.getBoundingClientRect().width);
+if(inspectorAfter<inspectorBefore+50) throw new Error('Inspector did not resize wider: '+JSON.stringify({inspectorBefore,inspectorAfter}));
+const savedInspectorWidth=await page.evaluate(()=>window.NAGWEB_WORKSPACE16_API&&window.NAGWEB_WORKSPACE16_API.state().rightWidth);
+if(!savedInspectorWidth||Math.abs(savedInspectorWidth-inspectorAfter)>3) throw new Error('Inspector width was not persisted in workspace state');
+
 // Persistencia + idempotencia del workspace: al recargar debe conservar el panel
 // izquierdo plegado y MutationObserver no debe duplicar controles.
 await leftButton.click();
@@ -158,10 +171,12 @@ await page.waitForFunction(()=>window.NAGWEB_WORKSPACE16===1 && !!document.query
 const workspaceState=await page.evaluate(()=>({
  leftPersisted:document.body.classList.contains('nw-left-collapsed'),
  leftToggles:document.querySelectorAll('.nw-dock-toggle.left').length,
- rightToggles:document.querySelectorAll('.nw-dock-toggle.right').length
+ rightToggles:document.querySelectorAll('.nw-dock-toggle.right').length,
+ rightWidth:window.NAGWEB_WORKSPACE16_API&&window.NAGWEB_WORKSPACE16_API.rightWidth()
 }));
 if(!workspaceState.leftPersisted) throw new Error('Left panel collapse state did not persist after reload');
 if(workspaceState.leftToggles!==1||workspaceState.rightToggles!==1) throw new Error('Workspace controls duplicated after reload: '+JSON.stringify(workspaceState));
+if(Math.abs(workspaceState.rightWidth-savedInspectorWidth)>3) throw new Error('Inspector width did not survive reload: '+JSON.stringify({workspaceState,savedInspectorWidth}));
 await page.click('.nw-dock-toggle.left');
 
 await runStorytellingSmoke(page);
