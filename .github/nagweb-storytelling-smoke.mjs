@@ -87,20 +87,28 @@ export async function runStorytellingSmoke(page){
  await page.click('[data-story-action="add"]');
  assert.equal(await page.evaluate(()=>sec().elements[0].sdKeyframes.length),4);
  assert.equal(await page.evaluate(()=>sec().elements[0].sdKeyframes[2].at),65);
- await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub(sec().id,.5));
- await page.click('[data-story-beat-add]');
- const beatId=await page.evaluate(()=>sec().sdBeats[0].id);
- await page.focus('[data-story-beat-field="name"]');await page.keyboard.down('Control');await page.keyboard.press('a');await page.keyboard.up('Control');await page.keyboard.type('PRODUCTO');await page.keyboard.press('Tab');
- assert.equal(await page.evaluate(()=>sec().sdBeats[0].name),'PRODUCTO');
- await page.focus('[data-sd-beat="'+beatId+'"]');await page.keyboard.press('ArrowRight');
- assert.equal(await page.evaluate(()=>sec().sdBeats[0].at),51);
- assert.equal(await page.$$eval('[data-story-beat-line]',ns=>ns.length),2);
- await page.$eval('[data-sd-key="'+key+'"]',n=>n.scrollIntoView({block:'center'}));
- const snapDrag=await page.$eval('[data-sd-key="'+key+'"]',n=>{const r=n.getBoundingClientRect(),t=n.parentElement.getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2,to:t.x+t.width*.505};});
- await page.mouse.move(snapDrag.x,snapDrag.y);await page.mouse.down();await page.mouse.move(snapDrag.to,snapDrag.y,{steps:3});await page.mouse.up();
- assert.equal(await page.evaluate(k=>sec().elements[0].sdKeyframes.find(f=>f.id===k).at,key),51);
- await page.focus('[data-sd-beat="'+beatId+'"]');await page.keyboard.press('Backspace');
- assert.equal(await page.evaluate(()=>sec().sdBeats.length),0);
+
+ // Los marcadores antiguos se conservan en datos, pero ya no ocupan la Timeline
+ // ni atraen keyframes invisiblemente.
+ await page.evaluate(()=>{sec().sdBeats=[{id:'legacy-beat',at:51,name:'PRODUCTO'}];sec().sdSnapBeats=true;renderPane();});
+ assert.equal(await page.$('[data-story-beat-add]'),null);
+ assert.equal(await page.$('[data-sd-beat]'),null);
+ assert.equal(await page.$('[data-story-beat-line]'),null);
+ assert.deepEqual(await page.evaluate(()=>({beats:sec().sdBeats,ui:{markersVisible:NAGWEB_STORY_TIMELINE_UI.markersVisible,directScrub:NAGWEB_STORY_TIMELINE_UI.directScrub}})),{
+  beats:[{id:'legacy-beat',at:51,name:'PRODUCTO'}],ui:{markersVisible:false,directScrub:true}
+ });
+
+ // La Timeline misma funciona como scrub: regla y pista actualizan el mismo
+ // progreso que el control "Ver un momento".
+ const ruler=await page.$eval('[data-story-scrub-ruler]',n=>{const r=n.getBoundingClientRect();return{x:r.x,y:r.y,w:r.width,h:r.height};});
+ await page.mouse.click(ruler.x+ruler.w*.37,ruler.y+ruler.h/2);
+ const rulerScrub=await page.evaluate(()=>({p:NAGWEB_SCROLL_DIRECTOR.progress(sec().id),slider:+document.querySelector('[data-sd-scrub="'+sec().id+'"]').value}));
+ assert.ok(Math.abs(rulerScrub.p-37)<1);assert.ok(Math.abs(rulerScrub.slider-37)<1);
+
+ const directTrack=await page.$eval('[data-story-track="story-text"]',n=>{const r=n.getBoundingClientRect();return{x:r.x,y:r.y,w:r.width,h:r.height};});
+ await page.mouse.click(directTrack.x+directTrack.w*.58,directTrack.y+directTrack.h/2);
+ const trackScrub=await page.evaluate(()=>({p:NAGWEB_SCROLL_DIRECTOR.progress(sec().id),slider:+document.querySelector('[data-sd-scrub="'+sec().id+'"]').value,beats:sec().sdBeats.length}));
+ assert.ok(Math.abs(trackScrub.p-58)<1);assert.ok(Math.abs(trackScrub.slider-58)<1);assert.equal(trackScrub.beats,1);
  assert.equal(await page.evaluate(()=>sec().elements.length),2);
  await page.evaluate(()=>NAGWEB_STORY_EDITOR.select('story-text',NAGWEB_STORY_EDITOR.frames(sec().elements[0])[1].id));
  await page.click('[data-story-action="hold"]');
