@@ -8,14 +8,19 @@ var style=document.createElement('style');
 style.id='nw-workspace-v16-css';
 style.textContent=[
 '@media (min-width:1041px){',
-'  main{transition:grid-template-columns .22s cubic-bezier(.2,.8,.2,1)}',
-'  body.nw-left-collapsed main{grid-template-columns:34px minmax(0,1fr) 300px!important}',
-'  body.nw-right-collapsed main{grid-template-columns:248px minmax(0,1fr) 34px!important}',
+'  body{--nw-left-width:248px;--nw-right-width:300px}',
+'  main{grid-template-columns:var(--nw-left-width) minmax(0,1fr) var(--nw-right-width)!important;transition:grid-template-columns .22s cubic-bezier(.2,.8,.2,1)}',
+'  body.nw-left-collapsed main{grid-template-columns:34px minmax(0,1fr) var(--nw-right-width)!important}',
+'  body.nw-right-collapsed main{grid-template-columns:var(--nw-left-width) minmax(0,1fr) 34px!important}',
 '  body.nw-left-collapsed.nw-right-collapsed main{grid-template-columns:34px minmax(0,1fr) 34px!important}',
 '  .col.scenes,.col.inspector{position:relative;transition:padding .18s ease}',
 '  .nw-dock-toggle{position:absolute;z-index:500;top:8px;width:24px;height:24px;border:1px solid var(--line);border-radius:7px;background:color-mix(in srgb,var(--panel) 90%,transparent);color:var(--ink-soft);display:grid;place-items:center;padding:0;box-shadow:0 4px 15px rgba(0,0,0,.12);font:700 14px/1 system-ui;backdrop-filter:blur(8px)}',
 '  .nw-dock-toggle:hover{color:var(--ink);border-color:var(--accent)}',
-'  .nw-dock-toggle.left{right:4px}.nw-dock-toggle.right{left:4px}',
+'  .nw-dock-toggle.left{right:4px}.nw-dock-toggle.right{left:8px}',
+'  .nw-inspector-resize{position:absolute;z-index:510;left:-4px;top:0;bottom:0;width:8px;cursor:ew-resize;touch-action:none}',
+'  .nw-inspector-resize:after{content:"";position:absolute;left:3px;top:38px;bottom:12px;width:1px;background:transparent;transition:background .15s}',
+'  .nw-inspector-resize:hover:after,.nw-inspector-resize.is-dragging:after{background:var(--accent)}',
+'  body.nw-right-collapsed .nw-inspector-resize{display:none}',
 '  body.nw-left-collapsed .col.scenes{padding:0!important;overflow:hidden!important}',
 '  body.nw-right-collapsed .col.inspector{padding:0!important;overflow:hidden!important}',
 '  body.nw-left-collapsed .col.scenes>*:not(.nw-dock-toggle){display:none!important}',
@@ -41,6 +46,8 @@ var KEY='nagweb.workspace.v16';
 function load(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(_){return{}}}
 function save(v){try{localStorage.setItem(KEY,JSON.stringify(v))}catch(_){}}
 var st=load();
+var rightWidth=Math.max(260,Math.min(620,+st.rightWidth||300));
+document.body.style.setProperty('--nw-right-width',rightWidth+'px');
 
 function setSide(side,on){
  on=!!on;
@@ -64,6 +71,25 @@ function installSides(){
  }
  if(right&&!right.querySelector('.nw-dock-toggle.right')){
   var c=document.createElement('button');c.type='button';c.className='nw-dock-toggle right';c.addEventListener('click',function(){setSide('right',!document.body.classList.contains('nw-right-collapsed'));});right.appendChild(c);
+ }
+ if(right&&!right.querySelector('.nw-inspector-resize')){
+  var grip=document.createElement('i');grip.className='nw-inspector-resize';grip.setAttribute('aria-label','Redimensionar inspector');grip.title='Arrastrá para cambiar el ancho del inspector';right.appendChild(grip);
+  grip.addEventListener('pointerdown',function(ev){
+   if(innerWidth<=1040)return;
+   ev.preventDefault();ev.stopPropagation();grip.classList.add('is-dragging');
+   var startX=ev.clientX,startW=right.getBoundingClientRect().width;
+   try{grip.setPointerCapture(ev.pointerId)}catch(_){}
+   function mv(e){
+    var w=Math.max(260,Math.min(Math.min(620,innerWidth-420),startW+(startX-e.clientX)));
+    rightWidth=Math.round(w);document.body.style.setProperty('--nw-right-width',rightWidth+'px');
+    try{if(typeof layoutFrame==='function')layoutFrame()}catch(_){}
+   }
+   function up(){
+    grip.classList.remove('is-dragging');grip.removeEventListener('pointermove',mv);grip.removeEventListener('pointerup',up);grip.removeEventListener('pointercancel',up);
+    st.rightWidth=rightWidth;save(st);
+   }
+   grip.addEventListener('pointermove',mv);grip.addEventListener('pointerup',up);grip.addEventListener('pointercancel',up);
+  });
  }
  setSide('left',!!st.left);setSide('right',!!st.right);
 }
@@ -119,5 +145,6 @@ var variantObserver=new MutationObserver(function(muts){
 });
 variantObserver.observe(document.body,{childList:true,subtree:true});
 
-console.info('[NagWeb] workspace v1.6: paneles plegables + variantes ajustables');
+window.NAGWEB_WORKSPACE16_API={version:'1.7',state:function(){return JSON.parse(JSON.stringify(st))},rightWidth:function(){return rightWidth}};
+console.info('[NagWeb] workspace v1.7: paneles plegables + inspector y variantes ajustables');
 })();
