@@ -90,6 +90,19 @@ export async function runStorytellingSmoke(page){
  assert.equal(held[2].at,held[1].at+10);
  for(const prop of ['x','y','scale','rotate','opacity','blur'])assert.equal(held[2][prop],held[1][prop]);
  assert.ok(await page.$('.nw-sd-hold'));
+ // Double click also works on the legacy timing bar, without its drag handler
+ // replacing the track between clicks or creating a spurious undo step.
+ await page.$eval('[data-story-track="story-old"]',n=>n.scrollIntoView({block:'center'}));
+ const legacyTrack=await page.$eval('[data-story-track="story-old"]',n=>{const r=n.getBoundingClientRect();return{x:r.x+r.width*.5,y:r.y+r.height/2};});
+ const beforeLegacyAdd=await page.evaluate(()=>history.length);
+ await page.mouse.click(legacyTrack.x,legacyTrack.y,{count:2});
+ assert.equal(await page.evaluate(()=>sec().elements[1].sdKeyframes.length),1);
+ assert.equal(await page.evaluate(()=>history.length),beforeLegacyAdd+1);
+ await page.keyboard.down('Shift');await page.click('[data-story-select="story-text"]');await page.keyboard.up('Shift');
+ assert.equal(await page.evaluate(()=>selection.length),2);
+ await page.keyboard.down('Shift');await page.click('[data-story-select="story-old"]');await page.keyboard.up('Shift');
+ assert.deepEqual(await page.evaluate(()=>({ids:selection,element:sec().elements[curEl].id})),{ids:['story-text'],element:'story-text'});
+ assert.equal(await page.$('.nw-sd-key.is-selected'),null);
  const staggerIds=await page.evaluate(()=>{
   const s=sec();s.elements=[];
   for(let i=0;i<6;i++)s.elements.push(mkEl('heading',{id:'stagger-'+i,text:'Texto '+i,anim:'none',sdStart:20,sdEnd:75}));
@@ -110,5 +123,34 @@ export async function runStorytellingSmoke(page){
  await page.evaluate(ids=>NAGWEB_STORY_EDITOR.stagger(ids,5,20),staggerIds);
  assert.equal(await page.evaluate(()=>sec().elements[0].sdKeyframes[0].at),20);
  assert.equal(await page.evaluate(()=>sec().elements[0].sdKeyframes.at(-1).at),100);
+ const behavior=await page.evaluate(()=>{
+  const e=sec().elements[1];selection=[e.id];curEl=1;renderPane();
+  const before={start:e.sdStart,end:e.sdEnd};
+  NAGWEB_BEHAVIORS.apply('reveal');NAGWEB_BEHAVIORS.apply('parallax');
+  const combined=NAGWEB_BEHAVIORS.applied(e).filter(c=>c.enabled).map(c=>c.id);
+  e.sdMoveY=-220;NAGWEB_BEHAVIORS.toggle('parallax',false);const paused=e.sdMoveY;
+  NAGWEB_BEHAVIORS.toggle('parallax',true);const resumed=e.sdMoveY;
+  NAGWEB_BEHAVIORS.toggle('reveal',false);
+  const restored=e.sdStart===before.start&&e.sdEnd===before.end;
+  selection=['uc-child'];curEl=sec().elements.findIndex(e=>e.id==='uc-child');renderPane();
+  NAGWEB_BEHAVIORS.apply('depth');NAGWEB_BEHAVIORS.apply('magnet');
+  const child=sec().elements[curEl],configs=NAGWEB_BEHAVIORS.applied(child);
+  const legacy=mkEl('heading',{nwBehaviors:['reveal'],sdStart:17,sdEnter:'up'});
+  return{combined,paused,resumed,restored,depthOff:!configs.find(c=>c.id==='depth').enabled,magnetOn:configs.find(c=>c.id==='magnet').enabled,legacy:NAGWEB_BEHAVIORS.applied(legacy)[0].params.sdStart};
+ });
+ assert.deepEqual(behavior.combined,['reveal','parallax']);assert.equal(behavior.paused,0);assert.equal(behavior.resumed,-220);assert.ok(behavior.restored&&behavior.depthOff&&behavior.magnetOn);assert.equal(behavior.legacy,17);
+ await page.focus('[data-behavior-id="magnet"][data-behavior-field="ucStrength"]');await page.keyboard.down('Control');await page.keyboard.press('a');await page.keyboard.up('Control');await page.keyboard.type('61');await page.keyboard.press('Tab');
+ await page.click('[data-behavior-toggle="magnet"]');await page.click('[data-behavior-toggle="magnet"]');
+ assert.equal(await page.evaluate(()=>sec().elements[curEl].ucStrength),61);
+ const frameBehaviors=await page.evaluate(()=>{
+  const e=sec().elements[0];selection=[e.id];curEl=0;renderPane();
+  NAGWEB_BEHAVIORS.apply('reveal');NAGWEB_BEHAVIORS.apply('parallax');
+  const both=NAGWEB_BEHAVIORS.applied(e).filter(c=>c.enabled).map(c=>c.id),ys=e.sdKeyframes.map(k=>k.y);
+  NAGWEB_BEHAVIORS.toggle('reveal',false);const independent=JSON.stringify(ys)===JSON.stringify(e.sdKeyframes.map(k=>k.y));
+  NAGWEB_BEHAVIORS.toggle('reveal',true);const resumed=NAGWEB_BEHAVIORS.applied(e).filter(c=>c.enabled).length===2;
+  const legacy=mkEl('heading',{id:'legacy-recipe-with-frames',nwBehaviors:['reveal'],sdKeyframes:[{at:0,x:0},{at:100,x:120}]});sec().elements.push(legacy);selection=[legacy.id];curEl=sec().elements.length-1;renderPane();
+  const original=JSON.stringify(legacy.sdKeyframes);NAGWEB_BEHAVIORS.toggle('reveal',false);return{both,independent,resumed,kept:original===JSON.stringify(legacy.sdKeyframes)};
+ });
+ assert.deepEqual(frameBehaviors.both,['reveal','parallax']);assert.ok(frameBehaviors.independent&&frameBehaviors.resumed&&frameBehaviors.kept);
  console.log('Storytelling: modelo, compatibilidad, interpolación y runtime exportado OK');
 }

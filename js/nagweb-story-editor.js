@@ -9,11 +9,13 @@ function active(e){return e.sdKeyframesEnabled!==false&&frames(e).length>0;}
 function element(id){return (sec().elements||[]).find(function(e){return e.id===id;});}
 function current(){return selection.length===1?element(selection[0]):null;}
 function picked(e){return selected&&selected.element===e.id?frames(e).find(function(k){return k.id===selected.key;}):null;}
-function persist(){var top=pane.scrollTop;saveProject();renderPane();pane.scrollTop=top;schedulePreview();}
+function persist(){var scroller=pane.closest('.col.inspector')||pane,top=scroller.scrollTop;saveProject();renderPane();scroller.scrollTop=top;schedulePreview();}
 function selectElement(id,add){
  var f=findEl(id);if(!f)return;
  curSec=f[0];curEl=f[1];secFocus=false;curPane='elements';
  selection=add?(selection.indexOf(id)>=0?selection.filter(function(x){return x!==id;}):selection.concat(id)):[id];
+ if(selection.length===1)curEl=sec().elements.findIndex(function(e){return e.id===selection[0];});
+ if(!selection.length){curEl=-1;secFocus=true;}
  if(typeof unfoldTo==='function')unfoldTo(id);
  syncSelectionToFrame();
 }
@@ -137,6 +139,7 @@ function num(attr,key,value,label,min,max,unit){
 }
 function transport(s){var val=D.progress(s.id);return '<div class="field cstack"><label>Ver un momento <span data-sd-val>'+Math.round(val)+'%</span></label><input aria-label="Ver un momento" class="crange" type="range" data-sd-scrub="'+s.id+'" min="0" max="100" step="0.1" value="'+val+'"></div><div class="nw-sd-actions"><button type="button" class="btn tiny" data-sd-play="'+s.id+'">▶ Reproducir secuencia</button><button type="button" class="btn tiny" data-sd-live="'+s.id+'">Volver al scroll real</button></div>';}
 function timeline(s,val){
+ if(selected&&(selection.length!==1||selected.element!==selection[0]))selected=null;
  var list=(s.elements||[]).filter(function(e){return M.eligible(e,s);});
  
  return '<div class="nw-sd-timeline" data-sd-timeline="'+s.id+'" style="--sd-play:'+val+'%"><div class="nw-sd-timeline-head"><span>LÍNEA DE TIEMPO</span><span>0 · 25 · 50 · 75 · 100%</span></div>'+beatsPanel(s)+'<div class="nw-sd-timeline-grid">'+list.map(function(e){

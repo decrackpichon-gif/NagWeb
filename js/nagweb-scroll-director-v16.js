@@ -128,19 +128,23 @@ if(pane){
   if(!h&&!bar0)return;
   var row=(h||bar0).closest('[data-sd-row]'),track=(h||bar0).closest('.nw-sd-ttrack');if(!row||!track)return;
   var s=sec(),e=(s.elements||[]).find(function(x){return x.id===row.dataset.sdRow;});if(!e)return;
-  ev.preventDefault();ev.stopPropagation();elDefaults(e);snapshot();
+  ev.preventDefault();ev.stopPropagation();elDefaults(e);
   var edge=h&&h.dataset.sdEdge,r=track.getBoundingClientRect(),bar=row.querySelector('.nw-sd-tbar');
   var start0=Math.max(0,Math.min(100,+e.sdStart||0)),end0=Math.max(start0,Math.min(100,+e.sdEnd||82)),dur=end0-start0,x0=ev.clientX;
-  var cap=h||bar0;try{cap.setPointerCapture(ev.pointerId)}catch(_){}
+  var changed=false,cap=h||bar0;try{cap.setPointerCapture(ev.pointerId)}catch(_){}
   function value(clientX){return Math.round(Math.max(0,Math.min(100,(clientX-r.left)/Math.max(1,r.width)*100)));}
   function draw(){var a=Math.max(0,Math.min(100,+e.sdStart||0)),b=Math.max(a,Math.min(100,+e.sdEnd||82));bar.style.left=a+'%';bar.style.width=Math.max(1,b-a)+'%';}
   function move(x){
-   if(edge){var v=value(x);if(edge==='start')e.sdStart=Math.min(v,Math.max(0,(+e.sdEnd||82)-1));else e.sdEnd=Math.max(v,Math.min(100,(+e.sdStart||0)+1));}
-   else {var delta=Math.round((x-x0)/Math.max(1,r.width)*100),a=Math.max(0,Math.min(100-dur,start0+delta));e.sdStart=a;e.sdEnd=a+dur;}
+   if(Math.abs(x-x0)<2&&!changed)return;
+   var a=+e.sdStart,b=+e.sdEnd;
+   if(edge){var v=value(x);if(edge==='start')a=Math.min(v,Math.max(0,b-1));else b=Math.max(v,Math.min(100,a+1));}
+   else {var delta=Math.round((x-x0)/Math.max(1,r.width)*100);a=Math.max(0,Math.min(100-dur,start0+delta));b=a+dur;}
+   if(a===+e.sdStart&&b===+e.sdEnd)return;
+   if(!changed){snapshot();changed=true;}e.sdStart=a;e.sdEnd=b;
    draw();
   }
   function mv(e2){move(e2.clientX);}
-  function up(e2){move(e2.clientX);cap.removeEventListener('pointermove',mv);cap.removeEventListener('pointerup',up);cap.removeEventListener('pointercancel',up);saveProject();renderPane();schedulePreview();}
+  function up(e2){if(e2.type==='pointercancel'){e.sdStart=start0;e.sdEnd=end0;}else move(e2.clientX);cap.removeEventListener('pointermove',mv);cap.removeEventListener('pointerup',up);cap.removeEventListener('pointercancel',up);if(changed){saveProject();renderPane();schedulePreview();}}
   cap.addEventListener('pointermove',mv);cap.addEventListener('pointerup',up);cap.addEventListener('pointercancel',up);
  });
  pane.addEventListener('input',function(ev){

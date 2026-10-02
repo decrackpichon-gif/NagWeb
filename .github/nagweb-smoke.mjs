@@ -50,7 +50,7 @@ await page.setViewport({width:1440,height:900,deviceScaleFactor:1});
 const pageErrors=[];
 page.on('pageerror',e=>pageErrors.push(String(e&&e.stack||e)));
 
-await page.goto('http://127.0.0.1:4173/index.html',{waitUntil:'domcontentloaded',timeout:60000});
+await page.goto(process.env.NAGWEB_SMOKE_URL||'http://127.0.0.1:4173/index.html',{waitUntil:'domcontentloaded',timeout:60000});
 await page.waitForFunction(()=>window.NAGWEB_FEEDBACK16===1 && !!window.NAGWEB_UNIVERSAL && !!window.NAGWEB_SCROLL_DIRECTOR,{timeout:30000});
 await page.waitForSelector('#preview',{timeout:30000});
 await page.waitForFunction(()=>{
@@ -103,7 +103,7 @@ const state=Object.assign(await page.evaluate(()=>({
  directorUniversalLoaded:(()=>{const u=window.NAGWEB_UNIVERSAL,d=window.NAGWEB_SCROLL_DIRECTOR;return !!(u&&u.version&&d&&d.version);})(),
  anchor3dApi:(()=>{const a=window.NAGWEB_3D_ANCHOR;return !!(a&&a.version==='1.0'&&typeof a.bind==='function'&&typeof a.unbind==='function'&&typeof a.refresh==='function');})(),
  anchor3dPreviewApi:(()=>{const f=document.querySelector('#preview'),a=f&&f.contentWindow&&f.contentWindow.NAGWEB_3D_ANCHOR;return !!(a&&a.version==='1.0'&&typeof a.bind==='function');})(),
- behaviorApi:(()=>{const b=window.NAGWEB_BEHAVIORS,l=b&&typeof b.list==='function'?b.list():[];return !!(b&&b.version==='1.0'&&typeof b.apply==='function'&&l.length===10&&['Revelar','Mantener','Parallax','Seguir cursor','Magnetismo','Scrub de video','Sticky','Transición de escena','Profundidad','Órbita 3D'].every(n=>l.some(x=>x.label===n)));})(),
+ behaviorApi:(()=>{const b=window.NAGWEB_BEHAVIORS,l=b&&typeof b.list==='function'?b.list():[];return !!(b&&b.version==='2.0'&&typeof b.apply==='function'&&typeof b.toggle==='function'&&l.length===10&&['Revelar','Mantener','Parallax','Seguir cursor','Magnetismo','Scrub de video','Sticky','Transición de escena','Profundidad','Órbita 3D'].every(n=>l.some(x=>x.label===n)));})(),
  behaviorCategory:(()=>{try{const c=INSERT_CATS.find(x=>x.key==='behavior'),items=c&&c.items&&c.items();return !!(c&&c.label==='Comportamientos'&&Array.isArray(items)&&items.length===10);}catch(_){return false}})()
 })),contractState);
 for(const [k,v] of Object.entries(state)){
