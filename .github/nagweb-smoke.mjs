@@ -41,7 +41,9 @@ const candidates=['/usr/bin/google-chrome-stable','/usr/bin/google-chrome','/usr
 const executablePath=candidates.find(p=>fs.existsSync(p));
 if(!executablePath) throw new Error('No Chromium/Chrome executable found on runner');
 
-const browser=await puppeteer.launch({headless:true,executablePath,args:['--no-sandbox','--disable-dev-shm-usage']});
+const browserArgs=['--no-sandbox','--disable-dev-shm-usage'];
+if(process.env.NAGWEB_BROWSER_PROXY) browserArgs.push('--proxy-server='+process.env.NAGWEB_BROWSER_PROXY);
+const browser=await puppeteer.launch({headless:true,executablePath,args:browserArgs});
 const page=await browser.newPage();
 await page.setViewport({width:1440,height:900,deviceScaleFactor:1});
 const pageErrors=[];
@@ -52,7 +54,7 @@ await page.waitForFunction(()=>window.NAGWEB_FEEDBACK16===1 && !!window.NAGWEB_U
 await page.waitForSelector('#preview',{timeout:30000});
 await page.waitForFunction(()=>{
  const f=document.querySelector('#preview');
- return !!(f&&f.contentDocument&&f.contentDocument.body&&f.contentDocument.body.innerHTML.length>50);
+ return !!(f&&f.contentDocument&&f.contentDocument.body&&f.contentDocument.body.innerHTML.length>50&&f.contentWindow.NAGWEB_3D_ANCHOR);
 },{timeout:30000});
 
 const state=Object.assign(await page.evaluate(()=>({
