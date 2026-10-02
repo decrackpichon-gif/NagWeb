@@ -84,5 +84,31 @@ export async function runStorytellingSmoke(page){
  await page.focus('[data-sd-beat="'+beatId+'"]');await page.keyboard.press('Backspace');
  assert.equal(await page.evaluate(()=>sec().sdBeats.length),0);
  assert.equal(await page.evaluate(()=>sec().elements.length),2);
+ await page.evaluate(()=>NAGWEB_STORY_EDITOR.select('story-text',NAGWEB_STORY_EDITOR.frames(sec().elements[0])[1].id));
+ await page.click('[data-story-action="hold"]');
+ const held=await page.evaluate(()=>NAGWEB_STORY_EDITOR.frames(sec().elements[0]));
+ assert.equal(held[2].at,held[1].at+10);
+ for(const prop of ['x','y','scale','rotate','opacity','blur'])assert.equal(held[2][prop],held[1][prop]);
+ assert.ok(await page.$('.nw-sd-hold'));
+ const staggerIds=await page.evaluate(()=>{
+  const s=sec();s.elements=[];
+  for(let i=0;i<6;i++)s.elements.push(mkEl('heading',{id:'stagger-'+i,text:'Texto '+i,anim:'none',sdStart:20,sdEnd:75}));
+  s.elements.push(mkEl('container',{id:'universal-stagger',universal:true}),mkEl('heading',{id:'uc-child',parent:'universal-stagger',sdStart:20,sdEnd:80}),mkEl('heading',{id:'fixed-skip',fixed:true}),mkEl('container',{id:'modal-skip',modal:true}),mkEl('light3d',{id:'light-skip'}));
+  selection=s.elements.map(e=>e.id);renderPane();return selection;
+ });
+ await page.click('[data-story-stagger-apply]');
+ const staggered=await page.evaluate(()=>sec().elements.map(e=>[e.id,e.sdStart]));
+ assert.deepEqual(staggered.slice(0,6).map(e=>e[1]),[20,25,30,35,40,45]);
+ assert.equal(staggered[7][1],50);assert.ok(staggered.slice(8).every(e=>e[1]!==55));
+ assert.equal(staggered[6][1],null); // No automatic timing is added to the Universal container.
+ const preset=await page.evaluate(()=>{
+  selection=['stagger-0'];curEl=0;renderPane();const before=sec().elements.length;
+  NAGWEB_STORY_EDITOR.preset('stagger-0','cinematic');
+  return{count:sec().elements.length,before,frames:sec().elements[0].sdKeyframes.length,start:sec().elements[0].sdStart};
+ });
+ assert.equal(preset.count,preset.before);assert.equal(preset.frames,4);assert.equal(preset.start,20);
+ await page.evaluate(ids=>NAGWEB_STORY_EDITOR.stagger(ids,5,20),staggerIds);
+ assert.equal(await page.evaluate(()=>sec().elements[0].sdKeyframes[0].at),20);
+ assert.equal(await page.evaluate(()=>sec().elements[0].sdKeyframes.at(-1).at),100);
  console.log('Storytelling: modelo, compatibilidad, interpolación y runtime exportado OK');
 }

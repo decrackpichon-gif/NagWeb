@@ -77,7 +77,7 @@ paneSceneNew=function(){
   body+='<div class="field cstack"><label>Ver un momento sin scrollear <span class="val" data-sd-val>'+Math.round(val)+'%</span></label><input type="range" class="crange" data-sd-scrub="'+s.id+'" min="0" max="100" step="1" value="'+val+'"></div>';
   body+=timelineHTML(s,val);
   body+='<div class="row"><button type="button" class="btn tiny" data-sd-play="'+s.id+'">▶ Reproducir secuencia</button><button type="button" class="btn tiny" data-sd-live="'+s.id+'">↕ Volver al scroll real</button></div>';
-  body+='<div class="row" style="margin-top:7px"><button type="button" class="btn tiny" data-sd-auto="'+s.id+'">Repartir elementos en etapas</button><button type="button" class="btn tiny" data-sd-reset="'+s.id+'">Mostrar todos toda la escena</button></div>';
+  body+='<div class="row" style="margin-top:7px"><button type="button" class="btn tiny" data-sd-auto="'+s.id+'">Repartir recorridos simples</button><button type="button" class="btn tiny" data-sd-reset="'+s.id+'">Mostrar todos toda la escena</button></div>';
   body+='<p class="hint gh">Después seleccioná cada elemento. En su panel aparece <b>Momento en la historia</b>, donde decidís cuándo entra, cuándo sale y qué recorrido hace.</p>';
  }
  var trans=cRow('Tipo',cSeg('sec.stType',s.stType||'cut',[['cut','Corte'],['fade','Fundido'],['overlay','Superposición'],['push','Empuje'],['zoom','Zoom'],['morph','Morph simple']]));
@@ -91,7 +91,7 @@ paneElementNew=function(){
  var html=_paneElementNew(),s=sec();secDefaults(s);
  if(!s.sdEnabled)return html;
  var editor=window.NAGWEB_STORY_EDITOR;
- if(selection.length>1&&editor)return html+grp('el-scroll-director','Secuencia seleccionada',editor.transport(s)+timelineHTML(s,scrubState[s.id]||0));
+ if(selection.length>1&&editor)return html+grp('el-scroll-director','Secuencia seleccionada',editor.transport(s)+timelineHTML(s,scrubState[s.id]||0)+editor.staggerPanel(s));
  if(selection.length!==1)return html;
  var raw=s.elements[curEl];if(!raw||raw.type==='light3d'||raw.fixed||raw.modal||!model.eligible(raw,s))return html;
  elDefaults(raw);
@@ -163,13 +163,13 @@ if(pane){
   if(live){if(playRAF){cancelAnimationFrame(playRAF);playRAF=0;}delete scrubState[live.dataset.sdLive];postLive(live.dataset.sdLive);renderPane();return;}
   var auto=ev.target.closest('[data-sd-auto]');
   if(auto){
-   var s=sec();snapshot();function insideUniversal(e){var guard=0,p=e&&e.parent;while(p&&guard++<30){var host=(s.elements||[]).find(function(x){return x.id===p;});if(!host)return false;if(host.type==='container'&&host.universal)return true;p=host.parent;}return false;}var list=s.elements.filter(function(e){return (!e.parent||insideUniversal(e))&&!(e.type==='container'&&e.universal)&&e.type!=='light3d'&&!e.fixed&&!e.modal;});
+   var s=sec();snapshot();function insideUniversal(e){var guard=0,p=e&&e.parent;while(p&&guard++<30){var host=(s.elements||[]).find(function(x){return x.id===p;});if(!host)return false;if(host.type==='container'&&host.universal)return true;p=host.parent;}return false;}var list=s.elements.filter(function(e){return (!e.parent||insideUniversal(e))&&!(e.type==='container'&&e.universal)&&e.type!=='light3d'&&!e.fixed&&!e.modal&&model.eligible(e,s)&&!model.normalize(e.sdKeyframes).length;});
    var n=Math.max(1,list.length),step=Math.min(22,72/n);
    list.forEach(function(e,i){elDefaults(e);e.sdStart=Math.round(5+i*step);e.sdEnd=Math.min(92,Math.round(e.sdStart+Math.max(18,step*1.35)));e.sdSpan=Math.max(4,Math.min(10,Math.round(step*.45)));e.sdEnter=i%3===0?'up':i%3===1?'fade':'depth';e.sdExit=i===list.length-1?'keep':'fade';});
    saveProject();renderPane();schedulePreview();return;
   }
   var reset=ev.target.closest('[data-sd-reset]');
-  if(reset){var ss=sec();snapshot();ss.elements.forEach(function(e){if(e.type==='light3d'||e.fixed||e.modal)return;elDefaults(e);e.sdStart=0;e.sdEnd=100;e.sdSpan=6;e.sdEnter='none';e.sdExit='keep';e.sdMoveX=0;e.sdMoveY=0;e.sdRotate=0;e.sdScale=100;});saveProject();renderPane();schedulePreview();return;}
+  if(reset){var ss=sec();snapshot();ss.elements.forEach(function(e){if(e.type==='light3d'||e.fixed||e.modal)return;if(!model.eligible(e,ss))return;elDefaults(e);e.sdKeyframesEnabled=false;e.sdStart=0;e.sdEnd=100;e.sdSpan=6;e.sdEnter='none';e.sdExit='keep';e.sdMoveX=0;e.sdMoveY=0;e.sdRotate=0;e.sdScale=100;});saveProject();renderPane();schedulePreview();return;}
   var play=ev.target.closest('[data-sd-play]');
   if(play){
    if(playRAF)cancelAnimationFrame(playRAF);

@@ -41,6 +41,50 @@ function beatUpdate(id,patch){
  snapshot();list[i]=next;s.sdBeats=list;persist();return true;
 }
 function beatRemove(id){var s=sec(),list=beats(s);if(!list.some(function(b){return b.id===id;}))return false;snapshot();s.sdBeats=list.filter(function(b){return b.id!==id;});selectedBeat=null;persist();return true;}
+function hold(id,key,gap){
+ var e=element(id),list=e&&frames(e),i=list?list.findIndex(function(k){return k.id===key;}):-1;if(i<0)return false;
+ var max=i<list.length-1?list[i+1].at-.1:100,at=Math.round(Math.min(max,list[i].at+M.clamp(M.number(gap,10),.1,100))*10)/10;
+ if(at<=list[i].at){toast('No queda espacio después de este momento. Mové el siguiente punto.');return false;}
+ return add(id,at,list[i]);
+}
+function staggerList(s,ids){return (s.elements||[]).filter(function(e){return ids.indexOf(e.id)>=0&&M.eligible(e,s)&&!(e.type==='container'&&e.universal);});}
+function stagger(ids,step,start){
+ var s=sec(),list=staggerList(s,ids),changes=[];step=M.clamp(M.number(step,5),.1,100);start=M.clamp(M.number(start,0),0,100);
+ if(list.length<2){toast('Seleccioná al menos dos elementos dirigibles.');return false;}
+ if(start+(list.length-1)*step>=100){toast('Las entradas no caben: bajá la separación o adelantá la primera.');return false;}
+ for(var i=0;i<list.length;i++){
+  var e=list[i],at=Math.round((start+i*step)*10)/10,ks=frames(e);
+  if(active(e)){
+   if(100-at<(ks.length-1)*.1){toast('Hay demasiados momentos para ese intervalo. Ampliá el recorrido.');return false;}
+   var first=ks[0].at,last=ks[ks.length-1].at,ratio=last===first?1:Math.min(1,(100-at)/(last-first)),previous=at-.1;
+   ks.forEach(function(k,j){k.at=Math.round(Math.max(previous+.1,Math.min(100-(ks.length-1-j)*.1,at+(k.at-first)*ratio))*10)/10;previous=k.at;});
+   changes.push({e:e,values:{sdKeyframes:ks}});
+  }else{
+   var span=Math.min(M.number(e.sdSpan,8),(100-at)/2),end=Math.min(e.sdExit&&e.sdExit!=='keep'?100-span:100,at+Math.max(span,M.number(e.sdEnd,82)-M.number(e.sdStart,0)));
+   changes.push({e:e,values:{sdStart:at,sdEnd:end,sdSpan:span}});
+  }
+ }
+ snapshot();changes.forEach(function(c){Object.assign(c.e,c.values);});s.sdEnabled=true;persist();return true;
+}
+function staggerPanel(s){
+ var list=staggerList(s,selection);if(list.length<2)return '';
+ var first=active(list[0])?frames(list[0])[0].at:M.number(list[0].sdStart,0);
+ return '<h4 class="gsub">Aparición escalonada</h4>'+cRow('Primera entrada',num('data-story-stagger','start',first,'Primera entrada',0,100,'%'))+cRow('Separación',num('data-story-stagger','step',5,'Separación entre entradas',.1,100,'%'))+'<button type="button" class="btn tiny" data-story-stagger-apply>Escalonar '+list.length+' elementos</button><p class="hint gh">Sigue el orden de las pistas. Si un recorrido supera el final, se acorta su duración conservando todos sus estados. Los contenedores de Escena universal quedan fuera del reparto.</p>';
+}
+var presets={
+ cinematic:{name:'Entrada cinematográfica',frames:[{at:0,x:-180,y:25,scale:80,opacity:0,blur:12},{at:22,x:0,y:0,scale:100,opacity:100,blur:0},{at:65},{at:90,y:-80,opacity:0,scale:110}]},
+ reveal:{name:'Revelado suave',frames:[{at:0,y:35,opacity:0},{at:25,y:0,opacity:100},{at:90}]},
+ zoom:{name:'Zoom dramático',frames:[{at:0,scale:60,opacity:0},{at:35,scale:110,opacity:100},{at:55,scale:100},{at:90}]},
+ parallax:{name:'Parallax lento',frames:[{at:0,y:60},{at:90,y:-60}]},
+ floating:{name:'Texto flotante',frames:[{at:0,y:0},{at:25,y:-25},{at:50,y:0},{at:75,y:-25},{at:100,y:0}]},
+ depth:{name:'Salida hacia profundidad',frames:[{at:0},{at:55},{at:90,scale:65,opacity:0,blur:14}]}
+};
+function preset(id,name){
+ var e=element(id),p=presets[name];if(!p||!M.eligible(e,sec()))return false;
+ snapshot();e.sdKeyframes=M.normalize(p.frames.map(function(k){return Object.assign({id:nid(),ease:name==='parallax'?'linear':'cinematic'},k);}));e.sdKeyframesEnabled=true;sec().sdEnabled=true;
+ selected={element:id,key:e.sdKeyframes[0].id};persist();return true;
+}
+function presetPanel(){return cRow('Punto de partida','<select class="csel" data-story-preset aria-label="Preset de movimiento"><option value="">Elegir movimiento…</option>'+Object.keys(presets).map(function(k){return '<option value="'+k+'">'+presets[k].name+'</option>';}).join('')+'</select>')+'<p class="hint gh">Reemplaza los momentos de este elemento. Todos los valores quedan editables y podés deshacer.</p>';}
 function snap(at,list,index,skip){
  if(skip||sec().sdSnapBeats===false)return at;
  var b=bounds(list,index),near=beats(sec()).filter(function(k){return k.at>=b[0]&&k.at<=b[1]&&Math.abs(k.at-at)<=2;}).sort(function(a,b){return Math.abs(a.at-at)-Math.abs(b.at-at);})[0];
@@ -106,9 +150,10 @@ function timeline(s,val){
 }
 function panel(s,e){
  var ks=frames(e),k=picked(e),body='';
- if(!active(e))return '<div class="nw-sd-actions"><button type="button" class="btn tiny" data-story-action="enable">'+(ks.length?'Reactivar keyframes':'Crear keyframes del recorrido')+'</button></div><p class="hint gh">Los valores del recorrido anterior se conservan. Después podés editar cada momento.</p>';
+ if(!active(e))return '<div class="nw-sd-actions"><button type="button" class="btn tiny" data-story-action="enable">'+(ks.length?'Reactivar keyframes':'Crear keyframes del recorrido')+'</button></div><p class="hint gh">Los valores del recorrido anterior se conservan. Después podés editar cada momento.</p>'+presetPanel();
  body+=transport(s)+timeline(s,D.progress(s.id));
  body+='<div class="nw-sd-actions"><button type="button" class="btn tiny" data-story-action="add">+ Momento aquí</button><button type="button" class="btn tiny" data-story-action="disable">Usar recorrido anterior</button></div>';
+ body+=presetPanel();
  if(!k)return body+'<p class="hint gh">Seleccioná un punto para editarlo. Dos puntos con el mismo estado crean una permanencia.</p>';
  var i=ks.findIndex(function(x){return x.id===k.id;}),b=bounds(ks,i);
  body+='<div class="nw-sd-inspector" data-story-inspector="'+k.id+'"><h4 class="gsub">Momento seleccionado</h4>'+cRow('Momento en la escena',num('data-story-field','at',k.at,'Momento en la escena',b[0],b[1],'%'));
@@ -116,16 +161,18 @@ function panel(s,e){
  Object.keys(M.properties).forEach(function(p){var def=M.properties[p];if(p==='opacity')body+='<h4 class="gsub">Apariencia</h4>';body+=cRow(def.label,num('data-story-field',p,k[p],def.label,def.min,def.max,def.unit));});
  body+='<h4 class="gsub">Interpolación</h4>'+cRow('Hacia el siguiente momento','<select class="csel" aria-label="Interpolación" data-story-field="ease">'+Object.keys(M.easings).map(function(key){return '<option value="'+key+'"'+(k.ease===key?' selected':'')+'>'+M.easings[key]+'</option>';}).join('')+'</select>');
  body+='<p class="hint gh">'+(i===ks.length-1?'Último momento: este estado se mantiene hasta el final.':'Este cambio de velocidad se aplica al tramo siguiente.')+' Los valores se suman al diseño del elemento; 100% conserva su escala y opacidad base.</p>';
- body+='<div class="nw-sd-actions"><button type="button" class="btn tiny danger" data-story-action="delete">Eliminar momento</button></div></div>';
+ body+=cRow('Permanecer durante',num('data-story-hold','gap',10,'Duración de la permanencia',.1,100,'%'))+'<div class="nw-sd-actions"><button type="button" class="btn tiny" data-story-action="hold">Agregar permanencia</button><button type="button" class="btn tiny danger" data-story-action="delete">Eliminar momento</button></div></div>';
  return body;
 }
 pane.addEventListener('change',function(ev){
+ if(ev.target.matches('[data-story-preset]')){var e=current();if(e&&ev.target.value)preset(e.id,ev.target.value);return;}
  var beatField=ev.target.closest('[data-story-beat-field]');if(beatField&&selectedBeat){var patch={};patch[beatField.dataset.storyBeatField]=beatField.value;beatUpdate(selectedBeat.id,patch);return;}
  if(ev.target.matches('[data-story-snap]')){snapshot();sec().sdSnapBeats=ev.target.checked;saveProject();return;}
  var t=ev.target.closest('[data-story-field]'),e=current(),k=e&&picked(e);if(!t||!k)return;
  var patch={};patch[t.dataset.storyField]=t.value;update(e.id,k.id,patch);
 });
 pane.addEventListener('click',function(ev){
+ if(ev.target.closest('[data-story-stagger-apply]')){stagger(selection,+pane.querySelector('[data-story-stagger="step"]').value,+pane.querySelector('[data-story-stagger="start"]').value);return;}
  if(ev.target.closest('[data-story-beat-add]')){beatAdd(D.progress(sec().id));return;}
  var beatDel=ev.target.closest('[data-story-beat-delete]');if(beatDel){beatRemove(beatDel.dataset.storyBeatDelete);return;}
  var name=ev.target.closest('[data-story-select]');if(name){selectElement(name.dataset.storySelect,ev.shiftKey);selected=null;renderPane();return;}
@@ -135,7 +182,8 @@ pane.addEventListener('click',function(ev){
  if(action==='enable')enable(e);
  else if(action==='disable'){snapshot();e.sdKeyframesEnabled=false;selected=null;persist();}
  else if(action==='add')add(e.id,D.progress(sec().id));
- else if(action==='delete'&&picked(e))remove(e.id,picked(e).id);
+  else if(action==='delete'&&picked(e))remove(e.id,picked(e).id);
+ else if(action==='hold'&&picked(e))hold(e.id,picked(e).id,+pane.querySelector('[data-story-hold]').value);
 });
 pane.addEventListener('dblclick',function(ev){var track=ev.target.closest('[data-story-track]');if(!track||ev.target.closest('[data-sd-key]'))return;ev.preventDefault();var r=track.getBoundingClientRect();add(track.dataset.storyTrack,(ev.clientX-r.left)/r.width*100);});
 pane.addEventListener('pointerdown',function(ev){
@@ -190,5 +238,5 @@ window.addEventListener('keydown',function(ev){
 },true);
 var style=document.createElement('style');style.textContent='.nw-sd-ttrack{height:24px;overflow:visible;border-radius:5px;touch-action:none}.nw-sd-tbar{top:9px;bottom:9px;opacity:.65}.nw-sd-key{position:absolute;z-index:6;top:6px;width:12px;height:12px;transform:translateX(-50%) rotate(45deg);padding:0;border:2px solid var(--panel);border-radius:2px;background:var(--accent);cursor:ew-resize;touch-action:none}.nw-sd-key.is-selected,.nw-sd-key:focus-visible{background:var(--ink);outline:2px solid var(--accent);outline-offset:2px}.nw-sd-actions{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.nw-sd-inspector{margin-top:12px;padding-top:6px;border-top:1px solid var(--line)}.nw-sd-hold{position:absolute;top:17px;height:3px;background:var(--ink);opacity:.5;pointer-events:none}.nw-sd-timeline-grid:before{display:none}.nw-sd-ttrack{background:repeating-linear-gradient(90deg,transparent 0,transparent calc(25% - 1px),var(--line) calc(25% - 1px),var(--line) 25%),var(--panel)}.nw-sd-timeline-grid{gap:7px}.nw-sd-tname{min-height:24px}.nw-sd-playhead{z-index:5}.nw-sd-inspector input{min-width:0}';document.head.append(style);
 style.textContent+='.nw-sd-beats{height:36px;margin-top:10px}.nw-sd-beat{position:absolute;top:20px;transform:translateX(-50%);padding:0;border:0;color:var(--accent);background:transparent;cursor:ew-resize;touch-action:none}.nw-sd-beat span{position:absolute;bottom:16px;left:0;max-width:64px;overflow:hidden;text-overflow:ellipsis;font:600 9px system-ui;white-space:nowrap}.nw-sd-beat.is-selected{color:var(--ink);outline:1px solid var(--accent)}.nw-sd-beat-line{position:absolute;top:-4px;bottom:-4px;width:1px;border-left:1px dashed var(--accent);opacity:.6;pointer-events:none}.nw-sd-beat-inspector{margin-bottom:10px;padding:6px;border:1px solid var(--line);border-radius:6px}';
-window.NAGWEB_STORY_EDITOR={timeline:timeline,panel:panel,transport:transport,active:active,frames:frames,add:add,update:update,remove:remove,select:selectKey,beats:beats,beatAdd:beatAdd,beatUpdate:beatUpdate,beatRemove:beatRemove};
+window.NAGWEB_STORY_EDITOR={timeline:timeline,panel:panel,transport:transport,active:active,frames:frames,add:add,update:update,remove:remove,select:selectKey,beats:beats,beatAdd:beatAdd,beatUpdate:beatUpdate,beatRemove:beatRemove,hold:hold,stagger:stagger,staggerPanel:staggerPanel,preset:preset,presets:presets};
 })();
