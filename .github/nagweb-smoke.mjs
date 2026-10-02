@@ -1,5 +1,6 @@
 import puppeteer from 'puppeteer-core';
 import fs from 'node:fs';
+import {runStorytellingSmoke} from './nagweb-storytelling-smoke.mjs';
 
 const feedbackSource=fs.readFileSync(new URL('../js/nagweb-feedback-v16.js',import.meta.url),'utf8');
 const directorSource=fs.readFileSync(new URL('../js/nagweb-scroll-director-v16.js',import.meta.url),'utf8');
@@ -161,6 +162,7 @@ if(!workspaceState.leftPersisted) throw new Error('Left panel collapse state did
 if(workspaceState.leftToggles!==1||workspaceState.rightToggles!==1) throw new Error('Workspace controls duplicated after reload: '+JSON.stringify(workspaceState));
 await page.click('.nw-dock-toggle.left');
 
+await runStorytellingSmoke(page);
 if(pageErrors.length) throw new Error('Browser page errors:\n'+pageErrors.join('\n\n'));
 console.log('NagWeb smoke OK',state);
 await browser.close();
