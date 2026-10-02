@@ -91,7 +91,7 @@ function selectWidget(id){
 }
 function installEditors(){
  var fr=document.getElementById('preview'),doc,w;try{doc=fr&&fr.contentDocument;w=fr&&fr.contentWindow}catch(_){return}
- if(!doc||!w||w.__nwFeedback16Editors)return;w.__nwFeedback16Editors=1;
+ if(!doc||!doc.head||!w||w.__nwFeedback16Editors)return;w.__nwFeedback16Editors=1;
  var st=doc.createElement('style');st.textContent='.nw-part-edit-active{outline:2px solid #8C6BFF!important;outline-offset:3px!important}.nw-story-editbar{left:12px;right:auto;top:12px}';doc.head.appendChild(st);
  doc.addEventListener('pointerdown',function(ev){
   var b=ev.target.closest&&ev.target.closest('[data-nw-part]');
