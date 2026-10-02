@@ -390,7 +390,7 @@ var ob=new MutationObserver(function(){setTimeout(installCanvasTools,40);});if(p
      e.ucReaction='depth';e.ucStrength=e.ucStrength==null?65:e.ucStrength;tag(e,id);
     }
    }else if(id==='orbit3d'){
-    if(!e){notice('Seleccioná el elemento DOM que querés usar como ancla 3D.');return false}
+    if(!e){notice('Seleccioná el elemento del lienzo al que querés vincular el objeto 3D.');return false}
     e.nw3dOrbit=true;e.nw3dOrbitSpeed=e.nw3dOrbitSpeed==null?18:e.nw3dOrbitSpeed;tag(e,id);
    }else return false;
    if(!options.managed){persist();notice((REGISTRY[id]&&REGISTRY[id].label||id)+' aplicado.');}
@@ -408,7 +408,7 @@ var ob=new MutationObserver(function(){setTimeout(installCanvasTools,40);});if(p
   magnet:{label:'Magnetismo',desc:'Atrae el elemento hacia el cursor dentro de una Escena universal.',icon:'magnet',group:'Interacción'},
   depth:{label:'Profundidad',desc:'Agrega reacción de profundidad/parallax al cursor.',icon:'stack',group:'Interacción'},
   videoScrub:{label:'Scrub de video',desc:'Vincula el tiempo del video al recorrido visible del elemento.',icon:'film-strip',group:'Media'},
-  orbit3d:{label:'Órbita 3D',desc:'Marca el elemento como ancla orbital para objetos vinculados con NAGWEB_3D_ANCHOR.',icon:'globe',group:'3D'}
+  orbit3d:{label:'Órbita 3D',desc:'Hace girar un objeto 3D vinculado al elemento seleccionado.',icon:'globe',group:'3D'}
  };
 
  try{
