@@ -61,8 +61,11 @@ export async function runCompositionSmoke(page){
  // The editor's live playhead and "here" actions must use actual preview progress.
  await page.evaluate(()=>{const w=document.querySelector('#preview').contentWindow,n=w.document.querySelector('[data-id="compose-scene"]');w.scrollTo(0,n.getBoundingClientRect().top+w.scrollY+(n.offsetHeight-w.innerHeight)*.5);});
  await page.waitForFunction(()=>Math.abs(NAGWEB_SCROLL_DIRECTOR.progress('compose-scene')-50)<.1&&Math.abs(+document.querySelector('[data-sd-scrub="compose-scene"]').value-50)<.1);
- await page.click('[data-story-beat-add]');
- near(await page.evaluate(()=>sec().sdBeats[0].at),50,.1);
+ assert.equal(await page.$('[data-story-beat-add]'),null);
+ const liveRuler=await page.$eval('[data-story-scrub-ruler]',n=>{const r=n.getBoundingClientRect();return{x:r.x,y:r.y,w:r.width,h:r.height};});
+ await page.mouse.click(liveRuler.x+liveRuler.w*.62,liveRuler.y+liveRuler.h/2);
+ const liveScrub=await page.evaluate(()=>({p:NAGWEB_SCROLL_DIRECTOR.progress('compose-scene'),slider:+document.querySelector('[data-sd-scrub="compose-scene"]').value}));
+ near(liveScrub.p,62,1);near(liveScrub.slider,62,1);
 
  await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);
  await page.waitForFunction(()=>document.querySelector('#composition-export').contentDocument.querySelector('[data-id="compose-child"]').style.getPropertyValue('--nw-sd-x')==='0.00px');
