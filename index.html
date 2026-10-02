@@ -15772,7 +15772,7 @@ function generateSite(p, edit, external, mobileView){
   .wordwrap{display:inline-block;white-space:nowrap}
   @media (max-width:640px){ .sc{padding:11vh 7vw} .sc:not(.free) .inner{max-width:100%} }
   @media (prefers-reduced-motion: reduce){
-    .el{opacity:1 !important;filter:none !important;clip-path:none !important}
+    .el:not([data-nw-sd-base]){opacity:1 !important;filter:none !important;clip-path:none !important}
   }${hoverCSS(p)}${elExtraCSS(p)}${modulesCSS(usedKinds, usesShader)}${lgUsed(allSecs) ? LG_CSS : ''}${p.customCSS ? '\n  ' + String(p.customCSS).replace(/<\/style/gi, '') : ''}${editCSS}${edit ? '' : responsiveCSS(Object.assign({}, p, { sections: allSecs }))}
 </style>${!edit && p.customHead ? '\n' + p.customHead : ''}
 </head>

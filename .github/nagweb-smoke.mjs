@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer-core';
 import fs from 'node:fs';
 import {runStorytellingSmoke} from './nagweb-storytelling-smoke.mjs';
+import {runCompositionSmoke} from './nagweb-composition-smoke.mjs';
 
 const feedbackSource=fs.readFileSync(new URL('../js/nagweb-feedback-v16.js',import.meta.url),'utf8');
 const directorSource=fs.readFileSync(new URL('../js/nagweb-scroll-director-v16.js',import.meta.url),'utf8');
@@ -45,6 +46,7 @@ if(!executablePath) throw new Error('No Chromium/Chrome executable found on runn
 const browserArgs=['--no-sandbox','--disable-dev-shm-usage'];
 if(process.env.NAGWEB_BROWSER_PROXY) browserArgs.push('--proxy-server='+process.env.NAGWEB_BROWSER_PROXY);
 const browser=await puppeteer.launch({headless:true,executablePath,args:browserArgs});
+try{
 const page=await browser.newPage();
 await page.setViewport({width:1440,height:900,deviceScaleFactor:1});
 const pageErrors=[];
@@ -163,6 +165,9 @@ if(workspaceState.leftToggles!==1||workspaceState.rightToggles!==1) throw new Er
 await page.click('.nw-dock-toggle.left');
 
 await runStorytellingSmoke(page);
+await runCompositionSmoke(page);
 if(pageErrors.length) throw new Error('Browser page errors:\n'+pageErrors.join('\n\n'));
 console.log('NagWeb smoke OK',state);
+}finally{
 await browser.close();
+}
