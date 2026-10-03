@@ -464,10 +464,10 @@ function labOpen(){
  labRange.value=50;lab.querySelector('[data-motion-now]').textContent='50%';lab.showModal();labFrame.srcdoc=generateSite(p,false,false,false);
 }
 lab.querySelector('[data-motion-template]').addEventListener('click',function(){if(!labDraft){labStop();labSet(.5);}});
-labFrame.addEventListener('load',function(){if(lab.open)labSet(.5);});
+labFrame.addEventListener('load',function(){if(lab.open){labSet(+labRange.value/100);labBindCanvas();}});
 document.addEventListener('click',function(ev){if(ev.target.closest('[data-motion-open]'))labOpen();});
 lab.querySelector('[data-motion-close]').addEventListener('click',function(){lab.close();});
-lab.addEventListener('close',function(){labStop();clearTimeout(labEditTimer);labFrame.srcdoc='';labScene=null;labDraft=null;labEditing=null;labForm.hidden=true;lab.querySelector('[data-motion-gallery-details]').hidden=false;lab.querySelector('[data-motion-template]').disabled=false;lab.querySelector('[data-motion-mode]').textContent='Explorar composiciones';lab.querySelector('[data-motion-insert]').hidden=false;lab.querySelector('[data-motion-insert-group]').hidden=false;});
+lab.addEventListener('close',function(){labStop();clearTimeout(labEditTimer);labFrame.srcdoc='';labFrame.style.pointerEvents='none';labFrame.tabIndex=-1;labSelected=null;labScene=null;labDraft=null;labEditing=null;labForm.hidden=true;lab.querySelector('[data-motion-gallery-details]').hidden=false;lab.querySelector('[data-motion-template]').disabled=false;lab.querySelector('[data-motion-mode]').textContent='Explorar composiciones';lab.querySelector('[data-motion-insert]').hidden=false;lab.querySelector('[data-motion-insert-group]').hidden=false;});
 labRange.addEventListener('input',function(){labStop();labSet(+labRange.value/100);});
 labPlay.addEventListener('click',function(){if(labRAF){labStop();return;}if(matchMedia('(prefers-reduced-motion: reduce)').matches){toast('Movimiento reducido activo. Podés recorrer la vista previa con el control de momento.');return;}labStarted=performance.now();labOffset=+labRange.value/100;labPlay.textContent='Ⅱ Pausar';labPlay.setAttribute('aria-pressed','true');labRAF=requestAnimationFrame(labTick);});
 function labInsert(){
@@ -490,19 +490,57 @@ function labInsertGroup(){
 }
 lab.querySelector('[data-motion-insert-group]').addEventListener('click',labInsertGroup);
 var labForm=document.createElement('section');labForm.hidden=true;labForm.className='nw-motion-body';labForm.dataset.motionEditForm='';lab.querySelector('.nw-motion-inspector').appendChild(labForm);
+var labSelected=null;
+function labSelectedElement(){return labDraft&&labDraft.elements.find(function(e){return e.id===labSelected;});}
+function labSelectElement(id){
+ labSelected=id;var e=labSelectedElement(),doc=labFrame.contentDocument;
+ if(doc)doc.querySelectorAll('[data-motion-canvas]').forEach(function(n){n.classList.toggle('nw-motion-selected',n.dataset.id===id);});
+ var name=labForm.querySelector('[data-motion-selection]');if(name)name.textContent=e?(e.name||e.type):'Seleccioná un elemento en el centro';
+ labForm.querySelectorAll('[data-motion-position]').forEach(function(n){n.disabled=!e;n.value=e?e[n.dataset.motionPosition]:'';});
+ labForm.querySelectorAll('[data-motion-content]').forEach(function(n){n.closest('.crow').style.outline=e&&labDraft.elements[+n.dataset.motionContent]===e?'1px solid var(--accent)':'';});
+}
+function labPlaceElement(e,x,y){
+ e.x=Math.round(Math.max(0,Math.min(100,x))*100)/100;e.y=Math.round(Math.max(0,Math.min(100,y))*100)/100;
+ var doc=labFrame.contentDocument,n=doc&&doc.querySelector('[data-id="'+e.id+'"]');
+ if(n){n.style.setProperty('left',e.x+'%','important');n.style.setProperty('top',e.y+'%','important');}
+ labSelectElement(e.id);
+}
+function labBindCanvas(){
+ labFrame.style.pointerEvents=labDraft?'auto':'none';labFrame.tabIndex=labDraft?0:-1;if(!labDraft)return;
+ var doc=labFrame.contentDocument,drag=null,style=doc.createElement('style');
+ style.textContent='[data-motion-canvas]{cursor:grab;touch-action:none;user-select:none}[data-motion-canvas] *{user-select:none;-webkit-user-drag:none}.nw-motion-selected{outline:2px solid #b9f36b!important;outline-offset:4px}[data-motion-canvas]:focus-visible{outline:2px solid #b9f36b}';doc.head.appendChild(style);
+ labDraft.elements.forEach(function(e){if(e.parent!==labDraft.id)return;var n=doc.querySelector('[data-id="'+e.id+'"]');if(!n)return;n.dataset.motionCanvas='';n.tabIndex=0;n.setAttribute('aria-label','Seleccionar '+(e.name||e.type));});
+ doc.addEventListener('click',function(ev){ev.preventDefault();ev.stopImmediatePropagation();},true);
+ doc.addEventListener('dragstart',function(ev){ev.preventDefault();});
+ doc.addEventListener('pointerdown',function(ev){
+  if(ev.button!==0||!ev.isPrimary)return;var n=ev.target.closest('[data-motion-canvas]');if(!n){labSelectElement(null);return;}
+  var e=labDraft.elements.find(function(e){return e.id===n.dataset.id;}),parent=n.offsetParent;if(!e||!parent)return;
+  ev.preventDefault();labStop();labSelectElement(e.id);n.focus({preventScroll:true});
+  drag={node:n,element:e,pointer:ev.pointerId,x:ev.clientX,y:ev.clientY,baseX:e.x,baseY:e.y,width:parent.clientWidth,height:parent.clientHeight};n.setPointerCapture(ev.pointerId);
+ });
+ doc.addEventListener('pointermove',function(ev){if(!drag||ev.pointerId!==drag.pointer)return;ev.preventDefault();labPlaceElement(drag.element,drag.baseX+(ev.clientX-drag.x)/drag.width*100,drag.baseY+(ev.clientY-drag.y)/drag.height*100);});
+ function finish(ev,cancel){if(!drag||ev.pointerId!==drag.pointer)return;var d=drag;drag=null;if(cancel)labPlaceElement(d.element,d.baseX,d.baseY);if(d.node.hasPointerCapture(d.pointer))d.node.releasePointerCapture(d.pointer);}
+ doc.addEventListener('pointerup',function(ev){finish(ev,false);});doc.addEventListener('pointercancel',function(ev){finish(ev,true);});doc.addEventListener('lostpointercapture',function(ev){finish(ev,true);});
+ doc.addEventListener('keydown',function(ev){
+  var n=ev.target.closest('[data-motion-canvas]');if(n&&(ev.key==='Enter'||ev.key===' ')){ev.preventDefault();labStop();labSelectElement(n.dataset.id);return;}
+  var e=labSelectedElement(),dx=ev.key==='ArrowLeft'?-1:ev.key==='ArrowRight'?1:0,dy=ev.key==='ArrowUp'?-1:ev.key==='ArrowDown'?1:0;
+  if(!e||(!dx&&!dy))return;n=doc.querySelector('[data-id="'+e.id+'"]');var p=n&&n.offsetParent;if(!p)return;ev.preventDefault();labStop();var step=ev.shiftKey?10:1;labPlaceElement(e,e.x+dx*step/p.clientWidth*100,e.y+dy*step/p.clientHeight*100);
+ });
+ labSelectElement(labSelected);
+}
 function labPreviewDraft(){
  if(!labDraft||!labEditing)return;var s=page().sections.find(function(s){return s.id===labEditing.scene;});if(!s)return;
- labScene=Object.assign({},s,{id:labDraft.id,bg:labDraft.bg,sdEnabled:false,nwMotionSource:'time',nwMotionDuration:labDraft.config.duration,nwMotionLoop:labDraft.config.loop,sdPerspective:labDraft.config.perspective,elements:labDraft.elements.map(function(e){var n=Object.assign({},e);if(n.parent===labDraft.id)n.parent='';return n;})});
+ labScene=Object.assign({},s,{id:labDraft.id,bg:labDraft.bg,layout:'free',height:100,sdEnabled:false,nwMotionSource:'time',nwMotionDuration:labDraft.config.duration,nwMotionLoop:labDraft.config.loop,sdPerspective:labDraft.config.perspective,elements:labDraft.elements.map(function(e){var n=Object.assign({},e);if(n.parent===labDraft.id)n.parent='';n.mobile=Object.assign({},e.mobile,{x:e.x,y:e.y,w:e.w});return n;})});
  labFrame.srcdoc=generateSite(Object.assign({},flattenPage(page()),{sections:[labScene]}),false,false,false);
 }
 function labEdit(id){
  if(lab.open)return;var f=findEl(id),s=f&&page().sections[f[0]],g=s&&s.elements[f[1]];if(!g||!g.nwMotionInstance)return false;
- labEditing={scene:s.id,group:g.id};labDraft={id:g.id,bg:g.bg,config:JSON.parse(JSON.stringify(g.nwMotionInstance)),elements:JSON.parse(JSON.stringify(s.elements.filter(function(e){return e!==g&&motionOwner(s,e)===g;})))};
+ labEditing={scene:s.id,group:g.id};labDraft={id:g.id,bg:g.bg,config:JSON.parse(JSON.stringify(g.nwMotionInstance)),elements:JSON.parse(JSON.stringify(s.elements.filter(function(e){return e!==g&&motionOwner(s,e)===g;})))};labSelected=null;labRange.value=50;
  lab.querySelector('[data-motion-insert]').hidden=true;lab.querySelector('[data-motion-insert-group]').hidden=true;labForm.hidden=false;lab.querySelector('[data-motion-gallery-details]').hidden=true;lab.querySelector('[data-motion-template]').disabled=true;lab.querySelector('[data-motion-mode]').textContent='Editando esta composición';
- var c=labDraft.config;labForm.innerHTML='<h3>Editar esta composición</h3><p class="hint">Los cambios se aplican al guardar. Cerrar descarta esta edición.</p>'+cRow('Animar por','<select class="csel" data-motion-config="source"><option value="time"'+(c.source!=='scroll'?' selected':'')+'>Tiempo</option><option value="scroll"'+(c.source==='scroll'?' selected':'')+'>Scroll de esta escena</option></select>')+cRow('Duración (segundos)','<input class="csel" type="number" min="0.5" max="120" step="0.5" data-motion-config="duration" value="'+c.duration+'">')+cRow('Repetir','<input type="checkbox" data-motion-config="loop"'+(c.loop!==false?' checked':'')+'>')+cRow('Perspectiva (px)','<input class="csel" type="number" min="200" max="5000" step="50" data-motion-config="perspective" value="'+c.perspective+'">')+labDraft.elements.map(function(e,i){return cRow(esc(e.name||e.type),e.type==='image'?'<select class="csel" data-motion-content="'+i+'" data-motion-content-field="assetId">'+(project.assets.images||[]).map(function(a){return '<option value="'+esc(a.id)+'"'+(a.id===e.assetId?' selected':'')+'>'+esc(a.name)+'</option>';}).join('')+'</select>':'<input class="csel" data-motion-content="'+i+'" data-motion-content-field="text" value="'+esc(e.text||'')+'">');}).join('')+'<button type="button" class="btn primary" data-motion-save>Guardar cambios en este grupo</button><p class="hint">Scroll activa el Director de esta escena. Para editar momentos individuales, guardá y seleccioná una lámina en el lienzo.</p>';
+ var c=labDraft.config;labForm.innerHTML='<h3>Editar esta composición</h3><p class="hint">Los cambios se aplican al guardar. Cerrar descarta esta edición.</p><p class="hint">Arrastrá un elemento en el centro para editar su posición base. Sus momentos se conservan.</p><p data-motion-selection>Seleccioná un elemento en el centro</p>'+cRow('Posición X (%)','<input class="csel" type="number" min="0" max="100" step="0.1" data-motion-position="x" disabled>')+cRow('Posición Y (%)','<input class="csel" type="number" min="0" max="100" step="0.1" data-motion-position="y" disabled>')+cRow('Animar por','<select class="csel" data-motion-config="source"><option value="time"'+(c.source!=='scroll'?' selected':'')+'>Tiempo</option><option value="scroll"'+(c.source==='scroll'?' selected':'')+'>Scroll de esta escena</option></select>')+cRow('Duración (segundos)','<input class="csel" type="number" min="0.5" max="120" step="0.5" data-motion-config="duration" value="'+c.duration+'">')+cRow('Repetir','<input type="checkbox" data-motion-config="loop"'+(c.loop!==false?' checked':'')+'>')+cRow('Perspectiva (px)','<input class="csel" type="number" min="200" max="5000" step="50" data-motion-config="perspective" value="'+c.perspective+'">')+labDraft.elements.map(function(e,i){return cRow(esc(e.name||e.type),e.type==='image'?'<select class="csel" data-motion-content="'+i+'" data-motion-content-field="assetId">'+(project.assets.images||[]).map(function(a){return '<option value="'+esc(a.id)+'"'+(a.id===e.assetId?' selected':'')+'>'+esc(a.name)+'</option>';}).join('')+'</select>':'<input class="csel" data-motion-content="'+i+'" data-motion-content-field="text" value="'+esc(e.text||'')+'">');}).join('')+'<button type="button" class="btn primary" data-motion-save>Guardar cambios en este grupo</button><p class="hint">Scroll activa el Director de esta escena. Para editar momentos individuales, guardá y seleccioná una lámina en el lienzo.</p>';
  lab.showModal();labPreviewDraft();return true;
 }
-labForm.addEventListener('change',function(ev){if(!labDraft)return;var t=ev.target,k=t.dataset.motionConfig;if(k){labDraft.config[k]=k==='loop'?t.checked:k==='source'?t.value:Math.max(k==='duration'?.5:200,Math.min(k==='duration'?120:5000,+t.value||(k==='duration'?8:1000)));}else if(t.dataset.motionContent!=null){var e=labDraft.elements[+t.dataset.motionContent];if(e)e[t.dataset.motionContentField]=t.value;}else return;labStop();clearTimeout(labEditTimer);labEditTimer=setTimeout(labPreviewDraft,100);});
+labForm.addEventListener('change',function(ev){if(!labDraft)return;var t=ev.target,k=t.dataset.motionConfig;if(t.dataset.motionPosition){var e=labSelectedElement();if(e&&isFinite(t.valueAsNumber)){labStop();labPlaceElement(e,t.dataset.motionPosition==='x'?t.valueAsNumber:e.x,t.dataset.motionPosition==='y'?t.valueAsNumber:e.y);}return;}if(k){labDraft.config[k]=k==='loop'?t.checked:k==='source'?t.value:Math.max(k==='duration'?.5:200,Math.min(k==='duration'?120:5000,+t.value||(k==='duration'?8:1000)));}else if(t.dataset.motionContent!=null){var e=labDraft.elements[+t.dataset.motionContent];if(e)e[t.dataset.motionContentField]=t.value;}else return;labStop();clearTimeout(labEditTimer);labEditTimer=setTimeout(labPreviewDraft,100);});
 labForm.addEventListener('click',function(ev){if(!ev.target.closest('[data-motion-save]')||!labDraft||!labEditing)return;var s=page().sections.find(function(s){return s.id===labEditing.scene;}),g=s&&s.elements.find(function(e){return e.id===labEditing.group;});if(!g){lab.close();return;}snapshot();g.nwMotionInstance=labDraft.config;var edits={};labDraft.elements.forEach(function(e){edits[e.id]=e;});s.elements=s.elements.map(function(e){return edits[e.id]||e;});if(g.nwMotionInstance.source==='scroll')s.sdEnabled=true;var id=g.id;lab.close();refresh();D.scrub(id,.35);toast('Cambios guardados en la misma composición.');});
 document.addEventListener('click',function(ev){var b=ev.target.closest('[data-motion-edit]');if(b)labEdit(b.dataset.motionEdit);});
 window.NAGWEB_MOTION_LAB={open:labOpen,insert:labInsert,insertGroup:labInsertGroup,edit:labEdit,create:focusComposition};
