@@ -33,8 +33,8 @@ function commitMomentState(e,s,at,state,patch){
  if(k)selected={element:e.id,key:k.id};
  saveProject();renderPane();D.scrub(s.id,at/100);schedulePreview();return k;
 }
-function commitBaseState(e,patch){
- snapshot();Object.keys(patch||{}).forEach(function(k){putViewValue(e,k,patch[k]);});saveProject();renderPane();schedulePreview();
+function commitBaseState(e,patch,afterSnapshot){
+ snapshot();Object.keys(patch||{}).forEach(function(k){putViewValue(e,k,patch[k]);});if(typeof afterSnapshot==='function')afterSnapshot();saveProject();renderPane();schedulePreview();
 }
 function setCanvasMode(mode){
  canvasMode=mode==='moment'?'moment':'base';saveCanvasMode();renderPane();syncCanvasTools();
@@ -335,29 +335,6 @@ pane.addEventListener('wheel',function(ev){
 pane.addEventListener('scroll',function(ev){if(ev.target&&ev.target.classList&&ev.target.classList.contains('nw-sd-scroll'))timelineUI.scrollLeft=ev.target.scrollLeft;},true);
 var timelineObserver=new MutationObserver(function(){restoreTimelineViewport();});
 timelineObserver.observe(pane,{childList:true,subtree:true});
-function handleMomentCanvasChange(d){
- if(canvasMode!=='moment'||!d||d.type!=='change'||!d.id)return false;
- var found=typeof findEl==='function'&&findEl(d.id);if(!found)return false;
- var s=page().sections[found[0]],e=s&&s.elements[found[1]];if(!s||!e||!s.sdEnabled||!M.eligible(e,s))return false;
- var at=atNow(s),state=currentMomentState(e,s,at),patch={},node,rel,rr;
- try{
-  node=preview.contentDocument&&preview.contentDocument.querySelector('.el[data-id="'+d.id+'"]');
-  rel=node&&(node.classList.contains('obj-anchor')?node.parentElement:((node.parentElement&&node.parentElement.closest('.container-box'))||node.closest('.sc')||node.closest('.sc-fixed-layer')));
-  rr=rel&&rel.getBoundingClientRect();
- }catch(_){}
- var bx=+viewValue(e,'x',50),by=+viewValue(e,'y',50),bw=Math.max(.01,+viewValue(e,'w',60)),br=+viewValue(e,'rot',0);
- if(isFinite(+d.x)&&Math.abs(+d.x-bx)>.001)patch.x=state.x+(+d.x-bx)/100*(rr&&rr.width||1000);
- if(isFinite(+d.y)&&Math.abs(+d.y-by)>.001)patch.y=state.y+(+d.y-by)/100*(rr&&rr.height||700);
- if(isFinite(+d.w)&&Math.abs(+d.w-bw)>.001)patch.scale=state.scale*(+d.w/bw);
- if(isFinite(+d.rot)&&Math.abs(+d.rot-br)>.001)patch.rotate=state.rotate+(+d.rot-br);
- if(!Object.keys(patch).length)return false;
- commitMomentState(e,s,at,state,patch);return true;
-}
-window.addEventListener('message',function(ev){
- var d=ev.data;if(ev.source!==preview.contentWindow||!d||!d.sc)return;
- if(canvasMode==='moment'&&d.type==='change'&&handleMomentCanvasChange(d)){ev.stopImmediatePropagation();if(ev.preventDefault)ev.preventDefault();}
-},true);
-
 function syncCanvasTools(){
  var doc,w;try{doc=preview.contentDocument;w=preview.contentWindow}catch(_){return}if(!doc||!doc.body||!w)return;
  doc.body.classList.toggle('nw-story-moment-mode',canvasMode==='moment');
@@ -380,9 +357,27 @@ function syncCanvasTools(){
   size.style.left=(r.right-7)+'px';size.style.top=(r.bottom-7)+'px';
   rot.style.left=(r.left+r.width/2-7)+'px';rot.style.top=(r.top-30)+'px';
  }
- function basePatch(q,patch){
-  commitBaseState(q.e,patch);
+ function basePatch(q,patch,afterSnapshot){
+  commitBaseState(q.e,patch,afterSnapshot);
  }
+ doc.addEventListener('pointerdown',function(ev){
+  if(canvasMode!=='moment'||ev.button===2||ev.target.closest('.nw-story-transform-h'))return;
+  var node=ev.target.closest&&ev.target.closest('.el[data-id]');if(!node||!node.closest('.nw-sd-active')||node.classList.contains('sc-locked'))return;
+  var id=node.dataset.id,found=typeof findEl==='function'&&findEl(id);if(!found)return;
+  var s=page().sections[found[0]],e=s&&s.elements[found[1]];if(!s||!s.sdEnabled||!M.eligible(e,s))return;
+  if(ev.shiftKey)return; // conserva selección múltiple
+  ev.preventDefault();ev.stopImmediatePropagation();
+  if(!(selection.length===1&&selection[0]===id)){selectElement(id,false);curSec=found[0];curEl=found[1];renderPane();syncSelectionToFrame();}
+  var at=atNow(s),state=currentMomentState(e,s,at),sx=ev.clientX,sy=ev.clientY,moved=false,lastX=state.x,lastY=state.y;
+  function mv(e2){
+   var dx=e2.clientX-sx,dy=e2.clientY-sy;if(Math.abs(dx)+Math.abs(dy)>2)moved=true;
+   lastX=state.x+dx;lastY=state.y+dy;
+   node.style.setProperty('--nw-sd-x',lastX.toFixed(2)+'px');node.style.setProperty('--nw-sd-y',lastY.toFixed(2)+'px');draw();
+  }
+  function up(){w.removeEventListener('pointermove',mv);w.removeEventListener('pointerup',up);w.removeEventListener('pointercancel',up);if(moved)commitMomentState(e,s,at,state,{x:lastX,y:lastY});}
+  w.addEventListener('pointermove',mv);w.addEventListener('pointerup',up);w.addEventListener('pointercancel',up);
+ },true);
+
  size.addEventListener('pointerdown',function(ev){
   var q=target();if(!q)return;ev.preventDefault();ev.stopPropagation();
   var r=q.n.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dist0=Math.max(12,Math.hypot(ev.clientX-cx,ev.clientY-cy));
@@ -397,11 +392,12 @@ function syncCanvasTools(){
    if(canvasMode==='moment')commitMomentState(q.e,q.s,at,state,{scale:state.scale*last});
    else{
     var patch={w:Math.round(Math.max(5,Math.min(100,bw*last))*10)/10};
+    var scaleRuns=null;
     if(proportional&&text){
      var baseSize=+viewValue(q.e,'customSize',0);patch.customSize=Math.round((baseSize>0?baseSize*last:font0*last)*10)/10;
-     if(q.e.richMode&&Array.isArray(q.e.runs))q.e.runs.forEach(function(run){if(+run.customSize)run.customSize=Math.round(run.customSize*last*10)/10;});
+     if(q.e.richMode&&Array.isArray(q.e.runs))scaleRuns=function(){q.e.runs.forEach(function(run){if(+run.customSize)run.customSize=Math.round(run.customSize*last*10)/10;});};
     }
-    basePatch(q,patch);
+    basePatch(q,patch,scaleRuns);
    }
   }
   w.addEventListener('pointermove',mv);w.addEventListener('pointerup',up);
