@@ -77,9 +77,10 @@ export async function runStorytellingSmoke(page){
  assert.ok(compact.ruler<=21,'Regla demasiado alta: '+compact.ruler);
  assert.equal(compact.footer,false);
 
- // Clic en cualquier pista selecciona ese elemento y recorre la escena en un solo gesto.
+ // Clic en la zona libre de una pista selecciona ese elemento y recorre la escena.
+ // La barra violeta del recorrido simple conserva su gesto de arrastre.
  const oldTrack=await page.$eval('[data-story-track="story-old"]',n=>{const r=n.getBoundingClientRect();return{x:r.x,y:r.y,w:r.width,h:r.height};});
- await page.mouse.click(oldTrack.x+oldTrack.w*.42,oldTrack.y+oldTrack.h/2);
+ await page.mouse.click(oldTrack.x+oldTrack.w*.10,oldTrack.y+oldTrack.h/2);
  await page.waitForFunction(()=>selection.length===1&&selection[0]==='story-old');
  const trackDirect=await page.evaluate(()=>({
   selection:selection.slice(),
@@ -87,7 +88,7 @@ export async function runStorytellingSmoke(page){
   context:document.querySelector('.nw-sd-timeline-context strong')?.textContent
  }));
  assert.deepEqual(trackDirect.selection,['story-old']);
- assert.ok(Math.abs(trackDirect.progress-42)<1);
+ assert.ok(Math.abs(trackDirect.progress-10)<1);
  assert.equal(trackDirect.context,'Anterior');
 
  // Restaurar el elemento principal para continuar las pruebas del fixture.
