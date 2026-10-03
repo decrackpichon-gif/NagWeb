@@ -188,7 +188,7 @@ export async function runStorytellingSmoke(page){
  assert.equal(added.length,3);assert.ok(Math.abs(added[1].at-25)<1);
  const key=added[1].id;
  assert.equal(await page.$eval('[data-story-inspector]',n=>n.dataset.storyInspector),key);
- const inspectorLanguage=await page.$eval('[data-story-inspector]',n=>n.innerText);
+ const inspectorLanguage=await page.$eval('[data-story-inspector]',n=>n.textContent);
  assert.ok(inspectorLanguage.includes('Cómo está el elemento en este momento'));
  assert.ok(inspectorLanguage.includes('Cómo cambia hasta el próximo momento'));
  assert.ok(inspectorLanguage.includes('Ritmo del cambio'));
