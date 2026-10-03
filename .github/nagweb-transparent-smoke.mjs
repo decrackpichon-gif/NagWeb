@@ -16,7 +16,9 @@ export async function runTransparentSmoke(page){
      const f=document.createElement('iframe');f.id='alpha-export';
      f.style.cssText=`border:0;width:${viewport.width}px;height:${viewport.height}px`;
      let html=generateSite(Object.assign({},flattenPage(page()),{sections}),false,false,viewport.width<500);
-     html=html.replace('</head>','<style>body{background:#123456}[data-id="alpha-0"]{opacity:.7}[data-id="alpha-1"]{opacity:.6}</style></head>');
+     // Scene colors normally paint the global backdrop. Author local backgrounds
+     // explicitly here, as custom CSS can, to verify their alpha survives layering.
+     html=html.replace('</head>','<style>body{background:#123456}.sc[data-id^="alpha-"]{background:var(--bg)}[data-id="alpha-0"]{opacity:.7}[data-id="alpha-1"]{opacity:.6}</style></head>');
      f.srcdoc=html;document.body.append(f);
     },{viewport,type});
     await page.waitForFunction(()=>document.getElementById('alpha-export')?.contentWindow?.__NAG_SCENE_TRANSITIONS);
