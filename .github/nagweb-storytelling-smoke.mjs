@@ -352,6 +352,12 @@ export async function runStorytellingSmoke(page){
 
  // Robustez: una escena larga con cientos de momentos debe seguir siendo editable
  // y sobrevivir a una recarga real junto con el estado útil de la Timeline.
+ // Guardamos el estado previo para que este stress test no contamine los módulos siguientes.
+ const preStress=await page.evaluate(()=>({
+  project:JSON.stringify(project),
+  timeline:localStorage.getItem('nagweb.story.timeline.ui.v1'),
+  canvas:localStorage.getItem('nagweb.story.canvas.mode.v1')
+ }));
  const stress=await page.evaluate(async()=>{
   const s=sec();s.id='story-stress';s.layout='free';s.sdEnabled=true;s.sdEase='linear';s.sdLength=1200;s.stType='cut';s.elements=[];
   for(let i=0;i<16;i++){
@@ -443,6 +449,28 @@ export async function runStorytellingSmoke(page){
  assert.deepEqual(reloaded.importedIds,['key-0','key-1','key-2']);assert.equal(reloaded.importedX,77);
  assert.equal(reloaded.timeline.zoom,4);assert.equal(reloaded.timeline.docked,true);assert.equal(reloaded.canvas,'moment');assert.equal(reloaded.docked,true);
  assert.ok(reloaded.scrollLeft>100);assert.ok(Math.abs(reloaded.saved.scrollLeft-reloaded.scrollLeft)<2);
+
+ // Restaurar exactamente el estado con el que entró el stress test.
+ await page.evaluate(pre=>{
+  localStorage.setItem(STORE_KEY,pre.project);
+  if(pre.timeline==null)localStorage.removeItem('nagweb.story.timeline.ui.v1');else localStorage.setItem('nagweb.story.timeline.ui.v1',pre.timeline);
+  if(pre.canvas==null)localStorage.removeItem('nagweb.story.canvas.mode.v1');else localStorage.setItem('nagweb.story.canvas.mode.v1',pre.canvas);
+ },preStress);
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.waitForFunction(()=>window.NAGWEB_STORY_EDITOR&&window.NAGWEB_STORY_TIMELINE_UI&&typeof project!=='undefined'&&project.pages?.length);
+ const restored=await page.evaluate(()=>({
+  timeline:NAGWEB_STORY_TIMELINE_UI.state(),
+  canvas:NAGWEB_STORY_EDITOR.canvasMode(),
+  project:JSON.stringify(project)
+ }));
+ assert.equal(restored.project,preStress.project);
+ assert.equal(restored.canvas,preStress.canvas==='moment'?'moment':'base');
+ if(preStress.timeline){
+  const old=JSON.parse(preStress.timeline);
+  assert.equal(restored.timeline.zoom,old.zoom);
+  assert.equal(restored.timeline.docked,old.docked);
+  assert.equal(restored.timeline.minimized,old.minimized);
+ }
 
  console.log('Storytelling: modelo, compatibilidad, interpolación, persistencia y runtime exportado OK');
 }
