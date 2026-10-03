@@ -486,6 +486,7 @@ export async function runStorytellingSmoke(page){
  await page.evaluate(()=>{
   curPage=0;curSec=0;curEl=0;curPane='elements';selection=[sec().elements[0].id];secFocus=false;
   renderPane();renderPreview();
+  NAGWEB_STORY_TIMELINE_UI.fit();
   if(!NAGWEB_STORY_TIMELINE_UI.state().docked){
    const b=document.querySelector('[data-story-tl-dock]');if(b)b.click();
   }
