@@ -12,6 +12,7 @@ import {runMotionLabSmoke} from './nagweb-motion-lab-smoke.mjs';
 import {runTimeSmoke} from './nagweb-time-smoke.mjs';
 import {runMotionGroupSmoke} from './nagweb-motion-group-smoke.mjs';
 import {runMotionCanvasSmoke} from './nagweb-motion-canvas-smoke.mjs';
+import {runMotionPrepareSmoke} from './nagweb-motion-prepare-smoke.mjs';
 
 const feedbackSource=fs.readFileSync(new URL('../js/nagweb-feedback-v16.js',import.meta.url),'utf8');
 const directorSource=fs.readFileSync(new URL('../js/nagweb-scroll-director-v16.js',import.meta.url),'utf8');
@@ -201,6 +202,7 @@ await runMotionLabSmoke(page);
 await runTimeSmoke(page);
 await runMotionGroupSmoke(page);
 await runMotionCanvasSmoke(page);
+await runMotionPrepareSmoke(page);
 await runStorytellingSmoke(page);
 await runCompositionSmoke(page);
 await runTransparentSmoke(page);

@@ -120,7 +120,7 @@ Esta etapa reorganiza la interfaz existente. La línea de tiempo de momentos en 
 
 Al reabrir una composición, sus miembros directos pueden seleccionarse y arrastrarse en el panel central. El inspector indica el elemento seleccionado y permite ajustar X/Y en porcentaje; las flechas mueven un píxel y Mayús diez. La edición modifica la posición base (0–100%), conservando sus keyframes y ajustes móviles. El preview muestra esa posición base también cuando el panel es estrecho.
 
-El arrastre pausa la reproducción. Cancelar un gesto restaura su posición inicial; cerrar descarta el borrador completo. Guardar conserva IDs y grupo, persiste los cambios y admite deshacer/rehacer. Las recargas de contenido mantienen selección y momento de preview. La galería conserva su vista previa sin edición. La edición de momentos dentro de Motion Lab sigue pendiente.
+El arrastre pausa la reproducción. Cancelar un gesto restaura su posición inicial; cerrar descarta el borrador completo. Guardar conserva IDs y grupo, persiste los cambios y admite deshacer/rehacer. Las recargas de contenido mantienen selección y momento de preview. La galería utiliza ahora el mismo borrador editable antes de insertar. La edición de momentos dentro de Motion Lab sigue pendiente.
 
 `.github/nagweb-motion-canvas-smoke.mjs` verifica arrastre de mouse real, selección, cancelación de gesto, teclado, controles numéricos, momento al recargar, cierre sin guardar, persistencia, historial y conservación de keyframes.
 
@@ -137,3 +137,12 @@ El cambio pausa la reproducción y permanece en el borrador hasta guardar. Cance
 El tirador superior gira el elemento alrededor de su centro, con ajuste cada 15° al mantener Mayús. **Ángulo (°)** permite un valor preciso; las flechas sobre el tirador giran 1° (Mayús: 15°). Los ángulos se normalizan entre −180° y 180°. El giro modifica `rot` del diseño base y conserva las rotaciones, inclinaciones y demás valores de los keyframes.
 
 Los tiradores acompañan el recorrido de preview. Cancelar un gesto restaura el giro inicial, cerrar descarta el borrador y guardar conserva IDs y configuración móvil. Las pruebas del lienzo verifican arco de mouse real, ajuste con Mayús, matriz de rotación visible, centro fijo, cancelación, teclado, edición numérica, recarga, reapertura, persistencia y deshacer/rehacer.
+
+
+## Motion Lab — preparar antes de insertar
+
+Abrir Motion Lab permite personalizar la composición desde la biblioteca, con preview y los mismos controles usados al reabrir un grupo: textos, imágenes, posición, ancho, giro, fuente, duración, repetición y perspectiva. Los recursos de ejemplo y los cambios quedan en un borrador temporal; el proyecto, su almacenamiento y su historial no cambian hasta insertar. Cerrar descarta la preparación.
+
+**Insertar en esta escena** y **Como escena nueva** consumen los valores preparados. La fuente Scroll activa el Director del destino, mientras Tiempo conserva la independencia de la escena anfitriona. La reapertura de un grupo mantiene **Guardar cambios en este grupo**. El banco sigue contando con una sola composición y la edición de momentos en la ventana está pendiente.
+
+`.github/nagweb-motion-prepare-smoke.mjs` verifica personalización previa con mouse y controles, preview, cancelación sin escrituras, inserción de grupo/escena con los valores elegidos, fuente, reapertura e historial.
