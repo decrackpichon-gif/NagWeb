@@ -67,10 +67,6 @@ function selectKey(id,key,render){
  selectElement(id,false);selected={element:id,key:key};D.scrub(sec().id,k.at/100);
  if(render!==false){renderPane();var b=pane.querySelector('[data-sd-key="'+key+'"]');if(b)b.focus({preventScroll:true});}
 }
-function trackClick(id,pct){
- pct=M.clamp(M.number(pct,0),0,100);
- selectElement(id,false);selected=null;D.scrub(sec().id,pct/100);renderPane();restoreTimelineViewport();
-}
 function bounds(list,index){return[index?list[index-1].at+.1:0,index<list.length-1?list[index+1].at-.1:100];}
 function moveValue(list,index,at){var b=bounds(list,index);return Math.round(M.clamp(+at,b[0],b[1])*10)/10;}
 function beats(s){
@@ -202,7 +198,7 @@ function timeline(s,val){
  var rows=list.map(function(e){
   var ks=frames(e),use=active(e),a=use?ks[0].at:M.clamp(M.number(e.sdStart,0),0,100),b=use?ks[ks.length-1].at:M.clamp(M.number(e.sdEnd,82),a,100);
   var name=esc(e.name||e.label||e.text||e.type),isSelected=selection.indexOf(e.id)>=0,mode=use?(ks.length+' momento'+(ks.length===1?'':'s')):'recorrido simple';
-  return '<div class="nw-sd-trow'+(isSelected?' is-selected':'')+'" data-sd-row="'+e.id+'"><button type="button" class="nw-sd-tname" data-story-select="'+e.id+'" title="'+name+' · '+mode+'"><span>'+name+'</span><small>'+mode+'</small></button><div class="nw-sd-ttrack" data-story-track="'+e.id+'" title="Clic: seleccionar y recorrer · Doble clic: guardar momento"><i class="nw-sd-playhead"></i><i class="nw-sd-tbar" '+(use?'':'data-sd-bar="1"')+' style="left:'+a+'%;width:'+Math.max(.1,b-a)+'%">'+(use?'':'<button type="button" class="nw-sd-thandle start" data-sd-edge="start" aria-label="Mover inicio"></button><button type="button" class="nw-sd-thandle end" data-sd-edge="end" aria-label="Mover fin"></button>')+'</i>'+ (use?ks.map(function(k,i){
+  return '<div class="nw-sd-trow'+(isSelected?' is-selected':'')+'" data-sd-row="'+e.id+'"><button type="button" class="nw-sd-tname" data-story-select="'+e.id+'" title="'+name+' · '+mode+'"><span>'+name+'</span><small>'+mode+'</small></button><div class="nw-sd-ttrack" data-story-track="'+e.id+'" title="Clic: recorrer la escena · Doble clic: guardar momento"><i class="nw-sd-playhead"></i><i class="nw-sd-tbar" '+(use?'':'data-sd-bar="1"')+' style="left:'+a+'%;width:'+Math.max(.1,b-a)+'%">'+(use?'':'<button type="button" class="nw-sd-thandle start" data-sd-edge="start" aria-label="Mover inicio"></button><button type="button" class="nw-sd-thandle end" data-sd-edge="end" aria-label="Mover fin"></button>')+'</i>'+ (use?ks.map(function(k,i){
    var prev=ks[i-1],hold=prev&&Object.keys(M.properties).every(function(p){return prev[p]===k[p];});
    return (hold?'<i class="nw-sd-hold" title="Permanencia" style="left:'+prev.at+'%;width:'+(k.at-prev.at)+'%"></i>':'')+'<button type="button" class="nw-sd-key'+(selected&&selected.element===e.id&&selected.key===k.id?' is-selected':'')+'" data-sd-key="'+k.id+'" style="left:'+k.at+'%" aria-label="Momento '+k.at+'% de '+name+'" aria-pressed="'+!!(selected&&selected.element===e.id&&selected.key===k.id)+'" title="'+k.at+'% · '+M.easings[k.ease]+'"></button>';
   }).join(''):'')+'</div></div>';
@@ -248,9 +244,7 @@ pane.addEventListener('click',function(ev){
  var scrubSurface=ev.target.closest&&ev.target.closest('[data-story-scrub-ruler],[data-story-track]');
  if(scrubSurface&&!ev.target.closest('[data-sd-key],[data-sd-edge]')){
   var rr=scrubSurface.getBoundingClientRect(),pct=M.clamp((ev.clientX-rr.left)/Math.max(1,rr.width),0,1);
-  var trackId=scrubSurface.dataset&&scrubSurface.dataset.storyTrack;
-  if(trackId)trackClick(trackId,pct*100);
-  else D.scrub(sec().id,pct);
+  D.scrub(sec().id,pct);
   return;
  }
  var dockBtn=ev.target.closest('[data-story-tl-dock]');
@@ -428,5 +422,5 @@ function syncCanvasTools(){
 preview.addEventListener('load',function(){setTimeout(syncCanvasTools,120);});
 setTimeout(syncCanvasTools,250);
 window.NAGWEB_STORY_TIMELINE_UI={version:'1.1',markersVisible:false,directScrub:true,state:function(){return Object.assign({},timelineUI)},setZoom:function(z){timelineUI.zoom=Math.max(1,Math.min(6,+z||1));saveTimelineUI();renderPane();restoreTimelineViewport();},fit:function(){timelineUI.zoom=1;timelineUI.scrollLeft=0;saveTimelineUI();renderPane();restoreTimelineViewport();}};
-window.NAGWEB_STORY_EDITOR={timeline:timeline,panel:panel,transport:transport,active:active,frames:frames,add:add,update:update,remove:remove,select:selectKey,trackClick:trackClick,beats:beats,beatAdd:beatAdd,beatUpdate:beatUpdate,beatRemove:beatRemove,hold:hold,stagger:stagger,staggerPanel:staggerPanel,preset:preset,presets:presets,canvasMode:function(){return canvasMode},setCanvasMode:setCanvasMode,canvasEdit:function(id,patch,at){var e=element(id),s=sec();if(!e)return false;at=at==null?atNow(s):at;return commitMomentState(e,s,at,currentMomentState(e,s,at),patch);}};
+window.NAGWEB_STORY_EDITOR={timeline:timeline,panel:panel,transport:transport,active:active,frames:frames,add:add,update:update,remove:remove,select:selectKey,beats:beats,beatAdd:beatAdd,beatUpdate:beatUpdate,beatRemove:beatRemove,hold:hold,stagger:stagger,staggerPanel:staggerPanel,preset:preset,presets:presets,canvasMode:function(){return canvasMode},setCanvasMode:setCanvasMode,canvasEdit:function(id,patch,at){var e=element(id),s=sec();if(!e)return false;at=at==null?atNow(s):at;return commitMomentState(e,s,at,currentMomentState(e,s,at),patch);}};
 })();
