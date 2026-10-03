@@ -162,3 +162,12 @@ La biblioteca suma **Órbita suave** junto a **Iso Focus**. Es una composición 
 Cambiar de miniatura actualiza preview, título y controles. Cada opción conserva su propio borrador, selección y momento durante la sesión de Motion Lab; cerrar descarta las preparaciones. Insertar agrega solamente el grupo/escena y los recursos de la opción elegida. Reabrir un grupo identifica su plantilla y mantiene la edición sobre esa instancia. Los nombres de grupo y el momento seleccionado se adaptan a la composición.
 
 `.github/nagweb-motion-bank-smoke.mjs` verifica ciclo sin salto, diferencias de pose, alternancia sin pérdida de borradores ni escrituras al proyecto, inserción sin recursos de opciones descartadas, IDs, reapertura, historial, exportación y biblioteca móvil.
+
+
+## Biblioteca Motion Lab — Túnel de láminas
+
+La tercera composición aproxima tarjetas desde el fondo, con fases escalonadas, inclinaciones y fundidos. El ciclo dura inicialmente doce segundos y utiliza perspectiva de 1200 px. El retorno al fondo ocurre con opacidad cero para evitar un salto visible; las poses y visibilidad de inicio y fin coinciden. La geometría base presenta las tarjetas ligeramente desplazadas.
+
+El mismo runtime evalúa los momentos y, únicamente para esta plantilla, ordena los elementos animados por profundidad para mantener delante la tarjeta más cercana. El alcance funciona en preview, reapertura del grupo y exportación, y respeta movimiento reducido. No se agrega otro reloj o interpolador. La biblioteca genera las miniaturas desde su catálogo y conserva borradores independientes para las tres opciones.
+
+`.github/nagweb-motion-tunnel-smoke.mjs` verifica el cierre del ciclo, retorno invisible, capas por profundidad mediante un solapamiento real, preparación, inserción sin activar el Director, reapertura, historial, exportación y movimiento reducido.
