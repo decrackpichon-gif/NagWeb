@@ -54,48 +54,50 @@ export async function runStorytellingSmoke(page){
  assert.equal(await page.evaluate(()=>NAGWEB_STORY_EDITOR.canvasMode()),'moment');
  await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('story-scene',.5));
  let previewHandle=await page.$('#preview'),previewFrame=await previewHandle.contentFrame();
- const moveMetric=await previewFrame.evaluate(()=>{
-  const n=document.querySelector('[data-id="story-text"]'),rel=(n.parentElement&&n.parentElement.closest('.container-box'))||n.closest('.sc');
-  return{width:rel.getBoundingClientRect().width,handles:[...document.querySelectorAll('.nw-story-transform-h')].map(h=>getComputedStyle(h).display)};
- });
- assert.ok(moveMetric.handles.every(x=>x!=='none'));
- await previewFrame.evaluate(()=>parent.postMessage({sc:true,type:'change',id:'story-text',x:25,y:30,w:60,rot:0},'*'));
+ const moveMetric=await previewFrame.evaluate(()=>({handles:[...document.querySelectorAll('.nw-story-transform-h')].map(h=>getComputedStyle(h).display)}));
+ assert.ok(moveMetric.handles.length===2&&moveMetric.handles.every(x=>x!=='none'));
+ let storyNode=await previewFrame.$('[data-id="story-text"]'),storyBox=await storyNode.boundingBox();
+ await page.mouse.move(storyBox.x+storyBox.width/2,storyBox.y+storyBox.height/2);
+ await page.mouse.down();await page.mouse.move(storyBox.x+storyBox.width/2+50,storyBox.y+storyBox.height/2,{steps:5});await page.mouse.up();
  await page.waitForFunction(()=>sec().elements[0].sdKeyframes.some(k=>Math.abs(k.at-50)<.11));
  let momentEdit=await page.evaluate(()=>({baseX:sec().elements[0].x,frames:NAGWEB_STORY_EDITOR.frames(sec().elements[0])}));
  assert.equal(momentEdit.baseX,20);
  assert.equal(momentEdit.frames.find(k=>k.at===0).x,0);
  assert.equal(momentEdit.frames.find(k=>k.at===100).x,200);
- near(momentEdit.frames.find(k=>Math.abs(k.at-50)<.11).x,100+moveMetric.width*.05,1);
+ near(momentEdit.frames.find(k=>Math.abs(k.at-50)<.11).x,150,2);
 
  // Editar un keyframe existente cambia solo ese punto, no los vecinos.
  await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('story-scene',0));
  previewHandle=await page.$('#preview');previewFrame=await previewHandle.contentFrame();
- const width0=await previewFrame.evaluate(()=>{const n=document.querySelector('[data-id="story-text"]'),rel=(n.parentElement&&n.parentElement.closest('.container-box'))||n.closest('.sc');return rel.getBoundingClientRect().width;});
- await previewFrame.evaluate(()=>parent.postMessage({sc:true,type:'change',id:'story-text',x:22,y:30,w:60,rot:0},'*'));
+ storyNode=await previewFrame.$('[data-id="story-text"]');storyBox=await storyNode.boundingBox();
+ await page.mouse.move(storyBox.x+storyBox.width/2,storyBox.y+storyBox.height/2);
+ await page.mouse.down();await page.mouse.move(storyBox.x+storyBox.width/2+20,storyBox.y+storyBox.height/2+15,{steps:4});await page.mouse.up();
  await page.waitForFunction(()=>NAGWEB_STORY_EDITOR.frames(sec().elements[0]).find(k=>k.at===0).x>0);
  const isolated=await page.evaluate(()=>NAGWEB_STORY_EDITOR.frames(sec().elements[0]));
- near(isolated.find(k=>k.at===0).x,width0*.02,1);
+ near(isolated.find(k=>k.at===0).x,20,2);near(isolated.find(k=>k.at===0).y,15,2);
  assert.equal(isolated.find(k=>k.at===100).x,200);
  assert.ok(isolated.some(k=>Math.abs(k.at-50)<.11));
 
- // En Diseño base el mismo gesto cambia la geometría base y conserva los keyframes.
+ // En Diseño base el drag vuelve a modificar la geometría general, sin tocar keyframes.
  await page.click('[data-story-canvas-mode="base"]');
  const framesBeforeBase=await page.evaluate(()=>JSON.stringify(NAGWEB_STORY_EDITOR.frames(sec().elements[0])));
  previewHandle=await page.$('#preview');previewFrame=await previewHandle.contentFrame();
- await previewFrame.evaluate(()=>parent.postMessage({sc:true,type:'change',id:'story-text',x:30,y:30,w:60,rot:0},'*'));
- await page.waitForFunction(()=>sec().elements[0].x===30);
+ storyNode=await previewFrame.$('[data-id="story-text"]');storyBox=await storyNode.boundingBox();
+ const sceneWidth=await previewFrame.$eval('[data-id="story-scene"]',n=>n.getBoundingClientRect().width);
+ await page.mouse.move(storyBox.x+storyBox.width/2,storyBox.y+storyBox.height/2);
+ await page.mouse.down();await page.mouse.move(storyBox.x+storyBox.width/2+sceneWidth*.1,storyBox.y+storyBox.height/2,{steps:5});await page.mouse.up();
+ await page.waitForFunction(()=>sec().elements[0].x>=29);
  assert.equal(await page.evaluate(()=>JSON.stringify(NAGWEB_STORY_EDITOR.frames(sec().elements[0]))),framesBeforeBase);
 
  // Alt+Shift + handle de tamaño escala proporcionalmente texto y caja en Diseño base.
  await page.evaluate(()=>{sec().elements[0].x=20;sec().elements[0].w=60;sec().elements[0].rot=0;sec().elements[0].customSize=0;renderPane();renderPreview();});
  await page.waitForFunction(()=>document.querySelector('#preview')?.contentDocument?.querySelector('.nw-story-transform-h.size'));
  previewHandle=await page.$('#preview');previewFrame=await previewHandle.contentFrame();
- await previewFrame.evaluate(()=>{
-  const h=document.querySelector('.nw-story-transform-h.size'),hr=h.getBoundingClientRect();
-  h.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:hr.left+7,clientY:hr.top+7,altKey:true,shiftKey:true,pointerId:41}));
-  window.dispatchEvent(new PointerEvent('pointermove',{clientX:hr.left+70,clientY:hr.top+70,altKey:true,shiftKey:true,pointerId:41}));
-  window.dispatchEvent(new PointerEvent('pointerup',{clientX:hr.left+70,clientY:hr.top+70,altKey:true,shiftKey:true,pointerId:41}));
- });
+ const sizeHandle=await previewFrame.$('.nw-story-transform-h.size'),sizeBox=await sizeHandle.boundingBox();
+ await page.keyboard.down('Alt');await page.keyboard.down('Shift');
+ await page.mouse.move(sizeBox.x+sizeBox.width/2,sizeBox.y+sizeBox.height/2);await page.mouse.down();
+ await page.mouse.move(sizeBox.x+sizeBox.width/2+70,sizeBox.y+sizeBox.height/2+70,{steps:5});await page.mouse.up();
+ await page.keyboard.up('Shift');await page.keyboard.up('Alt');
  await page.waitForFunction(()=>sec().elements[0].w>60&&sec().elements[0].customSize>0);
  const proportional=await page.evaluate(()=>({w:sec().elements[0].w,size:sec().elements[0].customSize,frames:JSON.stringify(NAGWEB_STORY_EDITOR.frames(sec().elements[0]))}));
  assert.ok(proportional.w>60&&proportional.size>0);
