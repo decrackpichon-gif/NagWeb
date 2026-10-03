@@ -279,7 +279,7 @@ function rt(DATA,createModel){
   }
   states[cfg.id]={set:function(p){manual=model.clamp(+p||0,0,1);paint();},live:function(){manual=null;if(cfg.time){elapsed=0;previous=performance.now();clockStart();}paint();},pause:function(){manual=last;paint();},progress:function(){return last;},update:function(c){var q=els.find(function(q){return q.c.id===c.id;});if(q){q.c=c;paint();}}};
   if(cfg.time)clockResets.push(function(){previous=performance.now();});
-  if(cfg.time)clocks.push(function(t){var dt=Math.max(0,t-previous);previous=t;if(document.hidden||motion.matches||manual!=null||(!cfg.loop&&elapsed>=cfg.duration))return false;elapsed+=dt;paint();return cfg.loop||elapsed<cfg.duration;});
+  if(cfg.time)clocks.push(function(t){var dt=Math.max(0,t-previous);previous=t;if(motion.matches){paint();return false;}if(document.hidden||manual!=null||(!cfg.loop&&elapsed>=cfg.duration))return false;elapsed+=dt;paint();return cfg.loop||elapsed<cfg.duration;});
   paints.push(paint);paint();
  }
  (DATA||[]).forEach(setup);
