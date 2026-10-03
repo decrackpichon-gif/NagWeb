@@ -180,3 +180,12 @@ Los títulos, párrafos y etiquetas de texto simple se editan sobre el lienzo me
 El inspector refleja cada cambio del borrador. Cambiar de plantilla conserva la edición; insertar o guardar confirma también una edición activa. Cerrar descarta el borrador completo. Guardar mantiene IDs, geometría y momentos, sobre la misma instancia. Los textos con estilos por fragmentos conservan por ahora su flujo existente en el editor principal.
 
 `.github/nagweb-motion-text-smoke.mjs` verifica escritura real con mouse/teclado, confirmación y cancelación, sincronización, borradores sin escritura al proyecto, inserción, reapertura, guardado sin duplicar, historial y HTML exportado.
+
+
+## Imágenes propias en Motion Lab
+
+Cada lámina ofrece “Cargar imagen…” tanto al preparar una composición como al editar una instancia. El archivo se lee y valida en el navegador y se previsualiza en el borrador; no se modifica el proyecto hasta insertar o guardar. Reemplazar la imagen conserva el elemento, su geometría, configuración móvil y momentos. Un archivo que no puede decodificarse mantiene la imagen previa.
+
+Las cargas pertenecen a la sesión y al borrador que las inició. Cambiar de plantilla conserva sus recursos; cerrar descarta las cargas, incluso si terminan después. Insertar/guardar se deshabilita mientras carga la opción activa. Solo se incorporan los recursos nuevos utilizados por la composición final; las alternativas reemplazadas no se agregan al proyecto. El historial incluye elementos y recursos.
+
+`.github/nagweb-motion-upload-smoke.mjs` verifica el selector real de archivos, carga y preview, archivo inválido, cancelación, borradores por plantilla, recursos utilizados, IDs/geometría/momentos, guardado en la misma instancia, historial, cargas tardías y renderización del HTML exportado.
