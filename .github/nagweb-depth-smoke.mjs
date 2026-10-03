@@ -60,9 +60,13 @@ export async function runDepthSmoke(page){
   await page.evaluate(()=>{selection=['depth-text'];curEl=0;renderPane();});
   await page.waitForFunction(()=>document.getElementById('preview')?.contentDocument?.querySelector('[data-id="depth-text"]')?.style.getPropertyValue('--nw-sd-z')==='240.00px');
   await page.click('[data-sd-play="depth-scene"]');
-  await page.waitForFunction(()=>NAGWEB_SCROLL_DIRECTOR.progress('depth-scene')>5);
+  await page.waitForFunction(()=>{
+   const p=NAGWEB_SCROLL_DIRECTOR.progress('depth-scene'),n=document.getElementById('preview')?.contentDocument?.querySelector('[data-id="depth-text"]');
+   const z=parseFloat(n?.style.getPropertyValue('--nw-sd-z'));
+   return p>5&&p<90&&Math.abs(z-p*2.4)<2;
+  });
   const playing=await page.evaluate(()=>({p:NAGWEB_SCROLL_DIRECTOR.progress('depth-scene'),z:parseFloat(document.getElementById('preview').contentDocument.querySelector('[data-id="depth-text"]').style.getPropertyValue('--nw-sd-z'))}));
-  assert.ok(Math.abs(playing.z-playing.p*2.4)<3,'Playback must use the depth evaluator');
+  assert.ok(Math.abs(playing.z-playing.p*2.4)<3,'Playback must use the depth evaluator: '+JSON.stringify(playing));
   await page.evaluate(()=>{
    NAGWEB_SCROLL_DIRECTOR.live('depth-scene');
    const w=document.getElementById('preview').contentWindow,n=w.document.querySelector('[data-id="depth-scene"]');
