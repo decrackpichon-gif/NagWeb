@@ -428,6 +428,49 @@ function syncCanvasTools(){
 }
 preview.addEventListener('load',function(){setTimeout(syncCanvasTools,120);});
 setTimeout(syncCanvasTools,250);
-window.NAGWEB_STORY_TIMELINE_UI={version:'1.1',markersVisible:false,directScrub:true,state:function(){return Object.assign({},timelineUI)},setZoom:function(z){timelineUI.zoom=Math.max(1,Math.min(6,+z||1));saveTimelineUI();renderPane();restoreTimelineViewport();},fit:function(){timelineUI.zoom=1;timelineUI.scrollLeft=0;saveTimelineUI();renderPane();restoreTimelineViewport();}};
+window.NAGWEB_STORY_TIMELINE_UI={version:'1.1',markersVisible:false,directScrub:true,state:function(){return Object.assign({},timelineUI)},setState:function(state){Object.assign(timelineUI,state);saveTimelineUI();renderPane();},setZoom:function(z){timelineUI.zoom=Math.max(1,Math.min(6,+z||1));saveTimelineUI();renderPane();restoreTimelineViewport();},fit:function(){timelineUI.zoom=1;timelineUI.scrollLeft=0;saveTimelineUI();renderPane();restoreTimelineViewport();}};
 window.NAGWEB_STORY_EDITOR={timeline:timeline,panel:panel,transport:transport,active:active,frames:frames,add:add,update:update,remove:remove,select:selectKey,beats:beats,beatAdd:beatAdd,beatUpdate:beatUpdate,beatRemove:beatRemove,hold:hold,stagger:stagger,staggerPanel:staggerPanel,preset:preset,presets:presets,canvasMode:function(){return canvasMode},setCanvasMode:setCanvasMode,canvasEdit:function(id,patch,at){var e=element(id),s=sec();if(!e)return false;at=at==null?atNow(s):at;return commitMomentState(e,s,at,currentMomentState(e,s,at),patch);}};
+
+// Motion Lab is a gallery of ordinary scenes, evaluated by the same Director.
+function focusComposition(){
+ var assets=[],s=mkSection({name:'Iso Focus · Motion Lab',layout:'free',bg:'#10121b',fg:'#f5f3ed',height:100,sdEnabled:true,sdLength:320,sdPerspective:1000,sdEase:'cinematic',sdMotionTemplate:'iso-focus'});
+ ['#b9f36b','#c9b3ff','#ffac83'].forEach(function(color,i){
+  var a={id:nid(),name:'Motion Lab · lámina '+(i+1),data:'data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 620"><rect width="480" height="620" fill="'+color+'"/><circle cx="240" cy="280" r="150" fill="#10121b"/><path d="M100 330L240 110L380 330Z" fill="'+color+'"/><text x="35" y="540" font-family="sans-serif" font-size="42" fill="#10121b">DISEÑO '+(i+1)+'</text><text x="35" y="580" font-family="sans-serif" font-size="18" fill="#10121b">TU PROYECTO EN MOVIMIENTO</text></svg>')};assets.push(a);
+  var edge=i===1?0:(i===0?-1:1),z=i===1?-160:-320;
+  s.elements.push(mkEl('image',{name:'Lámina '+(i+1)+' · reemplazá la imagen',assetId:a.id,alt:'Diseño '+(i+1),x:50+edge*27,y:55,w:i===1?30:23,ratio:620/480,radius:12,anim:'none',mobile:{x:50+edge*29,y:52,w:i===1?36:23},sdKeyframesEnabled:true,sdKeyframes:M.normalize([{id:nid(),at:0,z:z,rotateX:32,rotateY:edge*28-12,ease:'cinematic'},{id:nid(),at:35,z:0,rotateX:0,rotateY:0,ease:'cinematic'},{id:nid(),at:65,ease:'cinematic'},{id:nid(),at:100,z:z,rotateX:32,rotateY:-edge*28+12,ease:'cinematic'}])}));
+ });
+ s.elements.push(mkEl('label',{name:'Etiqueta',text:'MOTION LAB / 01',x:50,y:10,w:90,textAlign:'center',color:'#b9f36b',anim:'none',sdEnter:'none',sdEnd:100}));
+ s.elements.push(mkEl('heading',{name:'Título',text:'Diseño en perspectiva',customSize:34,x:50,y:18,w:90,textAlign:'center',anim:'none',sdEnter:'none',sdEnd:100,mobile:{customSize:25}}));
+ s.elements.push(mkEl('paragraph',{name:'Descripción',text:'Tres láminas. Un recorrido. Tu identidad.',customSize:16,x:50,y:91,w:90,textAlign:'center',anim:'none',sdEnter:'none',sdEnd:100}));
+ return{scene:s,assets:assets};
+}
+var labStyle=document.createElement('style');labStyle.textContent='.nw-motion-dialog{width:min(900px,94vw);max-height:90vh;padding:24px;border:1px solid var(--line);border-radius:18px;background:var(--panel,#181820);color:var(--ink,#eee);overflow:auto}.nw-motion-dialog::backdrop{background:#000a;backdrop-filter:blur(5px)}.nw-motion-head{display:flex;align-items:center;justify-content:space-between;gap:16px}.nw-motion-head h2{margin:0;font-size:26px}.nw-motion-card{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:18px 0}.nw-motion-frame{width:100%;height:360px;display:block;border:0;pointer-events:none;background:#10121b}.nw-motion-body{padding:18px}.nw-motion-body h3{margin:0 0 8px}.nw-motion-controls{display:flex;align-items:center;gap:12px;margin:16px 0}.nw-motion-controls input{flex:1;min-width:40px}.nw-motion-open{white-space:nowrap}.nw-motion-description{line-height:1.5;color:var(--ink-soft);margin:10px 0}@media(max-width:600px){.nw-motion-dialog{padding:16px}.nw-motion-frame{height:300px}.nw-motion-open{font-size:11px;padding:6px}}';document.head.appendChild(labStyle);
+var labButton=document.createElement('button');labButton.type='button';labButton.className='btn nw-motion-open';labButton.dataset.motionOpen='';labButton.textContent='Motion Lab';labButton.title='Explorar composiciones animadas editables';document.querySelector('.tb-left').appendChild(labButton);
+var labSide=labButton.cloneNode(true);labSide.style.cssText='width:100%;margin:8px 0 14px';labSide.textContent='Motion Lab · escenas animadas';document.getElementById('sec-add-box').before(labSide);
+var lab=document.createElement('dialog');lab.className='nw-motion-dialog';lab.setAttribute('aria-labelledby','nw-motion-title');lab.innerHTML='<div class="nw-motion-head"><h2 id="nw-motion-title">Motion Lab</h2><button type="button" class="btn tiny" data-motion-close aria-label="Cerrar Motion Lab">Cerrar</button></div><p class="nw-motion-description">Elegí una composición, reemplazá las imágenes y editá cada movimiento en el lienzo y la línea de tiempo.</p><article class="nw-motion-card"><iframe class="nw-motion-frame" title="Vista previa de Iso Focus" tabindex="-1" sandbox="allow-scripts allow-same-origin"></iframe><div class="nw-motion-body"><h3>Iso Focus</h3><p class="nw-motion-description">Tres láminas se acercan desde un plano inclinado, permanecen de frente y vuelven a alejarse. Receta propia inspirada en la referencia.</p><div class="nw-motion-controls"><button type="button" class="btn tiny" data-motion-play aria-pressed="false">▶ Reproducir</button><input type="range" data-motion-progress aria-label="Momento de la vista previa" min="0" max="100" value="50"><output data-motion-now>50%</output></div><button type="button" class="btn primary" data-motion-insert>Insertar escena y editar</button><p class="hint">Agrega una escena nueva. Conserva las escenas que ya tenés. Imágenes, textos y movimientos quedan editables.</p></div></article><p class="nw-motion-description">Primera composición disponible. La cámara animada y las demás composiciones se sumarán en próximas etapas.</p>';document.body.appendChild(lab);
+var labFrame=lab.querySelector('iframe'),labRange=lab.querySelector('[data-motion-progress]'),labPlay=lab.querySelector('[data-motion-play]'),labScene=null,labRAF=0,labStarted=0,labOffset=0;
+function labStop(){cancelAnimationFrame(labRAF);labRAF=0;labPlay.textContent='▶ Reproducir';labPlay.setAttribute('aria-pressed','false');}
+function labSet(p){labRange.value=Math.round(p*100);lab.querySelector('[data-motion-now]').textContent=Math.round(p*100)+'%';try{var rt=labFrame.contentWindow.__NAG_SCROLL_DIRECTOR;if(rt&&labScene&&rt[labScene.id])rt[labScene.id].set(p);}catch(_){} }
+function labTick(t){if(!lab.open){labStop();return;}labSet(((t-labStarted)/6000+labOffset)%1);labRAF=requestAnimationFrame(labTick);}
+function labOpen(){
+ if(lab.open)return;var recipe=focusComposition();labScene=recipe.scene;
+ var p=Object.assign({},flattenPage(page()),{sections:[labScene],assets:Object.assign({},project.assets,{images:(project.assets.images||[]).concat(recipe.assets)})});
+ labRange.value=50;lab.querySelector('[data-motion-now]').textContent='50%';lab.showModal();labFrame.srcdoc=generateSite(p,false,false,false);
+}
+labFrame.addEventListener('load',function(){if(lab.open)labSet(.5);});
+document.addEventListener('click',function(ev){if(ev.target.closest('[data-motion-open]'))labOpen();});
+lab.querySelector('[data-motion-close]').addEventListener('click',function(){lab.close();});
+lab.addEventListener('close',function(){labStop();labFrame.srcdoc='';labScene=null;});
+labRange.addEventListener('input',function(){labStop();labSet(+labRange.value/100);});
+labPlay.addEventListener('click',function(){if(labRAF){labStop();return;}if(matchMedia('(prefers-reduced-motion: reduce)').matches){toast('Movimiento reducido activo. Podés recorrer la vista previa con el control de momento.');return;}labStarted=performance.now();labOffset=+labRange.value/100;labPlay.textContent='Ⅱ Pausar';labPlay.setAttribute('aria-pressed','true');labRAF=requestAnimationFrame(labTick);});
+function labInsert(){
+ var recipe=focusComposition(),s=recipe.scene;snapshot();project.assets.images=project.assets.images||[];Array.prototype.push.apply(project.assets.images,recipe.assets);
+ page().sections.splice(curSec+1,0,s);curSec++;curEl=1;curPane='elements';selection=[s.elements[1].id];secFocus=false;
+ canvasMode='moment';saveCanvasMode();timelineUI.docked=true;timelineUI.minimized=false;saveTimelineUI();closedGroups.delete('el-scroll-director');
+ selected={element:s.elements[1].id,key:s.elements[1].sdKeyframes[1].id};lab.close();refresh();D.scrub(s.id,.35);syncSelectionToFrame();
+ if(typeof pendingAfterLoad!=='undefined')pendingAfterLoad.push({type:'scrollto',id:s.id});
+ toast('Escena insertada. Seleccioná una lámina para cambiar su imagen; los puntos de la línea de tiempo editan sus movimientos.');return s.id;
+}
+lab.querySelector('[data-motion-insert]').addEventListener('click',labInsert);
+window.NAGWEB_MOTION_LAB={open:labOpen,insert:labInsert,create:focusComposition};
 })();
