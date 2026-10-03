@@ -451,7 +451,10 @@ export async function runStorytellingSmoke(page){
  assert.ok(reloaded.scrollLeft>100);assert.ok(Math.abs(reloaded.saved.scrollLeft-reloaded.scrollLeft)<2);
 
  // Restaurar exactamente el estado con el que entró el stress test.
- await page.evaluate(pre=>{
+ await page.evaluate(async pre=>{
+  // Dejar que cualquier guardado debounceado por el último scroll termine antes
+  // de reponer el estado previo del laboratorio.
+  await new Promise(r=>setTimeout(r,180));
   localStorage.setItem(STORE_KEY,pre.project);
   if(pre.timeline==null)localStorage.removeItem('nagweb.story.timeline.ui.v1');else localStorage.setItem('nagweb.story.timeline.ui.v1',pre.timeline);
   if(pre.canvas==null)localStorage.removeItem('nagweb.story.canvas.mode.v1');else localStorage.setItem('nagweb.story.canvas.mode.v1',pre.canvas);
