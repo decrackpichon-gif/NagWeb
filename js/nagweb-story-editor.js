@@ -41,7 +41,9 @@ function setCanvasMode(mode){
 }
 timelineUI.zoom=Math.max(1,Math.min(6,+timelineUI.zoom||1));
 timelineUI.height=Math.max(190,Math.min(Math.round(innerHeight*.72),+timelineUI.height||320));
+var timelineUISaveTimer=0;
 function saveTimelineUI(){try{localStorage.setItem(TIMELINE_UI_KEY,JSON.stringify(timelineUI))}catch(_){}}
+function queueTimelineUISave(){clearTimeout(timelineUISaveTimer);timelineUISaveTimer=setTimeout(saveTimelineUI,120);}
 function restoreTimelineViewport(){
  requestAnimationFrame(function(){
   var sc=pane.querySelector('.nw-sd-scroll');if(sc)sc.scrollLeft=Math.max(0,+timelineUI.scrollLeft||0);
@@ -335,7 +337,7 @@ pane.addEventListener('wheel',function(ev){
  var sc=ev.target.closest&&ev.target.closest('.nw-sd-scroll');if(!sc||!ev.shiftKey)return;
  ev.preventDefault();sc.scrollLeft+=Math.abs(ev.deltaY)>Math.abs(ev.deltaX)?ev.deltaY:ev.deltaX;timelineUI.scrollLeft=sc.scrollLeft;
 },{passive:false});
-pane.addEventListener('scroll',function(ev){if(ev.target&&ev.target.classList&&ev.target.classList.contains('nw-sd-scroll'))timelineUI.scrollLeft=ev.target.scrollLeft;},true);
+pane.addEventListener('scroll',function(ev){if(ev.target&&ev.target.classList&&ev.target.classList.contains('nw-sd-scroll')){timelineUI.scrollLeft=ev.target.scrollLeft;queueTimelineUISave();}},true);
 var timelineObserver=new MutationObserver(function(){restoreTimelineViewport();});
 timelineObserver.observe(pane,{childList:true,subtree:true});
 function syncCanvasTools(){
