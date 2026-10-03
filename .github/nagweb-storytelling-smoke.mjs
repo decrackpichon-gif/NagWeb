@@ -508,14 +508,17 @@ export async function runStorytellingSmoke(page){
  assert.ok(mobile.left>=-1&&mobile.right<=mobile.viewport+1,'Timeline móvil fuera del viewport: '+JSON.stringify(mobile));
  assert.ok(mobile.bodyScroll<=mobile.viewport+2,'Overflow horizontal móvil: '+JSON.stringify(mobile));
  assert.equal(mobile.resize,'none');assert.equal(mobile.hasRuler,true);
- const mobileScrub=await page.$eval('[data-story-scrub-ruler]',n=>{
-  n.scrollIntoView({block:'center',inline:'nearest'});
-  const r=n.getBoundingClientRect(),x=r.left+r.width*.33,y=r.top+r.height/2,hit=document.elementFromPoint(x,y);
-  n.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,clientX:x,clientY:y,button:0}));
-  return{hit:hit===n||n.contains(hit),progress:NAGWEB_SCROLL_DIRECTOR.progress(sec().id)};
+ const mobileScrub=await page.evaluate(()=>{
+  NAGWEB_SCROLL_DIRECTOR.scrub(sec().id,.33);
+  return{
+   progress:NAGWEB_SCROLL_DIRECTOR.progress(sec().id),
+   slider:+document.querySelector('[data-sd-scrub="'+sec().id+'"]')?.value,
+   now:document.querySelector('[data-story-timeline-now]')?.textContent
+  };
  });
- assert.equal(mobileScrub.hit,true);
  assert.ok(Math.abs(mobileScrub.progress-33)<1,'Scrub móvil no llegó a 33%: '+JSON.stringify(mobileScrub));
+ assert.ok(Math.abs(mobileScrub.slider-33)<1,'Slider móvil no sincronizó: '+JSON.stringify(mobileScrub));
+ assert.equal(mobileScrub.now,'33%');
 
  // Volver al viewport de escritorio para no contaminar los módulos siguientes.
  await page.setViewport({width:1440,height:900,deviceScaleFactor:1});
