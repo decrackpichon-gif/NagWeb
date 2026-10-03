@@ -6,7 +6,7 @@ export async function runMotionTextSmoke(page){
   await page.evaluate(()=>{project.pages[0].sections=[mkSection({layout:'free',sdEnabled:false,elements:[]})];curPage=0;curSec=0;curEl=0;selection=[];secFocus=false;saveProject();renderPane();renderPreview();history=[];future=[];});
   const before=await page.evaluate(()=>({project:JSON.stringify(project),stored:localStorage.getItem(STORE_KEY)}));
   async function frame(){await page.waitForFunction(()=>document.querySelector('.nw-motion-dialog iframe')?.contentDocument?.querySelector('.hd[data-motion-text]'));return (await page.$('.nw-motion-dialog iframe')).contentFrame();}
-  async function edit(f,selector,text){const n=await f.$(selector),r=await n.boundingBox();assert.ok(r);await page.mouse.click(r.x+r.width/2,r.y+r.height/2,{clickCount:2});assert.equal(await n.evaluate(n=>n.isContentEditable),true);await page.keyboard.type(text);return n;}
+  async function edit(f,selector,text){const n=await f.$(selector),r=await n.boundingBox();assert.ok(r);await page.mouse.click(r.x+r.width/2,r.y+r.height/2,{clickCount:2});assert.equal(await n.evaluate(n=>n.isContentEditable),true,'Double click starts editing: '+JSON.stringify(await n.evaluate(n=>{const r=n.getBoundingClientRect();return {id:n.dataset.id,hit:n.ownerDocument.elementFromPoint(r.left+r.width/2,r.top+r.height/2)?.outerHTML.slice(0,450),active:n.ownerDocument.activeElement?.outerHTML.slice(0,250)};})));await page.keyboard.type(text);return n;}
   await page.click('.tb-left [data-motion-open]');let f=await frame();
   let n=await edit(f,'.hd','Mi estudio <b>creativo</b>');
   const x=await page.$eval('[data-motion-position="x"]',n=>n.value);
