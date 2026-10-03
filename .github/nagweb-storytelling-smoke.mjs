@@ -480,5 +480,40 @@ export async function runStorytellingSmoke(page){
   assert.equal(restored.timeline.minimized,old.minimized);
  }
 
- console.log('Storytelling: modelo, compatibilidad, interpolación, persistencia y runtime exportado OK');
-}
+ // Robustez móvil: la Timeline sigue utilizable sin comerse el viewport ni
+ // forzar overflow horizontal. El modo "grande" cae a layout normal en <=1040 px.
+ await page.setViewport({width:390,height:844,deviceScaleFactor:1});
+ await page.evaluate(()=>{
+  curPage=0;curSec=0;curEl=0;curPane='elements';selection=[sec().elements[0].id];secFocus=false;
+  renderPane();renderPreview();
+  if(!NAGWEB_STORY_TIMELINE_UI.state().docked){
+   const b=document.querySelector('[data-story-tl-dock]');if(b)b.click();
+  }
+ });
+ await page.waitForFunction(()=>document.querySelector('.nw-sd-timeline.nw-sd-docked'));
+ const mobile=await page.evaluate(()=>{
+  const tl=document.querySelector('.nw-sd-timeline.nw-sd-docked');
+  const r=tl.getBoundingClientRect(),resize=tl.querySelector('.nw-sd-dock-resize');
+  return{
+   position:getComputedStyle(tl).position,
+   left:r.left,right:r.right,width:r.width,
+   viewport:innerWidth,
+   bodyScroll:document.documentElement.scrollWidth,
+   resize:resize&&getComputedStyle(resize).display,
+   hasRuler:!!tl.querySelector('[data-story-scrub-ruler]')
+  };
+ });
+ assert.notEqual(mobile.position,'fixed');
+ assert.ok(mobile.left>=-1&&mobile.right<=mobile.viewport+1,'Timeline móvil fuera del viewport: '+JSON.stringify(mobile));
+ assert.ok(mobile.bodyScroll<=mobile.viewport+2,'Overflow horizontal móvil: '+JSON.stringify(mobile));
+ assert.equal(mobile.resize,'none');assert.equal(mobile.hasRuler,true);
+ const mobileRuler=await page.$eval('[data-story-scrub-ruler]',n=>{const r=n.getBoundingClientRect();return{x:r.x,y:r.y,w:r.width,h:r.height};});
+ await page.mouse.click(mobileRuler.x+mobileRuler.w*.33,mobileRuler.y+mobileRuler.h/2);
+ const mobileScrub=await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.progress(sec().id));
+ assert.ok(Math.abs(mobileScrub-33)<1);
+
+ // Volver al viewport de escritorio para no contaminar los módulos siguientes.
+ await page.setViewport({width:1440,height:900,deviceScaleFactor:1});
+
+ console.log('Storytelling: modelo, compatibilidad, interpolación, persistencia, móvil y runtime exportado OK');
+}}
