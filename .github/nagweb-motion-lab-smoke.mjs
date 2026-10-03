@@ -22,7 +22,7 @@ export async function runMotionLabSmoke(page){
   const old=JSON.parse(previous.project),next=JSON.parse(inserted.project);
   assert.equal(next.pages[previous.curPage].sections.length,old.pages[previous.curPage].sections.length+1);
   assert.deepEqual(next.pages[previous.curPage].sections.filter(s=>s.id!==inserted.scene.id),old.pages[previous.curPage].sections);
-  assert.equal(inserted.scene.sdMotionTemplate,'iso-focus');assert.equal(inserted.scene.sdEnabled,true);
+  assert.equal(inserted.scene.sdMotionTemplate,'iso-focus');assert.equal(inserted.scene.sdEnabled,false);assert.equal(inserted.scene.nwMotionSource,'time');
   assert.equal(inserted.scene.elements.length,6);assert.equal(inserted.scene.elements.filter(e=>e.type==='image').length,3);
   assert.ok(inserted.scene.elements.slice(0,3).every(e=>e.sdKeyframes.length===4&&e.assetId));
   assert.equal(next.assets.images.length,old.assets.images.length+3);assert.equal(inserted.mode,'moment');assert.equal(inserted.docked,true);
