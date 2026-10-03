@@ -79,7 +79,7 @@ function apply(id){
  finish();return true;
 }
 var controls={
- sdStart:['Visible desde','%',0,100],sdEnd:['Visible hasta','%',0,100],sdSpan:['Duración de entrada','%',1,30],sdMoveY:['Movimiento vertical','px',-1600,1600],
+ sdStart:['Visible desde','%',0,100],sdEnd:['Visible hasta','%',0,100],sdSpan:['Duración de entrada','%',1,30],sdMoveY:['Mover arriba / abajo','px',-1600,1600],
  sdEnter:['Entrada',[['none','Ya está'],['fade','Fundido'],['up','Desde abajo'],['down','Desde arriba'],['left','Desde izquierda'],['right','Desde derecha'],['zoom','Zoom'],['blur','Desenfoque'],['depth','Profundidad']]],
  sdExit:['Salida',[['keep','Se queda'],['fade','Fundido'],['up','Hacia arriba'],['down','Hacia abajo'],['left','Hacia izquierda'],['right','Hacia derecha'],['zoom','Zoom'],['blur','Desenfoque']]],
  ucScroll:['Parallax al scroll','px',-160,160],ucStrength:['Intensidad','%',0,100],ucAxis:['Eje',[['both','X + Y'],['x','Horizontal'],['y','Vertical']]],ucDepth:['Profundidad','px',0,120],ucIntensity:['Intensidad visual','',0,1],
@@ -96,7 +96,7 @@ function system(c,t,s){
 }
 function panel(t,s,isScene){
  var list=records(t,s);if(!list.length)return '';
- var html='<p class="hint gh">Podés pausar cada comportamiento y recuperar sus valores al reactivarlo. Si dos controlan las mismas propiedades, se activa uno a la vez.</p>';
+ var html='<p class="hint gh"><b>Comportamiento</b> = una acción que se aplica a este elemento o escena que ya existe. No inserta una plantilla nueva. Podés pausarlo y recuperar sus valores al reactivarlo; si dos controlan la misma propiedad, queda activo uno a la vez.</p>';
  list.forEach(function(c){
   var values=c.enabled?t:c.params,hasFrames=(c.frameProps||[]).length||frameProperties(c.id,t,s).length;
   html+='<div class="nw-behavior-config" data-behavior="'+c.id+'"><h4 class="gsub">'+B.registry[c.id].label+'</h4><label class="hint"><input type="checkbox" data-behavior-toggle="'+c.id+'"'+(c.enabled?' checked':'')+'> Activado</label><p class="hint gh">'+system(c,t,s)+'</p>';
