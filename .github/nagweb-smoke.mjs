@@ -7,6 +7,7 @@ import {runHistorySmoke} from './nagweb-history-smoke.mjs';
 import {runLegacySmoke} from './nagweb-legacy-smoke.mjs';
 import {runTransparentSmoke} from './nagweb-transparent-smoke.mjs';
 import {runCancelSmoke} from './nagweb-cancel-smoke.mjs';
+import {runDepthSmoke} from './nagweb-depth-smoke.mjs';
 
 const feedbackSource=fs.readFileSync(new URL('../js/nagweb-feedback-v16.js',import.meta.url),'utf8');
 const directorSource=fs.readFileSync(new URL('../js/nagweb-scroll-director-v16.js',import.meta.url),'utf8');
@@ -191,6 +192,7 @@ await page.click('.nw-dock-toggle.left');
 await runHistorySmoke(page);
 await runLegacySmoke(page);
 await runCancelSmoke(page);
+await runDepthSmoke(page);
 await runStorytellingSmoke(page);
 await runCompositionSmoke(page);
 await runTransparentSmoke(page);

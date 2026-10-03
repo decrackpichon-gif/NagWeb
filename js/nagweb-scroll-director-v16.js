@@ -46,6 +46,7 @@ function secDefaults(s){
  if(s.sdEnabled==null)s.sdEnabled=false;
  if(s.sdLength==null)s.sdLength=320;
  if(s.sdEase==null)s.sdEase='cinematic';
+ if(s.sdPerspective==null)s.sdPerspective=1000;
  if(s.stType==null)s.stType='cut';
  if(s.stSpan==null)s.stSpan=24;
  return s;
@@ -73,6 +74,7 @@ paneSceneNew=function(){
  if(s.sdEnabled){
   body+='<p class="hint gh">La escena se convierte en una pequeña película controlada por el scroll: queda fija mientras el recorrido avanza de 0% a 100%.</p>';
   body+=cRow('Longitud del recorrido',cNum('sec.sdLength',s.sdLength,'vh',{step:20,min:140,max:900}));
+  body+=cRow('Perspectiva',cNum('sec.sdPerspective',s.sdPerspective,'px',{step:50,min:200,max:5000}));
   body+=cRow('Ritmo',cSeg('sec.sdEase',s.sdEase||'cinematic',[['linear','Directa'],['smooth','Suave'],['cinematic','Cinemática']]));
   body+='<div class="field cstack"><label>Previsualizar momento <span class="val" data-sd-val>'+Math.round(val)+'%</span></label><input type="range" class="crange" data-sd-scrub="'+s.id+'" min="0" max="100" step="1" value="'+val+'"></div>';
   body+=timelineHTML(s,val);
@@ -221,7 +223,7 @@ function rt(DATA,createModel){
    var cs=getComputedStyle(n),baseOpacity=parseFloat(cs.opacity),baseFilter=cs.filter&&cs.filter!=='none'?cs.filter:'blur(0px)',basePointer=cs.pointerEvents||'auto';
    n.style.setProperty('--nw-sd-base-opacity',isFinite(baseOpacity)?baseOpacity:1);
    n.style.setProperty('--nw-sd-base-filter',baseFilter);n.setAttribute('data-nw-sd-el','1');
-   els.push({n:n,c:c,basePointer:basePointer});
+   els.push({n:n,c:c,basePointer:basePointer,depth:null,depthValue:''});
   });
   var manual=null,last=0;
   function paint(){
@@ -233,6 +235,22 @@ function rt(DATA,createModel){
     n.style.setProperty('--nw-sd-y',v.y.toFixed(2)+'px');
     n.style.setProperty('--nw-sd-scale',(v.scale/100).toFixed(4));
     n.style.setProperty('--nw-sd-rot',v.rotate.toFixed(2)+'deg');
+    n.style.setProperty('--nw-sd-z',v.z.toFixed(2)+'px');
+    n.style.setProperty('--nw-sd-rx',v.rotateX.toFixed(2)+'deg');
+    n.style.setProperty('--nw-sd-ry',v.rotateY.toFixed(2)+'deg');
+    // A paused additive effect renders this evaluated pose. It has no playback
+    // clock or interpolation of its own, and keeps authored CSS transforms live.
+    var depth=Math.abs(v.z)+Math.abs(v.rotateX)+Math.abs(v.rotateY)>.0001;
+    if(!depth){if(q.depth){q.depth.cancel();q.depth=null;}q.depthValue='';}
+    else{
+     var transform='perspective('+cfg.perspective+'px) translateZ('+v.z.toFixed(3)+'px) rotateX('+v.rotateX.toFixed(3)+'deg) rotateY('+v.rotateY.toFixed(3)+'deg)';
+     if(transform!==q.depthValue){
+      var keys=[{transform:transform},{transform:transform}];
+      if(q.depth)q.depth.effect.setKeyframes(keys);
+      else{q.depth=n.animate(keys,{duration:1,fill:'both',composite:'add'});q.depth.pause();q.depth.currentTime=0;}
+      q.depthValue=transform;
+     }
+    }
     n.style.setProperty('--nw-sd-opacity',op.toFixed(4));
     n.style.setProperty('--nw-sd-blur',v.blur.toFixed(2)+'px');
     n.style.pointerEvents=op<.025?'none':q.basePointer;
@@ -267,7 +285,7 @@ generateSite=function(p,edit,minify,mobile){
  var html=_generateSite(p,edit,minify,mobile);
  var secs=(p.sections||[]).filter(function(s){return !!s.sdEnabled&&s.layout!=='horizontal';});
  if(!secs.length)return html;
- var data=secs.map(function(s){return{id:s.id,length:Math.max(140,Math.min(900,+s.sdLength||320)),ease:s.sdEase||'cinematic',elements:(s.elements||[]).filter(function(e){return model.eligible(e,s);}).map(function(e){return model.compile(e);})};});
+ var data=secs.map(function(s){return{id:s.id,length:Math.max(140,Math.min(900,+s.sdLength||320)),perspective:Math.max(200,Math.min(5000,+s.sdPerspective||1000)),ease:s.sdEase||'cinematic',elements:(s.elements||[]).filter(function(e){return model.eligible(e,s);}).map(function(e){return model.compile(e);})};});
  html=html.replace('</head>','<style id="nw-scroll-director-css">'+SD_CSS+'</style></head>');
  html=html.replace('</body>','<script id="nw-scroll-director-runtime">('+rt.toString()+')('+JSON.stringify(data).replace(/</g,'\\u003c')+','+window.NAGWEB_CREATE_STORY_MODEL.toString()+');</script></body>');
  return html;
