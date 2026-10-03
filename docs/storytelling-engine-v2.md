@@ -100,3 +100,11 @@ Las nuevas escenas de Motion Lab usan `nwMotionSource: time`, con `sdEnabled: fa
 El runtime único usa un reloj para el progreso temporal y evalúa los mismos momentos. Tiempo no crea un stage sticky ni modifica el alto de la escena. Exportación reproduce automáticamente; en diseño la pose queda detenida para editar, con Reproducir/Pausar y Reiniciar por tiempo. Sin repetición se mantiene el último momento. Movimiento reducido detiene el reloj y neutraliza los movimientos añadidos; las pestañas ocultas no acumulan tiempo. Cambiar de fuente conserva los momentos y editar una pose temporal no activa Scroll.
 
 `.github/nagweb-time-smoke.mjs` comprueba duración, repetición, pausa, altura normal, coexistencia de escenas temporales y de scroll, cambio de fuente, movimiento reducido y edición/guardado.
+
+## Instancias dentro de una escena — primera etapa implementada
+
+**Insertar en esta escena** agrega un contenedor normal con seis miembros editables y `nwMotionInstance` (plantilla, fuente, duración, repetición y perspectiva). No crea otra escena ni cambia su Director; **Como escena nueva** conserva la alternativa anterior. La composición tiene su propio alcance en el mismo runtime y Timeline: el Director no toma sus miembros y el reloj temporal de la composición no mueve el resto de la escena.
+
+Seleccionar el grupo o uno de sus miembros muestra **Editar en Motion Lab**. La ventana reabre esa instancia, con su contenido y configuración actuales, preview, selector de imágenes, textos y reproducción. Guardar reemplaza esos datos conservando IDs y momentos; cerrar descarta el borrador. La selección de Scroll al guardar activa el Director de la escena anfitriona. Los momentos individuales siguen editándose en el lienzo y la Timeline, sobre la instancia seleccionada.
+
+La ventana aún conserva la organización de la galería inicial; su transformación al entorno de tres columnas y la mejora visual de la composición siguen pendientes. `.github/nagweb-motion-group-smoke.mjs` verifica inserción sin escenas nuevas, edición de poses por instancia, reapertura, contenido, cancelación, historial, IDs y exportación de grupos temporales junto al Director.

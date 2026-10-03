@@ -4,8 +4,11 @@
 var M=window.NAGWEB_STORY_MODEL,D=window.NAGWEB_SCROLL_DIRECTOR,pane=document.getElementById('pane');
 if(!M||!D||!pane)return;
 var selected=null,selectedBeat=null;
-function storyEnabled(s){return s.sdEnabled||s.nwMotionSource==='time';}
-function enableStory(s){if(s.nwMotionSource!=='time')s.sdEnabled=true;}
+function motionOwner(s,e){var seen={};while(e){if(e.nwMotionInstance)return e;if(!e.parent||seen[e.parent])break;seen[e.parent]=1;e=(s.elements||[]).find(function(n){return n.id===e.parent;});}return null;}
+function storyContext(s,e){var g=motionOwner(s,e);if(!g)return s;var c=g.nwMotionInstance;return Object.assign({},s,{id:g.id,__motionOwner:g,nwMotionSource:c.source||'time',nwMotionDuration:c.duration||8,nwMotionLoop:c.loop!==false,sdPerspective:c.perspective||1000,sdEnabled:c.source==='scroll',elements:(s.elements||[]).filter(function(n){return motionOwner(s,n)===g;})});}
+function storySec(e){return storyContext(sec(),e||current());}
+function storyEnabled(s,e){return !!motionOwner(s,e)||s.sdEnabled||s.nwMotionSource==='time';}
+function enableStory(s){if(!s.__motionOwner&&s.nwMotionSource!=='time')s.sdEnabled=true;}
 var TIMELINE_UI_KEY='nagweb.story.timeline.ui.v1';
 function loadTimelineUI(){try{return Object.assign({docked:false,minimized:false,zoom:1,height:320,scrollLeft:0},JSON.parse(localStorage.getItem(TIMELINE_UI_KEY)||'{}'))}catch(_){return{docked:false,minimized:false,zoom:1,height:320,scrollLeft:0}}}
 var timelineUI=loadTimelineUI();
@@ -68,7 +71,7 @@ function selectElement(id,add){
 }
 function selectKey(id,key,render){
  var e=element(id),k=e&&frames(e).find(function(k){return k.id===key;});if(!k)return;
- selectElement(id,false);selected={element:id,key:key};D.scrub(sec().id,k.at/100);
+ selectElement(id,false);selected={element:id,key:key};D.scrub(storySec(e).id,k.at/100);
  if(render!==false){renderPane();var b=pane.querySelector('[data-sd-key="'+key+'"]');if(b)b.focus({preventScroll:true});}
 }
 function bounds(list,index){return[index?list[index-1].at+.1:0,index<list.length-1?list[index+1].at-.1:100];}
@@ -131,8 +134,8 @@ var presets={
 };
 function preset(id,name){
  var e=element(id),p=presets[name];if(!p||!M.eligible(e,sec()))return false;
- snapshot();e.sdKeyframes=M.normalize(p.frames.map(function(k){return Object.assign({id:nid(),ease:name==='parallax'?'linear':'cinematic'},k);}));e.sdKeyframesEnabled=true;enableStory(sec());
- selected={element:id,key:e.sdKeyframes[0].id};persist();D.scrub(sec().id,e.sdKeyframes[0].at/100);return true;
+ snapshot();e.sdKeyframes=M.normalize(p.frames.map(function(k){return Object.assign({id:nid(),ease:name==='parallax'?'linear':'cinematic'},k);}));e.sdKeyframesEnabled=true;enableStory(storySec(e));
+ selected={element:id,key:e.sdKeyframes[0].id};persist();D.scrub(storySec(e).id,e.sdKeyframes[0].at/100);return true;
 }
 function presetPanel(){return cRow('Plantilla de movimiento','<select class="csel" data-story-preset aria-label="Plantilla de movimiento"><option value="">Elegir plantilla…</option>'+Object.keys(presets).map(function(k){return '<option value="'+k+'">'+presets[k].name+'</option>';}).join('')+'</select>')+'<p class="hint gh"><b>Plantilla</b> = un recorrido prearmado para este mismo elemento. No agrega otro objeto: reemplaza sus momentos y después podés editar cada uno.</p>';}
 function snap(at,list,index,skip){
@@ -154,7 +157,7 @@ function add(id,at,state){
  if(existing){selectKey(id,existing.id);return existing.id;}
  if(list.length>=512){toast('La pista admite hasta 512 momentos.');return false;}
  var value=state||M.evaluate(M.compile(e),at/100,sec().sdEase);
- snapshot();enableStory(sec());e.sdKeyframesEnabled=true;
+ snapshot();enableStory(storySec(e));e.sdKeyframesEnabled=true;
  var k=Object.assign({ease:sec().sdEase||'cinematic'},value,{at:at,id:nid()});
  list.push(k);e.sdKeyframes=M.normalize(list);selectKey(id,k.id,false);persist();return k.id;
 }
@@ -168,7 +171,7 @@ function update(id,key,patch){
   else if(M.properties[p]){var def=M.properties[p];next[p]=M.clamp(M.number(patch[p],k[p]),def.min,def.max);}
  });
  if(JSON.stringify(next)===JSON.stringify(k))return false;
- snapshot();list[i]=next;e.sdKeyframes=list;selected={element:id,key:key};D.scrub(sec().id,next.at/100);persist();return true;
+ snapshot();list[i]=next;e.sdKeyframes=list;selected={element:id,key:key};D.scrub(storySec(e).id,next.at/100);persist();return true;
 }
 function remove(id,key){
  var e=element(id),list=e&&frames(e);if(!list||!list.some(function(k){return k.id===key;}))return false;
@@ -180,7 +183,7 @@ function enable(e){
   var c=M.compile(e),a=M.clamp(M.number(e.sdStart,0),0,100),b=M.clamp(M.number(e.sdEnd,82),a,100),span=M.number(e.sdSpan,8);
   e.sdKeyframes=M.normalize([0,a,a+span,b,b+span,100].map(function(at){at=M.clamp(at,0,100);return Object.assign({id:nid(),at:at,ease:sec().sdEase||'cinematic'},M.evaluate(c,at/100,sec().sdEase));}));
  }
- e.sdKeyframesEnabled=true;enableStory(sec());selected={element:e.id,key:frames(e)[0].id};persist();
+ e.sdKeyframesEnabled=true;enableStory(storySec(e));selected={element:e.id,key:frames(e)[0].id};persist();
 }
 function num(attr,key,value,label,min,max,unit){
  return '<label class="num"><input type="number" '+attr+'="'+key+'" value="'+value+'" min="'+min+'" max="'+max+'" step="0.1" aria-label="'+label+'"><span class="u">'+unit+'</span></label>';
@@ -188,7 +191,7 @@ function num(attr,key,value,label,min,max,unit){
 function transport(s){var val=D.progress(s.id);return '<div class="field cstack"><label>Recorrer la escena <span data-sd-val>'+Math.round(val)+'%</span></label><input aria-label="Recorrer la escena" class="crange" type="range" data-sd-scrub="'+s.id+'" min="0" max="100" step="0.1" value="'+val+'"></div><div class="nw-sd-actions"><button type="button" class="btn tiny" data-sd-play="'+s.id+'">▶ Reproducir</button><button type="button" class="btn tiny" data-sd-pause="'+s.id+'">Pausar</button><button type="button" class="btn tiny" data-sd-live="'+s.id+'">'+(s.nwMotionSource==='time'?'Reiniciar por tiempo':'Volver al scroll real')+'</button></div>';}
 function timeline(s,val){
  if(selected&&(selection.length!==1||selected.element!==selection[0]))selected=null;
- var list=(s.elements||[]).filter(function(e){return M.eligible(e,s);});
+ var list=(s.elements||[]).filter(function(e){return e.id!==s.id&&M.eligible(e,s);});
  var zoom=Math.max(1,Math.min(6,+timelineUI.zoom||1)),docked=!!timelineUI.docked,min=!!timelineUI.minimized;
  var chosen=selection.length===1?list.find(function(e){return e.id===selection[0];}):null;
  var chosenName=chosen?esc(chosen.name||chosen.label||chosen.text||chosen.type):selection.length>1?(selection.length+' elementos'):'Ningún elemento';
@@ -221,6 +224,7 @@ function canvasModePanel(s,e){
  return '<div class="nw-story-canvas-mode '+(moment?'is-moment':'is-base')+'"><div class="nw-story-mode-head"><h4 class="gsub">Edición en el lienzo</h4><span>'+(moment?('Momento '+at+'%'):'Base')+'</span></div><div class="seg nw-story-mode-seg"><button type="button" data-story-canvas-mode="base" class="'+(!moment?'on':'')+'">Diseño base</button><button type="button" data-story-canvas-mode="moment" class="'+(moment?'on':'')+'">Momento de la escena</button></div><p class="hint gh" data-story-mode-status>'+status+'</p></div>';
 }
 function panel(s,e){
+ s=storyContext(s,e);
  var ks=frames(e),k=picked(e),body=canvasModePanel(s,e);
  if(!active(e))return body+'<div class="nw-sd-actions"><button type="button" class="btn tiny" data-story-action="enable">'+(ks.length?'Reactivar momentos editables':'Crear momentos editables')+'</button></div><p class="hint gh">Con <b>Momento de la escena</b>, cada cambio del lienzo se guarda en el porcentaje actual sin modificar los demás momentos.</p>'+presetPanel();
  body+=transport(s)+timeline(s,D.progress(s.id));
@@ -249,7 +253,7 @@ pane.addEventListener('click',function(ev){
  var scrubSurface=ev.target.closest&&ev.target.closest('[data-story-scrub-ruler],[data-story-track]');
  if(scrubSurface&&!ev.target.closest('[data-sd-key],[data-sd-edge]')){
   var rr=scrubSurface.getBoundingClientRect(),pct=M.clamp((ev.clientX-rr.left)/Math.max(1,rr.width),0,1);
-  D.scrub(sec().id,pct);
+  D.scrub(storySec().id,pct);
   return;
  }
  var dockBtn=ev.target.closest('[data-story-tl-dock]');
@@ -262,7 +266,7 @@ pane.addEventListener('click',function(ev){
   cur=Math.max(0,Math.min(steps.length-1,cur+dir));timelineUI.zoom=steps[cur];saveTimelineUI();renderPane();restoreTimelineViewport();return;
  }
  if(ev.target.closest('[data-story-stagger-apply]')){stagger(selection,+pane.querySelector('[data-story-stagger="step"]').value,+pane.querySelector('[data-story-stagger="start"]').value);return;}
- if(ev.target.closest('[data-story-beat-add]')){beatAdd(D.progress(sec().id));return;}
+ if(ev.target.closest('[data-story-beat-add]')){beatAdd(D.progress(storySec().id));return;}
  var beatDel=ev.target.closest('[data-story-beat-delete]');if(beatDel){beatRemove(beatDel.dataset.storyBeatDelete);return;}
  var name=ev.target.closest('[data-story-select]');if(name){selectElement(name.dataset.storySelect,ev.shiftKey);selected=null;renderPane();return;}
  var key=ev.target.closest('[data-sd-key]');if(key){selectKey(key.closest('[data-sd-row]').dataset.sdRow,key.dataset.sdKey);return;}
@@ -270,7 +274,7 @@ pane.addEventListener('click',function(ev){
  var action=b.dataset.storyAction;
  if(action==='enable')enable(e);
  else if(action==='disable'){snapshot();e.sdKeyframesEnabled=false;selected=null;persist();}
- else if(action==='add')add(e.id,D.progress(sec().id));
+ else if(action==='add')add(e.id,D.progress(storySec().id));
   else if(action==='delete'&&picked(e))remove(e.id,picked(e).id);
  else if(action==='hold'&&picked(e))hold(e.id,picked(e).id,+pane.querySelector('[data-story-hold]').value);
 });
@@ -293,10 +297,10 @@ pane.addEventListener('pointerdown',function(ev){
   if(at===list[i].at)return;
   if(!changed){snapshot();changed=true;}
   list[i].at=at;e.sdKeyframes=list;key.style.left=at+'%';
-  D.update(sec().id,e);D.scrub(sec().id,at/100);
+  D.update(storySec(e).id,e);D.scrub(storySec(e).id,at/100);
  }
  function end(event){
-  if(event.type==='pointercancel'&&changed){list[i].at=startAt;e.sdKeyframes=originalFrames;history=undoBefore;future=redoBefore;D.update(sec().id,e);D.scrub(sec().id,startAt/100);}
+  if(event.type==='pointercancel'&&changed){list[i].at=startAt;e.sdKeyframes=originalFrames;history=undoBefore;future=redoBefore;D.update(storySec(e).id,e);D.scrub(storySec(e).id,startAt/100);}
   key.removeEventListener('pointermove',move);key.removeEventListener('pointerup',end);key.removeEventListener('pointercancel',end);
   if(changed)persist();else renderPane();
   var b=pane.querySelector('[data-sd-key="'+list[i].id+'"]');if(b)b.focus({preventScroll:true});
@@ -353,7 +357,7 @@ function syncCanvasTools(){
  doc.body.appendChild(box);doc.body.appendChild(size);doc.body.appendChild(rot);
  function target(){
   if(selection.length!==1)return null;
-  var e=current(),s=sec();if(!e||!storyEnabled(s)||!M.eligible(e,s))return null;
+  var e=current(),s=sec();if(!e||!storyEnabled(s,e)||!M.eligible(e,s))return null;
   var n=doc.querySelector('.el.sc-sel[data-id="'+e.id+'"]');if(!n||!n.closest('.nw-sd-active'))return null;
   return{e:e,s:s,n:n};
  }
@@ -374,13 +378,13 @@ function syncCanvasTools(){
  }
  doc.addEventListener('pointerdown',function(ev){
   if(canvasMode!=='moment'||ev.button===2||ev.target.closest('.nw-story-transform-h'))return;
-  var node=ev.target.closest&&ev.target.closest('.el[data-id]');if(!node||!node.closest('.nw-sd-active')||node.classList.contains('sc-locked'))return;
+  var node=ev.target.closest&&ev.target.closest('.el[data-id]');if(!node||!node.hasAttribute('data-nw-sd-el')||node.classList.contains('sc-locked'))return;
   var id=node.dataset.id,found=typeof findEl==='function'&&findEl(id);if(!found)return;
-  var s=page().sections[found[0]],e=s&&s.elements[found[1]];if(!s||!storyEnabled(s)||!M.eligible(e,s))return;
+  var s=page().sections[found[0]],e=s&&s.elements[found[1]];if(!s||!storyEnabled(s,e)||!M.eligible(e,s))return;
   if(ev.shiftKey)return; // conserva selección múltiple
   ev.preventDefault();ev.stopImmediatePropagation();
   if(!(selection.length===1&&selection[0]===id)){selectElement(id,false);curSec=found[0];curEl=found[1];renderPane();syncSelectionToFrame();}
-  var at=atNow(s),state=currentMomentState(e,s,at),sx=ev.clientX,sy=ev.clientY,moved=false,lastX=state.x,lastY=state.y,restore=rememberStyles(node,['--nw-sd-x','--nw-sd-y']);
+  s=storyContext(s,e);var at=atNow(s),state=currentMomentState(e,s,at),sx=ev.clientX,sy=ev.clientY,moved=false,lastX=state.x,lastY=state.y,restore=rememberStyles(node,['--nw-sd-x','--nw-sd-y']);
   function mv(e2){
    var dx=e2.clientX-sx,dy=e2.clientY-sy;if(Math.abs(dx)+Math.abs(dy)>2)moved=true;
    lastX=state.x+dx;lastY=state.y+dy;
@@ -393,7 +397,7 @@ function syncCanvasTools(){
  size.addEventListener('pointerdown',function(ev){
   var q=target();if(!q)return;ev.preventDefault();ev.stopPropagation();
   var r=q.n.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dist0=Math.max(12,Math.hypot(ev.clientX-cx,ev.clientY-cy));
-  var at=atNow(q.s),state=currentMomentState(q.e,q.s,at),bw=Math.max(5,+viewValue(q.e,'w',60)),font0=parseFloat(w.getComputedStyle(q.n).fontSize)||16;
+  var at=atNow(storyContext(q.s,q.e)),state=currentMomentState(q.e,q.s,at),bw=Math.max(5,+viewValue(q.e,'w',60)),font0=parseFloat(w.getComputedStyle(q.n).fontSize)||16;
   var text=/^(heading|paragraph|label|button)$/.test(q.e.type),proportional=canvasMode==='moment'||(text&&ev.altKey&&ev.shiftKey),last=1,moved=false,restore=rememberStyles(q.n,['--nw-sd-scale','width','font-size']);
   function mv(e2){last=Math.max(.08,Math.min(8,Math.hypot(e2.clientX-cx,e2.clientY-cy)/dist0));moved=Math.abs(last-1)>.005;
    if(canvasMode==='moment'){q.n.style.setProperty('--nw-sd-scale',(state.scale*last/100).toFixed(4));}
@@ -401,7 +405,7 @@ function syncCanvasTools(){
    draw();
   }
   function up(event){w.removeEventListener('pointermove',mv);w.removeEventListener('pointerup',up);w.removeEventListener('pointercancel',up);if(event.type==='pointercancel'||!moved){restore();return;}
-   if(canvasMode==='moment')commitMomentState(q.e,q.s,at,state,{scale:state.scale*last});
+   if(canvasMode==='moment')commitMomentState(q.e,storyContext(q.s,q.e),at,state,{scale:state.scale*last});
    else{
     var patch={w:Math.round(Math.max(5,Math.min(100,bw*last))*10)/10};
     var scaleRuns=null;
@@ -417,10 +421,10 @@ function syncCanvasTools(){
  rot.addEventListener('pointerdown',function(ev){
   var q=target();if(!q)return;ev.preventDefault();ev.stopPropagation();
   var r=q.n.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,a0=Math.atan2(ev.clientY-cy,ev.clientX-cx)*180/Math.PI;
-  var at=atNow(q.s),state=currentMomentState(q.e,q.s,at),baseRot=+viewValue(q.e,'rot',0),delta=0,moved=false,restore=rememberStyles(q.n,['--nw-sd-rot','--rot']);
+  var at=atNow(storyContext(q.s,q.e)),state=currentMomentState(q.e,q.s,at),baseRot=+viewValue(q.e,'rot',0),delta=0,moved=false,restore=rememberStyles(q.n,['--nw-sd-rot','--rot']);
   function mv(e2){var a=Math.atan2(e2.clientY-cy,e2.clientX-cx)*180/Math.PI;delta=a-a0;moved=Math.abs(delta)>.2;
    if(canvasMode==='moment')q.n.style.setProperty('--nw-sd-rot',(state.rotate+delta).toFixed(2)+'deg');else q.n.style.setProperty('--rot',(baseRot+delta).toFixed(2)+'deg');draw();}
-  function up(event){w.removeEventListener('pointermove',mv);w.removeEventListener('pointerup',up);w.removeEventListener('pointercancel',up);if(event.type==='pointercancel'||!moved){restore();return;}if(canvasMode==='moment')commitMomentState(q.e,q.s,at,state,{rotate:state.rotate+delta});else basePatch(q,{rot:Math.round(baseRot+delta)});}
+  function up(event){w.removeEventListener('pointermove',mv);w.removeEventListener('pointerup',up);w.removeEventListener('pointercancel',up);if(event.type==='pointercancel'||!moved){restore();return;}if(canvasMode==='moment')commitMomentState(q.e,storyContext(q.s,q.e),at,state,{rotate:state.rotate+delta});else basePatch(q,{rot:Math.round(baseRot+delta)});}
   w.addEventListener('pointermove',mv);w.addEventListener('pointerup',up);w.addEventListener('pointercancel',up);
  });
  w.addEventListener('pointermove',draw,true);w.addEventListener('scroll',draw,true);w.addEventListener('resize',draw);doc.addEventListener('nw-sd-progress',draw,true);
@@ -431,7 +435,7 @@ function syncCanvasTools(){
 preview.addEventListener('load',function(){setTimeout(syncCanvasTools,120);});
 setTimeout(syncCanvasTools,250);
 window.NAGWEB_STORY_TIMELINE_UI={version:'1.1',markersVisible:false,directScrub:true,state:function(){return Object.assign({},timelineUI)},setState:function(state){Object.assign(timelineUI,state);saveTimelineUI();renderPane();},setZoom:function(z){timelineUI.zoom=Math.max(1,Math.min(6,+z||1));saveTimelineUI();renderPane();restoreTimelineViewport();},fit:function(){timelineUI.zoom=1;timelineUI.scrollLeft=0;saveTimelineUI();renderPane();restoreTimelineViewport();}};
-window.NAGWEB_STORY_EDITOR={timeline:timeline,panel:panel,transport:transport,active:active,frames:frames,add:add,update:update,remove:remove,select:selectKey,beats:beats,beatAdd:beatAdd,beatUpdate:beatUpdate,beatRemove:beatRemove,hold:hold,stagger:stagger,staggerPanel:staggerPanel,preset:preset,presets:presets,canvasMode:function(){return canvasMode},setCanvasMode:setCanvasMode,canvasEdit:function(id,patch,at){var e=element(id),s=sec();if(!e)return false;at=at==null?atNow(s):at;return commitMomentState(e,s,at,currentMomentState(e,s,at),patch);}};
+window.NAGWEB_STORY_EDITOR={timeline:timeline,panel:panel,transport:transport,active:active,frames:frames,add:add,update:update,remove:remove,select:selectKey,beats:beats,beatAdd:beatAdd,beatUpdate:beatUpdate,beatRemove:beatRemove,hold:hold,stagger:stagger,staggerPanel:staggerPanel,preset:preset,presets:presets,context:storyContext,owner:motionOwner,canvasMode:function(){return canvasMode},setCanvasMode:setCanvasMode,canvasEdit:function(id,patch,at){var e=element(id),s=storySec(e);if(!e)return false;at=at==null?atNow(s):at;return commitMomentState(e,s,at,currentMomentState(e,s,at),patch);}};
 
 // Motion Lab is a gallery of ordinary scenes, evaluated by the same Director.
 function focusComposition(){
@@ -449,20 +453,20 @@ function focusComposition(){
 var labStyle=document.createElement('style');labStyle.textContent='.nw-motion-dialog{width:min(900px,94vw);max-height:90vh;padding:24px;border:1px solid var(--line);border-radius:18px;background:var(--panel,#181820);color:var(--ink,#eee);overflow:auto}.nw-motion-dialog::backdrop{background:#000a;backdrop-filter:blur(5px)}.nw-motion-head{display:flex;align-items:center;justify-content:space-between;gap:16px}.nw-motion-head h2{margin:0;font-size:26px}.nw-motion-card{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:18px 0}.nw-motion-frame{width:100%;height:360px;display:block;border:0;pointer-events:none;background:#10121b}.nw-motion-body{padding:18px}.nw-motion-body h3{margin:0 0 8px}.nw-motion-controls{display:flex;align-items:center;gap:12px;margin:16px 0}.nw-motion-controls input{flex:1;min-width:40px}.nw-motion-open{white-space:nowrap}.nw-motion-description{line-height:1.5;color:var(--ink-soft);margin:10px 0}@media(max-width:600px){.nw-motion-dialog{padding:16px}.nw-motion-frame{height:300px}.nw-motion-open{font-size:11px;padding:6px}}';document.head.appendChild(labStyle);
 var labButton=document.createElement('button');labButton.type='button';labButton.className='btn nw-motion-open';labButton.dataset.motionOpen='';labButton.textContent='Motion Lab';labButton.title='Explorar composiciones animadas editables';document.querySelector('.tb-left').appendChild(labButton);
 var labSide=labButton.cloneNode(true);labSide.style.cssText='width:100%;margin:8px 0 14px';labSide.textContent='Motion Lab · escenas animadas';document.getElementById('sec-add-box').before(labSide);
-var lab=document.createElement('dialog');lab.className='nw-motion-dialog';lab.setAttribute('aria-labelledby','nw-motion-title');lab.innerHTML='<div class="nw-motion-head"><h2 id="nw-motion-title">Motion Lab</h2><button type="button" class="btn tiny" data-motion-close aria-label="Cerrar Motion Lab">Cerrar</button></div><p class="nw-motion-description">Elegí una composición, reemplazá las imágenes y editá cada movimiento en el lienzo y la línea de tiempo.</p><article class="nw-motion-card"><iframe class="nw-motion-frame" title="Vista previa de Iso Focus" tabindex="-1" sandbox="allow-scripts allow-same-origin"></iframe><div class="nw-motion-body"><h3>Iso Focus</h3><p class="nw-motion-description">Tres láminas se acercan desde un plano inclinado, permanecen de frente y vuelven a alejarse. Receta propia inspirada en la referencia.</p><div class="nw-motion-controls"><button type="button" class="btn tiny" data-motion-play aria-pressed="false">▶ Reproducir</button><input type="range" data-motion-progress aria-label="Momento de la vista previa" min="0" max="100" value="50"><output data-motion-now>50%</output></div><button type="button" class="btn primary" data-motion-insert>Insertar escena y editar</button><p class="hint">Agrega una escena nueva. Conserva las escenas que ya tenés. Imágenes, textos y movimientos quedan editables.</p></div></article><p class="nw-motion-description">Primera composición disponible. La cámara animada y las demás composiciones se sumarán en próximas etapas.</p>';document.body.appendChild(lab);
-var labFrame=lab.querySelector('iframe'),labRange=lab.querySelector('[data-motion-progress]'),labPlay=lab.querySelector('[data-motion-play]'),labScene=null,labRAF=0,labStarted=0,labOffset=0;
+var lab=document.createElement('dialog');lab.className='nw-motion-dialog';lab.setAttribute('aria-labelledby','nw-motion-title');lab.innerHTML='<div class="nw-motion-head"><h2 id="nw-motion-title">Motion Lab</h2><button type="button" class="btn tiny" data-motion-close aria-label="Cerrar Motion Lab">Cerrar</button></div><p class="nw-motion-description">Elegí una composición, reemplazá las imágenes y editá cada movimiento en el lienzo y la línea de tiempo.</p><article class="nw-motion-card"><iframe class="nw-motion-frame" title="Vista previa de Iso Focus" tabindex="-1" sandbox="allow-scripts allow-same-origin"></iframe><div class="nw-motion-body"><h3>Iso Focus</h3><p class="nw-motion-description">Tres láminas se acercan desde un plano inclinado, permanecen de frente y vuelven a alejarse. Receta propia inspirada en la referencia.</p><div class="nw-motion-controls"><button type="button" class="btn tiny" data-motion-play aria-pressed="false">▶ Reproducir</button><input type="range" data-motion-progress aria-label="Momento de la vista previa" min="0" max="100" value="50"><output data-motion-now>50%</output></div><button type="button" class="btn primary" data-motion-insert-group>Insertar en esta escena</button> <button type="button" class="btn tiny" data-motion-insert>Como escena nueva</button><p class="hint">La composición se agrega como grupo editable. También podés crear una escena nueva. Imágenes, textos y movimientos quedan editables.</p></div></article><p class="nw-motion-description">Primera composición disponible. La cámara animada y las demás composiciones se sumarán en próximas etapas.</p>';document.body.appendChild(lab);
+var labFrame=lab.querySelector('iframe'),labRange=lab.querySelector('[data-motion-progress]'),labPlay=lab.querySelector('[data-motion-play]'),labScene=null,labRAF=0,labStarted=0,labOffset=0,labDraft=null,labEditing=null,labEditTimer=0;
 function labStop(){cancelAnimationFrame(labRAF);labRAF=0;labPlay.textContent='▶ Reproducir';labPlay.setAttribute('aria-pressed','false');}
 function labSet(p){labRange.value=Math.round(p*100);lab.querySelector('[data-motion-now]').textContent=Math.round(p*100)+'%';try{var rt=labFrame.contentWindow.__NAG_SCROLL_DIRECTOR;if(rt&&labScene&&rt[labScene.id])rt[labScene.id].set(p);}catch(_){} }
-function labTick(t){if(!lab.open){labStop();return;}labSet(((t-labStarted)/6000+labOffset)%1);labRAF=requestAnimationFrame(labTick);}
+function labTick(t){if(!lab.open){labStop();return;}var p=(t-labStarted)/((labDraft?labDraft.config.duration:8)*1000)+labOffset,loop=!labDraft||labDraft.config.loop!==false;labSet(loop?p%1:Math.min(1,p));if(!loop&&p>=1){labStop();return;}labRAF=requestAnimationFrame(labTick);}
 function labOpen(){
- if(lab.open)return;var recipe=focusComposition();labScene=recipe.scene;
+ if(lab.open)return;labDraft=null;labEditing=null;var recipe=focusComposition();labScene=recipe.scene;
  var p=Object.assign({},flattenPage(page()),{sections:[labScene],assets:Object.assign({},project.assets,{images:(project.assets.images||[]).concat(recipe.assets)})});
  labRange.value=50;lab.querySelector('[data-motion-now]').textContent='50%';lab.showModal();labFrame.srcdoc=generateSite(p,false,false,false);
 }
 labFrame.addEventListener('load',function(){if(lab.open)labSet(.5);});
 document.addEventListener('click',function(ev){if(ev.target.closest('[data-motion-open]'))labOpen();});
 lab.querySelector('[data-motion-close]').addEventListener('click',function(){lab.close();});
-lab.addEventListener('close',function(){labStop();labFrame.srcdoc='';labScene=null;});
+lab.addEventListener('close',function(){labStop();clearTimeout(labEditTimer);labFrame.srcdoc='';labScene=null;labDraft=null;labEditing=null;labForm.hidden=true;lab.querySelector('[data-motion-insert]').hidden=false;lab.querySelector('[data-motion-insert-group]').hidden=false;});
 labRange.addEventListener('input',function(){labStop();labSet(+labRange.value/100);});
 labPlay.addEventListener('click',function(){if(labRAF){labStop();return;}if(matchMedia('(prefers-reduced-motion: reduce)').matches){toast('Movimiento reducido activo. Podés recorrer la vista previa con el control de momento.');return;}labStarted=performance.now();labOffset=+labRange.value/100;labPlay.textContent='Ⅱ Pausar';labPlay.setAttribute('aria-pressed','true');labRAF=requestAnimationFrame(labTick);});
 function labInsert(){
@@ -474,5 +478,31 @@ function labInsert(){
  toast('Escena insertada. Seleccioná una lámina para cambiar su imagen; los puntos de la línea de tiempo editan sus movimientos.');return s.id;
 }
 lab.querySelector('[data-motion-insert]').addEventListener('click',labInsert);
-window.NAGWEB_MOTION_LAB={open:labOpen,insert:labInsert,create:focusComposition};
+function labInsertGroup(){
+ var recipe=focusComposition(),s=sec();if(s.layout==='horizontal'){toast('Elegí una escena de lienzo libre o de contenido para insertar la composición.');return false;}
+ var group=mkEl('container',{name:'Iso Focus · composición',x:50,y:50,w:86,h:600,bg:'#10121b',radius:20,anim:'none',nwMotionInstance:{template:'iso-focus',source:'time',duration:8,loop:true,perspective:1000}});
+ recipe.scene.elements.forEach(function(e){e.parent=group.id;});snapshot();project.assets.images=project.assets.images||[];Array.prototype.push.apply(project.assets.images,recipe.assets);
+ s.elements.push(group);Array.prototype.push.apply(s.elements,recipe.scene.elements);curEl=s.elements.indexOf(recipe.scene.elements[1]);selection=[s.elements[curEl].id];secFocus=false;curPane='elements';
+ canvasMode='moment';saveCanvasMode();timelineUI.docked=true;timelineUI.minimized=false;saveTimelineUI();closedGroups.delete('el-scroll-director');closedGroups.delete('el-motion-instance');
+ selected={element:s.elements[curEl].id,key:s.elements[curEl].sdKeyframes[1].id};lab.close();refresh();D.scrub(group.id,.35);syncSelectionToFrame();
+ toast('Composición agregada. Editar en Motion Lab reabre este mismo grupo.');return group.id;
+}
+lab.querySelector('[data-motion-insert-group]').addEventListener('click',labInsertGroup);
+var labForm=document.createElement('section');labForm.hidden=true;labForm.className='nw-motion-body';labForm.dataset.motionEditForm='';lab.querySelector('.nw-motion-card').appendChild(labForm);
+function labPreviewDraft(){
+ if(!labDraft||!labEditing)return;var s=page().sections.find(function(s){return s.id===labEditing.scene;});if(!s)return;
+ labScene=Object.assign({},s,{id:labDraft.id,bg:labDraft.bg,sdEnabled:false,nwMotionSource:'time',nwMotionDuration:labDraft.config.duration,nwMotionLoop:labDraft.config.loop,sdPerspective:labDraft.config.perspective,elements:labDraft.elements.map(function(e){var n=Object.assign({},e);if(n.parent===labDraft.id)n.parent='';return n;})});
+ labFrame.srcdoc=generateSite(Object.assign({},flattenPage(page()),{sections:[labScene]}),false,false,false);
+}
+function labEdit(id){
+ if(lab.open)return;var f=findEl(id),s=f&&page().sections[f[0]],g=s&&s.elements[f[1]];if(!g||!g.nwMotionInstance)return false;
+ labEditing={scene:s.id,group:g.id};labDraft={id:g.id,bg:g.bg,config:JSON.parse(JSON.stringify(g.nwMotionInstance)),elements:JSON.parse(JSON.stringify(s.elements.filter(function(e){return e!==g&&motionOwner(s,e)===g;})))};
+ lab.querySelector('[data-motion-insert]').hidden=true;lab.querySelector('[data-motion-insert-group]').hidden=true;labForm.hidden=false;
+ var c=labDraft.config;labForm.innerHTML='<h3>Editar esta composición</h3><p class="hint">Los cambios se aplican al guardar. Cerrar descarta esta edición.</p>'+cRow('Animar por','<select class="csel" data-motion-config="source"><option value="time"'+(c.source!=='scroll'?' selected':'')+'>Tiempo</option><option value="scroll"'+(c.source==='scroll'?' selected':'')+'>Scroll de esta escena</option></select>')+cRow('Duración (segundos)','<input class="csel" type="number" min="0.5" max="120" step="0.5" data-motion-config="duration" value="'+c.duration+'">')+cRow('Repetir','<input type="checkbox" data-motion-config="loop"'+(c.loop!==false?' checked':'')+'>')+cRow('Perspectiva (px)','<input class="csel" type="number" min="200" max="5000" step="50" data-motion-config="perspective" value="'+c.perspective+'">')+labDraft.elements.map(function(e,i){return cRow(esc(e.name||e.type),e.type==='image'?'<select class="csel" data-motion-content="'+i+'" data-motion-content-field="assetId">'+(project.assets.images||[]).map(function(a){return '<option value="'+esc(a.id)+'"'+(a.id===e.assetId?' selected':'')+'>'+esc(a.name)+'</option>';}).join('')+'</select>':'<input class="csel" data-motion-content="'+i+'" data-motion-content-field="text" value="'+esc(e.text||'')+'">');}).join('')+'<button type="button" class="btn primary" data-motion-save>Guardar cambios en este grupo</button><p class="hint">Scroll activa el Director de esta escena. Para editar momentos individuales, guardá y seleccioná una lámina en el lienzo.</p>';
+ lab.showModal();labPreviewDraft();return true;
+}
+labForm.addEventListener('change',function(ev){if(!labDraft)return;var t=ev.target,k=t.dataset.motionConfig;if(k){labDraft.config[k]=k==='loop'?t.checked:k==='source'?t.value:Math.max(k==='duration'?.5:200,Math.min(k==='duration'?120:5000,+t.value||(k==='duration'?8:1000)));}else if(t.dataset.motionContent!=null){var e=labDraft.elements[+t.dataset.motionContent];if(e)e[t.dataset.motionContentField]=t.value;}else return;labStop();clearTimeout(labEditTimer);labEditTimer=setTimeout(labPreviewDraft,100);});
+labForm.addEventListener('click',function(ev){if(!ev.target.closest('[data-motion-save]')||!labDraft||!labEditing)return;var s=page().sections.find(function(s){return s.id===labEditing.scene;}),g=s&&s.elements.find(function(e){return e.id===labEditing.group;});if(!g){lab.close();return;}snapshot();g.nwMotionInstance=labDraft.config;var edits={};labDraft.elements.forEach(function(e){edits[e.id]=e;});s.elements=s.elements.map(function(e){return edits[e.id]||e;});if(g.nwMotionInstance.source==='scroll')s.sdEnabled=true;var id=g.id;lab.close();refresh();D.scrub(id,.35);toast('Cambios guardados en la misma composición.');});
+document.addEventListener('click',function(ev){var b=ev.target.closest('[data-motion-edit]');if(b)labEdit(b.dataset.motionEdit);});
+window.NAGWEB_MOTION_LAB={open:labOpen,insert:labInsert,insertGroup:labInsertGroup,edit:labEdit,create:focusComposition};
 })();
