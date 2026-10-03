@@ -120,6 +120,13 @@ Esta etapa reorganiza la interfaz existente. La línea de tiempo de momentos en 
 
 Al reabrir una composición, sus miembros directos pueden seleccionarse y arrastrarse en el panel central. El inspector indica el elemento seleccionado y permite ajustar X/Y en porcentaje; las flechas mueven un píxel y Mayús diez. La edición modifica la posición base (0–100%), conservando sus keyframes y ajustes móviles. El preview muestra esa posición base también cuando el panel es estrecho.
 
-El arrastre pausa la reproducción. Cancelar un gesto restaura su posición inicial; cerrar descarta el borrador completo. Guardar conserva IDs y grupo, persiste los cambios y admite deshacer/rehacer. Las recargas de contenido mantienen selección y momento de preview. La galería conserva su vista previa sin edición. Esta etapa cubre posicionamiento; tamaño, rotación y edición de momentos dentro de Motion Lab siguen pendientes.
+El arrastre pausa la reproducción. Cancelar un gesto restaura su posición inicial; cerrar descarta el borrador completo. Guardar conserva IDs y grupo, persiste los cambios y admite deshacer/rehacer. Las recargas de contenido mantienen selección y momento de preview. La galería conserva su vista previa sin edición. La rotación y edición de momentos dentro de Motion Lab siguen pendientes.
 
 `.github/nagweb-motion-canvas-smoke.mjs` verifica arrastre de mouse real, selección, cancelación de gesto, teclado, controles numéricos, momento al recargar, cierre sin guardar, persistencia, historial y conservación de keyframes.
+
+
+## Motion Lab — ancho desde el lienzo y el inspector
+
+Seleccionar un miembro muestra un tirador lateral para cambiar su ancho base alrededor de su centro. Las imágenes mantienen su proporción; en textos se ajusta el ancho de la caja. El inspector incluye **Ancho (%)**, entre 1 y 100. Las flechas sobre el tirador cambian un punto porcentual (Mayús: cinco). El tirador acompaña la selección durante el recorrido de la animación y al redimensionar la ventana.
+
+El cambio pausa la reproducción y permanece en el borrador hasta guardar. Cancelar el gesto restaura el ancho inicial; cerrar lo descarta. Guardado, reapertura y deshacer/rehacer conservan IDs, posiciones, keyframes y configuración móvil. Las pruebas del lienzo comprueban el arrastre real de tamaño, proporción, centro fijo, cancelación, teclado, valor numérico y seguimiento durante scrub.
