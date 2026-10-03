@@ -4,10 +4,10 @@
 'use strict';
 function createStoryModel(){
  var properties={
-  x:{label:'Movimiento horizontal',unit:'px',base:0,min:-10000,max:10000},
-  y:{label:'Movimiento vertical',unit:'px',base:0,min:-10000,max:10000},
-  scale:{label:'Escala',unit:'%',base:100,min:0,max:1000},
-  rotate:{label:'Rotación',unit:'°',base:0,min:-3600,max:3600},
+  x:{label:'Mover izquierda / derecha',unit:'px',base:0,min:-10000,max:10000},
+  y:{label:'Mover arriba / abajo',unit:'px',base:0,min:-10000,max:10000},
+  scale:{label:'Tamaño',unit:'%',base:100,min:0,max:1000},
+  rotate:{label:'Giro',unit:'°',base:0,min:-3600,max:3600},
   opacity:{label:'Opacidad',unit:'%',base:100,min:0,max:100},
   blur:{label:'Desenfoque',unit:'px',base:0,min:0,max:100}
  };
