@@ -72,12 +72,12 @@ paneSceneNew=function(){
  var body=cRow('Activar',cSeg('sec.sdEnabled',!!s.sdEnabled,[['false','No'],['true','Sí']],'bool'));
  if(s.sdEnabled){
   body+='<p class="hint gh">La escena se convierte en una pequeña película controlada por el scroll: queda fija mientras el recorrido avanza de 0% a 100%.</p>';
-  body+=cRow('Duración',cNum('sec.sdLength',s.sdLength,'vh',{step:20,min:140,max:900}));
-  body+=cRow('Sensación',cSeg('sec.sdEase',s.sdEase||'cinematic',[['linear','Directa'],['smooth','Suave'],['cinematic','Cinemática']]));
-  body+='<div class="field cstack"><label>Ver un momento sin scrollear <span class="val" data-sd-val>'+Math.round(val)+'%</span></label><input type="range" class="crange" data-sd-scrub="'+s.id+'" min="0" max="100" step="1" value="'+val+'"></div>';
+  body+=cRow('Longitud del recorrido',cNum('sec.sdLength',s.sdLength,'vh',{step:20,min:140,max:900}));
+  body+=cRow('Ritmo',cSeg('sec.sdEase',s.sdEase||'cinematic',[['linear','Directa'],['smooth','Suave'],['cinematic','Cinemática']]));
+  body+='<div class="field cstack"><label>Previsualizar momento <span class="val" data-sd-val>'+Math.round(val)+'%</span></label><input type="range" class="crange" data-sd-scrub="'+s.id+'" min="0" max="100" step="1" value="'+val+'"></div>';
   body+=timelineHTML(s,val);
   body+='<div class="row"><button type="button" class="btn tiny" data-sd-play="'+s.id+'">▶ Reproducir secuencia</button><button type="button" class="btn tiny" data-sd-live="'+s.id+'">↕ Volver al scroll real</button></div>';
-  body+='<div class="row" style="margin-top:7px"><button type="button" class="btn tiny" data-sd-auto="'+s.id+'">Repartir recorridos simples</button><button type="button" class="btn tiny" data-sd-reset="'+s.id+'">Mostrar todos toda la escena</button></div>';
+  body+='<div class="row" style="margin-top:7px"><button type="button" class="btn tiny" data-sd-auto="'+s.id+'">Distribuir entradas automáticamente</button><button type="button" class="btn tiny" data-sd-reset="'+s.id+'">Dejar todos visibles</button></div>';
   body+='<p class="hint gh">Después seleccioná cada elemento. En su panel aparece <b>Momento en la historia</b>, donde decidís cuándo entra, cuándo sale y qué recorrido hace.</p>';
  }
  var trans=cRow('Tipo',cSeg('sec.stType',s.stType||'cut',[['cut','Corte'],['fade','Fundido'],['overlay','Superposición'],['push','Empuje'],['zoom','Zoom'],['morph','Morph simple']]));
@@ -96,18 +96,18 @@ paneElementNew=function(){
  var raw=s.elements[curEl];if(!raw||raw.type==='light3d'||raw.fixed||raw.modal||!model.eligible(raw,s))return html;
  elDefaults(raw);
  var e=viewMobile?Object.assign({},raw,raw.mobile):raw;
- var timing=cRow('Visible desde / hasta',cNum('el.sdStart',e.sdStart,'%',{step:1,min:0,max:100})+cNum('el.sdEnd',e.sdEnd,'%',{step:1,min:0,max:100}));
- timing+=cRow('Transición',cNum('el.sdSpan',e.sdSpan,'%',{step:1,min:1,max:30}));
+ var timing=cRow('Empieza / termina',cNum('el.sdStart',e.sdStart,'%',{step:1,min:0,max:100})+cNum('el.sdEnd',e.sdEnd,'%',{step:1,min:0,max:100}));
+ timing+=cRow('Duración de entrada / salida',cNum('el.sdSpan',e.sdSpan,'%',{step:1,min:1,max:30}));
  timing+=cRow('Entrada',cSel('el.sdEnter',[
   ['none','Ya está'],['fade','Fundido'],['up','Desde abajo'],['down','Desde arriba'],['left','Desde izquierda'],['right','Desde derecha'],['zoom','Zoom'],['blur','Desenfoque'],['depth','Profundidad']
  ],e.sdEnter||'fade'));
  timing+=cRow('Salida',cSel('el.sdExit',[
   ['keep','Se queda'],['fade','Fundido'],['up','Hacia arriba'],['down','Hacia abajo'],['left','Hacia izquierda'],['right','Hacia derecha'],['zoom','Zoom'],['blur','Desenfoque']
  ],e.sdExit||'keep'));
- timing+='<h4 class="gsub">Viaje mientras está en escena</h4>';
- timing+=cRow('Desplazamiento',cNum('el.sdMoveX',e.sdMoveX,'X px',{step:10,min:-1600,max:1600})+cNum('el.sdMoveY',e.sdMoveY,'Y px',{step:10,min:-1600,max:1600}));
- timing+=cRow('Rotación / escala',cNum('el.sdRotate',e.sdRotate,'°',{step:5,min:-720,max:720})+cNum('el.sdScale',e.sdScale,'%',{step:5,min:10,max:500}));
- timing+='<p class="hint gh">Ejemplo: 20% → 55% hace que aparezca cerca del 20%, permanezca mientras avanza la escena y complete su viaje alrededor del 55%.</p>';
+ timing+='<h4 class="gsub">Movimiento durante la escena</h4>';
+ timing+=cRow('Izquierda / derecha',cNum('el.sdMoveX',e.sdMoveX,'px',{step:10,min:-1600,max:1600}));timing+=cRow('Arriba / abajo',cNum('el.sdMoveY',e.sdMoveY,'px',{step:10,min:-1600,max:1600}));
+ timing+=cRow('Giro / tamaño',cNum('el.sdRotate',e.sdRotate,'°',{step:5,min:-720,max:720})+cNum('el.sdScale',e.sdScale,'%',{step:5,min:10,max:500}));
+ timing+='<p class="hint gh">En movimiento: − horizontal va a la izquierda y + a la derecha; − vertical va hacia arriba y + hacia abajo. Ejemplo: 20% → 55% hace que empiece cerca del 20% y complete su recorrido alrededor del 55%.</p>';
  if(raw.type==='shape3d'){
   timing+='<p class="hint gh">'+(raw.anchor!==false?'Este objeto 3D está anclado al lienzo: el Director mueve su ancla, así que el objeto Three.js la sigue.':'Este 3D no está anclado al lienzo. Activá su opción de anclaje si querés dirigirlo desde esta línea de tiempo.')+'</p>';
  }
