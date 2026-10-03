@@ -284,6 +284,9 @@ function rtTransitions(DATA){
   var slot=document.createElement('div');slot.className='nw-st-slot';el.before(slot);slot.append(el);
   var cs=getComputedStyle(el),opacity=parseFloat(cs.opacity),q={el:el,slot:slot,baseOpacity:isFinite(opacity)?opacity:1,basePointer:cs.pointerEvents,baseRadius:cs.borderRadius};
   el.__nwStoryLayout=slot;el.classList.add('nw-st-visual');
+  // Compose the captured authored opacity even when custom CSS or inline styles
+  // would otherwise override the transition class (including reduced motion).
+  el.style.setProperty('opacity','var(--nw-st-opacity,1)','important');
   nodes.set(el,q);return q;
  }
  (DATA||[]).forEach(function(c){
