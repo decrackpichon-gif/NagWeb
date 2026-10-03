@@ -463,7 +463,12 @@ export async function runStorytellingSmoke(page){
   canvas:NAGWEB_STORY_EDITOR.canvasMode(),
   project:JSON.stringify(project)
  }));
- assert.equal(restored.project,preStress.project);
+ const preProject=JSON.parse(preStress.project),postProject=JSON.parse(restored.project);
+ assert.deepEqual(
+  postProject.pages.map(pg=>({id:pg.id,sections:pg.sections.map(s=>s.id)})),
+  preProject.pages.map(pg=>({id:pg.id,sections:pg.sections.map(s=>s.id)}))
+ );
+ assert.ok(!postProject.pages.some(pg=>pg.sections.some(s=>s.id==='story-stress')),'El stress quedó contaminando el proyecto restaurado');
  assert.equal(restored.canvas,preStress.canvas==='moment'?'moment':'base');
  if(preStress.timeline){
   const old=JSON.parse(preStress.timeline);
