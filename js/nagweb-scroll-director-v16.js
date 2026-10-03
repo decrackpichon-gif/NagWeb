@@ -284,7 +284,9 @@ function rt(DATA,createModel){
  }
  (DATA||[]).forEach(setup);
  addEventListener('scroll',req,{passive:true});addEventListener('resize',req);
- motion.addEventListener('change',function(){clockResets.forEach(function(fn){fn();});req();clockStart();});
+ // Apply accessibility changes immediately; background/offscreen frames may
+ // throttle requestAnimationFrame exactly when their motion clock is stopped.
+ motion.addEventListener('change',function(){clockResets.forEach(function(fn){fn();});paints.forEach(function(fn){fn();});clockStart();});
  document.addEventListener('visibilitychange',function(){clockResets.forEach(function(fn){fn();});clockStart();});
  addEventListener('message',function(ev){var d=ev.data||{},S=states[d.secId];if(!S||!d.sc||ev.source!==parent)return;if(d.type==='nw-sd-scrub')S.set(d.progress);else if(d.type==='nw-sd-live')S.live();else if(d.type==='nw-sd-update'&&d.element)S.update(d.element);});
  window.__NAG_SCROLL_DIRECTOR=states;
