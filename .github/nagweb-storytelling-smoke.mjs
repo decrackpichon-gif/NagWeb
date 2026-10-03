@@ -108,6 +108,34 @@ export async function runStorytellingSmoke(page){
  assert.ok(proportional.w>60&&proportional.size>0);
  assert.equal(proportional.frames,framesBeforeBase);
 
+ // Media → Imagen recibe los mismos handles externos de tamaño y rotación.
+ await page.evaluate(()=>{
+  const s=sec();s.elements.push(mkEl('image',{id:'story-image',x:48,y:55,w:28,ratio:'4/3',rot:0}));
+  curEl=s.elements.length-1;selection=['story-image'];renderPane();renderPreview();
+ });
+ await page.waitForFunction(()=>document.querySelector('#preview')?.contentDocument?.querySelector('[data-id="story-image"]')&&document.querySelector('#preview')?.contentDocument?.querySelector('.nw-story-transform-h.size'));
+ previewHandle=await page.$('#preview');previewFrame=await previewHandle.contentFrame();
+ const imageHandles=await previewFrame.evaluate(()=>[...document.querySelectorAll('.nw-story-transform-h')].map(h=>getComputedStyle(h).display));
+ assert.equal(imageHandles.length,2);assert.ok(imageHandles.every(x=>x!=='none'));
+ await previewFrame.evaluate(()=>{
+  const h=document.querySelector('.nw-story-transform-h.size'),r=h.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;
+  h.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,clientX:x,clientY:y,button:0,pointerId:41}));
+  window.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,clientX:x+55,clientY:y+55,button:0,pointerId:41}));
+  window.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,clientX:x+55,clientY:y+55,button:0,pointerId:41}));
+ });
+ await page.waitForFunction(()=>sec().elements.find(e=>e.id==='story-image').w>28);
+ await page.waitForFunction(()=>document.querySelector('#preview')?.contentDocument?.querySelector('.nw-story-transform-h.rot'));
+ previewHandle=await page.$('#preview');previewFrame=await previewHandle.contentFrame();
+ await previewFrame.evaluate(()=>{
+  const h=document.querySelector('.nw-story-transform-h.rot'),n=document.querySelector('[data-id="story-image"]'),hr=h.getBoundingClientRect(),nr=n.getBoundingClientRect(),x=hr.left+hr.width/2,y=hr.top+hr.height/2,cx=nr.left+nr.width/2,cy=nr.top+nr.height/2;
+  h.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,clientX:x,clientY:y,button:0,pointerId:42}));
+  window.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,clientX:cx+55,clientY:cy,button:0,pointerId:42}));
+  window.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,clientX:cx+55,clientY:cy,button:0,pointerId:42}));
+ });
+ await page.waitForFunction(()=>Math.abs(sec().elements.find(e=>e.id==='story-image').rot)>1);
+ const imageEdit=await page.evaluate(()=>{const e=sec().elements.find(e=>e.id==='story-image');return{w:e.w,rot:e.rot}});
+ assert.ok(imageEdit.w>28);assert.ok(Math.abs(imageEdit.rot)>1);
+
  // Restaurar fixture para el resto de las pruebas históricas.
  await page.evaluate(()=>{
   const e=sec().elements[0];e.x=20;e.y=30;e.w=60;e.rot=0;e.customSize=0;e.sdKeyframes=[{at:0,x:0,opacity:100},{at:100,x:200,y:-100,scale:150,rotate:20,opacity:50,blur:4}];e.sdKeyframesEnabled=true;
