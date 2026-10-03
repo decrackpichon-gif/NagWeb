@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 
 export async function runMotionGroupSmoke(page){
+ const errors=[],onError=e=>errors.push(String(e));page.on('pageerror',onError);
  const previous=await page.evaluate(()=>({project:JSON.stringify(project),curPage,curSec,curEl,curPane,selection,secFocus,mode:NAGWEB_STORY_EDITOR.canvasMode(),timeline:NAGWEB_STORY_TIMELINE_UI.state()}));
  try{
   await page.evaluate(()=>{
@@ -55,9 +56,13 @@ export async function runMotionGroupSmoke(page){
   await page.waitForFunction(id=>document.getElementById('group-export').contentWindow.__NAG_SCROLL_DIRECTOR[id].progress()>.1,{},gid);
   assert.equal(await page.evaluate(()=>document.getElementById('group-export').contentWindow.__NAG_SCROLL_DIRECTOR['motion-host'].progress()),1);
   await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);
-  await page.waitForFunction(id=>document.getElementById('group-export').contentDocument.querySelector('[data-id="'+id+'"] [data-nw-sd-el]').style.getPropertyValue('--nw-sd-z')==='0.00px',{},gid);
+  try{await page.waitForFunction(id=>document.getElementById('group-export').contentDocument.querySelector('[data-id="'+id+'"] [data-nw-sd-el]').style.getPropertyValue('--nw-sd-z')==='0.00px',{timeout:5000},gid);}catch(e){
+   const diagnostic=await page.evaluate(id=>{const f=document.getElementById('group-export'),g=f.contentDocument.querySelector('[data-id="'+id+'"]'),n=g.querySelector('[data-nw-sd-el]');return{media:f.contentWindow.matchMedia('(prefers-reduced-motion:reduce)').matches,progress:f.contentWindow.__NAG_SCROLL_DIRECTOR[id].progress(),z:n.style.getPropertyValue('--nw-sd-z'),classes:g.className,parent:g.closest('.sc')?.dataset.id};},gid);
+   throw new Error('Group reduced motion: '+JSON.stringify({diagnostic,errors}));
+  }
   console.log('Grupos Motion Lab: inserción en escena existente, poses por instancia, reapertura, contenido, guardado, cancelación, historial, IDs y exportación junto al Director OK');
  }finally{
+  page.off('pageerror',onError);
   await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'no-preference'}]);
   await page.evaluate(p=>{document.querySelector('.nw-motion-dialog').close();document.getElementById('group-export')?.remove();clearTimeout(previewTimer);project=JSON.parse(p.project);curPage=p.curPage;curSec=p.curSec;curEl=p.curEl;curPane=p.curPane;selection=p.selection;secFocus=p.secFocus;history=[];future=[];NAGWEB_STORY_EDITOR.setCanvasMode(p.mode);NAGWEB_STORY_TIMELINE_UI.setState(p.timeline);saveProject();renderScenes();renderPane();renderPreview();},previous);
  }
