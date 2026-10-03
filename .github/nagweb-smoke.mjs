@@ -7,6 +7,8 @@ const feedbackSource=fs.readFileSync(new URL('../js/nagweb-feedback-v16.js',impo
 const directorSource=fs.readFileSync(new URL('../js/nagweb-scroll-director-v16.js',import.meta.url),'utf8');
 const universalSource=fs.readFileSync(new URL('../js/nagweb-universal-container.js',import.meta.url),'utf8');
 const directionSource=fs.readFileSync(new URL('../js/nagweb-v14-direction.js',import.meta.url),'utf8');
+const behaviorSource=fs.readFileSync(new URL('../js/nagweb-behaviors-v2.js',import.meta.url),'utf8');
+const storySource=fs.readFileSync(new URL('../js/nagweb-story-editor.js',import.meta.url),'utf8');
 const contractState={
  heroPartSelector:feedbackSource.includes('data-nw-part'),
  storyChapterSelector:['data-nw-story-ch="1"','data-nw-story-ch="2"','data-nw-story-ch="3"'].every(x=>feedbackSource.includes(x)),
@@ -35,6 +37,7 @@ const contractState={
  anchor3dSource:['NAGWEB_3D_ANCHOR','getBoundingClientRect','unproject(cam)','followSize','followCssRotation'].every(x=>directorSource.includes(x)),
  anchor3dExport:directorSource.includes('nw-3d-anchor-runtime')&&directorSource.includes('rt3DAnchor.toString()'),
  behaviorCatalogSource:directionSource.includes("ensureCategory('behavior','Comportamientos'")&&['reveal','hold','parallax','sticky','sceneTransition','cursor','magnet','depth','videoScrub','orbit3d'].every(x=>directionSource.includes(x+':{label:')),
+ catalogLanguage:directionSource.includes("creativeCat.label='Plantillas animadas'")&&directionSource.includes("cat.desc='Aplican movimiento o interacción")&&behaviorSource.includes('<b>Comportamiento</b> = una acción')&&storySource.includes("Plantilla de movimiento"),
  behaviorRuntimeSource:directionSource.includes('function rtBehaviors(DATA)')&&directionSource.includes('nw-behaviors-runtime')&&directionSource.includes('nwVideoScrub')&&directionSource.includes('nw3dOrbit'),
  behaviorOrbitBridge:directorSource.includes("data-nw-3d-orbit")&&directorSource.includes('orbitSpeed')&&directorSource.includes('performance.now()-b.started')
 };
@@ -106,7 +109,8 @@ const state=Object.assign(await page.evaluate(()=>({
  anchor3dApi:(()=>{const a=window.NAGWEB_3D_ANCHOR;return !!(a&&a.version==='1.0'&&typeof a.bind==='function'&&typeof a.unbind==='function'&&typeof a.refresh==='function');})(),
  anchor3dPreviewApi:(()=>{const f=document.querySelector('#preview'),a=f&&f.contentWindow&&f.contentWindow.NAGWEB_3D_ANCHOR;return !!(a&&a.version==='1.0'&&typeof a.bind==='function');})(),
  behaviorApi:(()=>{const b=window.NAGWEB_BEHAVIORS,l=b&&typeof b.list==='function'?b.list():[];return !!(b&&b.version==='2.0'&&typeof b.apply==='function'&&typeof b.toggle==='function'&&l.length===10&&['Revelar','Mantener','Parallax','Seguir cursor','Magnetismo','Scrub de video','Sticky','Transición de escena','Profundidad','Órbita 3D'].every(n=>l.some(x=>x.label===n)));})(),
- behaviorCategory:(()=>{try{const c=INSERT_CATS.find(x=>x.key==='behavior'),items=c&&c.items&&c.items();return !!(c&&c.label==='Comportamientos'&&Array.isArray(items)&&items.length===10);}catch(_){return false}})()
+ behaviorCategory:(()=>{try{const c=INSERT_CATS.find(x=>x.key==='behavior'),items=c&&c.items&&c.items();return !!(c&&c.label==='Comportamientos'&&Array.isArray(items)&&items.length===10);}catch(_){return false}})(),
+ catalogLanguage:(()=>{try{const p=INSERT_CATS.find(x=>x.key==='creative'),b=INSERT_CATS.find(x=>x.key==='behavior');return !!(p&&p.label==='Plantillas animadas'&&p.desc&&b&&b.desc&&/elemento que ya seleccionaste/.test(b.desc));}catch(_){return false}})()
 })),contractState);
 for(const [k,v] of Object.entries(state)){
  if(!v) throw new Error('Smoke assertion failed: '+k+' = '+String(v));
