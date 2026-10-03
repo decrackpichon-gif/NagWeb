@@ -31,8 +31,19 @@ export async function runMotionCanvasSmoke(page){
    assert.ok(Math.abs(before.y+before.height/2-after.y-after.height/2)<1,'Resize keeps center Y');
    return actual;
   }
+  async function rotate(frame,degrees,cancel=false,snap=false){
+   const node=await frame.$('[data-id="'+fixture.id+'"]'),before=await node.boundingBox(),handle=await frame.$('[data-motion-rotate]'),box=await handle.boundingBox();assert.ok(box);
+   const original=await page.$eval('[data-motion-angle]',n=>n.valueAsNumber),cx=before.x+before.width/2,cy=before.y+before.height/2,sx=box.x+box.width/2,sy=box.y+box.height/2,angle=Math.atan2(sy-cy,sx-cx),radius=Math.hypot(sx-cx,sy-cy);
+   await page.mouse.move(sx,sy);if(snap)await page.keyboard.down('Shift');await page.mouse.down();
+   for(let i=1;i<=8;i++){const a=angle+degrees*i/8*Math.PI/180;await page.mouse.move(cx+Math.cos(a)*radius,cy+Math.sin(a)*radius);}
+   if(cancel)await handle.evaluate(n=>n.dispatchEvent(new PointerEvent('pointercancel',{bubbles:true,pointerId:1})));await page.mouse.up();if(snap)await page.keyboard.up('Shift');
+   const actual=await page.$eval('[data-motion-angle]',n=>n.valueAsNumber),expected=cancel?original:snap?Math.round((original+degrees)/15)*15:original+degrees;assert.ok(Math.abs(actual-expected)<.1,'Rotation follows mouse arc and snapping');
+   const after=await node.boundingBox();assert.ok(Math.abs(before.x+before.width/2-after.x-after.width/2)<1,'Rotation keeps center X');assert.ok(Math.abs(before.y+before.height/2-after.y-after.height/2)<1,'Rotation keeps center Y');
+   assert.equal(await node.evaluate(n=>n.style.getPropertyValue('--rot')),actual+'deg');return actual;
+  }
   let frame=await open();await drag(frame,36,24);
   assert.ok((await resize(frame,20))>fixture.element.w);
+  await rotate(frame,24);
   assert.match(await page.$eval('[data-motion-selection]',n=>n.textContent),/Lámina 2/);
   assert.ok(await frame.$('[data-id="'+fixture.id+'"].nw-motion-selected'));
   assert.equal(await page.evaluate(()=>JSON.stringify(sec())),fixture.scene,'Draft must not write project');
@@ -52,21 +63,25 @@ export async function runMotionCanvasSmoke(page){
   const resized=await resize(frame,20);await resize(frame,16,true);
   await page.keyboard.press('ArrowRight');assert.equal(await page.$eval('[data-motion-width]',n=>n.valueAsNumber),Math.round((resized+1)*100)/100);
   await page.$eval('[data-motion-width]',n=>{n.value='42';n.dispatchEvent(new Event('change',{bubbles:true}));});
+  await rotate(frame,27,false,true);await rotate(frame,-12,true);
+  await page.keyboard.press('ArrowLeft');assert.equal(await page.$eval('[data-motion-angle]',n=>n.valueAsNumber),29);
+  await page.$eval('[data-motion-angle]',n=>{n.value='22';n.dispatchEvent(new Event('change',{bubbles:true}));});
+  const matrixAngle=await node.evaluate(n=>{const m=new DOMMatrixReadOnly(getComputedStyle(n).transform);return Math.atan2(m.b,m.a)*180/Math.PI;});assert.ok(Math.abs(matrixAngle-22)<.1,'Base rotation is visibly rendered');
   // Content reload keeps the selected member and current preview moment.
   await page.$eval('[data-motion-progress]',n=>{n.value='72';n.dispatchEvent(new Event('input',{bubbles:true}));});
   await page.$eval('[data-motion-config="duration"]',n=>{n.value='3';n.dispatchEvent(new Event('change',{bubbles:true}));});
-  await page.waitForFunction(id=>{const f=document.querySelector('.nw-motion-dialog iframe'),n=f?.contentDocument?.querySelector('[data-id="'+id+'"].nw-motion-selected');return n&&n.style.left==='62%'&&n.style.width==='42%'&&f.contentWindow.__NAG_SCROLL_DIRECTOR?.[f.contentDocument.querySelector('.sc').dataset.id]?.progress()===.72;},{timeout:10000},fixture.id);
+  await page.waitForFunction(id=>{const f=document.querySelector('.nw-motion-dialog iframe'),n=f?.contentDocument?.querySelector('[data-id="'+id+'"].nw-motion-selected');return n&&n.style.left==='62%'&&n.style.width==='42%'&&n.style.getPropertyValue('--rot')==='22deg'&&f.contentWindow.__NAG_SCROLL_DIRECTOR?.[f.contentDocument.querySelector('.sc').dataset.id]?.progress()===.72;},{timeout:10000},fixture.id);
   assert.equal(await page.$eval('[data-motion-width]',n=>n.value),'42');
   const followed=await page.evaluate(()=>{const d=document.querySelector('.nw-motion-dialog iframe').contentDocument,n=d.querySelector('.nw-motion-selected').getBoundingClientRect(),b=d.querySelector('[data-motion-resize]').getBoundingClientRect();return Math.abs(b.x+b.width/2-n.right-6);});assert.ok(followed<1,'Handle follows animation scrub');
   await page.click('[data-motion-save]');
   const saved=await page.evaluate(id=>({scene:JSON.stringify(sec()),e:sec().elements.find(e=>e.id===id),stored:JSON.parse(localStorage.getItem(STORE_KEY)).pages[0].sections[0]}),fixture.id);
-  assert.equal(saved.e.x,62);assert.equal(saved.e.y,58);assert.equal(saved.e.w,42);assert.deepEqual(saved.e.sdKeyframes,fixture.element.sdKeyframes);assert.deepEqual(saved.e.mobile,fixture.element.mobile);assert.equal(saved.e.ratio,fixture.element.ratio);assert.equal(saved.e.parent,fixture.gid);
+  assert.equal(saved.e.x,62);assert.equal(saved.e.y,58);assert.equal(saved.e.w,42);assert.equal(saved.e.rot,22);assert.deepEqual(saved.e.sdKeyframes,fixture.element.sdKeyframes);assert.deepEqual(saved.e.mobile,fixture.element.mobile);assert.equal(saved.e.ratio,fixture.element.ratio);assert.equal(saved.e.parent,fixture.gid);
   assert.equal(JSON.parse(saved.scene).elements.filter(e=>e.nwMotionInstance).length,1);assert.equal(JSON.parse(saved.scene).sdEnabled,false);assert.deepEqual(saved.stored,JSON.parse(saved.scene));
   await page.evaluate(()=>undo());assert.equal(await page.evaluate(()=>JSON.stringify(sec())),fixture.scene);
   await page.evaluate(()=>redo());assert.equal(await page.evaluate(()=>JSON.stringify(sec())),saved.scene);
-  frame=await open();await drag(frame,0,0);assert.equal(await page.$eval('[data-motion-position="x"]',n=>n.value),'62');assert.equal(await page.$eval('[data-motion-width]',n=>n.value),'42');
+  frame=await open();await drag(frame,0,0);assert.equal(await page.$eval('[data-motion-position="x"]',n=>n.value),'62');assert.equal(await page.$eval('[data-motion-width]',n=>n.value),'42');assert.equal(await page.$eval('[data-motion-angle]',n=>n.value),'22');
   await page.click('[data-motion-close]');assert.deepEqual(errors,[]);
-  console.log('Lienzo Motion Lab: arrastre y tamaño reales, proporción y centro conservados, cancelar gestos, teclado, X/Y/ancho, tirador durante scrub, guardar sin duplicar, cerrar, historial y keyframes intactos OK');
+  console.log('Lienzo Motion Lab: arrastre, tamaño y giro reales, Mayús 15°, centro conservado, cancelar gestos, teclado, X/Y/ancho/ángulo, tiradores durante scrub, guardar sin duplicar, cerrar, historial y keyframes intactos OK');
  }finally{
   page.off('pageerror',onError);
   await page.evaluate(p=>{document.querySelector('.nw-motion-dialog').close();clearTimeout(previewTimer);project=JSON.parse(p.project);curPage=p.curPage;curSec=p.curSec;curEl=p.curEl;curPane=p.curPane;selection=p.selection;secFocus=p.secFocus;history=[];future=[];NAGWEB_STORY_EDITOR.setCanvasMode(p.mode);NAGWEB_STORY_TIMELINE_UI.setState(p.timeline);saveProject();renderScenes();renderPane();renderPreview();},previous);
