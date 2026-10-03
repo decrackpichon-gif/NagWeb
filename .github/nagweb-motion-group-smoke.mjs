@@ -20,6 +20,8 @@ export async function runMotionGroupSmoke(page){
   assert.equal(await page.evaluate(id=>sec().elements.find(e=>e.id===id).sdKeyframes[1].x,inserted.selected),42);
   assert.equal(await page.evaluate(()=>sec().sdEnabled),false);
   await page.evaluate(()=>undo());assert.equal(await page.evaluate(id=>JSON.stringify(sec().elements.find(e=>e.id===id).sdKeyframes),inserted.selected),pose);
+  // Undo deliberately clears selection in NagWeb; select the restored member again.
+  await page.evaluate(id=>{const e=sec().elements.find(e=>e.id===id);NAGWEB_STORY_EDITOR.select(id,e.sdKeyframes[1].id);},inserted.selected);
 
   // Reopening saves into the existing group; closing discards a draft.
   await page.click('[data-motion-edit="'+gid+'"]');
