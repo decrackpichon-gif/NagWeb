@@ -47,6 +47,27 @@ export async function runStorytellingSmoke(page){
  await page.waitForFunction(()=>document.querySelector('#preview')?.contentWindow?.__NAG_SCROLL_DIRECTOR?.['story-scene']);
  assert.ok(await page.evaluate(()=>!!window.NAGWEB_STORY_TIMELINE_UI));
 
+ // La Timeline mantiene contexto y jerarquía aunque la pista crezca con zoom.
+ const timelineUx=await page.evaluate(()=>{
+  const tl=document.querySelector('[data-sd-timeline="story-scene"]');
+  const row=tl&&tl.querySelector('[data-sd-row="story-text"]');
+  const name=row&&row.querySelector('.nw-sd-tname');
+  return{
+   context:tl&&tl.querySelector('.nw-sd-timeline-context strong')?.textContent,
+   now:tl&&tl.querySelector('[data-story-timeline-now]')?.textContent,
+   rowText:name&&name.textContent,
+   sticky:name&&getComputedStyle(name).position,
+   primary:!!document.querySelector('.nw-story-primary[data-story-action="add"]'),
+   modeBadge:document.querySelector('.nw-story-mode-head span')?.textContent
+  };
+ });
+ assert.equal(timelineUx.context,'Historia');
+ assert.ok(/%$/.test(timelineUx.now||''));
+ assert.ok((timelineUx.rowText||'').includes('2 momentos'));
+ assert.equal(timelineUx.sticky,'sticky');
+ assert.equal(timelineUx.primary,true);
+ assert.equal(timelineUx.modeBadge,'Base');
+
  // La UI narrativa habla en términos visuales, sin confundir preset con punto inicial.
  const uxLabels=await page.evaluate(()=>{
   const e=sec().elements[0],first=NAGWEB_STORY_EDITOR.frames(e)[0];
@@ -73,6 +94,7 @@ export async function runStorytellingSmoke(page){
  assert.ok(await page.$('[data-story-canvas-mode="moment"]'));
  await page.click('[data-story-canvas-mode="moment"]');
  assert.equal(await page.evaluate(()=>NAGWEB_STORY_EDITOR.canvasMode()),'moment');
+ assert.ok(/^Momento \d+(?:\.\d+)?%$/.test(await page.$eval('.nw-story-mode-head span',n=>n.textContent)));
  await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('story-scene',.5));
  let previewHandle=await page.$('#preview'),previewFrame=await previewHandle.contentFrame();
  const moveMetric=await previewFrame.evaluate(()=>({handles:[...document.querySelectorAll('.nw-story-transform-h')].map(h=>getComputedStyle(h).display)}));
@@ -166,6 +188,11 @@ export async function runStorytellingSmoke(page){
 
  await page.click('[data-story-tl-dock]');
  assert.ok(await page.$('.nw-sd-timeline.nw-sd-docked'));
+ const dockUx=await page.$eval('.nw-sd-timeline.nw-sd-docked',n=>({
+  labelWidth:getComputedStyle(n).getPropertyValue('--nw-story-label-width').trim(),
+  sticky:getComputedStyle(n.querySelector('.nw-sd-tname')).position
+ }));
+ assert.equal(dockUx.labelWidth,'150px');assert.equal(dockUx.sticky,'sticky');
  const dockBefore=await page.$eval('.nw-sd-timeline.nw-sd-docked',n=>n.getBoundingClientRect().height);
  const resize=await page.$('.nw-sd-dock-resize'),rb=await resize.boundingBox();
  await page.mouse.move(rb.x+rb.width/2,rb.y+rb.height/2);await page.mouse.down();await page.mouse.move(rb.x+rb.width/2,rb.y-60,{steps:4});await page.mouse.up();
@@ -188,6 +215,7 @@ export async function runStorytellingSmoke(page){
  assert.equal(added.length,3);assert.ok(Math.abs(added[1].at-25)<1);
  const key=added[1].id;
  assert.equal(await page.$eval('[data-story-inspector]',n=>n.dataset.storyInspector),key);
+ assert.equal(await page.$eval('.nw-story-inspector-head strong',n=>n.textContent),'25%');
  const inspectorLanguage=await page.$eval('[data-story-inspector]',n=>n.textContent);
  assert.ok(inspectorLanguage.includes('Cómo está el elemento en este momento'));
  assert.ok(inspectorLanguage.includes('Cómo cambia hasta el próximo momento'));
@@ -227,8 +255,8 @@ export async function runStorytellingSmoke(page){
  // progreso que el control "Ver un momento".
  const ruler=await page.$eval('[data-story-scrub-ruler]',n=>{const r=n.getBoundingClientRect();return{x:r.x,y:r.y,w:r.width,h:r.height};});
  await page.mouse.click(ruler.x+ruler.w*.37,ruler.y+ruler.h/2);
- const rulerScrub=await page.evaluate(()=>({p:NAGWEB_SCROLL_DIRECTOR.progress(sec().id),slider:+document.querySelector('[data-sd-scrub="'+sec().id+'"]').value}));
- assert.ok(Math.abs(rulerScrub.p-37)<1);assert.ok(Math.abs(rulerScrub.slider-37)<1);
+ const rulerScrub=await page.evaluate(()=>({p:NAGWEB_SCROLL_DIRECTOR.progress(sec().id),slider:+document.querySelector('[data-sd-scrub="'+sec().id+'"]').value,now:document.querySelector('[data-story-timeline-now]')?.textContent}));
+ assert.ok(Math.abs(rulerScrub.p-37)<1);assert.ok(Math.abs(rulerScrub.slider-37)<1);assert.equal(rulerScrub.now,'37%');
 
  const directTrack=await page.$eval('[data-story-track="story-text"]',n=>{const r=n.getBoundingClientRect();return{x:r.x,y:r.y,w:r.width,h:r.height};});
  await page.mouse.click(directTrack.x+directTrack.w*.58,directTrack.y+directTrack.h/2);
