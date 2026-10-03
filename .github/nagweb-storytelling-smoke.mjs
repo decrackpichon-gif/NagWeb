@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+const near=(a,b,t=.04)=>assert.ok(Math.abs(a-b)<t,`${a} ≠ ${b}`);
 
 export async function runStorytellingSmoke(page){
  const model=await page.evaluate(()=>{
