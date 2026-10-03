@@ -146,3 +146,10 @@ Abrir Motion Lab permite personalizar la composición desde la biblioteca, con p
 **Insertar en esta escena** y **Como escena nueva** consumen los valores preparados. La fuente Scroll activa el Director del destino, mientras Tiempo conserva la independencia de la escena anfitriona. La reapertura de un grupo mantiene **Guardar cambios en este grupo**. El banco sigue contando con una sola composición y la edición de momentos en la ventana está pendiente.
 
 `.github/nagweb-motion-prepare-smoke.mjs` verifica personalización previa con mouse y controles, preview, cancelación sin escrituras, inserción de grupo/escena con los valores elegidos, fuente, reapertura e historial.
+
+
+## Iso Focus — primera revisión visual
+
+La composición nueva utiliza tres láminas originales de diseño editorial (Pulso, Forma y Trazo), con tipografía grande, motivos distintos y una paleta de lavanda, lima y marfil. La cabecera y el pie tienen una jerarquía más discreta y la miniatura de biblioteca se construye con esas mismas imágenes. Son recursos SVG autocontenidos, reemplazables desde el inspector; no requieren servicios ni descargas externas.
+
+Esta revisión cambia el contenido visual inicial. Conserva geometría, duración, poses y selección de momentos del recorrido, así como la preparación antes de insertar. Las instancias existentes conservan sus imágenes y personalizaciones. El banco sigue contando con una sola composición. La prueba de galería verifica que las tres nuevas imágenes se cargan con sus dimensiones naturales y las pruebas de inserción/exportación conservan el flujo completo.

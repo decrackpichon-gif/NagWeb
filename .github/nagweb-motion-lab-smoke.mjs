@@ -6,6 +6,7 @@ export async function runMotionLabSmoke(page){
  try{
   await page.click('.tb-left [data-motion-open]');
   await page.waitForFunction(()=>document.querySelector('.nw-motion-dialog[open] iframe')?.contentWindow?.__NAG_SCROLL_DIRECTOR);
+  await page.waitForFunction(()=>{const imgs=[...document.querySelector('.nw-motion-dialog iframe').contentDocument.querySelectorAll('img')];return imgs.length===3&&imgs.every(n=>n.complete&&n.naturalWidth===480&&n.naturalHeight===620);});
   const layout=await page.evaluate(()=>{
    const r=s=>document.querySelector(s).getBoundingClientRect(),a=r('.nw-motion-library'),b=r('.nw-motion-stage'),c=r('.nw-motion-inspector'),f=r('.nw-motion-frame'),t=r('.nw-motion-controls');
    return{columns:a.right<=b.left+1&&b.right<=c.left+1,stageWidth:b.width,libraryWidth:a.width,inspectorWidth:c.width,playbackBelow:t.top>=f.bottom-3,previewHeight:f.height};
