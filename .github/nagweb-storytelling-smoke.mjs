@@ -138,8 +138,9 @@ export async function runStorytellingSmoke(page){
 
  // Restaurar fixture para el resto de las pruebas históricas.
  await page.evaluate(()=>{
-  const e=sec().elements[0];e.x=20;e.y=30;e.w=60;e.rot=0;e.customSize=0;e.sdKeyframes=[{at:0,x:0,opacity:100},{at:100,x:200,y:-100,scale:150,rotate:20,opacity:50,blur:4}];e.sdKeyframesEnabled=true;
-  NAGWEB_STORY_EDITOR.setCanvasMode('base');renderPane();renderPreview();
+  const s=sec();s.elements=s.elements.filter(e=>e.id!=='story-image');
+  const e=s.elements[0];e.x=20;e.y=30;e.w=60;e.rot=0;e.customSize=0;e.sdKeyframes=[{at:0,x:0,opacity:100},{at:100,x:200,y:-100,scale:150,rotate:20,opacity:50,blur:4}];e.sdKeyframesEnabled=true;
+  curEl=0;selection=['story-text'];NAGWEB_STORY_EDITOR.setCanvasMode('base');renderPane();renderPreview();
  });
  await page.waitForFunction(()=>document.querySelector('#preview')?.contentWindow?.__NAG_SCROLL_DIRECTOR?.['story-scene']);
 
