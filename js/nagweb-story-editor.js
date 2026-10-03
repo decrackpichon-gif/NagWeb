@@ -124,12 +124,13 @@ var presets={
  zoom:{name:'Zoom dramático',frames:[{at:0,scale:60,opacity:0},{at:35,scale:110,opacity:100},{at:55,scale:100},{at:90}]},
  parallax:{name:'Parallax lento',frames:[{at:0,y:60},{at:90,y:-60}]},
  floating:{name:'Texto flotante',frames:[{at:0,y:0},{at:25,y:-25},{at:50,y:0},{at:75,y:-25},{at:100,y:0}]},
- depth:{name:'Salida hacia profundidad',frames:[{at:0},{at:55},{at:90,scale:65,opacity:0,blur:14}]}
+ depth:{name:'Salida hacia profundidad',frames:[{at:0},{at:55},{at:90,scale:65,opacity:0,blur:14}]},
+ iso_focus:{name:'Iso Focus · enfoque inclinado',frames:[{at:0,z:-260,rotateX:32,rotateY:-28},{at:35,z:0,rotateX:0,rotateY:0},{at:65},{at:100,z:-260,rotateX:32,rotateY:28}]}
 };
 function preset(id,name){
  var e=element(id),p=presets[name];if(!p||!M.eligible(e,sec()))return false;
  snapshot();e.sdKeyframes=M.normalize(p.frames.map(function(k){return Object.assign({id:nid(),ease:name==='parallax'?'linear':'cinematic'},k);}));e.sdKeyframesEnabled=true;sec().sdEnabled=true;
- selected={element:id,key:e.sdKeyframes[0].id};persist();return true;
+ selected={element:id,key:e.sdKeyframes[0].id};persist();D.scrub(sec().id,e.sdKeyframes[0].at/100);return true;
 }
 function presetPanel(){return cRow('Plantilla de movimiento','<select class="csel" data-story-preset aria-label="Plantilla de movimiento"><option value="">Elegir plantilla…</option>'+Object.keys(presets).map(function(k){return '<option value="'+k+'">'+presets[k].name+'</option>';}).join('')+'</select>')+'<p class="hint gh"><b>Plantilla</b> = un recorrido prearmado para este mismo elemento. No agrega otro objeto: reemplaza sus momentos y después podés editar cada uno.</p>';}
 function snap(at,list,index,skip){

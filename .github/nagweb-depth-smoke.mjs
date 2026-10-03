@@ -86,6 +86,34 @@ export async function runDepthSmoke(page){
   await page.waitForFunction(()=>document.getElementById('depth-export').contentDocument.querySelector('[data-id="depth-text"]').getAnimations().length===1);
   await page.evaluate(()=>document.getElementById('depth-export').contentWindow.__NAG_SCROLL_DIRECTOR['depth-scene'].set(0));
   assert.equal(await page.evaluate(()=>document.getElementById('depth-export').contentDocument.querySelector('[data-id="depth-text"]').getAnimations().length),0);
+
+  // Apply the recipe through its real menu; keep the object and its authored design.
+  const beforeRecipe=await page.evaluate(()=>JSON.stringify(sec()));
+  await page.select('[data-story-preset]','iso_focus');
+  await page.waitForFunction(()=>document.getElementById('preview')?.contentDocument?.querySelector('[data-id="depth-text"]')?.style.getPropertyValue('--nw-sd-z')==='-260.00px');
+  const recipe=await page.evaluate(()=>({scene:JSON.stringify(sec()),stored:JSON.parse(localStorage.getItem(STORE_KEY)).pages[0].sections[0].elements[0].sdKeyframes,progress:NAGWEB_SCROLL_DIRECTOR.progress('depth-scene')}));
+  const oldScene=JSON.parse(beforeRecipe),newScene=JSON.parse(recipe.scene);
+  assert.deepEqual(newScene.elements[0].sdKeyframes.map(k=>[k.at,k.z,k.rotateX,k.rotateY]),[[0,-260,32,-28],[35,0,0,0],[65,0,0,0],[100,-260,32,28]]);
+  assert.deepEqual(recipe.stored,newScene.elements[0].sdKeyframes);assert.equal(recipe.progress,0);
+  const oldElement={...oldScene.elements[0]},newElement={...newScene.elements[0]};
+  delete oldElement.sdKeyframes;delete newElement.sdKeyframes;delete oldElement.sdKeyframesEnabled;delete newElement.sdKeyframesEnabled;
+  assert.deepEqual(newElement,oldElement);assert.deepEqual(newScene.elements.slice(1),oldScene.elements.slice(1));assert.equal(newScene.sdPerspective,oldScene.sdPerspective);
+  await page.evaluate(()=>undo());assert.equal(await page.evaluate(()=>JSON.stringify(sec())),beforeRecipe);
+  await page.evaluate(()=>redo());assert.equal(await page.evaluate(()=>JSON.stringify(sec())),recipe.scene);
+  await page.evaluate(()=>{
+   NAGWEB_SCROLL_DIRECTOR.scrub('depth-scene',.5);
+   document.getElementById('depth-export').srcdoc=generateSite(flattenPage(page()),false,false,false);
+  });
+  await page.waitForFunction(()=>document.getElementById('preview')?.contentDocument?.querySelector('[data-id="depth-text"]')?.style.getPropertyValue('--nw-sd-z')==='0.00px');
+  await page.waitForFunction(()=>document.getElementById('depth-export')?.contentWindow?.__NAG_SCROLL_DIRECTOR?.['depth-scene']);
+  const recipeExport=await page.evaluate(()=>{
+   const f=document.getElementById('depth-export'),d=f.contentWindow.__NAG_SCROLL_DIRECTOR['depth-scene'],n=f.contentDocument.querySelector('[data-id="depth-text"]');
+   d.set(0);const first=[n.style.getPropertyValue('--nw-sd-z'),n.style.getPropertyValue('--nw-sd-rx'),n.style.getPropertyValue('--nw-sd-ry')];
+   d.set(.5);const hold=[n.style.getPropertyValue('--nw-sd-z'),n.getAnimations().length];
+   d.set(1);return{first,hold,last:n.style.getPropertyValue('--nw-sd-ry')};
+  });
+  assert.deepEqual(recipeExport,{first:['-260.00px','32.00deg','-28.00deg'],hold:['0.00px',0],last:'28.00deg'});
+  console.log('Iso Focus: menú real, pose inicial, permanencia, diseño base, guardado, Deshacer/Rehacer y exportación OK');
   console.log('Profundidad visible: matrices, diseño base, Universal, inspector, guardado, Undo/Redo, scrub, export y movimiento reducido OK');
  }finally{
   await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'no-preference'}]);
