@@ -71,11 +71,9 @@ export async function runStorytellingSmoke(page){
  // El panel extendido usa el alto para editar, no para ayuda secundaria.
  const compact=await page.evaluate(()=>{
   const tl=document.querySelector('[data-sd-timeline="story-scene"]');
-  const head=tl.querySelector('.nw-sd-timeline-head').getBoundingClientRect();
   const ruler=tl.querySelector('.nw-sd-ruler').getBoundingClientRect();
-  return{head:head.height,ruler:ruler.height,footer:!!tl.querySelector('.nw-sd-timeline-hint')};
+  return{ruler:ruler.height,footer:!!tl.querySelector('.nw-sd-timeline-hint')};
  });
- assert.ok(compact.head<=30,'Cabecera demasiado alta: '+compact.head);
  assert.ok(compact.ruler<=21,'Regla demasiado alta: '+compact.ruler);
  assert.equal(compact.footer,false);
 
@@ -217,9 +215,14 @@ export async function runStorytellingSmoke(page){
  assert.ok(await page.$('.nw-sd-timeline.nw-sd-docked'));
  const dockUx=await page.$eval('.nw-sd-timeline.nw-sd-docked',n=>({
   labelWidth:getComputedStyle(n).getPropertyValue('--nw-story-label-width').trim(),
-  sticky:getComputedStyle(n.querySelector('.nw-sd-tname')).position
+  sticky:getComputedStyle(n.querySelector('.nw-sd-tname')).position,
+  head:n.querySelector('.nw-sd-timeline-head').getBoundingClientRect().height,
+  eyebrow:getComputedStyle(n.querySelector('.nw-sd-eyebrow')).display,
+  footer:!!n.querySelector('.nw-sd-timeline-hint')
  }));
  assert.equal(dockUx.labelWidth,'150px');assert.equal(dockUx.sticky,'sticky');
+ assert.ok(dockUx.head<=26,'Cabecera extendida demasiado alta: '+dockUx.head);
+ assert.equal(dockUx.eyebrow,'none');assert.equal(dockUx.footer,false);
  const dockBefore=await page.$eval('.nw-sd-timeline.nw-sd-docked',n=>n.getBoundingClientRect().height);
  const resize=await page.$('.nw-sd-dock-resize'),rb=await resize.boundingBox();
  await page.mouse.move(rb.x+rb.width/2,rb.y+rb.height/2);await page.mouse.down();await page.mouse.move(rb.x+rb.width/2,rb.y-60,{steps:4});await page.mouse.up();
