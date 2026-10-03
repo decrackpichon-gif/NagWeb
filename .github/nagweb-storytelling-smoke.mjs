@@ -45,6 +45,69 @@ export async function runStorytellingSmoke(page){
  });
  await page.waitForFunction(()=>document.querySelector('#preview')?.contentWindow?.__NAG_SCROLL_DIRECTOR?.['story-scene']);
  assert.ok(await page.evaluate(()=>!!window.NAGWEB_STORY_TIMELINE_UI));
+
+ // Diseño base y Momento de la escena son capas distintas.
+ assert.equal(await page.evaluate(()=>NAGWEB_STORY_EDITOR.canvasMode()),'base');
+ assert.ok(await page.$('[data-story-canvas-mode="base"]'));
+ assert.ok(await page.$('[data-story-canvas-mode="moment"]'));
+ await page.click('[data-story-canvas-mode="moment"]');
+ assert.equal(await page.evaluate(()=>NAGWEB_STORY_EDITOR.canvasMode()),'moment');
+ await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('story-scene',.5));
+ let previewHandle=await page.$('#preview'),previewFrame=await previewHandle.contentFrame();
+ const moveMetric=await previewFrame.evaluate(()=>{
+  const n=document.querySelector('[data-id="story-text"]'),rel=(n.parentElement&&n.parentElement.closest('.container-box'))||n.closest('.sc');
+  return{width:rel.getBoundingClientRect().width,handles:[...document.querySelectorAll('.nw-story-transform-h')].map(h=>getComputedStyle(h).display)};
+ });
+ assert.ok(moveMetric.handles.every(x=>x!=='none'));
+ await previewFrame.evaluate(()=>parent.postMessage({sc:true,type:'change',id:'story-text',x:25,y:30,w:60,rot:0},'*'));
+ await page.waitForFunction(()=>sec().elements[0].sdKeyframes.some(k=>Math.abs(k.at-50)<.11));
+ let momentEdit=await page.evaluate(()=>({baseX:sec().elements[0].x,frames:NAGWEB_STORY_EDITOR.frames(sec().elements[0])}));
+ assert.equal(momentEdit.baseX,20);
+ assert.equal(momentEdit.frames.find(k=>k.at===0).x,0);
+ assert.equal(momentEdit.frames.find(k=>k.at===100).x,200);
+ near(momentEdit.frames.find(k=>Math.abs(k.at-50)<.11).x,100+moveMetric.width*.05,1);
+
+ // Editar un keyframe existente cambia solo ese punto, no los vecinos.
+ await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('story-scene',0));
+ previewHandle=await page.$('#preview');previewFrame=await previewHandle.contentFrame();
+ const width0=await previewFrame.evaluate(()=>{const n=document.querySelector('[data-id="story-text"]'),rel=(n.parentElement&&n.parentElement.closest('.container-box'))||n.closest('.sc');return rel.getBoundingClientRect().width;});
+ await previewFrame.evaluate(()=>parent.postMessage({sc:true,type:'change',id:'story-text',x:22,y:30,w:60,rot:0},'*'));
+ await page.waitForFunction(()=>NAGWEB_STORY_EDITOR.frames(sec().elements[0]).find(k=>k.at===0).x>0);
+ const isolated=await page.evaluate(()=>NAGWEB_STORY_EDITOR.frames(sec().elements[0]));
+ near(isolated.find(k=>k.at===0).x,width0*.02,1);
+ assert.equal(isolated.find(k=>k.at===100).x,200);
+ assert.ok(isolated.some(k=>Math.abs(k.at-50)<.11));
+
+ // En Diseño base el mismo gesto cambia la geometría base y conserva los keyframes.
+ await page.click('[data-story-canvas-mode="base"]');
+ const framesBeforeBase=await page.evaluate(()=>JSON.stringify(NAGWEB_STORY_EDITOR.frames(sec().elements[0])));
+ previewHandle=await page.$('#preview');previewFrame=await previewHandle.contentFrame();
+ await previewFrame.evaluate(()=>parent.postMessage({sc:true,type:'change',id:'story-text',x:30,y:30,w:60,rot:0},'*'));
+ await page.waitForFunction(()=>sec().elements[0].x===30);
+ assert.equal(await page.evaluate(()=>JSON.stringify(NAGWEB_STORY_EDITOR.frames(sec().elements[0]))),framesBeforeBase);
+
+ // Alt+Shift + handle de tamaño escala proporcionalmente texto y caja en Diseño base.
+ await page.evaluate(()=>{sec().elements[0].x=20;sec().elements[0].w=60;sec().elements[0].rot=0;sec().elements[0].customSize=0;renderPane();renderPreview();});
+ await page.waitForFunction(()=>document.querySelector('#preview')?.contentDocument?.querySelector('.nw-story-transform-h.size'));
+ previewHandle=await page.$('#preview');previewFrame=await previewHandle.contentFrame();
+ await previewFrame.evaluate(()=>{
+  const h=document.querySelector('.nw-story-transform-h.size'),hr=h.getBoundingClientRect();
+  h.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:hr.left+7,clientY:hr.top+7,altKey:true,shiftKey:true,pointerId:41}));
+  window.dispatchEvent(new PointerEvent('pointermove',{clientX:hr.left+70,clientY:hr.top+70,altKey:true,shiftKey:true,pointerId:41}));
+  window.dispatchEvent(new PointerEvent('pointerup',{clientX:hr.left+70,clientY:hr.top+70,altKey:true,shiftKey:true,pointerId:41}));
+ });
+ await page.waitForFunction(()=>sec().elements[0].w>60&&sec().elements[0].customSize>0);
+ const proportional=await page.evaluate(()=>({w:sec().elements[0].w,size:sec().elements[0].customSize,frames:JSON.stringify(NAGWEB_STORY_EDITOR.frames(sec().elements[0]))}));
+ assert.ok(proportional.w>60&&proportional.size>0);
+ assert.equal(proportional.frames,framesBeforeBase);
+
+ // Restaurar fixture para el resto de las pruebas históricas.
+ await page.evaluate(()=>{
+  const e=sec().elements[0];e.x=20;e.y=30;e.w=60;e.rot=0;e.customSize=0;e.sdKeyframes=[{at:0,x:0,opacity:100},{at:100,x:200,y:-100,scale:150,rotate:20,opacity:50,blur:4}];e.sdKeyframesEnabled=true;
+  NAGWEB_STORY_EDITOR.setCanvasMode('base');renderPane();renderPreview();
+ });
+ await page.waitForFunction(()=>document.querySelector('#preview')?.contentWindow?.__NAG_SCROLL_DIRECTOR?.['story-scene']);
+
  await page.click('[data-story-tl-dock]');
  assert.ok(await page.$('.nw-sd-timeline.nw-sd-docked'));
  const dockBefore=await page.$eval('.nw-sd-timeline.nw-sd-docked',n=>n.getBoundingClientRect().height);
