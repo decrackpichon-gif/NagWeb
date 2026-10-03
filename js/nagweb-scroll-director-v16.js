@@ -128,7 +128,7 @@ function currentProgress(id){
 function paintPlayhead(id,pct){
  var inp=pane.querySelector('[data-sd-scrub="'+id+'"]'),tl=pane.querySelector('[data-sd-timeline="'+id+'"]');
  if(inp){inp.value=pct;var val=inp.closest('.field').querySelector('[data-sd-val]');if(val)val.textContent=Math.round(pct)+'%';}
- if(tl)tl.style.setProperty('--sd-play',pct+'%');
+ if(tl){tl.style.setProperty('--sd-play',pct+'%');var now=tl.querySelector('[data-story-timeline-now]');if(now)now.textContent=Math.round(pct)+'%';}
 }
 var pane=document.getElementById('pane');
 if(pane){
