@@ -46,3 +46,11 @@ La tanda de transparencia (`.github/nagweb-transparent-smoke.mjs`) ejecuta Fade,
 Las transiciones capturan la opacidad original y la componen con su fundido, también si fue definida mediante CSS personalizado o un estilo inline prioritario. Una escena futura permanece oculta y sin interacción hasta entrar; movimiento reducido recupera la opacidad original.
 
 La tanda de cancelación (`.github/nagweb-cancel-smoke.mjs`) comprueba gestos interrumpidos de movimiento, tamaño y giro en el lienzo, y arrastre de momentos en la Timeline. Una cancelación restaura la apariencia y conserva el proyecto guardado y las pilas de Deshacer/Rehacer; los movimientos mínimos sin edición tampoco dejan cambios visuales pendientes.
+
+## Profundidad 2.5D — primera etapa
+
+El modelo compartido admite `z`, `rotateX` y `rotateY` en los momentos guardados y su interpolación. `rotate` mantiene el giro sobre Z existente. Los proyectos anteriores usan profundidad e inclinaciones cero; movimiento reducido neutraliza estas propiedades y conserva la visibilidad.
+
+Esta etapa prepara los datos y el evaluador. La visualización y los controles de profundidad se habilitarán al completar su integración con el runtime existente; todavía no se aplican efectos 2.5D al lienzo o al sitio exportado. No se agrega otro motor ni otra línea de tiempo.
+
+Validación del modelo: `node .github/nagweb-depth-model-test.mjs`. La misma prueba se ejecuta al iniciar el smoke de Chromium y comprueba que la fábrica serializada de los sitios exportados evalúe las mismas poses.

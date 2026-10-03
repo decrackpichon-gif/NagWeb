@@ -6,6 +6,9 @@ function createStoryModel(){
  var properties={
   x:{label:'Mover izquierda / derecha',unit:'px',base:0,min:-10000,max:10000},
   y:{label:'Mover arriba / abajo',unit:'px',base:0,min:-10000,max:10000},
+  z:{label:'Profundidad',unit:'px',base:0,min:-10000,max:10000},
+  rotateX:{label:'Inclinar arriba / abajo',unit:'°',base:0,min:-3600,max:3600},
+  rotateY:{label:'Inclinar izquierda / derecha',unit:'°',base:0,min:-3600,max:3600},
   scale:{label:'Tamaño',unit:'%',base:100,min:0,max:1000},
   rotate:{label:'Giro',unit:'°',base:0,min:-3600,max:3600},
   opacity:{label:'Opacidad',unit:'%',base:100,min:0,max:100},
@@ -61,7 +64,7 @@ function createStoryModel(){
    else if(c.exit==='left')x-=ep*110;else if(c.exit==='right')x+=ep*110;
    else if(c.exit==='zoom')sc*=1+ep*.22;else if(c.exit==='blur')blur+=ep*18;
   }
-  return{x:x,y:y,scale:sc*100,rotate:rot,opacity:clamp(op,0,1)*100,blur:blur};
+  return{x:x,y:y,z:0,rotateX:0,rotateY:0,scale:sc*100,rotate:rot,opacity:clamp(op,0,1)*100,blur:blur};
  }
  function compile(e){
   var frames=e.sdKeyframesEnabled===false?[]:normalize(e.sdKeyframes);
@@ -71,7 +74,7 @@ function createStoryModel(){
  function evaluate(c,p,k,reduce){
   var out=c.keyframes&&c.keyframes.length?framesAt(c.keyframes,p):legacy(c,clamp(number(p,0),0,1),k||'cinematic');
   // Preserve base styling and narrative visibility. Neutralize only added motion/filter.
-  if(reduce){out.x=0;out.y=0;out.scale=100;out.rotate=0;out.blur=0;}
+  if(reduce){out.x=0;out.y=0;out.z=0;out.rotateX=0;out.rotateY=0;out.scale=100;out.rotate=0;out.blur=0;}
   return out;
  }
  function eligible(e,s){
