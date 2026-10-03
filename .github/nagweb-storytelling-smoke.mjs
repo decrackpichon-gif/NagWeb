@@ -65,9 +65,6 @@ export async function runStorytellingSmoke(page){
  assert.equal(uxLabels.scale,'Tamaño');
  assert.equal(uxLabels.rotate,'Giro');
  assert.ok(uxLabels.pane.includes('Plantilla de movimiento'));
- assert.ok(uxLabels.pane.includes('Cómo está el elemento en este momento'));
- assert.ok(uxLabels.pane.includes('Cómo cambia hasta el próximo momento'));
- assert.ok(uxLabels.pane.includes('Ritmo del cambio'));
  assert.ok(!uxLabels.pane.includes('Punto de partida'));
 
  // Diseño base y Momento de la escena son capas distintas.
@@ -191,6 +188,12 @@ export async function runStorytellingSmoke(page){
  assert.equal(added.length,3);assert.ok(Math.abs(added[1].at-25)<1);
  const key=added[1].id;
  assert.equal(await page.$eval('[data-story-inspector]',n=>n.dataset.storyInspector),key);
+ const inspectorLanguage=await page.$eval('[data-story-inspector]',n=>n.innerText);
+ assert.ok(inspectorLanguage.includes('Cómo está el elemento en este momento'));
+ assert.ok(inspectorLanguage.includes('Cómo cambia hasta el próximo momento'));
+ assert.ok(inspectorLanguage.includes('Ritmo del cambio'));
+ assert.ok(inspectorLanguage.includes('Mover izquierda / derecha'));
+ assert.ok(inspectorLanguage.includes('Mover arriba / abajo'));
  await page.$eval('[data-sd-key="'+key+'"]',n=>n.scrollIntoView({block:'center'}));
  const drag=await page.$eval('[data-sd-key="'+key+'"]',n=>{const r=n.getBoundingClientRect(),t=n.parentElement.getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2,to:t.x+t.width*.4};});
  await page.mouse.move(drag.x,drag.y);await page.mouse.down();await page.mouse.move(drag.to,drag.y,{steps:5});await page.mouse.up();
