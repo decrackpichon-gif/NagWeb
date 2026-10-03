@@ -413,7 +413,7 @@ export async function runStorytellingSmoke(page){
  assert.ok(stress.migratedProject?.pages?.[0]?.sections?.some(s=>s.id==='story-stress'),'migrate descartó story-stress antes del reload');
 
  await page.reload({waitUntil:'domcontentloaded'});
- await page.waitForFunction(()=>window.NAGWEB_STORY_EDITOR&&window.NAGWEB_STORY_TIMELINE_UI&&window.project?.pages?.length);
+ await page.waitForFunction(()=>window.NAGWEB_STORY_EDITOR&&window.NAGWEB_STORY_TIMELINE_UI&&typeof project!=='undefined'&&project.pages?.length);
  const loadedAfterReload=await page.evaluate(()=>project.pages.map(pg=>pg.sections.map(s=>s.id)));
  assert.ok(loadedAfterReload.some(ids=>ids.includes('story-stress')),'Reload cargó otras escenas: '+JSON.stringify(loadedAfterReload));
  await page.evaluate(()=>{
