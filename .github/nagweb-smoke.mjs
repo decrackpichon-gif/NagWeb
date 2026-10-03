@@ -4,6 +4,7 @@ import {runStorytellingSmoke} from './nagweb-storytelling-smoke.mjs';
 import {runCompositionSmoke} from './nagweb-composition-smoke.mjs';
 import {runHistorySmoke} from './nagweb-history-smoke.mjs';
 import {runLegacySmoke} from './nagweb-legacy-smoke.mjs';
+import {runTransparentSmoke} from './nagweb-transparent-smoke.mjs';
 
 const feedbackSource=fs.readFileSync(new URL('../js/nagweb-feedback-v16.js',import.meta.url),'utf8');
 const directorSource=fs.readFileSync(new URL('../js/nagweb-scroll-director-v16.js',import.meta.url),'utf8');
@@ -189,6 +190,7 @@ await runHistorySmoke(page);
 await runLegacySmoke(page);
 await runStorytellingSmoke(page);
 await runCompositionSmoke(page);
+await runTransparentSmoke(page);
 if(pageErrors.length) throw new Error('Browser page errors:\n'+pageErrors.join('\n\n'));
 console.log('NagWeb smoke OK',state);
 }finally{
