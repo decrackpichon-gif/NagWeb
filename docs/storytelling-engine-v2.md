@@ -171,3 +171,12 @@ La tercera composición aproxima tarjetas desde el fondo, con fases escalonadas,
 El mismo runtime evalúa los momentos y, únicamente para esta plantilla, ordena los elementos animados por profundidad para mantener delante la tarjeta más cercana. El alcance funciona en preview, reapertura del grupo y exportación, y respeta movimiento reducido. No se agrega otro reloj o interpolador. La biblioteca genera las miniaturas desde su catálogo y conserva borradores independientes para las tres opciones.
 
 `.github/nagweb-motion-tunnel-smoke.mjs` verifica el cierre del ciclo, retorno invisible, capas por profundidad mediante un solapamiento real, preparación, inserción sin activar el Director, reapertura, historial, exportación y movimiento reducido.
+
+
+## Texto directo en Motion Lab
+
+Los títulos, párrafos y etiquetas de texto simple se editan sobre el lienzo mediante doble clic o Enter sobre el elemento enfocado. La reproducción se pausa; Enter confirma, Escape restaura el texto previo y perder el foco confirma. Mientras se escribe, las flechas y la selección de texto conservan su comportamiento nativo y no desplazan el elemento. Se usa texto plano, sin convertir el contenido escrito en HTML.
+
+El inspector refleja cada cambio del borrador. Cambiar de plantilla conserva la edición; insertar o guardar confirma también una edición activa. Cerrar descarta el borrador completo. Guardar mantiene IDs, geometría y momentos, sobre la misma instancia. Los textos con estilos por fragmentos conservan por ahora su flujo existente en el editor principal.
+
+`.github/nagweb-motion-text-smoke.mjs` verifica escritura real con mouse/teclado, confirmación y cancelación, sincronización, borradores sin escritura al proyecto, inserción, reapertura, guardado sin duplicar, historial y HTML exportado.
