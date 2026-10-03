@@ -47,6 +47,29 @@ export async function runStorytellingSmoke(page){
  await page.waitForFunction(()=>document.querySelector('#preview')?.contentWindow?.__NAG_SCROLL_DIRECTOR?.['story-scene']);
  assert.ok(await page.evaluate(()=>!!window.NAGWEB_STORY_TIMELINE_UI));
 
+ // La UI narrativa habla en términos visuales, sin confundir preset con punto inicial.
+ const uxLabels=await page.evaluate(()=>{
+  const e=sec().elements[0],first=NAGWEB_STORY_EDITOR.frames(e)[0];
+  NAGWEB_STORY_EDITOR.select('story-text',first.id);
+  const p=document.getElementById('pane').innerText;
+  return{
+   x:NAGWEB_STORY_MODEL.properties.x.label,
+   y:NAGWEB_STORY_MODEL.properties.y.label,
+   scale:NAGWEB_STORY_MODEL.properties.scale.label,
+   rotate:NAGWEB_STORY_MODEL.properties.rotate.label,
+   pane:p
+  };
+ });
+ assert.equal(uxLabels.x,'Mover izquierda / derecha');
+ assert.equal(uxLabels.y,'Mover arriba / abajo');
+ assert.equal(uxLabels.scale,'Tamaño');
+ assert.equal(uxLabels.rotate,'Giro');
+ assert.ok(uxLabels.pane.includes('Plantilla de movimiento'));
+ assert.ok(uxLabels.pane.includes('Cómo está el elemento en este momento'));
+ assert.ok(uxLabels.pane.includes('Cómo cambia hasta el próximo momento'));
+ assert.ok(uxLabels.pane.includes('Ritmo del cambio'));
+ assert.ok(!uxLabels.pane.includes('Punto de partida'));
+
  // Diseño base y Momento de la escena son capas distintas.
  assert.equal(await page.evaluate(()=>NAGWEB_STORY_EDITOR.canvasMode()),'base');
  assert.ok(await page.$('[data-story-canvas-mode="base"]'));
