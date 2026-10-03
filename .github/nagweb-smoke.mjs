@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import {runStorytellingSmoke} from './nagweb-storytelling-smoke.mjs';
 import {runCompositionSmoke} from './nagweb-composition-smoke.mjs';
 import {runHistorySmoke} from './nagweb-history-smoke.mjs';
+import {runLegacySmoke} from './nagweb-legacy-smoke.mjs';
 
 const feedbackSource=fs.readFileSync(new URL('../js/nagweb-feedback-v16.js',import.meta.url),'utf8');
 const directorSource=fs.readFileSync(new URL('../js/nagweb-scroll-director-v16.js',import.meta.url),'utf8');
@@ -185,6 +186,7 @@ if(Math.abs(workspaceState.rightWidth-savedInspectorWidth)>3) throw new Error('I
 await page.click('.nw-dock-toggle.left');
 
 await runHistorySmoke(page);
+await runLegacySmoke(page);
 await runStorytellingSmoke(page);
 await runCompositionSmoke(page);
 if(pageErrors.length) throw new Error('Browser page errors:\n'+pageErrors.join('\n\n'));

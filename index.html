@@ -19253,7 +19253,9 @@ $('file-json').addEventListener('change', ev => {
   r.onload = () => {
     try{
       const p = migrate(JSON.parse(String(r.result)));
-      if(!p || !p.pages || !p.pages.length) throw 0;
+      if(!p || !Array.isArray(p.pages) || !p.pages.length || !p.pages.every(pg =>
+        pg && Array.isArray(pg.sections) && pg.sections.length && pg.sections.every(s =>
+          s && Array.isArray(s.elements)))) throw 0;
       project = p; curPage = 0; curSec = 0; curEl = 0; selection = [];
       renderPages(); refresh(); renderPreview();
       toast('Proyecto abierto.');
