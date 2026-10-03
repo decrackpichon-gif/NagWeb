@@ -44,7 +44,7 @@ export async function runMotionGroupSmoke(page){
   assert.equal(await page.evaluate(()=>page().sections.length),1);await page.evaluate(()=>undo());
 
   // Director owns the host track; each group owns its own members and clock.
-  await page.evaluate(()=>{sec().sdEnabled=true;renderPreview();const f=document.createElement('iframe');f.id='group-export';f.style.cssText='width:900px;height:600px';f.srcdoc=generateSite(flattenPage(page()),false,false,false);document.body.append(f);});
+  await page.evaluate(()=>{sec().sdEnabled=true;renderPreview();const f=document.createElement('iframe');f.id='group-export';f.style.cssText='position:fixed;top:0;left:0;z-index:999999;width:900px;height:600px';f.srcdoc=generateSite(flattenPage(page()),false,false,false);document.body.append(f);});
   await page.waitForFunction(id=>document.getElementById('group-export')?.contentWindow?.__NAG_SCROLL_DIRECTOR?.[id],{},gid);
   const independent=await page.evaluate(id=>{
    const f=document.getElementById('group-export'),r=f.contentWindow.__NAG_SCROLL_DIRECTOR,d=f.contentDocument;
