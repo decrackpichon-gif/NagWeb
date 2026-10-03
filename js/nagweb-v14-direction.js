@@ -32,6 +32,8 @@ function ensureCategory(key,label,icon,after){
 }
 ensureCategory('composition','Composiciones','frame','creative');
 ensureCategory('mockup','Mockups','monitor','composition');
+var creativeCat=INSERT_CATS.find(function(c){return c.key==='creative';});
+if(creativeCat){creativeCat.label='Plantillas animadas';creativeCat.desc='Insertan una pieza visual prearmada que después podés editar.';}
 
 var layoutCat=INSERT_CATS.find(function(c){return c.key==='layout';});
 if(layoutCat && !layoutCat.__nwWidgets){
@@ -399,7 +401,7 @@ var ob=new MutationObserver(function(){setTimeout(installCanvasTools,40);});if(p
  }
 
  var REGISTRY={
-  reveal:{label:'Revelar',desc:'Hace entrar el elemento durante la narrativa de scroll.',icon:'eye',group:'Narrativa'},
+  reveal:{label:'Revelar',desc:'Aplicá al elemento seleccionado una entrada durante la narrativa de scroll.',icon:'eye',group:'Narrativa'},
   hold:{label:'Mantener',desc:'Mantiene el elemento presente durante toda la escena.',icon:'pin',group:'Narrativa'},
   parallax:{label:'Parallax',desc:'Desplazamiento relativo al scroll, compatible con Director y Escena universal.',icon:'arrows-down-up',group:'Narrativa'},
   sticky:{label:'Sticky',desc:'Convierte la escena actual en un recorrido sticky controlado por scroll.',icon:'push-pin',group:'Narrativa'},
@@ -415,7 +417,7 @@ var ob=new MutationObserver(function(){setTimeout(installCanvasTools,40);});if(p
   ensureCategory('behavior','Comportamientos','wand','creative');
   var cat=INSERT_CATS.find(function(x){return x.key==='behavior'});
   if(cat){
-   cat.res=false;
+   cat.res=false;cat.desc='Aplican movimiento o interacción al elemento que ya seleccionaste; no insertan una pieza nueva.';
    cat.items=function(){
     return Object.keys(REGISTRY).map(function(id){
      var b=REGISTRY[id];
