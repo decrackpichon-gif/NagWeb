@@ -67,6 +67,10 @@ function selectKey(id,key,render){
  selectElement(id,false);selected={element:id,key:key};D.scrub(sec().id,k.at/100);
  if(render!==false){renderPane();var b=pane.querySelector('[data-sd-key="'+key+'"]');if(b)b.focus({preventScroll:true});}
 }
+function trackClick(id,pct){
+ pct=M.clamp(M.number(pct,0),0,100);
+ selectElement(id,false);selected=null;D.scrub(sec().id,pct/100);renderPane();restoreTimelineViewport();
+}
 function bounds(list,index){return[index?list[index-1].at+.1:0,index<list.length-1?list[index+1].at-.1:100];}
 function moveValue(list,index,at){var b=bounds(list,index);return Math.round(M.clamp(+at,b[0],b[1])*10)/10;}
 function beats(s){
@@ -245,7 +249,7 @@ pane.addEventListener('click',function(ev){
  if(scrubSurface&&!ev.target.closest('[data-sd-key],[data-sd-edge]')){
   var rr=scrubSurface.getBoundingClientRect(),pct=M.clamp((ev.clientX-rr.left)/Math.max(1,rr.width),0,1);
   var trackId=scrubSurface.dataset&&scrubSurface.dataset.storyTrack;
-  if(trackId&&!(selection.length===1&&selection[0]===trackId)){selectElement(trackId,false);selected=null;D.scrub(sec().id,pct);renderPane();restoreTimelineViewport();}
+  if(trackId)trackClick(trackId,pct*100);
   else D.scrub(sec().id,pct);
   return;
  }
@@ -424,5 +428,5 @@ function syncCanvasTools(){
 preview.addEventListener('load',function(){setTimeout(syncCanvasTools,120);});
 setTimeout(syncCanvasTools,250);
 window.NAGWEB_STORY_TIMELINE_UI={version:'1.1',markersVisible:false,directScrub:true,state:function(){return Object.assign({},timelineUI)},setZoom:function(z){timelineUI.zoom=Math.max(1,Math.min(6,+z||1));saveTimelineUI();renderPane();restoreTimelineViewport();},fit:function(){timelineUI.zoom=1;timelineUI.scrollLeft=0;saveTimelineUI();renderPane();restoreTimelineViewport();}};
-window.NAGWEB_STORY_EDITOR={timeline:timeline,panel:panel,transport:transport,active:active,frames:frames,add:add,update:update,remove:remove,select:selectKey,beats:beats,beatAdd:beatAdd,beatUpdate:beatUpdate,beatRemove:beatRemove,hold:hold,stagger:stagger,staggerPanel:staggerPanel,preset:preset,presets:presets,canvasMode:function(){return canvasMode},setCanvasMode:setCanvasMode,canvasEdit:function(id,patch,at){var e=element(id),s=sec();if(!e)return false;at=at==null?atNow(s):at;return commitMomentState(e,s,at,currentMomentState(e,s,at),patch);}};
+window.NAGWEB_STORY_EDITOR={timeline:timeline,panel:panel,transport:transport,active:active,frames:frames,add:add,update:update,remove:remove,select:selectKey,trackClick:trackClick,beats:beats,beatAdd:beatAdd,beatUpdate:beatUpdate,beatRemove:beatRemove,hold:hold,stagger:stagger,staggerPanel:staggerPanel,preset:preset,presets:presets,canvasMode:function(){return canvasMode},setCanvasMode:setCanvasMode,canvasEdit:function(id,patch,at){var e=element(id),s=sec();if(!e)return false;at=at==null?atNow(s):at;return commitMomentState(e,s,at,currentMomentState(e,s,at),patch);}};
 })();
