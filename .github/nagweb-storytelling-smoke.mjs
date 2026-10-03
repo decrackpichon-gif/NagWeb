@@ -250,6 +250,10 @@ export async function runStorytellingSmoke(page){
  assert.equal(await page.evaluate(()=>sec().elements.length),2);
  await page.evaluate(()=>undo());
  assert.equal(await page.evaluate(()=>sec().elements[0].sdKeyframes.length),3);
+ await page.evaluate(()=>redo());
+ assert.equal(await page.evaluate(()=>sec().elements[0].sdKeyframes.length),2);
+ await page.evaluate(()=>undo());
+ assert.equal(await page.evaluate(()=>sec().elements[0].sdKeyframes.length),3);
  await page.evaluate(()=>{selection=['story-text'];curEl=0;renderPane();NAGWEB_SCROLL_DIRECTOR.scrub(sec().id,.65);});
  await page.click('[data-story-action="add"]');
  assert.equal(await page.evaluate(()=>sec().elements[0].sdKeyframes.length),4);
@@ -345,5 +349,94 @@ export async function runStorytellingSmoke(page){
   const original=JSON.stringify(legacy.sdKeyframes);NAGWEB_BEHAVIORS.toggle('reveal',false);return{both,independent,resumed,kept:original===JSON.stringify(legacy.sdKeyframes)};
  });
  assert.deepEqual(frameBehaviors.both,['reveal','parallax']);assert.ok(frameBehaviors.independent&&frameBehaviors.resumed&&frameBehaviors.kept);
- console.log('Storytelling: modelo, compatibilidad, interpolación y runtime exportado OK');
+
+ // Robustez: una escena larga con cientos de momentos debe seguir siendo editable
+ // y sobrevivir a una recarga real junto con el estado útil de la Timeline.
+ const stress=await page.evaluate(async()=>{
+  const s=sec();s.id='story-stress';s.layout='free';s.sdEnabled=true;s.sdEase='linear';s.sdLength=1200;s.stType='cut';s.elements=[];
+  for(let i=0;i<16;i++){
+   const ks=[];
+   for(let j=0;j<24;j++)ks.push({
+    id:'stress-'+i+'-k-'+j,
+    at:Math.round((j*100/23)*10)/10,
+    x:i*9+j*5,
+    y:(i%4)*12-j*2,
+    scale:100+(j%5)*3,
+    rotate:j*1.5,
+    opacity:Math.max(20,100-j*2),
+    blur:j%3,
+    ease:j%2?'smooth':'linear'
+   });
+   s.elements.push(mkEl('heading',{id:'stress-'+i,text:'Pista '+(i+1),anim:'none',x:10+i,y:10+i,sdKeyframesEnabled:true,sdKeyframes:ks}));
+  }
+  s.elements.push(mkEl('paragraph',{id:'stress-imported',text:'Importado sin IDs',anim:'none',sdKeyframesEnabled:true,sdKeyframes:[
+   {at:0,x:0,opacity:100},{at:50,x:40,opacity:80},{at:100,x:90,opacity:50}
+  ]}));
+  project.pages[0].sections=[s];curPage=0;curSec=0;curEl=0;curPane='elements';selection=['stress-0'];secFocus=false;
+  renderPane();renderPreview();
+
+  // Un proyecto viejo puede traer momentos sin id. La primera edición los estabiliza.
+  const importedBefore=NAGWEB_STORY_EDITOR.frames(s.elements.at(-1)).map(k=>k.id);
+  const importedEdited=NAGWEB_STORY_EDITOR.update('stress-imported',importedBefore[1],{x:77});
+
+  NAGWEB_STORY_TIMELINE_UI.setZoom(4);
+  NAGWEB_STORY_EDITOR.setCanvasMode('moment');
+  const dock=document.querySelector('[data-story-tl-dock]');if(dock)dock.click();
+  await new Promise(r=>setTimeout(r,20));
+  const sc=document.querySelector('.nw-sd-scroll');
+  const wanted=Math.min(640,Math.max(0,sc.scrollWidth-sc.clientWidth));
+  sc.scrollLeft=wanted;sc.dispatchEvent(new Event('scroll',{bubbles:true}));
+  await new Promise(r=>setTimeout(r,220));
+  saveProject();
+
+  const imported=s.elements.find(e=>e.id==='stress-imported');
+  return{
+   rows:document.querySelectorAll('[data-sd-row]').length,
+   keys:document.querySelectorAll('[data-sd-key]').length,
+   projectKeys:s.elements.reduce((n,e)=>n+(e.sdKeyframes||[]).length,0),
+   importedEdited,
+   importedIds:imported.sdKeyframes.map(k=>k.id),
+   importedX:imported.sdKeyframes[1].x,
+   timeline:NAGWEB_STORY_TIMELINE_UI.state(),
+   canvas:NAGWEB_STORY_EDITOR.canvasMode(),
+   savedTimeline:JSON.parse(localStorage.getItem('nagweb.story.timeline.ui.v1')||'{}'),
+   storeKey:STORE_KEY
+  };
+ });
+ assert.equal(stress.rows,17);assert.equal(stress.keys,387);assert.equal(stress.projectKeys,387);
+ assert.equal(stress.importedEdited,true);assert.deepEqual(stress.importedIds,['key-0','key-1','key-2']);assert.equal(stress.importedX,77);
+ assert.equal(stress.timeline.zoom,4);assert.equal(stress.timeline.docked,true);assert.equal(stress.canvas,'moment');
+ assert.ok(stress.timeline.scrollLeft>100);assert.ok(Math.abs(stress.savedTimeline.scrollLeft-stress.timeline.scrollLeft)<2);
+
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.waitForFunction(()=>window.NAGWEB_STORY_EDITOR&&window.NAGWEB_STORY_TIMELINE_UI&&window.project?.pages?.[0]?.sections?.some(s=>s.id==='story-stress'));
+ await page.evaluate(()=>{
+  curPage=0;curSec=project.pages[0].sections.findIndex(s=>s.id==='story-stress');curEl=0;curPane='elements';selection=['stress-0'];secFocus=false;
+  renderPane();renderPreview();
+ });
+ await page.waitForFunction(()=>document.querySelector('[data-sd-timeline="story-stress"]')&&document.querySelectorAll('[data-sd-key]').length===387);
+ await page.waitForFunction(()=>document.querySelector('.nw-sd-scroll')?.scrollLeft>100);
+ const reloaded=await page.evaluate(()=>{
+  const s=sec(),imported=s.elements.find(e=>e.id==='stress-imported'),tl=document.querySelector('[data-sd-timeline="story-stress"]'),sc=tl.querySelector('.nw-sd-scroll');
+  return{
+   rows:tl.querySelectorAll('[data-sd-row]').length,
+   keys:tl.querySelectorAll('[data-sd-key]').length,
+   length:s.sdLength,
+   sample:s.elements[7].sdKeyframes[12],
+   importedIds:imported.sdKeyframes.map(k=>k.id),
+   importedX:imported.sdKeyframes[1].x,
+   timeline:NAGWEB_STORY_TIMELINE_UI.state(),
+   canvas:NAGWEB_STORY_EDITOR.canvasMode(),
+   docked:tl.classList.contains('nw-sd-docked'),
+   scrollLeft:sc.scrollLeft,
+   saved:JSON.parse(localStorage.getItem('nagweb.story.timeline.ui.v1')||'{}')
+  };
+ });
+ assert.equal(reloaded.rows,17);assert.equal(reloaded.keys,387);assert.equal(reloaded.length,1200);
+ assert.equal(reloaded.sample.id,'stress-7-k-12');assert.equal(reloaded.sample.x,123);
+ assert.deepEqual(reloaded.importedIds,['key-0','key-1','key-2']);assert.equal(reloaded.importedX,77);
+ assert.equal(reloaded.timeline.zoom,4);assert.equal(reloaded.timeline.docked,true);assert.equal(reloaded.canvas,'moment');assert.equal(reloaded.docked,true);
+ assert.ok(reloaded.scrollLeft>100);assert.ok(Math.abs(reloaded.saved.scrollLeft-reloaded.scrollLeft)<2);
+
+ console.log('Storytelling: modelo, compatibilidad, interpolación, persistencia y runtime exportado OK');
 }
