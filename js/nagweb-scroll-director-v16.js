@@ -153,7 +153,7 @@ if(pane){
    draw();
   }
   function mv(e2){move(e2.clientX);}
-  function up(e2){if(e2.type==='pointercancel'){e.sdStart=start0;e.sdEnd=end0;}else move(e2.clientX);cap.removeEventListener('pointermove',mv);cap.removeEventListener('pointerup',up);cap.removeEventListener('pointercancel',up);if(changed){saveProject();renderPane();schedulePreview();}else if(bar0&&window.NAGWEB_STORY_EDITOR&&typeof window.NAGWEB_STORY_EDITOR.trackClick==='function'){window.NAGWEB_STORY_EDITOR.trackClick(e.id,value(e2.clientX));}}
+  function up(e2){if(e2.type==='pointercancel'){e.sdStart=start0;e.sdEnd=end0;}else move(e2.clientX);cap.removeEventListener('pointermove',mv);cap.removeEventListener('pointerup',up);cap.removeEventListener('pointercancel',up);if(changed){saveProject();renderPane();schedulePreview();}}
   cap.addEventListener('pointermove',mv);cap.addEventListener('pointerup',up);cap.addEventListener('pointercancel',up);
  });
  pane.addEventListener('input',function(ev){
