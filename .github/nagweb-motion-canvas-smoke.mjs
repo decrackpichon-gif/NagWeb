@@ -11,7 +11,7 @@ export async function runMotionCanvasSmoke(page){
   });
   async function open(){
    await page.evaluate(id=>NAGWEB_MOTION_LAB.edit(id),fixture.gid);
-   await page.waitForFunction(id=>document.querySelector('.nw-motion-dialog iframe')?.contentDocument?.querySelector('[data-id="'+id+'"][data-motion-canvas]'),{},fixture.id);
+   try{await page.waitForFunction(id=>document.querySelector('.nw-motion-dialog iframe')?.contentDocument?.querySelector('[data-id="'+id+'"][data-motion-canvas]'),{timeout:10000},fixture.id);}catch(e){throw new Error('Motion canvas open: '+JSON.stringify(await page.evaluate(()=>({open:document.querySelector('.nw-motion-dialog').open,srcLength:document.querySelector('.nw-motion-dialog iframe').srcdoc.length})))+' '+errors.join('; ')+' '+e);}
    const handle=await page.$('.nw-motion-dialog iframe');return handle.contentFrame();
   }
   async function drag(frame,dx,dy){
