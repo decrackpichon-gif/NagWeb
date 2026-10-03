@@ -129,7 +129,7 @@ function preset(id,name){
  snapshot();e.sdKeyframes=M.normalize(p.frames.map(function(k){return Object.assign({id:nid(),ease:name==='parallax'?'linear':'cinematic'},k);}));e.sdKeyframesEnabled=true;sec().sdEnabled=true;
  selected={element:id,key:e.sdKeyframes[0].id};persist();return true;
 }
-function presetPanel(){return cRow('Punto de partida','<select class="csel" data-story-preset aria-label="Preset de movimiento"><option value="">Elegir movimiento…</option>'+Object.keys(presets).map(function(k){return '<option value="'+k+'">'+presets[k].name+'</option>';}).join('')+'</select>')+'<p class="hint gh">Reemplaza los momentos de este elemento. Todos los valores quedan editables y podés deshacer.</p>';}
+function presetPanel(){return cRow('Plantilla de movimiento','<select class="csel" data-story-preset aria-label="Plantilla de movimiento"><option value="">Elegir plantilla…</option>'+Object.keys(presets).map(function(k){return '<option value="'+k+'">'+presets[k].name+'</option>';}).join('')+'</select>')+'<p class="hint gh"><b>Plantilla</b> = un recorrido prearmado para este mismo elemento. No agrega otro objeto: reemplaza sus momentos y después podés editar cada uno.</p>';}
 function snap(at,list,index,skip){
  // Marcadores narrativos se conservan en los datos por compatibilidad, pero
  // ya no forman parte de la UI. No hacemos snapping a guías invisibles.
@@ -180,7 +180,7 @@ function enable(e){
 function num(attr,key,value,label,min,max,unit){
  return '<label class="num"><input type="number" '+attr+'="'+key+'" value="'+value+'" min="'+min+'" max="'+max+'" step="0.1" aria-label="'+label+'"><span class="u">'+unit+'</span></label>';
 }
-function transport(s){var val=D.progress(s.id);return '<div class="field cstack"><label>Ver un momento <span data-sd-val>'+Math.round(val)+'%</span></label><input aria-label="Ver un momento" class="crange" type="range" data-sd-scrub="'+s.id+'" min="0" max="100" step="0.1" value="'+val+'"></div><div class="nw-sd-actions"><button type="button" class="btn tiny" data-sd-play="'+s.id+'">▶ Reproducir secuencia</button><button type="button" class="btn tiny" data-sd-live="'+s.id+'">Volver al scroll real</button></div>';}
+function transport(s){var val=D.progress(s.id);return '<div class="field cstack"><label>Recorrer la escena <span data-sd-val>'+Math.round(val)+'%</span></label><input aria-label="Recorrer la escena" class="crange" type="range" data-sd-scrub="'+s.id+'" min="0" max="100" step="0.1" value="'+val+'"></div><div class="nw-sd-actions"><button type="button" class="btn tiny" data-sd-play="'+s.id+'">▶ Reproducir</button><button type="button" class="btn tiny" data-sd-live="'+s.id+'">Volver al scroll real</button></div>';}
 function timeline(s,val){
  if(selected&&(selection.length!==1||selected.element!==selection[0]))selected=null;
  var list=(s.elements||[]).filter(function(e){return M.eligible(e,s);});
@@ -210,23 +210,23 @@ function timeline(s,val){
 
 function canvasModePanel(s,e){
  var at=atNow(s),hit=exactMoment(e,at),moment=canvasMode==='moment';
- var status=moment?(hit?'◆ Keyframe · '+at+'%':'🎬 '+at+'% · al transformar se crea un keyframe'):'Editás posición, tamaño y rotación base para toda la escena.';
+ var status=moment?(hit?'◆ Momento guardado · '+at+'%':'🎬 '+at+'% · al mover, girar o redimensionar se guarda un momento nuevo'):'Editás la posición, el tamaño y el giro base que usa toda la escena.';
  return '<div class="nw-story-canvas-mode"><h4 class="gsub">Edición en el lienzo</h4><div class="seg nw-story-mode-seg"><button type="button" data-story-canvas-mode="base" class="'+(!moment?'on':'')+'">Diseño base</button><button type="button" data-story-canvas-mode="moment" class="'+(moment?'on':'')+'">Momento de la escena</button></div><p class="hint gh" data-story-mode-status>'+status+'</p></div>';
 }
 function panel(s,e){
  var ks=frames(e),k=picked(e),body=canvasModePanel(s,e);
- if(!active(e))return body+'<div class="nw-sd-actions"><button type="button" class="btn tiny" data-story-action="enable">'+(ks.length?'Reactivar keyframes':'Crear keyframes del recorrido')+'</button></div><p class="hint gh">Los valores del recorrido anterior se conservan. En “Momento de la escena”, mover o transformar en el lienzo crea el keyframe necesario automáticamente.</p>'+presetPanel();
+ if(!active(e))return body+'<div class="nw-sd-actions"><button type="button" class="btn tiny" data-story-action="enable">'+(ks.length?'Reactivar momentos editables':'Crear momentos editables')+'</button></div><p class="hint gh">Con <b>Momento de la escena</b>, cada cambio del lienzo se guarda en el porcentaje actual sin modificar los demás momentos.</p>'+presetPanel();
  body+=transport(s)+timeline(s,D.progress(s.id));
- body+='<div class="nw-sd-actions"><button type="button" class="btn tiny" data-story-action="add">+ Momento aquí</button><button type="button" class="btn tiny" data-story-action="disable">Usar recorrido anterior</button></div>';
+ body+='<div class="nw-sd-actions"><button type="button" class="btn tiny" data-story-action="add">+ Guardar momento aquí</button><button type="button" class="btn tiny" data-story-action="disable">Volver al recorrido simple</button></div>';
  body+=presetPanel();
  if(!k)return body+'<p class="hint gh">Seleccioná un punto para editarlo. Dos puntos con el mismo estado crean una permanencia.</p>';
  var i=ks.findIndex(function(x){return x.id===k.id;}),b=bounds(ks,i);
  body+='<div class="nw-sd-inspector" data-story-inspector="'+k.id+'"><h4 class="gsub">Momento seleccionado</h4>'+cRow('Momento en la escena',num('data-story-field','at',k.at,'Momento en la escena',b[0],b[1],'%'));
- body+='<h4 class="gsub">Transformación</h4>';
+ body+='<h4 class="gsub">Cómo está el elemento en este momento</h4>';
  Object.keys(M.properties).forEach(function(p){var def=M.properties[p];if(p==='opacity')body+='<h4 class="gsub">Apariencia</h4>';body+=cRow(def.label,num('data-story-field',p,k[p],def.label,def.min,def.max,def.unit));});
- body+='<h4 class="gsub">Interpolación</h4>'+cRow('Hacia el siguiente momento','<select class="csel" aria-label="Interpolación" data-story-field="ease">'+Object.keys(M.easings).map(function(key){return '<option value="'+key+'"'+(k.ease===key?' selected':'')+'>'+M.easings[key]+'</option>';}).join('')+'</select>');
+ body+='<p class="hint gh">En movimiento: valores negativos llevan a izquierda/arriba; positivos a derecha/abajo. X 0 e Y 0 significan la posición del diseño base.</p><h4 class="gsub">Cómo cambia hasta el próximo momento</h4>'+cRow('Ritmo del cambio','<select class="csel" aria-label="Ritmo del cambio" data-story-field="ease">'+Object.keys(M.easings).map(function(key){return '<option value="'+key+'"'+(k.ease===key?' selected':'')+'>'+M.easings[key]+'</option>';}).join('')+'</select>');
  body+='<p class="hint gh">'+(i===ks.length-1?'Último momento: este estado se mantiene hasta el final.':'Este cambio de velocidad se aplica al tramo siguiente.')+' Los valores se suman al diseño del elemento; 100% conserva su escala y opacidad base.</p>';
- body+=cRow('Permanecer durante',num('data-story-hold','gap',10,'Duración de la permanencia',.1,100,'%'))+'<div class="nw-sd-actions"><button type="button" class="btn tiny" data-story-action="hold">Agregar permanencia</button><button type="button" class="btn tiny danger" data-story-action="delete">Eliminar momento</button></div></div>';
+ body+=cRow('Mantener este estado durante',num('data-story-hold','gap',10,'Duración de la permanencia',.1,100,'%'))+'<div class="nw-sd-actions"><button type="button" class="btn tiny" data-story-action="hold">Crear permanencia</button><button type="button" class="btn tiny danger" data-story-action="delete">Eliminar momento</button></div></div>';
  return body;
 }
 pane.addEventListener('change',function(ev){
