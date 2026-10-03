@@ -6,6 +6,11 @@ export async function runMotionLabSmoke(page){
  try{
   await page.click('.tb-left [data-motion-open]');
   await page.waitForFunction(()=>document.querySelector('.nw-motion-dialog[open] iframe')?.contentWindow?.__NAG_SCROLL_DIRECTOR);
+  const layout=await page.evaluate(()=>{
+   const r=s=>document.querySelector(s).getBoundingClientRect(),a=r('.nw-motion-library'),b=r('.nw-motion-stage'),c=r('.nw-motion-inspector'),f=r('.nw-motion-frame'),t=r('.nw-motion-controls');
+   return{columns:a.right<=b.left+1&&b.right<=c.left+1,stageWidth:b.width,libraryWidth:a.width,inspectorWidth:c.width,playbackBelow:t.top>=f.bottom-3,previewHeight:f.height};
+  });
+  assert.equal(layout.columns,true);assert.ok(layout.stageWidth>layout.libraryWidth&&layout.stageWidth>layout.inspectorWidth);assert.equal(layout.playbackBelow,true);assert.ok(layout.previewHeight>450);
   assert.equal(await page.evaluate(()=>JSON.stringify(project)),previous.project,'Browsing must not change the project');
   const preview=await page.evaluate(()=>{
    const f=document.querySelector('.nw-motion-dialog iframe'),w=f.contentWindow,d=w.__NAG_SCROLL_DIRECTOR,id=Object.keys(d)[0],n=f.contentDocument.querySelector('[data-nw-sd-el]');
@@ -51,6 +56,7 @@ export async function runMotionLabSmoke(page){
   await page.setViewport({width:390,height:844,deviceScaleFactor:1});
   await page.evaluate(()=>NAGWEB_MOTION_LAB.open());
   assert.ok(await page.evaluate(()=>{const r=document.querySelector('.nw-motion-dialog').getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.height<=innerHeight;}));
+  assert.ok(await page.evaluate(()=>{const d=document.querySelector('.nw-motion-dialog'),r=s=>d.querySelector(s).getBoundingClientRect(),a=r('.nw-motion-library'),b=r('.nw-motion-stage'),c=r('.nw-motion-inspector');return a.bottom<=b.top+1&&b.bottom<=c.top+1&&d.scrollWidth<=d.clientWidth+2;}));
   await page.click('[data-motion-close]');
   console.log('Motion Lab: acceso visible, preview compartido, reproducción, inserción sin pérdida, momentos editables, guardado, Undo/Redo, IDs únicos, export y móvil OK');
  }finally{

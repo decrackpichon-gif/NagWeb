@@ -108,3 +108,9 @@ El runtime único usa un reloj para el progreso temporal y evalúa los mismos mo
 Seleccionar el grupo o uno de sus miembros muestra **Editar en Motion Lab**. La ventana reabre esa instancia, con su contenido y configuración actuales, preview, selector de imágenes, textos y reproducción. Guardar reemplaza esos datos conservando IDs y momentos; cerrar descarta el borrador. La selección de Scroll al guardar activa el Director de la escena anfitriona. Los momentos individuales siguen editándose en el lienzo y la Timeline, sobre la instancia seleccionada.
 
 La ventana aún conserva la organización de la galería inicial; su transformación al entorno de tres columnas y la mejora visual de la composición siguen pendientes. `.github/nagweb-motion-group-smoke.mjs` verifica inserción sin escenas nuevas, edición de poses por instancia, reapertura, contenido, cancelación, historial, IDs y exportación de grupos temporales junto al Director.
+
+## Motion Lab — estructura de trabajo inicial
+
+La ventana ocupa casi toda la pantalla y organiza biblioteca con miniatura a la izquierda, preview central amplio, inspector a la derecha y reproducción debajo del preview. Reabrir una instancia lleva sus controles de contenido y reproducción al inspector; el borrador sigue guardándose o descartándose mediante las mismas acciones. En pantallas pequeñas las regiones se apilan y el inspector conserva su propio desplazamiento.
+
+Esta etapa reorganiza la interfaz existente: el centro sigue siendo una vista previa. La edición directa dentro de Motion Lab, la línea de tiempo de momentos en esa ventana y el rediseño visual de la primera composición todavía están pendientes. Las pruebas de galería comprueban la geometría de columnas, el área de preview, reproducción inferior y adaptación móvil; las pruebas de grupos mantienen edición y guardado del mismo objeto.

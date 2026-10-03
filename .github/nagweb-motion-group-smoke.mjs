@@ -26,6 +26,8 @@ export async function runMotionGroupSmoke(page){
 
   // Reopening saves into the existing group; closing discards a draft.
   await page.click('[data-motion-edit="'+gid+'"]');
+  assert.equal(await page.$eval('[data-motion-edit-form]',n=>n.closest('.nw-motion-inspector')!=null),true);
+  assert.equal(await page.$eval('[data-motion-gallery-details]',n=>n.hidden),true);
   await page.waitForFunction(id=>document.querySelector('.nw-motion-dialog iframe')?.contentWindow?.__NAG_SCROLL_DIRECTOR?.[id],{},gid);
   await page.$eval('[data-motion-content="3"]',n=>{n.value='Mi marca';n.dispatchEvent(new Event('change',{bubbles:true}));});
   await page.$eval('[data-motion-config="duration"]',n=>{n.value='2';n.dispatchEvent(new Event('change',{bubbles:true}));});
