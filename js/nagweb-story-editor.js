@@ -242,7 +242,7 @@ pane.addEventListener('click',function(ev){
  var modeBtn=ev.target.closest&&ev.target.closest('[data-story-canvas-mode]');
  if(modeBtn){setCanvasMode(modeBtn.dataset.storyCanvasMode);return;}
  var scrubSurface=ev.target.closest&&ev.target.closest('[data-story-scrub-ruler],[data-story-track]');
- if(scrubSurface&&!ev.target.closest('[data-sd-key],[data-sd-edge],[data-sd-bar]')){
+ if(scrubSurface&&!ev.target.closest('[data-sd-key],[data-sd-edge]')){
   var rr=scrubSurface.getBoundingClientRect(),pct=M.clamp((ev.clientX-rr.left)/Math.max(1,rr.width),0,1);
   var trackId=scrubSurface.dataset&&scrubSurface.dataset.storyTrack;
   if(trackId&&!(selection.length===1&&selection[0]===trackId)){selectElement(trackId,false);selected=null;D.scrub(sec().id,pct);renderPane();restoreTimelineViewport();}
