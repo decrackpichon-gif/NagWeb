@@ -400,6 +400,8 @@ export async function runStorytellingSmoke(page){
    timeline:NAGWEB_STORY_TIMELINE_UI.state(),
    canvas:NAGWEB_STORY_EDITOR.canvasMode(),
    savedTimeline:JSON.parse(localStorage.getItem('nagweb.story.timeline.ui.v1')||'{}'),
+   savedProject:(()=>{try{return JSON.parse(localStorage.getItem(STORE_KEY)||'null')}catch(_){return null}})(),
+   migratedProject:(()=>{try{return migrate(JSON.parse(localStorage.getItem(STORE_KEY)||'null'))}catch(_){return null}})(),
    storeKey:STORE_KEY
   };
  });
@@ -407,9 +409,13 @@ export async function runStorytellingSmoke(page){
  assert.equal(stress.importedEdited,true);assert.deepEqual(stress.importedIds,['key-0','key-1','key-2']);assert.equal(stress.importedX,77);
  assert.equal(stress.timeline.zoom,4);assert.equal(stress.timeline.docked,true);assert.equal(stress.canvas,'moment');
  assert.ok(stress.timeline.scrollLeft>100);assert.ok(Math.abs(stress.savedTimeline.scrollLeft-stress.timeline.scrollLeft)<2);
+ assert.ok(stress.savedProject?.pages?.[0]?.sections?.some(s=>s.id==='story-stress'),'saveProject no persistió story-stress');
+ assert.ok(stress.migratedProject?.pages?.[0]?.sections?.some(s=>s.id==='story-stress'),'migrate descartó story-stress antes del reload');
 
  await page.reload({waitUntil:'domcontentloaded'});
- await page.waitForFunction(()=>window.NAGWEB_STORY_EDITOR&&window.NAGWEB_STORY_TIMELINE_UI&&window.project?.pages?.[0]?.sections?.some(s=>s.id==='story-stress'));
+ await page.waitForFunction(()=>window.NAGWEB_STORY_EDITOR&&window.NAGWEB_STORY_TIMELINE_UI&&window.project?.pages?.length);
+ const loadedAfterReload=await page.evaluate(()=>project.pages.map(pg=>pg.sections.map(s=>s.id)));
+ assert.ok(loadedAfterReload.some(ids=>ids.includes('story-stress')),'Reload cargó otras escenas: '+JSON.stringify(loadedAfterReload));
  await page.evaluate(()=>{
   curPage=0;curSec=project.pages[0].sections.findIndex(s=>s.id==='story-stress');curEl=0;curPane='elements';selection=['stress-0'];secFocus=false;
   renderPane();renderPreview();
