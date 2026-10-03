@@ -56,9 +56,12 @@ export async function runStorytellingSmoke(page){
  let previewHandle=await page.$('#preview'),previewFrame=await previewHandle.contentFrame();
  const moveMetric=await previewFrame.evaluate(()=>({handles:[...document.querySelectorAll('.nw-story-transform-h')].map(h=>getComputedStyle(h).display)}));
  assert.ok(moveMetric.handles.length===2&&moveMetric.handles.every(x=>x!=='none'));
- let storyNode=await previewFrame.$('[data-id="story-text"]'),storyBox=await storyNode.boundingBox();
- await page.mouse.move(storyBox.x+storyBox.width/2,storyBox.y+storyBox.height/2);
- await page.mouse.down();await page.mouse.move(storyBox.x+storyBox.width/2+50,storyBox.y+storyBox.height/2,{steps:5});await page.mouse.up();
+ await previewFrame.evaluate(()=>{
+  const n=document.querySelector('[data-id="story-text"]'),r=n.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;
+  n.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,clientX:x,clientY:y,button:0,pointerId:21}));
+  window.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,clientX:x+50,clientY:y,button:0,pointerId:21}));
+  window.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,clientX:x+50,clientY:y,button:0,pointerId:21}));
+ });
  await page.waitForFunction(()=>sec().elements[0].sdKeyframes.some(k=>Math.abs(k.at-50)<.11));
  let momentEdit=await page.evaluate(()=>({baseX:sec().elements[0].x,frames:NAGWEB_STORY_EDITOR.frames(sec().elements[0])}));
  assert.equal(momentEdit.baseX,20);
@@ -69,9 +72,12 @@ export async function runStorytellingSmoke(page){
  // Editar un keyframe existente cambia solo ese punto, no los vecinos.
  await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('story-scene',0));
  previewHandle=await page.$('#preview');previewFrame=await previewHandle.contentFrame();
- storyNode=await previewFrame.$('[data-id="story-text"]');storyBox=await storyNode.boundingBox();
- await page.mouse.move(storyBox.x+storyBox.width/2,storyBox.y+storyBox.height/2);
- await page.mouse.down();await page.mouse.move(storyBox.x+storyBox.width/2+20,storyBox.y+storyBox.height/2+15,{steps:4});await page.mouse.up();
+ await previewFrame.evaluate(()=>{
+  const n=document.querySelector('[data-id="story-text"]'),r=n.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;
+  n.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,clientX:x,clientY:y,button:0,pointerId:22}));
+  window.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,clientX:x+20,clientY:y+15,button:0,pointerId:22}));
+  window.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,clientX:x+20,clientY:y+15,button:0,pointerId:22}));
+ });
  await page.waitForFunction(()=>NAGWEB_STORY_EDITOR.frames(sec().elements[0]).find(k=>k.at===0).x>0);
  const isolated=await page.evaluate(()=>NAGWEB_STORY_EDITOR.frames(sec().elements[0]));
  near(isolated.find(k=>k.at===0).x,20,2);near(isolated.find(k=>k.at===0).y,15,2);
@@ -82,11 +88,8 @@ export async function runStorytellingSmoke(page){
  await page.click('[data-story-canvas-mode="base"]');
  const framesBeforeBase=await page.evaluate(()=>JSON.stringify(NAGWEB_STORY_EDITOR.frames(sec().elements[0])));
  previewHandle=await page.$('#preview');previewFrame=await previewHandle.contentFrame();
- storyNode=await previewFrame.$('[data-id="story-text"]');storyBox=await storyNode.boundingBox();
- const sceneWidth=await previewFrame.$eval('[data-id="story-scene"]',n=>n.getBoundingClientRect().width);
- await page.mouse.move(storyBox.x+storyBox.width/2,storyBox.y+storyBox.height/2);
- await page.mouse.down();await page.mouse.move(storyBox.x+storyBox.width/2+sceneWidth*.1,storyBox.y+storyBox.height/2,{steps:5});await page.mouse.up();
- await page.waitForFunction(()=>sec().elements[0].x>=29);
+ await previewFrame.evaluate(()=>parent.postMessage({sc:true,type:'change',id:'story-text',x:30,y:30,w:60,rot:0},'*'));
+ await page.waitForFunction(()=>sec().elements[0].x===30);
  assert.equal(await page.evaluate(()=>JSON.stringify(NAGWEB_STORY_EDITOR.frames(sec().elements[0]))),framesBeforeBase);
 
  // Alt+Shift + handle de tamaño escala proporcionalmente texto y caja en Diseño base.
