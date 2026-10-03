@@ -516,4 +516,4 @@ export async function runStorytellingSmoke(page){
  await page.setViewport({width:1440,height:900,deviceScaleFactor:1});
 
  console.log('Storytelling: modelo, compatibilidad, interpolación, persistencia, móvil y runtime exportado OK');
-}}
+}
