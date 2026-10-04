@@ -10,7 +10,7 @@
 })(typeof window!=='undefined'?window:globalThis,function(engine,assetPrep){
   'use strict';
 
-  var VERSION='2.0.0-alpha.1';
+  var VERSION='2.1.0-alpha.1';
   var DEFAULTS={
     points:30,
     slices:60,
@@ -118,14 +118,17 @@
     return run.then(function(a){
       if(!a.silhouetteReliable)throw new Error('NagWeb Organic: a reliable transparent silhouette is required');
       var iw=image.naturalWidth||image.width,ih=image.naturalHeight||image.height;
-      var rad=-(a.principalAxisAngle||0)*Math.PI/180,co=Math.abs(Math.cos(rad)),si=Math.abs(Math.sin(rad));
+      var axisAngle=Number(opts.axisAngle);
+      if(!Number.isFinite(axisAngle)&&opts.profile&&opts.profile.organic)axisAngle=Number(opts.profile.organic.axisAngle);
+      if(!Number.isFinite(axisAngle))axisAngle=Number(a.principalAxisAngle)||0;
+      var rad=-axisAngle*Math.PI/180,co=Math.abs(Math.cos(rad)),si=Math.abs(Math.sin(rad));
       var w=Math.ceil(iw*co+ih*si),h=Math.ceil(iw*si+ih*co);
       var canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
       var c=canvas.getContext('2d');c.translate(w/2,h/2);c.rotate(rad);c.drawImage(image,-iw/2,-ih/2);
       return assetPrep.analyzeImage(canvas,{maxDimension:512}).then(function(rotatedAnalysis){
         return assetPrep.trimTransparent(canvas,rotatedAnalysis,{paddingRatio:opts.paddingRatio==null ? .015 : opts.paddingRatio});
       }).then(function(trimmed){
-        return {canvas:trimmed.canvas,analysis:a,axisAngle:a.principalAxisAngle,width:trimmed.width,height:trimmed.height};
+        return {canvas:trimmed.canvas,analysis:a,axisAngle:axisAngle,width:trimmed.width,height:trimmed.height,leadEnd:'right'};
       });
     });
   }
