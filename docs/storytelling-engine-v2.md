@@ -219,3 +219,12 @@ La edición cambia solo las propiedades elegidas del punto existente: conserva I
 “Al siguiente momento” elige el easing del tramo saliente: Lineal, Suave, Acelera, Frena, Acelera y frena o Cinemática. En el último momento queda deshabilitado porque no hay un tramo siguiente. La edición mantiene los demás momentos, sus IDs, la geometría base y los demás elementos. Funciona antes de insertar y al reabrir el grupo; cada plantilla conserva su borrador y cerrar lo descarta.
 
 `.github/nagweb-motion-transition-smoke.mjs` verifica las nueve propiedades en un punto intermedio conocido, el cambio real entre easing cinematográfico y lineal, estilos computados, límites, último momento, conservación de geometría y otros puntos/elementos, borradores, inserción, guardado sobre la misma instancia, cancelación, Deshacer/Rehacer y el movimiento en el HTML exportado.
+
+
+## Agregar y quitar momentos dentro de Motion Lab
+
+Un elemento con momentos activos ofrece “Agregar aquí” y “Quitar elegido”. Recorrer la vista previa y agregar captura las nueve propiedades de la pose evaluada en ese porcentaje, con precisión de décimas y un ID nuevo. El nuevo momento hereda el easing del tramo en el que se agrega. Si ya existe un momento en esa posición, se selecciona sin duplicarlo ni reemplazarlo. Se mantienen los límites de 512 puntos y al menos dos momentos por elemento; quitar selecciona el punto superviviente más próximo.
+
+La captura conserva la pose en el instante elegido. Al dividir un tramo con easing, la curva entre los momentos puede cambiar; cada tramo sigue usando su propio easing. Los cambios permanecen en el borrador antes de insertar/guardar y no alteran los demás elementos ni la geometría base. Reubicar momentos sigue disponible en la línea de tiempo del lienzo principal.
+
+`.github/nagweb-motion-points-smoke.mjs` verifica captura de una pose interpolada sin salto ni recarga, posiciones decimales, duplicados, quitar y selección posterior, mínimo de puntos, IDs/otros momentos/elementos, borradores por plantilla, inserción, guardado en la misma instancia, cancelación, historial y equivalencia con el HTML exportado.
