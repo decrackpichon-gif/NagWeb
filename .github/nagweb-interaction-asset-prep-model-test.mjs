@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 const require=createRequire(import.meta.url);
 const A=require('../js/nagweb-interaction-asset-prep-v1.js');
 
-assert.equal(A.version,'1.1.0');
+assert.equal(A.version,'1.2.0');
 
 function pixels(w,h,inside){
   const data=new Uint8ClampedArray(w*h*4);
@@ -43,3 +43,19 @@ const tiny=A.analyzePixels(pixels(100,100,(x,y)=>x>48&&x<52&&y>48&&y<52));
 assert.ok(tiny.warnings.some(x=>x.includes('resolución')));
 
 console.log('NagWeb Interaction Asset Prep V1 model tests: PASS');
+
+const axis=A.axisAnchors({
+  width:400,height:200,sampleWidth:400,sampleHeight:200,
+  centroid:{x:.5,y:.5},subjectBounds:{x:.1,y:.2,width:.8,height:.6},principalAxisAngle:0
+});
+assert.ok(Math.abs(axis.start.x-.1)<.001&&Math.abs(axis.end.x-.9)<.001,'auto axis should intersect subject bounds');
+assert.ok(Math.abs(A.axisAngleFromAnchors({x:.2,y:.5},{x:.8,y:.5},400,200))<.001);
+assert.ok(Math.abs(A.axisAngleFromAnchors({x:.5,y:.8},{x:.5,y:.2},400,200)+90)<.001);
+
+const manualProfile=A.createProfile({
+  width:400,height:200,sampleWidth:400,sampleHeight:200,sourceWidth:800,sourceHeight:400,
+  silhouetteReliable:true,needsBackgroundRemoval:false,organicCandidate:true,recommendedMode:'organic',
+  subjectBounds:{x:.1,y:.2,width:.8,height:.6},centroid:{x:.5,y:.5},principalAxisAngle:0,elongation:2.4,warnings:[]
+},{trailAnchor:{x:.2,y:.8},leadAnchor:{x:.8,y:.2}});
+assert.equal(manualProfile.organic.directionSource,'manual');
+assert.ok(manualProfile.organic.axisAngle<0);
