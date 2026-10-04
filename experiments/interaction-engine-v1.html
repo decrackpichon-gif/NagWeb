@@ -41,6 +41,7 @@
       <label class="check"><input id="rotate" type="checkbox" checked> Orientar hacia el cursor</label>
       <label class="check"><input id="idle" type="checkbox" checked> Movimiento automático al quedar inactivo</label>
       <label class="check"><input id="contain" type="checkbox"> Mantener el recurso dentro del lienzo</label>
+      <div class="field"><label>Al salir el cursor del lienzo</label><select id="leave"><option value="idle">Pasar a movimiento automático</option><option value="hold">Quedarse donde iba</option><option value="center">Volver al centro</option></select></div>
     </div>
 
     <div class="group">
@@ -88,6 +89,7 @@
     document.getElementById('rotate').checked=o.rotateToTarget;
     document.getElementById('idle').checked=o.idle.enabled;
     document.getElementById('contain').checked=o.edgeMode==='contain';
+    document.getElementById('leave').value=o.leaveBehavior||'idle';
     document.getElementById('preset').value=o.preset&&E.presets[o.preset]?o.preset:'custom';
     forwardAngle=o.assetForwardAngle||0;
     document.querySelectorAll('.dir').forEach(function(b){b.classList.toggle('on',Number(b.dataset.angle)===forwardAngle);});
@@ -98,6 +100,7 @@
     next.rotateToTarget=document.getElementById('rotate').checked;
     next.idle={enabled:document.getElementById('idle').checked};
     next.edgeMode=document.getElementById('contain').checked?'contain':'free';
+    next.leaveBehavior=document.getElementById('leave').value;
     next.edgePadding=10;
     return next;
   }
@@ -112,13 +115,13 @@
   }
 
   Object.keys(defs).forEach(function(id){document.getElementById(id).addEventListener('input',markCustom);});
-  ['rotate','idle','contain'].forEach(function(id){document.getElementById(id).addEventListener('change',markCustom);});
+  ['rotate','idle','contain','leave'].forEach(function(id){document.getElementById(id).addEventListener('change',markCustom);});
   document.getElementById('size').addEventListener('input',function(){setSize(this.value);refreshConfig();});
   document.querySelectorAll('.dir').forEach(function(b){b.addEventListener('click',function(){setDirection(this.dataset.angle);});});
 
   document.getElementById('preset').addEventListener('change',function(){
     if(this.value==='custom')return;
-    var keep={assetForwardAngle:forwardAngle,edgeMode:document.getElementById('contain').checked?'contain':'free',edgePadding:10};
+    var keep={assetForwardAngle:forwardAngle,edgeMode:document.getElementById('contain').checked?'contain':'free',leaveBehavior:document.getElementById('leave').value,edgePadding:10};
     var o=engine.applyPreset(this.value,keep);
     syncControlsFromOptions(o);refreshConfig();
   });
