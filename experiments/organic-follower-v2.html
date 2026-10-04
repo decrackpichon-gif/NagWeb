@@ -25,7 +25,7 @@
     <div class="group">
       <h2>2 · Eje del recurso</h2>
       <div class="status">NagWeb propone automáticamente el eje. Arrastrá <b>COLA</b> y <b>CABEZA</b> si hace falta corregirlo. Sirve aunque el personaje venga vertical o en diagonal.</div>
-      <div class="axis-actions"><button id="resetAxis" class="btn">Restablecer detección</button></div>
+      <div class="axis-actions"><button id="swapAxis" class="btn">Invertir dirección</button><button id="resetAxis" class="btn">Restablecer detección</button></div>
       <div id="axisInfo" class="status" style="margin-top:8px"></div>
     </div>
 
@@ -142,6 +142,7 @@
     document.getElementById(id).addEventListener('input',function(){syncOutputs();if(renderer)renderer.setOptions(organicOptions());});
   });
   bindAnchor('trailAnchor','trail');bindAnchor('leadAnchor','lead');
+  document.getElementById('swapAxis').addEventListener('click',function(){var t=axis.trail;axis.trail=axis.lead;axis.lead=t;axis.manual=true;updateAxisUI();document.getElementById('status').textContent='Dirección invertida. Volvé a preparar para aplicarla.';});
   document.getElementById('resetAxis').addEventListener('click',function(){autoAxis();document.getElementById('status').textContent='Eje automático restaurado. Volvé a preparar para aplicarlo.';});
   window.addEventListener('resize',function(){requestAnimationFrame(updateAxisUI);});
   document.getElementById('preset').addEventListener('change',function(){follower.applyPreset(this.value,{rotateToTarget:false,distanceFromPointer:26,edgeMode:'free'});});
