@@ -227,7 +227,7 @@ function rt(DATA,createModel,createStreamModel){
  function streamRenderer(stage,cfg){
   if(!cfg.stream)return null;var params=streamModel.config(cfg.stream),scroll=!cfg.time||!!cfg.streamScroll;if(!scroll)params.turns=1;var slots=(cfg.streamSlots||[]).map(function(id){var node=stage.querySelector('[data-id="'+id+'"]'),img=node&&node.querySelector('img');if(!img)return null;var canvas=document.createElement('canvas');canvas.className='nw-stream-card';canvas.setAttribute('aria-hidden','true');canvas.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none';node.appendChild(canvas);node.dataset.nwStreamSlot='';node.querySelectorAll('img').forEach(function(n){n.style.cssText+=';opacity:0!important;visibility:hidden!important;pointer-events:none!important';});img.addEventListener('load',req);return{node:node,img:img,canvas:canvas,texture:null,key:''};}).filter(Boolean);
   if(!slots.length)return null;var host=slots[0].node.offsetParent||stage;if(cfg.group)stage.classList.add('nw-stream-group');if(window.ResizeObserver)new ResizeObserver(req).observe(host);
-  if(params.backgroundType==='none'){host.style.background='transparent';}
+  if(params.backgroundType==='none'){host.style.background='transparent';host.style.boxShadow='none';}
   else if(params.backgroundType==='gradient'){host.style.backgroundImage='radial-gradient(ellipse at center,'+params.gradientColor+','+params.backgroundColor+')';host.style.backgroundColor=params.backgroundColor;}
   else if(params.backgroundType==='image'&&cfg.streamBackground){host.style.backgroundImage='url('+JSON.stringify(cfg.streamBackground)+')';host.style.backgroundSize='cover';host.style.backgroundPosition='center';}
   else host.style.backgroundColor=params.backgroundColor;
