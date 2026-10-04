@@ -3,51 +3,155 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NagWeb · Interaction Engine V1</title>
+<title>NagWeb · Interaction Engine V1.1</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#111;color:#f5f1e8;font-family:Inter,system-ui,sans-serif}body{height:100vh;overflow:hidden}.app{height:100%;display:grid;grid-template-columns:300px 1fr}.panel{padding:18px;border-right:1px solid #333;background:#171717;overflow:auto}.panel h1{font-size:18px;margin:0 0 8px}.panel p{font-size:12px;line-height:1.45;color:#aaa;margin:0 0 18px}.field{margin:0 0 14px}.field label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px}.field input[type=range]{width:100%}.row{display:flex;gap:8px}.btn,.upload{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 12px;border:1px solid #555;background:#222;color:#fff;font:600 12px inherit;cursor:pointer}.upload{width:100%;margin-bottom:14px}.upload input{display:none}.check{display:flex;gap:8px;align-items:center;font-size:12px;margin:10px 0}.stage{position:relative;overflow:hidden;background:radial-gradient(circle at 50% 40%,#32264c 0,#181522 46%,#0d0c11 100%);touch-action:none}.hint{position:absolute;left:18px;bottom:18px;font-size:11px;color:#9e98aa;pointer-events:none}.target{position:absolute;left:0;top:0;width:180px;height:180px;display:grid;place-items:center;pointer-events:none}.visual{width:100%;height:100%;filter:drop-shadow(0 18px 20px rgba(0,0,0,.35))}.visual img{width:100%;height:100%;object-fit:contain;display:block}.status{margin-top:14px;padding-top:14px;border-top:1px solid #333;font:11px/1.5 ui-monospace,monospace;color:#9ed8a9}.pill{display:inline-block;padding:3px 6px;border:1px solid #3f5d48;color:#b6efc2;margin-bottom:8px}@media(max-width:760px){.app{grid-template-columns:1fr;grid-template-rows:auto 1fr}.panel{border-right:0;border-bottom:1px solid #333;max-height:48vh}.target{width:140px;height:140px}}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#111;color:#f5f1e8;font-family:Inter,system-ui,sans-serif}body{height:100vh;overflow:hidden}.app{height:100%;display:grid;grid-template-columns:330px 1fr}.panel{padding:18px;border-right:1px solid #333;background:#171717;overflow:auto}.panel h1{font-size:18px;margin:0 0 8px}.panel p{font-size:12px;line-height:1.45;color:#aaa;margin:0 0 18px}.group{padding:12px 0;border-top:1px solid #303030}.group:first-of-type{border-top:0;padding-top:0}.group h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8f8998;margin:0 0 12px}.field{margin:0 0 13px}.field label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px}.field input[type=range],select,textarea{width:100%}select,textarea{border:1px solid #444;background:#202020;color:#fff;padding:8px;font:12px inherit}.row{display:flex;gap:8px;flex-wrap:wrap}.btn,.upload,.dir{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 12px;border:1px solid #555;background:#222;color:#fff;font:600 12px inherit;cursor:pointer}.btn:hover,.upload:hover,.dir:hover{border-color:#888}.upload{width:100%;margin-bottom:12px}.upload input{display:none}.check{display:flex;gap:8px;align-items:center;font-size:12px;margin:10px 0}.dirs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.dir{padding:0;min-height:34px}.dir.on{background:#eee;color:#111;border-color:#eee}.stage{position:relative;overflow:hidden;background:radial-gradient(circle at 50% 40%,#32264c 0,#181522 46%,#0d0c11 100%);touch-action:none}.stage:before{content:"";position:absolute;inset:22px;border:1px dashed rgba(255,255,255,.08);pointer-events:none}.hint{position:absolute;left:18px;bottom:18px;font-size:11px;color:#9e98aa;pointer-events:none}.target{position:absolute;left:0;top:0;width:180px;height:180px;display:grid;place-items:center;pointer-events:none}.visual{width:100%;height:100%;filter:drop-shadow(0 18px 20px rgba(0,0,0,.35))}.visual img{width:100%;height:100%;object-fit:contain;display:block}.status{margin-top:14px;padding-top:14px;border-top:1px solid #333;font:11px/1.5 ui-monospace,monospace;color:#9ed8a9}.pill{display:inline-block;padding:3px 6px;border:1px solid #3f5d48;color:#b6efc2;margin-bottom:8px}.config{height:90px;resize:vertical;color:#b8d7ff;font-family:ui-monospace,monospace;font-size:10px}@media(max-width:760px){.app{grid-template-columns:1fr;grid-template-rows:auto 1fr}.panel{border-right:0;border-bottom:1px solid #333;max-height:52vh}.target{width:140px;height:140px}}
 </style>
 </head>
 <body>
 <div class="app">
   <aside class="panel">
-    <h1>Interactive Follower · V1</h1>
-    <p>Motor genérico. Subí cualquier PNG, JPG, WebP o GIF y mové el cursor sobre el lienzo.</p>
-    <label class="upload">Subir imagen<input id="file" type="file" accept="image/png,image/jpeg,image/webp,image/gif"></label>
-    <div class="field"><label>Seguimiento <output id="followOut"></output></label><input id="follow" type="range" min="0.02" max="0.30" step="0.01" value="0.09"></div>
-    <div class="field"><label>Inercia <output id="dampOut"></output></label><input id="damp" type="range" min="0.55" max="0.95" step="0.01" value="0.82"></div>
-    <div class="field"><label>Velocidad máxima <output id="speedOut"></output></label><input id="speed" type="range" min="5" max="80" step="1" value="34"></div>
-    <div class="field"><label>Suavidad de giro <output id="turnOut"></output></label><input id="turn" type="range" min="0.03" max="0.45" step="0.01" value="0.18"></div>
-    <div class="field"><label>Tilt 3D <output id="tiltOut"></output></label><input id="tilt" type="range" min="0" max="25" step="1" value="8"></div>
-    <div class="field"><label>Escala por velocidad <output id="scaleOut"></output></label><input id="scale" type="range" min="0" max="0.18" step="0.01" value="0.05"></div>
-    <label class="check"><input id="rotate" type="checkbox" checked> Orientar hacia el cursor</label>
-    <label class="check"><input id="idle" type="checkbox" checked> Movimiento automático al quedar inactivo</label>
+    <h1>Interactive Follower · V1.1</h1>
+    <p>Subí cualquier imagen y definí cómo debe comportarse. Todavía es un laboratorio independiente de NagWeb.</p>
+
+    <div class="group">
+      <h2>Recurso</h2>
+      <label class="upload">Subir PNG / JPG / WebP / GIF<input id="file" type="file" accept="image/png,image/jpeg,image/webp,image/gif"></label>
+      <div class="field"><label>Tamaño <output id="sizeOut">180 px</output></label><input id="size" type="range" min="70" max="360" step="1" value="180"></div>
+      <div class="field"><label>¿Hacia dónde mira originalmente?</label>
+        <div class="dirs" id="dirs">
+          <button class="dir on" data-angle="0" title="Derecha">→</button>
+          <button class="dir" data-angle="90" title="Abajo">↓</button>
+          <button class="dir" data-angle="180" title="Izquierda">←</button>
+          <button class="dir" data-angle="-90" title="Arriba">↑</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
+      <h2>Comportamiento</h2>
+      <div class="field"><label>Preset</label><select id="preset"><option value="custom">Personalizado</option><option value="soft">Suave</option><option value="floating">Flotante</option><option value="agile">Ágil</option><option value="heavy">Pesado</option><option value="magnetic">Magnético</option><option value="character">Personaje</option></select></div>
+      <div class="field"><label>Seguimiento <output id="followOut"></output></label><input id="follow" type="range" min="0.02" max="0.30" step="0.005" value="0.09"></div>
+      <div class="field"><label>Inercia <output id="dampOut"></output></label><input id="damp" type="range" min="0.55" max="0.96" step="0.01" value="0.82"></div>
+      <div class="field"><label>Velocidad máxima <output id="speedOut"></output></label><input id="speed" type="range" min="5" max="90" step="1" value="34"></div>
+      <div class="field"><label>Suavidad de giro <output id="turnOut"></output></label><input id="turn" type="range" min="0.03" max="0.50" step="0.01" value="0.18"></div>
+      <div class="field"><label>Distancia al cursor <output id="distanceOut"></output></label><input id="distance" type="range" min="0" max="180" step="1" value="0"></div>
+      <div class="field"><label>Tilt 3D <output id="tiltOut"></output></label><input id="tilt" type="range" min="0" max="25" step="1" value="8"></div>
+      <div class="field"><label>Escala por velocidad <output id="scaleOut"></output></label><input id="scale" type="range" min="0" max="0.18" step="0.005" value="0.05"></div>
+      <label class="check"><input id="rotate" type="checkbox" checked> Orientar hacia el cursor</label>
+      <label class="check"><input id="idle" type="checkbox" checked> Movimiento automático al quedar inactivo</label>
+      <label class="check"><input id="contain" type="checkbox"> Mantener el recurso dentro del lienzo</label>
+    </div>
+
+    <div class="group">
+      <h2>Configuración portable</h2>
+      <textarea id="config" class="config" spellcheck="false"></textarea>
+      <div class="row"><button id="export" class="btn">Actualizar JSON</button><button id="import" class="btn">Aplicar JSON</button></div>
+    </div>
+
     <div class="row"><button id="reset" class="btn">Centrar</button><button id="pause" class="btn">Pausar</button></div>
-    <div class="status"><span class="pill">LAB AISLADO</span><div id="status">motor listo</div></div>
+    <div class="status"><span class="pill">LAB AISLADO · V1.1</span><div id="status">motor listo</div></div>
   </aside>
+
   <main id="stage" class="stage">
     <div id="target" class="target"><div class="visual"><img id="asset" alt="Recurso interactivo"></div></div>
-    <div class="hint">Mové el mouse. Tras 2,6 s sin interacción entra en idle.</div>
+    <div class="hint">Mové el mouse. La línea punteada marca una zona visual de seguridad.</div>
   </main>
 </div>
 <script src="../js/nagweb-interaction-engine-v1.js"></script>
 <script>
 (function(){
-  var stage=document.getElementById('stage'),target=document.getElementById('target'),asset=document.getElementById('asset');
-  var fallback='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffe5a6"/><stop offset="1" stop-color="#ff7a8a"/></linearGradient></defs><g><path d="M110 18c33 0 62 20 75 50 10 23 9 55-4 78-15 27-42 47-71 54-29-7-56-27-71-54-13-23-14-55-4-78 13-30 42-50 75-50z" fill="url(#g)"/><circle cx="82" cy="96" r="12" fill="#211828"/><circle cx="138" cy="96" r="12" fill="#211828"/><circle cx="86" cy="91" r="4" fill="#fff"/><circle cx="142" cy="91" r="4" fill="#fff"/><path d="M79 134q31 25 62 0" fill="none" stroke="#211828" stroke-width="8" stroke-linecap="round"/><path d="M48 108 15 91l13 35zM172 108l33-17-13 35z" fill="#ff9f76"/></g></svg>');
+  var E=NAGWEB_INTERACTION_ENGINE,stage=document.getElementById('stage'),target=document.getElementById('target'),asset=document.getElementById('asset');
+  var assetRatio=1,forwardAngle=0;
+  var fallback='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 180"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffe5a6"/><stop offset="1" stop-color="#ff7a8a"/></linearGradient></defs><path d="M25 90c35-63 126-76 185-28l32-25-8 45 8 45-32-25c-59 48-150 35-185-28l-17 16z" fill="url(#g)"/><circle cx="184" cy="72" r="10" fill="#211828"/><circle cx="188" cy="69" r="3" fill="#fff"/></svg>');
   asset.src=fallback;
-  var engine=NAGWEB_INTERACTION_ENGINE.createFollower(target,{area:stage,tilt:8});
-  var defs={follow:'follow',damp:'damping',speed:'maxSpeed',turn:'turnSmoothing',tilt:'tilt',scale:'speedScale'};
-  function sync(){
-    var next={};Object.keys(defs).forEach(function(id){var el=document.getElementById(id);next[defs[id]]=Number(el.value);document.getElementById(id+'Out').value=el.value;});
-    next.rotateToTarget=document.getElementById('rotate').checked;next.idle={enabled:document.getElementById('idle').checked};engine.setOptions(next);
+
+  var engine=E.createFollower(target,{area:stage,tilt:8,edgePadding:10});
+  var defs={follow:'follow',damp:'damping',speed:'maxSpeed',turn:'turnSmoothing',distance:'distanceFromPointer',tilt:'tilt',scale:'speedScale'};
+
+  function setSize(px){
+    px=Number(px)||180;
+    var w=px,h=px;
+    if(assetRatio>=1)h=px/assetRatio; else w=px*assetRatio;
+    target.style.width=w+'px';target.style.height=h+'px';
+    document.getElementById('sizeOut').value=Math.round(px)+' px';
   }
-  Object.keys(defs).forEach(function(id){document.getElementById(id).addEventListener('input',sync);});
-  document.getElementById('rotate').addEventListener('change',sync);document.getElementById('idle').addEventListener('change',sync);sync();
-  document.getElementById('file').addEventListener('change',function(){var f=this.files&&this.files[0];if(!f)return;var u=URL.createObjectURL(f);asset.onload=function(){document.getElementById('status').textContent='imagen cargada: '+f.name;};asset.src=u;});
+  function setDirection(angle){
+    forwardAngle=Number(angle)||0;
+    document.querySelectorAll('.dir').forEach(function(b){b.classList.toggle('on',Number(b.dataset.angle)===forwardAngle);});
+    engine.setOptions({assetForwardAngle:forwardAngle});
+    refreshConfig();
+  }
+  function syncControlsFromOptions(o){
+    var reverse={follow:'follow',damping:'damp',maxSpeed:'speed',turnSmoothing:'turn',distanceFromPointer:'distance',tilt:'tilt',speedScale:'scale'};
+    Object.keys(reverse).forEach(function(k){var el=document.getElementById(reverse[k]);el.value=o[k];document.getElementById(reverse[k]+'Out').value=o[k];});
+    document.getElementById('rotate').checked=o.rotateToTarget;
+    document.getElementById('idle').checked=o.idle.enabled;
+    document.getElementById('contain').checked=o.edgeMode==='contain';
+    document.getElementById('preset').value=o.preset&&E.presets[o.preset]?o.preset:'custom';
+    forwardAngle=o.assetForwardAngle||0;
+    document.querySelectorAll('.dir').forEach(function(b){b.classList.toggle('on',Number(b.dataset.angle)===forwardAngle);});
+  }
+  function readMotionControls(){
+    var next={assetForwardAngle:forwardAngle};
+    Object.keys(defs).forEach(function(id){var el=document.getElementById(id);next[defs[id]]=Number(el.value);document.getElementById(id+'Out').value=el.value;});
+    next.rotateToTarget=document.getElementById('rotate').checked;
+    next.idle={enabled:document.getElementById('idle').checked};
+    next.edgeMode=document.getElementById('contain').checked?'contain':'free';
+    next.edgePadding=10;
+    return next;
+  }
+  function refreshConfig(){
+    var packet={motion:JSON.parse(engine.serialize()),asset:{size:Number(document.getElementById('size').value),ratio:assetRatio}};
+    document.getElementById('config').value=JSON.stringify(packet,null,2);
+  }
+  function markCustom(){
+    engine.setOptions(readMotionControls());
+    document.getElementById('preset').value='custom';
+    refreshConfig();
+  }
+
+  Object.keys(defs).forEach(function(id){document.getElementById(id).addEventListener('input',markCustom);});
+  ['rotate','idle','contain'].forEach(function(id){document.getElementById(id).addEventListener('change',markCustom);});
+  document.getElementById('size').addEventListener('input',function(){setSize(this.value);refreshConfig();});
+  document.querySelectorAll('.dir').forEach(function(b){b.addEventListener('click',function(){setDirection(this.dataset.angle);});});
+
+  document.getElementById('preset').addEventListener('change',function(){
+    if(this.value==='custom')return;
+    var keep={assetForwardAngle:forwardAngle,edgeMode:document.getElementById('contain').checked?'contain':'free',edgePadding:10};
+    var o=engine.applyPreset(this.value,keep);
+    syncControlsFromOptions(o);refreshConfig();
+  });
+
+  document.getElementById('file').addEventListener('change',function(){
+    var f=this.files&&this.files[0];if(!f)return;
+    var u=URL.createObjectURL(f);
+    asset.onload=function(){
+      assetRatio=(asset.naturalWidth||1)/(asset.naturalHeight||1);
+      setSize(document.getElementById('size').value);
+      document.getElementById('status').textContent='imagen cargada: '+f.name+' · '+asset.naturalWidth+'×'+asset.naturalHeight;
+      URL.revokeObjectURL(u);refreshConfig();
+    };
+    asset.src=u;
+  });
+  asset.onload=function(){assetRatio=(asset.naturalWidth||1)/(asset.naturalHeight||1);setSize(180);refreshConfig();};
+
+  document.getElementById('export').onclick=refreshConfig;
+  document.getElementById('import').onclick=function(){
+    try{
+      var packet=JSON.parse(document.getElementById('config').value);
+      var o=E.deserializeOptions(packet.motion||packet);
+      engine.setOptions(o);
+      syncControlsFromOptions(o);
+      if(packet.asset&&packet.asset.size){document.getElementById('size').value=packet.asset.size;setSize(packet.asset.size);}
+      refreshConfig();document.getElementById('status').textContent='configuración aplicada correctamente';
+    }catch(err){document.getElementById('status').textContent='ERROR: '+err.message;}
+  };
   document.getElementById('reset').onclick=function(){engine.reset();};
   document.getElementById('pause').onclick=function(){var b=this;if(b.dataset.p==='1'){engine.resume();b.dataset.p='0';b.textContent='Pausar';}else{engine.pause();b.dataset.p='1';b.textContent='Reanudar';}};
-  window.__NAGWEB_INTERACTION_V1__={engine:engine,stage:stage,target:target};
+
+  syncControlsFromOptions(engine.options);setSize(180);refreshConfig();
+  window.__NAGWEB_INTERACTION_V1__={engine:engine,stage:stage,target:target,refreshConfig:refreshConfig};
 })();
 </script>
 </body>
