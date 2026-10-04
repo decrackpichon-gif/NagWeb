@@ -23,7 +23,7 @@ try{
     canvas:{w:document.querySelector('#organicCanvas').width,h:document.querySelector('#organicCanvas').height}
   }));
   assert.equal(initial.organicVersion,'2.0.0-alpha.1');
-  assert.equal(initial.engineVersion,'1.4.0');
+  assert.equal(initial.engineVersion,'1.5.0');
   assert.equal(initial.analysis.silhouetteReliable,true);
   assert.ok(initial.analysis.elongation>1.75);
   assert.ok(initial.canvas.w>500&&initial.canvas.h>300);
