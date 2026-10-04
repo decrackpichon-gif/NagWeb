@@ -14,10 +14,13 @@ try{
   page.on('pageerror',e=>pageErrors.push(String(e&&e.stack||e)));
 
   await page.goto(process.env.NAGWEB_INTERACTION_URL||'http://127.0.0.1:4173/experiments/interaction-engine-v1.html',{waitUntil:'domcontentloaded',timeout:30000});
-  await page.waitForFunction(()=>window.__NAGWEB_INTERACTION_V1__&&window.NAGWEB_INTERACTION_ENGINE,{timeout:10000});
+  await page.waitForFunction(()=>window.__NAGWEB_INTERACTION_V1__&&window.NAGWEB_INTERACTION_ENGINE&&window.NAGWEB_INTERACTION_ASSET_PREP,{timeout:10000});
+  await page.waitForFunction(()=>document.querySelector('#analysis')?.dataset.ready==='1',{timeout:10000});
 
   const initial=await page.evaluate(()=>({
     version:NAGWEB_INTERACTION_ENGINE.version,
+    prepVersion:NAGWEB_INTERACTION_ASSET_PREP.version,
+    prep:(()=>{const el=document.querySelector('#analysis');return {ready:el.dataset.ready,text:el.textContent};})(),
     title:document.title,
     controls:{
       upload:!!document.querySelector('#file'),
@@ -29,6 +32,9 @@ try{
     state:{x:__NAGWEB_INTERACTION_V1__.engine.state.x,y:__NAGWEB_INTERACTION_V1__.engine.state.y}
   }));
   assert.equal(initial.version,'1.3.0');
+  assert.equal(initial.prepVersion,'1.0.0');
+  assert.equal(initial.prep.ready,'1');
+  assert.ok(initial.prep.text.includes('Recomendación'));
   assert.ok(initial.title.includes('Interaction Engine'));
   assert.deepEqual(initial.controls,{upload:true,preset:true,size:true,directions:4,config:true});
   const runtimeInitial=await page.evaluate(()=>NAGWEB_INTERACTION_ENGINE.runtimeStats());
