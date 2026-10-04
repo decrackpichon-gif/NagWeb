@@ -11,7 +11,7 @@ export async function runMotionRetimeSmoke(page){
   const before=await page.evaluate(()=>({project:JSON.stringify(project),stored:localStorage.getItem(STORE_KEY),factory:NAGWEB_MOTION_LAB.create().scene.elements}));
   async function frame(){await page.waitForFunction(()=>document.querySelector('.nw-motion-dialog iframe')?.contentDocument?.querySelector('.im-hov[data-motion-canvas]'));return (await page.$('.nw-motion-dialog iframe')).contentFrame();}
   async function select(id){const f=await frame(),n=await f.$(id?'[data-id="'+id+'"]':'.im-hov');await n.focus();await page.keyboard.press('Space');return n.evaluate(n=>n.dataset.id);}
-  async function points(){return page.$$eval('[data-motion-key] option',ns=>ns.map(n=>({id:n.value,at:parseFloat(n.textContent)})));}
+  async function points(){const list=await page.$$eval('[data-motion-key] option',ns=>ns.map(n=>({id:n.value,at:parseFloat(n.textContent)})));assert.deepEqual(await page.$$eval('[data-motion-key-jump]',ns=>ns.map(n=>({id:n.dataset.motionKeyJump,at:parseFloat(n.textContent)}))),list);return list;}
   async function move(value){await page.$eval('[data-motion-key-at]',(n,v)=>{n.value=String(v);n.dispatchEvent(new Event('change',{bubbles:true}));},value);}
   async function pose(id,progress){return page.evaluate(readPose,{id,progress});}
   await page.click('.tb-left [data-motion-open]');assert.equal(await page.$eval('[data-motion-key-at]',n=>n.disabled),true);const id=await select(),original=await points(),key=original.find(k=>k.at===35).id;await page.select('[data-motion-key]',key);

@@ -11,8 +11,8 @@ export async function runMotionPointsSmoke(page){
   const before=await page.evaluate(()=>({project:JSON.stringify(project),stored:localStorage.getItem(STORE_KEY),factory:NAGWEB_MOTION_LAB.create().scene.elements}));
   async function frame(){await page.waitForFunction(()=>document.querySelector('.nw-motion-dialog iframe')?.contentDocument?.querySelector('.im-hov[data-motion-canvas]'));return (await page.$('.nw-motion-dialog iframe')).contentFrame();}
   async function select(id){const f=await frame(),n=await f.$(id?'[data-id="'+id+'"]':'.im-hov');await n.focus();await page.keyboard.press('Space');return n.evaluate(n=>n.dataset.id);}
-  async function points(){return page.$$eval('[data-motion-key] option',ns=>ns.map(n=>({id:n.value,at:parseFloat(n.textContent)})));}
-  async function moment(at){const list=await points();await page.select('[data-motion-key]',list.find(k=>k.at===at).id);}
+  async function points(){const list=await page.$$eval('[data-motion-key] option',ns=>ns.map(n=>({id:n.value,at:parseFloat(n.textContent)})));assert.deepEqual(await page.$$eval('[data-motion-key-jump]',ns=>ns.map(n=>({id:n.dataset.motionKeyJump,at:parseFloat(n.textContent)}))),list);return list;}
+  async function moment(at){const list=await points();await page.click('[data-motion-key-jump="'+list.find(k=>k.at===at).id+'"]');}
   async function scrub(at){await page.$eval('[data-motion-progress]',(n,at)=>{n.value=String(at);n.dispatchEvent(new Event('input',{bubbles:true}));},at);}
   async function pose(id,progress){return page.evaluate(readPose,{id,progress});}
   await page.click('.tb-left [data-motion-open]');const id=await select(),originalPoints=await points();await scrub(10.5);const initial=await pose(id);assert.equal(initial.vars[2],'-285.44px');

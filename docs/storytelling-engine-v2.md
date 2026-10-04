@@ -313,3 +313,12 @@ Se mantienen los índices y campos de cada miembro para sincronizar escritura di
 Cada borrador conserva durante la sesión si Composición está abierta, incluso al cambiar y regresar de plantilla o reconstruir el inspector. Ese estado de interfaz no se agrega al proyecto ni a la configuración de la animación. La regeneración de la vista previa mantiene el desplegable abierto y los valores editados.
 
 La prueba de inspector abre Composición, edita la duración con teclado real, comprueba su guardado y verifica que el estado abierto se conserve al volver a la plantilla. También verifica la posición de los controles de estilo. La prueba de escritura directa confirma el texto pendiente al abrir Composición y mantiene accesible el campo Duración.
+
+
+## Selección directa de momentos en Motion Lab
+
+“Movimiento del elemento” muestra los momentos como botones con su porcentaje, junto al selector existente. El elegido se distingue visualmente y con `aria-pressed`. Un clic pausa y lleva la vista previa a esa pose, sincronizando el porcentaje, el selector y las propiedades. La fila se actualiza al agregar, quitar o reubicar puntos, conserva posiciones decimales y utiliza una altura acotada con desplazamiento para composiciones con muchos momentos.
+
+Las flechas izquierda/derecha recorren los momentos en orden; Home/End eligen el primero/último. Enter y Espacio eligen el botón enfocado. Un único botón participa en el orden de Tab, y el foco se conserva al reconstruir la fila. Los atajos se capturan antes de los comandos del lienzo principal para que no modifiquen elementos externos. El control se oculta cuando el elemento no tiene momentos activos.
+
+Las pruebas de momentos usan clics reales sobre los botones para editar, cambiar de plantilla, guardar, cancelar y verificar la exportación. También recorren los atajos con un elemento exterior seleccionado y comprueban que el proyecto, el almacenamiento y el historial no cambien. La prueba de agregar/quitar compara los IDs y porcentajes de la fila con los del selector después de cada operación.
