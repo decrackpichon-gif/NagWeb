@@ -32,7 +32,7 @@ try{
     },
     state:{x:__NAGWEB_INTERACTION_V1__.engine.state.x,y:__NAGWEB_INTERACTION_V1__.engine.state.y}
   }));
-  assert.equal(initial.version,'1.4.0');
+  assert.equal(initial.version,'1.5.0');
   assert.equal(initial.prepVersion,'1.1.0');
   assert.equal(initial.influenceVersion,'1.0.0');
   assert.equal(initial.prep.ready,'1');
@@ -43,6 +43,8 @@ try{
   assert.equal(runtimeInitial.instances,1);
   assert.ok(runtimeInitial.active>=2,'follower and influence field should share the ticker');
   assert.equal(runtimeInitial.running,true);
+  assert.equal(runtimeInitial.pointerHubs,1);
+  assert.equal(runtimeInitial.pointerSubscribers,1);
 
   const box=await page.$eval('#stage',el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};});
   await page.mouse.move(box.x+box.width*.82,box.y+box.height*.70);
@@ -121,12 +123,33 @@ try{
   });
   assert.equal(multi.created.instances,multi.baseline.instances+24,'all stress followers should register');
   assert.equal(multi.created.active,multi.baseline.active+24,'all stress followers should share the active runtime');
+  assert.equal(multi.created.pointerHubs,multi.baseline.pointerHubs,'followers on one stage must share a single pointer hub');
+  assert.equal(multi.created.pointerSubscribers,multi.baseline.pointerSubscribers+24,'pointer hub should track subscribers without extra DOM listeners');
   assert.equal(multi.halfPaused.active,multi.baseline.active+12,'paused followers should leave the shared ticker');
   assert.ok(multi.frameDelta>2&&multi.frameDelta<40,'24 followers should advance on one shared frame clock');
   assert.equal(multi.restored.preset,'agile');
   assert.equal(multi.cleaned,true,'destroy should restore inline motion styles');
   assert.equal(multi.final.instances,multi.baseline.instances,'destroy should release every stress instance');
   assert.equal(multi.final.active,multi.baseline.active,'destroy should release every stress tick');
+  assert.equal(multi.final.pointerSubscribers,multi.baseline.pointerSubscribers,'destroy should release pointer subscriptions');
+
+  const composed=await page.evaluate(async()=>{
+    const stage=document.querySelector('#stage'),d=document.createElement('div');
+    d.style.cssText='position:absolute;left:0;top:0;width:40px;height:40px;transform:rotate(12deg);background:#fff';
+    stage.appendChild(d);
+    const before=d.style.transform;
+    const f=NAGWEB_INTERACTION_ENGINE.createFollower(d,{area:stage,renderMode:'variables',preset:'soft'});
+    f.setTarget(120,90,'area');await new Promise(r=>setTimeout(r,120));
+    const during={transform:d.style.transform,x:d.style.getPropertyValue('--nw-if-x'),mode:f.status.renderMode};
+    f.destroy();
+    const after={transform:d.style.transform,x:d.style.getPropertyValue('--nw-if-x')};d.remove();
+    return {before,during,after};
+  });
+  assert.equal(composed.during.mode,'variables');
+  assert.equal(composed.during.transform,composed.before,'variables mode must preserve existing transform');
+  assert.ok(composed.during.x,'variables mode should emit motion variables');
+  assert.equal(composed.after.transform,composed.before,'destroy must preserve original transform');
+  assert.equal(composed.after.x,'','destroy must restore motion variables');
 
   assert.equal(pageErrors.length,0,'page should have no JS errors: '+pageErrors.join('\n'));
   fs.mkdirSync('/tmp/nagweb-interaction-v1',{recursive:true});
