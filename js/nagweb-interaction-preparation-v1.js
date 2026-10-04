@@ -138,11 +138,16 @@
     async function prepare(image,run){
       run=run||{};
       if(!image)throw new Error('NagWeb Preparation: image is required');
-      var externalSignal=run.signal||null,ownController=typeof AbortController!=='undefined'?new AbortController():null;
+      var externalSignal=run.signal||null,ownController=typeof AbortController!=='undefined'?new AbortController():null,detachExternal=null;
       activeController=ownController;
-      var signal=externalSignal||ownController&&ownController.signal||null;
+      if(externalSignal&&ownController){
+        if(externalSignal.aborted)ownController.abort();
+        else {var relay=function(){ownController.abort();};externalSignal.addEventListener('abort',relay,{once:true});detachExternal=function(){externalSignal.removeEventListener('abort',relay);};}
+      }
+      var signal=ownController?ownController.signal:externalSignal;
       throwIfAborted(signal);emit('start');
 
+      try{
       var original=image,source=sourceInfo(image,run,o);
       if(source.blocked)throw new Error('NagWeb Preparation: source dimensions exceed safe limits');
       var before=await analyze(original,signal),working=original,usedAI=false,aiAttempted=false,aiResult=null,backgroundError=null,downscaledForAI=false;
@@ -170,8 +175,10 @@
       var profile=assetPrep.createProfile(after,{leadEnd:'right',cropPadding:o.cropPadding});profile.readiness.recommendedMode=mode.mode;
 
       throwIfAborted(signal);emit('complete',{quality:report.quality,mode:mode.mode,fallback:!!backgroundError});
-      activeController=null;activeRemover=null;
       return {originalImage:original,image:working,analysis:after,profile:profile,report:report,usedAI:usedAI,aiResult:aiResult,trimmed:trimmedResult.trimmed};
+      } finally {
+        if(detachExternal)detachExternal();activeController=null;activeRemover=null;
+      }
     }
 
     function cancel(){
