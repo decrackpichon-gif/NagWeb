@@ -3,13 +3,16 @@ import assert from 'node:assert/strict';
 const require=createRequire(import.meta.url);
 const E=require('../js/nagweb-interaction-engine-v1.js');
 
-assert.equal(E.version,'1.1.0');
+assert.equal(E.version,'1.2.0');
 assert.equal(E.schema,'nagweb-interaction-follower');
 assert.deepEqual(Object.keys(E.presets).sort(),['agile','character','floating','heavy','magnetic','soft']);
 
 const o=E.normalizeOptions({follow:99,damping:-1,maxSpeed:0,tilt:90,minScale:2,maxScale:1,distanceFromPointer:-20,edgeMode:'wat'});
 assert.equal(o.follow,.65);assert.equal(o.damping,0);assert.equal(o.maxSpeed,.5);assert.equal(o.tilt,45);
 assert.ok(o.minScale<=o.maxScale);assert.equal(o.distanceFromPointer,0);assert.equal(o.edgeMode,'free');
+assert.equal(E.normalizeOptions({leaveBehavior:'wat'}).leaveBehavior,'idle');
+assert.equal(E.normalizeOptions({leaveBehavior:'hold'}).leaveBehavior,'hold');
+assert.equal(E.normalizeOptions({pauseWhenHidden:false}).pauseWhenHidden,false);
 
 const character=E.normalizeOptions({preset:'character',assetForwardAngle:-90});
 assert.equal(character.preset,'character');
@@ -51,4 +54,4 @@ const restored=E.deserializeOptions(serialized);
 assert.equal(restored.assetForwardAngle,180);assert.equal(restored.edgeMode,'contain');assert.equal(restored.preset,'soft');
 assert.throws(()=>E.deserializeOptions('{"schema":"wrong","version":1,"options":{}}'));
 
-console.log('NagWeb Interaction Engine V1.1 model tests: PASS');
+console.log('NagWeb Interaction Engine V1.2 model tests: PASS');
