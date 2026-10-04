@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 const require=createRequire(import.meta.url);
 const A=require('../js/nagweb-interaction-asset-prep-v1.js');
 
-assert.equal(A.version,'1.0.0');
+assert.equal(A.version,'1.1.0');
 
 function pixels(w,h,inside){
   const data=new Uint8ClampedArray(w*h*4);
@@ -20,6 +20,13 @@ assert.equal(horizontal.recommendedMode,'organic');
 assert.ok(horizontal.elongation>4);
 assert.ok(Math.abs(horizontal.principalAxisAngle)<2);
 assert.ok(horizontal.subjectBounds.x>0&&horizontal.subjectBounds.width<1);
+const profile=A.createProfile(horizontal,{leadEnd:'left',cropPadding:.02});
+assert.equal(profile.schema,'nagweb-interaction-asset-profile');
+assert.equal(profile.organic.leadEnd,'left');
+assert.equal(profile.readiness.organicCandidate,true);
+const restored=A.deserializeProfile(A.serializeProfile(profile));
+assert.equal(restored.geometry.principalAxisAngle,profile.geometry.principalAxisAngle);
+assert.equal(restored.organic.cropPadding,.02);
 
 const vertical=A.analyzePixels(pixels(80,120,(x,y)=>x>=30&&x<=49&&y>=10&&y<=109));
 assert.ok(vertical.elongation>4);
