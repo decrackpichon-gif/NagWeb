@@ -29,6 +29,12 @@
     </div>
 
     <div class="group">
+      <h2>Preparación automática</h2>
+      <div id="analysis" class="status" style="margin:0;padding:0;border:0;color:#c9c4d1" data-ready="0">Analizando recurso…</div>
+      <div class="row" style="margin-top:10px"><button id="trim" class="btn" disabled>Recortar transparencia</button></div>
+    </div>
+
+    <div class="group">
       <h2>Comportamiento</h2>
       <div class="field"><label>Preset</label><select id="preset"><option value="custom">Personalizado</option><option value="soft">Suave</option><option value="floating">Flotante</option><option value="agile">Ágil</option><option value="heavy">Pesado</option><option value="magnetic">Magnético</option><option value="character">Personaje</option></select></div>
       <div class="field"><label>Seguimiento <output id="followOut"></output></label><input id="follow" type="range" min="0.02" max="0.30" step="0.005" value="0.09"></div>
@@ -60,10 +66,11 @@
   </main>
 </div>
 <script src="../js/nagweb-interaction-engine-v1.js"></script>
+<script src="../js/nagweb-interaction-asset-prep-v1.js"></script>
 <script>
 (function(){
-  var E=NAGWEB_INTERACTION_ENGINE,stage=document.getElementById('stage'),target=document.getElementById('target'),asset=document.getElementById('asset');
-  var assetRatio=1,forwardAngle=0;
+  var E=NAGWEB_INTERACTION_ENGINE,A=NAGWEB_INTERACTION_ASSET_PREP,stage=document.getElementById('stage'),target=document.getElementById('target'),asset=document.getElementById('asset');
+  var assetRatio=1,forwardAngle=0,currentAnalysis=null,currentAssetUrl=null;
   var fallback='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 180"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffe5a6"/><stop offset="1" stop-color="#ff7a8a"/></linearGradient></defs><path d="M25 90c35-63 126-76 185-28l32-25-8 45 8 45-32-25c-59 48-150 35-185-28l-17 16z" fill="url(#g)"/><circle cx="184" cy="72" r="10" fill="#211828"/><circle cx="188" cy="69" r="3" fill="#fff"/></svg>');
   asset.src=fallback;
 
@@ -104,6 +111,22 @@
     next.edgePadding=10;
     return next;
   }
+  function renderAnalysis(a){
+    currentAnalysis=a;
+    var el=document.getElementById('analysis'),trim=document.getElementById('trim');
+    if(!a){el.dataset.ready='0';el.textContent='No se pudo analizar el recurso.';trim.disabled=true;return;}
+    var bg=a.needsBackgroundRemoval?'⚠ fondo no preparado':'✓ transparencia lista';
+    var shape=a.silhouetteReliable?'✓ silueta detectable':'⚠ silueta incierta';
+    var mode=a.recommendedMode==='organic'?'Movimiento orgánico (candidato)':'Interactive Follower';
+    el.dataset.ready='1';
+    el.innerHTML='<b>'+bg+'</b><br>'+shape+'<br>Recomendación: <b>'+mode+'</b><br>Eje: '+a.principalAxisAngle.toFixed(1)+'° · elongación '+a.elongation.toFixed(2)+(a.warnings.length?'<br><span style="color:#d8b47d">'+a.warnings.join(' ')+'</span>':'');
+    trim.disabled=!a.silhouetteReliable;
+  }
+  function analyzeAsset(){
+    document.getElementById('analysis').dataset.ready='0';
+    document.getElementById('analysis').textContent='Analizando recurso…';
+    return A.analyzeImage(asset,{maxDimension:512}).then(function(a){renderAnalysis(a);return a;}).catch(function(err){renderAnalysis(null);document.getElementById('status').textContent='Análisis: '+err.message;});
+  }
   function refreshConfig(){
     var packet={motion:JSON.parse(engine.serialize()),asset:{size:Number(document.getElementById('size').value),ratio:assetRatio}};
     document.getElementById('config').value=JSON.stringify(packet,null,2);
@@ -133,11 +156,27 @@
       assetRatio=(asset.naturalWidth||1)/(asset.naturalHeight||1);
       setSize(document.getElementById('size').value);
       document.getElementById('status').textContent='imagen cargada: '+f.name+' · '+asset.naturalWidth+'×'+asset.naturalHeight;
-      URL.revokeObjectURL(u);refreshConfig();
+      currentAssetUrl=u;analyzeAsset().then(refreshConfig);
     };
     asset.src=u;
   });
-  asset.onload=function(){assetRatio=(asset.naturalWidth||1)/(asset.naturalHeight||1);setSize(180);refreshConfig();};
+  asset.onload=function(){assetRatio=(asset.naturalWidth||1)/(asset.naturalHeight||1);setSize(180);analyzeAsset().then(refreshConfig);};
+
+  document.getElementById('trim').onclick=function(){
+    if(!currentAnalysis)return;
+    A.trimTransparent(asset,currentAnalysis,{paddingRatio:.02}).then(function(r){
+      r.canvas.toBlob(function(blob){
+        if(!blob)return;
+        var old=currentAssetUrl,u=URL.createObjectURL(blob);currentAssetUrl=u;
+        asset.onload=function(){
+          assetRatio=(asset.naturalWidth||1)/(asset.naturalHeight||1);
+          setSize(document.getElementById('size').value);
+          analyzeAsset().then(function(){refreshConfig();document.getElementById('status').textContent='transparencia recortada: '+r.width+'×'+r.height;if(old)URL.revokeObjectURL(old);});
+        };
+        asset.src=u;
+      },'image/webp',.92);
+    }).catch(function(err){document.getElementById('status').textContent='Recorte: '+err.message;});
+  };
 
   document.getElementById('export').onclick=refreshConfig;
   document.getElementById('import').onclick=function(){
