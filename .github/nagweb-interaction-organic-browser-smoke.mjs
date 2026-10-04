@@ -22,7 +22,7 @@ try{
     spine:__NAGWEB_ORGANIC_V2__.renderer.spine,
     canvas:{w:document.querySelector('#organicCanvas').width,h:document.querySelector('#organicCanvas').height}
   }));
-  assert.equal(initial.organicVersion,'2.0.0-alpha.1');
+  assert.equal(initial.organicVersion,'2.1.0-alpha.1');
   assert.equal(initial.engineVersion,'1.5.0');
   assert.equal(initial.analysis.silhouetteReliable,true);
   assert.ok(initial.analysis.elongation>1.75);
@@ -47,10 +47,26 @@ try{
 
   await page.$eval('#length',el=>{el.value='520';el.dispatchEvent(new Event('input',{bubbles:true}));});
   await page.$eval('#sway',el=>{el.value='.075';el.dispatchEvent(new Event('input',{bubbles:true}));});
-  await page.select('#lead','left');
+  const anchorsBefore=await page.evaluate(()=>({
+    trail:{left:parseFloat(document.querySelector('#trailAnchor').style.left),top:parseFloat(document.querySelector('#trailAnchor').style.top)},
+    lead:{left:parseFloat(document.querySelector('#leadAnchor').style.left),top:parseFloat(document.querySelector('#leadAnchor').style.top)},
+    source:__NAGWEB_ORGANIC_V2__.profile.organic.directionSource
+  }));
+  assert.equal(anchorsBefore.source,'auto');
+  const leadBox=await page.$eval('#leadAnchor',el=>{const r=el.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};});
+  await page.mouse.move(leadBox.x,leadBox.y);
+  await page.mouse.down();
+  await page.mouse.move(leadBox.x-45,leadBox.y-28,{steps:6});
+  await page.mouse.up();
+  await new Promise(r=>setTimeout(r,100));
+  const manual=await page.evaluate(()=>({profile:__NAGWEB_ORGANIC_V2__.profile,info:document.querySelector('#axisInfo').textContent}));
+  assert.equal(manual.profile.organic.directionSource,'manual');
+  assert.ok(/corregido manualmente/i.test(manual.info));
+  await page.click('#prepare');
   await new Promise(r=>setTimeout(r,180));
-  const changed=await page.evaluate(()=>({options:__NAGWEB_ORGANIC_V2__.renderer.options,spine:__NAGWEB_ORGANIC_V2__.renderer.spine}));
-  assert.equal(changed.options.length,520);assert.equal(changed.options.sway,.075);assert.equal(changed.options.leadEnd,'left');
+  const changed=await page.evaluate(()=>({options:__NAGWEB_ORGANIC_V2__.renderer.options,spine:__NAGWEB_ORGANIC_V2__.renderer.spine,prepared:__NAGWEB_ORGANIC_V2__.prepared}));
+  assert.equal(changed.options.length,520);assert.equal(changed.options.sway,.075);assert.equal(changed.options.leadEnd,'right');
+  assert.ok(Number.isFinite(changed.prepared.axisAngle));
   const expected2=520/(changed.options.points-1);
   const d=Math.hypot(changed.spine[1].x-changed.spine[0].x,changed.spine[1].y-changed.spine[0].y);
   assert.ok(Math.abs(d-expected2)<.1,'live length changes should resegment body');
@@ -72,5 +88,5 @@ try{
   assert.equal(rs.sway,0);
   await reduced.close();
 
-  console.log('NagWeb Organic Follower V2 browser smoke: PASS');
+  console.log('NagWeb Organic Follower V2.1 browser smoke: PASS');
 }finally{await browser.close();}
