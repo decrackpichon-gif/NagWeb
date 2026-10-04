@@ -1,0 +1,41 @@
+name: NagWeb Interaction Engine V1
+
+on:
+  push:
+    branches:
+      - feat/interaction-engine-v1
+    paths:
+      - 'js/nagweb-interaction-engine-v1.js'
+      - 'experiments/interaction-engine-v1.html'
+      - '.github/nagweb-interaction-v1-*.mjs'
+      - '.github/workflows/nagweb-interaction-v1.yml'
+      - 'docs/interaction-engine-v1.md'
+  workflow_dispatch:
+
+jobs:
+  interaction-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run model tests
+        run: node .github/nagweb-interaction-v1-model-test.mjs
+      - name: Install browser driver
+        run: npm install --no-save puppeteer-core
+      - name: Start static server
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/nagweb-interaction-http.log 2>&1 &
+          sleep 2
+      - name: Run browser smoke
+        run: node .github/nagweb-interaction-v1-browser-smoke.mjs
+      - name: Save interaction lab screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: interaction-engine-v1-visual
+          path: /tmp/nagweb-interaction-v1
+          if-no-files-found: ignore
+          retention-days: 7
