@@ -42,7 +42,6 @@ assert.ok(opaque.warnings.length>0);
 const tiny=A.analyzePixels(pixels(100,100,(x,y)=>x>48&&x<52&&y>48&&y<52));
 assert.ok(tiny.warnings.some(x=>x.includes('resolución')));
 
-console.log('NagWeb Interaction Asset Prep V1 model tests: PASS');
 
 const axis=A.axisAnchors({
   width:400,height:200,sampleWidth:400,sampleHeight:200,
@@ -59,3 +58,5 @@ const manualProfile=A.createProfile({
 },{trailAnchor:{x:.2,y:.8},leadAnchor:{x:.8,y:.2}});
 assert.equal(manualProfile.organic.directionSource,'manual');
 assert.ok(manualProfile.organic.axisAngle<0);
+
+console.log('NagWeb Interaction Asset Prep V1.2 model tests: PASS');
