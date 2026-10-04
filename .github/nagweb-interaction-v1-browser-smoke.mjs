@@ -117,8 +117,35 @@ try{
 
   assert.equal(pageErrors.length,0,'page should have no JS errors: '+pageErrors.join('\n'));
   fs.mkdirSync('/tmp/nagweb-interaction-v1',{recursive:true});
-  await page.screenshot({path:'/tmp/nagweb-interaction-v1/lab.png',fullPage:true});
-  console.log('NagWeb Interaction Engine V1.2 browser smoke: PASS');
+  await page.screenshot({path:'/tmp/nagweb-interaction-v1/lab-desktop.png',fullPage:true});
+
+  const mobile=await browser.newPage();
+  await mobile.setViewport({width:390,height:844,deviceScaleFactor:2,isMobile:true,hasTouch:true});
+  await mobile.goto(process.env.NAGWEB_INTERACTION_URL||'http://127.0.0.1:4173/experiments/interaction-engine-v1.html',{waitUntil:'domcontentloaded',timeout:30000});
+  await mobile.waitForFunction(()=>window.__NAGWEB_INTERACTION_V1__&&window.NAGWEB_INTERACTION_ENGINE,{timeout:10000});
+  const mbox=await mobile.$eval('#stage',el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};});
+  const mstart=await mobile.evaluate(()=>({x:__NAGWEB_INTERACTION_V1__.engine.state.x,y:__NAGWEB_INTERACTION_V1__.engine.state.y}));
+  await mobile.touchscreen.tap(mbox.x+mbox.width*.75,mbox.y+mbox.height*.35);
+  await new Promise(r=>setTimeout(r,300));
+  const mend=await mobile.evaluate(()=>({x:__NAGWEB_INTERACTION_V1__.engine.state.x,y:__NAGWEB_INTERACTION_V1__.engine.state.y}));
+  assert.ok(Math.hypot(mend.x-mstart.x,mend.y-mstart.y)>1,'touch pointerdown should steer follower');
+  await mobile.screenshot({path:'/tmp/nagweb-interaction-v1/lab-mobile.png',fullPage:true});
+  await mobile.close();
+
+  const reduced=await browser.newPage();
+  await reduced.setViewport({width:900,height:650,deviceScaleFactor:1});
+  await reduced.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);
+  await reduced.goto(process.env.NAGWEB_INTERACTION_URL||'http://127.0.0.1:4173/experiments/interaction-engine-v1.html',{waitUntil:'domcontentloaded',timeout:30000});
+  await reduced.waitForFunction(()=>window.__NAGWEB_INTERACTION_V1__&&window.NAGWEB_INTERACTION_ENGINE,{timeout:10000});
+  const rb=await reduced.$eval('#stage',el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};});
+  const r0=await reduced.evaluate(()=>({x:__NAGWEB_INTERACTION_V1__.engine.state.x,y:__NAGWEB_INTERACTION_V1__.engine.state.y}));
+  await reduced.mouse.move(rb.x+rb.width*.9,rb.y+rb.height*.2);
+  await new Promise(r=>setTimeout(r,250));
+  const r1=await reduced.evaluate(()=>({x:__NAGWEB_INTERACTION_V1__.engine.state.x,y:__NAGWEB_INTERACTION_V1__.engine.state.y}));
+  assert.ok(Math.hypot(r1.x-r0.x,r1.y-r0.y)<1,'reduced motion should keep follower resting');
+  await reduced.close();
+
+  console.log('NagWeb Interaction Engine V1.3 browser smoke: PASS');
 } finally {
   await browser.close();
 }
