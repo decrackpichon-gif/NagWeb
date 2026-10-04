@@ -47,7 +47,8 @@
       moduleUrl:input.moduleUrl||DEFAULT_MODULE_URL,
       allowNetwork:input.allowNetwork!==false,
       progress:typeof input.progress==='function'?input.progress:null,
-      moduleLoader:typeof input.moduleLoader==='function'?input.moduleLoader:null
+      moduleLoader:typeof input.moduleLoader==='function'?input.moduleLoader:null,
+      environment:input.environment||null
     };
   }
   function chooseDevice(options,env){
@@ -100,7 +101,7 @@
     }
     async function load(){
       if(pipe)return pipe;
-      state='loading';lastError=null;activeDevice=chooseDevice(o);emit({phase:'load'});
+      state='loading';lastError=null;activeDevice=chooseDevice(o,o.environment||undefined);emit({phase:'load'});
       try{
         pipe=await makePipeline(activeDevice);
       }catch(err){
