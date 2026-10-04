@@ -189,3 +189,12 @@ Cada lámina ofrece “Cargar imagen…” tanto al preparar una composición co
 Las cargas pertenecen a la sesión y al borrador que las inició. Cambiar de plantilla conserva sus recursos; cerrar descarta las cargas, incluso si terminan después. Insertar/guardar se deshabilita mientras carga la opción activa. Solo se incorporan los recursos nuevos utilizados por la composición final; las alternativas reemplazadas no se agregan al proyecto. El historial incluye elementos y recursos.
 
 `.github/nagweb-motion-upload-smoke.mjs` verifica el selector real de archivos, carga y preview, archivo inválido, cancelación, borradores por plantilla, recursos utilizados, IDs/geometría/momentos, guardado en la misma instancia, historial, cargas tardías y renderización del HTML exportado.
+
+
+## Tipografía y fondo en Motion Lab
+
+Seleccionar un título, párrafo o etiqueta de texto simple muestra controles de tamaño base (0–160 px; 0 hereda), peso, alineación y color. Las imágenes y los textos con estilos por fragmentos no activan estos controles. El fondo de la composición también se personaliza antes de insertar o al editar una instancia.
+
+Los cambios viven en el borrador y se previsualizan con el mismo generador. Motion Lab muestra la tipografía base sin las sobrescrituras móviles del iframe; al insertar y guardar se preserva la configuración móvil original. Cada plantilla conserva sus estilos y fondo durante la sesión. Guardar modifica el fondo del grupo y los estilos del elemento manteniendo IDs, geometría y momentos; cerrar descarta el borrador.
+
+`.github/nagweb-motion-style-smoke.mjs` verifica controles contextuales, estilos calculados visibles, fondo, borradores sin escrituras al proyecto, configuración móvil, inserción/guardado de la misma instancia, cancelación, historial y estilos calculados del HTML exportado.
