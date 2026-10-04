@@ -160,3 +160,32 @@ Se agregaron:
 - botón **Restaurar original** permanente en el laboratorio.
 
 La cancelación de modelos en navegador es cooperativa: JavaScript no puede detener a mitad de instrucción una inferencia ya entregada al backend WebGPU/WASM, pero el resultado posterior se invalida y no se aplica. Esto evita cambios tardíos sobre el asset o la interfaz.
+
+
+## Calibración visual del eje orgánico — Asset Prep 1.2 / Organic 2.1
+
+Para recursos orgánicos NagWeb ya no presupone que el asset viene horizontal ni que la cabeza está a la derecha.
+
+El análisis propone automáticamente dos anclajes normalizados sobre el eje principal de la silueta:
+
+- **COLA**: extremo trasero;
+- **CABEZA**: extremo que lidera.
+
+El laboratorio permite arrastrar ambos puntos directamente sobre la miniatura, restablecer la detección automática o invertir la dirección con un clic. El perfil guarda `trailAnchor`, `leadAnchor`, `axisAngle` y `directionSource` (`auto` o `manual`).
+
+Organic Follower 2.1 usa ese ángulo para rotar una copia del recurso antes de segmentarla. Internamente el extremo de CABEZA queda normalizado hacia la derecha, por lo que el renderer puede mantener una única convención estable aunque el archivo original venga vertical, diagonal o invertido.
+
+Los perfiles V1 antiguos que no contienen anclajes se migran al abrirse: los puntos se reconstruyen a partir del centroide, la caja de silueta y el eje principal guardados.
+
+### QA de cierre de esta micro-etapa
+
+El run **#96** del workflow `NagWeb Interaction Engine V1` pasó:
+
+- todos los model tests;
+- smoke de Interactive Follower;
+- smoke de Organic Follower 2.1, incluyendo arrastre real de CABEZA/COLA;
+- smoke del adaptador IA;
+- smoke del pipeline de preparación robusta;
+- generación de capturas de laboratorio.
+
+La rama sigue siendo laboratorio y el PR #2 continúa siendo **do not merge**.
