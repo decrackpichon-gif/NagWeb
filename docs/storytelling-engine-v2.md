@@ -286,3 +286,12 @@ La carga usa la misma validación de las imágenes de reemplazo. Mientras está 
 Insertar solo incorpora los recursos que siguen utilizados, y las copias comparten el archivo. Reabrir una instancia permite sumar más imágenes y guardarlas en el mismo grupo, sin modificar elementos externos. Cerrar descarta las altas pendientes de confirmar.
 
 `.github/nagweb-motion-add-image-smoke.mjs` verifica selector real, cancelación y archivo inválido sin elementos vacíos, creación sin imágenes previas, proporción renderizada, movimiento propio, guardas durante la carga, cambio de plantilla y cierre de sesión con cargas tardías, recursos utilizados y duplicación, inserción sin Director, altas al guardar, externos intactos, Deshacer/Rehacer y renderizado/movimiento en el HTML exportado.
+
+
+## Nombres de elementos en Motion Lab
+
+El inspector ofrece “Nombre del elemento” para identificar el texto o la imagen seleccionada. Enter o salir del campo confirma; Escape descarta lo escrito en el campo sin cerrar Motion Lab. Se recortan los espacios exteriores y se admiten hasta 80 caracteres. Un nombre vacío conserva el anterior. El nombre organiza la composición y no modifica el texto visible, la imagen ni su movimiento.
+
+La lista de Elementos, el título del inspector, las etiquetas de contenido y las etiquetas accesibles del lienzo y selector de archivos se actualizan con texto literal, sin regenerar la vista previa. Los nombres se conservan en cada borrador por plantilla y al insertar/guardar; cerrar descarta los cambios sin confirmar. Reabrir permite renombrar dentro de la misma instancia.
+
+`.github/nagweb-motion-name-smoke.mjs` verifica teclado real, Enter/Tab/Escape, vacíos, nombres con marcas literales, sincronización sin recarga, conservación del contenido/movimiento, borradores sin escritura previa, guardado exacto de un único nombre, externos intactos, cancelación, Deshacer/Rehacer y equivalencia de la animación exportada.
