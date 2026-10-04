@@ -1,43 +1,74 @@
 # NagWeb Interaction Engine V1
 
-Primera etapa aislada del nuevo sistema de interacción.
+Motor aislado para estudiar y estabilizar interacciones de seguimiento antes de integrarlas al editor principal.
 
-## Objetivo
+## V1.1 — configuración de producto
 
-Permitir que cualquier recurso visual (PNG/JPG/WebP/GIF o un elemento DOM) siga al cursor con una respuesta de calidad sin exigir preparación especial del asset.
+La rama `feat/interaction-engine-v1` sigue sin modificar archivos del editor. El laboratorio puede usar cualquier PNG, JPG, WebP o GIF local.
 
-## Alcance V1
+### Capacidades
 
 - seguimiento con inercia y límite de velocidad;
+- seis presets: Suave, Flotante, Ágil, Pesado, Magnético y Personaje;
+- dirección frontal del asset: derecha, abajo, izquierda o arriba, o cualquier ángulo numérico por API;
+- distancia configurable respecto del cursor;
 - orientación opcional hacia el puntero;
 - suavizado de giro;
-- tilt 3D configurable;
+- tilt 3D;
 - escala sutil en función de la velocidad;
-- idle automático sobre trayectoria orgánica;
-- soporte de pointermove/pointerdown;
-- respeto por `prefers-reduced-motion`;
-- API independiente de los globals del editor;
-- laboratorio aislado con carga local de imágenes;
-- modelo testeable sin DOM.
+- idle automático;
+- modo de borde libre o contenido, teniendo en cuenta dimensiones reales del recurso;
+- `prefers-reduced-motion`;
+- configuración serializable y validada;
+- API independiente de globals de NagWeb.
 
-## API mínima
+### Dirección frontal
+
+`assetForwardAngle` describe hacia dónde mira el archivo sin transformaciones:
+
+- `0`: derecha;
+- `90`: abajo;
+- `180`: izquierda;
+- `-90`: arriba.
+
+El motor compensa ese ángulo al orientar el recurso. Así una ilustración no necesita rotarse previamente en Photoshop.
+
+### Presets
+
+```js
+follower.applyPreset('character', {
+  assetForwardAngle: -90
+});
+```
+
+Los presets son puntos de partida. Cualquier edición posterior convierte la configuración en personalizada.
+
+### Persistencia
+
+```js
+const json = follower.serialize();
+const options = NAGWEB_INTERACTION_ENGINE.deserializeOptions(json);
+```
+
+El paquete usa el esquema `nagweb-interaction-follower` versión 1. Datos de runtime como nodos DOM no se serializan.
+
+### API
 
 ```js
 const follower = NAGWEB_INTERACTION_ENGINE.createFollower(element, {
   area: container,
-  follow: 0.09,
-  damping: 0.82,
-  maxSpeed: 34,
-  rotateToTarget: true,
-  turnSmoothing: 0.18,
-  tilt: 8,
-  speedScale: 0.05,
-  idle: { enabled: true, delay: 2600 }
+  preset: 'character',
+  assetForwardAngle: 0,
+  distanceFromPointer: 54,
+  edgeMode: 'contain',
+  edgePadding: 10
 });
 ```
 
-La integración con los paneles de NagWeb queda deliberadamente fuera de esta rama inicial. Esta V1 valida el motor y su contrato antes de acoplarlo al editor.
+## Qué sigue sin integrarse
 
-## Próximo paso
+Esta rama todavía no agrega botones, paneles o tipos de elemento al editor principal. El tamaño del recurso se prueba en el laboratorio pero seguirá siendo una propiedad visual del elemento de NagWeb, no del motor de física.
 
-Agregar presets de comportamiento, persistencia serializable y un adaptador para elementos reales del lienzo de NagWeb sin duplicar motores de animación existentes.
+## Próxima micro-etapa
+
+Robustez de entrada y lifecycle: teclado/touch, seguimiento relativo al área, salida/reentrada del puntero, visibilidad de pestaña, resize del asset, múltiples seguidores simultáneos y batería de pruebas de lifecycle.
