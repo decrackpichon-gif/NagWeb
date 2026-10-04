@@ -32,6 +32,7 @@ import {runMotionNameSmoke} from './nagweb-motion-name-smoke.mjs';
 import {runMotionInspectorSmoke} from './nagweb-motion-inspector-smoke.mjs';
 import {runMotionLibrarySmoke} from './nagweb-motion-library-smoke.mjs';
 import {runMotionSearchSmoke} from './nagweb-motion-search-smoke.mjs';
+import {runMotionExpandSmoke} from './nagweb-motion-expand-smoke.mjs';
 
 const feedbackSource=fs.readFileSync(new URL('../js/nagweb-feedback-v16.js',import.meta.url),'utf8');
 const directorSource=fs.readFileSync(new URL('../js/nagweb-scroll-director-v16.js',import.meta.url),'utf8');
@@ -213,6 +214,7 @@ if(workspaceState.leftToggles!==1||workspaceState.rightToggles!==1) throw new Er
 if(Math.abs(workspaceState.rightWidth-savedInspectorWidth)>3) throw new Error('Inspector width did not survive reload: '+JSON.stringify({workspaceState,savedInspectorWidth}));
 await page.click('.nw-dock-toggle.left');
 
+await runMotionExpandSmoke(page);
 await runHistorySmoke(page);
 await runLegacySmoke(page);
 await runCancelSmoke(page);

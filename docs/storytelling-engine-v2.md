@@ -354,3 +354,12 @@ Limpiar búsqueda devuelve todas las tarjetas y conserva el foco en el campo. Es
 
 
 La revisión visual del buscador compacto detectó que el título inicial del abanico, al ocupar dos líneas, se superponía con su etiqueta. El título de las nuevas composiciones Abanico se ubica en Y=24% tanto en diseño base como en móvil. Las instancias ya colocadas conservan sus posiciones. La prueba de búsqueda comprueba el espacio entre los rectángulos renderizados del título y la etiqueta en pantalla compacta.
+
+
+## Ampliar el lienzo de Motion Lab
+
+El botón “Ampliar lienzo”, junto a Cerrar, dedica el espacio de Biblioteca e inspector a la vista previa y aumenta la altura del diálogo. En escritorio centra el lienzo con un ancho acotado según su altura, para que las láminas no invadan los textos al crecer la ventana. “Volver a paneles” restaura el editor. Conserva el mismo iframe, la composición, selección, búsqueda, paneles abiertos, posición del inspector y momento actual; no agrega escrituras al proyecto. Reproducir, pausar y recorrer la animación siguen disponibles, y ampliar/restaurar no interrumpe la reproducción. Los tiradores se recolocan al cambiar el tamaño del iframe.
+
+La edición directa del lienzo sigue disponible en la vista ampliada. Escape vuelve a los paneles y enfoca su botón. Dentro del iframe, una edición de texto o un arrastre activo se cancela primero; otro Escape vuelve al editor. Cerrar mantiene el comportamiento habitual de descartar cambios pendientes. Una nueva sesión o la reapertura de una instancia comienza con todos los paneles disponibles. El modo ampliado funciona en escritorio y pantallas compactas, y no se guarda en los datos del proyecto.
+
+`.github/nagweb-motion-expand-smoke.mjs` verifica el aumento real del lienzo, mismo documento y estado de edición, reproducción continua, conservación de búsqueda/desplegable/scroll, Escape y foco desde controles e iframe, cancelación de texto y arrastre, edición directa e inserción habitual, reapertura/cierre, ausencia de escrituras y espacio/controles en móvil. Se ejecuta antes de las otras pruebas de flujo y conserva capturas de escritorio y móvil.
