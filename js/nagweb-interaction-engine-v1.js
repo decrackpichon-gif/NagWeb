@@ -10,7 +10,7 @@
 })(typeof window!=='undefined'?window:globalThis,function(){
   'use strict';
 
-  var VERSION='1.3.0';
+  var VERSION='1.4.0';
   var SCHEMA='nagweb-interaction-follower';
   var INSTANCES=new Set(), TICKS=new Set(), TICKING=false, TICK_ID=0, LAST_TICK=0, FRAME_COUNT=0, LAST_DT=0;
   function runtimeFrame(now){
@@ -349,6 +349,12 @@
     serializeOptions:serializeOptions,
     deserializeOptions:deserializeOptions,
     createFollower:createFollower,
+    subscribeFrame:function(fn){
+      if(typeof fn!=='function')throw new Error('NagWeb Interaction Engine: frame subscriber must be a function');
+      addTick(fn);
+      var live=true;
+      return function(){if(!live)return;live=false;removeTick(fn);};
+    },
     runtimeStats:runtimeStats,
     utils:{clamp:clamp,lerp:lerp,normAngle:normAngle}
   };
