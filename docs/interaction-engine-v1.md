@@ -2,7 +2,7 @@
 
 Motor aislado para estudiar y estabilizar interacciones de seguimiento antes de integrarlas al editor principal.
 
-## V1.1 — configuración de producto
+## V1.2 — configuración + lifecycle
 
 La rama `feat/interaction-engine-v1` sigue sin modificar archivos del editor. El laboratorio puede usar cualquier PNG, JPG, WebP o GIF local.
 
@@ -18,6 +18,11 @@ La rama `feat/interaction-engine-v1` sigue sin modificar archivos del editor. El
 - escala sutil en función de la velocidad;
 - idle automático;
 - modo de borde libre o contenido, teniendo en cuenta dimensiones reales del recurso;
+- salida del puntero configurable: idle, mantener destino o volver al centro;
+- pausa de cálculo mientras la pestaña está oculta;
+- `ResizeObserver` para reaccionar a cambios reales de tamaño del asset y del área;
+- pausa/reanudación y estado de lifecycle consultable;
+- targets manuales en coordenadas globales o relativas al área;
 - `prefers-reduced-motion`;
 - configuración serializable y validada;
 - API independiente de globals de NagWeb.
@@ -69,6 +74,10 @@ const follower = NAGWEB_INTERACTION_ENGINE.createFollower(element, {
 
 Esta rama todavía no agrega botones, paneles o tipos de elemento al editor principal. El tamaño del recurso se prueba en el laboratorio pero seguirá siendo una propiedad visual del elemento de NagWeb, no del motor de física.
 
+## QA aislado
+
+La rama incluye `nagweb-interaction-v1-model-test.mjs` y un smoke de Chromium que abre el laboratorio real, mueve el puntero, cambia preset, dirección, tamaño y bordes, prueba pausa/reanudación, crea un segundo follower, serializa la configuración y comprueba `destroy()`. Un workflow propio ejecuta estas pruebas sin lanzar el smoke completo de NagWeb.
+
 ## Próxima micro-etapa
 
-Robustez de entrada y lifecycle: teclado/touch, seguimiento relativo al área, salida/reentrada del puntero, visibilidad de pestaña, resize del asset, múltiples seguidores simultáneos y batería de pruebas de lifecycle.
+Rendimiento multi-instancia: un único ticker compartido, evitar lecturas de layout por frame, métricas de runtime y prueba de carga con muchos seguidores simultáneos.
