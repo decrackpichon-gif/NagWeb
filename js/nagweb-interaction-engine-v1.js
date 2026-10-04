@@ -10,7 +10,7 @@
 })(typeof window!=='undefined'?window:globalThis,function(){
   'use strict';
 
-  var VERSION='1.1.0';
+  var VERSION='1.2.0';
   var SCHEMA='nagweb-interaction-follower';
   var PRESETS={
     soft:{label:'Suave',follow:0.065,damping:0.87,maxSpeed:28,turnSmoothing:0.12,tilt:4,speedScale:0.025,distanceFromPointer:20,idle:{enabled:true,delay:2600,amplitudeX:0.18,amplitudeY:0.12,speed:0.00020}},
@@ -37,6 +37,8 @@
     idle:{enabled:true,delay:2600,amplitudeX:0.24,amplitudeY:0.16,speed:0.00024},
     reducedMotion:'respect',
     pointerDown:true,
+    leaveBehavior:'idle',
+    pauseWhenHidden:true,
     edgeMode:'free',
     edgePadding:0,
     start:'center'
@@ -89,6 +91,8 @@
     o.assetForwardAngle=Number(o.assetForwardAngle)||0;
     o.rotationOffset=Number(o.rotationOffset)||0;
     o.edgeMode=o.edgeMode==='contain'?'contain':'free';
+    o.leaveBehavior=['idle','hold','center'].indexOf(o.leaveBehavior)>=0?o.leaveBehavior:'idle';
+    o.pauseWhenHidden=o.pauseWhenHidden!==false;
     o.idle=o.idle||{};
     o.idle.enabled=o.idle.enabled!==false;
     o.idle.delay=Math.max(0,Number(o.idle.delay)||0);
@@ -192,7 +196,7 @@
     var start=resolveStart(bounds,o.start);
     var s=createState(start.x,start.y);
     var target={x:start.x,y:start.y};
-    var destroyed=false,paused=false,raf=0,last=performance.now(),lastInput=performance.now();
+    var destroyed=false,paused=false,hidden=false,pointerInside=true,raf=0,last=performance.now(),lastInput=performance.now();
     var media=(typeof matchMedia==='function')?matchMedia('(prefers-reduced-motion: reduce)'):null;
     var reduce=o.reducedMotion==='always'||(o.reducedMotion==='respect'&&media&&media.matches);
     var motionTarget=inputOptions.motionTarget||element;
@@ -206,18 +210,24 @@
     };
     motionTarget.style.transformOrigin=motionTarget.style.transformOrigin||'50% 50%';
     motionTarget.style.willChange='translate, rotate, scale, transform';
+    var size={width:0,height:0},sizeObserver=null,areaObserver=null;
+    function refreshSize(){var r=element.getBoundingClientRect();size.width=r.width;size.height=r.height;}
+    refreshSize();
 
-    function visualSize(){
-      var r=element.getBoundingClientRect();
-      return {width:r.width,height:r.height};
-    }
     function setTarget(clientX,clientY){
       bounds=getBounds(area);
-      target.x=clientX;target.y=clientY;lastInput=performance.now();s.active=true;
+      target.x=clientX;target.y=clientY;lastInput=performance.now();s.active=true;pointerInside=true;
     }
     function onMove(ev){setTarget(ev.clientX,ev.clientY);}
     function onDown(ev){if(o.pointerDown)setTarget(ev.clientX,ev.clientY);}
-    function onResize(){bounds=getBounds(area);}
+    function onEnter(){pointerInside=true;}
+    function onLeave(){
+      pointerInside=false;
+      if(o.leaveBehavior==='center'){var c=resolveStart(getBounds(area),'center');target.x=c.x;target.y=c.y;lastInput=performance.now();}
+      else if(o.leaveBehavior==='idle') lastInput=performance.now()-o.idle.delay;
+    }
+    function onVisibility(){hidden=!!(o.pauseWhenHidden&&document.hidden);last=performance.now();}
+    function onResize(){bounds=getBounds(area);refreshSize();}
     function apply(){
       var x=s.x,y=s.y;
       if(area!==window&&area!==document&&area!==document.body&&area!==document.documentElement){x-=bounds.x;y-=bounds.y;}
@@ -238,14 +248,14 @@
     function frame(now){
       if(destroyed)return;
       var dt=now-last;last=now;
-      if(!paused){
+      if(!paused&&!hidden){
         bounds=getBounds(area);
         if(reduce){
           var c=resolveStart(bounds,'center');s.x=c.x;s.y=c.y;s.vx=s.vy=0;s.angle=0;s.tiltX=s.tiltY=0;s.scale=1;
         }else{
           var useTarget=target;
           if(o.idle.enabled&&now-lastInput>=o.idle.delay) useTarget=idleTarget(now,bounds,o);
-          step(s,useTarget,bounds,o,dt,visualSize());
+          step(s,useTarget,bounds,o,dt,size);
         }
         apply();
       }
@@ -255,7 +265,15 @@
     var eventTarget=(area===window||area===document)?window:area;
     eventTarget.addEventListener('pointermove',onMove,{passive:true});
     eventTarget.addEventListener('pointerdown',onDown,{passive:true});
+    eventTarget.addEventListener('pointerenter',onEnter,{passive:true});
+    eventTarget.addEventListener('pointerleave',onLeave,{passive:true});
     window.addEventListener('resize',onResize,{passive:true});
+    document.addEventListener('visibilitychange',onVisibility,{passive:true});
+    if(typeof ResizeObserver==='function'){
+      sizeObserver=new ResizeObserver(refreshSize);sizeObserver.observe(element);
+      if(area&&area!==window&&area!==document){areaObserver=new ResizeObserver(onResize);areaObserver.observe(area);}
+    }
+    onVisibility();
     apply();
     raf=requestAnimationFrame(frame);
 
@@ -275,14 +293,20 @@
         o=normalizeOptions(merge({preset:name},overrides||{}));
         return clone(o);
       },
-      setTarget:function(x,y){setTarget(x,y);},
+      setTarget:function(x,y,space){
+        bounds=getBounds(area);
+        if(space==='area'){x+=bounds.x;y+=bounds.y;}
+        setTarget(x,y);
+      },
+      get status(){return {paused:paused,hidden:hidden,pointerInside:pointerInside,destroyed:destroyed};},
       pause:function(){paused=true;},
       resume:function(){paused=false;last=performance.now();},
       reset:function(){bounds=getBounds(area);var p=resolveStart(bounds,o.start);s=createState(p.x,p.y);target={x:p.x,y:p.y};lastInput=performance.now();apply();this.state=s;},
       serialize:function(){return serializeOptions(o);},
       destroy:function(){
         if(destroyed)return;destroyed=true;cancelAnimationFrame(raf);
-        eventTarget.removeEventListener('pointermove',onMove);eventTarget.removeEventListener('pointerdown',onDown);window.removeEventListener('resize',onResize);
+        eventTarget.removeEventListener('pointermove',onMove);eventTarget.removeEventListener('pointerdown',onDown);eventTarget.removeEventListener('pointerenter',onEnter);eventTarget.removeEventListener('pointerleave',onLeave);window.removeEventListener('resize',onResize);document.removeEventListener('visibilitychange',onVisibility);
+        if(sizeObserver)sizeObserver.disconnect();if(areaObserver)areaObserver.disconnect();
         motionTarget.style.translate=original.translate;motionTarget.style.rotate=original.rotate;motionTarget.style.scale=original.scale;motionTarget.style.transform=original.transform;motionTarget.style.transformOrigin=original.transformOrigin;motionTarget.style.willChange=original.willChange;
         ['--nw-if-x','--nw-if-y','--nw-if-angle','--nw-if-speed','--nw-if-scale'].forEach(function(k){element.style.removeProperty(k);});
       }
