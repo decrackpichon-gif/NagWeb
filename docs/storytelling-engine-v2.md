@@ -246,3 +246,12 @@ La columna izquierda alterna entre “Biblioteca” y “Elementos”. La segund
 Cada borrador por plantilla restaura su propia selección y lista. Reabrir un grupo mantiene disponibles sus elementos aunque la biblioteca de plantillas esté deshabilitada. Los nombres se insertan como texto, los botones usan `aria-pressed` y las pestañas ofrecen navegación con flechas/Home/End. En pantallas compactas, la lista ocupa la misma fila horizontal desplazable de la biblioteca.
 
 `.github/nagweb-motion-layers-smoke.mjs` verifica una lámina del túnel con opacidad cero y sin eventos de puntero, selección real del lienzo, edición de texto pendiente, teclado y pestañas, cambio/restauración de borrador, ausencia de escrituras al proyecto antes de confirmar, inserción, reapertura, guardado, cancelar, historial y selección en pantalla compacta.
+
+
+## Duplicar textos y láminas en Motion Lab
+
+“Duplicar seleccionado” copia una lámina o texto simple del lienzo, antes de insertar o al reabrir una instancia. Confirma la escritura directa pendiente, pausa la vista previa y selecciona la nueva copia. Conserva contenido, estilos, dimensiones, configuración móvil y movimiento, asigna nuevos IDs al elemento y sus momentos, y desplaza su posición base tres puntos porcentuales en X/Y (también en las posiciones móviles explícitas). Los nombres de copias del mismo elemento se distinguen con un número cuando hace falta.
+
+Las copias reutilizan el recurso de imagen y mantienen sus datos independientes. Quedan en el borrador por plantilla hasta insertar o guardar; cerrar las descarta. Guardar una instancia actualiza los miembros existentes y añade los nuevos al mismo grupo, preservando los elementos externos. La duplicación se deshabilita sin selección válida o durante una carga de imagen. Los contenedores y textos por fragmentos quedan fuera de esta etapa.
+
+`.github/nagweb-motion-duplicate-smoke.mjs` verifica poses renderizadas antes/después de copiar, edición independiente, IDs, recursos reutilizados, estilos móviles, texto directo activo, borradores sin escritura al proyecto, inserción, incorporación de nuevos miembros al guardar, elementos externos, cancelar, Deshacer/Rehacer y renderizado del HTML exportado.
