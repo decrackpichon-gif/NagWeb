@@ -95,11 +95,13 @@ window.NAGWEB_STORY_MODEL=createStoryModel();
 // is a curved surface, rather than a flat image with a sampled keyframe track.
 function createStreamModel(){
  var specs={ringTilt:[0,-60,60,1],ringOpening:[55,15,85,1],ringSize:[80,50,95,1],cardSize:[21,12,80,1],backFade:[70,10,95,5],perspective:[18,0,40,2],padding:[6,0,20,.5],cornerRadius:[3,0,12,.5],turns:[1,.25,20,.25],start:[0,0,99,1],end:[100,1,100,1],scrollLength:[320,140,900,20]};
+ var orbitSpecs={orbitSize:[85,40,130,1],spacing:[18,0,60,1],tilt:[55,20,100,1],swingAngle:[30,5,80,1],float:[2.5,0,8,.5]};
  var ratios={'1:1':1,'4:3':4/3,'3:4':3/4,'4:5':4/5,'16:9':16/9,'9:16':9/16};
- function config(raw){raw=raw||{};var out={};Object.keys(specs).forEach(function(k){var s=specs[k],n=raw[k];out[k]=Math.max(s[1],Math.min(s[2],n!==''&&n!=null&&isFinite(+n)?+n:s[0]));});out.end=Math.max(out.start+1,out.end);out.cardRatio=raw.cardRatio==='auto'||ratios[raw.cardRatio]?raw.cardRatio:'16:9';out.frameRatio=raw.frameRatio==='auto'||ratios[raw.frameRatio]?raw.frameRatio:'16:9';out.shadow=!!raw.shadow;out.backgroundType=['none','color','gradient','image'].indexOf(raw.backgroundType)>=0?raw.backgroundType:'color';out.backgroundColor=/^#[0-9a-f]{6}$/i.test(raw.backgroundColor||'')?raw.backgroundColor:'#101014';out.gradientColor=/^#[0-9a-f]{6}$/i.test(raw.gradientColor||'')?raw.gradientColor:'#3a3a5a';out.backgroundId=typeof raw.backgroundId==='string'?raw.backgroundId:'';return out;}
+ function config(raw){raw=raw||{};var out={},orbit=raw.kind==='iso-orbit',fields=orbit?Object.assign({},specs,orbitSpecs):specs;Object.keys(fields).forEach(function(k){var s=fields[k],n=raw[k];out[k]=Math.max(s[1],Math.min(s[2],n!==''&&n!=null&&isFinite(+n)?+n:s[0]));});out.end=Math.max(out.start+1,out.end);out.cardRatio=raw.cardRatio==='auto'||ratios[raw.cardRatio]?raw.cardRatio:orbit?'1:1':'16:9';out.frameRatio=raw.frameRatio==='auto'||ratios[raw.frameRatio]?raw.frameRatio:'16:9';out.shadow=!!raw.shadow;out.backgroundType=['none','color','gradient','image'].indexOf(raw.backgroundType)>=0?raw.backgroundType:'color';out.backgroundColor=/^#[0-9a-f]{6}$/i.test(raw.backgroundColor||'')?raw.backgroundColor:'#101014';out.gradientColor=/^#[0-9a-f]{6}$/i.test(raw.gradientColor||'')?raw.gradientColor:'#3a3a5a';out.backgroundId=typeof raw.backgroundId==='string'?raw.backgroundId:'';if(orbit){out.kind='iso-orbit';out.motion=raw.motion==='spin'?'spin':'swing';}return out;}
  function phase(progress,c,scroll){var p=scroll?Math.max(0,Math.min(1,(progress*100-c.start)/(c.end-c.start))):progress;return p*c.turns;}
  function layout(width,height,raw,progress,count,imageRatio,scroll){
   var c=config(raw),fw=width,fh=height,ratio=ratios[c.frameRatio];if(ratio){if(fw/fh>ratio)fw=fh*ratio;else fh=fw/ratio;}
+  if(c.kind==='iso-orbit')return orbitLayout(width,height,fw,fh,c,progress,imageRatio,scroll);
   var unit=Math.min(fw,fh)/100,inset=unit*c.padding,radius=Math.min(fw-2*inset,fh-2*inset)/2*c.ringSize/100*1.15,cardW=unit*c.cardSize,cardH=cardW/(ratios[c.cardRatio]||Math.max(.25,Math.min(4,imageRatio||1))),tilt=c.ringTilt*Math.PI/180,opening=c.ringOpening/100,axis=Math.sqrt(1-opening*opening),co=Math.cos(tilt),si=Math.sin(tilt),angle=2*Math.PI*((phase(progress,c,scroll)%1+1)%1),cards=[];
   function point(a){var x=radius*Math.cos(a),y=-radius*Math.sin(a)*opening,scale=1+c.perspective/100*Math.sin(a);return{x:width/2+(x*co-y*si)*scale,y:height/2-(x*si+y*co)*scale,ax:-axis*si*scale*cardH/2,ay:axis*co*scale*cardH/2,depth:Math.sin(a)};}
   for(var i=0;i<count;i++){var a=angle+2*Math.PI*i/count,mid=point(a),steps=Math.min(60,Math.max(12,Math.round(cardW/4))),top=[],bottom=[],minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
@@ -108,7 +110,18 @@ function createStreamModel(){
   }
   return cards.sort(function(a,b){return a.depth-b.depth;});
  }
- return{config:config,specs:specs,ratios:ratios,phase:phase,layout:layout};
+ function orbitLayout(width,height,fw,fh,c,progress,imageRatio,scroll){
+  var cycle=(phase(progress,c,scroll)%1+1)%1,angle=c.motion==='spin'?cycle*2*Math.PI:c.swingAngle*Math.PI/180*Math.sin(cycle*2*Math.PI),co=Math.cos(angle),si=Math.sin(angle),iso=Math.cos(Math.PI/6),tilt=c.tilt/100,ux=(co-si)*iso,uy=(co+si)*iso*tilt,vx=(-si-co)*iso,vy=(-si+co)*iso*tilt;
+  var aspect=ratios[c.cardRatio]||Math.max(.25,Math.min(4,imageRatio||1)),unit=Math.min(fw,fh)/100,pad=unit*c.padding,bob=unit*c.float,stepX=aspect*(1+c.spacing/100),stepY=1+c.spacing/100,extent=Math.SQRT2*iso*(Math.hypot(stepX,stepY)+Math.hypot(aspect,1)/2),scale=Math.min((fw-2*pad)/(2*extent),(fh-2*pad-2*bob)/(2*extent*tilt))*c.orbitSize/100,cardW=scale*aspect,cardH=scale,cards=[];
+  for(var i=0;i<9;i++){
+   var gx=(i%3-1)*stepX,gy=(Math.floor(i/3)-1)*stepY,depth=gx*uy+gy*vy,cx=width/2+(gx*ux+gy*vx)*scale,cy=height/2+depth*scale-bob*Math.sin(cycle*2*Math.PI+i*2.399963229728653),upper=[],lower=[];
+   for(var j=0;j<2;j++){var dx=(j-.5)*cardW;upper.push({x:cx+dx*ux-cardH/2*vx,y:cy+dx*uy-cardH/2*vy});lower.push({x:cx+dx*ux+cardH/2*vx,y:cy+dx*uy+cardH/2*vy});}
+   var points=upper.concat(lower),left=Math.floor(Math.min.apply(null,points.map(function(p){return p.x;})))-3,top=Math.floor(Math.min.apply(null,points.map(function(p){return p.y;})))-3,right=Math.ceil(Math.max.apply(null,points.map(function(p){return p.x;})))+3,bottom=Math.ceil(Math.max.apply(null,points.map(function(p){return p.y;})))+3;
+   cards.push({slot:i,depth:depth,alpha:1,left:left,top:top,width:Math.max(1,right-left),height:Math.max(1,bottom-top),upper:upper,lower:lower,textureWidth:cardW,textureHeight:cardH,corner:unit*c.cornerRadius});
+  }
+  return cards.sort(function(a,b){return a.depth-b.depth;});
+ }
+ return{config:config,specs:specs,orbitSpecs:orbitSpecs,ratios:ratios,phase:phase,layout:layout};
 }
 window.NAGWEB_CREATE_STREAM_MODEL=createStreamModel;
 window.NAGWEB_STREAM_MODEL=createStreamModel();

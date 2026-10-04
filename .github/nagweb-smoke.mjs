@@ -2,6 +2,7 @@ import puppeteer from 'puppeteer-core';
 import fs from 'node:fs';
 import './nagweb-depth-model-test.mjs';
 import './nagweb-stream-model-test.mjs';
+import './nagweb-orbit-model-test.mjs';
 import {runStorytellingSmoke} from './nagweb-storytelling-smoke.mjs';
 import {runCompositionSmoke} from './nagweb-composition-smoke.mjs';
 import {runHistorySmoke} from './nagweb-history-smoke.mjs';
@@ -37,6 +38,7 @@ import {runMotionExpandSmoke} from './nagweb-motion-expand-smoke.mjs';
 import {runMotionDropSmoke} from './nagweb-motion-drop-smoke.mjs';
 import {runMotionStreamSmoke} from './nagweb-motion-stream-smoke.mjs';
 import {runMotionStreamPlacementSmoke} from './nagweb-motion-stream-placement-smoke.mjs';
+import {runMotionIsoOrbitSmoke} from './nagweb-motion-iso-orbit-smoke.mjs';
 
 const feedbackSource=fs.readFileSync(new URL('../js/nagweb-feedback-v16.js',import.meta.url),'utf8');
 const directorSource=fs.readFileSync(new URL('../js/nagweb-scroll-director-v16.js',import.meta.url),'utf8');
@@ -220,6 +222,8 @@ await page.click('.nw-dock-toggle.left');
 
 await runMotionStreamPlacementSmoke(page);
 await runMotionStreamSmoke(page);
+await runMotionStreamPlacementSmoke(page,'iso-orbit');
+await runMotionIsoOrbitSmoke(page);
 await runMotionDropSmoke(page);
 await runMotionExpandSmoke(page);
 await runHistorySmoke(page);
