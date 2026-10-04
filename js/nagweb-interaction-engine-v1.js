@@ -10,23 +10,35 @@
 })(typeof window!=='undefined'?window:globalThis,function(){
   'use strict';
 
-  var VERSION='1.0.0';
+  var VERSION='1.1.0';
+  var SCHEMA='nagweb-interaction-follower';
+  var PRESETS={
+    soft:{label:'Suave',follow:0.065,damping:0.87,maxSpeed:28,turnSmoothing:0.12,tilt:4,speedScale:0.025,distanceFromPointer:20,idle:{enabled:true,delay:2600,amplitudeX:0.18,amplitudeY:0.12,speed:0.00020}},
+    floating:{label:'Flotante',follow:0.045,damping:0.91,maxSpeed:22,turnSmoothing:0.09,tilt:10,speedScale:0.045,distanceFromPointer:28,idle:{enabled:true,delay:1900,amplitudeX:0.27,amplitudeY:0.19,speed:0.00018}},
+    agile:{label:'Ágil',follow:0.16,damping:0.70,maxSpeed:58,turnSmoothing:0.34,tilt:6,speedScale:0.055,distanceFromPointer:8,idle:{enabled:true,delay:3200,amplitudeX:0.18,amplitudeY:0.13,speed:0.00030}},
+    heavy:{label:'Pesado',follow:0.04,damping:0.94,maxSpeed:19,turnSmoothing:0.065,tilt:3,speedScale:0.015,distanceFromPointer:38,idle:{enabled:true,delay:3000,amplitudeX:0.13,amplitudeY:0.09,speed:0.00014}},
+    magnetic:{label:'Magnético',follow:0.23,damping:0.61,maxSpeed:78,turnSmoothing:0.46,tilt:5,speedScale:0.085,distanceFromPointer:0,idle:{enabled:false,delay:2600,amplitudeX:0.15,amplitudeY:0.10,speed:0.00024}},
+    character:{label:'Personaje',follow:0.082,damping:0.84,maxSpeed:31,turnSmoothing:0.16,tilt:7,speedScale:0.025,distanceFromPointer:54,idle:{enabled:true,delay:2400,amplitudeX:0.20,amplitudeY:0.12,speed:0.00019}}
+  };
   var DEFAULTS={
+    preset:'custom',
     follow:0.09,
     damping:0.82,
     maxSpeed:34,
     rotateToTarget:true,
+    assetForwardAngle:0,
     rotationOffset:0,
     turnSmoothing:0.18,
     tilt:0,
     speedScale:0.05,
     minScale:0.94,
     maxScale:1.08,
+    distanceFromPointer:0,
     idle:{enabled:true,delay:2600,amplitudeX:0.24,amplitudeY:0.16,speed:0.00024},
     reducedMotion:'respect',
     pointerDown:true,
-    clampToBounds:false,
-    padding:0,
+    edgeMode:'free',
+    edgePadding:0,
     start:'center'
   };
 
@@ -36,6 +48,14 @@
   function deg(rad){return rad*180/Math.PI;}
   function clone(v){return JSON.parse(JSON.stringify(v));}
   function isFiniteNumber(v){return typeof v==='number'&&Number.isFinite(v);}
+  function plainInput(input){
+    var src=input||{},out={};
+    Object.keys(src).forEach(function(k){
+      if(k==='area'||k==='motionTarget')return;
+      out[k]=src[k];
+    });
+    return out;
+  }
   function merge(base,extra){
     var out=clone(base||{}),src=extra||{};
     Object.keys(src).forEach(function(k){
@@ -44,8 +64,17 @@
     });
     return out;
   }
+  function presetOptions(name){
+    var p=PRESETS[name];
+    return p?clone(p):null;
+  }
   function normalizeOptions(input){
-    var o=merge(DEFAULTS,input||{});
+    var clean=plainInput(input);
+    var named=clean.preset&&PRESETS[clean.preset]?clean.preset:null;
+    var o=merge(DEFAULTS,named?PRESETS[named]:{});
+    o=merge(o,clean);
+    o.preset=named||clean.preset||'custom';
+    if(!PRESETS[o.preset]&&o.preset!=='custom')o.preset='custom';
     o.follow=clamp(Number(o.follow)||0,0.005,0.65);
     o.damping=clamp(Number(o.damping)||0,0,0.995);
     o.maxSpeed=clamp(Number(o.maxSpeed)||0,0.5,240);
@@ -55,8 +84,11 @@
     o.minScale=clamp(Number(o.minScale)||0.01,0.05,4);
     o.maxScale=clamp(Number(o.maxScale)||1,0.05,4);
     if(o.minScale>o.maxScale){var t=o.minScale;o.minScale=o.maxScale;o.maxScale=t;}
-    o.padding=Math.max(0,Number(o.padding)||0);
+    o.distanceFromPointer=clamp(Number(o.distanceFromPointer)||0,0,2000);
+    o.edgePadding=Math.max(0,Number(o.edgePadding)||0);
+    o.assetForwardAngle=Number(o.assetForwardAngle)||0;
     o.rotationOffset=Number(o.rotationOffset)||0;
+    o.edgeMode=o.edgeMode==='contain'?'contain':'free';
     o.idle=o.idle||{};
     o.idle.enabled=o.idle.enabled!==false;
     o.idle.delay=Math.max(0,Number(o.idle.delay)||0);
@@ -78,36 +110,64 @@
     };
   }
 
-  function step(state,target,bounds,options,dt){
+  function resolveFollowTarget(state,target,distance){
+    var d=Math.max(0,Number(distance)||0);
+    if(!d)return {x:target.x,y:target.y};
+    var dx=target.x-state.x,dy=target.y-state.y,len=Math.hypot(dx,dy);
+    if(len<=d||len<0.0001)return {x:state.x,y:state.y};
+    return {x:target.x-dx/len*d,y:target.y-dy/len*d};
+  }
+
+  function constrainState(state,bounds,size,o){
+    if(!bounds||o.edgeMode!=='contain')return state;
+    var halfW=Math.max(0,(size&&size.width||0)/2),halfH=Math.max(0,(size&&size.height||0)/2),p=o.edgePadding||0;
+    var minX=bounds.x+halfW+p,maxX=bounds.x+bounds.width-halfW-p;
+    var minY=bounds.y+halfH+p,maxY=bounds.y+bounds.height-halfH-p;
+    if(minX>maxX)minX=maxX=bounds.x+bounds.width/2;
+    if(minY>maxY)minY=maxY=bounds.y+bounds.height/2;
+    var ox=state.x,oy=state.y;
+    state.x=clamp(state.x,minX,maxX);state.y=clamp(state.y,minY,maxY);
+    if(state.x!==ox)state.vx=0;
+    if(state.y!==oy)state.vy=0;
+    return state;
+  }
+
+  function step(state,target,bounds,options,dt,size){
     var o=options, s=state;
     var frame=clamp((dt||16.6667)/16.6667,0.25,3);
-    var dx=target.x-s.x,dy=target.y-s.y;
+    var effective=resolveFollowTarget(s,target,o.distanceFromPointer);
+    var dx=effective.x-s.x,dy=effective.y-s.y;
+    var pointerDx=target.x-s.x,pointerDy=target.y-s.y;
     var desiredVx=dx*o.follow*frame,desiredVy=dy*o.follow*frame;
     s.vx=(s.vx+(desiredVx-s.vx)*(1-o.damping))*Math.pow(o.damping,Math.max(0,frame-1));
     s.vy=(s.vy+(desiredVy-s.vy)*(1-o.damping))*Math.pow(o.damping,Math.max(0,frame-1));
     var speed=Math.hypot(s.vx,s.vy),limit=o.maxSpeed*frame;
     if(speed>limit&&speed>0){s.vx=s.vx/speed*limit;s.vy=s.vy/speed*limit;speed=limit;}
     s.x+=s.vx;s.y+=s.vy;
+    constrainState(s,bounds,size,o);
 
-    if(o.clampToBounds&&bounds){
-      var p=o.padding||0;
-      s.x=clamp(s.x,bounds.x+p,bounds.x+bounds.width-p);
-      s.y=clamp(s.y,bounds.y+p,bounds.y+bounds.height-p);
-    }
-
-    var desiredAngle=Math.atan2(dy,dx)+o.rotationOffset*Math.PI/180;
-    if(o.rotateToTarget&&Math.hypot(dx,dy)>1){
+    var desiredAngle=Math.atan2(pointerDy,pointerDx)-o.assetForwardAngle*Math.PI/180+o.rotationOffset*Math.PI/180;
+    if(o.rotateToTarget&&Math.hypot(pointerDx,pointerDy)>1){
       s.angle+=normAngle(desiredAngle-s.angle)*o.turnSmoothing*frame;
     }
 
-    var nx=clamp(dx/Math.max(1,bounds.width*0.5),-1,1);
-    var ny=clamp(dy/Math.max(1,bounds.height*0.5),-1,1);
+    var nx=clamp(pointerDx/Math.max(1,bounds.width*0.5),-1,1);
+    var ny=clamp(pointerDy/Math.max(1,bounds.height*0.5),-1,1);
     s.tiltX=lerp(s.tiltX,-ny*o.tilt,clamp(o.turnSmoothing*frame,0,1));
     s.tiltY=lerp(s.tiltY,nx*o.tilt,clamp(o.turnSmoothing*frame,0,1));
     var ratio=clamp(speed/Math.max(1,o.maxSpeed),0,1);
     s.scale=clamp(1+ratio*o.speedScale,o.minScale,o.maxScale);
     s.targetX=target.x;s.targetY=target.y;
     return s;
+  }
+
+  function serializeOptions(options){
+    return JSON.stringify({schema:SCHEMA,version:1,options:normalizeOptions(options)});
+  }
+  function deserializeOptions(value){
+    var data=typeof value==='string'?JSON.parse(value):clone(value);
+    if(!data||data.schema!==SCHEMA||data.version!==1||!data.options)throw new Error('NagWeb Interaction Engine: invalid follower config');
+    return normalizeOptions(data.options);
   }
 
   function getBounds(el){
@@ -125,8 +185,9 @@
 
   function createFollower(element,inputOptions){
     if(!element||!element.style) throw new Error('NagWeb Interaction Engine: element is required');
+    inputOptions=inputOptions||{};
     var o=normalizeOptions(inputOptions);
-    var area=(inputOptions&&inputOptions.area)||element.parentElement||window;
+    var area=inputOptions.area||element.parentElement||window;
     var bounds=getBounds(area);
     var start=resolveStart(bounds,o.start);
     var s=createState(start.x,start.y);
@@ -134,7 +195,7 @@
     var destroyed=false,paused=false,raf=0,last=performance.now(),lastInput=performance.now();
     var media=(typeof matchMedia==='function')?matchMedia('(prefers-reduced-motion: reduce)'):null;
     var reduce=o.reducedMotion==='always'||(o.reducedMotion==='respect'&&media&&media.matches);
-    var motionTarget=(inputOptions&&inputOptions.motionTarget)||element;
+    var motionTarget=inputOptions.motionTarget||element;
     var original={
       translate:motionTarget.style.translate,
       rotate:motionTarget.style.rotate,
@@ -146,6 +207,10 @@
     motionTarget.style.transformOrigin=motionTarget.style.transformOrigin||'50% 50%';
     motionTarget.style.willChange='translate, rotate, scale, transform';
 
+    function visualSize(){
+      var r=element.getBoundingClientRect();
+      return {width:r.width,height:r.height};
+    }
     function setTarget(clientX,clientY){
       bounds=getBounds(area);
       target.x=clientX;target.y=clientY;lastInput=performance.now();s.active=true;
@@ -161,7 +226,9 @@
       motionTarget.style.scale=s.scale.toFixed(4);
       if(o.tilt>0){
         motionTarget.style.transform='perspective(900px) rotateX('+s.tiltX.toFixed(2)+'deg) rotateY('+s.tiltY.toFixed(2)+'deg)';
-      }else if(original.transform){motionTarget.style.transform=original.transform;}
+      }else{
+        motionTarget.style.transform=original.transform;
+      }
       element.style.setProperty('--nw-if-x',x.toFixed(2)+'px');
       element.style.setProperty('--nw-if-y',y.toFixed(2)+'px');
       element.style.setProperty('--nw-if-angle',deg(s.angle).toFixed(2)+'deg');
@@ -178,7 +245,7 @@
         }else{
           var useTarget=target;
           if(o.idle.enabled&&now-lastInput>=o.idle.delay) useTarget=idleTarget(now,bounds,o);
-          step(s,useTarget,bounds,o,dt);
+          step(s,useTarget,bounds,o,dt,visualSize());
         }
         apply();
       }
@@ -197,11 +264,22 @@
       element:element,
       state:s,
       get options(){return clone(o);},
-      setOptions:function(next){o=normalizeOptions(merge(o,next||{}));return clone(o);},
+      setOptions:function(next){
+        var clean=plainInput(next||{});
+        if(clean.preset&&PRESETS[clean.preset])o=normalizeOptions(clean);
+        else {delete clean.preset;o=normalizeOptions(merge(o,clean));o.preset='custom';}
+        return clone(o);
+      },
+      applyPreset:function(name,overrides){
+        if(!PRESETS[name])throw new Error('NagWeb Interaction Engine: unknown preset '+name);
+        o=normalizeOptions(merge({preset:name},overrides||{}));
+        return clone(o);
+      },
       setTarget:function(x,y){setTarget(x,y);},
       pause:function(){paused=true;},
       resume:function(){paused=false;last=performance.now();},
       reset:function(){bounds=getBounds(area);var p=resolveStart(bounds,o.start);s=createState(p.x,p.y);target={x:p.x,y:p.y};lastInput=performance.now();apply();this.state=s;},
+      serialize:function(){return serializeOptions(o);},
       destroy:function(){
         if(destroyed)return;destroyed=true;cancelAnimationFrame(raf);
         eventTarget.removeEventListener('pointermove',onMove);eventTarget.removeEventListener('pointerdown',onDown);window.removeEventListener('resize',onResize);
@@ -213,11 +291,18 @@
 
   return {
     version:VERSION,
+    schema:SCHEMA,
     defaults:clone(DEFAULTS),
+    presets:clone(PRESETS),
+    presetOptions:presetOptions,
     normalizeOptions:normalizeOptions,
     createState:createState,
     idleTarget:idleTarget,
+    resolveFollowTarget:resolveFollowTarget,
+    constrainState:constrainState,
     step:step,
+    serializeOptions:serializeOptions,
+    deserializeOptions:deserializeOptions,
     createFollower:createFollower,
     utils:{clamp:clamp,lerp:lerp,normAngle:normAngle}
   };
