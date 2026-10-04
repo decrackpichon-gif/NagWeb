@@ -188,7 +188,7 @@
         trailAnchor:trail,
         leadAnchor:lead,
         axisAngle:axisAngle,
-        directionSource:(input.trailAnchor||input.leadAnchor)?'manual':'auto'
+        directionSource:input.directionSource==='auto'?'auto':((input.trailAnchor||input.leadAnchor)?'manual':'auto')
       },
       warnings:(a.warnings||[]).slice()
     };
