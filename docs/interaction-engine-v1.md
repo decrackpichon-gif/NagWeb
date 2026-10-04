@@ -2,7 +2,7 @@
 
 Motor aislado para estudiar y estabilizar interacciones de seguimiento antes de integrarlas al editor principal.
 
-## V1.3 — configuración + lifecycle + runtime compartido
+## V1.4 — follower + preparación local + campo de influencia
 
 La rama `feat/interaction-engine-v1` sigue sin modificar archivos del editor. El laboratorio puede usar cualquier PNG, JPG, WebP o GIF local.
 
@@ -85,3 +85,28 @@ La rama incluye `nagweb-interaction-v1-model-test.mjs` y un smoke de Chromium qu
 ## Próxima micro-etapa
 
 Preparación del asset: análisis local de transparencia, dimensiones, silueta y eje predominante para que NagWeb pueda recomendar automáticamente qué tipo de interacción conviene.
+
+
+## Preparación local del asset
+
+`nagweb-interaction-asset-prep-v1.js` analiza la imagen enteramente en el navegador:
+
+- transparencia y calidad del borde transparente;
+- caja real de la silueta;
+- centroide;
+- eje principal;
+- elongación;
+- advertencias de resolución/ocupación;
+- recomendación inicial entre follower rígido y candidato orgánico.
+
+Si la silueta transparente es confiable, el laboratorio puede recortar automáticamente márgenes transparentes preservando la resolución original. Una imagen opaca no se inventa como transparente: se marca explícitamente como candidata a eliminación de fondo en una etapa posterior.
+
+## Campo de influencia
+
+`nagweb-interaction-influence-v1.js` permite que el follower afecte elementos DOM cercanos mediante desplazamiento, rotación y escala con retorno elástico. Usa el mismo ticker del motor principal, de modo que no crea otro bucle de animación.
+
+El laboratorio lo demuestra sobre letras independientes detrás del recurso. Radio, fuerza y desplazamiento máximo son editables y la configuración se incluye en el paquete JSON portable.
+
+## Estado de integración
+
+Sigue deliberadamente aislado. El PR draft #2 existe sólo como superficie de QA y está marcado **do not merge**. Su workflow prueba el módulo sobre el merge sintético con la rama `feat/storytelling-engine-v2`, por lo que detecta incompatibilidades con el NagWeb que avanza en paralelo sin incorporar estos archivos al producto.
