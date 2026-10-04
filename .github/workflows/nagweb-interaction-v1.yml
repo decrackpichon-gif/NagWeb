@@ -27,6 +27,10 @@ on:
       - 'docs/interaction-engine-v1.md'
   workflow_dispatch:
 
+concurrency:
+  group: nagweb-interaction-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   interaction-qa:
     runs-on: ubuntu-latest
