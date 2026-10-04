@@ -74,8 +74,8 @@ try{
 
   await page.$eval('#size',el=>{el.value='260';el.dispatchEvent(new Event('input',{bubbles:true}));});
   await new Promise(r=>setTimeout(r,80));
-  const size=await page.$eval('#target',el=>{const r=el.getBoundingClientRect();return {width:r.width,height:r.height};});
-  assert.ok(Math.abs(Math.max(size.width,size.height)-260)<2,'asset longest side should follow size control');
+  const size=await page.$eval('#target',el=>({width:el.offsetWidth,height:el.offsetHeight}));
+  assert.ok(Math.abs(Math.max(size.width,size.height)-260)<2,'asset base longest side should follow size control');
 
   await page.click('#contain');
   options=await page.evaluate(()=>__NAGWEB_INTERACTION_V1__.engine.options);
