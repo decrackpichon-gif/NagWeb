@@ -201,3 +201,12 @@ Los cambios viven en el borrador y se previsualizan con el mismo generador. Moti
 
 
 El inspector separa el contenido desplazable de los botones de insertar/guardar, que ocupan un pie propio. Al mostrar los controles de texto, las acciones no cubren otros campos ni reciben clics dirigidos a ellos. La prueba de escritura directa confirma el texto al enfocar Duración y exige que Motion Lab siga abierto.
+
+
+## Profundidad e inclinación por momento en Motion Lab
+
+Seleccionar un elemento con momentos activos muestra “Movimiento del elemento”: se elige uno de sus momentos existentes y se ajustan profundidad, inclinación vertical e inclinación lateral. El selector recorre esa pose y cada cambio actualiza el mismo runtime mediante su operación de actualización, sin recargar el iframe ni agregar un reloj o interpolador. Los controles del diseño base siguen siendo independientes.
+
+La edición cambia solo las propiedades elegidas del punto existente: conserva IDs, tiempos, easing, otros valores, elementos y configuración móvil. Cada borrador conserva el punto seleccionado; recorrer el control de progreso selecciona el punto más próximo. El progreso admite décimas de porcentaje para los puntos fraccionarios del túnel. Insertar/guardar incorpora la edición, cerrar la descarta y el historial incluye los cambios. Agregar, eliminar y reordenar momentos sigue disponible en la línea de tiempo del editor principal.
+
+`.github/nagweb-motion-key-smoke.mjs` verifica transformación visible y poses, independencia del diseño base, puntos/IDs/otras propiedades/elementos intactos, borradores sin escritura al proyecto, inserción, guardado de la misma instancia, cancelación, historial, runtime exportado y momentos decimales.

@@ -18,6 +18,7 @@ import {runMotionTunnelSmoke} from './nagweb-motion-tunnel-smoke.mjs';
 import {runMotionTextSmoke} from './nagweb-motion-text-smoke.mjs';
 import {runMotionUploadSmoke} from './nagweb-motion-upload-smoke.mjs';
 import {runMotionStyleSmoke} from './nagweb-motion-style-smoke.mjs';
+import {runMotionKeySmoke} from './nagweb-motion-key-smoke.mjs';
 
 const feedbackSource=fs.readFileSync(new URL('../js/nagweb-feedback-v16.js',import.meta.url),'utf8');
 const directorSource=fs.readFileSync(new URL('../js/nagweb-scroll-director-v16.js',import.meta.url),'utf8');
@@ -213,6 +214,7 @@ await runMotionTunnelSmoke(page);
 await runMotionTextSmoke(page);
 await runMotionUploadSmoke(page);
 await runMotionStyleSmoke(page);
+await runMotionKeySmoke(page);
 await runStorytellingSmoke(page);
 await runCompositionSmoke(page);
 await runTransparentSmoke(page);
