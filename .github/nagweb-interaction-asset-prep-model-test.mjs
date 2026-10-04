@@ -59,4 +59,15 @@ const manualProfile=A.createProfile({
 assert.equal(manualProfile.organic.directionSource,'manual');
 assert.ok(manualProfile.organic.axisAngle<0);
 
+
+const legacy=A.deserializeProfile({
+  schema:A.profileSchema,version:1,source:{width:400,height:200},
+  readiness:{backgroundReady:true,silhouetteReliable:true,organicCandidate:true,recommendedMode:'organic'},
+  geometry:{subjectBounds:{x:.1,y:.2,width:.8,height:.6},centroid:{x:.5,y:.5},principalAxisAngle:0,elongation:2.4},
+  organic:{leadEnd:'right',cropPadding:.015},warnings:[]
+});
+assert.ok(legacy.organic.trailAnchor.x<legacy.organic.leadAnchor.x,'legacy profiles should migrate to usable anchors');
+const swapped=A.swapOrganicDirection(legacy);
+assert.ok(swapped.organic.trailAnchor.x>swapped.organic.leadAnchor.x,'direction swap should exchange anchors');
+assert.equal(swapped.organic.directionSource,'manual');
 console.log('NagWeb Interaction Asset Prep V1.2 model tests: PASS');
