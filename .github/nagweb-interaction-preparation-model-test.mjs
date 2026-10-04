@@ -36,7 +36,7 @@ assert.equal(report.trimmed,true);
 assert.equal(report.recommendedMode,'organic');
 assert.equal(P.deserializeReport(P.serializeReport(report)).quality.level,'excellent');
 
-const opts=P.normalizeOptions({maxDimension:9999,cropPadding:.7,organicThreshold:.4});
+assert.equal(P.normalizeOptions({}).cropPadding,.015);\nconst opts=P.normalizeOptions({maxDimension:9999,cropPadding:.7,organicThreshold:.4});
 assert.equal(opts.maxDimension,1600);
 assert.equal(opts.cropPadding,.2);
 assert.equal(opts.organicThreshold,1.1);
