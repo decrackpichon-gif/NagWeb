@@ -390,3 +390,11 @@ El modelo puro prueba cierre exacto, curvatura, orden de superficies, perspectiv
 El fondo puede ser “Sin fondo”: el grupo permanece transparente en el editor y en el HTML exportado, mostrando la escena que tiene detrás. Al colocarlo se selecciona la composición completa; hacer clic sobre sus tarjetas en la escena selecciona ese grupo. Las imágenes del anillo se personalizan en Motion Lab, donde la plantilla sigue determinando su geometría.
 
 El tirador de tamaño cambia ancho y alto juntos, conservando la proporción de la órbita y sus tarjetas. El runtime observa el tamaño del contenedor para redibujar durante el arrastre, incluso con la vista previa pausada. La cancelación restaura ambas dimensiones; Deshacer/Rehacer y reapertura conservan el tamaño. La prueba de navegador usa arrastre real por mouse en Loop y Scroll, compara la geometría proporcional de las doce tarjetas y comprueba transparencia y recursos en exportación.
+
+## Orden de imágenes de Showcase Stream
+
+Al seleccionar una imagen del anillo, el inspector muestra **Posición en el anillo**. Podés escribir el puesto o usar **Anterior / Siguiente** para moverla un lugar. La pestaña Elementos indica la posición de cada imagen. Los botones se desactivan en los extremos y durante una carga pendiente; una posición vacía vuelve al valor actual sin reconstruir la vista previa.
+
+La operación mueve la misma imagen, conservando su identificador, nombre y recurso. Las imágenes libres y los textos mantienen su lugar. La selección, el momento del preview y el desplazamiento del inspector se conservan; reordenar pausa la reproducción para poder revisar el resultado. Se puede preparar antes de insertar y también modificar una instancia colocada. Biblioteca, guardado, reapertura, Deshacer/Rehacer y HTML exportado conservan el orden. Cerrar descarta los cambios pendientes y guardar una secuencia por scroll mantiene su reproducción conectada al scroll real.
+
+La prueba de Showcase Stream verifica posición directa, ambos botones, extremos, valores vacíos, selección y momento conservados, texto libre intacto, recursos e identificadores, Biblioteca, inserción, edición y exportación, además de cancelación por cierre. Los campos de texto y números del inspector usan negro sobre blanco en ambos temas, y Tamaño de imagen admite hasta 80%.
