@@ -6,6 +6,7 @@ on:
       - feat/interaction-engine-v1
     paths:
       - 'js/nagweb-interaction-engine-v1.js'
+      - 'js/nagweb-interaction-asset-prep-v1.js'
       - 'experiments/interaction-engine-v1.html'
       - '.github/nagweb-interaction-v1-*.mjs'
       - '.github/workflows/nagweb-interaction-v1.yml'
@@ -22,7 +23,9 @@ jobs:
         with:
           node-version: '22'
       - name: Run model tests
-        run: node .github/nagweb-interaction-v1-model-test.mjs
+        run: |
+          node .github/nagweb-interaction-v1-model-test.mjs
+          node .github/nagweb-interaction-asset-prep-model-test.mjs
       - name: Install browser driver
         run: npm install --no-save puppeteer-core
       - name: Start static server
