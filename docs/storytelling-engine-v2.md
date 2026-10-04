@@ -322,3 +322,14 @@ La prueba de inspector abre Composición, edita la duración con teclado real, c
 Las flechas izquierda/derecha recorren los momentos en orden; Home/End eligen el primero/último. Enter y Espacio eligen el botón enfocado. Un único botón participa en el orden de Tab, y el foco se conserva al reconstruir la fila. Los atajos se capturan antes de los comandos del lienzo principal para que no modifiquen elementos externos. El control se oculta cuando el elemento no tiene momentos activos.
 
 Las pruebas de momentos usan clics reales sobre los botones para editar, cambiar de plantilla, guardar, cancelar y verificar la exportación. También recorren los atajos con un elemento exterior seleccionado y comprueban que el proyecto, el almacenamiento y el historial no cambien. La prueba de agregar/quitar compara los IDs y porcentajes de la fila con los del selector después de cada operación.
+
+
+## Biblioteca personal de Motion Lab
+
+“Mis composiciones”, en la pestaña Biblioteca, permite nombrar y guardar una copia de lo preparado antes de insertarlo. Guarda contenido, imágenes utilizadas, geometría, estilos móviles, momentos, interpolación y configuración de Tiempo/Scroll. Cada guardado crea una composición nueva dentro del proyecto (`nwMotionLibrary`, versión 1), incluida en el JSON y conservada al volver a abrirlo. No inserta elementos ni añade recursos a las escenas.
+
+Elegir una composición guardada crea un borrador independiente con nuevos IDs de elementos, imágenes y momentos. Conserva el tipo de plantilla original para su comportamiento de profundidad. Se puede personalizar antes de insertar y cambiar de plantilla sin perder el borrador durante la sesión. Las instancias insertadas llevan el nombre personalizado y se reabren con el mismo editor. Las imágenes incorporadas a la biblioteca son copias incluidas en sus datos; insertar solo incorpora las utilizadas.
+
+También se puede guardar una copia en Biblioteca al editar una instancia colocada, sin aplicar los cambios pendientes a esa instancia. “Quitar de Biblioteca” elimina únicamente la composición guardada: los grupos ya insertados conservan contenido y recursos. Guardar y quitar admiten Deshacer/Rehacer en el editor principal. Los nombres se muestran como texto literal. Los controles siguen disponibles en pantalla compacta.
+
+`.github/nagweb-motion-library-smoke.mjs` verifica guardado previo a inserción, imágenes propias incluidas, nombres y texto literal, ausencia de cambios en escenas y recursos principales, poses interpoladas equivalentes, IDs independientes entre reutilizaciones, borradores, Tiempo sin Director, guardado desde una instancia sin aplicarlo, eliminación sin alterar instancias, historial, conservación del JSON tras migración y recarga, controles compactos y equivalencia del HTML exportado.
