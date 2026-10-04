@@ -10,9 +10,11 @@ on:
       - 'js/nagweb-interaction-influence-v1.js'
       - 'js/nagweb-interaction-organic-v2.js'
       - 'js/nagweb-interaction-background-ai-v1.js'
+      - 'js/nagweb-interaction-preparation-v1.js'
       - 'experiments/interaction-engine-v1.html'
       - 'experiments/organic-follower-v2.html'
       - 'experiments/background-ai-v1.html'
+      - 'experiments/preparation-pipeline-v1.html'
       - '.github/nagweb-interaction-v1-*.mjs'
       - '.github/workflows/nagweb-interaction-v1.yml'
       - 'docs/interaction-engine-v1.md'
@@ -58,6 +60,7 @@ jobs:
           node .github/nagweb-interaction-influence-model-test.mjs
           node .github/nagweb-interaction-organic-model-test.mjs
           node .github/nagweb-interaction-background-ai-model-test.mjs
+          node .github/nagweb-interaction-preparation-model-test.mjs
       - name: Install browser driver
         run: npm install --no-save puppeteer-core
       - name: Start static server
@@ -69,6 +72,7 @@ jobs:
           node .github/nagweb-interaction-v1-browser-smoke.mjs
           node .github/nagweb-interaction-organic-browser-smoke.mjs
           node .github/nagweb-interaction-background-ai-browser-smoke.mjs
+          node .github/nagweb-interaction-preparation-browser-smoke.mjs
       - name: Save interaction lab screenshot
         if: always()
         uses: actions/upload-artifact@v4
