@@ -70,4 +70,11 @@ assert.ok(legacy.organic.trailAnchor.x<legacy.organic.leadAnchor.x,'legacy profi
 const swapped=A.swapOrganicDirection(legacy);
 assert.ok(swapped.organic.trailAnchor.x>swapped.organic.leadAnchor.x,'direction swap should exchange anchors');
 assert.equal(swapped.organic.directionSource,'manual');
+
+const autoProfile=A.createProfile({
+  width:400,height:200,sampleWidth:400,sampleHeight:200,sourceWidth:800,sourceHeight:400,
+  silhouetteReliable:true,needsBackgroundRemoval:false,organicCandidate:true,recommendedMode:'organic',
+  subjectBounds:{x:.1,y:.2,width:.8,height:.6},centroid:{x:.5,y:.5},principalAxisAngle:0,elongation:2.4,warnings:[]
+},{trailAnchor:{x:.1,y:.5},leadAnchor:{x:.9,y:.5},directionSource:'auto'});
+assert.equal(autoProfile.organic.directionSource,'auto');
 console.log('NagWeb Interaction Asset Prep V1.2 model tests: PASS');
