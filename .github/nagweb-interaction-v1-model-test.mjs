@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 const require=createRequire(import.meta.url);
 const E=require('../js/nagweb-interaction-engine-v1.js');
 
-assert.equal(E.version,'1.3.0');
+assert.equal(E.version,'1.4.0');
 assert.equal(E.schema,'nagweb-interaction-follower');
 assert.deepEqual(E.runtimeStats(),{instances:0,active:0,running:false,frames:0,lastDt:0});
 assert.deepEqual(Object.keys(E.presets).sort(),['agile','character','floating','heavy','magnetic','soft']);
@@ -55,4 +55,4 @@ const restored=E.deserializeOptions(serialized);
 assert.equal(restored.assetForwardAngle,180);assert.equal(restored.edgeMode,'contain');assert.equal(restored.preset,'soft');
 assert.throws(()=>E.deserializeOptions('{"schema":"wrong","version":1,"options":{}}'));
 
-console.log('NagWeb Interaction Engine V1.3 model tests: PASS');
+console.log('NagWeb Interaction Engine V1.4 model tests: PASS');
