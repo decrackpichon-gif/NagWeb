@@ -264,3 +264,14 @@ Las copias reutilizan el recurso de imagen y mantienen sus datos independientes.
 Guardar aplica las eliminaciones únicamente a miembros de la instancia editada, además de actualizar los existentes y agregar los nuevos. Conserva los elementos externos y los recursos ya incorporados al proyecto. Recalcula la selección del lienzo principal por ID; si el elemento seleccionado fue eliminado, selecciona el grupo para evitar que el inspector edite accidentalmente al siguiente elemento. Una composición nueva solo incorpora los recursos de sus elementos supervivientes. La inserción ya no presupone dos láminas: elige un elemento animado disponible y, si solo quedan textos sin momentos, selecciona uno en modo de diseño base.
 
 `.github/nagweb-motion-remove-smoke.mjs` verifica selección después de quitar, borradores por plantilla, ausencia de escrituras previas, recursos utilizados, altas y bajas en el mismo guardado, supervivientes y elementos externos intactos, cancelar, Deshacer/Rehacer, elementos ausentes del HTML exportado e inserción de una sola lámina como escena y de un solo texto como grupo.
+
+
+## Agregar textos propios en Motion Lab
+
+La pestaña “Elementos” ofrece “Agregar texto”, incluso cuando la composición ya no tiene ningún texto que duplicar. Crea y selecciona un texto simple independiente en el centro, con nombre único, ancho 70%, tamaño 24 px (18 px en móvil) y un color inicial claro u oscuro según el fondo. Se puede escribir directamente en el lienzo y editar posición, ancho, ángulo y estilo antes de insertar.
+
+El texto comienza sin desplazamientos ni efectos, con dos momentos neutros en 0% y 100% e interpolación lineal. Sus nueve propiedades de movimiento se pueden personalizar desde el inspector, agregar o reubicar momentos, y combinar con Tiempo o Scroll. Agregar confirma la escritura pendiente y pausa la vista previa. Se deshabilita mientras se carga una imagen.
+
+Los textos nuevos quedan en el borrador de su plantilla hasta insertar o guardar. Al reabrir una composición se pueden añadir más textos en el mismo grupo; cerrar descarta esas altas. No requieren recursos de imagen ni activar el Director cuando la composición usa Tiempo.
+
+`.github/nagweb-motion-add-text-smoke.mjs` verifica creación sin textos previos, escritura directa y texto literal seguro, contraste inicial, nombres e IDs únicos, movimiento interpolado propio sin alterar la geometría base, borradores sin escrituras al proyecto, inserción independiente del Director, nuevas altas al guardar, elementos externos, cancelación, Deshacer/Rehacer y equivalencia de la animación en el HTML exportado.
