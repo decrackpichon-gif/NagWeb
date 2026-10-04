@@ -1,0 +1,16 @@
+import { createRequire } from 'node:module';
+import assert from 'node:assert/strict';
+const require=createRequire(import.meta.url);
+const I=require('../js/nagweb-interaction-influence-v1.js');
+assert.equal(I.version,'1.0.0');
+const o=I.normalizeOptions({radius:100,strength:1,maxPush:50,maxRotate:10,maxScale:.1,spring:.08,damping:.84});
+const far=I.computeRepulsion({x:0,y:0},{x:150,y:0,radius:0},o);
+assert.equal(far.strength,0);assert.equal(far.x,0);
+const near=I.computeRepulsion({x:0,y:0},{x:50,y:0,radius:0},o);
+assert.ok(near.strength>0);assert.ok(near.x>0);assert.equal(near.y,0);assert.ok(near.scale>1);
+let state={x:0,y:0,vx:0,vy:0,rotation:0,vr:0,scale:1,vs:0,strength:0};
+for(let i=0;i<120;i++)I.springStep(state,{x:40,y:-20,rotation:8,scale:1.08,strength:1},o,16.6667);
+assert.ok(Math.abs(state.x-40)<1);assert.ok(Math.abs(state.y+20)<1);assert.ok(Math.abs(state.rotation-8)<1);assert.ok(Math.abs(state.scale-1.08)<.02);
+for(let i=0;i<180;i++)I.springStep(state,{x:0,y:0,rotation:0,scale:1,strength:0},o,16.6667);
+assert.ok(Math.abs(state.x)<1);assert.ok(Math.abs(state.y)<1);assert.ok(Math.abs(state.rotation)<1);assert.ok(Math.abs(state.scale-1)<.02);
+console.log('NagWeb Interaction Influence V1 model tests: PASS');
