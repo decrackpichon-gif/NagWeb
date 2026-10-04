@@ -10,16 +10,17 @@
   'use strict';
   var VERSION='1.0.0';
   function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+  function num(v,d){v=Number(v);return Number.isFinite(v)?v:d;}
   function normalizeOptions(input){
     input=input||{};
     return {
-      radius:Math.max(1,Number(input.radius)||180),
-      strength:clamp(Number(input.strength)==null?1:Number(input.strength),0,3),
-      maxPush:Math.max(0,Number(input.maxPush)||70),
-      maxRotate:Math.max(0,Number(input.maxRotate)||10),
-      maxScale:Math.max(0,Number(input.maxScale)||0.08),
-      spring:clamp(Number(input.spring)||0.08,0.001,1),
-      damping:clamp(Number(input.damping)||0.84,0.05,0.999),
+      radius:Math.max(1,num(input.radius,180)),
+      strength:clamp(num(input.strength,1),0,3),
+      maxPush:Math.max(0,num(input.maxPush,70)),
+      maxRotate:Math.max(0,num(input.maxRotate,10)),
+      maxScale:Math.max(0,num(input.maxScale,0.08)),
+      spring:clamp(num(input.spring,0.08),0.001,1),
+      damping:clamp(num(input.damping,0.84),0.05,0.999),
       reducedMotion:input.reducedMotion||'respect'
     };
   }
