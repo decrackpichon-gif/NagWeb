@@ -295,3 +295,12 @@ El inspector ofrece “Nombre del elemento” para identificar el texto o la ima
 La lista de Elementos, el título del inspector, las etiquetas de contenido y las etiquetas accesibles del lienzo y selector de archivos se actualizan con texto literal, sin regenerar la vista previa. Los nombres se conservan en cada borrador por plantilla y al insertar/guardar; cerrar descarta los cambios sin confirmar. Reabrir permite renombrar dentro de la misma instancia.
 
 `.github/nagweb-motion-name-smoke.mjs` verifica teclado real, Enter/Tab/Escape, vacíos, nombres con marcas literales, sincronización sin recarga, conservación del contenido/movimiento, borradores sin escritura previa, guardado exacto de un único nombre, externos intactos, cancelación, Deshacer/Rehacer y equivalencia de la animación exportada.
+
+
+## Contenido contextual en el inspector de Motion Lab
+
+“Contenido seleccionado” aparece junto al nombre y antes de los controles de geometría. Elegir un texto muestra su campo de escritura; elegir una imagen muestra su recurso y el botón de carga. Los campos de los demás elementos se ocultan, y sin selección no se muestra contenido. El lienzo y la lista de Elementos utilizan el mismo inspector. Los controles de composición siguen disponibles para ajustar fondo, duración, repetición y perspectiva.
+
+Se mantienen los índices y campos de cada miembro para sincronizar escritura directa, cargas y borradores. Cambiar la selección o regenerar la vista previa restaura el contenido del elemento elegido sin perder las ediciones anteriores. El nombre sigue siendo una etiqueta de organización independiente del contenido.
+
+`.github/nagweb-motion-inspector-smoke.mjs` verifica visibilidad de un único contenido, ubicación en el inspector, selección desde lista y lienzo, edición con teclado y selector reales, reemplazo sin alterar el movimiento, regeneración, borradores sin escritura previa, guardado exacto, controles accesibles en pantalla compacta, Deshacer/Rehacer y equivalencia del HTML exportado. La prueba de cargas selecciona explícitamente la imagen antes de abrir su selector de archivos.

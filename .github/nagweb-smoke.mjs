@@ -28,6 +28,7 @@ import {runMotionRemoveSmoke} from './nagweb-motion-remove-smoke.mjs';
 import {runMotionAddTextSmoke} from './nagweb-motion-add-text-smoke.mjs';
 import {runMotionAddImageSmoke} from './nagweb-motion-add-image-smoke.mjs';
 import {runMotionNameSmoke} from './nagweb-motion-name-smoke.mjs';
+import {runMotionInspectorSmoke} from './nagweb-motion-inspector-smoke.mjs';
 
 const feedbackSource=fs.readFileSync(new URL('../js/nagweb-feedback-v16.js',import.meta.url),'utf8');
 const directorSource=fs.readFileSync(new URL('../js/nagweb-scroll-director-v16.js',import.meta.url),'utf8');
@@ -233,6 +234,7 @@ await runMotionRemoveSmoke(page);
 await runMotionAddTextSmoke(page);
 await runMotionAddImageSmoke(page);
 await runMotionNameSmoke(page);
+await runMotionInspectorSmoke(page);
 await runStorytellingSmoke(page);
 await runCompositionSmoke(page);
 await runTransparentSmoke(page);
