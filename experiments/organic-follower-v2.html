@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>NagWeb · Organic Follower V2 Lab</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:Inter,system-ui,sans-serif;background:#101014;color:#f4efe8}body{overflow:hidden}.app{display:grid;grid-template-columns:330px 1fr;height:100%}.panel{background:#17171c;border-right:1px solid #303039;padding:18px;overflow:auto}.panel h1{font-size:18px;margin:0 0 7px}.panel>p{font-size:12px;color:#aaa6b1;line-height:1.5;margin:0 0 17px}.group{border-top:1px solid #303039;padding:14px 0}.group h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#9993a2;margin:0 0 11px}.field{margin-bottom:12px}.field label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px}.field input[type=range],.field select{width:100%}.field select{background:#22222a;color:#fff;border:1px solid #464650;padding:8px}.btn,.upload{display:flex;align-items:center;justify-content:center;min-height:36px;padding:0 12px;border:1px solid #555563;background:#22222a;color:#fff;font:600 12px inherit;cursor:pointer}.btn:disabled{opacity:.38;cursor:not-allowed}.upload{width:100%}.upload input{display:none}.status{font:11px/1.5 ui-monospace,monospace;color:#bbb5c5}.good{color:#a8e4b5}.warn{color:#e7bc76}.stage{position:relative;overflow:hidden;touch-action:none;background:radial-gradient(90% 80% at 55% 45%,#394057 0%,#202330 45%,#101116 100%)}#organicCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.head{position:absolute;left:0;top:0;width:8px;height:8px;border-radius:50%;background:#fff;opacity:.28;pointer-events:none}.copy{position:absolute;left:50%;top:50%;translate:-50% -50%;font:900 clamp(54px,12vw,190px)/.8 Arial Black,Impact,sans-serif;letter-spacing:-.07em;color:rgba(255,255,255,.08);white-space:nowrap;pointer-events:none}.hint{position:absolute;left:20px;bottom:18px;font-size:11px;color:#8f94a2;pointer-events:none}.thumb{margin-top:10px;width:100%;height:96px;border:1px solid #33343e;background:#101116;display:grid;place-items:center;overflow:hidden}.thumb img{max-width:95%;max-height:90%;object-fit:contain}@media(max-width:760px){.app{grid-template-columns:1fr;grid-template-rows:auto 1fr}.panel{max-height:48vh;border-right:0;border-bottom:1px solid #303039}.stage{min-height:52vh}}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:Inter,system-ui,sans-serif;background:#101014;color:#f4efe8}body{overflow:hidden}.app{display:grid;grid-template-columns:330px 1fr;height:100%}.panel{background:#17171c;border-right:1px solid #303039;padding:18px;overflow:auto}.panel h1{font-size:18px;margin:0 0 7px}.panel>p{font-size:12px;color:#aaa6b1;line-height:1.5;margin:0 0 17px}.group{border-top:1px solid #303039;padding:14px 0}.group h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#9993a2;margin:0 0 11px}.field{margin-bottom:12px}.field label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px}.field input[type=range],.field select{width:100%}.field select{background:#22222a;color:#fff;border:1px solid #464650;padding:8px}.btn,.upload{display:flex;align-items:center;justify-content:center;min-height:36px;padding:0 12px;border:1px solid #555563;background:#22222a;color:#fff;font:600 12px inherit;cursor:pointer}.btn:disabled{opacity:.38;cursor:not-allowed}.upload{width:100%}.upload input{display:none}.status{font:11px/1.5 ui-monospace,monospace;color:#bbb5c5}.good{color:#a8e4b5}.warn{color:#e7bc76}.stage{position:relative;overflow:hidden;touch-action:none;background:radial-gradient(90% 80% at 55% 45%,#394057 0%,#202330 45%,#101116 100%)}#organicCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.head{position:absolute;left:0;top:0;width:8px;height:8px;border-radius:50%;background:#fff;opacity:.28;pointer-events:none}.copy{position:absolute;left:50%;top:50%;translate:-50% -50%;font:900 clamp(54px,12vw,190px)/.8 Arial Black,Impact,sans-serif;letter-spacing:-.07em;color:rgba(255,255,255,.08);white-space:nowrap;pointer-events:none}.hint{position:absolute;left:20px;bottom:18px;font-size:11px;color:#8f94a2;pointer-events:none}.thumb{position:relative;margin-top:10px;width:100%;height:110px;border:1px solid #33343e;background:#101116;display:grid;place-items:center;overflow:hidden}.thumb img{max-width:88%;max-height:84%;object-fit:contain}.endpick{position:absolute;top:50%;translate:0 -50%;width:34px;height:34px;border-radius:50%;border:1px solid #646473;background:#21212a;color:#fff;font-weight:800;cursor:pointer}.endpick.left{left:8px}.endpick.right{right:8px}.endpick.on{background:#fff;color:#141419;border-color:#fff}@media(max-width:760px){.app{grid-template-columns:1fr;grid-template-rows:auto 1fr}.panel{max-height:48vh;border-right:0;border-bottom:1px solid #303039}.stage{min-height:52vh}}
 </style>
 </head>
 <body>
@@ -17,7 +17,7 @@
     <div class="group">
       <h2>1 · Recurso</h2>
       <label class="upload">Subir imagen transparente<input id="file" type="file" accept="image/png,image/webp,image/gif,image/jpeg"></label>
-      <div class="thumb"><img id="asset" alt="Asset de prueba"></div>
+      <div class="thumb"><img id="asset" alt="Asset de prueba"><button class="endpick left" data-lead="left" title="Este extremo lidera">←</button><button class="endpick right on" data-lead="right" title="Este extremo lidera">→</button></div>
       <div id="analysis" class="status" data-ready="0" style="margin-top:9px">Analizando…</div>
       <button id="prepare" class="btn" style="width:100%;margin-top:10px" disabled>Preparar para movimiento orgánico</button>
     </div>
@@ -25,7 +25,7 @@
     <div class="group">
       <h2>2 · Dirección</h2>
       <div class="field"><label>Extremo que lidera</label><select id="lead"><option value="right">Derecho</option><option value="left">Izquierdo</option></select></div>
-      <div class="status">La geometría detecta el eje, pero no puede saber con certeza cuál extremo es cabeza/cola. Este control resuelve esa ambigüedad sin IA.</div>
+      <div class="status">También podés elegirlo tocando una de las flechas sobre la miniatura. La decisión queda guardada en el perfil del asset.</div>
     </div>
 
     <div class="group">
@@ -56,12 +56,17 @@
 (function(){
   var E=NAGWEB_INTERACTION_ENGINE,A=NAGWEB_INTERACTION_ASSET_PREP,O=NAGWEB_ORGANIC_FOLLOWER;
   var stage=document.getElementById('stage'),head=document.getElementById('head'),canvas=document.getElementById('organicCanvas'),asset=document.getElementById('asset');
-  var analysis=null,prepared=null,renderer=null,currentUrl=null;
+  var analysis=null,prepared=null,renderer=null,currentUrl=null,assetProfile=null;
   var follower=E.createFollower(head,{area:stage,preset:'soft',distanceFromPointer:26,rotateToTarget:false,edgeMode:'free',idle:{enabled:true,delay:2400}});
 
   var fallback='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="760" height="270" viewBox="0 0 760 270"><defs><linearGradient id="b" x1="0" x2="1"><stop stop-color="#ff7a52"/><stop offset=".46" stop-color="#ffe2ad"/><stop offset="1" stop-color="#ff9768"/></linearGradient></defs><path d="M47 135c62-88 196-91 307-44 102-57 234-61 338 1l51-57-15 79 15 79-51-57c-104 62-236 58-338 1-111 47-245 44-307-44L7 135z" fill="url(#b)"/><circle cx="108" cy="112" r="14" fill="#382328"/><circle cx="113" cy="107" r="4" fill="#fff"/></svg>');
 
   function output(id,value){document.getElementById(id+'Out').value=value;}
+  function updateLeadUI(){
+    var lead=document.getElementById('lead').value;
+    document.querySelectorAll('.endpick').forEach(function(b){b.classList.toggle('on',b.dataset.lead===lead);});
+    if(analysis)assetProfile=A.createProfile(analysis,{leadEnd:lead,cropPadding:.015});
+  }
   function organicOptions(){
     return {
       length:Number(document.getElementById('length').value),
@@ -97,7 +102,8 @@
       prepared=p;
       if(renderer)renderer.destroy();
       renderer=O.createRenderer(Object.assign({leader:follower,canvas:canvas,area:stage,image:p.canvas},organicOptions()));
-      document.getElementById('status').textContent='Asset preparado: '+p.width+'×'+p.height+'. Movimiento orgánico activo.';
+      assetProfile=A.createProfile(analysis,{leadEnd:document.getElementById('lead').value,cropPadding:.015});
+      document.getElementById('status').textContent='Asset preparado: '+p.width+'×'+p.height+'. Perfil '+assetProfile.schema+' guardable.';
       window.__NAGWEB_ORGANIC_V2__.renderer=renderer;
       return p;
     }).catch(function(err){document.getElementById('status').textContent='Preparación: '+err.message;throw err;});
@@ -107,7 +113,10 @@
   ['length','sway','waves','points','slices'].forEach(function(id){
     document.getElementById(id).addEventListener('input',function(){syncOutputs();if(renderer)renderer.setOptions(organicOptions());});
   });
-  document.getElementById('lead').addEventListener('change',function(){if(renderer)renderer.setOptions(organicOptions());});
+  document.getElementById('lead').addEventListener('change',function(){updateLeadUI();if(renderer)renderer.setOptions(organicOptions());});
+  document.querySelectorAll('.endpick').forEach(function(b){b.addEventListener('click',function(){
+    document.getElementById('lead').value=this.dataset.lead;updateLeadUI();if(renderer)renderer.setOptions(organicOptions());
+  });});
   document.getElementById('preset').addEventListener('change',function(){follower.applyPreset(this.value,{rotateToTarget:false,distanceFromPointer:26,edgeMode:'free'});});
 
   document.getElementById('file').addEventListener('change',function(){
@@ -117,8 +126,8 @@
     asset.src=u;
   });
 
-  window.__NAGWEB_ORGANIC_V2__={follower:follower,renderer:null,get analysis(){return analysis;},get prepared(){return prepared;}};
-  syncOutputs();
+  window.__NAGWEB_ORGANIC_V2__={follower:follower,renderer:null,get analysis(){return analysis;},get prepared(){return prepared;},get profile(){return assetProfile;}};
+  syncOutputs();updateLeadUI();
   asset.onload=analyze;
   asset.src=fallback;
 })();
