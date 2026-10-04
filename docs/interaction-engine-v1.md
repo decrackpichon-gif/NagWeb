@@ -110,3 +110,33 @@ El laboratorio lo demuestra sobre letras independientes detrás del recurso. Rad
 ## Estado de integración
 
 Sigue deliberadamente aislado. El PR draft #2 existe sólo como superficie de QA y está marcado **do not merge**. Su workflow prueba el módulo sobre el merge sintético con la rama `feat/storytelling-engine-v2`, por lo que detecta incompatibilidades con el NagWeb que avanza en paralelo sin incorporar estos archivos al producto.
+
+
+## Preparación automática end-to-end
+
+`nagweb-interaction-preparation-v1.js` une las piezas anteriores en un flujo único pensado para la experiencia final de NagWeb:
+
+1. analiza el asset localmente;
+2. puntúa compatibilidad de 0 a 100;
+3. si el fondo no está preparado, puede invocar el adaptador IA únicamente cuando está permitido;
+4. vuelve a analizar el resultado;
+5. recorta transparencia automáticamente cuando la silueta es fiable;
+6. genera el perfil portable del asset;
+7. recomienda `follower` u `organic` con nivel de confianza.
+
+El pipeline no hace obligatoria la IA. Un PNG/WebP transparente bien preparado pasa por análisis + recorte sin red. Una imagen opaca puede seguir funcionando con `follower`; la IA sólo se usa para mejorar la preparación cuando el usuario lo autoriza.
+
+El laboratorio `experiments/preparation-pipeline-v1.html` expone el flujo como futura experiencia de producto: **subir → preparar automáticamente → revisar compatibilidad → usar**.
+
+### Semáforo de compatibilidad
+
+- **Excelente**: 90–100.
+- **Buena**: 72–89.
+- **Requiere revisión**: 50–71.
+- **No preparada**: menos de 50.
+
+Una puntuación baja nunca bloquea artificialmente el modo rígido. La recomendación segura continúa siendo `follower` cuando no hay una silueta suficientemente fiable para deformar.
+
+### Estado de madurez
+
+El pipeline sigue en laboratorio y no se conecta todavía al editor. Para considerarlo listo faltan pruebas con un banco diverso de assets reales, cancelación del proceso IA, manejo de archivos muy grandes, persistencia del asset preparado y UX de corrección manual de la recomendación.
