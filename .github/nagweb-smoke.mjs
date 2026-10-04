@@ -39,6 +39,7 @@ import {runMotionDropSmoke} from './nagweb-motion-drop-smoke.mjs';
 import {runMotionStreamSmoke} from './nagweb-motion-stream-smoke.mjs';
 import {runMotionStreamPlacementSmoke} from './nagweb-motion-stream-placement-smoke.mjs';
 import {runMotionIsoOrbitSmoke} from './nagweb-motion-iso-orbit-smoke.mjs';
+import {runMotionBatchImagesSmoke} from './nagweb-motion-batch-images-smoke.mjs';
 
 const feedbackSource=fs.readFileSync(new URL('../js/nagweb-feedback-v16.js',import.meta.url),'utf8');
 const directorSource=fs.readFileSync(new URL('../js/nagweb-scroll-director-v16.js',import.meta.url),'utf8');
@@ -224,6 +225,7 @@ await runMotionStreamPlacementSmoke(page);
 await runMotionStreamSmoke(page);
 await runMotionStreamPlacementSmoke(page,'iso-orbit');
 await runMotionIsoOrbitSmoke(page);
+await runMotionBatchImagesSmoke(page);
 await runMotionDropSmoke(page);
 await runMotionExpandSmoke(page);
 await runHistorySmoke(page);

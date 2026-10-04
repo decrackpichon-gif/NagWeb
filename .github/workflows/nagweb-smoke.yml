@@ -5,6 +5,7 @@ on:
     branches:
       - feature/creativos-v14
       - feat/storytelling-engine-v2
+      - internal-motion-lab
   workflow_dispatch:
 
 jobs:

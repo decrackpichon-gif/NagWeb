@@ -408,3 +408,15 @@ La selección en el lienzo sigue la superficie inclinada de cada tarjeta, evitan
 Loop continuo usa segundos por ciclo, independiente del scroll. Secuencia por scroll usa ciclos, inicio/fin y recorrido de escena; permite avanzar, detener y retroceder. Ambas fuentes comparten el modelo geométrico y el reloj del runtime existente, con cierre exacto entre ciclos. La inserción como grupo o escena, redimensionado proporcional, transparencia, historial, Biblioteca, reapertura y HTML exportado reutilizan el flujo de Showcase Stream.
 
 El modelo puro verifica nueve planos afines, cierre de oscilación y giro, encuadre inicial en distintos tamaños, profundidad, límites y fábrica serializada. Las pruebas de navegador verifican imágenes dibujadas, selección real, sustitución y orden, controles, copias independientes, scroll real después de guardar, loop sin Director, inserción y edición, exportación, redimensionado, móvil y movimiento reducido. Las capturas de escritorio y móvil se guardan con los artefactos de CI.
+
+## Cargar varias imágenes en Motion Lab
+
+Showcase Stream e Iso Orbit incluyen “Cargar varias imágenes…”. Se pueden elegir hasta tantas imágenes como posiciones tenga la composición. El lote reemplaza las primeras posiciones, en el orden de los archivos elegidos, respetando el orden actual de las tarjetas. Las posiciones restantes, identificadores, nombres, parámetros de movimiento y elementos libres se conservan. El inspector informa la cantidad cargada.
+
+Primero se leen y decodifican todas las imágenes; recién entonces se aplica el lote completo al borrador. Si un archivo falla o se eligen demasiados, no se cambia ninguna imagen ni se agregan recursos parciales. Mientras se carga se bloquean inserción, guardado, Biblioteca, cambios de cantidad, orden y nuevas cargas. Cambiar de plantilla permite terminar la carga en su borrador sin alterar la plantilla visible; cerrar descarta los resultados pendientes. El proyecto cambia al insertar o guardar.
+
+La prueba de navegador usa archivos propios reales, orden modificado, reemplazo parcial, texto libre, archivos inválidos y exceso de cantidad, bloqueos, cambio de plantilla durante lectura, descarte al cerrar, inserción, reapertura, edición de la misma instancia, historial y recursos del HTML exportado.
+
+## Desarrollo y publicación por tandas
+
+La rama `internal-motion-lab` conserva las microetapas y ejecuta el flujo completo de GitHub Actions. `vercel.json` desactiva los despliegues automáticos únicamente para las ramas `internal-motion-lab*`, mediante `git.deploymentEnabled`, según la configuración oficial de Vercel. Las otras ramas mantienen su comportamiento. Se promueve una tanda verificada a `feat/storytelling-engine-v2` cuando corresponda publicar para revisión; no se promueve cada corrección o microetapa. Registrar el commit publicado y el commit pendiente evita confundir la versión online con avances aún sin publicar.
