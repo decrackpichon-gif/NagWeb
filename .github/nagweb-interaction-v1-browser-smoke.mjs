@@ -14,12 +14,13 @@ try{
   page.on('pageerror',e=>pageErrors.push(String(e&&e.stack||e)));
 
   await page.goto(process.env.NAGWEB_INTERACTION_URL||'http://127.0.0.1:4173/experiments/interaction-engine-v1.html',{waitUntil:'domcontentloaded',timeout:30000});
-  await page.waitForFunction(()=>window.__NAGWEB_INTERACTION_V1__&&window.NAGWEB_INTERACTION_ENGINE&&window.NAGWEB_INTERACTION_ASSET_PREP,{timeout:10000});
+  await page.waitForFunction(()=>window.__NAGWEB_INTERACTION_V1__&&window.NAGWEB_INTERACTION_ENGINE&&window.NAGWEB_INTERACTION_ASSET_PREP&&window.NAGWEB_INTERACTION_INFLUENCE,{timeout:10000});
   await page.waitForFunction(()=>document.querySelector('#analysis')?.dataset.ready==='1',{timeout:10000});
 
   const initial=await page.evaluate(()=>({
     version:NAGWEB_INTERACTION_ENGINE.version,
     prepVersion:NAGWEB_INTERACTION_ASSET_PREP.version,
+    influenceVersion:NAGWEB_INTERACTION_INFLUENCE.version,
     prep:(()=>{const el=document.querySelector('#analysis');return {ready:el.dataset.ready,text:el.textContent};})(),
     title:document.title,
     controls:{
@@ -31,15 +32,16 @@ try{
     },
     state:{x:__NAGWEB_INTERACTION_V1__.engine.state.x,y:__NAGWEB_INTERACTION_V1__.engine.state.y}
   }));
-  assert.equal(initial.version,'1.3.0');
+  assert.equal(initial.version,'1.4.0');
   assert.equal(initial.prepVersion,'1.0.0');
+  assert.equal(initial.influenceVersion,'1.0.0');
   assert.equal(initial.prep.ready,'1');
   assert.ok(initial.prep.text.includes('Recomendación'));
   assert.ok(initial.title.includes('Interaction Engine'));
   assert.deepEqual(initial.controls,{upload:true,preset:true,size:true,directions:4,config:true});
   const runtimeInitial=await page.evaluate(()=>NAGWEB_INTERACTION_ENGINE.runtimeStats());
   assert.equal(runtimeInitial.instances,1);
-  assert.equal(runtimeInitial.active,1);
+  assert.ok(runtimeInitial.active>=2,'follower and influence field should share the ticker');
   assert.equal(runtimeInitial.running,true);
 
   const box=await page.$eval('#stage',el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};});
@@ -47,6 +49,11 @@ try{
   await new Promise(r=>setTimeout(r,500));
   const moved=await page.evaluate(()=>({x:__NAGWEB_INTERACTION_V1__.engine.state.x,y:__NAGWEB_INTERACTION_V1__.engine.state.y}));
   assert.ok(Math.hypot(moved.x-initial.state.x,moved.y-initial.state.y)>5,'follower should move after pointer input');
+
+  await page.mouse.move(box.x+box.width*.50,box.y+box.height*.50);
+  await new Promise(r=>setTimeout(r,350));
+  const influenced=await page.$eval('#reactiveWord span',els=>els.map(el=>el.style.translate));
+  assert.ok(influenced.some(v=>v&&v!=='0.00px 0.00px'),'nearby letters should be displaced by the follower');
 
   await page.select('#preset','character');
   await new Promise(r=>setTimeout(r,80));
@@ -128,7 +135,7 @@ try{
   const mobile=await browser.newPage();
   await mobile.setViewport({width:390,height:844,deviceScaleFactor:2,isMobile:true,hasTouch:true});
   await mobile.goto(process.env.NAGWEB_INTERACTION_URL||'http://127.0.0.1:4173/experiments/interaction-engine-v1.html',{waitUntil:'domcontentloaded',timeout:30000});
-  await mobile.waitForFunction(()=>window.__NAGWEB_INTERACTION_V1__&&window.NAGWEB_INTERACTION_ENGINE,{timeout:10000});
+  await mobile.waitForFunction(()=>window.__NAGWEB_INTERACTION_V1__&&window.NAGWEB_INTERACTION_ENGINE&&window.NAGWEB_INTERACTION_INFLUENCE,{timeout:10000});
   const mbox=await mobile.$eval('#stage',el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};});
   const mstart=await mobile.evaluate(()=>({x:__NAGWEB_INTERACTION_V1__.engine.state.x,y:__NAGWEB_INTERACTION_V1__.engine.state.y}));
   await mobile.touchscreen.tap(mbox.x+mbox.width*.75,mbox.y+mbox.height*.35);
@@ -142,7 +149,7 @@ try{
   await reduced.setViewport({width:900,height:650,deviceScaleFactor:1});
   await reduced.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);
   await reduced.goto(process.env.NAGWEB_INTERACTION_URL||'http://127.0.0.1:4173/experiments/interaction-engine-v1.html',{waitUntil:'domcontentloaded',timeout:30000});
-  await reduced.waitForFunction(()=>window.__NAGWEB_INTERACTION_V1__&&window.NAGWEB_INTERACTION_ENGINE,{timeout:10000});
+  await reduced.waitForFunction(()=>window.__NAGWEB_INTERACTION_V1__&&window.NAGWEB_INTERACTION_ENGINE&&window.NAGWEB_INTERACTION_INFLUENCE,{timeout:10000});
   const rb=await reduced.$eval('#stage',el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};});
   const r0=await reduced.evaluate(()=>({x:__NAGWEB_INTERACTION_V1__.engine.state.x,y:__NAGWEB_INTERACTION_V1__.engine.state.y}));
   await reduced.mouse.move(rb.x+rb.width*.9,rb.y+rb.height*.2);
