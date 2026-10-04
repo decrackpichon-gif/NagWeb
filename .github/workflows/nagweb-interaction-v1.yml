@@ -10,6 +10,7 @@ on:
       - 'js/nagweb-interaction-influence-v1.js'
       - 'js/nagweb-interaction-organic-v2.js'
       - 'experiments/interaction-engine-v1.html'
+      - 'experiments/organic-follower-v2.html'
       - '.github/nagweb-interaction-v1-*.mjs'
       - '.github/workflows/nagweb-interaction-v1.yml'
       - 'docs/interaction-engine-v1.md'
@@ -25,6 +26,7 @@ on:
       - '.github/nagweb-interaction-asset-prep-model-test.mjs'
       - '.github/nagweb-interaction-influence-model-test.mjs'
       - '.github/nagweb-interaction-organic-model-test.mjs'
+      - '.github/nagweb-interaction-organic-browser-smoke.mjs'
       - '.github/workflows/nagweb-interaction-v1.yml'
       - 'docs/interaction-engine-v1.md'
   workflow_dispatch:
@@ -55,7 +57,9 @@ jobs:
           python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/nagweb-interaction-http.log 2>&1 &
           sleep 2
       - name: Run browser smoke
-        run: node .github/nagweb-interaction-v1-browser-smoke.mjs
+        run: |
+          node .github/nagweb-interaction-v1-browser-smoke.mjs
+          node .github/nagweb-interaction-organic-browser-smoke.mjs
       - name: Save interaction lab screenshot
         if: always()
         uses: actions/upload-artifact@v4
