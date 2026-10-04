@@ -44,11 +44,9 @@ const fallbackModule={
     return async()=>[fakeRaw];
   }
 };
-const fallback=AI.createRemover({device:'auto',moduleLoader:async()=>fallbackModule});
-globalThis.navigator={gpu:{}};
+const fallback=AI.createRemover({device:'auto',environment:{gpu:{}},moduleLoader:async()=>fallbackModule});
 await fallback.load();
 assert.deepEqual(attempts,['webgpu','wasm']);
 assert.equal(fallback.status.device,'wasm');
-delete globalThis.navigator;
 
 console.log('NagWeb Background AI V1 model tests: PASS');
