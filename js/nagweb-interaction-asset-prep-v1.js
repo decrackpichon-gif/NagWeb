@@ -10,7 +10,8 @@
 })(typeof window!=='undefined'?window:globalThis,function(){
   'use strict';
 
-  var VERSION='1.0.0';
+  var VERSION='1.1.0';
+  var PROFILE_SCHEMA='nagweb-interaction-asset-profile';
 
   function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
   function analyzePixels(imageData,opts){
@@ -123,6 +124,44 @@
     });
   }
 
+  function createProfile(a,input){
+    if(!a)throw new Error('NagWeb Asset Prep: analysis is required');
+    input=input||{};
+    return {
+      schema:PROFILE_SCHEMA,
+      version:1,
+      source:{width:a.sourceWidth||a.width,height:a.sourceHeight||a.height},
+      readiness:{
+        backgroundReady:!a.needsBackgroundRemoval,
+        silhouetteReliable:!!a.silhouetteReliable,
+        organicCandidate:!!a.organicCandidate,
+        recommendedMode:a.recommendedMode
+      },
+      geometry:{
+        subjectBounds:Object.assign({},a.subjectBounds),
+        centroid:Object.assign({},a.centroid),
+        principalAxisAngle:Number(a.principalAxisAngle)||0,
+        elongation:Number(a.elongation)||1
+      },
+      organic:{
+        leadEnd:input.leadEnd==='left'?'left':'right',
+        cropPadding:input.cropPadding==null ? .015 : Math.max(0,Number(input.cropPadding)||0)
+      },
+      warnings:(a.warnings||[]).slice()
+    };
+  }
+  function serializeProfile(profile){
+    if(!profile||profile.schema!==PROFILE_SCHEMA||profile.version!==1)throw new Error('NagWeb Asset Prep: invalid asset profile');
+    return JSON.stringify(profile);
+  }
+  function deserializeProfile(value){
+    var p=typeof value==='string'?JSON.parse(value):JSON.parse(JSON.stringify(value));
+    if(!p||p.schema!==PROFILE_SCHEMA||p.version!==1||!p.geometry||!p.readiness)throw new Error('NagWeb Asset Prep: invalid asset profile');
+    p.organic=p.organic||{leadEnd:'right',cropPadding:.015};
+    p.organic.leadEnd=p.organic.leadEnd==='left'?'left':'right';
+    return p;
+  }
+
   function summarize(a){
     if(!a)return null;
     return {
@@ -135,5 +174,5 @@
     };
   }
 
-  return {version:VERSION,analyzePixels:analyzePixels,analyzeImage:analyzeImage,trimTransparent:trimTransparent,summarize:summarize};
+  return {version:VERSION,profileSchema:PROFILE_SCHEMA,analyzePixels:analyzePixels,analyzeImage:analyzeImage,trimTransparent:trimTransparent,createProfile:createProfile,serializeProfile:serializeProfile,deserializeProfile:deserializeProfile,summarize:summarize};
 });
