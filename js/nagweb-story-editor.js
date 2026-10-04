@@ -490,7 +490,7 @@ function bloomComposition(){
   var edge=i-1,frames=[];e.x=50;e.y=56;e.w=26;e.rot=0;e.mobile={x:50,y:56,w:30};
   [0,12,38,62,88,100].forEach(function(at){var open=at===38||at===62;frames.push({id:nid(),at:at,ease:'cinematic',x:open?edge*82:0,y:open?(edge?18:-8):0,z:open?(edge?-120:60):(edge?-55:25),rotateX:open?0:12,rotateY:open?edge*20:edge*8,rotate:open?edge*18:0,scale:open?(edge?100:106):94,opacity:100,blur:0});});e.sdKeyframes=M.normalize(frames);
  });
- s.elements[3].text='ESTUDIO / ABANICO';s.elements[3].color='#c7b8ff';s.elements[4].text='Miradas que se despliegan.';s.elements[5].text='Una colección. Distintas perspectivas.';
+ s.elements[3].text='ESTUDIO / ABANICO';s.elements[3].color='#c7b8ff';s.elements[4].text='Miradas que se despliegan.';s.elements[4].y=24;s.elements[4].mobile.y=24;s.elements[5].text='Una colección. Distintas perspectivas.';
  return recipe;
 }
 var motionTemplates={
