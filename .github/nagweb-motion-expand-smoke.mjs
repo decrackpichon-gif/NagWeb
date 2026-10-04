@@ -24,6 +24,6 @@ export async function runMotionExpandSmoke(page){
   console.log('Lienzo ampliado Motion Lab: espacio real escritorio/móvil, mismo documento/selección/pose/momento, búsqueda/desplegable/scroll conservados, reproducción continua, Escape con foco, texto y arrastre con cancelación prioritaria, edición directa e inserción habitual, reapertura/cierre sin escrituras OK');
  }catch(error){await page.screenshot({path:'/tmp/nagweb-motion-visuals/expanded-failure.png'}).catch(()=>{});throw error;
  }finally{
-  await page.mouse.up();await page.setViewport(viewport);await page.evaluate(p=>{document.querySelector('.nw-motion-dialog').close();clearTimeout(previewTimer);project=JSON.parse(p.project);curPage=p.curPage;curSec=p.curSec;curEl=p.curEl;curPane=p.curPane;selection=p.selection;secFocus=p.secFocus;history=[];future=[];NAGWEB_STORY_EDITOR.setCanvasMode(p.mode);NAGWEB_STORY_TIMELINE_UI.setState(p.timeline);saveProject();renderScenes();renderPane();renderPreview();},previous);
+  await page.mouse.up().catch(()=>{});await page.setViewport(viewport);await page.evaluate(p=>{document.querySelector('.nw-motion-dialog').close();clearTimeout(previewTimer);project=JSON.parse(p.project);curPage=p.curPage;curSec=p.curSec;curEl=p.curEl;curPane=p.curPane;selection=p.selection;secFocus=p.secFocus;history=[];future=[];NAGWEB_STORY_EDITOR.setCanvasMode(p.mode);NAGWEB_STORY_TIMELINE_UI.setState(p.timeline);saveProject();renderScenes();renderPane();renderPreview();},previous);
  }
 }
