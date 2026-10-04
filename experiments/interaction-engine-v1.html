@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NagWeb · Interaction Engine V1.1</title>
+<title>NagWeb · Interaction Engine Lab</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#111;color:#f5f1e8;font-family:Inter,system-ui,sans-serif}body{height:100vh;overflow:hidden}.app{height:100%;display:grid;grid-template-columns:330px 1fr}.panel{padding:18px;border-right:1px solid #333;background:#171717;overflow:auto}.panel h1{font-size:18px;margin:0 0 8px}.panel p{font-size:12px;line-height:1.45;color:#aaa;margin:0 0 18px}.group{padding:12px 0;border-top:1px solid #303030}.group:first-of-type{border-top:0;padding-top:0}.group h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8f8998;margin:0 0 12px}.field{margin:0 0 13px}.field label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px}.field input[type=range],select,textarea{width:100%}select,textarea{border:1px solid #444;background:#202020;color:#fff;padding:8px;font:12px inherit}.row{display:flex;gap:8px;flex-wrap:wrap}.btn,.upload,.dir{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 12px;border:1px solid #555;background:#222;color:#fff;font:600 12px inherit;cursor:pointer}.btn:hover,.upload:hover,.dir:hover{border-color:#888}.upload{width:100%;margin-bottom:12px}.upload input{display:none}.check{display:flex;gap:8px;align-items:center;font-size:12px;margin:10px 0}.dirs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.dir{padding:0;min-height:34px}.dir.on{background:#eee;color:#111;border-color:#eee}.stage{position:relative;overflow:hidden;background:radial-gradient(circle at 50% 40%,#32264c 0,#181522 46%,#0d0c11 100%);touch-action:none}.stage:before{content:"";position:absolute;inset:22px;border:1px dashed rgba(255,255,255,.08);pointer-events:none}.hint{position:absolute;left:18px;bottom:18px;font-size:11px;color:#9e98aa;pointer-events:none}.target{position:absolute;left:0;top:0;width:180px;height:180px;display:grid;place-items:center;pointer-events:none}.visual{width:100%;height:100%;filter:drop-shadow(0 18px 20px rgba(0,0,0,.35))}.visual img{width:100%;height:100%;object-fit:contain;display:block}.status{margin-top:14px;padding-top:14px;border-top:1px solid #333;font:11px/1.5 ui-monospace,monospace;color:#9ed8a9}.pill{display:inline-block;padding:3px 6px;border:1px solid #3f5d48;color:#b6efc2;margin-bottom:8px}.config{height:90px;resize:vertical;color:#b8d7ff;font-family:ui-monospace,monospace;font-size:10px}@media(max-width:760px){.app{grid-template-columns:1fr;grid-template-rows:auto 1fr}.panel{border-right:0;border-bottom:1px solid #333;max-height:52vh}.target{width:140px;height:140px}}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#111;color:#f5f1e8;font-family:Inter,system-ui,sans-serif}body{height:100vh;overflow:hidden}.app{height:100%;display:grid;grid-template-columns:330px 1fr}.panel{padding:18px;border-right:1px solid #333;background:#171717;overflow:auto}.panel h1{font-size:18px;margin:0 0 8px}.panel p{font-size:12px;line-height:1.45;color:#aaa;margin:0 0 18px}.group{padding:12px 0;border-top:1px solid #303030}.group:first-of-type{border-top:0;padding-top:0}.group h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8f8998;margin:0 0 12px}.field{margin:0 0 13px}.field label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px}.field input[type=range],select,textarea{width:100%}select,textarea{border:1px solid #444;background:#202020;color:#fff;padding:8px;font:12px inherit}.row{display:flex;gap:8px;flex-wrap:wrap}.btn,.upload,.dir{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 12px;border:1px solid #555;background:#222;color:#fff;font:600 12px inherit;cursor:pointer}.btn:hover,.upload:hover,.dir:hover{border-color:#888}.upload{width:100%;margin-bottom:12px}.upload input{display:none}.check{display:flex;gap:8px;align-items:center;font-size:12px;margin:10px 0}.dirs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.dir{padding:0;min-height:34px}.dir.on{background:#eee;color:#111;border-color:#eee}.stage{position:relative;overflow:hidden;background:radial-gradient(circle at 50% 40%,#32264c 0,#181522 46%,#0d0c11 100%);touch-action:none}.stage:before{content:"";position:absolute;inset:22px;border:1px dashed rgba(255,255,255,.08);pointer-events:none}.hint{position:absolute;left:18px;bottom:18px;font-size:11px;color:#9e98aa;pointer-events:none}.reactive{position:absolute;z-index:1;left:50%;top:50%;translate:-50% -50%;display:flex;gap:.015em;font:900 clamp(52px,10vw,150px)/.85 Arial Black,Impact,sans-serif;letter-spacing:-.07em;color:rgba(255,255,255,.9);white-space:nowrap;pointer-events:none}.reactive span{display:inline-block;will-change:translate,rotate,scale}.target{position:absolute;z-index:2;left:0;top:0;width:180px;height:180px;display:grid;place-items:center;pointer-events:none}.visual{width:100%;height:100%;filter:drop-shadow(0 18px 20px rgba(0,0,0,.35))}.visual img{width:100%;height:100%;object-fit:contain;display:block}.status{margin-top:14px;padding-top:14px;border-top:1px solid #333;font:11px/1.5 ui-monospace,monospace;color:#9ed8a9}.pill{display:inline-block;padding:3px 6px;border:1px solid #3f5d48;color:#b6efc2;margin-bottom:8px}.config{height:90px;resize:vertical;color:#b8d7ff;font-family:ui-monospace,monospace;font-size:10px}@media(max-width:760px){.app{grid-template-columns:1fr;grid-template-rows:auto 1fr}.panel{border-right:0;border-bottom:1px solid #333;max-height:52vh}.target{width:140px;height:140px}}
 </style>
 </head>
 <body>
 <div class="app">
   <aside class="panel">
-    <h1>Interactive Follower · V1.1</h1>
+    <h1>Interaction Engine · laboratorio</h1>
     <p>Subí cualquier imagen y definí cómo debe comportarse. Todavía es un laboratorio independiente de NagWeb.</p>
 
     <div class="group">
@@ -51,6 +51,14 @@
     </div>
 
     <div class="group">
+      <h2>Influencia sobre otros elementos</h2>
+      <label class="check"><input id="influenceEnabled" type="checkbox" checked> Empujar elementos cercanos</label>
+      <div class="field"><label>Radio <output id="influenceRadiusOut">190</output></label><input id="influenceRadius" type="range" min="60" max="360" step="5" value="190"></div>
+      <div class="field"><label>Fuerza <output id="influenceStrengthOut">1</output></label><input id="influenceStrength" type="range" min="0" max="2.5" step="0.05" value="1"></div>
+      <div class="field"><label>Desplazamiento máximo <output id="influencePushOut">70</output></label><input id="influencePush" type="range" min="0" max="140" step="2" value="70"></div>
+    </div>
+
+    <div class="group">
       <h2>Configuración portable</h2>
       <textarea id="config" class="config" spellcheck="false"></textarea>
       <div class="row"><button id="export" class="btn">Actualizar JSON</button><button id="import" class="btn">Aplicar JSON</button></div>
@@ -61,20 +69,25 @@
   </aside>
 
   <main id="stage" class="stage">
+    <div id="reactiveWord" class="reactive" aria-hidden="true"><span>I</span><span>N</span><span>T</span><span>E</span><span>R</span><span>A</span><span>C</span><span>T</span></div>
     <div id="target" class="target"><div class="visual"><img id="asset" alt="Recurso interactivo"></div></div>
     <div class="hint">Mové el mouse. La línea punteada marca una zona visual de seguridad.</div>
   </main>
 </div>
 <script src="../js/nagweb-interaction-engine-v1.js"></script>
 <script src="../js/nagweb-interaction-asset-prep-v1.js"></script>
+<script src="../js/nagweb-interaction-influence-v1.js"></script>
 <script>
 (function(){
-  var E=NAGWEB_INTERACTION_ENGINE,A=NAGWEB_INTERACTION_ASSET_PREP,stage=document.getElementById('stage'),target=document.getElementById('target'),asset=document.getElementById('asset');
+  var E=NAGWEB_INTERACTION_ENGINE,A=NAGWEB_INTERACTION_ASSET_PREP,I=NAGWEB_INTERACTION_INFLUENCE,stage=document.getElementById('stage'),target=document.getElementById('target'),asset=document.getElementById('asset');
   var assetRatio=1,forwardAngle=0,currentAnalysis=null,currentAssetUrl=null;
   var fallback='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 180"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffe5a6"/><stop offset="1" stop-color="#ff7a8a"/></linearGradient></defs><path d="M25 90c35-63 126-76 185-28l32-25-8 45 8 45-32-25c-59 48-150 35-185-28l-17 16z" fill="url(#g)"/><circle cx="184" cy="72" r="10" fill="#211828"/><circle cx="188" cy="69" r="3" fill="#fff"/></svg>');
-  asset.src=fallback;
-
   var engine=E.createFollower(target,{area:stage,tilt:8,edgePadding:10});
+  var influence=I.createField({
+    source:function(){return {x:engine.state.x,y:engine.state.y};},
+    targets:document.querySelectorAll('#reactiveWord span'),
+    radius:190,strength:1,maxPush:70,maxRotate:10,maxScale:.08,spring:.08,damping:.84
+  });
   var defs={follow:'follow',damp:'damping',speed:'maxSpeed',turn:'turnSmoothing',distance:'distanceFromPointer',tilt:'tilt',scale:'speedScale'};
 
   function setSize(px){
@@ -127,8 +140,18 @@
     document.getElementById('analysis').textContent='Analizando recurso…';
     return A.analyzeImage(asset,{maxDimension:512}).then(function(a){renderAnalysis(a);return a;}).catch(function(err){renderAnalysis(null);document.getElementById('status').textContent='Análisis: '+err.message;});
   }
+  function syncInfluence(){
+    var enabled=document.getElementById('influenceEnabled').checked;
+    var radius=Number(document.getElementById('influenceRadius').value);
+    var strength=Number(document.getElementById('influenceStrength').value);
+    var push=Number(document.getElementById('influencePush').value);
+    document.getElementById('influenceRadiusOut').value=radius;
+    document.getElementById('influenceStrengthOut').value=strength;
+    document.getElementById('influencePushOut').value=push;
+    influence.setOptions({radius:radius,strength:enabled?strength:0,maxPush:push});
+  }
   function refreshConfig(){
-    var packet={motion:JSON.parse(engine.serialize()),asset:{size:Number(document.getElementById('size').value),ratio:assetRatio}};
+    var packet={motion:JSON.parse(engine.serialize()),influence:influence.options,asset:{size:Number(document.getElementById('size').value),ratio:assetRatio}};
     document.getElementById('config').value=JSON.stringify(packet,null,2);
   }
   function markCustom(){
@@ -140,6 +163,8 @@
   Object.keys(defs).forEach(function(id){document.getElementById(id).addEventListener('input',markCustom);});
   ['rotate','idle','contain','leave'].forEach(function(id){document.getElementById(id).addEventListener('change',markCustom);});
   document.getElementById('size').addEventListener('input',function(){setSize(this.value);refreshConfig();});
+  ['influenceRadius','influenceStrength','influencePush'].forEach(function(id){document.getElementById(id).addEventListener('input',function(){syncInfluence();refreshConfig();});});
+  document.getElementById('influenceEnabled').addEventListener('change',function(){syncInfluence();refreshConfig();});
   document.querySelectorAll('.dir').forEach(function(b){b.addEventListener('click',function(){setDirection(this.dataset.angle);});});
 
   document.getElementById('preset').addEventListener('change',function(){
@@ -186,14 +211,23 @@
       engine.setOptions(o);
       syncControlsFromOptions(o);
       if(packet.asset&&packet.asset.size){document.getElementById('size').value=packet.asset.size;setSize(packet.asset.size);}
+      if(packet.influence){
+        influence.setOptions(packet.influence);
+        document.getElementById('influenceRadius').value=packet.influence.radius;
+        document.getElementById('influenceStrength').value=packet.influence.strength;
+        document.getElementById('influencePush').value=packet.influence.maxPush;
+        document.getElementById('influenceEnabled').checked=packet.influence.strength>0;
+        syncInfluence();
+      }
       refreshConfig();document.getElementById('status').textContent='configuración aplicada correctamente';
     }catch(err){document.getElementById('status').textContent='ERROR: '+err.message;}
   };
   document.getElementById('reset').onclick=function(){engine.reset();};
   document.getElementById('pause').onclick=function(){var b=this;if(b.dataset.p==='1'){engine.resume();b.dataset.p='0';b.textContent='Pausar';}else{engine.pause();b.dataset.p='1';b.textContent='Reanudar';}};
 
-  syncControlsFromOptions(engine.options);setSize(180);refreshConfig();
-  window.__NAGWEB_INTERACTION_V1__={engine:engine,stage:stage,target:target,refreshConfig:refreshConfig};
+  syncControlsFromOptions(engine.options);setSize(180);syncInfluence();refreshConfig();
+  asset.src=fallback;
+  window.__NAGWEB_INTERACTION_V1__={engine:engine,influence:influence,stage:stage,target:target,refreshConfig:refreshConfig};
 })();
 </script>
 </body>
