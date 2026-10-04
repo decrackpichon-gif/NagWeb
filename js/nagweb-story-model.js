@@ -96,12 +96,14 @@ window.NAGWEB_STORY_MODEL=createStoryModel();
 function createStreamModel(){
  var specs={ringTilt:[0,-60,60,1],ringOpening:[55,15,85,1],ringSize:[80,50,95,1],cardSize:[21,12,80,1],backFade:[70,10,95,5],perspective:[18,0,40,2],padding:[6,0,20,.5],cornerRadius:[3,0,12,.5],turns:[1,.25,20,.25],start:[0,0,99,1],end:[100,1,100,1],scrollLength:[320,140,900,20]};
  var orbitSpecs={orbitSize:[85,40,130,1],spacing:[18,0,60,1],tilt:[55,20,100,1],swingAngle:[30,5,80,1],float:[2.5,0,8,.5]};
+ var popSpecs={gap:[3,0,10,.5],visible:[62,30,85,1]};
  var ratios={'1:1':1,'4:3':4/3,'3:4':3/4,'4:5':4/5,'16:9':16/9,'9:16':9/16};
- function config(raw){raw=raw||{};var out={},orbit=raw.kind==='iso-orbit',fields=orbit?Object.assign({},specs,orbitSpecs):specs;Object.keys(fields).forEach(function(k){var s=fields[k],n=raw[k];out[k]=Math.max(s[1],Math.min(s[2],n!==''&&n!=null&&isFinite(+n)?+n:s[0]));});out.end=Math.max(out.start+1,out.end);out.cardRatio=raw.cardRatio==='auto'||ratios[raw.cardRatio]?raw.cardRatio:orbit?'1:1':'16:9';out.frameRatio=raw.frameRatio==='auto'||ratios[raw.frameRatio]?raw.frameRatio:'16:9';out.shadow=!!raw.shadow;out.backgroundType=['none','color','gradient','image'].indexOf(raw.backgroundType)>=0?raw.backgroundType:'color';out.backgroundColor=/^#[0-9a-f]{6}$/i.test(raw.backgroundColor||'')?raw.backgroundColor:'#101014';out.gradientColor=/^#[0-9a-f]{6}$/i.test(raw.gradientColor||'')?raw.gradientColor:'#3a3a5a';out.backgroundId=typeof raw.backgroundId==='string'?raw.backgroundId:'';if(orbit){out.kind='iso-orbit';out.motion=raw.motion==='spin'?'spin':'swing';}return out;}
+ function config(raw){raw=raw||{};var out={},orbit=raw.kind==='iso-orbit',pop=raw.kind==='pop-grid',fields=orbit?Object.assign({},specs,orbitSpecs):pop?Object.assign({},specs,popSpecs):specs;Object.keys(fields).forEach(function(k){var s=fields[k],n=raw[k];out[k]=Math.max(s[1],Math.min(s[2],n!==''&&n!=null&&isFinite(+n)?+n:s[0]));});out.end=Math.max(out.start+1,out.end);out.cardRatio=raw.cardRatio==='auto'||ratios[raw.cardRatio]?raw.cardRatio:orbit?'1:1':'16:9';out.frameRatio=raw.frameRatio==='auto'||ratios[raw.frameRatio]?raw.frameRatio:'16:9';out.shadow=!!raw.shadow;out.backgroundType=['none','color','gradient','image'].indexOf(raw.backgroundType)>=0?raw.backgroundType:'color';out.backgroundColor=/^#[0-9a-f]{6}$/i.test(raw.backgroundColor||'')?raw.backgroundColor:'#101014';out.gradientColor=/^#[0-9a-f]{6}$/i.test(raw.gradientColor||'')?raw.gradientColor:'#3a3a5a';out.backgroundId=typeof raw.backgroundId==='string'?raw.backgroundId:'';if(orbit){out.kind='iso-orbit';out.motion=raw.motion==='spin'?'spin':'swing';}if(pop)out.kind='pop-grid';return out;}
  function phase(progress,c,scroll){var p=scroll?Math.max(0,Math.min(1,(progress*100-c.start)/(c.end-c.start))):progress;return p*c.turns;}
  function layout(width,height,raw,progress,count,imageRatio,scroll){
   var c=config(raw),fw=width,fh=height,ratio=ratios[c.frameRatio];if(ratio){if(fw/fh>ratio)fw=fh*ratio;else fh=fw/ratio;}
   if(c.kind==='iso-orbit')return orbitLayout(width,height,fw,fh,c,progress,imageRatio,scroll);
+  if(c.kind==='pop-grid')return popLayout(width,height,fw,fh,c,progress,count,scroll);
   var unit=Math.min(fw,fh)/100,inset=unit*c.padding,radius=Math.min(fw-2*inset,fh-2*inset)/2*c.ringSize/100*1.15,cardW=unit*c.cardSize,cardH=cardW/(ratios[c.cardRatio]||Math.max(.25,Math.min(4,imageRatio||1))),tilt=c.ringTilt*Math.PI/180,opening=c.ringOpening/100,axis=Math.sqrt(1-opening*opening),co=Math.cos(tilt),si=Math.sin(tilt),angle=2*Math.PI*((phase(progress,c,scroll)%1+1)%1),cards=[];
   function point(a){var x=radius*Math.cos(a),y=-radius*Math.sin(a)*opening,scale=1+c.perspective/100*Math.sin(a);return{x:width/2+(x*co-y*si)*scale,y:height/2-(x*si+y*co)*scale,ax:-axis*si*scale*cardH/2,ay:axis*co*scale*cardH/2,depth:Math.sin(a)};}
   for(var i=0;i<count;i++){var a=angle+2*Math.PI*i/count,mid=point(a),steps=Math.min(60,Math.max(12,Math.round(cardW/4))),top=[],bottom=[],minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
@@ -121,7 +123,16 @@ function createStreamModel(){
   }
   return cards.sort(function(a,b){return a.depth-b.depth;});
  }
- return{config:config,specs:specs,orbitSpecs:orbitSpecs,ratios:ratios,phase:phase,layout:layout};
+ function popLayout(width,height,fw,fh,c,progress,count,scroll){
+  var total=Math.max(2,Math.min(12,Math.round(count)||6)),portrait=fw<fh,columns=total===2?(portrait?1:2):total===3?(portrait?1:3):total<=4||portrait?2:3,rows=Math.ceil(total/columns),unit=Math.min(fw,fh)/100,pad=unit*c.padding,gap=unit*c.gap,tileW=Math.max(1,(fw-pad*2-gap*(columns-1))/columns),tileH=Math.max(1,(fh-pad*2-gap*(rows-1))/rows),ox=(width-fw)/2+pad,oy=(height-fh)/2+pad,edge=(1-c.visible/100)/2,cycle=(phase(progress,c,scroll)%1+1)%1,cards=[],seed=42;
+  for(var i=0;i<total;i++){
+   seed=(seed+1831565813)|0;var n=Math.imul(seed^seed>>>15,1|seed);n=n+Math.imul(n^n>>>7,61|n)^n;var offset=((n^n>>>14)>>>0)/4294967296,p=(cycle+offset)%1,appearance=p<edge?p/edge:p<1-edge?1:(1-p)/edge,scale=p<edge?1+3.2*Math.pow(appearance-1,3)+2.2*Math.pow(appearance-1,2):appearance;scale=Math.max(.001,scale);
+   var cx=ox+(i%columns)*(tileW+gap)+tileW/2,cy=oy+Math.floor(i/columns)*(tileH+gap)+tileH/2,w=tileW*scale,h=tileH*scale,upper=[{x:cx-w/2,y:cy-h/2},{x:cx+w/2,y:cy-h/2}],lower=[{x:cx-w/2,y:cy+h/2},{x:cx+w/2,y:cy+h/2}],left=Math.floor(cx-w/2)-3,top=Math.floor(cy-h/2)-3;
+   cards.push({slot:i,depth:i,alpha:Math.min(1,appearance*1.6),scale:scale,left:left,top:top,width:Math.ceil(cx+w/2)-left+3,height:Math.ceil(cy+h/2)-top+3,upper:upper,lower:lower,textureWidth:tileW,textureHeight:tileH,corner:unit*c.cornerRadius});
+  }
+  return cards;
+ }
+ return{config:config,specs:specs,orbitSpecs:orbitSpecs,popSpecs:popSpecs,ratios:ratios,phase:phase,layout:layout};
 }
 window.NAGWEB_CREATE_STREAM_MODEL=createStreamModel;
 window.NAGWEB_STREAM_MODEL=createStreamModel();

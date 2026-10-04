@@ -420,3 +420,11 @@ La prueba de navegador usa archivos propios reales, orden modificado, reemplazo 
 ## Desarrollo y publicación por tandas
 
 La rama `internal-motion-lab` conserva las microetapas y ejecuta el flujo completo de GitHub Actions. `vercel.json` desactiva los despliegues automáticos únicamente para las ramas `internal-motion-lab*`, mediante `git.deploymentEnabled`, según la configuración oficial de Vercel. Las otras ramas mantienen su comportamiento. Se promueve una tanda verificada a `feat/storytelling-engine-v2` cuando corresponda publicar para revisión; no se promueve cada corrección o microetapa. Registrar el commit publicado y el commit pendiente evita confundir la versión online con avances aún sin publicar.
+
+## Pop Grid: imágenes que aparecen a distinto ritmo
+
+Nueva plantilla basada en el comportamiento analizado en el HAR de referencia: cada imagen de una grilla aparece con una pequeña expansión, permanece visible y se contrae, siguiendo su propio desfase estable. Arranca con seis láminas propias y ocho segundos por ciclo; admite de dos a doce imágenes. Separación y Tiempo visible controlan el espacio entre las tarjetas y cuánto permanece completa cada una. La grilla se adapta a un lienzo horizontal o vertical y usa encuadre por cobertura, sin deformar las imágenes.
+
+Comparte las opciones de margen, esquinas, sombra y fondos, con “Sin fondo” inicial. Orden, carga individual o múltiple, imágenes libres y textos, borradores, Biblioteca, grupo o escena y edición posterior reutilizan los flujos existentes. Secuencia por scroll permite elegir ciclos, inicio/fin y recorrido; Loop continuo usa segundos por ciclo y funciona sin Director. Las texturas se conservan mientras cambia el tamaño animado de cada tarjeta, evitando recrearlas en cada fotograma.
+
+El modelo puro prueba de dos a doce posiciones, ritmos independientes, aparición/desaparición de todas las imágenes, cierre exacto, proporcionalidad, límites y fábrica exportada. Las pruebas de navegador cubren controles, cantidad y recuperación de tarjetas, Biblioteca con copias independientes, scroll real después de guardar, loop, transparencia, historial, JSON y HTML, escena reeditable, redimensionado por mouse, carga múltiple, móvil y movimiento reducido. Esta plantilla queda en la tanda pendiente de publicación junto con Iso Orbit y carga múltiple.

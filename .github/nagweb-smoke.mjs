@@ -38,6 +38,8 @@ import {runMotionExpandSmoke} from './nagweb-motion-expand-smoke.mjs';
 import {runMotionDropSmoke} from './nagweb-motion-drop-smoke.mjs';
 import {runMotionStreamSmoke} from './nagweb-motion-stream-smoke.mjs';
 import {runMotionStreamPlacementSmoke} from './nagweb-motion-stream-placement-smoke.mjs';
+import './nagweb-pop-model-test.mjs';
+import {runMotionPopGridSmoke} from './nagweb-motion-pop-grid-smoke.mjs';
 import {runMotionIsoOrbitSmoke} from './nagweb-motion-iso-orbit-smoke.mjs';
 import {runMotionBatchImagesSmoke} from './nagweb-motion-batch-images-smoke.mjs';
 
@@ -225,6 +227,8 @@ await runMotionStreamPlacementSmoke(page);
 await runMotionStreamSmoke(page);
 await runMotionStreamPlacementSmoke(page,'iso-orbit');
 await runMotionIsoOrbitSmoke(page);
+await runMotionStreamPlacementSmoke(page,'pop-grid');
+await runMotionPopGridSmoke(page);
 await runMotionBatchImagesSmoke(page);
 await runMotionDropSmoke(page);
 await runMotionExpandSmoke(page);
