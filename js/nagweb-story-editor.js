@@ -519,7 +519,7 @@ function labSearchText(value){return String(value||'').normalize('NFD').replace(
 function labFilterLibrary(){
  var input=labSearchBox.querySelector('input'),query=labSearchText(input.value).trim(),terms=query?query.split(/\s+/):[],count=0;
  labLibraryPage.querySelectorAll('[data-motion-template]').forEach(function(b){var text=labSearchText(b.querySelector('strong').textContent+' '+b.querySelector('small').textContent),match=terms.every(function(term){return text.indexOf(term)>=0;}),row=b.closest('.nw-motion-saved-item');if(row)row.hidden=!match;else b.hidden=!match;if(match)count++;});
- labSearchBox.querySelector('[data-motion-search-clear]').disabled=!input.value;var status=labSearchBox.querySelector('[data-motion-search-status]');status.hidden=!terms.length;status.textContent=!terms.length?'':count?count+' composición'+(count===1?'':'es'):'Sin coincidencias. Probá otro nombre.';
+ labSearchBox.querySelector('[data-motion-search-clear]').disabled=!input.value;var status=labSearchBox.querySelector('[data-motion-search-status]');status.hidden=!terms.length;status.textContent=!terms.length?'':count?count+' '+(count===1?'composición':'composiciones'):'Sin coincidencias. Probá otro nombre.';
 }
 function labClearSearch(focus){var input=labSearchBox.querySelector('input');input.value='';labFilterLibrary();if(focus)input.focus({preventScroll:true});}
 labSearchBox.addEventListener('input',labFilterLibrary);labSearchBox.addEventListener('search',labFilterLibrary);labSearchBox.querySelector('button').addEventListener('click',function(){labClearSearch(true);});
