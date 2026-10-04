@@ -54,7 +54,7 @@ try{
 
   await page.mouse.move(box.x+box.width*.50,box.y+box.height*.50);
   await new Promise(r=>setTimeout(r,350));
-  const influenced=await page.$eval('#reactiveWord span',els=>els.map(el=>el.style.translate));
+  const influenced=await page.$$eval('#reactiveWord span',els=>els.map(el=>el.style.translate));
   assert.ok(influenced.some(v=>v&&v!=='0.00px 0.00px'),'nearby letters should be displaced by the follower');
 
   await page.select('#preset','character');
