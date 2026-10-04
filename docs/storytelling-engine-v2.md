@@ -275,3 +275,14 @@ El texto comienza sin desplazamientos ni efectos, con dos momentos neutros en 0%
 Los textos nuevos quedan en el borrador de su plantilla hasta insertar o guardar. Al reabrir una composición se pueden añadir más textos en el mismo grupo; cerrar descarta esas altas. No requieren recursos de imagen ni activar el Director cuando la composición usa Tiempo.
 
 `.github/nagweb-motion-add-text-smoke.mjs` verifica creación sin textos previos, escritura directa y texto literal seguro, contraste inicial, nombres e IDs únicos, movimiento interpolado propio sin alterar la geometría base, borradores sin escrituras al proyecto, inserción independiente del Director, nuevas altas al guardar, elementos externos, cancelación, Deshacer/Rehacer y equivalencia de la animación en el HTML exportado.
+
+
+## Agregar imágenes propias en Motion Lab
+
+“Agregar imagen…” en Elementos abre el selector de archivos y añade una lámina independiente solo después de validar que la imagen se pueda cargar. Funciona aunque se hayan quitado todas las imágenes de la plantilla. Cancelar o elegir un archivo inválido no agrega elementos ni recursos; los errores se muestran junto al botón. La nueva imagen aparece seleccionada en el centro, con ancho 36% (48% en móvil), proporción original, nombre único y dos momentos neutros en 0% y 100%. Se puede mover, redimensionar, girar, duplicar y ajustar su movimiento antes de insertar.
+
+La carga usa la misma validación de las imágenes de reemplazo. Mientras está pendiente se bloquean altas, duplicaciones, eliminaciones e inserción/guardado del borrador actual. Si se cambia de plantilla, la imagen termina de incorporarse a su propio borrador y se selecciona al volver. Cerrar invalida las cargas de esa sesión. Las imágenes añadidas no requieren activar el Director para animar por Tiempo.
+
+Insertar solo incorpora los recursos que siguen utilizados, y las copias comparten el archivo. Reabrir una instancia permite sumar más imágenes y guardarlas en el mismo grupo, sin modificar elementos externos. Cerrar descarta las altas pendientes de confirmar.
+
+`.github/nagweb-motion-add-image-smoke.mjs` verifica selector real, cancelación y archivo inválido sin elementos vacíos, creación sin imágenes previas, proporción renderizada, movimiento propio, guardas durante la carga, cambio de plantilla y cierre de sesión con cargas tardías, recursos utilizados y duplicación, inserción sin Director, altas al guardar, externos intactos, Deshacer/Rehacer y renderizado/movimiento en el HTML exportado.

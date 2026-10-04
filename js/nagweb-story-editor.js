@@ -501,7 +501,7 @@ var labLibrary=lab.querySelector('.nw-motion-library'),labLibraryPage=document.c
 while(labLibrary.firstChild)labLibraryPage.appendChild(labLibrary.firstChild);
 var labLibraryNav=document.createElement('div');labLibraryNav.className='nw-motion-library-nav';labLibraryNav.setAttribute('role','tablist');labLibraryNav.setAttribute('aria-label','Biblioteca y elementos');
 labLibraryNav.innerHTML='<button type="button" class="btn tiny" id="nw-motion-library-tab" role="tab" aria-selected="true" aria-controls="nw-motion-library-page" data-motion-library-tab="library">Biblioteca</button><button type="button" class="btn tiny" id="nw-motion-elements-tab" role="tab" aria-selected="false" aria-controls="nw-motion-elements-page" tabindex="-1" data-motion-library-tab="elements">Elementos</button>';
-var labElementsPage=document.createElement('div');labElementsPage.className='nw-motion-library-page';labElementsPage.dataset.motionLibraryPage='elements';labElementsPage.id='nw-motion-elements-page';labElementsPage.hidden=true;labElementsPage.setAttribute('role','tabpanel');labElementsPage.setAttribute('aria-labelledby','nw-motion-elements-tab');labElementsPage.innerHTML='<h3>Elementos</h3><button type="button" class="btn tiny" style="flex:none;margin-bottom:10px" data-motion-add-text disabled>Agregar texto</button><div class="nw-motion-layers" data-motion-layers role="group" aria-label="Seleccionar un elemento de la composición"></div>';
+var labElementsPage=document.createElement('div');labElementsPage.className='nw-motion-library-page';labElementsPage.dataset.motionLibraryPage='elements';labElementsPage.id='nw-motion-elements-page';labElementsPage.hidden=true;labElementsPage.setAttribute('role','tabpanel');labElementsPage.setAttribute('aria-labelledby','nw-motion-elements-tab');labElementsPage.innerHTML='<h3>Elementos</h3><div style="display:flex;flex-direction:column;gap:6px;flex:none;margin-bottom:10px"><button type="button" class="btn tiny" data-motion-add-text disabled>Agregar texto</button><button type="button" class="btn tiny" data-motion-add-image disabled>Agregar imagen…</button><input type="file" accept="image/*" data-motion-add-image-upload aria-label="Agregar una imagen a la composición" hidden><span class="hint" role="status" data-motion-add-image-status></span></div><div class="nw-motion-layers" data-motion-layers role="group" aria-label="Seleccionar un elemento de la composición"></div>';
 labLibrary.append(labLibraryNav,labLibraryPage,labElementsPage);labLibrary.setAttribute('aria-label','Biblioteca y elementos de la composición');
 labStyle.textContent+='\n.nw-motion-library-nav{display:flex;gap:4px;margin-bottom:16px}.nw-motion-library-nav .btn{flex:1;padding:7px 3px;font-size:11px}.nw-motion-library-nav [aria-selected="true"]{border-color:var(--accent);color:var(--accent)}.nw-motion-library-page[hidden]{display:none!important}.nw-motion-layers{display:flex;flex-direction:column;gap:6px}.nw-motion-layer{display:block;width:100%;box-sizing:border-box;text-align:left;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--panel-2);color:var(--ink);cursor:pointer}.nw-motion-layer strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}.nw-motion-layer small{display:block;color:var(--ink-soft);font-size:10px;margin-top:3px}.nw-motion-layer[aria-pressed="true"]{border-color:var(--accent);background:var(--panel)}.nw-motion-layer:focus-visible,.nw-motion-library-nav .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}@media(max-width:760px){.nw-motion-library-nav{flex:none;flex-direction:column;margin:0}.nw-motion-library-nav .btn{padding:5px 7px}.nw-motion-library-page{display:flex;align-items:center;gap:14px;flex:none}.nw-motion-library-page>p,.nw-motion-library-page>.nw-motion-category{display:none}.nw-motion-layers{flex-direction:row}.nw-motion-layer{width:126px;flex:none;padding:6px 8px}}\n';
 function labLibraryTab(key,focus){
@@ -510,7 +510,7 @@ function labLibraryTab(key,focus){
 }
 labLibraryNav.addEventListener('keydown',function(ev){var b=ev.target.closest('[data-motion-library-tab]');if(!b||['ArrowLeft','ArrowRight','Home','End'].indexOf(ev.key)<0)return;ev.preventDefault();labLibraryTab(ev.key==='Home'?'library':ev.key==='End'?'elements':b.dataset.motionLibraryTab==='library'?'elements':'library',true);});
 function labBuildLayers(){
- var list=lab.querySelector('[data-motion-layers]'),add=lab.querySelector('[data-motion-add-text]');if(add)add.disabled=!labDraft||!!labUploadsPending();list.replaceChildren();if(!labDraft)return;
+ var list=lab.querySelector('[data-motion-layers]');lab.querySelectorAll('[data-motion-add-text],[data-motion-add-image],[data-motion-add-image-upload]').forEach(function(n){n.disabled=!labDraft||!!labUploadsPending();});lab.querySelector('[data-motion-add-image-status]').textContent=labDraft&&labImageAdds.has(labDraft)?'Cargando imagen…':'';list.replaceChildren();if(!labDraft)return;
  labDraft.elements.filter(function(e){return e.parent===labDraft.id;}).forEach(function(e){var b=document.createElement('button');b.type='button';b.className='nw-motion-layer';b.dataset.motionLayer=e.id;b.setAttribute('aria-pressed',String(e.id===labSelected));b.title=e.name||e.type;var name=document.createElement('strong');name.textContent=e.name||e.type;var type=document.createElement('small');type.textContent=e.type==='image'?'Imagen':/^(heading|paragraph|label)$/.test(e.type)?'Texto':'Elemento';b.append(name,type);list.appendChild(b);});
 }
 var labFrame=lab.querySelector('iframe'),labRange=lab.querySelector('[data-motion-progress]'),labPlay=lab.querySelector('[data-motion-play]'),labScene=null,labRAF=0,labStarted=0,labOffset=0,labDraft=null,labEditing=null,labEditTimer=0,labSource=null,labAssets=[],labDrafts={};
@@ -533,7 +533,8 @@ function labOpen(){
  lab.querySelector('[data-motion-insert]').hidden=false;lab.querySelector('[data-motion-insert-group]').hidden=false;lab.querySelector('[data-motion-gallery-details]').hidden=true;lab.querySelector('[data-motion-mode]').textContent='Personalizar antes de insertar';
  labActions.hidden=false;lab.showModal();labChoose('iso-focus');
 }
-labLibrary.addEventListener('click',function(ev){if(ev.target.closest('[data-motion-add-text]')){labAddText();return;}var tab=ev.target.closest('[data-motion-library-tab]');if(tab){labLibraryTab(tab.dataset.motionLibraryTab);return;}var layer=ev.target.closest('[data-motion-layer]');if(layer&&labDraft&&labDraft.elements.some(function(e){return e.id===layer.dataset.motionLayer;})){labFinishText(false);labStop();labSelectElement(layer.dataset.motionLayer);return;}var b=ev.target.closest('[data-motion-template]');if(b&&!b.disabled)labChoose(b.dataset.motionTemplate);});
+labLibrary.addEventListener('click',function(ev){if(ev.target.closest('[data-motion-add-image]')){if(labDraft&&!labUploadsPending()){labFinishText(false);var input=lab.querySelector('[data-motion-add-image-upload]');input.value='';input.click();}return;}if(ev.target.closest('[data-motion-add-text]')){labAddText();return;}var tab=ev.target.closest('[data-motion-library-tab]');if(tab){labLibraryTab(tab.dataset.motionLibraryTab);return;}var layer=ev.target.closest('[data-motion-layer]');if(layer&&labDraft&&labDraft.elements.some(function(e){return e.id===layer.dataset.motionLayer;})){labFinishText(false);labStop();labSelectElement(layer.dataset.motionLayer);return;}var b=ev.target.closest('[data-motion-template]');if(b&&!b.disabled)labChoose(b.dataset.motionTemplate);});
+labLibrary.addEventListener('change',function(ev){if(ev.target.hasAttribute('data-motion-add-image-upload'))labLoadImage(ev.target);});
 function labRecipe(){
  labFinishText(false);
  var recipe=lab.open&&labDraft&&!labEditing?{scene:JSON.parse(JSON.stringify(labSource)),assets:JSON.parse(JSON.stringify(labUsedAssets(labDraft,labAssets))),config:JSON.parse(JSON.stringify(labDraft.config))}:focusComposition();
@@ -576,27 +577,30 @@ var labForm=document.createElement('section');labForm.hidden=true;labForm.classN
 var labActions=lab.querySelector('.nw-motion-actions'),labInspector=lab.querySelector('.nw-motion-inspector'),labScroll=document.createElement('div'),labFooter=document.createElement('div');
 labInspector.style.cssText='display:flex;flex-direction:column;overflow:hidden;padding:0;min-height:0';labScroll.className='nw-motion-inspector-scroll';labScroll.style.cssText='flex:1;min-height:0;overflow:auto;padding:18px';labFooter.className='nw-motion-inspector-footer';labFooter.style.cssText='flex:none;background:var(--panel);padding:12px 18px;border-top:1px solid var(--line)';
 labActions.style.cssText='margin:0';labFooter.appendChild(labActions);labScroll.appendChild(lab.querySelector('[data-motion-gallery-details]'));labScroll.appendChild(labForm);labInspector.appendChild(labScroll);labInspector.appendChild(labFooter);
-var labSelected=null,labTextEdit=null,labSession=0,labImageReads=new WeakMap();
+var labSelected=null,labTextEdit=null,labSession=0,labImageReads=new WeakMap(),labImageAdds=new WeakMap();
 function labUsedAssets(draft,assets){return assets.filter(function(a){return draft.elements.some(function(e){return e.assetId===a.id;});});}
-function labUploadsPending(){return labDraft&&labDraft.elements.some(function(e){return labImageReads.has(e);});}
+function labUploadsPending(){return labDraft&&(labImageAdds.has(labDraft)||labDraft.elements.some(function(e){return labImageReads.has(e);}));}
 function labUploadState(){
  if(!labDraft)return;var busy=labUploadsPending();
- lab.querySelectorAll('[data-motion-insert],[data-motion-insert-group],[data-motion-save],[data-motion-add-text]').forEach(function(n){n.disabled=busy;});
+ lab.querySelectorAll('[data-motion-insert],[data-motion-insert-group],[data-motion-save],[data-motion-add-text],[data-motion-add-image],[data-motion-add-image-upload]').forEach(function(n){n.disabled=busy;});
+ lab.querySelector('[data-motion-add-image-status]').textContent=labImageAdds.has(labDraft)?'Cargando imagen…':'';
  var duplicate=labForm.querySelector('[data-motion-duplicate]');if(duplicate)duplicate.disabled=busy||!labCanDuplicate(labSelectedElement());
  var remove=labForm.querySelector('[data-motion-element-remove]');if(remove)remove.disabled=busy||!labCanRemove(labSelectedElement());
  labForm.querySelectorAll('[data-motion-upload]').forEach(function(n){var pending=labImageReads.has(labDraft.elements[+n.dataset.motionUpload]),row=n.parentNode;n.disabled=pending;row.querySelector('[data-motion-upload-open]').disabled=pending;row.querySelector('[data-motion-upload-status]').textContent=pending?'Cargando imagen…':'';});
 }
 function labLoadImage(input){
- var file=input.files&&input.files[0],draft=labDraft,e=draft&&draft.elements[+input.dataset.motionUpload];input.value='';if(!file||!e||e.type!=='image')return;
- var session=labSession,assets=labAssets,reader=new FileReader();labImageReads.set(e,reader);labStop();labUploadState();
- function active(){return lab.open&&labSession===session&&labImageReads.get(e)===reader;}
- function finish(error,data){
-  if(!active())return;labImageReads.delete(e);
-  if(error){toast('No se pudo cargar esa imagen. Probá con otro archivo.');if(labDraft===draft)labUploadState();return;}
-  var asset={id:nid(),name:file.name,data:data};assets.push(asset);e.assetId=asset.id;
+ var file=input.files&&input.files[0],draft=labDraft,adding=input.hasAttribute('data-motion-add-image-upload'),e=draft&&!adding&&draft.elements[+input.dataset.motionUpload];input.value='';if(!file||!draft||adding&&labUploadsPending()||!adding&&(!e||e.type!=='image'))return;
+ var session=labSession,assets=labAssets,reader=new FileReader(),reads=adding?labImageAdds:labImageReads,target=adding?draft:e;reads.set(target,reader);labFinishText(false);labStop();labUploadState();
+ function active(){return lab.open&&labSession===session&&reads.get(target)===reader;}
+ function finish(error,data,image){
+  if(!active())return;reads.delete(target);
+  if(error){toast('No se pudo cargar esa imagen. Probá con otro archivo.');if(labDraft===draft){labUploadState();if(adding)lab.querySelector('[data-motion-add-image-status]').textContent='No se pudo cargar. Probá con otra imagen.';}return;}
+  var asset={id:nid(),name:file.name,data:data};assets.push(asset);
+  if(adding){var name='Imagen nueva',index=2;while(draft.elements.some(function(n){return n.name===name;}))name='Imagen nueva '+index++;e=mkEl('image',{name:name,parent:draft.id,assetId:asset.id,alt:file.name,x:50,y:50,w:36,ratio:image.naturalHeight/image.naturalWidth,radius:6,anim:'none',sdEnter:'none',sdEnd:100,mobile:{w:48},sdKeyframesEnabled:true,sdKeyframes:M.normalize([{id:nid(),at:0,ease:'linear'},{id:nid(),at:100,ease:'linear'}])});draft.elements.push(e);var cached=labDrafts[draft.config.template];if(cached&&cached.draft===draft)cached.selected=e.id;}
+  else e.assetId=asset.id;
   if(labDraft===draft){labSelected=e.id;clearTimeout(labEditTimer);labBuildForm();labPreviewDraft();}
  }
- reader.onerror=function(){finish(true);};reader.onload=function(){if(!active())return;var data=String(reader.result),image=new Image();image.onload=function(){finish(!image.naturalWidth||!image.naturalHeight,data);};image.onerror=function(){finish(true);};image.src=data;};reader.readAsDataURL(file);
+ reader.onerror=function(){finish(true);};reader.onload=function(){if(!active())return;var data=String(reader.result),image=new Image();image.onload=function(){finish(!image.naturalWidth||!image.naturalHeight,data,image);};image.onerror=function(){finish(true);};image.src=data;};reader.readAsDataURL(file);
 }
 function labTextValue(n){return n.innerText.replace(/[\r\n]+/g,' ');}
 function labSyncText(edit){
