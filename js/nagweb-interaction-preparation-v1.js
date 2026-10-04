@@ -27,7 +27,7 @@
       allowAI:input.allowAI!==false,
       autoTrim:input.autoTrim!==false,
       maxDimension:Math.round(clamp(Number(input.maxDimension)||512,128,1600)),
-      cropPadding:clamp(Number(input.cropPadding)==null?.015:Number(input.cropPadding),0,.2),
+      cropPadding:clamp(input.cropPadding==null?.015:(Number(input.cropPadding)||0),0,.2),
       organicThreshold:clamp(Number(input.organicThreshold)||1.75,1.1,5),
       remover:input.remover||null,
       progress:typeof input.progress==='function'?input.progress:null
