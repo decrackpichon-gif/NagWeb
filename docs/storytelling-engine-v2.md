@@ -237,3 +237,12 @@ La captura conserva la pose en el instante elegido. Al dividir un tramo con easi
 Si la posición redondeada ya está ocupada, o el valor no es válido, se restaura el campo y se muestra un aviso junto a él sin modificar ningún momento. La reubicación funciona en los borradores por plantilla y al reabrir una instancia; insertar/guardar la confirma, cerrar la descarta. La edición avanzada por arrastre sigue disponible en la línea de tiempo principal.
 
 `.github/nagweb-motion-retime-smoke.mjs` prueba el campo con teclado real, interpolación en un instante conocido, cruces de orden, pose/easing/IDs y otros elementos conservados, decimales, colisiones y valores inválidos sin pérdida, borradores, inserción, guardado de la misma instancia, cancelar, Deshacer/Rehacer y equivalencia con el HTML exportado.
+
+
+## Selección desde la lista de elementos en Motion Lab
+
+La columna izquierda alterna entre “Biblioteca” y “Elementos”. La segunda muestra los elementos que se editan directamente en el lienzo, con su nombre y tipo, y permite elegirlos aunque estén superpuestos, fuera de vista o transparentes. Seleccionar desde la lista confirma la escritura directa pendiente y pausa la reproducción, conservando el momento actual. La selección del lienzo, la lista y el inspector permanece sincronizada después de editar o regenerar la vista previa.
+
+Cada borrador por plantilla restaura su propia selección y lista. Reabrir un grupo mantiene disponibles sus elementos aunque la biblioteca de plantillas esté deshabilitada. Los nombres se insertan como texto, los botones usan `aria-pressed` y las pestañas ofrecen navegación con flechas/Home/End. En pantallas compactas, la lista ocupa la misma fila horizontal desplazable de la biblioteca.
+
+`.github/nagweb-motion-layers-smoke.mjs` verifica una lámina del túnel con opacidad cero y sin eventos de puntero, selección real del lienzo, edición de texto pendiente, teclado y pestañas, cambio/restauración de borrador, ausencia de escrituras al proyecto antes de confirmar, inserción, reapertura, guardado, cancelar, historial y selección en pantalla compacta.
