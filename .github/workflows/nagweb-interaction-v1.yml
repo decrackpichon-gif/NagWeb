@@ -12,6 +12,7 @@ on:
       - 'js/nagweb-interaction-background-ai-v1.js'
       - 'experiments/interaction-engine-v1.html'
       - 'experiments/organic-follower-v2.html'
+      - 'experiments/background-ai-v1.html'
       - '.github/nagweb-interaction-v1-*.mjs'
       - '.github/workflows/nagweb-interaction-v1.yml'
       - 'docs/interaction-engine-v1.md'
@@ -32,6 +33,7 @@ on:
       - '.github/nagweb-interaction-organic-model-test.mjs'
       - '.github/nagweb-interaction-organic-browser-smoke.mjs'
       - '.github/nagweb-interaction-background-ai-model-test.mjs'
+      - '.github/nagweb-interaction-background-ai-browser-smoke.mjs'
       - '.github/workflows/nagweb-interaction-v1.yml'
       - 'docs/interaction-engine-v1.md'
   workflow_dispatch:
@@ -66,6 +68,7 @@ jobs:
         run: |
           node .github/nagweb-interaction-v1-browser-smoke.mjs
           node .github/nagweb-interaction-organic-browser-smoke.mjs
+          node .github/nagweb-interaction-background-ai-browser-smoke.mjs
       - name: Save interaction lab screenshot
         if: always()
         uses: actions/upload-artifact@v4
