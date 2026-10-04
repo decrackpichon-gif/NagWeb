@@ -1,0 +1,29 @@
+import { createRequire } from 'node:module';
+import assert from 'node:assert/strict';
+const require=createRequire(import.meta.url);
+const S=require('../js/nagweb-interaction-session-v1.js');
+
+assert.equal(S.version,'1.0.0-alpha.1');
+const s=S.normalize({
+  mode:'auto',
+  influenceEnabled:true,
+  followerOptions:{follow:.12,maxSpeed:44},
+  organicOptions:{length:510,sway:.06},
+  influenceOptions:{radius:240,strength:1.2},
+  preparationReport:{recommendedMode:'organic',quality:{score:96}},
+  metadata:{name:'Prueba'}
+});
+assert.equal(s.schema,S.schema);
+assert.equal(S.resolveMode(s),'organic');
+assert.equal(S.summary(s).quality,96);
+assert.equal(S.summary(s).name,'Prueba');
+
+const forced=S.normalize({...s,mode:'follower'});
+assert.equal(S.resolveMode(forced),'follower');
+
+const round=S.deserialize(S.serialize(s));
+assert.equal(round.organicOptions.length,510);
+assert.equal(round.influenceOptions.radius,240);
+
+assert.throws(()=>S.deserialize('{"bad":true}'),/invalid session/);
+console.log('NagWeb Interaction Session V1 model tests: PASS');
