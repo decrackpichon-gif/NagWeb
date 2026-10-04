@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>NagWeb · Organic Follower V2 Lab</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:Inter,system-ui,sans-serif;background:#101014;color:#f4efe8}body{overflow:hidden}.app{display:grid;grid-template-columns:330px 1fr;height:100%}.panel{background:#17171c;border-right:1px solid #303039;padding:18px;overflow:auto}.panel h1{font-size:18px;margin:0 0 7px}.panel>p{font-size:12px;color:#aaa6b1;line-height:1.5;margin:0 0 17px}.group{border-top:1px solid #303039;padding:14px 0}.group h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#9993a2;margin:0 0 11px}.field{margin-bottom:12px}.field label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px}.field input[type=range],.field select{width:100%}.field select{background:#22222a;color:#fff;border:1px solid #464650;padding:8px}.btn,.upload{display:flex;align-items:center;justify-content:center;min-height:36px;padding:0 12px;border:1px solid #555563;background:#22222a;color:#fff;font:600 12px inherit;cursor:pointer}.btn:disabled{opacity:.38;cursor:not-allowed}.upload{width:100%}.upload input{display:none}.status{font:11px/1.5 ui-monospace,monospace;color:#bbb5c5}.good{color:#a8e4b5}.warn{color:#e7bc76}.stage{position:relative;overflow:hidden;touch-action:none;background:radial-gradient(90% 80% at 55% 45%,#394057 0%,#202330 45%,#101116 100%)}#organicCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.head{position:absolute;left:0;top:0;width:8px;height:8px;border-radius:50%;background:#fff;opacity:.28;pointer-events:none}.copy{position:absolute;left:50%;top:50%;translate:-50% -50%;font:900 clamp(54px,12vw,190px)/.8 Arial Black,Impact,sans-serif;letter-spacing:-.07em;color:rgba(255,255,255,.08);white-space:nowrap;pointer-events:none}.hint{position:absolute;left:20px;bottom:18px;font-size:11px;color:#8f94a2;pointer-events:none}.thumb{position:relative;margin-top:10px;width:100%;height:110px;border:1px solid #33343e;background:#101116;display:grid;place-items:center;overflow:hidden}.thumb img{max-width:88%;max-height:84%;object-fit:contain}.endpick{position:absolute;top:50%;translate:0 -50%;width:34px;height:34px;border-radius:50%;border:1px solid #646473;background:#21212a;color:#fff;font-weight:800;cursor:pointer}.endpick.left{left:8px}.endpick.right{right:8px}.endpick.on{background:#fff;color:#141419;border-color:#fff}@media(max-width:760px){.app{grid-template-columns:1fr;grid-template-rows:auto 1fr}.panel{max-height:48vh;border-right:0;border-bottom:1px solid #303039}.stage{min-height:52vh}}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:Inter,system-ui,sans-serif;background:#101014;color:#f4efe8}body{overflow:hidden}.app{display:grid;grid-template-columns:330px 1fr;height:100%}.panel{background:#17171c;border-right:1px solid #303039;padding:18px;overflow:auto}.panel h1{font-size:18px;margin:0 0 7px}.panel>p{font-size:12px;color:#aaa6b1;line-height:1.5;margin:0 0 17px}.group{border-top:1px solid #303039;padding:14px 0}.group h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#9993a2;margin:0 0 11px}.field{margin-bottom:12px}.field label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px}.field input[type=range],.field select{width:100%}.field select{background:#22222a;color:#fff;border:1px solid #464650;padding:8px}.btn,.upload{display:flex;align-items:center;justify-content:center;min-height:36px;padding:0 12px;border:1px solid #555563;background:#22222a;color:#fff;font:600 12px inherit;cursor:pointer}.btn:disabled{opacity:.38;cursor:not-allowed}.upload{width:100%}.upload input{display:none}.status{font:11px/1.5 ui-monospace,monospace;color:#bbb5c5}.good{color:#a8e4b5}.warn{color:#e7bc76}.stage{position:relative;overflow:hidden;touch-action:none;background:radial-gradient(90% 80% at 55% 45%,#394057 0%,#202330 45%,#101116 100%)}#organicCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.head{position:absolute;left:0;top:0;width:8px;height:8px;border-radius:50%;background:#fff;opacity:.28;pointer-events:none}.copy{position:absolute;left:50%;top:50%;translate:-50% -50%;font:900 clamp(54px,12vw,190px)/.8 Arial Black,Impact,sans-serif;letter-spacing:-.07em;color:rgba(255,255,255,.08);white-space:nowrap;pointer-events:none}.hint{position:absolute;left:20px;bottom:18px;font-size:11px;color:#8f94a2;pointer-events:none}.thumb{position:relative;margin-top:10px;width:100%;height:110px;border:1px solid #33343e;background:#101116;display:grid;place-items:center;overflow:hidden}.thumb img{max-width:88%;max-height:84%;object-fit:contain}.axisline{position:absolute;height:2px;background:rgba(255,255,255,.46);transform-origin:0 50%;pointer-events:none}.anchor{position:absolute;width:42px;height:42px;border-radius:50%;border:1px solid #777483;background:#20202a;color:#fff;font:700 9px/1 Inter,system-ui,sans-serif;translate:-50% -50%;cursor:grab;touch-action:none;box-shadow:0 3px 12px rgba(0,0,0,.35)}.anchor:active{cursor:grabbing}.anchor.lead{background:#f4efe8;color:#17171c;border-color:#fff}.anchor.trail{background:#252631}.axis-actions{display:flex;gap:8px;margin-top:8px}.axis-actions .btn{flex:1}@media(max-width:760px){.app{grid-template-columns:1fr;grid-template-rows:auto 1fr}.panel{max-height:48vh;border-right:0;border-bottom:1px solid #303039}.stage{min-height:52vh}}
 </style>
 </head>
 <body>
@@ -17,15 +17,16 @@
     <div class="group">
       <h2>1 · Recurso</h2>
       <label class="upload">Subir imagen transparente<input id="file" type="file" accept="image/png,image/webp,image/gif,image/jpeg"></label>
-      <div class="thumb"><img id="asset" alt="Asset de prueba"><button class="endpick left" data-lead="left" title="Este extremo lidera">←</button><button class="endpick right on" data-lead="right" title="Este extremo lidera">→</button></div>
+      <div class="thumb" id="thumb"><img id="asset" alt="Asset de prueba"><div id="axisLine" class="axisline"></div><button id="trailAnchor" class="anchor trail" title="Extremo trasero">COLA</button><button id="leadAnchor" class="anchor lead" title="Extremo delantero">CABEZA</button></div>
       <div id="analysis" class="status" data-ready="0" style="margin-top:9px">Analizando…</div>
       <button id="prepare" class="btn" style="width:100%;margin-top:10px" disabled>Preparar para movimiento orgánico</button>
     </div>
 
     <div class="group">
-      <h2>2 · Dirección</h2>
-      <div class="field"><label>Extremo que lidera</label><select id="lead"><option value="right">Derecho</option><option value="left">Izquierdo</option></select></div>
-      <div class="status">También podés elegirlo tocando una de las flechas sobre la miniatura. La decisión queda guardada en el perfil del asset.</div>
+      <h2>2 · Eje del recurso</h2>
+      <div class="status">NagWeb propone automáticamente el eje. Arrastrá <b>COLA</b> y <b>CABEZA</b> si hace falta corregirlo. Sirve aunque el personaje venga vertical o en diagonal.</div>
+      <div class="axis-actions"><button id="resetAxis" class="btn">Restablecer detección</button></div>
+      <div id="axisInfo" class="status" style="margin-top:8px"></div>
     </div>
 
     <div class="group">
@@ -56,16 +57,43 @@
 (function(){
   var E=NAGWEB_INTERACTION_ENGINE,A=NAGWEB_INTERACTION_ASSET_PREP,O=NAGWEB_ORGANIC_FOLLOWER;
   var stage=document.getElementById('stage'),head=document.getElementById('head'),canvas=document.getElementById('organicCanvas'),asset=document.getElementById('asset');
-  var analysis=null,prepared=null,renderer=null,currentUrl=null,assetProfile=null;
+  var analysis=null,prepared=null,renderer=null,currentUrl=null,assetProfile=null,axis={trail:{x:.12,y:.5},lead:{x:.88,y:.5},manual:false};
   var follower=E.createFollower(head,{area:stage,preset:'soft',distanceFromPointer:26,rotateToTarget:false,edgeMode:'free',idle:{enabled:true,delay:2400}});
 
   var fallback='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="760" height="270" viewBox="0 0 760 270"><defs><linearGradient id="b" x1="0" x2="1"><stop stop-color="#ff7a52"/><stop offset=".46" stop-color="#ffe2ad"/><stop offset="1" stop-color="#ff9768"/></linearGradient></defs><path d="M47 135c62-88 196-91 307-44 102-57 234-61 338 1l51-57-15 79 15 79-51-57c-104 62-236 58-338 1-111 47-245 44-307-44L7 135z" fill="url(#b)"/><circle cx="108" cy="112" r="14" fill="#382328"/><circle cx="113" cy="107" r="4" fill="#fff"/></svg>');
 
   function output(id,value){document.getElementById(id+'Out').value=value;}
-  function updateLeadUI(){
-    var lead=document.getElementById('lead').value;
-    document.querySelectorAll('.endpick').forEach(function(b){b.classList.toggle('on',b.dataset.lead===lead);});
-    if(analysis)assetProfile=A.createProfile(analysis,{leadEnd:lead,cropPadding:.015});
+  function autoAxis(){
+    if(!analysis)return;
+    var a=A.axisAnchors(analysis);
+    axis={trail:{x:a.start.x,y:a.start.y},lead:{x:a.end.x,y:a.end.y},manual:false};
+    updateAxisUI();
+  }
+  function anchorPointToThumb(p){
+    var tr=document.getElementById('thumb').getBoundingClientRect(),ir=asset.getBoundingClientRect();
+    return {x:(ir.left-tr.left)+p.x*ir.width,y:(ir.top-tr.top)+p.y*ir.height};
+  }
+  function thumbPointToAnchor(clientX,clientY){
+    var ir=asset.getBoundingClientRect();
+    return {x:Math.max(0,Math.min(1,(clientX-ir.left)/Math.max(1,ir.width))),y:Math.max(0,Math.min(1,(clientY-ir.top)/Math.max(1,ir.height)))};
+  }
+  function updateAxisUI(){
+    var trail=anchorPointToThumb(axis.trail),lead=anchorPointToThumb(axis.lead);
+    var t=document.getElementById('trailAnchor'),l=document.getElementById('leadAnchor'),line=document.getElementById('axisLine');
+    t.style.left=trail.x+'px';t.style.top=trail.y+'px';l.style.left=lead.x+'px';l.style.top=lead.y+'px';
+    var dx=lead.x-trail.x,dy=lead.y-trail.y,len=Math.hypot(dx,dy);
+    line.style.left=trail.x+'px';line.style.top=trail.y+'px';line.style.width=len+'px';line.style.transform='rotate('+Math.atan2(dy,dx)+'rad)';
+    if(analysis){
+      assetProfile=A.createProfile(analysis,{trailAnchor:axis.trail,leadAnchor:axis.lead,cropPadding:.015});
+      document.getElementById('axisInfo').textContent=(axis.manual?'Eje corregido manualmente':'Eje detectado automáticamente')+' · '+assetProfile.organic.axisAngle.toFixed(1)+'°';
+    }
+  }
+  function bindAnchor(id,key){
+    var el=document.getElementById(id),drag=false,pid=null;
+    el.addEventListener('pointerdown',function(ev){drag=true;pid=ev.pointerId;el.setPointerCapture&&el.setPointerCapture(pid);ev.preventDefault();});
+    el.addEventListener('pointermove',function(ev){if(!drag)return;axis[key]=thumbPointToAnchor(ev.clientX,ev.clientY);axis.manual=true;updateAxisUI();if(renderer)document.getElementById('status').textContent='Eje modificado. Volvé a preparar para aplicarlo.';});
+    function stop(){drag=false;pid=null;}
+    el.addEventListener('pointerup',stop);el.addEventListener('pointercancel',stop);
   }
   function organicOptions(){
     return {
@@ -74,7 +102,7 @@
       swayWaves:Number(document.getElementById('waves').value),
       points:Number(document.getElementById('points').value),
       slices:Number(document.getElementById('slices').value),
-      leadEnd:document.getElementById('lead').value
+      leadEnd:'right'
     };
   }
   function syncOutputs(){
@@ -92,18 +120,18 @@
       var cls=a.silhouetteReliable?'good':'warn';
       box.innerHTML='<span class="'+cls+'">'+(a.silhouetteReliable?'✓ Silueta transparente confiable':'⚠ Requiere preparar/eliminar fondo')+'</span><br>Eje detectado: '+a.principalAxisAngle.toFixed(1)+'°<br>Elongación: '+a.elongation.toFixed(2)+'<br>Modo recomendado: '+(a.organicCandidate?'orgánico':'follower rígido');
       button.disabled=!a.silhouetteReliable;
-      if(a.silhouetteReliable&&a.organicCandidate)return prepare();
+      if(a.silhouetteReliable){autoAxis();if(a.organicCandidate)return prepare();}
     }).catch(function(err){box.textContent='Error: '+err.message;document.getElementById('status').textContent=err.message;});
   }
   function prepare(){
     if(!analysis||!analysis.silhouetteReliable)return Promise.resolve();
     document.getElementById('status').textContent='Preparando asset…';
-    return O.rotateAndCrop(asset,analysis,{paddingRatio:.015}).then(function(p){
+    assetProfile=A.createProfile(analysis,{trailAnchor:axis.trail,leadAnchor:axis.lead,cropPadding:.015});
+    return O.rotateAndCrop(asset,analysis,{paddingRatio:.015,profile:assetProfile}).then(function(p){
       prepared=p;
       if(renderer)renderer.destroy();
       renderer=O.createRenderer(Object.assign({leader:follower,canvas:canvas,area:stage,image:p.canvas},organicOptions()));
-      assetProfile=A.createProfile(analysis,{leadEnd:document.getElementById('lead').value,cropPadding:.015});
-      document.getElementById('status').textContent='Asset preparado: '+p.width+'×'+p.height+'. Perfil '+assetProfile.schema+' guardable.';
+      document.getElementById('status').textContent='Asset preparado: '+p.width+'×'+p.height+' · eje '+p.axisAngle.toFixed(1)+'° · perfil guardable.';
       window.__NAGWEB_ORGANIC_V2__.renderer=renderer;
       return p;
     }).catch(function(err){document.getElementById('status').textContent='Preparación: '+err.message;throw err;});
@@ -113,10 +141,9 @@
   ['length','sway','waves','points','slices'].forEach(function(id){
     document.getElementById(id).addEventListener('input',function(){syncOutputs();if(renderer)renderer.setOptions(organicOptions());});
   });
-  document.getElementById('lead').addEventListener('change',function(){updateLeadUI();if(renderer)renderer.setOptions(organicOptions());});
-  document.querySelectorAll('.endpick').forEach(function(b){b.addEventListener('click',function(){
-    document.getElementById('lead').value=this.dataset.lead;updateLeadUI();if(renderer)renderer.setOptions(organicOptions());
-  });});
+  bindAnchor('trailAnchor','trail');bindAnchor('leadAnchor','lead');
+  document.getElementById('resetAxis').addEventListener('click',function(){autoAxis();document.getElementById('status').textContent='Eje automático restaurado. Volvé a preparar para aplicarlo.';});
+  window.addEventListener('resize',function(){requestAnimationFrame(updateAxisUI);});
   document.getElementById('preset').addEventListener('change',function(){follower.applyPreset(this.value,{rotateToTarget:false,distanceFromPointer:26,edgeMode:'free'});});
 
   document.getElementById('file').addEventListener('change',function(){
@@ -127,8 +154,8 @@
   });
 
   window.__NAGWEB_ORGANIC_V2__={follower:follower,renderer:null,get analysis(){return analysis;},get prepared(){return prepared;},get profile(){return assetProfile;}};
-  syncOutputs();updateLeadUI();
-  asset.onload=analyze;
+  syncOutputs();
+  asset.onload=function(){analyze().then(function(){requestAnimationFrame(updateAxisUI);});};
   asset.src=fallback;
 })();
 </script>
