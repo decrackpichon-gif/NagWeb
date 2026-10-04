@@ -28,9 +28,13 @@ try{
     },
     state:{x:__NAGWEB_INTERACTION_V1__.engine.state.x,y:__NAGWEB_INTERACTION_V1__.engine.state.y}
   }));
-  assert.equal(initial.version,'1.2.0');
+  assert.equal(initial.version,'1.3.0');
   assert.ok(initial.title.includes('Interaction Engine'));
   assert.deepEqual(initial.controls,{upload:true,preset:true,size:true,directions:4,config:true});
+  const runtimeInitial=await page.evaluate(()=>NAGWEB_INTERACTION_ENGINE.runtimeStats());
+  assert.equal(runtimeInitial.instances,1);
+  assert.equal(runtimeInitial.active,1);
+  assert.equal(runtimeInitial.running,true);
 
   const box=await page.$eval('#stage',el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};});
   await page.mouse.move(box.x+box.width*.82,box.y+box.height*.70);
@@ -78,24 +82,38 @@ try{
 
   const multi=await page.evaluate(async()=>{
     const stage=document.querySelector('#stage');
-    const d=document.createElement('div');
-    d.id='qa-second-follower';d.style.cssText='position:absolute;left:0;top:0;width:60px;height:40px;background:#fff;pointer-events:none';
-    stage.appendChild(d);
-    const f=NAGWEB_INTERACTION_ENGINE.createFollower(d,{area:stage,preset:'soft',edgeMode:'contain'});
-    const start={x:f.state.x,y:f.state.y};
-    f.setTarget(120,90,'area');
-    await new Promise(r=>setTimeout(r,160));
-    const end={x:f.state.x,y:f.state.y};
-    const serialized=f.serialize();
-    const restored=NAGWEB_INTERACTION_ENGINE.deserializeOptions(serialized);
-    f.destroy();
-    const cleaned=d.style.translate===''&&d.style.rotate===''&&d.style.scale==='';
-    d.remove();
-    return {start,end,restored,cleaned};
+    const baseline=NAGWEB_INTERACTION_ENGINE.runtimeStats();
+    const items=[],followers=[];
+    for(let i=0;i<24;i++){
+      const d=document.createElement('div');
+      d.style.cssText='position:absolute;left:0;top:0;width:'+(28+i%4*4)+'px;height:'+(24+i%3*5)+'px;background:#fff;pointer-events:none';
+      stage.appendChild(d);items.push(d);
+      const f=NAGWEB_INTERACTION_ENGINE.createFollower(d,{area:stage,preset:i%2?'soft':'agile',edgeMode:'contain'});
+      f.setTarget(80+(i%8)*70,70+Math.floor(i/8)*120,'area');
+      followers.push(f);
+    }
+    const created=NAGWEB_INTERACTION_ENGINE.runtimeStats();
+    const framesBefore=created.frames;
+    await new Promise(r=>setTimeout(r,260));
+    const afterRun=NAGWEB_INTERACTION_ENGINE.runtimeStats();
+    followers.slice(0,12).forEach(f=>f.pause());
+    const halfPaused=NAGWEB_INTERACTION_ENGINE.runtimeStats();
+    followers.slice(0,12).forEach(f=>f.resume());
+    const restored=NAGWEB_INTERACTION_ENGINE.deserializeOptions(followers[0].serialize());
+    followers.forEach(f=>f.destroy());
+    const cleaned=items.every(d=>d.style.translate===''&&d.style.rotate===''&&d.style.scale==='');
+    items.forEach(d=>d.remove());
+    const final=NAGWEB_INTERACTION_ENGINE.runtimeStats();
+    return {baseline,created,afterRun,halfPaused,final,restored,cleaned,frameDelta:afterRun.frames-framesBefore};
   });
-  assert.ok(Math.hypot(multi.end.x-multi.start.x,multi.end.y-multi.start.y)>1,'second follower should run independently');
-  assert.equal(multi.restored.preset,'soft');
+  assert.equal(multi.created.instances,multi.baseline.instances+24,'all stress followers should register');
+  assert.equal(multi.created.active,multi.baseline.active+24,'all stress followers should share the active runtime');
+  assert.equal(multi.halfPaused.active,multi.baseline.active+12,'paused followers should leave the shared ticker');
+  assert.ok(multi.frameDelta>2&&multi.frameDelta<40,'24 followers should advance on one shared frame clock');
+  assert.equal(multi.restored.preset,'agile');
   assert.equal(multi.cleaned,true,'destroy should restore inline motion styles');
+  assert.equal(multi.final.instances,multi.baseline.instances,'destroy should release every stress instance');
+  assert.equal(multi.final.active,multi.baseline.active,'destroy should release every stress tick');
 
   assert.equal(pageErrors.length,0,'page should have no JS errors: '+pageErrors.join('\n'));
   fs.mkdirSync('/tmp/nagweb-interaction-v1',{recursive:true});
