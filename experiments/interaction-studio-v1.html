@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NagWeb · Interaction Studio</title>
+<style>
+:root{color-scheme:dark;--bg:#0e0e12;--panel:#17171c;--line:#32323b;--muted:#9b98a5;--ink:#f5f1e9;--ok:#a7e7b5;--warn:#efc37c;--bad:#ee9999}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink)}body{overflow:hidden}
+.app{height:100%;display:grid;grid-template-columns:360px 1fr}.panel{background:var(--panel);border-right:1px solid var(--line);padding:18px;overflow:auto}.panel h1{font-size:18px;margin:0 0 5px}.panel>p{font-size:12px;color:var(--muted);line-height:1.45;margin:0 0 14px}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:12px 0 18px}.step{font-size:9px;text-align:center;padding:6px 3px;border:1px solid #383741;color:#777582}.step.on{border-color:#777382;color:#fff}.step.done{border-color:#34523d;color:var(--ok)}
+.group{border-top:1px solid var(--line);padding:14px 0}.group h2{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#aaa5b3;margin:0 0 10px}.field{margin:0 0 11px}.field>label{display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px}.field input[type=range],.field select{width:100%}.field select{min-height:36px;background:#23232a;color:#fff;border:1px solid #474650;padding:0 8px}
+.upload,.btn{display:flex;align-items:center;justify-content:center;min-height:38px;border:1px solid #555360;background:#222228;color:#fff;font:600 11px inherit;cursor:pointer}.upload{width:100%}.upload input{display:none}.btn{width:100%}.btn:disabled{opacity:.4;cursor:not-allowed}.row{display:grid;grid-template-columns:1fr 1fr;gap:7px}.check{display:flex;gap:8px;align-items:center;font-size:11px;color:#ccc8d1;margin:10px 0}
+.status{padding:9px;border:1px solid #33323b;background:#121217;font:10px/1.5 ui-monospace,monospace;color:#c1bdc9}.status.good{color:var(--ok)}.status.warn{color:var(--warn)}.status.bad{color:var(--bad)}
+.thumb{position:relative;height:120px;margin-top:10px;border:1px solid #33343c;background:#101014;display:grid;place-items:center;overflow:hidden}.thumb img{max-width:88%;max-height:84%;object-fit:contain}.axisline{position:absolute;height:2px;background:rgba(255,255,255,.45);transform-origin:0 50%;pointer-events:none}.anchor{position:absolute;width:44px;height:44px;border-radius:50%;translate:-50% -50%;border:1px solid #777482;background:#23232b;color:#fff;font:700 8px/1 Inter,sans-serif;cursor:grab;touch-action:none}.anchor.lead{background:#f5f1e9;color:#111}.anchor:active{cursor:grabbing}.axisActions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:7px}
+.stage{position:relative;overflow:hidden;touch-action:none;background:radial-gradient(100% 100% at 60% 40%,#45335b 0,#221c2d 47%,#0e0d13 100%)}.stage:after{content:"INTERACTION STUDIO";position:absolute;right:18px;bottom:16px;font:10px ui-monospace,monospace;color:#686370;pointer-events:none}
+.hero{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}.headline{display:flex;flex-wrap:wrap;justify-content:center;max-width:84%;gap:.01em;font:900 clamp(58px,11vw,180px)/.78 Arial Black,Impact,sans-serif;letter-spacing:-.07em;text-align:center;color:#f1eadc}.headline span{display:inline-block}.headline .break{flex-basis:100%;height:0}
+.sub{position:absolute;top:24px;left:28px;font-size:11px;color:#bcb6c5;pointer-events:none}.sub b{color:#fff}.followerVisual{position:absolute;left:0;top:0;width:240px;height:240px;display:grid;place-items:center;pointer-events:none;transform-origin:50% 50%;will-change:transform}.followerVisual img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 18px 19px rgba(0,0,0,.38))}.leader{position:absolute;width:2px;height:2px;opacity:0;pointer-events:none}#organicCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.pill{display:inline-flex;align-items:center;padding:3px 7px;border:1px solid #4a4853;border-radius:999px;font-size:9px;color:#bbb6c3}.modeNote{margin-top:6px;font-size:10px;color:#8f8b96}.export{margin-top:8px;width:100%;height:120px;background:#101014;color:#a9c9ff;border:1px solid #33343c;padding:8px;font:9px/1.45 ui-monospace,monospace;resize:vertical}
+@media(max-width:800px){body{overflow:auto}.app{grid-template-columns:1fr;grid-template-rows:auto 62vh;height:auto;min-height:100%}.panel{border-right:0;border-bottom:1px solid var(--line);max-height:none}.stage{min-height:62vh}.followerVisual{width:180px;height:180px}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="panel">
+  <h1>Interaction Studio</h1>
+  <p>Flujo unificado de laboratorio. Subí un recurso, preparalo, calibralo si hace falta y probá la interacción final antes de integrarla al editor.</p>
+  <div class="steps">
+    <div id="s1" class="step on">1 · ASSET</div><div id="s2" class="step">2 · PREP</div><div id="s3" class="step">3 · AJUSTE</div><div id="s4" class="step">4 · TEST</div>
+  </div>
+
+  <div class="group">
+    <h2>Recurso</h2>
+    <label class="upload">Subir PNG / JPG / WebP<input id="file" type="file" accept="image/png,image/jpeg,image/webp"></label>
+    <label class="check"><input id="allowAI" type="checkbox"> Permitir IA para quitar fondo si hace falta</label>
+    <div class="row"><button id="prepare" class="btn">Preparar automáticamente</button><button id="cancel" class="btn" disabled>Cancelar</button></div>
+    <div id="prepStatus" class="status" style="margin-top:8px">Cargando recurso de demostración…</div>
+    <div id="thumb" class="thumb"><img id="sourcePreview" alt="Recurso"><div id="axisLine" class="axisline"></div><button id="trailAnchor" class="anchor" title="Extremo trasero">COLA</button><button id="leadAnchor" class="anchor lead" title="Extremo delantero">CABEZA</button></div>
+    <div id="axisActions" class="axisActions"><button id="swapAxis" class="btn">Invertir</button><button id="resetAxis" class="btn">Automático</button></div>
+    <button id="applyAxis" class="btn" style="margin-top:7px">Aplicar eje orgánico</button>
+  </div>
+
+  <div class="group">
+    <h2>Comportamiento</h2>
+    <div class="field"><label>Modo <span id="resolvedMode" class="pill">auto</span></label><select id="mode"><option value="auto">Automático</option><option value="follower">Seguidor</option><option value="organic">Orgánico</option></select></div>
+    <div class="field"><label>Preset</label><select id="preset"><option value="soft">Suave</option><option value="floating">Flotante</option><option value="agile">Ágil</option><option value="heavy">Pesado</option><option value="magnetic">Magnético</option><option value="character">Personaje</option></select></div>
+    <div class="field"><label>Tamaño <output id="sizeOut"></output></label><input id="size" type="range" min="100" max="680" step="5" value="310"></div>
+    <div class="field"><label>Distancia del cursor <output id="distanceOut"></output></label><input id="distance" type="range" min="0" max="180" step="2" value="28"></div>
+    <div id="followerDirection" class="field"><label>Frente del asset</label><select id="forward"><option value="0">Derecha →</option><option value="90">Abajo ↓</option><option value="180">Izquierda ←</option><option value="-90">Arriba ↑</option></select></div>
+    <div id="organicControls">
+      <div class="field"><label>Flexibilidad <output id="swayOut"></output></label><input id="sway" type="range" min="0" max=".12" step=".005" value=".04"></div>
+      <div class="field"><label>Ondas <output id="wavesOut"></output></label><input id="waves" type="range" min="1" max="8" step=".2" value="4.2"></div>
+    </div>
+    <div id="modeNote" class="modeNote"></div>
+  </div>
+
+  <div class="group">
+    <h2>Campo de influencia</h2>
+    <label class="check"><input id="influence" type="checkbox" checked> Empujar elementos cercanos</label>
+    <div class="field"><label>Radio <output id="radiusOut"></output></label><input id="radius" type="range" min="70" max="420" step="5" value="210"></div>
+    <div class="field"><label>Fuerza <output id="strengthOut"></output></label><input id="strength" type="range" min="0" max="2.5" step=".05" value="1"></div>
+  </div>
+
+  <div class="group">
+    <h2>Configuración portable</h2>
+    <div class="row"><button id="export" class="btn">Generar JSON</button><button id="copy" class="btn">Copiar</button></div>
+    <textarea id="sessionJson" class="export" spellcheck="false" placeholder="La configuración aparecerá acá…"></textarea>
+  </div>
+</aside>
+
+<main id="stage" class="stage">
+  <div class="sub"><b>Mové el cursor</b> para probar · la tipografía reacciona al campo de influencia</div>
+  <div class="hero"><div id="headline" class="headline" aria-label="MOVE WITH ME"><span>M</span><span>O</span><span>V</span><span>E</span><i class="break"></i><span>W</span><span>I</span><span>T</span><span>H</span><i class="break"></i><span>M</span><span>E</span></div></div>
+  <canvas id="organicCanvas" aria-hidden="true"></canvas>
+  <div id="followerVisual" class="followerVisual"><img id="followerImage" alt=""></div>
+  <div id="leader" class="leader"></div>
+</main>
+</div>
+
+<script src="../js/nagweb-interaction-engine-v1.js"></script>
+<script src="../js/nagweb-interaction-asset-prep-v1.js"></script>
+<script src="../js/nagweb-interaction-influence-v1.js"></script>
+<script src="../js/nagweb-interaction-organic-v2.js"></script>
+<script src="../js/nagweb-interaction-background-ai-v1.js"></script>
+<script src="../js/nagweb-interaction-preparation-v1.js"></script>
+<script src="../js/nagweb-interaction-session-v1.js"></script>
+<script>
+(function(){
+  var E=NAGWEB_INTERACTION_ENGINE,A=NAGWEB_INTERACTION_ASSET_PREP,I=NAGWEB_INTERACTION_INFLUENCE,O=NAGWEB_ORGANIC_FOLLOWER,P=NAGWEB_INTERACTION_PREPARATION,S=NAGWEB_INTERACTION_SESSION;
+  var stage=document.getElementById('stage'),leaderEl=document.getElementById('leader'),visual=document.getElementById('followerVisual'),visualImg=document.getElementById('followerImage'),sourcePreview=document.getElementById('sourcePreview'),canvas=document.getElementById('organicCanvas');
+  var originalUrl=null,preparedUrl=null,currentFile=null,pipeline=null,prepResult=null,organicPrepared=null,organicRenderer=null,influenceField=null;
+  var axis={trail:{x:.12,y:.5},lead:{x:.88,y:.5},manual:false},activeMode='follower',busy=false;
+  var fallback='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="760" height="270" viewBox="0 0 760 270"><defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#ff7658"/><stop offset=".52" stop-color="#ffe3a8"/><stop offset="1" stop-color="#ff9867"/></linearGradient></defs><path d="M48 135c67-83 204-90 320-39 99-55 225-55 324 0l49-54-13 73 13 73-49-54c-99 55-225 55-324 0-116 51-253 44-320-39L8 135z" fill="url(#g)"/><circle cx="116" cy="111" r="14" fill="#31232b"/><circle cx="121" cy="106" r="4" fill="#fff"/></svg>');
+
+  var follower=E.createFollower(leaderEl,{
+    area:stage,preset:'soft',renderMode:'none',rotateToTarget:true,distanceFromPointer:28,assetForwardAngle:0,
+    onRender:function(v){
+      if(activeMode!=='follower')return;
+      var r=stage.getBoundingClientRect(),x=v.x-r.left,y=v.y-r.top;
+      visual.style.transform='translate('+(x-visual.offsetWidth/2)+'px,'+(y-visual.offsetHeight/2)+'px) rotate('+v.angle+'deg) scale('+v.scale+') perspective(900px) rotateX('+v.tiltX+'deg) rotateY('+v.tiltY+'deg)';
+    }
+  });
+
+  function setStep(n){
+    [1,2,3,4].forEach(function(i){var el=document.getElementById('s'+i);el.classList.toggle('done',i<n);el.classList.toggle('on',i===n);});
+  }
+  function status(text,cls){var el=document.getElementById('prepStatus');el.className='status '+(cls||'');el.textContent=text;}
+  function output(id,text){document.getElementById(id+'Out').value=text;}
+  function cleanPreparedUrl(){if(preparedUrl){URL.revokeObjectURL(preparedUrl);preparedUrl=null;}}
+  function imageUrlFromCanvas(c){
+    return new Promise(function(resolve,reject){c.toBlob(function(blob){if(!blob)return reject(new Error('No se pudo convertir el asset preparado'));cleanPreparedUrl();preparedUrl=URL.createObjectURL(blob);resolve(preparedUrl);},'image/webp',.94);});
+  }
+  async function setPreparedVisual(image){
+    if(image&&image.toBlob){visualImg.src=await imageUrlFromCanvas(image);sourcePreview.src=visualImg.src;}
+    else if(originalUrl){visualImg.src=originalUrl;sourcePreview.src=originalUrl;}
+    else {visualImg.src=fallback;sourcePreview.src=fallback;}
+  }
+  function autoAxis(){
+    if(!prepResult||!prepResult.analysis)return;
+    var a=A.axisAnchors(prepResult.analysis);axis={trail:a.start,lead:a.end,manual:false};drawAxis();
+  }
+  function pointToThumb(p){
+    var tr=document.getElementById('thumb').getBoundingClientRect(),ir=sourcePreview.getBoundingClientRect();
+    return {x:ir.left-tr.left+p.x*ir.width,y:ir.top-tr.top+p.y*ir.height};
+  }
+  function pointerToAxis(x,y){
+    var ir=sourcePreview.getBoundingClientRect();
+    return {x:Math.max(0,Math.min(1,(x-ir.left)/Math.max(1,ir.width))),y:Math.max(0,Math.min(1,(y-ir.top)/Math.max(1,ir.height)))};
+  }
+  function drawAxis(){
+    var ta=pointToThumb(axis.trail),la=pointToThumb(axis.lead),t=document.getElementById('trailAnchor'),l=document.getElementById('leadAnchor'),line=document.getElementById('axisLine');
+    t.style.left=ta.x+'px';t.style.top=ta.y+'px';l.style.left=la.x+'px';l.style.top=la.y+'px';
+    var dx=la.x-ta.x,dy=la.y-ta.y;line.style.left=ta.x+'px';line.style.top=ta.y+'px';line.style.width=Math.hypot(dx,dy)+'px';line.style.transform='rotate('+Math.atan2(dy,dx)+'rad)';
+  }
+  function bindAnchor(id,key){
+    var el=document.getElementById(id),drag=false;
+    el.addEventListener('pointerdown',function(ev){drag=true;el.setPointerCapture&&el.setPointerCapture(ev.pointerId);ev.preventDefault();});
+    el.addEventListener('pointermove',function(ev){if(!drag)return;axis[key]=pointerToAxis(ev.clientX,ev.clientY);axis.manual=true;drawAxis();status('Eje modificado. Tocá “Aplicar eje orgánico” para actualizar.','warn');});
+    function stop(){drag=false;}el.addEventListener('pointerup',stop);el.addEventListener('pointercancel',stop);
+  }
+  function currentAssetProfile(){
+    if(!prepResult)return null;
+    return A.createProfile(prepResult.analysis,{trailAnchor:axis.trail,leadAnchor:axis.lead,cropPadding:.015,directionSource:axis.manual?'manual':'auto'});
+  }
+  function organicOpts(){
+    return {length:Number(document.getElementById('size').value),sway:Number(document.getElementById('sway').value),swayWaves:Number(document.getElementById('waves').value),points:30,slices:60,leadEnd:'right'};
+  }
+  function resolveMode(){
+    var requested=document.getElementById('mode').value;
+    var resolved=requested;
+    if(requested==='auto')resolved=prepResult&&prepResult.report?prepResult.report.recommendedMode:'follower';
+    if(resolved==='organic'&&(!prepResult||!prepResult.analysis||!prepResult.analysis.silhouetteReliable))resolved='follower';
+    return resolved;
+  }
+  function updateModeUI(){
+    var requested=document.getElementById('mode').value,resolved=resolveMode();activeMode=resolved;
+    document.getElementById('resolvedMode').textContent=requested==='auto'?'auto → '+resolved:resolved;
+    document.getElementById('organicControls').style.display=resolved==='organic'?'block':'none';
+    document.getElementById('followerDirection').style.display=resolved==='follower'?'block':'none';
+    document.getElementById('axisActions').style.opacity=prepResult&&prepResult.analysis&&prepResult.analysis.silhouetteReliable?'1':'.4';
+    document.getElementById('applyAxis').disabled=!(prepResult&&prepResult.analysis&&prepResult.analysis.silhouetteReliable);
+    visual.style.display=resolved==='follower'?'grid':'none';
+    canvas.style.display=resolved==='organic'?'block':'none';
+    var note='';
+    if(requested==='organic'&&resolved!=='organic')note='Orgánico necesita una silueta transparente confiable. Se usa Seguidor como fallback seguro.';
+    else if(requested==='auto'&&prepResult&&prepResult.report)note='NagWeb recomienda '+prepResult.report.recommendedMode+' con confianza '+prepResult.report.recommendationConfidence+'.';
+    document.getElementById('modeNote').textContent=note;
+    if(resolved==='organic'&&prepResult)prepareOrganic();
+    updateInfluence();
+    setStep(prepResult?4:1);
+  }
+  async function prepareOrganic(){
+    if(!prepResult||!prepResult.analysis.silhouetteReliable)return;
+    var profile=currentAssetProfile(),asset=prepResult.image;
+    try{
+      organicPrepared=await O.rotateAndCrop(asset,prepResult.analysis,{paddingRatio:.015,profile:profile});
+      if(organicRenderer)organicRenderer.destroy();
+      organicRenderer=O.createRenderer(Object.assign({leader:follower,canvas:canvas,area:stage,image:organicPrepared.canvas},organicOpts()));
+      window.__NAGWEB_INTERACTION_STUDIO__.organicRenderer=organicRenderer;
+      status('Listo · Orgánico '+organicPrepared.width+'×'+organicPrepared.height+' · eje '+organicPrepared.axisAngle.toFixed(1)+'°','good');
+    }catch(err){activeMode='follower';document.getElementById('mode').value='follower';visual.style.display='grid';canvas.style.display='none';status('Orgánico no pudo prepararse. Fallback a Seguidor · '+err.message,'warn');}
+  }
+  function followerOpts(){
+    return {preset:document.getElementById('preset').value,distanceFromPointer:Number(document.getElementById('distance').value),assetForwardAngle:Number(document.getElementById('forward').value),rotateToTarget:true};
+  }
+  function syncMotion(){
+    var preset=document.getElementById('preset').value;
+    follower.applyPreset(preset,{distanceFromPointer:Number(document.getElementById('distance').value),assetForwardAngle:Number(document.getElementById('forward').value),rotateToTarget:true});
+    var size=Number(document.getElementById('size').value);visual.style.width=size+'px';visual.style.height=size+'px';
+    if(organicRenderer)organicRenderer.setOptions(organicOpts());
+    output('size',size+' px');output('distance',document.getElementById('distance').value+' px');output('sway',document.getElementById('sway').value);output('waves',document.getElementById('waves').value);
+  }
+  function influenceOpts(){return {radius:Number(document.getElementById('radius').value),strength:Number(document.getElementById('strength').value),maxPush:85,maxRotate:11,maxScale:.09,spring:.08,damping:.84};}
+  function updateInfluence(){
+    var enabled=document.getElementById('influence').checked;
+    if(influenceField){influenceField.destroy();influenceField=null;}
+    if(enabled){
+      influenceField=I.createField({source:function(){return {x:follower.state.x,y:follower.state.y};},targets:document.querySelectorAll('#headline span'),...influenceOpts()});
+    }
+    window.__NAGWEB_INTERACTION_STUDIO__.influenceField=influenceField;
+    output('radius',document.getElementById('radius').value+' px');output('strength',document.getElementById('strength').value);
+  }
+  async function prepare(){
+    if(busy)return;busy=true;document.getElementById('prepare').disabled=true;document.getElementById('cancel').disabled=false;setStep(2);
+    pipeline=P.createPipeline({allowAI:document.getElementById('allowAI').checked,autoRemoveBackground:true,autoTrim:true,progress:function(x){status('Preparando · '+x.stage,x.stage==='background-error'?'warn':'');}});
+    try{
+      prepResult=await pipeline.prepare(sourcePreview,{fileSizeBytes:currentFile&&currentFile.size||0,modeOverride:'auto'});
+      await setPreparedVisual(prepResult.image);autoAxis();setStep(3);
+      var q=prepResult.report.quality;
+      status('Compatibilidad '+q.label+' · '+q.score+'/100 · recomendado: '+prepResult.report.recommendedMode+(prepResult.report.aiFallback?' · IA falló, original preservado':''),q.score>=72?'good':'warn');
+      updateModeUI();syncMotion();updateInfluence();
+    }catch(err){
+      if(err&&err.name==='AbortError')status('Preparación cancelada. El original sigue intacto.','warn');
+      else status('Preparación falló. El original sigue intacto · '+err.message,'bad');
+    }finally{busy=false;document.getElementById('prepare').disabled=false;document.getElementById('cancel').disabled=true;}
+  }
+  function session(){
+    return S.normalize({
+      mode:document.getElementById('mode').value,influenceEnabled:document.getElementById('influence').checked,
+      followerOptions:Object.assign({},follower.options,{assetForwardAngle:Number(document.getElementById('forward').value)}),
+      organicOptions:organicRenderer?organicRenderer.options:organicOpts(),influenceOptions:influenceOpts(),
+      assetProfile:currentAssetProfile(),preparationReport:prepResult&&prepResult.report,
+      assetRef:currentFile?{name:currentFile.name,type:currentFile.type,size:currentFile.size}:{name:'demo-asset.svg',type:'image/svg+xml'},
+      metadata:{name:currentFile?currentFile.name:'Demo Interaction Studio'}
+    });
+  }
+
+  document.getElementById('prepare').onclick=prepare;
+  document.getElementById('cancel').onclick=function(){if(pipeline)pipeline.cancel();};
+  document.getElementById('mode').onchange=updateModeUI;
+  document.getElementById('preset').onchange=syncMotion;
+  ['size','distance','forward','sway','waves'].forEach(function(id){document.getElementById(id).addEventListener('input',syncMotion);document.getElementById(id).addEventListener('change',syncMotion);});
+  document.getElementById('influence').onchange=updateInfluence;
+  ['radius','strength'].forEach(function(id){document.getElementById(id).addEventListener('input',function(){if(influenceField)influenceField.setOptions(influenceOpts());output('radius',document.getElementById('radius').value+' px');output('strength',document.getElementById('strength').value);});});
+  bindAnchor('trailAnchor','trail');bindAnchor('leadAnchor','lead');
+  document.getElementById('swapAxis').onclick=function(){var t=axis.trail;axis.trail=axis.lead;axis.lead=t;axis.manual=true;drawAxis();status('Dirección invertida. Aplicá el eje para actualizar.','warn');};
+  document.getElementById('resetAxis').onclick=function(){autoAxis();status('Eje automático restaurado. Aplicalo para actualizar.','warn');};
+  document.getElementById('applyAxis').onclick=async function(){await prepareOrganic();setStep(4);};
+  document.getElementById('export').onclick=function(){document.getElementById('sessionJson').value=S.serialize(session());};
+  document.getElementById('copy').onclick=async function(){var ta=document.getElementById('sessionJson');if(!ta.value)ta.value=S.serialize(session());try{await navigator.clipboard.writeText(ta.value);status('Configuración copiada al portapapeles.','good');}catch(e){ta.select();status('JSON seleccionado. Copialo manualmente.','warn');}};
+  document.getElementById('file').onchange=function(){
+    var f=this.files&&this.files[0];if(!f)return;
+    var check=P.validateFile(f,{});
+    if(check.blocked){status(check.warnings.join(' '),'bad');return;}
+    if(originalUrl)URL.revokeObjectURL(originalUrl);cleanPreparedUrl();currentFile=f;originalUrl=URL.createObjectURL(f);prepResult=null;organicPrepared=null;
+    if(organicRenderer){organicRenderer.destroy();organicRenderer=null;}sourcePreview.src=originalUrl;visualImg.src=originalUrl;setStep(1);
+    sourcePreview.onload=function(){drawAxis();status('Original cargado · '+f.name+' · '+(f.size/1048576).toFixed(1)+' MB'+(check.warnings.length?' · '+check.warnings.join(' '):''),check.warnings.length?'warn':'');};
+  };
+  window.addEventListener('resize',function(){requestAnimationFrame(drawAxis);if(influenceField)influenceField.measure();});
+
+  window.__NAGWEB_INTERACTION_STUDIO__={
+    follower:follower,organicRenderer:null,influenceField:null,get prepResult(){return prepResult;},get axis(){return axis;},
+    get mode(){return activeMode;},getSession:session,prepare:prepare,switchMode:function(m){document.getElementById('mode').value=m;updateModeUI();}
+  };
+  syncMotion();updateInfluence();sourcePreview.onload=function(){visualImg.src=fallback;prepare();};sourcePreview.src=fallback;
+})();
+</script>
+</body></html>
