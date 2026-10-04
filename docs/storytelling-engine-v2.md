@@ -228,3 +228,12 @@ Un elemento con momentos activos ofrece “Agregar aquí” y “Quitar elegido�
 La captura conserva la pose en el instante elegido. Al dividir un tramo con easing, la curva entre los momentos puede cambiar; cada tramo sigue usando su propio easing. Los cambios permanecen en el borrador antes de insertar/guardar y no alteran los demás elementos ni la geometría base. Reubicar momentos sigue disponible en la línea de tiempo del lienzo principal.
 
 `.github/nagweb-motion-points-smoke.mjs` verifica captura de una pose interpolada sin salto ni recarga, posiciones decimales, duplicados, quitar y selección posterior, mínimo de puntos, IDs/otros momentos/elementos, borradores por plantilla, inserción, guardado en la misma instancia, cancelación, historial y equivalencia con el HTML exportado.
+
+
+## Reubicar momentos dentro de Motion Lab
+
+“Ocurre en (%)” permite adelantar o retrasar el momento elegido entre 0 y 100, con precisión de décimas. Conserva su ID, pose y easing saliente, ordena los puntos por su nueva posición y recorre la vista previa hasta allí mediante el mismo runtime, sin recargar el iframe. El movimiento entre puntos refleja el nuevo intervalo.
+
+Si la posición redondeada ya está ocupada, o el valor no es válido, se restaura el campo y se muestra un aviso junto a él sin modificar ningún momento. La reubicación funciona en los borradores por plantilla y al reabrir una instancia; insertar/guardar la confirma, cerrar la descarta. La edición avanzada por arrastre sigue disponible en la línea de tiempo principal.
+
+`.github/nagweb-motion-retime-smoke.mjs` prueba el campo con teclado real, interpolación en un instante conocido, cruces de orden, pose/easing/IDs y otros elementos conservados, decimales, colisiones y valores inválidos sin pérdida, borradores, inserción, guardado de la misma instancia, cancelar, Deshacer/Rehacer y equivalencia con el HTML exportado.
