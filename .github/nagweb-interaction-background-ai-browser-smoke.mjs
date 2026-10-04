@@ -20,7 +20,7 @@ try{
     info:document.querySelector('#modelInfo').textContent
   }));
   assert.equal(state.ai,'1.1.0-alpha.1');
-  assert.equal(state.prep,'1.1.0');
+  assert.equal(state.prep,'1.2.0');
   assert.equal(state.remover,null,'AI model must remain unloaded until explicit action');
   assert.deepEqual(state.providers.sort(),['general','portrait']);
   assert.equal(state.buttonDisabled,true);
