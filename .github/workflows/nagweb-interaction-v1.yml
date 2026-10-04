@@ -8,6 +8,7 @@ on:
       - 'js/nagweb-interaction-engine-v1.js'
       - 'js/nagweb-interaction-asset-prep-v1.js'
       - 'js/nagweb-interaction-influence-v1.js'
+      - 'js/nagweb-interaction-organic-v2.js'
       - 'experiments/interaction-engine-v1.html'
       - '.github/nagweb-interaction-v1-*.mjs'
       - '.github/workflows/nagweb-interaction-v1.yml'
@@ -23,6 +24,7 @@ on:
       - '.github/nagweb-interaction-v1-*.mjs'
       - '.github/nagweb-interaction-asset-prep-model-test.mjs'
       - '.github/nagweb-interaction-influence-model-test.mjs'
+      - '.github/nagweb-interaction-organic-model-test.mjs'
       - '.github/workflows/nagweb-interaction-v1.yml'
       - 'docs/interaction-engine-v1.md'
   workflow_dispatch:
@@ -45,6 +47,7 @@ jobs:
           node .github/nagweb-interaction-v1-model-test.mjs
           node .github/nagweb-interaction-asset-prep-model-test.mjs
           node .github/nagweb-interaction-influence-model-test.mjs
+          node .github/nagweb-interaction-organic-model-test.mjs
       - name: Install browser driver
         run: npm install --no-save puppeteer-core
       - name: Start static server
