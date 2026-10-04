@@ -33,7 +33,7 @@ try{
     state:{x:__NAGWEB_INTERACTION_V1__.engine.state.x,y:__NAGWEB_INTERACTION_V1__.engine.state.y}
   }));
   assert.equal(initial.version,'1.5.0');
-  assert.equal(initial.prepVersion,'1.1.0');
+  assert.equal(initial.prepVersion,'1.2.0');
   assert.equal(initial.influenceVersion,'1.0.0');
   assert.equal(initial.prep.ready,'1');
   assert.ok(initial.prep.text.includes('Recomendación'));
