@@ -158,7 +158,7 @@ try{
   assert.ok(Math.hypot(r1.x-r0.x,r1.y-r0.y)<1,'reduced motion should keep follower resting');
   await reduced.close();
 
-  console.log('NagWeb Interaction Engine V1.3 browser smoke: PASS');
+  console.log('NagWeb Interaction Engine V1.4 browser smoke: PASS');
 } finally {
   await browser.close();
 }
