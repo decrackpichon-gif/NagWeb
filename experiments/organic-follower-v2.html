@@ -84,7 +84,7 @@
     var dx=lead.x-trail.x,dy=lead.y-trail.y,len=Math.hypot(dx,dy);
     line.style.left=trail.x+'px';line.style.top=trail.y+'px';line.style.width=len+'px';line.style.transform='rotate('+Math.atan2(dy,dx)+'rad)';
     if(analysis){
-      assetProfile=A.createProfile(analysis,{trailAnchor:axis.trail,leadAnchor:axis.lead,cropPadding:.015});
+      assetProfile=A.createProfile(analysis,{trailAnchor:axis.trail,leadAnchor:axis.lead,cropPadding:.015,directionSource:axis.manual?'manual':'auto'});
       document.getElementById('axisInfo').textContent=(axis.manual?'Eje corregido manualmente':'Eje detectado automáticamente')+' · '+assetProfile.organic.axisAngle.toFixed(1)+'°';
     }
   }
@@ -126,7 +126,7 @@
   function prepare(){
     if(!analysis||!analysis.silhouetteReliable)return Promise.resolve();
     document.getElementById('status').textContent='Preparando asset…';
-    assetProfile=A.createProfile(analysis,{trailAnchor:axis.trail,leadAnchor:axis.lead,cropPadding:.015});
+    assetProfile=A.createProfile(analysis,{trailAnchor:axis.trail,leadAnchor:axis.lead,cropPadding:.015,directionSource:axis.manual?'manual':'auto'});
     return O.rotateAndCrop(asset,analysis,{paddingRatio:.015,profile:assetProfile}).then(function(p){
       prepared=p;
       if(renderer)renderer.destroy();
