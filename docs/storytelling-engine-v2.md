@@ -255,3 +255,12 @@ Cada borrador por plantilla restaura su propia selección y lista. Reabrir un gr
 Las copias reutilizan el recurso de imagen y mantienen sus datos independientes. Quedan en el borrador por plantilla hasta insertar o guardar; cerrar las descarta. Guardar una instancia actualiza los miembros existentes y añade los nuevos al mismo grupo, preservando los elementos externos. La duplicación se deshabilita sin selección válida o durante una carga de imagen. Los contenedores y textos por fragmentos quedan fuera de esta etapa.
 
 `.github/nagweb-motion-duplicate-smoke.mjs` verifica poses renderizadas antes/después de copiar, edición independiente, IDs, recursos reutilizados, estilos móviles, texto directo activo, borradores sin escritura al proyecto, inserción, incorporación de nuevos miembros al guardar, elementos externos, cancelar, Deshacer/Rehacer y renderizado del HTML exportado.
+
+
+## Quitar elementos y simplificar composiciones en Motion Lab
+
+“Quitar elemento” elimina una lámina o texto simple del borrador y selecciona el siguiente elemento disponible. Conserva al menos un elemento y no elimina contenedores ni elementos con hijos. Se deshabilita durante las cargas de imagen. Reconstruye la lista, el inspector y la vista previa sin modificar el proyecto hasta insertar o guardar; cerrar descarta las eliminaciones.
+
+Guardar aplica las eliminaciones únicamente a miembros de la instancia editada, además de actualizar los existentes y agregar los nuevos. Conserva los elementos externos y los recursos ya incorporados al proyecto. Una composición nueva solo incorpora los recursos de sus elementos supervivientes. La inserción ya no presupone dos láminas: elige un elemento animado disponible y, si solo quedan textos sin momentos, selecciona uno en modo de diseño base.
+
+`.github/nagweb-motion-remove-smoke.mjs` verifica selección después de quitar, borradores por plantilla, ausencia de escrituras previas, recursos utilizados, altas y bajas en el mismo guardado, supervivientes y elementos externos intactos, cancelar, Deshacer/Rehacer, elementos ausentes del HTML exportado e inserción de una sola lámina como escena y de un solo texto como grupo.

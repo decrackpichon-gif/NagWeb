@@ -24,6 +24,7 @@ import {runMotionPointsSmoke} from './nagweb-motion-points-smoke.mjs';
 import {runMotionRetimeSmoke} from './nagweb-motion-retime-smoke.mjs';
 import {runMotionLayersSmoke} from './nagweb-motion-layers-smoke.mjs';
 import {runMotionDuplicateSmoke} from './nagweb-motion-duplicate-smoke.mjs';
+import {runMotionRemoveSmoke} from './nagweb-motion-remove-smoke.mjs';
 
 const feedbackSource=fs.readFileSync(new URL('../js/nagweb-feedback-v16.js',import.meta.url),'utf8');
 const directorSource=fs.readFileSync(new URL('../js/nagweb-scroll-director-v16.js',import.meta.url),'utf8');
@@ -225,6 +226,7 @@ await runMotionPointsSmoke(page);
 await runMotionRetimeSmoke(page);
 await runMotionLayersSmoke(page);
 await runMotionDuplicateSmoke(page);
+await runMotionRemoveSmoke(page);
 await runStorytellingSmoke(page);
 await runCompositionSmoke(page);
 await runTransparentSmoke(page);
