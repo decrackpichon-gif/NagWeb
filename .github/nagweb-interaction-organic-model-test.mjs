@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 const require=createRequire(import.meta.url);
 const O=require('../js/nagweb-interaction-organic-v2.js');
 
-assert.equal(O.version,'2.0.0-alpha.1');
+assert.equal(O.version,'2.1.0-alpha.1');
 
 const opts=O.normalizeOptions({points:30,slices:60,length:290,sway:.04});
 assert.equal(opts.points,30);assert.equal(opts.slices,60);assert.equal(opts.length,290);
