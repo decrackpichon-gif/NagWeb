@@ -28,7 +28,8 @@
     shadowBlur:0.045,
     shadowOffsetX:0.035,
     shadowOffsetY:0.06,
-    maxDpr:2
+    maxDpr:2,
+    reducedMotion:'respect'
   };
 
   function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
@@ -53,6 +54,7 @@
     o.shadowOffsetX=clamp(Number(o.shadowOffsetX)||0,-0.2,0.2);
     o.shadowOffsetY=clamp(Number(o.shadowOffsetY)||0,-0.2,0.2);
     o.maxDpr=clamp(Number(o.maxDpr)||2,1,3);
+    o.reducedMotion=['respect','always','never'].indexOf(o.reducedMotion)>=0?o.reducedMotion:'respect';
     return o;
   }
 
@@ -138,6 +140,8 @@
 
     var o=normalizeOptions(input),leader=input.leader,canvas=input.canvas,ctx=canvas.getContext('2d'),area=input.area||canvas.parentElement||document.documentElement;
     var dpr=1,bounds={left:0,top:0,width:0,height:0},phase=0,lastHeading=0,destroyed=false,paused=false;
+    var media=typeof matchMedia==='function'?matchMedia('(prefers-reduced-motion: reduce)'):null;
+    function reduced(){return o.reducedMotion==='always'||(o.reducedMotion==='respect'&&media&&media.matches);}
     var speed0=Math.hypot(leader.state.vx||0,leader.state.vy||0);
     if(speed0>.05)lastHeading=Math.atan2(leader.state.vy,leader.state.vx);
     var spine=createSpine(o.points,leader.state.x,leader.state.y,lastHeading,o.length);
@@ -157,6 +161,7 @@
     }
     function draw(speedRatio){
       ctx.clearRect(0,0,bounds.width,bounds.height);
+      var ro=reduced()?merge(o,{sway:0}):o;
       var iw=img.width||img.naturalWidth,ih=img.height||img.naturalHeight;
       if(!iw||!ih)return;
       var srcW=iw/o.slices,destH=o.length*(ih/iw),dw=o.length/o.slices*o.overlap;
@@ -170,7 +175,7 @@
           ctx.globalAlpha=.78;
         }
         for(var j=o.slices-1;j>=0;j--){
-          var u=j/(o.slices-1),p=sampleSpine(spine,u,phase,o,speedRatio);
+          var u=j/(o.slices-1),p=sampleSpine(spine,u,phase,ro,speedRatio);
           var srcX=o.leadEnd==='right'?iw-(j+1)*srcW:j*srcW;
           ctx.save();ctx.translate(p.x-bounds.left,p.y-bounds.top);ctx.rotate(p.angle);
           ctx.drawImage(img,srcX,0,srcW,ih,-dw/2,-destH/2,dw,destH);
@@ -185,7 +190,7 @@
       if(speed>.08)lastHeading=Math.atan2(vy,vx);
       var max=(leader.options&&leader.options.maxSpeed)||34,speedRatio=clamp(speed/Math.max(1,max),0,1);
       ensureSpine();advanceSpine(spine,leader.state,o.length,lastHeading);
-      phase=advancePhase(phase,speedRatio,o,dt);draw(speedRatio);
+      if(!reduced())phase=advancePhase(phase,speedRatio,o,dt);draw(speedRatio);
     }
     function onMeasure(){measure();}
     measure();
