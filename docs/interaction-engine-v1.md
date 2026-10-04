@@ -189,3 +189,38 @@ El run **#96** del workflow `NagWeb Interaction Engine V1` pasó:
 - generación de capturas de laboratorio.
 
 La rama sigue siendo laboratorio y el PR #2 continúa siendo **do not merge**.
+
+
+## Interaction Studio V1 — flujo unificado
+
+Se agregó `experiments/interaction-studio-v1.html` como laboratorio end-to-end. Su objetivo es probar la experiencia completa antes de cualquier integración con el editor principal.
+
+El flujo cubre:
+
+1. carga de PNG/JPG/WebP o asset demo;
+2. validación y preparación automática partiendo siempre del original inmutable;
+3. IA de fondo opcional;
+4. recomendación automática Follower/Organic;
+5. calibración visual CABEZA/COLA para Orgánico;
+6. cambio manual de modo y fallback seguro a Follower;
+7. presets de movimiento, tamaño, distancia al cursor y orientación frontal del asset;
+8. controles orgánicos de flexibilidad/ondas;
+9. campo de influencia sobre elementos HTML cercanos;
+10. exportación de una configuración portable.
+
+También se agregó `nagweb-interaction-session-v1.js`, que define el contrato `nagweb-interaction-session`. La sesión conserva comportamiento, perfil del asset, reporte de preparación y opciones de influencia, pero **no embebe los bytes de la imagen**. Eso permite desacoplar la configuración del almacenamiento final de assets.
+
+### QA
+
+El run **#102** pasó todos los model tests y browser smokes, incluyendo:
+
+- Interaction Engine;
+- Asset Prep 1.2;
+- Influence Field;
+- Organic Follower 2.1;
+- Background AI;
+- Preparation Pipeline 1.1;
+- Interaction Session V1;
+- Interaction Studio V1.
+
+El Studio sigue siendo una superficie de laboratorio. No se agrega navegación ni UI al editor principal hasta alcanzar la etapa de integración final.
