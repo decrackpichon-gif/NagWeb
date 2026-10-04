@@ -10,7 +10,7 @@
 })(typeof window!=='undefined'?window:globalThis,function(){
   'use strict';
 
-  var VERSION='1.1.0';
+  var VERSION='1.2.0';
   var PROFILE_SCHEMA='nagweb-interaction-asset-profile';
 
   function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
@@ -124,9 +124,48 @@
     });
   }
 
+
+  function clamp01(v){return clamp(Number(v)||0,0,1);}
+  function normalizeAnchor(p,fallback){
+    p=p||fallback||{x:.5,y:.5};
+    return {x:clamp01(p.x),y:clamp01(p.y)};
+  }
+  function axisAnchors(a){
+    if(!a)throw new Error('NagWeb Asset Prep: analysis is required');
+    var w=Math.max(1,Number(a.sampleWidth||a.width||a.sourceWidth)||1);
+    var h=Math.max(1,Number(a.sampleHeight||a.height||a.sourceHeight)||1);
+    var c={x:clamp01(a.centroid&&a.centroid.x),y:clamp01(a.centroid&&a.centroid.y)};
+    var b=a.subjectBounds||{x:0,y:0,width:1,height:1};
+    var minX=clamp01(b.x)*w,maxX=clamp01(b.x+b.width)*w,minY=clamp01(b.y)*h,maxY=clamp01(b.y+b.height)*h;
+    var cx=c.x*w,cy=c.y*h,rad=(Number(a.principalAxisAngle)||0)*Math.PI/180,dx=Math.cos(rad),dy=Math.sin(rad);
+    var hits=[];
+    function add(t){
+      if(!Number.isFinite(t))return;
+      var x=cx+t*dx,y=cy+t*dy;
+      if(x>=minX-1e-6&&x<=maxX+1e-6&&y>=minY-1e-6&&y<=maxY+1e-6)hits.push({t:t,x:x/w,y:y/h});
+    }
+    if(Math.abs(dx)>1e-8){add((minX-cx)/dx);add((maxX-cx)/dx);}
+    if(Math.abs(dy)>1e-8){add((minY-cy)/dy);add((maxY-cy)/dy);}
+    hits.sort(function(p,q){return p.t-q.t;});
+    if(hits.length<2){
+      var rx=Math.cos(rad)*.35,ry=Math.sin(rad)*.35*(w/h);
+      return {start:normalizeAnchor({x:c.x-rx,y:c.y-ry}),end:normalizeAnchor({x:c.x+rx,y:c.y+ry}),source:'auto'};
+    }
+    return {start:normalizeAnchor(hits[0]),end:normalizeAnchor(hits[hits.length-1]),source:'auto'};
+  }
+  function axisAngleFromAnchors(start,end,width,height){
+    start=normalizeAnchor(start);end=normalizeAnchor(end);
+    width=Math.max(1,Number(width)||1);height=Math.max(1,Number(height)||1);
+    return Math.atan2((end.y-start.y)*height,(end.x-start.x)*width)*180/Math.PI;
+  }
+
   function createProfile(a,input){
     if(!a)throw new Error('NagWeb Asset Prep: analysis is required');
     input=input||{};
+    var autoAxis=axisAnchors(a);
+    var trail=normalizeAnchor(input.trailAnchor,autoAxis.start);
+    var lead=normalizeAnchor(input.leadAnchor,autoAxis.end);
+    var axisAngle=axisAngleFromAnchors(trail,lead,a.sampleWidth||a.width||a.sourceWidth,a.sampleHeight||a.height||a.sourceHeight);
     return {
       schema:PROFILE_SCHEMA,
       version:1,
@@ -145,7 +184,11 @@
       },
       organic:{
         leadEnd:input.leadEnd==='left'?'left':'right',
-        cropPadding:input.cropPadding==null ? .015 : Math.max(0,Number(input.cropPadding)||0)
+        cropPadding:input.cropPadding==null ? .015 : Math.max(0,Number(input.cropPadding)||0),
+        trailAnchor:trail,
+        leadAnchor:lead,
+        axisAngle:axisAngle,
+        directionSource:(input.trailAnchor||input.leadAnchor)?'manual':'auto'
       },
       warnings:(a.warnings||[]).slice()
     };
@@ -159,6 +202,12 @@
     if(!p||p.schema!==PROFILE_SCHEMA||p.version!==1||!p.geometry||!p.readiness)throw new Error('NagWeb Asset Prep: invalid asset profile');
     p.organic=p.organic||{leadEnd:'right',cropPadding:.015};
     p.organic.leadEnd=p.organic.leadEnd==='left'?'left':'right';
+    var fallback=p.geometry&&p.geometry.subjectBounds?{x:.5,y:.5}:{x:.5,y:.5};
+    p.organic.trailAnchor=normalizeAnchor(p.organic.trailAnchor,fallback);
+    p.organic.leadAnchor=normalizeAnchor(p.organic.leadAnchor,fallback);
+    p.organic.axisAngle=Number(p.organic.axisAngle);
+    if(!Number.isFinite(p.organic.axisAngle))p.organic.axisAngle=Number(p.geometry&&p.geometry.principalAxisAngle)||0;
+    p.organic.directionSource=p.organic.directionSource==='manual'?'manual':'auto';
     return p;
   }
 
@@ -174,5 +223,5 @@
     };
   }
 
-  return {version:VERSION,profileSchema:PROFILE_SCHEMA,analyzePixels:analyzePixels,analyzeImage:analyzeImage,trimTransparent:trimTransparent,createProfile:createProfile,serializeProfile:serializeProfile,deserializeProfile:deserializeProfile,summarize:summarize};
+  return {version:VERSION,profileSchema:PROFILE_SCHEMA,analyzePixels:analyzePixels,analyzeImage:analyzeImage,trimTransparent:trimTransparent,axisAnchors:axisAnchors,axisAngleFromAnchors:axisAngleFromAnchors,createProfile:createProfile,serializeProfile:serializeProfile,deserializeProfile:deserializeProfile,summarize:summarize};
 });
