@@ -304,3 +304,12 @@ La lista de Elementos, el título del inspector, las etiquetas de contenido y la
 Se mantienen los índices y campos de cada miembro para sincronizar escritura directa, cargas y borradores. Cambiar la selección o regenerar la vista previa restaura el contenido del elemento elegido sin perder las ediciones anteriores. El nombre sigue siendo una etiqueta de organización independiente del contenido.
 
 `.github/nagweb-motion-inspector-smoke.mjs` verifica visibilidad de un único contenido, ubicación en el inspector, selección desde lista y lienzo, edición con teclado y selector reales, reemplazo sin alterar el movimiento, regeneración, borradores sin escritura previa, guardado exacto, controles accesibles en pantalla compacta, Deshacer/Rehacer y equivalencia del HTML exportado. La prueba de cargas selecciona explícitamente la imagen antes de abrir su selector de archivos.
+
+
+## Prioridad de controles en el inspector
+
+“Estilo del texto” se ubica inmediatamente después de “Contenido seleccionado”, antes de geometría y movimiento. Al seleccionar una imagen, el estilo de texto sigue oculto. El bloque “Composición” agrupa fondo, fuente de animación, duración, repetición y perspectiva en un desplegable nativo, inicialmente cerrado para dedicar el panel a la edición del elemento.
+
+Cada borrador conserva durante la sesión si Composición está abierta, incluso al cambiar y regresar de plantilla o reconstruir el inspector. Ese estado de interfaz no se agrega al proyecto ni a la configuración de la animación. La regeneración de la vista previa mantiene el desplegable abierto y los valores editados.
+
+La prueba de inspector abre Composición, edita la duración con teclado real, comprueba su guardado y verifica que el estado abierto se conserve al volver a la plantilla. También verifica la posición de los controles de estilo. La prueba de escritura directa confirma el texto pendiente al abrir Composición y mantiene accesible el campo Duración.
