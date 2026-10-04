@@ -2,7 +2,7 @@
 
 Motor aislado para estudiar y estabilizar interacciones de seguimiento antes de integrarlas al editor principal.
 
-## V1.2 — configuración + lifecycle
+## V1.3 — configuración + lifecycle + runtime compartido
 
 La rama `feat/interaction-engine-v1` sigue sin modificar archivos del editor. El laboratorio puede usar cualquier PNG, JPG, WebP o GIF local.
 
@@ -25,7 +25,11 @@ La rama `feat/interaction-engine-v1` sigue sin modificar archivos del editor. El
 - targets manuales en coordenadas globales o relativas al área;
 - `prefers-reduced-motion`;
 - configuración serializable y validada;
-- API independiente de globals de NagWeb.
+- API independiente de globals de NagWeb;
+- un único `requestAnimationFrame` compartido por todas las instancias;
+- seguidores pausados u ocultos salen del ticker;
+- tamaño y límites se actualizan por eventos/observers, no mediante lecturas de layout en cada frame;
+- métricas internas `runtimeStats()` para detectar fugas.
 
 ### Dirección frontal
 
@@ -80,4 +84,4 @@ La rama incluye `nagweb-interaction-v1-model-test.mjs` y un smoke de Chromium qu
 
 ## Próxima micro-etapa
 
-Rendimiento multi-instancia: un único ticker compartido, evitar lecturas de layout por frame, métricas de runtime y prueba de carga con muchos seguidores simultáneos.
+Preparación del asset: análisis local de transparencia, dimensiones, silueta y eje predominante para que NagWeb pueda recomendar automáticamente qué tipo de interacción conviene.
