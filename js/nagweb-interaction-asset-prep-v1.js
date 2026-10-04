@@ -202,12 +202,31 @@
     if(!p||p.schema!==PROFILE_SCHEMA||p.version!==1||!p.geometry||!p.readiness)throw new Error('NagWeb Asset Prep: invalid asset profile');
     p.organic=p.organic||{leadEnd:'right',cropPadding:.015};
     p.organic.leadEnd=p.organic.leadEnd==='left'?'left':'right';
-    var fallback=p.geometry&&p.geometry.subjectBounds?{x:.5,y:.5}:{x:.5,y:.5};
-    p.organic.trailAnchor=normalizeAnchor(p.organic.trailAnchor,fallback);
-    p.organic.leadAnchor=normalizeAnchor(p.organic.leadAnchor,fallback);
+    var migrated=null;
+    if(!p.organic.trailAnchor||!p.organic.leadAnchor){
+      migrated=axisAnchors({
+        width:p.source&&p.source.width,
+        height:p.source&&p.source.height,
+        sourceWidth:p.source&&p.source.width,
+        sourceHeight:p.source&&p.source.height,
+        centroid:p.geometry&&p.geometry.centroid,
+        subjectBounds:p.geometry&&p.geometry.subjectBounds,
+        principalAxisAngle:p.geometry&&p.geometry.principalAxisAngle
+      });
+    }
+    p.organic.trailAnchor=normalizeAnchor(p.organic.trailAnchor,migrated&&migrated.start||{x:.2,y:.5});
+    p.organic.leadAnchor=normalizeAnchor(p.organic.leadAnchor,migrated&&migrated.end||{x:.8,y:.5});
     p.organic.axisAngle=Number(p.organic.axisAngle);
-    if(!Number.isFinite(p.organic.axisAngle))p.organic.axisAngle=Number(p.geometry&&p.geometry.principalAxisAngle)||0;
+    if(!Number.isFinite(p.organic.axisAngle))p.organic.axisAngle=axisAngleFromAnchors(p.organic.trailAnchor,p.organic.leadAnchor,p.source&&p.source.width,p.source&&p.source.height);
     p.organic.directionSource=p.organic.directionSource==='manual'?'manual':'auto';
+    return p;
+  }
+
+  function swapOrganicDirection(profile){
+    var p=deserializeProfile(profile),t=p.organic.trailAnchor;
+    p.organic.trailAnchor=p.organic.leadAnchor;p.organic.leadAnchor=t;
+    p.organic.axisAngle=axisAngleFromAnchors(p.organic.trailAnchor,p.organic.leadAnchor,p.source&&p.source.width,p.source&&p.source.height);
+    p.organic.directionSource='manual';
     return p;
   }
 
@@ -223,5 +242,5 @@
     };
   }
 
-  return {version:VERSION,profileSchema:PROFILE_SCHEMA,analyzePixels:analyzePixels,analyzeImage:analyzeImage,trimTransparent:trimTransparent,axisAnchors:axisAnchors,axisAngleFromAnchors:axisAngleFromAnchors,createProfile:createProfile,serializeProfile:serializeProfile,deserializeProfile:deserializeProfile,summarize:summarize};
+  return {version:VERSION,profileSchema:PROFILE_SCHEMA,analyzePixels:analyzePixels,analyzeImage:analyzeImage,trimTransparent:trimTransparent,axisAnchors:axisAnchors,axisAngleFromAnchors:axisAngleFromAnchors,swapOrganicDirection:swapOrganicDirection,createProfile:createProfile,serializeProfile:serializeProfile,deserializeProfile:deserializeProfile,summarize:summarize};
 });
