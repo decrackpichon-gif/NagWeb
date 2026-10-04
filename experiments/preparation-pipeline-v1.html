@@ -5,79 +5,83 @@
 <title>NagWeb · Preparación automática</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,system-ui,sans-serif;background:#101013;color:#f4f1e9}
-main{min-height:100vh;display:grid;grid-template-columns:minmax(280px,360px) 1fr}
-aside{padding:22px;border-right:1px solid #303036;background:#18181d}h1{font-size:20px;margin:0 0 8px}p{font-size:12px;line-height:1.5;color:#aaa6b1}
-.upload,button{display:flex;align-items:center;justify-content:center;width:100%;min-height:40px;border:1px solid #4b4952;background:#222229;color:#fff;font:600 12px inherit;cursor:pointer}.upload input{display:none}
-button{margin-top:8px}button:disabled{opacity:.45;cursor:not-allowed}
-.stage{display:grid;place-items:center;position:relative;overflow:hidden;background:radial-gradient(circle,#302747,#16141d 55%,#0d0c10)}
-.preview{width:min(70vw,620px);height:min(68vh,620px);display:grid;place-items:center}.preview img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 20px 24px rgba(0,0,0,.35))}
+main{min-height:100vh;display:grid;grid-template-columns:minmax(300px,390px) 1fr}aside{padding:22px;border-right:1px solid #303036;background:#18181d;overflow:auto}
+h1{font-size:20px;margin:0 0 8px}p{font-size:12px;line-height:1.5;color:#aaa6b1}.field{margin:12px 0}.field label{display:block;font-size:11px;color:#aaa6b1;margin-bottom:5px}
+.upload,button,select{display:flex;align-items:center;justify-content:center;width:100%;min-height:40px;border:1px solid #4b4952;background:#222229;color:#fff;font:600 12px inherit}.upload,button{cursor:pointer}.upload input{display:none}select{padding:0 9px}
+button{margin-top:8px}button:disabled{opacity:.42;cursor:not-allowed}.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stage{display:grid;place-items:center;position:relative;overflow:hidden;background:radial-gradient(circle,#302747,#16141d 55%,#0d0c10)}.preview{width:min(70vw,620px);height:min(68vh,620px);display:grid;place-items:center}.preview img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 20px 24px rgba(0,0,0,.35))}
 .report{margin-top:16px;padding:12px;border:1px solid #33313a;background:#121216;font-size:12px;line-height:1.55}.meter{height:8px;background:#292832;margin:10px 0}.meter>i{display:block;height:100%;width:0;background:currentColor}
-.good{color:#9fe5ad}.warn{color:#e8c381}.bad{color:#eb9393}.mono{font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap;color:#a8c8ff;margin-top:12px}
-.note{position:absolute;bottom:16px;left:16px;color:#77727e;font-size:11px}
-@media(max-width:760px){main{grid-template-columns:1fr;grid-template-rows:auto 1fr}aside{border-right:0;border-bottom:1px solid #303036}}
+.good{color:#9fe5ad}.warn{color:#e8c381}.bad{color:#eb9393}.mono{font:10px/1.5 ui-monospace,monospace;white-space:pre-wrap;color:#a8c8ff;margin-top:12px;max-height:210px;overflow:auto}.note{position:absolute;bottom:16px;left:16px;color:#77727e;font-size:11px}
+@media(max-width:760px){main{grid-template-columns:1fr;grid-template-rows:auto 1fr}aside{border-right:0;border-bottom:1px solid #303036;max-height:56vh}}
 </style>
 </head>
 <body>
 <main>
 <aside>
 <h1>Preparación automática</h1>
-<p>Prueba del flujo “subo imagen → NagWeb decide qué necesita → entrega un asset listo y recomienda el motor”. La IA de fondo queda opcional.</p>
-<label class="upload">Elegir imagen<input id="file" type="file" accept="image/png,image/jpeg,image/webp"></label>
-<label style="display:flex;gap:8px;align-items:center;margin:12px 0;font-size:12px"><input id="allowAI" type="checkbox"> Permitir IA de fondo si hace falta</label>
+<p>Flujo robusto: conserva el original, usa IA sólo si hace falta y está autorizada, permite cancelar y nunca obliga a aceptar la recomendación automática.</p>
+<label class="upload">Elegir PNG / JPG / WebP<input id="file" type="file" accept="image/png,image/jpeg,image/webp"></label>
+<div class="field"><label>Modo final</label><select id="mode"><option value="auto">Automático</option><option value="follower">Seguidor</option><option value="organic">Orgánico</option></select></div>
+<label style="display:flex;gap:8px;align-items:center;margin:12px 0;font-size:12px"><input id="allowAI" type="checkbox"> Permitir IA para quitar fondo si hace falta</label>
 <button id="prepare" disabled>Preparar automáticamente</button>
+<div class="row"><button id="cancel" disabled>Cancelar</button><button id="restore" disabled>Restaurar original</button></div>
 <div id="report" class="report">Elegí una imagen para empezar.</div>
 <div id="json" class="mono"></div>
 </aside>
-<section class="stage">
-<div class="preview"><img id="image" alt="Vista previa"></div>
-<div class="note">LAB AISLADO · no modifica NagWeb</div>
-</section>
+<section class="stage"><div class="preview"><img id="image" alt="Vista previa"></div><div class="note">LAB AISLADO · el original siempre se conserva</div></section>
 </main>
 <script src="../js/nagweb-interaction-asset-prep-v1.js"></script>
 <script src="../js/nagweb-interaction-background-ai-v1.js"></script>
 <script src="../js/nagweb-interaction-preparation-v1.js"></script>
 <script>
 (function(){
-  var img=document.getElementById('image'),file=document.getElementById('file'),btn=document.getElementById('prepare'),report=document.getElementById('report'),json=document.getElementById('json');
-  var currentUrl=null;
+  var P=NAGWEB_INTERACTION_PREPARATION,img=document.getElementById('image'),file=document.getElementById('file'),btn=document.getElementById('prepare'),cancel=document.getElementById('cancel'),restore=document.getElementById('restore'),report=document.getElementById('report'),json=document.getElementById('json');
+  var originalUrl=null,preparedUrl=null,currentFile=null,pipeline=null,running=false;
+
+  function cleanupPrepared(){if(preparedUrl){URL.revokeObjectURL(preparedUrl);preparedUrl=null;}}
+  function showStatus(text,cls){report.className='report '+(cls||'');report.textContent=text;}
   function render(result){
-    var q=result.report.quality,cls=q.level==='excellent'?'good':q.level==='good'?'good':q.level==='manual'?'warn':'bad';
+    var q=result.report.quality,cls=q.level==='excellent'||q.level==='good'?'good':q.level==='manual'?'warn':'bad';
     report.className='report '+cls;
     report.innerHTML='<b>Compatibilidad: '+q.label+' · '+q.score+'/100</b><div class="meter"><i style="width:'+q.score+'%"></i></div>'+
-      'Modo recomendado: <b>'+(result.report.recommendedMode==='organic'?'Movimiento orgánico':'Seguidor')+'</b><br>'+
-      'Confianza: '+result.report.recommendationConfidence+'<br>'+
-      'IA usada: '+(result.report.usedAI?'sí':'no')+' · recorte: '+(result.report.trimmed?'sí':'no')+
-      (q.reasons.length?'<br><br>'+q.reasons.join('<br>'):'');
+      'Modo final: <b>'+(result.report.recommendedMode==='organic'?'Orgánico':'Seguidor')+'</b><br>'+
+      'Modo automático: '+result.report.automaticMode+' · confianza: '+result.report.recommendationConfidence+'<br>'+
+      'IA intentada: '+(result.report.aiAttempted?'sí':'no')+' · usada: '+(result.report.usedAI?'sí':'no')+' · fallback: '+(result.report.aiFallback?'sí':'no')+'<br>'+
+      'Original preservado: <b>'+ (result.report.originalPreserved?'sí':'no') +'</b>'+
+      (result.report.warnings.length?'<br><br>⚠ '+result.report.warnings.join('<br>⚠ '):'');
     json.textContent=JSON.stringify(result.report,null,2);
   }
+  function finish(){running=false;btn.disabled=!currentFile;cancel.disabled=true;restore.disabled=!originalUrl;}
   file.onchange=function(){
     var f=file.files&&file.files[0];if(!f)return;
-    if(currentUrl)URL.revokeObjectURL(currentUrl);currentUrl=URL.createObjectURL(f);
-    img.onload=function(){btn.disabled=false;report.className='report';report.textContent='Imagen lista. Tocá “Preparar automáticamente”.';json.textContent='';};
-    img.src=currentUrl;
+    if(running&&pipeline)pipeline.cancel();
+    var check=P.validateFile(f,{});
+    if(check.blocked){currentFile=null;btn.disabled=true;showStatus(check.warnings.join(' '),'bad');return;}
+    cleanupPrepared();if(originalUrl)URL.revokeObjectURL(originalUrl);
+    currentFile=f;originalUrl=URL.createObjectURL(f);img.src=originalUrl;restore.disabled=false;
+    img.onload=function(){btn.disabled=false;showStatus('Original cargado · '+f.name+' · '+(f.size/1048576).toFixed(1)+' MB'+(check.warnings.length?' · '+check.warnings.join(' '):''),check.warnings.length?'warn':'');json.textContent='';};
   };
+  restore.onclick=function(){if(!originalUrl)return;cleanupPrepared();img.src=originalUrl;showStatus('Original restaurado. Ninguna preparación modificó el archivo fuente.');json.textContent='';};
+  cancel.onclick=function(){if(pipeline)pipeline.cancel();cancel.disabled=true;showStatus('Cancelando… el original sigue intacto.','warn');};
   btn.onclick=async function(){
-    btn.disabled=true;report.className='report';report.textContent='Preparando…';
+    if(!currentFile||running)return;running=true;btn.disabled=true;cancel.disabled=false;showStatus('Preparando…');
+    pipeline=P.createPipeline({
+      allowAI:document.getElementById('allowAI').checked,autoRemoveBackground:true,autoTrim:true,
+      progress:function(x){if(running)showStatus('Preparando · '+x.stage,x.stage==='background-error'?'warn':'');}
+    });
     try{
-      var pipeline=NAGWEB_INTERACTION_PREPARATION.createPipeline({
-        allowAI:document.getElementById('allowAI').checked,
-        autoRemoveBackground:true,
-        autoTrim:true,
-        progress:function(x){report.textContent='Preparando · '+x.stage;}
-      });
-      var result=await pipeline.prepare(img);
-      if(result.image&&result.image!==img){
-        var canvas=result.image;
-        if(canvas.toBlob){
-          var blob=await new Promise(function(resolve){canvas.toBlob(resolve,'image/webp',.92);});
-          if(blob){if(currentUrl)URL.revokeObjectURL(currentUrl);currentUrl=URL.createObjectURL(blob);img.src=currentUrl;}
-        }
+      var result=await pipeline.prepare(img,{fileSizeBytes:currentFile.size,modeOverride:document.getElementById('mode').value});
+      if(result.image&&result.image!==img&&result.image.toBlob){
+        var blob=await new Promise(function(resolve){result.image.toBlob(resolve,'image/webp',.92);});
+        if(blob){cleanupPrepared();preparedUrl=URL.createObjectURL(blob);img.src=preparedUrl;}
       }
       render(result);window.__PREPARATION_RESULT__=result;
-    }catch(err){report.className='report bad';report.textContent='ERROR · '+err.message;}
-    btn.disabled=false;
+    }catch(err){
+      if(err&&err.name==='AbortError'){img.src=originalUrl;showStatus('Preparación cancelada. Se mantiene el original.','warn');}
+      else {img.src=originalUrl;showStatus('La preparación falló. Se restauró el original · '+err.message,'bad');}
+    }finally{finish();}
   };
-  window.__NAGWEB_PREPARATION_LAB__={image:img,prepareButton:btn};
+  window.__NAGWEB_PREPARATION_LAB__={image:img,get pipeline(){return pipeline;},prepareButton:btn,cancelButton:cancel,restoreButton:restore};
 })();
 </script>
 </body></html>
