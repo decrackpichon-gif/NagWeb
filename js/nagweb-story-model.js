@@ -91,4 +91,25 @@ function createStoryModel(){
 }
 window.NAGWEB_CREATE_STORY_MODEL=createStoryModel;
 window.NAGWEB_STORY_MODEL=createStoryModel();
+// Procedural motion keeps the same progress source as the Director. Each card
+// is a curved surface, rather than a flat image with a sampled keyframe track.
+function createStreamModel(){
+ var specs={ringTilt:[-28,-60,60,1],ringOpening:[55,15,85,1],ringSize:[80,50,95,1],cardSize:[21,12,32,1],backFade:[70,10,95,5],perspective:[18,0,40,2],padding:[6,0,20,.5],cornerRadius:[3,0,12,.5],turns:[1,.25,20,.25],start:[0,0,99,1],end:[100,1,100,1],scrollLength:[320,140,900,20]};
+ var ratios={'1:1':1,'4:3':4/3,'3:4':3/4,'4:5':4/5,'16:9':16/9,'9:16':9/16};
+ function config(raw){raw=raw||{};var out={};Object.keys(specs).forEach(function(k){var s=specs[k],n=raw[k];out[k]=Math.max(s[1],Math.min(s[2],n!==''&&n!=null&&isFinite(+n)?+n:s[0]));});out.end=Math.max(out.start+1,out.end);out.cardRatio=raw.cardRatio==='auto'||ratios[raw.cardRatio]?raw.cardRatio:'16:9';out.frameRatio=raw.frameRatio==='auto'||ratios[raw.frameRatio]?raw.frameRatio:'16:9';out.shadow=!!raw.shadow;out.backgroundType=['color','gradient','image'].indexOf(raw.backgroundType)>=0?raw.backgroundType:'color';out.backgroundColor=/^#[0-9a-f]{6}$/i.test(raw.backgroundColor||'')?raw.backgroundColor:'#101014';out.gradientColor=/^#[0-9a-f]{6}$/i.test(raw.gradientColor||'')?raw.gradientColor:'#3a3a5a';out.backgroundId=typeof raw.backgroundId==='string'?raw.backgroundId:'';return out;}
+ function phase(progress,c,scroll){var p=scroll?Math.max(0,Math.min(1,(progress*100-c.start)/(c.end-c.start))):progress;return p*c.turns;}
+ function layout(width,height,raw,progress,count,imageRatio,scroll){
+  var c=config(raw),fw=width,fh=height,ratio=ratios[c.frameRatio];if(ratio){if(fw/fh>ratio)fw=fh*ratio;else fh=fw/ratio;}
+  var unit=Math.min(fw,fh)/100,inset=unit*c.padding,radius=Math.min(fw-2*inset,fh-2*inset)/2*c.ringSize/100*1.15,cardW=unit*c.cardSize,cardH=cardW/(ratios[c.cardRatio]||Math.max(.25,Math.min(4,imageRatio||1))),tilt=c.ringTilt*Math.PI/180,opening=c.ringOpening/100,axis=Math.sqrt(1-opening*opening),co=Math.cos(tilt),si=Math.sin(tilt),angle=2*Math.PI*((phase(progress,c,scroll)%1+1)%1),cards=[];
+  function point(a){var x=radius*Math.cos(a),y=-radius*Math.sin(a)*opening,scale=1+c.perspective/100*Math.sin(a);return{x:width/2+(x*co-y*si)*scale,y:height/2-(x*si+y*co)*scale,ax:-axis*si*scale*cardH/2,ay:axis*co*scale*cardH/2,depth:Math.sin(a)};}
+  for(var i=0;i<count;i++){var a=angle+2*Math.PI*i/count,mid=point(a),steps=Math.min(60,Math.max(12,Math.round(cardW/4))),top=[],bottom=[],minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+   for(var j=0;j<=steps;j++){var p=point(a-(j/steps-.5)*cardW/Math.max(1,radius)),t={x:p.x-p.ax,y:p.y-p.ay},b={x:p.x+p.ax,y:p.y+p.ay};top.push(t);bottom.push(b);minX=Math.min(minX,t.x,b.x);maxX=Math.max(maxX,t.x,b.x);minY=Math.min(minY,t.y,b.y);maxY=Math.max(maxY,t.y,b.y);}
+   var front=Math.max(0,Math.min(1,(mid.depth+.3)/.6));cards.push({slot:i,depth:mid.depth,alpha:1-c.backFade/100+c.backFade/100*front,left:Math.floor(minX)-3,top:Math.floor(minY)-3,width:Math.max(1,Math.ceil(maxX)-Math.floor(minX)+6),height:Math.max(1,Math.ceil(maxY)-Math.floor(minY)+6),upper:top,lower:bottom,textureWidth:cardW,textureHeight:cardH,corner:unit*c.cornerRadius*1.4});
+  }
+  return cards.sort(function(a,b){return a.depth-b.depth;});
+ }
+ return{config:config,specs:specs,ratios:ratios,phase:phase,layout:layout};
+}
+window.NAGWEB_CREATE_STREAM_MODEL=createStreamModel;
+window.NAGWEB_STREAM_MODEL=createStreamModel();
 })();

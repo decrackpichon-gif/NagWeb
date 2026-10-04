@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+const scope={window:{}};vm.runInNewContext(fs.readFileSync(new URL('../js/nagweb-story-model.js',import.meta.url),'utf8'),scope);
+const m=scope.window.NAGWEB_STREAM_MODEL,c=m.config({ringTilt:0,turns:3,start:20,end:80});
+assert.equal(m.phase(.1,c,true),0);assert.equal(m.phase(.5,c,true),1.5);assert.equal(m.phase(.9,c,true),3);
+const plain=x=>JSON.parse(JSON.stringify(x)),a=plain(m.layout(1280,720,c,0,12)),b=plain(m.layout(1280,720,c,1,12));assert.deepEqual(a,b,'Integer revolutions close at the exact same curved geometry');
+const front=a.find(x=>x.slot===3),back=a.find(x=>x.slot===9);assert.equal(front.depth,1);assert.equal(front.alpha,1);assert.ok(Math.abs(back.alpha-.3)<1e-9);assert.ok(front.width>back.width,'Perspective enlarges the front surface');assert.ok(front.upper.some(p=>Math.abs(p.y-front.upper[0].y)>1),'A card is curved rather than a rigid flat plane');assert.equal(a.length,12);assert.ok(a.every((x,i)=>!i||x.depth>=a[i-1].depth));
+const bounded=m.config({turns:Infinity,start:90,end:10,ringSize:999,perspective:-10});assert.equal(bounded.turns,1);assert.equal(bounded.end,91);assert.equal(bounded.ringSize,95);assert.equal(bounded.perspective,0);
+console.log('Showcase Stream: ciclo exacto, fases de scroll y límites, profundidad/perspectiva, curvatura real y orden de superficies OK');

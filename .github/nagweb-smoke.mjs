@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer-core';
 import fs from 'node:fs';
 import './nagweb-depth-model-test.mjs';
+import './nagweb-stream-model-test.mjs';
 import {runStorytellingSmoke} from './nagweb-storytelling-smoke.mjs';
 import {runCompositionSmoke} from './nagweb-composition-smoke.mjs';
 import {runHistorySmoke} from './nagweb-history-smoke.mjs';
@@ -34,6 +35,7 @@ import {runMotionLibrarySmoke} from './nagweb-motion-library-smoke.mjs';
 import {runMotionSearchSmoke} from './nagweb-motion-search-smoke.mjs';
 import {runMotionExpandSmoke} from './nagweb-motion-expand-smoke.mjs';
 import {runMotionDropSmoke} from './nagweb-motion-drop-smoke.mjs';
+import {runMotionStreamSmoke} from './nagweb-motion-stream-smoke.mjs';
 
 const feedbackSource=fs.readFileSync(new URL('../js/nagweb-feedback-v16.js',import.meta.url),'utf8');
 const directorSource=fs.readFileSync(new URL('../js/nagweb-scroll-director-v16.js',import.meta.url),'utf8');
@@ -215,6 +217,7 @@ if(workspaceState.leftToggles!==1||workspaceState.rightToggles!==1) throw new Er
 if(Math.abs(workspaceState.rightWidth-savedInspectorWidth)>3) throw new Error('Inspector width did not survive reload: '+JSON.stringify({workspaceState,savedInspectorWidth}));
 await page.click('.nw-dock-toggle.left');
 
+await runMotionStreamSmoke(page);
 await runMotionDropSmoke(page);
 await runMotionExpandSmoke(page);
 await runHistorySmoke(page);
