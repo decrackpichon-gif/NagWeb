@@ -79,6 +79,25 @@ jobs:
           node .github/nagweb-interaction-background-ai-browser-smoke.mjs
           node .github/nagweb-interaction-preparation-browser-smoke.mjs
           node .github/nagweb-interaction-studio-browser-smoke.mjs
+      - name: Build human QA kit
+        run: |
+          mkdir -p /tmp/nagweb-interaction-studio/experiments /tmp/nagweb-interaction-studio/js
+          cp experiments/interaction-studio-v1.html /tmp/nagweb-interaction-studio/experiments/
+          cp experiments/INTERACTION_STUDIO_TEST.md /tmp/nagweb-interaction-studio/
+          cp js/nagweb-interaction-engine-v1.js /tmp/nagweb-interaction-studio/js/
+          cp js/nagweb-interaction-asset-prep-v1.js /tmp/nagweb-interaction-studio/js/
+          cp js/nagweb-interaction-influence-v1.js /tmp/nagweb-interaction-studio/js/
+          cp js/nagweb-interaction-organic-v2.js /tmp/nagweb-interaction-studio/js/
+          cp js/nagweb-interaction-background-ai-v1.js /tmp/nagweb-interaction-studio/js/
+          cp js/nagweb-interaction-preparation-v1.js /tmp/nagweb-interaction-studio/js/
+          cp js/nagweb-interaction-session-v1.js /tmp/nagweb-interaction-studio/js/
+      - name: Upload Interaction Studio test kit
+        uses: actions/upload-artifact@v4
+        with:
+          name: interaction-studio-test-kit
+          path: /tmp/nagweb-interaction-studio
+          if-no-files-found: error
+          retention-days: 14
       - name: Save interaction lab screenshot
         if: always()
         uses: actions/upload-artifact@v4
