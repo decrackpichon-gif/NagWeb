@@ -140,3 +140,23 @@ Una puntuación baja nunca bloquea artificialmente el modo rígido. La recomenda
 ### Estado de madurez
 
 El pipeline sigue en laboratorio y no se conecta todavía al editor. Para considerarlo listo faltan pruebas con un banco diverso de assets reales, cancelación del proceso IA, manejo de archivos muy grandes, persistencia del asset preparado y UX de corrección manual de la recomendación.
+
+
+## Robustez de preparación — V1.1
+
+La preparación automática ahora trata el archivo original como inmutable. Toda operación trabaja sobre una copia lógica o visual y el resultado conserva `originalImage`; un fallo de IA, una cancelación o una recomendación rechazada nunca reemplazan el recurso fuente.
+
+Se agregaron:
+
+- validación temprana de formato y peso;
+- advertencia para archivos pesados y límite configurable;
+- límite de megapíxeles para evitar picos extremos de memoria;
+- copia reducida sólo para la entrada de IA cuando el asset es demasiado grande;
+- cancelación cooperativa durante carga/inferencia y también entre etapas locales;
+- fallback al original si la IA falla;
+- reporte explícito de IA intentada/usada/fallback;
+- override manual `auto | follower | organic`;
+- advertencia si se fuerza Orgánico sin una silueta confiable;
+- botón **Restaurar original** permanente en el laboratorio.
+
+La cancelación de modelos en navegador es cooperativa: JavaScript no puede detener a mitad de instrucción una inferencia ya entregada al backend WebGPU/WASM, pero el resultado posterior se invalida y no se aplica. Esto evita cambios tardíos sobre el asset o la interfaz.
