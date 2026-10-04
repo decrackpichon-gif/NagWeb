@@ -384,3 +384,9 @@ Dos fuentes de reproducción: Loop continuo (segundos por vuelta, independiente 
 Insertar como escena nueva crea un grupo editable dentro de esa escena; el panel de escena permite reabrirlo en Motion Lab. Insertar en esta escena utiliza el grupo habitual. Guardar modifica esa misma instancia. Biblioteca, JSON, Deshacer/Rehacer y HTML exportado conservan los parámetros y recursos. Movimiento reducido mantiene el anillo quieto; las pausas y la visibilidad usan el reloj compartido del Director, sin añadir relojes por imagen.
 
 El modelo puro prueba cierre exacto, curvatura, orden de superficies, perspectiva y límites de fase. La prueba de navegador comprueba selección, archivos reales, controles, recuperación por cantidad, fondos, tres vueltas entre 20% y 80%, recorrido de 420vh, avance/retroceso con scroll real en el HTML exportado, loop sin recorrido extra, edición de instancia, Biblioteca, historial, escena reeditable, pantalla compacta y movimiento reducido. Las capturas del anillo de escritorio y móvil acompañan los artefactos de CI.
+
+## Showcase Stream sin fondo y tamaño proporcional
+
+El fondo puede ser “Sin fondo”: el grupo permanece transparente en el editor y en el HTML exportado, mostrando la escena que tiene detrás. Al colocarlo se selecciona la composición completa; hacer clic sobre sus tarjetas en la escena selecciona ese grupo. Las imágenes del anillo se personalizan en Motion Lab, donde la plantilla sigue determinando su geometría.
+
+El tirador de tamaño cambia ancho y alto juntos, conservando la proporción de la órbita y sus tarjetas. El runtime observa el tamaño del contenedor para redibujar durante el arrastre, incluso con la vista previa pausada. La cancelación restaura ambas dimensiones; Deshacer/Rehacer y reapertura conservan el tamaño. La prueba de navegador usa arrastre real por mouse en Loop y Scroll, compara la geometría proporcional de las doce tarjetas y comprueba transparencia y recursos en exportación.
