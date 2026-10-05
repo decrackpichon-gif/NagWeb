@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NagWeb · Organic Mesh V3 Lab</title><link rel="icon" href="data:,">
+<title>NagWeb · Organic Mesh V3.1 Lab</title><link rel="icon" href="data:,">
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#111117;color:#f4f0e8;font-family:Inter,system-ui,sans-serif}body{overflow:hidden}
 .app{height:100%;display:grid;grid-template-columns:320px 1fr}.panel{padding:18px;border-right:1px solid #30303a;background:#18181e;overflow:auto}.panel h1{font-size:18px;margin:0 0 6px}.panel p{font-size:12px;line-height:1.5;color:#aaa6b3;margin:0 0 16px}
@@ -13,8 +13,8 @@
 <body>
 <div class="app">
 <aside class="panel">
-  <h1>Organic Mesh V3</h1>
-  <p>Renderer experimental de malla WebGL continua. No usa slices independientes.</p>
+  <h1>Organic Mesh V3.1</h1>
+  <p>Renderer de malla WebGL continua con rigidez diferenciada para cabeza, torso y parte baja.</p>
   <label class="upload">Subir PNG / WebP transparente<input id="file" type="file" accept="image/png,image/webp"></label>
   <div class="preview"><img id="preview" alt="Asset"></div>
   <div id="status" class="status">Cargando benchmark…</div>
@@ -27,10 +27,15 @@
     <div class="field"><label>Ondas <output id="wavesOut"></output></label><input id="waves" type="range" min="1" max="8" step=".2" value="4"></div>
   </div>
   <div class="group">
-    <h2>Protección del personaje</h2>
-    <div class="field"><label>Zona rígida de cabeza <output id="rigidOut"></output></label><input id="rigid" type="range" min=".08" max=".42" step=".01" value=".22"></div>
-    <div class="field"><label>Curvatura cabeza <output id="headBendOut"></output></label><input id="headBend" type="range" min=".03" max=".22" step=".005" value=".085"></div>
-    <div class="field"><label>Curvatura cuerpo <output id="bodyBendOut"></output></label><input id="bodyBend" type="range" min=".12" max=".55" step=".01" value=".28"></div>
+    <h2>Zonas del personaje</h2>
+    <div class="field"><label>Fin de cabeza <output id="headZoneOut"></output></label><input id="headZone" type="range" min=".10" max=".36" step=".01" value=".22"></div>
+    <div class="field"><label>Fin de torso <output id="torsoZoneOut"></output></label><input id="torsoZone" type="range" min=".45" max=".84" step=".01" value=".66"></div>
+    <div class="field"><label>Rigidez cabeza <output id="headRigidityOut"></output></label><input id="headRigidity" type="range" min=".65" max="1" step=".01" value=".965"></div>
+    <div class="field"><label>Rigidez torso <output id="torsoRigidityOut"></output></label><input id="torsoRigidity" type="range" min=".10" max=".90" step=".01" value=".58"></div>
+    <div class="field"><label>Flexibilidad inferior <output id="lowerFlexOut"></output></label><input id="lowerFlex" type="range" min=".45" max="1" step=".01" value="1"></div>
+    <div class="field"><label>Curvatura cabeza <output id="headBendOut"></output></label><input id="headBend" type="range" min=".025" max=".18" step=".005" value=".065"></div>
+    <div class="field"><label>Curvatura torso <output id="torsoBendOut"></output></label><input id="torsoBend" type="range" min=".07" max=".30" step=".005" value=".16"></div>
+    <div class="field"><label>Curvatura inferior <output id="bodyBendOut"></output></label><input id="bodyBend" type="range" min=".16" max=".55" step=".01" value=".30"></div>
   </div>
   <div class="group">
     <h2>Malla</h2>
@@ -60,8 +65,13 @@
       length:Number(document.getElementById('length').value),
       sway:Number(document.getElementById('sway').value),
       swayWaves:Number(document.getElementById('waves').value),
-      headRigidFraction:Number(document.getElementById('rigid').value),
+      headZoneEnd:Number(document.getElementById('headZone').value),
+      torsoZoneEnd:Number(document.getElementById('torsoZone').value),
+      headFlex:1-Number(document.getElementById('headRigidity').value),
+      torsoFlex:1-Number(document.getElementById('torsoRigidity').value),
+      lowerFlex:Number(document.getElementById('lowerFlex').value),
       headMaxBend:Number(document.getElementById('headBend').value),
+      torsoMaxBend:Number(document.getElementById('torsoBend').value),
       bodyMaxBend:Number(document.getElementById('bodyBend').value),
       columns:Number(document.getElementById('columns').value),
       rows:Number(document.getElementById('rows').value)
@@ -69,11 +79,13 @@
   }
   function syncOutputs(){
     lengthOut.value=length.value+' px';swayOut.value=sway.value;wavesOut.value=waves.value;
-    rigidOut.value=rigid.value;headBendOut.value=headBend.value;bodyBendOut.value=bodyBend.value;
+    headZoneOut.value=Math.round(Number(headZone.value)*100)+'%';torsoZoneOut.value=Math.round(Number(torsoZone.value)*100)+'%';
+    headRigidityOut.value=Math.round(Number(headRigidity.value)*100)+'%';torsoRigidityOut.value=Math.round(Number(torsoRigidity.value)*100)+'%';lowerFlexOut.value=Math.round(Number(lowerFlex.value)*100)+'%';
+    headBendOut.value=headBend.value;torsoBendOut.value=torsoBend.value;bodyBendOut.value=bodyBend.value;
     columnsOut.value=columns.value;rowsOut.value=rows.value;
   }
   function applyLive(){syncOutputs();if(renderer)renderer.setOptions(opts());}
-  ['length','sway','waves','rigid','headBend','bodyBend','columns','rows'].forEach(function(id){document.getElementById(id).addEventListener('input',applyLive);});
+  ['length','sway','waves','headZone','torsoZone','headRigidity','torsoRigidity','lowerFlex','headBend','torsoBend','bodyBend','columns','rows'].forEach(function(id){document.getElementById(id).addEventListener('input',applyLive);});
 
   async function prepare(){
     status.textContent='Analizando y preparando…';
@@ -83,7 +95,7 @@
     preview.src=source.src;
     if(renderer)renderer.destroy();
     renderer=M.createRenderer(Object.assign({leader:follower,canvas:canvas,area:stage,image:prepared.canvas},opts()));
-    status.textContent='V3 listo · WebGL mesh · '+renderer.topology.vertexCount+' vértices · '+(renderer.topology.indexCount/3)+' triángulos · eje '+prepared.axisAngle.toFixed(1)+'°';
+    status.textContent='V3.1 listo · 3 zonas · WebGL mesh · '+renderer.topology.vertexCount+' vértices · '+(renderer.topology.indexCount/3)+' triángulos · eje '+prepared.axisAngle.toFixed(1)+'°';
     window.__NAGWEB_ORGANIC_V3__.renderer=renderer;window.__NAGWEB_ORGANIC_V3__.analysis=analysis;window.__NAGWEB_ORGANIC_V3__.prepared=prepared;
   }
 
