@@ -15,7 +15,7 @@
 .stage{position:relative;overflow:hidden;touch-action:none;background:radial-gradient(100% 100% at 60% 40%,#45335b 0,#221c2d 47%,#0e0d13 100%)}.stage:after{content:"INTERACTION STUDIO";position:absolute;right:18px;bottom:16px;font:10px ui-monospace,monospace;color:#686370;pointer-events:none}
 .hero{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}.headline{display:flex;flex-wrap:wrap;justify-content:center;max-width:84%;gap:.01em;font:900 clamp(58px,11vw,180px)/.78 Arial Black,Impact,sans-serif;letter-spacing:-.07em;text-align:center;color:#f1eadc}.headline span{display:inline-block}.headline .break{flex-basis:100%;height:0}
 .sub{position:absolute;top:24px;left:28px;font-size:11px;color:#bcb6c5;pointer-events:none}.sub b{color:#fff}.contentCard{position:absolute;right:5.5%;bottom:7%;width:min(360px,34vw);padding:18px 20px;border:1px solid rgba(255,255,255,.18);background:rgba(17,15,24,.42);backdrop-filter:blur(12px);border-radius:18px;pointer-events:none}.contentCard .eyebrow{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:#bdb6c9;margin-bottom:8px}.contentCard h3{font-size:clamp(18px,2.3vw,34px);line-height:1.02;margin:0 0 10px}.contentCard p{font-size:12px;line-height:1.5;color:#c6c1cc;margin:0 0 14px}.contentCard .word,.contentCard .chip,.headline span{display:inline-block}.contentCard .chip{padding:8px 12px;border:1px solid rgba(255,255,255,.32);border-radius:999px;color:#fff;font-size:11px}.followerVisual{position:absolute;left:0;top:0;width:240px;height:240px;display:grid;place-items:center;pointer-events:none;transform-origin:50% 50%;will-change:transform}.followerVisual img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 18px 19px rgba(0,0,0,.38))}.leader{position:absolute;width:2px;height:2px;opacity:0;pointer-events:none}#organicCanvas,#organicMeshCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-.pill{display:inline-flex;align-items:center;padding:3px 7px;border:1px solid #4a4853;border-radius:999px;font-size:9px;color:#bbb6c3}.modeNote{margin-top:6px;font-size:10px;color:#8f8b96}.export{margin-top:8px;width:100%;height:120px;background:#101014;color:#a9c9ff;border:1px solid #33343c;padding:8px;font:9px/1.45 ui-monospace,monospace;resize:vertical}
+.pill{display:inline-flex;align-items:center;padding:3px 7px;border:1px solid #4a4853;border-radius:999px;font-size:9px;color:#bbb6c3}.modeNote{margin-top:6px;font-size:10px;color:#8f8b96}.targetMeta{display:flex;justify-content:space-between;gap:8px;align-items:center;margin:7px 0 0;font-size:10px;color:#9e99a7}.targetEditor{margin-top:8px;padding:10px;border:1px solid #45434e;background:#111116}.targetEditor[hidden]{display:none}.targetName{font-size:10px;color:#f1edf5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:8px}.stage.target-editing .hero,.stage.target-editing .contentCard{pointer-events:auto}.stage.target-editing [data-nw-target-id]{pointer-events:auto;cursor:pointer;outline:1px dashed rgba(255,255,255,.22);outline-offset:3px;border-radius:3px}.stage.target-editing [data-nw-target-id][data-nw-reactive="1"]{outline-color:rgba(145,224,169,.8)}.stage.target-editing [data-nw-target-id][data-nw-selected="1"]{outline:2px solid #ffd38f;outline-offset:5px}.stage.target-editing:before{content:"EDITANDO OBJETIVOS";position:absolute;z-index:20;left:24px;top:48px;padding:5px 8px;border:1px solid #8a754e;background:#17140e;color:#ffd38f;font:700 9px ui-monospace,monospace;pointer-events:none}.export{margin-top:8px;width:100%;height:120px;background:#101014;color:#a9c9ff;border:1px solid #33343c;padding:8px;font:9px/1.45 ui-monospace,monospace;resize:vertical}
 @media(max-width:800px){body{overflow:auto}.app{grid-template-columns:1fr;grid-template-rows:auto 62vh;height:auto;min-height:100%}.panel{border-right:0;border-bottom:1px solid var(--line);max-height:none}.stage{min-height:62vh}.followerVisual{width:180px;height:180px}}
 </style>
 </head>
@@ -65,7 +65,14 @@
     <h2>Campo de influencia</h2>
     <label class="check"><input id="influence" type="checkbox" checked> Empujar elementos cercanos</label>
     <div class="field"><label>Influencia desde</label><select id="influenceSource"><option value="body">Cuerpo completo</option><option value="head">Cabeza / cursor</option></select></div>
-    <div class="field"><label>Objetivos de prueba</label><select id="influenceTargets"><option value="headline">Sólo título</option><option value="all">Título + contenido</option></select></div>
+    <div class="field"><label>Objetivos</label><select id="influenceTargets"><option value="headline">Sólo título</option><option value="all">Título + contenido</option><option value="custom">Selección personalizada</option></select></div>
+    <button id="editTargets" class="btn">Editar objetivos visualmente</button>
+    <div class="targetMeta"><span id="targetCount">0 reactivos</span><span>clic en un elemento para editarlo</span></div>
+    <div id="targetEditor" class="targetEditor" hidden>
+      <div id="targetName" class="targetName">Sin elemento seleccionado</div>
+      <label class="check"><input id="targetEnabled" type="checkbox"> Este elemento reacciona</label>
+      <div class="field"><label>Intensidad <output id="targetWeightOut">100%</output></label><input id="targetWeight" type="range" min="0" max="2" step=".01" value="1"></div>
+    </div>
     <div class="field"><label>Radio <output id="radiusOut"></output></label><input id="radius" type="range" min="70" max="420" step="5" value="210"></div>
     <div class="field"><label>Fuerza <output id="strengthOut"></output></label><input id="strength" type="range" min="0" max="2.5" step=".05" value="1"></div>
   </div>
@@ -107,7 +114,7 @@
   var E=NAGWEB_INTERACTION_ENGINE,A=NAGWEB_INTERACTION_ASSET_PREP,I=NAGWEB_INTERACTION_INFLUENCE,O=NAGWEB_ORGANIC_FOLLOWER,M=NAGWEB_ORGANIC_MESH,P=NAGWEB_INTERACTION_PREPARATION,S=NAGWEB_INTERACTION_SESSION;
   var stage=document.getElementById('stage'),leaderEl=document.getElementById('leader'),visual=document.getElementById('followerVisual'),visualImg=document.getElementById('followerImage'),sourcePreview=document.getElementById('sourcePreview'),canvas=document.getElementById('organicCanvas'),meshCanvas=document.getElementById('organicMeshCanvas'),sourceImage=new Image();
   var originalUrl=null,preparedUrl=null,currentFile=null,pipeline=null,prepResult=null,organicPrepared=null,organicRenderer=null,influenceField=null;
-  var axis={trail:{x:.12,y:.5},lead:{x:.88,y:.5},manual:false},zones={headEnd:.22,torsoEnd:.66,manual:false},activeMode='follower',activeOrganicEngine='mesh-v3',busy=false;
+  var axis={trail:{x:.12,y:.5},lead:{x:.88,y:.5},manual:false},zones={headEnd:.22,torsoEnd:.66,manual:false},activeMode='follower',activeOrganicEngine='mesh-v3',busy=false,targetEditing=false,selectedTargetId=null;
   var fallback='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="760" height="270" viewBox="0 0 760 270"><defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#ff7658"/><stop offset=".52" stop-color="#ffe3a8"/><stop offset="1" stop-color="#ff9867"/></linearGradient></defs><path d="M48 135c67-83 204-90 320-39 99-55 225-55 324 0l49-54-13 73 13 73-49-54c-99 55-225 55-324 0-116 51-253 44-320-39L8 135z" fill="url(#g)"/><circle cx="116" cy="111" r="14" fill="#31232b"/><circle cx="121" cy="106" r="4" fill="#fff"/></svg>');
 
   var follower=E.createFollower(leaderEl,{
@@ -298,10 +305,80 @@
     var size=Number(document.getElementById('size').value),ratio=(organicPrepared.height||1)/Math.max(1,organicPrepared.width||1);
     return Math.max(6,Math.min(90,size*ratio*.16));
   }
+  function influenceCandidates(){return Array.from(stage.querySelectorAll('[data-nw-target-id]'));}
+  function registerInfluenceCandidates(){
+    Array.from(stage.querySelectorAll('.influenceHeadline')).forEach(function(el,i){
+      if(!el.getAttribute('data-nw-target-id'))el.setAttribute('data-nw-target-id','headline-'+i);
+      if(!el.hasAttribute('data-nw-reactive'))el.setAttribute('data-nw-reactive','1');
+    });
+    Array.from(stage.querySelectorAll('.influenceContent')).forEach(function(el,i){
+      if(!el.getAttribute('data-nw-target-id'))el.setAttribute('data-nw-target-id',(el.classList.contains('chip')?'cta-':'content-')+i);
+      if(!el.hasAttribute('data-nw-reactive'))el.setAttribute('data-nw-reactive','0');
+    });
+    refreshTargetVisuals();
+  }
+  function targetSelection(){
+    return influenceCandidates().map(function(el){
+      return {id:el.getAttribute('data-nw-target-id'),enabled:el.getAttribute('data-nw-reactive')==='1',weight:Math.max(0,Math.min(2,Number(el.getAttribute('data-nw-influence-weight'))||0))};
+    });
+  }
+  function refreshTargetVisuals(){
+    var list=influenceCandidates(),active=list.filter(function(el){return el.getAttribute('data-nw-reactive')==='1';});
+    document.getElementById('targetCount').textContent=active.length+' de '+list.length+' reactivos';
+    list.forEach(function(el){el.setAttribute('data-nw-selected',el.getAttribute('data-nw-target-id')===selectedTargetId?'1':'0');});
+  }
+  function applyTargetScenario(name,rebuild){
+    name=['headline','all','custom'].indexOf(name)>=0?name:'headline';
+    document.getElementById('influenceTargets').value=name;
+    if(name!=='custom'){
+      influenceCandidates().forEach(function(el){
+        var enabled=name==='all'||el.classList.contains('influenceHeadline');
+        el.setAttribute('data-nw-reactive',enabled?'1':'0');
+      });
+    }
+    refreshTargetVisuals();
+    if(rebuild!==false)updateInfluence();
+  }
+  function applyTargetSelection(items){
+    var map={};(Array.isArray(items)?items:[]).forEach(function(item){if(item&&item.id)map[item.id]=item;});
+    influenceCandidates().forEach(function(el){
+      var id=el.getAttribute('data-nw-target-id'),item=map[id];
+      if(!item)return;
+      el.setAttribute('data-nw-reactive',item.enabled===false?'0':'1');
+      el.setAttribute('data-nw-influence-weight',String(Math.max(0,Math.min(2,Number(item.weight)||0))));
+    });
+    refreshTargetVisuals();
+  }
   function influenceTargetList(){
-    return document.getElementById('influenceTargets').value==='all'
-      ? document.querySelectorAll('.influenceHeadline,.influenceContent')
-      : document.querySelectorAll('.influenceHeadline');
+    return influenceCandidates().filter(function(el){return el.getAttribute('data-nw-reactive')==='1';});
+  }
+  function selectInfluenceTarget(el){
+    if(!el)return;
+    selectedTargetId=el.getAttribute('data-nw-target-id');
+    document.getElementById('targetEditor').hidden=false;
+    document.getElementById('targetName').textContent=(el.textContent||selectedTargetId).trim().slice(0,60)+' · '+selectedTargetId;
+    document.getElementById('targetEnabled').checked=el.getAttribute('data-nw-reactive')==='1';
+    var weight=Math.max(0,Math.min(2,Number(el.getAttribute('data-nw-influence-weight'))||0));
+    document.getElementById('targetWeight').value=weight;
+    document.getElementById('targetWeightOut').value=Math.round(weight*100)+'%';
+    refreshTargetVisuals();
+  }
+  function selectedInfluenceTarget(){
+    return selectedTargetId?stage.querySelector('[data-nw-target-id="'+selectedTargetId.replace(/"/g,'')+'"]'):null;
+  }
+  function setTargetEditing(next){
+    targetEditing=!!next;
+    stage.classList.toggle('target-editing',targetEditing);
+    document.getElementById('editTargets').textContent=targetEditing?'Terminar edición de objetivos':'Editar objetivos visualmente';
+    if(targetEditing){
+      if(document.getElementById('influenceTargets').value!=='custom')document.getElementById('influenceTargets').value='custom';
+      follower.pause();if(influenceField)influenceField.pause();
+      status('Edición de objetivos activa · hacé clic en un elemento de la composición.','warn');
+    }else{
+      follower.resume();if(influenceField)influenceField.resume();
+      status('Objetivos personalizados listos · '+document.getElementById('targetCount').textContent+'.','good');
+    }
+    refreshTargetVisuals();
   }
   function influenceOpts(){return {radius:Number(document.getElementById('radius').value),strength:Number(document.getElementById('strength').value),maxPush:85,maxRotate:11,maxScale:.09,spring:.08,damping:.84,sourceMode:document.getElementById('influenceSource').value==='head'?'head':'body',sweptBody:true,maxSweepDistance:220,sourceRadius:influencePhysicalRadius()};}
   function updateInfluence(){
@@ -319,6 +396,7 @@
         ...influenceOpts()
       });
     }
+    if(targetEditing&&influenceField)influenceField.pause();
     window.__NAGWEB_INTERACTION_STUDIO__.influenceField=influenceField;
     output('radius',document.getElementById('radius').value+' px');output('strength',document.getElementById('strength').value);
   }
@@ -347,7 +425,7 @@
       organicRenderer:activeOrganicEngine,
       bodyProfile:document.getElementById('bodyProfile').value,
       display:{size:Number(document.getElementById('size').value)},
-      organicOptions:organicRenderer?organicRenderer.options:(selectedOrganicEngine()==='mesh-v3'?organicV3Opts():organicV2Opts()),influenceOptions:Object.assign({},influenceOpts(),{targetScenario:document.getElementById('influenceTargets').value}),
+      organicOptions:organicRenderer?organicRenderer.options:(selectedOrganicEngine()==='mesh-v3'?organicV3Opts():organicV2Opts()),influenceOptions:Object.assign({},influenceOpts(),{targetScenario:document.getElementById('influenceTargets').value,targetSelection:targetSelection()}),
       assetProfile:currentAssetProfile(),preparationReport:prepResult&&prepResult.report,
       assetRef:currentFile?{name:currentFile.name,type:currentFile.type,size:currentFile.size}:{name:'demo-asset.svg',type:'image/svg+xml'},
       metadata:{name:currentFile?currentFile.name:'Demo Interaction Studio'}
@@ -380,7 +458,10 @@
     if(Number.isFinite(Number(io.radius)))document.getElementById('radius').value=io.radius;
     if(Number.isFinite(Number(io.strength)))document.getElementById('strength').value=io.strength;
     document.getElementById('influenceSource').value=io.sourceMode==='head'?'head':'body';
-    if(io.targetScenario)document.getElementById('influenceTargets').value=io.targetScenario==='all'?'all':'headline';
+    var scenario=['headline','all','custom'].indexOf(io.targetScenario)>=0?io.targetScenario:'headline';
+    document.getElementById('influenceTargets').value=scenario;
+    if(io.targetSelection&&io.targetSelection.length)applyTargetSelection(io.targetSelection);
+    else applyTargetScenario(scenario,false);
     follower.setOptions(fo);
     drawAxis();syncMotion();updateInfluence();
     await updateModeUI();
@@ -416,7 +497,29 @@
   });
   document.getElementById('influence').onchange=updateInfluence;
   document.getElementById('influenceSource').onchange=updateInfluence;
-  document.getElementById('influenceTargets').onchange=updateInfluence;
+  document.getElementById('influenceTargets').onchange=function(){applyTargetScenario(this.value,true);};
+  document.getElementById('editTargets').onclick=function(){setTargetEditing(!targetEditing);};
+  stage.addEventListener('click',function(ev){
+    if(!targetEditing)return;
+    var el=ev.target.closest&&ev.target.closest('[data-nw-target-id]');
+    if(!el||!stage.contains(el))return;
+    ev.preventDefault();ev.stopPropagation();selectInfluenceTarget(el);
+  },true);
+  document.getElementById('targetEnabled').onchange=function(){
+    var el=selectedInfluenceTarget();if(!el)return;
+    el.setAttribute('data-nw-reactive',this.checked?'1':'0');
+    document.getElementById('influenceTargets').value='custom';
+    refreshTargetVisuals();updateInfluence();
+    if(targetEditing&&influenceField)influenceField.pause();
+  };
+  document.getElementById('targetWeight').oninput=function(){
+    var el=selectedInfluenceTarget();if(!el)return;
+    var weight=Math.max(0,Math.min(2,Number(this.value)||0));
+    el.setAttribute('data-nw-influence-weight',String(weight));
+    document.getElementById('targetWeightOut').value=Math.round(weight*100)+'%';
+    document.getElementById('influenceTargets').value='custom';
+    if(influenceField&&el.getAttribute('data-nw-reactive')==='1')influenceField.setTargetWeight(selectedTargetId,weight);
+  };
   ['radius','strength'].forEach(function(id){document.getElementById(id).addEventListener('input',function(){if(influenceField)influenceField.setOptions(influenceOpts());output('radius',document.getElementById('radius').value+' px');output('strength',document.getElementById('strength').value);});});
   bindAnchor('trailAnchor','trail');bindAnchor('leadAnchor','lead');bindZoneMarker('headZoneMarker','headEnd');bindZoneMarker('torsoZoneMarker','torsoEnd');
   document.getElementById('swapAxis').onclick=function(){var t=axis.trail;axis.trail=axis.lead;axis.lead=t;axis.manual=true;drawAxis();status('Dirección invertida. Aplicá el eje para actualizar.','warn');};
@@ -441,11 +544,11 @@
 
   window.__NAGWEB_INTERACTION_STUDIO__={
     follower:follower,organicRenderer:null,influenceField:null,get prepResult(){return prepResult;},get axis(){return axis;},get zones(){return zones;},
-    get mode(){return activeMode;},get organicEngine(){return activeOrganicEngine;},getSession:session,applySession:applySessionValue,prepare:prepare,
+    get mode(){return activeMode;},get organicEngine(){return activeOrganicEngine;},get targetEditing(){return targetEditing;},get targetSelection(){return targetSelection();},getSession:session,applySession:applySessionValue,prepare:prepare,
     switchMode:function(m){document.getElementById('mode').value=m;updateModeUI();},
     switchOrganicEngine:async function(e){document.getElementById('organicEngine').value=e==='slices-v2'?'slices-v2':'mesh-v3';if(activeMode==='organic')await prepareOrganic();}
   };
-  applyBodyProfile('character');updateInfluence();sourceImage.onload=function(){sourcePreview.src=fallback;visualImg.src=fallback;prepare();};sourceImage.src=fallback;
+  registerInfluenceCandidates();applyTargetScenario('headline',false);applyBodyProfile('character');updateInfluence();sourceImage.onload=function(){sourcePreview.src=fallback;visualImg.src=fallback;prepare();};sourceImage.src=fallback;
 })();
 </script>
 </body></html>
