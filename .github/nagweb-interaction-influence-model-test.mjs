@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 const require=createRequire(import.meta.url);
 const I=require('../js/nagweb-interaction-influence-v1.js');
 
-assert.equal(I.version,'1.8.0');
+assert.equal(I.version,'1.9.0');
 const defaults=I.normalizeOptions({});
 assert.ok(Object.values(defaults).filter(v=>typeof v==='number').every(Number.isFinite));
 assert.equal(defaults.sourceMode,'body');
@@ -28,10 +28,18 @@ const headOnly=I.computeRepulsion(path[0],{x:52,y:18,radius:0},o);
 assert.ok(bodyNear.strength>headOnly.strength);
 assert.equal(I.computePathRepulsion(path,{x:400,y:400,radius:0},o).strength,0);
 
+const bounds=I.pathBounds([{x:0,y:10},{x:100,y:50}],[{x:-20,y:0}],15);
+assert.deepEqual(bounds,{minX:-35,minY:-15,maxX:115,maxY:65});
+assert.equal(I.pointInBounds({x:0,y:0},bounds),true);
+assert.equal(I.pointInBounds({x:200,y:0},bounds),false);
+assert.equal(I.pathBounds([],null,10),null);
+
 const prev=[{x:0,y:0},{x:80,y:0},{x:160,y:0}];
 const curr=[{x:80,y:0},{x:160,y:0},{x:240,y:0}];
 const target={x:120,y:45,radius:0};
-const swept=I.computeSweptPathRepulsion(curr,prev,target,o);
+const knownDistance=I.pathDistance(curr,prev);
+const swept=I.computeSweptPathRepulsion(curr,prev,target,o,knownDistance);
+assert.deepEqual(swept,I.computeSweptPathRepulsion(curr,prev,target,o),'known sweep distance must preserve output');
 const currentOnly=I.computePathRepulsion(curr,target,o);
 assert.ok(swept.strength>=currentOnly.strength,'swept body should never weaken the current field');
 const gapTarget={x:40,y:20,radius:0};
@@ -62,4 +70,4 @@ assert.ok(Math.abs(state.x-40)<1);assert.ok(Math.abs(state.y+20)<1);assert.ok(Ma
 for(let i=0;i<180;i++)I.springStep(state,{x:0,y:0,rotation:0,scale:1,strength:0},o,16.6667);
 assert.ok(Math.abs(state.x)<1);assert.ok(Math.abs(state.y)<1);assert.ok(Math.abs(state.rotation)<1);assert.ok(Math.abs(state.scale-1)<.02);
 
-console.log('NagWeb Interaction Influence V1.8 decoupled target physics model tests: PASS');
+console.log('NagWeb Interaction Influence V1.9 broadphase target physics model tests: PASS');
