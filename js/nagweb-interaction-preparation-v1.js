@@ -10,7 +10,7 @@
 })(typeof window!=='undefined'?window:globalThis,function(assetPrep,backgroundAI){
   'use strict';
 
-  var VERSION='1.1.0-alpha.1';
+  var VERSION='1.2.0-alpha.1';
   var SCHEMA='nagweb-interaction-preparation';
   var MB=1024*1024;
 
@@ -83,6 +83,24 @@
     return {mode:'follower',confidence:'high',reason:'La silueta no necesita deformación para seguir el cursor.',manual:false,unsafe:false};
   }
 
+  function recommendBodyProfile(a){
+    if(!a||!a.silhouetteReliable)return {profile:'character',confidence:'low',reason:'La silueta no es suficientemente fiable; Personaje es el perfil conservador.'};
+    var w=Math.max(1,Number(a.sourceWidth||a.width)||1),h=Math.max(1,Number(a.sourceHeight||a.height)||1);
+    var aspect=h/w,elongation=Number(a.elongation)||1;
+    if(aspect>=1.15){
+      return {
+        profile:'character',
+        confidence:aspect>=1.45?'high':'medium',
+        reason:'El recurso es predominantemente vertical; conviene proteger cabeza y torso.'
+      };
+    }
+    return {
+      profile:'creature',
+      confidence:elongation>=2.6?'high':'medium',
+      reason:'El recurso es alargado y no predominantemente vertical; conviene una distribución más flexible.'
+    };
+  }
+
   function applyModeOverride(autoMode,override,analysis){
     if(!override||override==='auto')return autoMode;
     if(override==='follower')return {mode:'follower',confidence:'manual',reason:'Modo elegido manualmente.',manual:true,unsafe:false,automatic:autoMode.mode};
@@ -99,6 +117,10 @@
     return {
       schema:SCHEMA,version:1,quality:quality,
       recommendedMode:mode.mode,recommendationConfidence:mode.confidence,recommendationReason:mode.reason,
+      recommendedOrganicRenderer:mode.mode==='organic'?'mesh-v3':null,
+      bodyProfileRecommendation:details.bodyProfile?details.bodyProfile.profile:null,
+      bodyProfileConfidence:details.bodyProfile?details.bodyProfile.confidence:null,
+      bodyProfileReason:details.bodyProfile?details.bodyProfile.reason:null,
       manualMode:!!mode.manual,unsafeMode:!!mode.unsafe,automaticMode:mode.automatic||mode.mode,
       usedAI:!!details.usedAI,aiAttempted:!!details.aiAttempted,aiFallback:!!details.backgroundError,
       aiError:details.backgroundError?String(details.backgroundError):null,
@@ -171,8 +193,10 @@
       if(trimmedResult.trimmed)after=await analyze(working,signal);
 
       var automatic=recommendMode(after,o),override=run.modeOverride||o.modeOverride,mode=applyModeOverride(automatic,override,after);
-      var report=makeReport(before,after,mode,{usedAI:usedAI,aiAttempted:aiAttempted,backgroundError:backgroundError,trimmed:trimmedResult.trimmed,downscaledForAI:downscaledForAI,source:source,warnings:source.warnings});
+      var bodyProfile=mode.mode==='organic'?recommendBodyProfile(after):null;
+      var report=makeReport(before,after,mode,{usedAI:usedAI,aiAttempted:aiAttempted,backgroundError:backgroundError,trimmed:trimmedResult.trimmed,downscaledForAI:downscaledForAI,source:source,warnings:source.warnings,bodyProfile:bodyProfile});
       var profile=assetPrep.createProfile(after,{leadEnd:'right',cropPadding:o.cropPadding});profile.readiness.recommendedMode=mode.mode;
+      if(bodyProfile){profile.organic.bodyProfile=bodyProfile.profile;profile.organic.renderer='mesh-v3';}
 
       throwIfAborted(signal);emit('complete',{quality:report.quality,mode:mode.mode,fallback:!!backgroundError});
       return {originalImage:original,image:working,analysis:after,profile:profile,report:report,usedAI:usedAI,aiResult:aiResult,trimmed:trimmedResult.trimmed};
@@ -193,5 +217,5 @@
   function serializeReport(report){if(!report||report.schema!==SCHEMA||report.version!==1)throw new Error('NagWeb Preparation: invalid report');return JSON.stringify(report);}
   function deserializeReport(value){var r=typeof value==='string'?JSON.parse(value):clone(value);if(!r||r.schema!==SCHEMA||r.version!==1||!r.quality)throw new Error('NagWeb Preparation: invalid report');return r;}
 
-  return {version:VERSION,schema:SCHEMA,normalizeOptions:normalizeOptions,validateFile:validateFile,sourceInfo:sourceInfo,scoreAnalysis:scoreAnalysis,recommendMode:recommendMode,applyModeOverride:applyModeOverride,makeReport:makeReport,createPipeline:createPipeline,serializeReport:serializeReport,deserializeReport:deserializeReport};
+  return {version:VERSION,schema:SCHEMA,normalizeOptions:normalizeOptions,validateFile:validateFile,sourceInfo:sourceInfo,scoreAnalysis:scoreAnalysis,recommendMode:recommendMode,recommendBodyProfile:recommendBodyProfile,applyModeOverride:applyModeOverride,makeReport:makeReport,createPipeline:createPipeline,serializeReport:serializeReport,deserializeReport:deserializeReport};
 });
