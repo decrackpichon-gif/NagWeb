@@ -158,6 +158,7 @@
     return {
       version:VERSION,
       get options(){return Object.assign({},o);},
+      get targetCount(){return targets.length;},
       setOptions:function(next){o=normalizeOptions(Object.assign({},o,next||{}));previousPath=null;return Object.assign({},o);},
       setTargets:function(list){if(input.__ro)input.__ro.disconnect();setTargets(list);if(typeof ResizeObserver==='function'){input.__ro=new ResizeObserver(onResize);targets.forEach(function(t){input.__ro.observe(t.el);});}},
       measure:measure,
