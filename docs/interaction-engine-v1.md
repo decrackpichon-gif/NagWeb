@@ -294,3 +294,39 @@ Los runs más recientes pasan model tests + browser smoke para:
 - Interaction Studio con zonas visuales, fallback WebGL y restore de sesión.
 
 La integración con NagWeb principal continúa bloqueada intencionalmente hasta completar el laboratorio y la prueba humana final.
+
+
+## V3.4 · Influencia corporal de contenido real
+
+El campo de influencia deja de tratar al personaje como un único punto.
+
+### Influence Field 1.2
+
+- `sourceMode=body` usa la spine completa del renderer orgánico;
+- swept-body conserva el recorrido entre frames para evitar tunneling cuando el personaje cruza un elemento a alta velocidad;
+- saltos grandes quedan limitados por `maxSweepDistance` para no empujar toda la página tras un teleport de puntero;
+- `sourceRadius` aproxima el grosor físico del asset además del radio de influencia visual;
+- el Studio permite comparar cuerpo completo contra cabeza/cursor.
+
+### Influence Field 1.3
+
+Los objetivos pueden declarar `data-nw-influence-weight`.
+
+Esto permite que distintos elementos reaccionen con intensidades distintas sin crear varios campos:
+
+- letras del hero: 1.0;
+- palabras de texto corrido: 0.52;
+- CTA: 0.72.
+
+El peso escala desplazamiento, rotación, escala y fuerza, conservando el retorno elástico común.
+
+### Interaction Studio 1.8
+
+El escenario de prueba ya no se limita a `MOVE WITH ME`. Incluye un bloque similar a una sección web real con eyebrow, título, párrafo y CTA. Puede alternarse entre:
+
+- sólo título;
+- título + contenido.
+
+El QA comprueba cantidad de objetivos, pesos diferenciados, swept body, radio corporal, persistencia del escenario y compatibilidad con Session 1.3.
+
+El run **#197** pasó model tests y browser smokes para esta implementación antes del commit documental.
