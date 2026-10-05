@@ -143,7 +143,11 @@
     }
     // Preserve local silhouette-derived dents. Only soften abrupt discontinuities.
     for(var j=1;j<flex.length;j++)flex[j]=Math.max(flex[j],flex[j-1]*.82);
-    for(var k=1;k<bend.length;k++)bend[k]=Math.max(bend[k],bend[k-1]*.72);
+    for(var k=1;k<bend.length;k++){
+      bend[k]=Math.max(bend[k],bend[k-1]*.72);
+      if(o.thicknessGuard)bend[k]=Math.min(bend[k],details[k].safeBend);
+    }
+    if(o.thicknessGuard)bend[0]=Math.min(bend[0],details[0].safeBend);
     details.forEach(function(d,idx){d.flex=flex[idx];d.bend=bend[idx];d.geometryCapped=d.bend<d.preSafetyBend-.000001;});
     return {positions:positions,flex:flex,bend:bend,details:details};
   }
