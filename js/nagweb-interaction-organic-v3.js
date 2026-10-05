@@ -202,7 +202,7 @@
       var canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
       var c=canvas.getContext('2d');c.translate(w/2,h/2);c.rotate(rad);c.drawImage(image,-iw/2,-ih/2);
       return assetPrep.analyzeImage(canvas,{maxDimension:512}).then(function(rot){
-        return assetPrep.trimTransparent(canvas,rot,{paddingRatio:opts.paddingRatio==null?.015:opts.paddingRatio});
+        return assetPrep.trimTransparent(canvas,rot,{paddingRatio:opts.paddingRatio==null ? .015 : opts.paddingRatio});
       }).then(function(trimmed){
         return {canvas:trimmed.canvas,analysis:a,axisAngle:axisAngle,width:trimmed.width,height:trimmed.height,leadEnd:'right'};
       });
