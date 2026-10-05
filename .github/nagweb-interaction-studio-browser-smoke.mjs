@@ -25,7 +25,7 @@ try{
     influenceVersion:NAGWEB_INTERACTION_INFLUENCE.version
   }));
   assert.equal(init.title,'NagWeb · Interaction Studio');assert.ok(init.quality>=72);assert.equal(init.recommended,'organic');assert.equal(init.mode,'organic');
-  assert.equal(init.sessionVersion,'1.6.0-alpha.1');assert.equal(init.assetVersion,'1.2.0');assert.equal(init.organicV2Version,'2.2.0-alpha.1');assert.equal(init.organicV3Version,'3.2.0-alpha.1');assert.equal(init.organicEngine,'mesh-v3');assert.equal(init.influence,true);assert.equal(init.influenceVersion,'1.6.0');
+  assert.equal(init.sessionVersion,'1.7.0-alpha.1');assert.equal(init.assetVersion,'1.2.0');assert.equal(init.organicV2Version,'2.2.0-alpha.1');assert.equal(init.organicV3Version,'3.2.0-alpha.1');assert.equal(init.organicEngine,'mesh-v3');assert.equal(init.influence,true);assert.equal(init.influenceVersion,'1.7.0');
 
   const stage=await page.$eval('#stage',el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height};});
   const head0=await page.evaluate(()=>({x:__NAGWEB_INTERACTION_STUDIO__.follower.state.x,y:__NAGWEB_INTERACTION_STUDIO__.follower.state.y}));
@@ -80,7 +80,18 @@ try{
   assert.equal(await page.$eval('[data-nw-target-id="content-0"]',el=>el.getAttribute('data-nw-reactive')),'0');
 
   const headline=await page.$('[data-nw-target-id="headline-0"]');await headline.click();await new Promise(r=>setTimeout(r,60));
+  await page.select('#targetProfile','tilt');await new Promise(r=>setTimeout(r,60));
+  assert.equal(await page.$eval('[data-nw-target-id="headline-0"]',el=>el.getAttribute('data-nw-influence-profile')),'tilt');
+  assert.equal(await page.$eval('[data-nw-target-id="headline-0"]',el=>Number(el.getAttribute('data-nw-influence-weight'))),.78);
+  assert.deepEqual(await page.$eval('[data-nw-target-id="headline-0"]',el=>({
+    move:Number(el.getAttribute('data-nw-influence-move')),
+    rotate:Number(el.getAttribute('data-nw-influence-rotate')),
+    scale:Number(el.getAttribute('data-nw-influence-scale'))
+  })),{move:.34,rotate:1.35,scale:.08});
+  assert.equal(await page.$eval('[data-nw-target-id="headline-0"]',el=>Number(el.getAttribute('data-nw-influence-return'))),1.05);
   await page.$eval('#targetWeight',el=>{el.value='.37';el.dispatchEvent(new Event('input',{bubbles:true}));});await new Promise(r=>setTimeout(r,50));
+  assert.equal(await page.$eval('#targetProfile',el=>el.value),'custom');
+  assert.equal(await page.$eval('[data-nw-target-id="headline-0"]',el=>el.getAttribute('data-nw-influence-profile')),'custom');
   await page.$eval('#targetRotate',el=>{el.checked=false;el.dispatchEvent(new Event('change',{bubbles:true}));});
   await page.$eval('#targetScale',el=>{el.checked=false;el.dispatchEvent(new Event('change',{bubbles:true}));});
   await page.$eval('#targetReturn',el=>{el.value='1.65';el.dispatchEvent(new Event('input',{bubbles:true}));});
@@ -91,6 +102,10 @@ try{
   assert.equal(await page.$eval('[data-nw-target-id="headline-0"]',el=>Number(el.getAttribute('data-nw-influence-return'))),1.4);
   assert.equal(await page.$eval('[data-nw-target-id="headline-1"]',el=>Number(el.getAttribute('data-nw-influence-return'))),1.4);
   assert.equal(await page.$eval('[data-nw-target-id="headline-0"]',el=>Number(el.getAttribute('data-nw-influence-weight'))),.37);
+  const headline3=await page.$('[data-nw-target-id="headline-2"]');await headline3.click();await new Promise(r=>setTimeout(r,50));
+  await page.select('#targetProfile','pulse');await new Promise(r=>setTimeout(r,50));
+  assert.equal(await page.$eval('[data-nw-target-id="headline-2"]',el=>el.getAttribute('data-nw-influence-profile')),'pulse');
+  assert.equal(await page.$eval('[data-nw-target-id="headline-2"]',el=>Number(el.getAttribute('data-nw-influence-scale'))),1.55);
   assert.deepEqual(await page.$eval('[data-nw-target-id="headline-0"]',el=>({
     move:Number(el.getAttribute('data-nw-influence-move')),
     rotate:Number(el.getAttribute('data-nw-influence-rotate')),
@@ -103,13 +118,14 @@ try{
   assert.deepEqual(await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.influenceField.getTargetResponse('headline-0')),{move:1,rotate:0,scale:0});
   assert.equal(await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.influenceField.getTargetReturnSpeed('headline-0')),1.4);
   assert.equal(await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.influenceField.getTargetReturnSpeed('headline-1')),1.4);
+  assert.equal(await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.influenceField.getTargetProfile('headline-2')),'pulse');
 
   const bodyOpts=await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.influenceField.options);
   assert.equal(bodyOpts.sweptBody,true);assert.ok(bodyOpts.sourceRadius>0);
 
   await page.click('#export');
   const exported=await page.$eval('#sessionJson',el=>el.value);
-  const data=JSON.parse(exported);assert.equal(data.schema,'nagweb-interaction-session');assert.equal(data.version,1);assert.equal(data.organicRenderer,'mesh-v3');assert.ok(data.organicOptions.headFlex<data.organicOptions.torsoFlex);assert.ok(data.organicOptions.headZoneEnd<data.organicOptions.torsoZoneEnd);assert.equal(data.influenceOptions.sourceMode,'body');assert.equal(data.influenceOptions.targetScenario,'custom');assert.equal(data.influenceOptions.sweptBody,true);assert.ok(data.influenceOptions.targetSelection.length>10);assert.equal(data.influenceOptions.targetSelection.find(t=>t.id==='content-0').enabled,false);assert.equal(data.influenceOptions.targetSelection.find(t=>t.id==='headline-0').weight,.37);assert.deepEqual(data.influenceOptions.targetSelection.find(t=>t.id==='headline-0').response,{move:1,rotate:0,scale:0});assert.equal(data.influenceOptions.targetSelection.find(t=>t.id==='headline-0').returnSpeed,1.4);assert.equal(data.influenceOptions.targetSelection.find(t=>t.id==='headline-1').returnSpeed,1.4);assert.ok(data.assetProfile);assert.ok(data.preparationReport);
+  const data=JSON.parse(exported);assert.equal(data.schema,'nagweb-interaction-session');assert.equal(data.version,1);assert.equal(data.organicRenderer,'mesh-v3');assert.ok(data.organicOptions.headFlex<data.organicOptions.torsoFlex);assert.ok(data.organicOptions.headZoneEnd<data.organicOptions.torsoZoneEnd);assert.equal(data.influenceOptions.sourceMode,'body');assert.equal(data.influenceOptions.targetScenario,'custom');assert.equal(data.influenceOptions.sweptBody,true);assert.ok(data.influenceOptions.targetSelection.length>10);assert.equal(data.influenceOptions.targetSelection.find(t=>t.id==='content-0').enabled,false);assert.equal(data.influenceOptions.targetSelection.find(t=>t.id==='headline-0').weight,.37);assert.deepEqual(data.influenceOptions.targetSelection.find(t=>t.id==='headline-0').response,{move:1,rotate:0,scale:0});assert.equal(data.influenceOptions.targetSelection.find(t=>t.id==='headline-0').returnSpeed,1.4);assert.equal(data.influenceOptions.targetSelection.find(t=>t.id==='headline-1').returnSpeed,1.4);assert.equal(data.influenceOptions.targetSelection.find(t=>t.id==='headline-0').profile,'custom');assert.equal(data.influenceOptions.targetSelection.find(t=>t.id==='headline-2').profile,'pulse');assert.ok(data.assetProfile);assert.ok(data.preparationReport);
 
   const savedSize=data.display.size,savedHead=data.organicOptions.headZoneEnd;
   await page.$eval('#size',el=>{el.value='180';el.dispatchEvent(new Event('input',{bubbles:true}));});
@@ -124,6 +140,8 @@ try{
   assert.deepEqual(restoredSelection.find(t=>t.id==='headline-0').response,{move:1,rotate:0,scale:0});
   assert.equal(restoredSelection.find(t=>t.id==='headline-0').returnSpeed,1.4);
   assert.equal(restoredSelection.find(t=>t.id==='headline-1').returnSpeed,1.4);
+  assert.equal(restoredSelection.find(t=>t.id==='headline-0').profile,'custom');
+  assert.equal(restoredSelection.find(t=>t.id==='headline-2').profile,'pulse');
 
   await page.$eval('#organicMeshCanvas',c=>c.dispatchEvent(new Event('webglcontextlost',{cancelable:true})));
   await page.waitForFunction(()=>window.__NAGWEB_INTERACTION_STUDIO__.organicEngine==='slices-v2',{timeout:5000});
@@ -132,5 +150,5 @@ try{
   assert.equal(errors.length,0,'Interaction Studio should have no page errors: '+errors.join('\n'));
   fs.mkdirSync('/tmp/nagweb-interaction-v1',{recursive:true});
   await page.screenshot({path:'/tmp/nagweb-interaction-v1/interaction-studio-v1.png',fullPage:true});
-  console.log('NagWeb Interaction Studio V2.2 multi-target editing browser smoke: PASS');
+  console.log('NagWeb Interaction Studio V2.3 reaction profiles browser smoke: PASS');
 }finally{await browser.close();}
