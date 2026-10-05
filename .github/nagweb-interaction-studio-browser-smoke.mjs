@@ -151,5 +151,5 @@ try{
   assert.equal(errors.length,0,'Interaction Studio should have no page errors: '+errors.join('\n'));
   fs.mkdirSync('/tmp/nagweb-interaction-v1',{recursive:true});
   await page.screenshot({path:'/tmp/nagweb-interaction-v1/interaction-studio-v1.png',fullPage:true});
-  console.log('NagWeb Interaction NagWeb Interaction Studio V2.4 canonical reaction profiles browser smoke: PASS');
+  console.log('NagWeb Interaction Studio V2.5 Influence 1.9 browser smoke: PASS');
 }finally{await browser.close();}
