@@ -14,13 +14,16 @@
   if(root) root.NAGWEB_INTERACTION_SESSION=api;
 })(typeof window!=='undefined'?window:globalThis,function(engine,organic,influence,assetPrep){
   'use strict';
-  var VERSION='1.7.0-alpha.1';
+  var VERSION='1.8.0-alpha.1';
   var SCHEMA='nagweb-interaction-session';
 
   function clone(v){return v==null?v:JSON.parse(JSON.stringify(v));}
   function mode(v){return ['auto','follower','organic'].indexOf(v)>=0?v:'auto';}
-  var TARGET_PROFILES={soft:1,displace:1,tilt:1,pulse:1,elastic:1,heavy:1};
-  function targetProfile(v){return TARGET_PROFILES[v]?v:'custom';}
+  function targetProfile(v){
+    v=String(v||'custom').trim().toLowerCase();
+    if(v==='soft')v='gentle';else if(v==='displace')v='shift';
+    return /^[a-z0-9_-]{1,48}$/.test(v)?v:'custom';
+  }
   function normalizeTargetSelection(value){
     if(!Array.isArray(value))return [];
     var seen={};
