@@ -73,7 +73,8 @@
       <label class="check"><input id="targetEnabled" type="checkbox"> Este elemento reacciona</label>
       <div class="field"><label>Perfil de reacción</label><select id="targetReactionProfile"><option value="custom">Personalizado</option></select></div>
       <div id="targetProfileNote" class="modeNote">Configuración manual.</div>
-      <div class="field"><label>Intensidad <output id="targetWeightOut">100%</output></label><input id="targetWeight" type="range" min="0" max="2" step=".01" value="1"></div>
+      <button id="previewTargets" class="btn" type="button" style="margin-top:7px">Probar reacción</button>
+      <div class="field" style="margin-top:10px"><label>Intensidad <output id="targetWeightOut">100%</output></label><input id="targetWeight" type="range" min="0" max="2" step=".01" value="1"></div>
       <div class="modeNote">Cómo reacciona este elemento</div>
       <label class="check"><input id="targetMove" type="checkbox" checked> Mover</label>
       <label class="check"><input id="targetRotate" type="checkbox" checked> Rotar</label>
@@ -121,7 +122,7 @@
 (function(){
   var E=NAGWEB_INTERACTION_ENGINE,A=NAGWEB_INTERACTION_ASSET_PREP,I=NAGWEB_INTERACTION_INFLUENCE,R=NAGWEB_INTERACTION_REACTION_PROFILES,O=NAGWEB_ORGANIC_FOLLOWER,M=NAGWEB_ORGANIC_MESH,P=NAGWEB_INTERACTION_PREPARATION,S=NAGWEB_INTERACTION_SESSION;
   var stage=document.getElementById('stage'),leaderEl=document.getElementById('leader'),visual=document.getElementById('followerVisual'),visualImg=document.getElementById('followerImage'),sourcePreview=document.getElementById('sourcePreview'),canvas=document.getElementById('organicCanvas'),meshCanvas=document.getElementById('organicMeshCanvas'),sourceImage=new Image();
-  var originalUrl=null,preparedUrl=null,currentFile=null,pipeline=null,prepResult=null,organicPrepared=null,organicRenderer=null,influenceField=null;
+  var originalUrl=null,preparedUrl=null,currentFile=null,pipeline=null,prepResult=null,organicPrepared=null,organicRenderer=null,influenceField=null,previewField=null,previewTimer=null;
   var axis={trail:{x:.12,y:.5},lead:{x:.88,y:.5},manual:false},zones={headEnd:.22,torsoEnd:.66,manual:false},activeMode='follower',activeOrganicEngine='mesh-v3',busy=false,targetEditing=false,selectedTargetId=null,selectedTargetIds=[];
   var fallback='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="760" height="270" viewBox="0 0 760 270"><defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#ff7658"/><stop offset=".52" stop-color="#ffe3a8"/><stop offset="1" stop-color="#ff9867"/></linearGradient></defs><path d="M48 135c67-83 204-90 320-39 99-55 225-55 324 0l49-54-13 73 13 73-49-54c-99 55-225 55-324 0-116 51-253 44-320-39L8 135z" fill="url(#g)"/><circle cx="116" cy="111" r="14" fill="#31232b"/><circle cx="121" cy="106" r="4" fill="#fff"/></svg>');
 
@@ -391,6 +392,7 @@
     return selectedTargetIds.map(function(id){return stage.querySelector('[data-nw-target-id="'+id.replace(/"/g,'')+'"]');}).filter(Boolean);
   }
   function selectInfluenceTarget(el,additive){
+    clearTargetPreview();
     if(!el)return;
     var id=el.getAttribute('data-nw-target-id'),idx=selectedTargetIds.indexOf(id);
     if(additive){
@@ -421,7 +423,27 @@
     refreshTargetVisuals();
   }
   function selectedInfluenceTarget(){return selectedInfluenceTargets()[0]||null;}
+  function clearTargetPreview(){
+    if(previewTimer){clearTimeout(previewTimer);previewTimer=null;}
+    if(previewField){previewField.destroy();previewField=null;}
+    if(window.__NAGWEB_INTERACTION_STUDIO__)window.__NAGWEB_INTERACTION_STUDIO__.previewField=null;
+  }
+  function previewSelectedTargets(){
+    var els=selectedInfluenceTargets();if(!els.length){status('Seleccioná al menos un objetivo para probar la reacción.','warn');return;}
+    clearTargetPreview();
+    previewField=I.createField(Object.assign({
+      source:function(){return {x:-1000000,y:-1000000};},
+      targets:els
+    },influenceOpts(),{radius:1,strength:0,maxPush:0,sourceRadius:0,sweptBody:false}));
+    els.forEach(function(el,i){
+      previewField.impulseTarget(el.getAttribute('data-nw-target-id'),{x:42,y:-18+(i%2)*5,rotation:9,scale:.08,strength:1});
+    });
+    if(window.__NAGWEB_INTERACTION_STUDIO__)window.__NAGWEB_INTERACTION_STUDIO__.previewField=previewField;
+    previewTimer=setTimeout(clearTargetPreview,1300);
+    status('Vista previa · '+els.length+' objetivo'+(els.length===1?'':'s')+'.','good');
+  }
   function setTargetEditing(next){
+    clearTargetPreview();
     targetEditing=!!next;
     stage.classList.toggle('target-editing',targetEditing);
     document.getElementById('editTargets').textContent=targetEditing?'Terminar edición de objetivos':'Editar objetivos visualmente';
@@ -437,6 +459,7 @@
     refreshTargetVisuals();
   }
   function markSelectedReactionCustom(){
+    clearTargetPreview();
     selectedInfluenceTargets().forEach(function(el){el.setAttribute('data-nw-reaction-profile','custom');});
     document.getElementById('targetReactionProfile').value='custom';
     document.getElementById('targetProfileNote').textContent='Configuración manual.';
@@ -452,6 +475,7 @@
     document.getElementById('targetReturnOut').value=Math.round(p.returnSpeed*100)+'%'+(selectedTargetIds.length>1?' · selección':'');
   }
   function applyReactionProfile(id){
+    clearTargetPreview();
     var p=R.get(id),els=selectedInfluenceTargets();if(!p||!els.length)return;
     els.forEach(function(el){
       el.setAttribute('data-nw-reaction-profile',p.id);
@@ -593,6 +617,7 @@
     ev.preventDefault();ev.stopPropagation();selectInfluenceTarget(el,ev.shiftKey);
   },true);
   document.getElementById('targetEnabled').onchange=function(){
+    clearTargetPreview();
     var els=selectedInfluenceTargets();if(!els.length)return;
     var enabled=this.checked;this.indeterminate=false;
     els.forEach(function(el){el.setAttribute('data-nw-reactive',enabled?'1':'0');});
@@ -632,6 +657,7 @@
     if(this.value==='custom'){markSelectedReactionCustom();return;}
     applyReactionProfile(this.value);
   };
+  document.getElementById('previewTargets').onclick=previewSelectedTargets;
   document.getElementById('targetReturn').oninput=function(){
     var els=selectedInfluenceTargets();if(!els.length)return;
     var speed=Math.max(.25,Math.min(2,Number(this.value)||1));
@@ -666,8 +692,8 @@
   window.addEventListener('resize',function(){requestAnimationFrame(drawAxis);if(influenceField)influenceField.measure();});
 
   window.__NAGWEB_INTERACTION_STUDIO__={
-    follower:follower,organicRenderer:null,influenceField:null,get prepResult(){return prepResult;},get axis(){return axis;},get zones(){return zones;},
-    get mode(){return activeMode;},get organicEngine(){return activeOrganicEngine;},get targetEditing(){return targetEditing;},get selectedTargetIds(){return selectedTargetIds.slice();},get targetSelection(){return targetSelection();},getSession:session,applySession:applySessionValue,prepare:prepare,
+    follower:follower,organicRenderer:null,influenceField:null,previewField:null,get prepResult(){return prepResult;},get axis(){return axis;},get zones(){return zones;},
+    get mode(){return activeMode;},get organicEngine(){return activeOrganicEngine;},get targetEditing(){return targetEditing;},get previewActive(){return !!previewField;},get selectedTargetIds(){return selectedTargetIds.slice();},get targetSelection(){return targetSelection();},previewTargets:previewSelectedTargets,clearPreview:clearTargetPreview,getSession:session,applySession:applySessionValue,prepare:prepare,
     switchMode:function(m){document.getElementById('mode').value=m;updateModeUI();},
     switchOrganicEngine:async function(e){document.getElementById('organicEngine').value=e==='slices-v2'?'slices-v2':'mesh-v3';if(activeMode==='organic')await prepareOrganic();}
   };
