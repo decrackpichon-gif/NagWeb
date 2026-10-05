@@ -49,6 +49,7 @@ h1{font-size:18px;margin:0 0 6px}.sub{font-size:11px;line-height:1.45;color:#aaa
     <div class="field"><label>Huesos virtuales <output id="bonesOut"></output></label><input id="bones" type="range" min="4" max="10" step="1" value="7"></div>
     <div class="field"><label>Radio de pesos <output id="radiusOut"></output></label><input id="radius" type="range" min=".12" max=".50" step=".01" value=".27"></div>
     <div class="field"><label>Influencias / vértice <output id="influencesOut"></output></label><input id="influences" type="range" min="1" max="4" step="1" value="4"></div>
+    <div class="field"><label>Blend</label><select id="skinMode"><option value="rigid2d">Rigid 2D · preserva volumen</option><option value="lbs">LBS clásico · referencia</option></select></div>
   </div>
   <div class="group"><div id="status" class="status">Preparando…</div></div>
 </aside>
@@ -75,21 +76,25 @@ h1{font-size:18px;margin:0 0 6px}.sub{font-size:11px;line-height:1.45;color:#aaa
   var compare=document.getElementById('compare'),s3=document.getElementById('stageV3'),s4=document.getElementById('stageV4');
   var c3=document.getElementById('canvasV3'),c4=document.getElementById('canvasV4'),rigCanvas=document.getElementById('rigCanvas'),status=document.getElementById('status'),preview=document.getElementById('preview');
   var source=new Image(),analysis=null,prepared=null,r3=null,r4=null,url=null;
+  var lengthEl=document.getElementById('length'),swayEl=document.getElementById('sway'),wavesEl=document.getElementById('waves'),columnsEl=document.getElementById('columns'),rowsEl=document.getElementById('rows'),bonesEl=document.getElementById('bones'),radiusEl=document.getElementById('radius'),influencesEl=document.getElementById('influences'),skinModeEl=document.getElementById('skinMode');
+  var lengthOutEl=document.getElementById('lengthOut'),swayOutEl=document.getElementById('swayOut'),wavesOutEl=document.getElementById('wavesOut'),columnsOutEl=document.getElementById('columnsOut'),rowsOutEl=document.getElementById('rowsOut'),bonesOutEl=document.getElementById('bonesOut'),radiusOutEl=document.getElementById('radiusOut'),influencesOutEl=document.getElementById('influencesOut');
+  var cross3=document.getElementById('crossV3'),cross4=document.getElementById('crossV4'),fileEl=document.getElementById('file');
   var fallback='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="360" height="620" viewBox="0 0 360 620"><g><ellipse cx="180" cy="92" rx="58" ry="72" fill="#ffd07a"/><path d="M122 84q58-88 116 0v22H122z" fill="#f6f0e7"/><circle cx="158" cy="92" r="7"/><circle cx="203" cy="92" r="7"/><path d="M151 127q30 20 58 0" fill="none" stroke="#2b1d23" stroke-width="8" stroke-linecap="round"/><path d="M102 176q78-52 156 0l34 185q-24 84-112 90-88-6-112-90z" fill="#d93118"/><path d="M145 178q35 44 70 0l16 262h-102z" fill="#ef4a2d"/><path d="M103 204 40 284l34 31 71-66zM257 204l63 80-34 31-71-66z" fill="#ffd07a"/><path d="M121 444 99 565h58l23-112zM239 444l22 121h-58l-23-112z" fill="#c32b17"/><rect x="85" y="560" width="92" height="24" rx="10" fill="#754521"/><rect x="183" y="560" width="92" height="24" rx="10" fill="#754521"/></g></svg>');
   var f3=E.createFollower(document.getElementById('leaderV3'),{area:s3,preset:'character',renderMode:'none',distanceFromPointer:20,rotateToTarget:true,idle:{enabled:false}});
   var f4=E.createFollower(document.getElementById('leaderV4'),{area:s4,preset:'character',renderMode:'none',distanceFromPointer:20,rotateToTarget:true,idle:{enabled:false}});
 
-  function common(){return {length:+length.value,sway:+sway.value,swayWaves:+waves.value,columns:+columns.value,rows:+rows.value};}
+  function common(){return {length:+lengthEl.value,sway:+swayEl.value,swayWaves:+wavesEl.value,columns:+columnsEl.value,rows:+rowsEl.value};}
   function v3opts(){return Object.assign({headZoneEnd:.22,torsoZoneEnd:.66,headFlex:.035,torsoFlex:.42,lowerFlex:1,headMaxBend:.065,torsoMaxBend:.16,bodyMaxBend:.30},common());}
-  function v4opts(){return Object.assign({boneCount:+bones.value,weightRadius:+radius.value,maxInfluences:+influences.value},common());}
-  function outputs(){lengthOut.value=length.value+' px';swayOut.value=sway.value;wavesOut.value=waves.value;columnsOut.value=columns.value;rowsOut.value=rows.value;bonesOut.value=bones.value;radiusOut.value=radius.value;influencesOut.value=influences.value;}
+  function v4opts(){return Object.assign({boneCount:+bonesEl.value,weightRadius:+radiusEl.value,maxInfluences:+influencesEl.value,skinMode:skinModeEl.value},common());}
+  function outputs(){lengthOutEl.value=lengthEl.value+' px';swayOutEl.value=swayEl.value;wavesOutEl.value=wavesEl.value;columnsOutEl.value=columnsEl.value;rowsOutEl.value=rowsEl.value;bonesOutEl.value=bonesEl.value;radiusOutEl.value=radiusEl.value;influencesOutEl.value=influencesEl.value;}
   function sync(){outputs();if(r3)r3.setOptions(v3opts());if(r4)r4.setOptions(v4opts());report();}
   ['length','sway','waves','columns','rows','bones','radius','influences'].forEach(function(id){document.getElementById(id).addEventListener('input',sync);});
+  skinModeEl.addEventListener('change',sync);
 
   function report(){
     if(!r3||!r4)return;
     var ws=r4.topology.weightStats;
-    status.textContent='V3 '+r3.topology.vertexCount+' vértices · V4 '+r4.topology.vertexCount+' vértices\nV4 '+r4.rig.count+' huesos · Σ pesos '+ws.minSum.toFixed(3)+'…'+ws.maxSum.toFixed(3)+' · máx '+ws.maxInfluences+' influencias';
+    status.textContent='V3 '+r3.topology.vertexCount+' vértices · V4 '+r4.topology.vertexCount+' vértices\nV4 '+r4.rig.count+' huesos · '+r4.options.skinMode+' · Σ pesos '+ws.minSum.toFixed(3)+'…'+ws.maxSum.toFixed(3)+' · máx '+ws.maxInfluences+' influencias';
   }
 
   function syncTarget(ev){
@@ -97,7 +102,7 @@ h1{font-size:18px;margin:0 0 6px}.sub{font-size:11px;line-height:1.45;color:#aaa
     nx=Math.max(0,Math.min(1,nx));ny=Math.max(0,Math.min(1,ny));
     f3.setTarget(nx*s3.clientWidth,ny*s3.clientHeight,'area');
     f4.setTarget(nx*s4.clientWidth,ny*s4.clientHeight,'area');
-    crossV3.style.left=(nx*100)+'%';crossV3.style.top=(ny*100)+'%';crossV4.style.left=(nx*100)+'%';crossV4.style.top=(ny*100)+'%';
+    cross3.style.left=(nx*100)+'%';cross3.style.top=(ny*100)+'%';cross4.style.left=(nx*100)+'%';cross4.style.top=(ny*100)+'%';
   }
   compare.addEventListener('pointermove',syncTarget,{passive:true});
 
@@ -124,7 +129,7 @@ h1{font-size:18px;margin:0 0 6px}.sub{font-size:11px;line-height:1.45;color:#aaa
     report();
   }
   function fail(err){status.textContent='ERROR · '+err.message;status.style.color='#ef9999';console.error(err);}
-  file.onchange=function(){var f=this.files&&this.files[0];if(!f)return;if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(f);source.onload=function(){prepare().catch(fail);};source.src=url;};
+  fileEl.onchange=function(){var f=this.files&&this.files[0];if(!f)return;if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(f);source.onload=function(){prepare().catch(fail);};source.src=url;};
   window.__NAGWEB_ORGANIC_V4_AB__={followerV3:f3,followerV4:f4,v3:null,v4:null,analysis:null,prepared:null};
   outputs();drawRig();source.onload=function(){prepare().catch(fail);};source.src=fallback;
 })();
