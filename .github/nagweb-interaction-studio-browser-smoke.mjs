@@ -21,10 +21,11 @@ try{
     organicV2Version:NAGWEB_ORGANIC_FOLLOWER.version,
     organicV3Version:NAGWEB_ORGANIC_MESH.version,
     organicEngine:__NAGWEB_INTERACTION_STUDIO__.organicEngine,
-    influence:!!__NAGWEB_INTERACTION_STUDIO__.influenceField
+    influence:!!__NAGWEB_INTERACTION_STUDIO__.influenceField,
+    influenceVersion:NAGWEB_INTERACTION_INFLUENCE.version
   }));
   assert.equal(init.title,'NagWeb · Interaction Studio');assert.ok(init.quality>=72);assert.equal(init.recommended,'organic');assert.equal(init.mode,'organic');
-  assert.equal(init.sessionVersion,'1.2.0-alpha.1');assert.equal(init.assetVersion,'1.2.0');assert.equal(init.organicV2Version,'2.2.0-alpha.1');assert.equal(init.organicV3Version,'3.2.0-alpha.1');assert.equal(init.organicEngine,'mesh-v3');assert.equal(init.influence,true);
+  assert.equal(init.sessionVersion,'1.2.0-alpha.1');assert.equal(init.assetVersion,'1.2.0');assert.equal(init.organicV2Version,'2.2.0-alpha.1');assert.equal(init.organicV3Version,'3.2.0-alpha.1');assert.equal(init.organicEngine,'mesh-v3');assert.equal(init.influence,true);assert.equal(init.influenceVersion,'1.1.0');
 
   const stage=await page.$eval('#stage',el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height};});
   const head0=await page.evaluate(()=>({x:__NAGWEB_INTERACTION_STUDIO__.follower.state.x,y:__NAGWEB_INTERACTION_STUDIO__.follower.state.y}));
@@ -55,10 +56,15 @@ try{
   assert.equal(await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.influenceField===null),true);
   await page.$eval('#influence',el=>{el.checked=true;el.dispatchEvent(new Event('change',{bubbles:true}));});
   assert.equal(await page.evaluate(()=>!!__NAGWEB_INTERACTION_STUDIO__.influenceField),true);
+  assert.equal(await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.influenceField.options.sourceMode),'body');
+  await page.select('#influenceSource','head');await new Promise(r=>setTimeout(r,80));
+  assert.equal(await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.influenceField.options.sourceMode),'head');
+  await page.select('#influenceSource','body');await new Promise(r=>setTimeout(r,80));
+  assert.equal(await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.influenceField.options.sourceMode),'body');
 
   await page.click('#export');
   const exported=await page.$eval('#sessionJson',el=>el.value);
-  const data=JSON.parse(exported);assert.equal(data.schema,'nagweb-interaction-session');assert.equal(data.version,1);assert.equal(data.organicRenderer,'mesh-v3');assert.ok(data.organicOptions.headFlex<data.organicOptions.torsoFlex);assert.ok(data.organicOptions.headZoneEnd<data.organicOptions.torsoZoneEnd);assert.ok(data.assetProfile);assert.ok(data.preparationReport);
+  const data=JSON.parse(exported);assert.equal(data.schema,'nagweb-interaction-session');assert.equal(data.version,1);assert.equal(data.organicRenderer,'mesh-v3');assert.ok(data.organicOptions.headFlex<data.organicOptions.torsoFlex);assert.ok(data.organicOptions.headZoneEnd<data.organicOptions.torsoZoneEnd);assert.equal(data.influenceOptions.sourceMode,'body');assert.ok(data.assetProfile);assert.ok(data.preparationReport);
 
   const savedSize=data.display.size,savedHead=data.organicOptions.headZoneEnd;
   await page.$eval('#size',el=>{el.value='180';el.dispatchEvent(new Event('input',{bubbles:true}));});
@@ -75,5 +81,5 @@ try{
   assert.equal(errors.length,0,'Interaction Studio should have no page errors: '+errors.join('\n'));
   fs.mkdirSync('/tmp/nagweb-interaction-v1',{recursive:true});
   await page.screenshot({path:'/tmp/nagweb-interaction-v1/interaction-studio-v1.png',fullPage:true});
-  console.log('NagWeb Interaction Studio V1.5 session restore browser smoke: PASS');
+  console.log('NagWeb Interaction Studio V1.6 body influence browser smoke: PASS');
 }finally{await browser.close();}
