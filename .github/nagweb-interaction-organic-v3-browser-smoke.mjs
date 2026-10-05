@@ -23,13 +23,14 @@ try{
     topology:__NAGWEB_ORGANIC_V3__.renderer.topology,
     analysis:__NAGWEB_ORGANIC_V3__.analysis,
     canvas:{w:document.querySelector('#meshCanvas').width,h:document.querySelector('#meshCanvas').height},
-    filter:getComputedStyle(document.querySelector('#meshCanvas')).filter
+    filter:getComputedStyle(document.querySelector('#meshCanvas')).filter,
+    texture:__NAGWEB_ORGANIC_V3__.renderer.textureInfo
   }));
-  assert.equal(initial.version,'3.1.0-alpha.1');assert.equal(initial.renderer,'webgl-mesh');
+  assert.equal(initial.version,'3.2.0-alpha.1');assert.equal(initial.renderer,'webgl-mesh');
   assert.equal(initial.topology.columns,32);assert.equal(initial.topology.rows,10);
   assert.equal(initial.topology.vertexCount,(32+1)*(10+1));
   assert.ok(initial.canvas.w>500&&initial.canvas.h>300);assert.equal(initial.analysis.silhouetteReliable,true);
-  assert.ok(/drop-shadow/.test(initial.filter));
+  assert.ok(/drop-shadow/.test(initial.filter));assert.ok(initial.texture.width<=initial.texture.limit&&initial.texture.height<=initial.texture.limit);
 
   const stage=await page.$eval('#stage',el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height};});
   const h0=await page.evaluate(()=>__NAGWEB_ORGANIC_V3__.renderer.spine[0]);
@@ -48,10 +49,15 @@ try{
   const changed=await page.evaluate(()=>__NAGWEB_ORGANIC_V3__.renderer.topology);
   assert.equal(changed.columns,40);assert.equal(changed.rows,12);assert.equal(changed.vertexCount,(40+1)*(12+1));
 
+  await page.evaluate(()=>__NAGWEB_ORGANIC_V3__.renderer.setOptions({maxTextureDimension:512}));
+  const textureSmall=await page.evaluate(()=>__NAGWEB_ORGANIC_V3__.renderer.textureInfo);
+  assert.ok(textureSmall.width<=512&&textureSmall.height<=512);assert.equal(textureSmall.scaled,true);
   const glOk=await page.$eval('#meshCanvas',c=>{const gl=c.getContext('webgl')||c.getContext('experimental-webgl');return !!gl&&gl.getError()===gl.NO_ERROR;});
   assert.equal(glOk,true);
   assert.equal(errors.length,0,'V3 lab should have no page errors: '+errors.join('\n'));assert.equal(consoleErrors.length,0,'V3 lab should have no console errors: '+consoleErrors.join('\n'));
   fs.mkdirSync('/tmp/nagweb-interaction-v1',{recursive:true});
   await page.screenshot({path:'/tmp/nagweb-interaction-v1/organic-v3-mesh.png',fullPage:true});
-  console.log('NagWeb Organic Mesh V3.1 browser smoke: PASS');
+  await page.$eval('#meshCanvas',c=>c.dispatchEvent(new Event('webglcontextlost',{cancelable:true})));
+  assert.equal(await page.evaluate(()=>__NAGWEB_ORGANIC_V3__.renderer.contextLost),true);
+  console.log('NagWeb Organic Mesh V3.2 browser smoke: PASS');
 }finally{await browser.close();}
