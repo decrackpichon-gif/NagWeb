@@ -8,7 +8,7 @@
   if(root) root.NAGWEB_INTERACTION_INFLUENCE=api;
 })(typeof window!=='undefined'?window:globalThis,function(engine){
   'use strict';
-  var VERSION='1.3.0';
+  var VERSION='1.4.0';
   function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
   function num(v,d){v=Number(v);return Number.isFinite(v)?v:d;}
   function normalizeOptions(input){
@@ -118,7 +118,8 @@
       el.style.willChange='translate, rotate, scale';
       var rawWeight=el.getAttribute&&el.getAttribute('data-nw-influence-weight');
       var weight=rawWeight==null?1:clamp(num(rawWeight,1),0,2);
-      return {el:el,state:newState(),rest:{x:0,y:0,radius:0},weight:weight,original:original};
+      var id=el.getAttribute&&el.getAttribute('data-nw-target-id')||null;
+      return {el:el,id:id,state:newState(),rest:{x:0,y:0,radius:0},weight:weight,original:original};
     }
     function setTargets(list){
       targets.forEach(function(t){restore(t);});
@@ -174,6 +175,19 @@
       get options(){return Object.assign({},o);},
       get targetCount(){return targets.length;},
       get targetWeights(){return targets.map(function(t){return t.weight;});},
+      get targetIds(){return targets.map(function(t){return t.id;});},
+      setTargetWeight:function(ref,weight){
+        weight=clamp(num(weight,1),0,2);
+        var hit=targets.find(function(t){return t.el===ref||t.id===ref;});
+        if(!hit)return null;
+        hit.weight=weight;
+        if(hit.el&&hit.el.setAttribute)hit.el.setAttribute('data-nw-influence-weight',String(weight));
+        return hit.weight;
+      },
+      getTargetWeight:function(ref){
+        var hit=targets.find(function(t){return t.el===ref||t.id===ref;});
+        return hit?hit.weight:null;
+      },
       setOptions:function(next){o=normalizeOptions(Object.assign({},o,next||{}));previousPath=null;return Object.assign({},o);},
       setTargets:function(list){if(input.__ro)input.__ro.disconnect();setTargets(list);if(typeof ResizeObserver==='function'){input.__ro=new ResizeObserver(onResize);targets.forEach(function(t){input.__ro.observe(t.el);});}},
       measure:measure,
