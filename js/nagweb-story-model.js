@@ -99,6 +99,8 @@ function createStreamModel(){
  var popSpecs={gap:[3,0,10,.5],visible:[62,30,85,1]};
  var ratios={'1:1':1,'4:3':4/3,'3:4':3/4,'4:5':4/5,'16:9':16/9,'9:16':9/16};
  function config(raw){raw=raw||{};var out={},orbit=raw.kind==='iso-orbit',pop=raw.kind==='pop-grid',fields=orbit?Object.assign({},specs,orbitSpecs):pop?Object.assign({},specs,popSpecs):specs;Object.keys(fields).forEach(function(k){var s=fields[k],n=raw[k];out[k]=Math.max(s[1],Math.min(s[2],n!==''&&n!=null&&isFinite(+n)?+n:s[0]));});out.end=Math.max(out.start+1,out.end);out.cardRatio=raw.cardRatio==='auto'||ratios[raw.cardRatio]?raw.cardRatio:orbit?'1:1':'16:9';out.frameRatio=raw.frameRatio==='auto'||ratios[raw.frameRatio]?raw.frameRatio:'16:9';out.shadow=!!raw.shadow;out.backgroundType=['none','color','gradient','image'].indexOf(raw.backgroundType)>=0?raw.backgroundType:'color';out.backgroundColor=/^#[0-9a-f]{6}$/i.test(raw.backgroundColor||'')?raw.backgroundColor:'#101014';out.gradientColor=/^#[0-9a-f]{6}$/i.test(raw.gradientColor||'')?raw.gradientColor:'#3a3a5a';out.backgroundId=typeof raw.backgroundId==='string'?raw.backgroundId:'';if(orbit){out.kind='iso-orbit';out.motion=raw.motion==='spin'?'spin':'swing';}if(pop)out.kind='pop-grid';return out;}
+ function imageFocus(raw){raw=raw||{};var out={};['x','y'].forEach(function(k){var n=raw[k];out[k]=n!==''&&n!=null&&isFinite(+n)?Math.max(0,Math.min(100,+n)):50;});return out;}
+ function imageCrop(iw,ih,width,height,raw){var focus=imageFocus(raw),scale=Math.max(width/iw,height/ih),w=iw*scale,h=ih*scale;return{x:(width-w)*focus.x/100,y:(height-h)*focus.y/100,width:w,height:h};}
  function phase(progress,c,scroll){var p=scroll?Math.max(0,Math.min(1,(progress*100-c.start)/(c.end-c.start))):progress;return p*c.turns;}
  function layout(width,height,raw,progress,count,imageRatio,scroll){
   var c=config(raw),fw=width,fh=height,ratio=ratios[c.frameRatio];if(ratio){if(fw/fh>ratio)fw=fh*ratio;else fh=fw/ratio;}
@@ -132,7 +134,7 @@ function createStreamModel(){
   }
   return cards;
  }
- return{config:config,specs:specs,orbitSpecs:orbitSpecs,popSpecs:popSpecs,ratios:ratios,phase:phase,layout:layout};
+ return{config:config,imageFocus:imageFocus,imageCrop:imageCrop,specs:specs,orbitSpecs:orbitSpecs,popSpecs:popSpecs,ratios:ratios,phase:phase,layout:layout};
 }
 window.NAGWEB_CREATE_STREAM_MODEL=createStreamModel;
 window.NAGWEB_STREAM_MODEL=createStreamModel();
