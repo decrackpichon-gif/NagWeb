@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NagWeb · Interaction Studio</title>
+<title>NagWeb · Interaction Studio</title><link rel="icon" href="data:,">
 <style>
 :root{color-scheme:dark;--bg:#0e0e12;--panel:#17171c;--line:#32323b;--muted:#9b98a5;--ink:#f5f1e9;--ok:#a7e7b5;--warn:#efc37c;--bad:#ee9999}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink)}body{overflow:hidden}
@@ -14,7 +14,7 @@
 .thumb{position:relative;height:120px;margin-top:10px;border:1px solid #33343c;background:#101014;display:grid;place-items:center;overflow:hidden}.thumb img{max-width:88%;max-height:84%;object-fit:contain}.axisline{position:absolute;height:2px;background:rgba(255,255,255,.45);transform-origin:0 50%;pointer-events:none}.anchor{position:absolute;width:44px;height:44px;border-radius:50%;translate:-50% -50%;border:1px solid #777482;background:#23232b;color:#fff;font:700 8px/1 Inter,sans-serif;cursor:grab;touch-action:none}.anchor.lead{background:#f5f1e9;color:#111}.anchor:active{cursor:grabbing}.axisActions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:7px}
 .stage{position:relative;overflow:hidden;touch-action:none;background:radial-gradient(100% 100% at 60% 40%,#45335b 0,#221c2d 47%,#0e0d13 100%)}.stage:after{content:"INTERACTION STUDIO";position:absolute;right:18px;bottom:16px;font:10px ui-monospace,monospace;color:#686370;pointer-events:none}
 .hero{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}.headline{display:flex;flex-wrap:wrap;justify-content:center;max-width:84%;gap:.01em;font:900 clamp(58px,11vw,180px)/.78 Arial Black,Impact,sans-serif;letter-spacing:-.07em;text-align:center;color:#f1eadc}.headline span{display:inline-block}.headline .break{flex-basis:100%;height:0}
-.sub{position:absolute;top:24px;left:28px;font-size:11px;color:#bcb6c5;pointer-events:none}.sub b{color:#fff}.followerVisual{position:absolute;left:0;top:0;width:240px;height:240px;display:grid;place-items:center;pointer-events:none;transform-origin:50% 50%;will-change:transform}.followerVisual img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 18px 19px rgba(0,0,0,.38))}.leader{position:absolute;width:2px;height:2px;opacity:0;pointer-events:none}#organicCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.sub{position:absolute;top:24px;left:28px;font-size:11px;color:#bcb6c5;pointer-events:none}.sub b{color:#fff}.followerVisual{position:absolute;left:0;top:0;width:240px;height:240px;display:grid;place-items:center;pointer-events:none;transform-origin:50% 50%;will-change:transform}.followerVisual img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 18px 19px rgba(0,0,0,.38))}.leader{position:absolute;width:2px;height:2px;opacity:0;pointer-events:none}#organicCanvas,#organicMeshCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .pill{display:inline-flex;align-items:center;padding:3px 7px;border:1px solid #4a4853;border-radius:999px;font-size:9px;color:#bbb6c3}.modeNote{margin-top:6px;font-size:10px;color:#8f8b96}.export{margin-top:8px;width:100%;height:120px;background:#101014;color:#a9c9ff;border:1px solid #33343c;padding:8px;font:9px/1.45 ui-monospace,monospace;resize:vertical}
 @media(max-width:800px){body{overflow:auto}.app{grid-template-columns:1fr;grid-template-rows:auto 62vh;height:auto;min-height:100%}.panel{border-right:0;border-bottom:1px solid var(--line);max-height:none}.stage{min-height:62vh}.followerVisual{width:180px;height:180px}}
 </style>
@@ -47,6 +47,8 @@
     <div class="field"><label>Distancia del cursor <output id="distanceOut"></output></label><input id="distance" type="range" min="0" max="180" step="2" value="28"></div>
     <div id="followerDirection" class="field"><label>Frente del asset</label><select id="forward"><option value="0">Derecha →</option><option value="90">Abajo ↓</option><option value="180">Izquierda ←</option><option value="-90">Arriba ↑</option></select></div>
     <div id="organicControls">
+      <div class="field"><label>Motor orgánico</label><select id="organicEngine"><option value="mesh-v3">Mesh V3 · continuo</option><option value="slices-v2">Slices V2.2 · referencia</option></select></div>
+      <div id="organicEngineNote" class="modeNote">Mesh V3 usa una textura WebGL continua; V2.2 queda disponible para comparar.</div>
       <div class="field"><label>Flexibilidad <output id="swayOut"></output></label><input id="sway" type="range" min="0" max=".12" step=".005" value=".04"></div>
       <div class="field"><label>Ondas <output id="wavesOut"></output></label><input id="waves" type="range" min="1" max="8" step=".2" value="4.2"></div>
     </div>
@@ -71,6 +73,7 @@
   <div class="sub"><b>Mové el cursor</b> para probar · la tipografía reacciona al campo de influencia</div>
   <div class="hero"><div id="headline" class="headline" aria-label="MOVE WITH ME"><span>M</span><span>O</span><span>V</span><span>E</span><i class="break"></i><span>W</span><span>I</span><span>T</span><span>H</span><i class="break"></i><span>M</span><span>E</span></div></div>
   <canvas id="organicCanvas" aria-hidden="true"></canvas>
+  <canvas id="organicMeshCanvas" aria-hidden="true"></canvas>
   <div id="followerVisual" class="followerVisual"><img id="followerImage" alt=""></div>
   <div id="leader" class="leader"></div>
 </main>
@@ -80,15 +83,16 @@
 <script src="../js/nagweb-interaction-asset-prep-v1.js"></script>
 <script src="../js/nagweb-interaction-influence-v1.js"></script>
 <script src="../js/nagweb-interaction-organic-v2.js"></script>
+<script src="../js/nagweb-interaction-organic-v3.js"></script>
 <script src="../js/nagweb-interaction-background-ai-v1.js"></script>
 <script src="../js/nagweb-interaction-preparation-v1.js"></script>
 <script src="../js/nagweb-interaction-session-v1.js"></script>
 <script>
 (function(){
-  var E=NAGWEB_INTERACTION_ENGINE,A=NAGWEB_INTERACTION_ASSET_PREP,I=NAGWEB_INTERACTION_INFLUENCE,O=NAGWEB_ORGANIC_FOLLOWER,P=NAGWEB_INTERACTION_PREPARATION,S=NAGWEB_INTERACTION_SESSION;
-  var stage=document.getElementById('stage'),leaderEl=document.getElementById('leader'),visual=document.getElementById('followerVisual'),visualImg=document.getElementById('followerImage'),sourcePreview=document.getElementById('sourcePreview'),canvas=document.getElementById('organicCanvas'),sourceImage=new Image();
+  var E=NAGWEB_INTERACTION_ENGINE,A=NAGWEB_INTERACTION_ASSET_PREP,I=NAGWEB_INTERACTION_INFLUENCE,O=NAGWEB_ORGANIC_FOLLOWER,M=NAGWEB_ORGANIC_MESH,P=NAGWEB_INTERACTION_PREPARATION,S=NAGWEB_INTERACTION_SESSION;
+  var stage=document.getElementById('stage'),leaderEl=document.getElementById('leader'),visual=document.getElementById('followerVisual'),visualImg=document.getElementById('followerImage'),sourcePreview=document.getElementById('sourcePreview'),canvas=document.getElementById('organicCanvas'),meshCanvas=document.getElementById('organicMeshCanvas'),sourceImage=new Image();
   var originalUrl=null,preparedUrl=null,currentFile=null,pipeline=null,prepResult=null,organicPrepared=null,organicRenderer=null,influenceField=null;
-  var axis={trail:{x:.12,y:.5},lead:{x:.88,y:.5},manual:false},activeMode='follower',busy=false;
+  var axis={trail:{x:.12,y:.5},lead:{x:.88,y:.5},manual:false},activeMode='follower',activeOrganicEngine='mesh-v3',busy=false;
   var fallback='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="760" height="270" viewBox="0 0 760 270"><defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#ff7658"/><stop offset=".52" stop-color="#ffe3a8"/><stop offset="1" stop-color="#ff9867"/></linearGradient></defs><path d="M48 135c67-83 204-90 320-39 99-55 225-55 324 0l49-54-13 73 13 73-49-54c-99 55-225 55-324 0-116 51-253 44-320-39L8 135z" fill="url(#g)"/><circle cx="116" cy="111" r="14" fill="#31232b"/><circle cx="121" cy="106" r="4" fill="#fff"/></svg>');
 
   var follower=E.createFollower(leaderEl,{
@@ -141,8 +145,16 @@
     if(!prepResult)return null;
     return A.createProfile(prepResult.analysis,{trailAnchor:axis.trail,leadAnchor:axis.lead,cropPadding:.015,directionSource:axis.manual?'manual':'auto'});
   }
-  function organicOpts(){
-    return {length:Number(document.getElementById('size').value),sway:Number(document.getElementById('sway').value),swayWaves:Number(document.getElementById('waves').value),points:30,slices:60,leadEnd:'right'};
+  function organicBaseOpts(){
+    return {length:Number(document.getElementById('size').value),sway:Number(document.getElementById('sway').value),swayWaves:Number(document.getElementById('waves').value),leadEnd:'right'};
+  }
+  function organicV2Opts(){return Object.assign({points:30,slices:72},organicBaseOpts());}
+  function organicV3Opts(){return Object.assign({spinePoints:34,columns:32,rows:10,headRigidFraction:.22,headMaxBend:.085,bodyMaxBend:.28},organicBaseOpts());}
+  function selectedOrganicEngine(){return document.getElementById('organicEngine').value==='slices-v2'?'slices-v2':'mesh-v3';}
+  function syncOrganicCanvases(){
+    var organic=activeMode==='organic';
+    canvas.style.display=organic&&activeOrganicEngine==='slices-v2'?'block':'none';
+    meshCanvas.style.display=organic&&activeOrganicEngine==='mesh-v3'?'block':'none';
   }
   function resolveMode(){
     var requested=document.getElementById('mode').value;
@@ -159,7 +171,7 @@
     document.getElementById('axisActions').style.opacity=prepResult&&prepResult.analysis&&prepResult.analysis.silhouetteReliable?'1':'.4';
     document.getElementById('applyAxis').disabled=!(prepResult&&prepResult.analysis&&prepResult.analysis.silhouetteReliable);
     visual.style.display=resolved==='follower'?'grid':'none';
-    canvas.style.display=resolved==='organic'?'block':'none';
+    syncOrganicCanvases();
     var note='';
     if(requested==='organic'&&resolved!=='organic')note='Orgánico necesita una silueta transparente confiable. Se usa Seguidor como fallback seguro.';
     else if(requested==='auto'&&prepResult&&prepResult.report)note='NagWeb recomienda '+prepResult.report.recommendedMode+' con confianza '+prepResult.report.recommendationConfidence+'.';
@@ -170,14 +182,38 @@
   }
   async function prepareOrganic(){
     if(!prepResult||!prepResult.analysis.silhouetteReliable)return;
-    var profile=currentAssetProfile(),asset=prepResult.image;
+    var profile=currentAssetProfile(),asset=prepResult.image,requested=selectedOrganicEngine();
+    if(organicRenderer){organicRenderer.destroy();organicRenderer=null;}
     try{
-      organicPrepared=await O.rotateAndCrop(asset,prepResult.analysis,{paddingRatio:.015,profile:profile});
-      if(organicRenderer)organicRenderer.destroy();
-      organicRenderer=O.createRenderer(Object.assign({leader:follower,canvas:canvas,area:stage,image:organicPrepared.canvas},organicOpts()));
-      window.__NAGWEB_INTERACTION_STUDIO__.organicRenderer=organicRenderer;
-      status('Listo · Orgánico '+organicPrepared.width+'×'+organicPrepared.height+' · eje '+organicPrepared.axisAngle.toFixed(1)+'°','good');
-    }catch(err){activeMode='follower';document.getElementById('mode').value='follower';visual.style.display='grid';canvas.style.display='none';status('Orgánico no pudo prepararse. Fallback a Seguidor · '+err.message,'warn');}
+      if(requested==='mesh-v3'){
+        organicPrepared=await M.prepareAsset(asset,prepResult.analysis,{paddingRatio:.015,profile:profile});
+        organicRenderer=M.createRenderer(Object.assign({leader:follower,canvas:meshCanvas,area:stage,image:organicPrepared.canvas},organicV3Opts()));
+        activeOrganicEngine='mesh-v3';
+        status('Listo · Mesh V3 continuo · '+organicPrepared.width+'×'+organicPrepared.height+' · '+organicRenderer.topology.vertexCount+' vértices','good');
+      }else{
+        organicPrepared=await O.rotateAndCrop(asset,prepResult.analysis,{paddingRatio:.015,profile:profile});
+        organicRenderer=O.createRenderer(Object.assign({leader:follower,canvas:canvas,area:stage,image:organicPrepared.canvas},organicV2Opts()));
+        activeOrganicEngine='slices-v2';
+        status('Listo · Slices V2.2 referencia · '+organicPrepared.width+'×'+organicPrepared.height,'good');
+      }
+    }catch(err){
+      if(requested==='mesh-v3'){
+        try{
+          organicPrepared=await O.rotateAndCrop(asset,prepResult.analysis,{paddingRatio:.015,profile:profile});
+          organicRenderer=O.createRenderer(Object.assign({leader:follower,canvas:canvas,area:stage,image:organicPrepared.canvas},organicV2Opts()));
+          activeOrganicEngine='slices-v2';
+          status('Mesh V3 no disponible. Fallback automático a Slices V2.2 · '+err.message,'warn');
+        }catch(err2){
+          activeMode='follower';document.getElementById('mode').value='follower';visual.style.display='grid';
+          status('Orgánico no pudo prepararse. Fallback a Seguidor · '+err2.message,'warn');
+        }
+      }else{
+        activeMode='follower';document.getElementById('mode').value='follower';visual.style.display='grid';
+        status('Orgánico no pudo prepararse. Fallback a Seguidor · '+err.message,'warn');
+      }
+    }
+    syncOrganicCanvases();
+    window.__NAGWEB_INTERACTION_STUDIO__.organicRenderer=organicRenderer;
   }
   function followerOpts(){
     return {preset:document.getElementById('preset').value,distanceFromPointer:Number(document.getElementById('distance').value),assetForwardAngle:Number(document.getElementById('forward').value),rotateToTarget:true};
@@ -186,7 +222,7 @@
     var preset=document.getElementById('preset').value;
     follower.applyPreset(preset,{distanceFromPointer:Number(document.getElementById('distance').value),assetForwardAngle:Number(document.getElementById('forward').value),rotateToTarget:true});
     var size=Number(document.getElementById('size').value);visual.style.width=size+'px';visual.style.height=size+'px';
-    if(organicRenderer)organicRenderer.setOptions(organicOpts());
+    if(organicRenderer)organicRenderer.setOptions(activeOrganicEngine==='mesh-v3'?organicV3Opts():organicV2Opts());
     output('size',size+' px');output('distance',document.getElementById('distance').value+' px');output('sway',document.getElementById('sway').value);output('waves',document.getElementById('waves').value);
   }
   function influenceOpts(){return {radius:Number(document.getElementById('radius').value),strength:Number(document.getElementById('strength').value),maxPush:85,maxRotate:11,maxScale:.09,spring:.08,damping:.84};}
@@ -217,7 +253,8 @@
     return S.normalize({
       mode:document.getElementById('mode').value,influenceEnabled:document.getElementById('influence').checked,
       followerOptions:Object.assign({},follower.options,{assetForwardAngle:Number(document.getElementById('forward').value)}),
-      organicOptions:organicRenderer?organicRenderer.options:organicOpts(),influenceOptions:influenceOpts(),
+      organicRenderer:activeOrganicEngine,
+      organicOptions:organicRenderer?organicRenderer.options:(selectedOrganicEngine()==='mesh-v3'?organicV3Opts():organicV2Opts()),influenceOptions:influenceOpts(),
       assetProfile:currentAssetProfile(),preparationReport:prepResult&&prepResult.report,
       assetRef:currentFile?{name:currentFile.name,type:currentFile.type,size:currentFile.size}:{name:'demo-asset.svg',type:'image/svg+xml'},
       metadata:{name:currentFile?currentFile.name:'Demo Interaction Studio'}
@@ -228,6 +265,7 @@
   document.getElementById('cancel').onclick=function(){if(pipeline)pipeline.cancel();};
   document.getElementById('mode').onchange=updateModeUI;
   document.getElementById('preset').onchange=syncMotion;
+  document.getElementById('organicEngine').onchange=async function(){if(activeMode==='organic'&&prepResult)await prepareOrganic();};
   ['size','distance','forward','sway','waves'].forEach(function(id){document.getElementById(id).addEventListener('input',syncMotion);document.getElementById(id).addEventListener('change',syncMotion);});
   document.getElementById('influence').onchange=updateInfluence;
   ['radius','strength'].forEach(function(id){document.getElementById(id).addEventListener('input',function(){if(influenceField)influenceField.setOptions(influenceOpts());output('radius',document.getElementById('radius').value+' px');output('strength',document.getElementById('strength').value);});});
@@ -242,7 +280,7 @@
     var check=P.validateFile(f,{});
     if(check.blocked){status(check.warnings.join(' '),'bad');return;}
     if(originalUrl)URL.revokeObjectURL(originalUrl);cleanPreparedUrl();currentFile=f;originalUrl=URL.createObjectURL(f);prepResult=null;organicPrepared=null;
-    if(organicRenderer){organicRenderer.destroy();organicRenderer=null;}setStep(1);
+    if(organicRenderer){organicRenderer.destroy();organicRenderer=null;}canvas.style.display='none';meshCanvas.style.display='none';setStep(1);
     sourceImage.onload=function(){sourcePreview.src=originalUrl;visualImg.src=originalUrl;drawAxis();status('Original cargado · '+f.name+' · '+(f.size/1048576).toFixed(1)+' MB'+(check.warnings.length?' · '+check.warnings.join(' '):''),check.warnings.length?'warn':'');};
     sourceImage.src=originalUrl;
   };
@@ -250,7 +288,9 @@
 
   window.__NAGWEB_INTERACTION_STUDIO__={
     follower:follower,organicRenderer:null,influenceField:null,get prepResult(){return prepResult;},get axis(){return axis;},
-    get mode(){return activeMode;},getSession:session,prepare:prepare,switchMode:function(m){document.getElementById('mode').value=m;updateModeUI();}
+    get mode(){return activeMode;},get organicEngine(){return activeOrganicEngine;},getSession:session,prepare:prepare,
+    switchMode:function(m){document.getElementById('mode').value=m;updateModeUI();},
+    switchOrganicEngine:async function(e){document.getElementById('organicEngine').value=e==='slices-v2'?'slices-v2':'mesh-v3';if(activeMode==='organic')await prepareOrganic();}
   };
   syncMotion();updateInfluence();sourceImage.onload=function(){sourcePreview.src=fallback;visualImg.src=fallback;prepare();};sourceImage.src=fallback;
 })();
