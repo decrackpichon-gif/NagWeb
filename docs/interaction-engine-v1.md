@@ -537,3 +537,74 @@ El browser QA prueba el ciclo completo:
 La línea estable de este documento continúa en `feat/interaction-engine-v1`.
 
 La investigación de deformación weighted-bone / Organic Skin V4 vive separada en `feat/interaction-engine-experimental-v1` y no se integra automáticamente. La comparación V3/V4 se hará cuando el prototipo experimental tenga suficiente madurez.
+
+
+## V3.8 · selección por área y multiselección honesta
+
+Interaction Studio incorpora selección rectangular de objetivos reactivos.
+
+### Selection Geometry 1.0
+
+La geometría reusable vive en `js/nagweb-interaction-selection-v1.js` y no depende del Studio.
+
+Expone:
+
+- normalización de rectángulos;
+- área de intersección;
+- detección de targets por centro o porcentaje de solapamiento;
+- composición de selección en modos `replace`, `add`, `subtract` y `toggle`.
+
+En el Studio:
+
+- clic selecciona un target;
+- Shift + clic alterna targets individuales;
+- arrastrar desde espacio vacío crea un marquee;
+- Shift + arrastre suma;
+- Alt/Option + arrastre quita;
+- el rectángulo nunca reemplaza la semántica de clic cuando el gesto empieza sobre un target.
+
+El API del laboratorio expone `selectTargets(ids, mode)` y `marqueeActive` para integración/QA.
+
+### Valores mixtos
+
+Cuando la selección contiene configuraciones diferentes, el panel deja de fingir que todos los targets tienen los valores del elemento primario:
+
+- checkboxes usan estado indeterminado;
+- intensidad y retorno muestran `Mixto`;
+- perfil muestra `Mixto` cuando corresponde.
+
+Editar un canal modifica únicamente ese canal. Por ejemplo, cambiar `rotate` ya no pisa `move` ni `scale` de los demás targets.
+
+El browser smoke valida selección rectangular real con Pointer Events y preservación de canales heterogéneos.
+
+## Influence 1.11 · lifecycle dinámico de targets
+
+Influence Field ahora administra targets incrementalmente.
+
+API nueva:
+
+- `hasTarget(ref)`;
+- `addTarget(element)`;
+- `removeTarget(ref)`;
+- `setTargets(list)` diferencial.
+
+`setTargets()` conserva estado físico y configuración de los elementos retenidos, agrega sólo los nuevos y restaura los estilos de los removidos.
+
+También se corrigió `impulseTarget()` para despertar explícitamente un target dormido antes de iniciar su retorno físico.
+
+### Target Registry 1.0
+
+`js/nagweb-interaction-target-registry-v1.js` es un adaptador DOM opcional, separado de la física.
+
+Usa `MutationObserver` para detectar altas, bajas y cambios de activación bajo un root configurable, agrupa mutaciones cercanas y puede enlazarse directamente a un Influence Field mediante `bindField()`.
+
+Además informa IDs duplicados, algo importante para sesiones persistentes.
+
+El browser QA comprueba:
+
+- habilitar un target existente;
+- agregar nodos nuevos;
+- conservar el peso de targets ya activos;
+- borrar nodos y liberar su estado;
+- detectar IDs duplicados;
+- sincronizar automáticamente el field sin reconstruir los targets retenidos.
