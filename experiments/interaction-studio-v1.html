@@ -64,6 +64,7 @@
   <div class="group">
     <h2>Campo de influencia</h2>
     <label class="check"><input id="influence" type="checkbox" checked> Empujar elementos cercanos</label>
+    <div class="field"><label>Influencia desde</label><select id="influenceSource"><option value="body">Cuerpo completo</option><option value="head">Cabeza / cursor</option></select></div>
     <div class="field"><label>Radio <output id="radiusOut"></output></label><input id="radius" type="range" min="70" max="420" step="5" value="210"></div>
     <div class="field"><label>Fuerza <output id="strengthOut"></output></label><input id="strength" type="range" min="0" max="2.5" step=".05" value="1"></div>
   </div>
@@ -285,12 +286,21 @@
     output('torsoRigidity',Math.round(Number(document.getElementById('torsoRigidity').value)*100)+'%');
     output('lowerFlex',Math.round(Number(document.getElementById('lowerFlex').value)*100)+'%');
   }
-  function influenceOpts(){return {radius:Number(document.getElementById('radius').value),strength:Number(document.getElementById('strength').value),maxPush:85,maxRotate:11,maxScale:.09,spring:.08,damping:.84};}
+  function influenceOpts(){return {radius:Number(document.getElementById('radius').value),strength:Number(document.getElementById('strength').value),maxPush:85,maxRotate:11,maxScale:.09,spring:.08,damping:.84,sourceMode:document.getElementById('influenceSource').value==='head'?'head':'body'};}
   function updateInfluence(){
     var enabled=document.getElementById('influence').checked;
     if(influenceField){influenceField.destroy();influenceField=null;}
     if(enabled){
-      influenceField=I.createField({source:function(){return {x:follower.state.x,y:follower.state.y};},targets:document.querySelectorAll('#headline span'),...influenceOpts()});
+      influenceField=I.createField({
+        source:function(){
+          if(document.getElementById('influenceSource').value==='body'&&activeMode==='organic'&&organicRenderer&&organicRenderer.spine&&organicRenderer.spine.length>1){
+            return {points:organicRenderer.spine};
+          }
+          return {x:follower.state.x,y:follower.state.y};
+        },
+        targets:document.querySelectorAll('#headline span'),
+        ...influenceOpts()
+      });
     }
     window.__NAGWEB_INTERACTION_STUDIO__.influenceField=influenceField;
     output('radius',document.getElementById('radius').value+' px');output('strength',document.getElementById('strength').value);
@@ -352,6 +362,7 @@
     }
     if(Number.isFinite(Number(io.radius)))document.getElementById('radius').value=io.radius;
     if(Number.isFinite(Number(io.strength)))document.getElementById('strength').value=io.strength;
+    document.getElementById('influenceSource').value=io.sourceMode==='head'?'head':'body';
     follower.setOptions(fo);
     drawAxis();syncMotion();updateInfluence();
     await updateModeUI();
@@ -386,6 +397,7 @@
     document.getElementById(id).addEventListener('input',function(){document.getElementById('bodyProfile').value='custom';syncMotion();});
   });
   document.getElementById('influence').onchange=updateInfluence;
+  document.getElementById('influenceSource').onchange=updateInfluence;
   ['radius','strength'].forEach(function(id){document.getElementById(id).addEventListener('input',function(){if(influenceField)influenceField.setOptions(influenceOpts());output('radius',document.getElementById('radius').value+' px');output('strength',document.getElementById('strength').value);});});
   bindAnchor('trailAnchor','trail');bindAnchor('leadAnchor','lead');bindZoneMarker('headZoneMarker','headEnd');bindZoneMarker('torsoZoneMarker','torsoEnd');
   document.getElementById('swapAxis').onclick=function(){var t=axis.trail;axis.trail=axis.lead;axis.lead=t;axis.manual=true;drawAxis();status('Dirección invertida. Aplicá el eje para actualizar.','warn');};
