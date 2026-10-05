@@ -322,3 +322,70 @@ El primer run V4-C (#373) falló porque el centro del primer bin de muestreo pro
 Run verde: **#374**.
 
 Próximo criterio de decisión: comparar con `ponjita.png` contra V3, usando primero preset `Personaje`. V4-C sólo continúa si mantiene la integridad de V4-B y aporta una diferencia visual útil en cuello, torso/ropa o transiciones de volumen.
+
+
+## Resultado humano de V4-C y V4-C.1
+
+La prueba humana con `ponjita.png` mostró que V4-C mantenía mejoras adaptativas, pero todavía podía romper la textura en curvas muy cerradas.
+
+Las capturas evidenciaron un caso distinto de V4.1:
+
+- la spine central podía seguir siendo válida y no cruzarse;
+- sin embargo, el radio de curvatura local podía ser menor que el semiancho visible del personaje;
+- en ese caso, el borde interno de la malla se comprimía, invertía o superponía;
+- el fallo aparecía especialmente en zonas anchas de ropa/túnica.
+
+Conclusión: el anti-fold de V4-B, basado en separación entre segmentos no vecinos de la spine, no alcanza por sí solo. Hace falta considerar el grosor físico de la silueta.
+
+### V4-C.1 · thickness-aware curvature guard
+
+Versión del módulo:
+
+`4.3.1-alpha.1`
+
+Se agrega un guard geométrico local:
+
+1. obtiene el ancho visible de silueta en cada `u`;
+2. lo convierte a semiancho relativo de la malla renderizada;
+3. estima el máximo cambio angular seguro por segmento;
+4. limita `controlBend` localmente si la curva solicitada excede ese valor;
+5. permite que los límites de bend/flex bajen de nuevo en zonas posteriores anchas.
+
+La fórmula se basa en la condición aproximada de offset curve:
+
+`Δθ < segmentLength / localHalfWidth`
+
+con margen configurable.
+
+Opciones nuevas:
+
+- `thicknessGuard`
+- `curvatureMargin`
+- `minSafeBend`
+- `maxSafeBend`
+
+V4-B conserva su comportamiento original por defecto. Sólo V4-C activa `preserveLocalControlDips=true`.
+
+### Diagnóstico actualizado
+
+El laboratorio marca en rojo los controles donde el guard de grosor está limitando la curvatura.
+
+Esto permite distinguir:
+
+- adaptación normal de silueta;
+- anti-fold de la spine;
+- límite físico por grosor.
+
+### QA
+
+Se agregaron tests que verifican:
+
+- zonas anchas reciben un `safeBend` menor que zonas finas;
+- controles marcados como `geometryCapped` nunca superan su límite local;
+- V4-B sigue monotónico por defecto;
+- V4-C puede conservar dips locales de flex/bend cuando son necesarios por silueta;
+- browser smoke confirma activación real del guard en el asset de fallback.
+
+Run verde: **#391**.
+
+Próximo criterio de decisión: repetir con `ponjita.png` las mismas curvas cerradas que rompían V4-C y verificar si desaparecen las inversiones de textura sin volver el movimiento excesivamente rígido.
