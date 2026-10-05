@@ -8,7 +8,7 @@
   if(root) root.NAGWEB_INTERACTION_INFLUENCE=api;
 })(typeof window!=='undefined'?window:globalThis,function(engine){
   'use strict';
-  var VERSION='1.11.0';
+  var VERSION='1.12.0';
   function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
   function num(v,d){v=Number(v);return Number.isFinite(v)?v:d;}
   function normalizeOptions(input){
@@ -173,20 +173,31 @@
     var media=typeof matchMedia==='function'?matchMedia('(prefers-reduced-motion: reduce)'):null;
     var reduce=o.reducedMotion==='always'||(o.reducedMotion==='respect'&&media&&media.matches);
 
+    function readTargetConfig(el){
+      var rawWeight=el&&el.getAttribute&&el.getAttribute('data-nw-influence-weight');
+      return {
+        id:el&&el.getAttribute&&el.getAttribute('data-nw-target-id')||null,
+        weight:rawWeight==null?1:clamp(num(rawWeight,1),0,2),
+        response:normalizeResponse({
+          move:el&&el.getAttribute&&el.getAttribute('data-nw-influence-move'),
+          rotate:el&&el.getAttribute&&el.getAttribute('data-nw-influence-rotate'),
+          scale:el&&el.getAttribute&&el.getAttribute('data-nw-influence-scale')
+        }),
+        returnSpeed:clamp(num(el&&el.getAttribute&&el.getAttribute('data-nw-influence-return'),1),.25,2),
+        profile:String(el&&el.getAttribute&&el.getAttribute('data-nw-reaction-profile')||'custom').slice(0,48)
+      };
+    }
+    function applyTargetConfig(record,config){
+      if(!record||!config)return null;
+      record.id=config.id;record.weight=config.weight;record.response=normalizeResponse(config.response);
+      record.returnSpeed=clamp(num(config.returnSpeed,1),.25,2);record.profile=String(config.profile||'custom').slice(0,48);
+      return {id:record.id,weight:record.weight,response:Object.assign({},record.response),returnSpeed:record.returnSpeed,profile:record.profile};
+    }
     function makeRecord(el){
       var original={translate:el.style.translate,rotate:el.style.rotate,scale:el.style.scale,willChange:el.style.willChange};
       el.style.willChange='translate, rotate, scale';
-      var rawWeight=el.getAttribute&&el.getAttribute('data-nw-influence-weight');
-      var weight=rawWeight==null?1:clamp(num(rawWeight,1),0,2);
-      var id=el.getAttribute&&el.getAttribute('data-nw-target-id')||null;
-      var profile=String(el.getAttribute&&el.getAttribute('data-nw-reaction-profile')||'custom').slice(0,48);
-      var returnSpeed=clamp(num(el.getAttribute&&el.getAttribute('data-nw-influence-return'),1),.25,2);
-      var response=normalizeResponse({
-        move:el.getAttribute&&el.getAttribute('data-nw-influence-move'),
-        rotate:el.getAttribute&&el.getAttribute('data-nw-influence-rotate'),
-        scale:el.getAttribute&&el.getAttribute('data-nw-influence-scale')
-      });
-      return {el:el,id:id,state:newState(),rest:{x:0,y:0,radius:0},weight:weight,response:response,returnSpeed:returnSpeed,profile:profile,sleeping:true,original:original};
+      var config=readTargetConfig(el);
+      return {el:el,id:config.id,state:newState(),rest:{x:0,y:0,radius:0},weight:config.weight,response:config.response,returnSpeed:config.returnSpeed,profile:config.profile,sleeping:true,original:original};
     }
     function targetIndex(ref){
       return targets.findIndex(function(t){return t.el===ref||t.id===ref;});
@@ -363,6 +374,13 @@
       addTarget:function(el){return addTarget(el,false);},
       removeTarget:function(ref){return removeTarget(ref,false);},
       setTargets:function(list){return setTargets(list);},
+      syncTarget:function(ref){
+        var idx=targetIndex(ref);if(idx<0)return null;
+        return applyTargetConfig(targets[idx],readTargetConfig(targets[idx].el));
+      },
+      syncTargets:function(){
+        return targets.map(function(t){return applyTargetConfig(t,readTargetConfig(t.el));});
+      },
       measure:measure,
       pause:function(){paused=true;},
       resume:function(){paused=false;},
@@ -373,5 +391,5 @@
       }
     };
   }
-  return {version:VERSION,normalizeOptions:normalizeOptions,computeRepulsion:computeRepulsion,closestPointOnSegment:closestPointOnSegment,computePathRepulsion:computePathRepulsion,pathDistance:pathDistance,pathBounds:pathBounds,pointInBounds:pointInBounds,computeSweptPathRepulsion:computeSweptPathRepulsion,weightGoal:weightGoal,normalizeResponse:normalizeResponse,responseGoal:responseGoal,targetDynamics:targetDynamics,impulseGoal:impulseGoal,springStep:springStep,stateSettled:stateSettled,resetState:resetState,goalActive:goalActive,createField:createField};
+  return {version:VERSION,normalizeOptions:normalizeOptions,readTargetConfig:readTargetConfig,computeRepulsion:computeRepulsion,closestPointOnSegment:closestPointOnSegment,computePathRepulsion:computePathRepulsion,pathDistance:pathDistance,pathBounds:pathBounds,pointInBounds:pointInBounds,computeSweptPathRepulsion:computeSweptPathRepulsion,weightGoal:weightGoal,normalizeResponse:normalizeResponse,responseGoal:responseGoal,targetDynamics:targetDynamics,impulseGoal:impulseGoal,springStep:springStep,stateSettled:stateSettled,resetState:resetState,goalActive:goalActive,createField:createField};
 });
