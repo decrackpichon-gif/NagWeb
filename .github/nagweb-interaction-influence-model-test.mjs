@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 const require=createRequire(import.meta.url);
 const I=require('../js/nagweb-interaction-influence-v1.js');
 
-assert.equal(I.version,'1.9.0');
+assert.equal(I.version,'1.10.0');
 const defaults=I.normalizeOptions({});
 assert.ok(Object.values(defaults).filter(v=>typeof v==='number').every(Number.isFinite));
 assert.equal(defaults.sourceMode,'body');
@@ -59,6 +59,10 @@ assert.deepEqual(rotationOnly,{x:0,y:0,rotation:8,scale:1,strength:.8});
 assert.ok(I.targetDynamics(o,2).spring>I.targetDynamics(o,.5).spring);
 assert.equal(I.targetDynamics(o,10).spring,I.targetDynamics(o,2).spring);
 assert.equal(I.targetDynamics(o,0).spring,I.targetDynamics(o,.25).spring);
+const impulse=I.impulseGoal({x:40,y:-20,rotation:10,scale:.1,strength:1},.5,{move:1,rotate:0,scale:1});
+assert.equal(impulse.x,20);assert.equal(impulse.y,-10);assert.equal(impulse.rotation,0);assert.ok(Math.abs(impulse.scale-1.05)<1e-9);assert.equal(impulse.strength,.5);
+const pulseImpulse=I.impulseGoal({x:40,y:-20,rotation:10,scale:.1},1,{move:0,rotate:0,scale:1});
+assert.equal(pulseImpulse.x,0);assert.equal(pulseImpulse.y,0);assert.equal(pulseImpulse.rotation,0);assert.ok(Math.abs(pulseImpulse.scale-1.1)<1e-9);
 
 const telePrev=[{x:0,y:0},{x:30,y:0}],teleCurr=[{x:1000,y:0},{x:1030,y:0}];
 const noTeleport=I.computeSweptPathRepulsion(teleCurr,telePrev,{x:500,y:0,radius:0},o);
@@ -70,4 +74,4 @@ assert.ok(Math.abs(state.x-40)<1);assert.ok(Math.abs(state.y+20)<1);assert.ok(Ma
 for(let i=0;i<180;i++)I.springStep(state,{x:0,y:0,rotation:0,scale:1,strength:0},o,16.6667);
 assert.ok(Math.abs(state.x)<1);assert.ok(Math.abs(state.y)<1);assert.ok(Math.abs(state.rotation)<1);assert.ok(Math.abs(state.scale-1)<.02);
 
-console.log('NagWeb Interaction Influence V1.9 broadphase target physics model tests: PASS');
+console.log('NagWeb Interaction Influence V1.10 impulse preview + broadphase model tests: PASS');
