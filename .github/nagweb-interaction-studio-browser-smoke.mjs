@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import puppeteer from 'puppeteer-core';
 import fs from 'node:fs';
+import {runStudioRobustnessSmoke} from './nagweb-interaction-studio-robustness-smoke.mjs';
 
 const candidates=['/usr/bin/google-chrome-stable','/usr/bin/google-chrome','/usr/bin/chromium','/usr/bin/chromium-browser'];
 const executablePath=candidates.find(p=>fs.existsSync(p));if(!executablePath)throw new Error('No Chromium/Chrome executable found');
@@ -52,6 +53,8 @@ try{
   assert.equal(lifecycle.added.config.weight,1);assert.deepEqual(lifecycle.added.config.response,{move:1,rotate:1,scale:1});assert.equal(lifecycle.added.config.returnSpeed,1,'Export uses the same defaults as the field');
   assert.deepEqual(lifecycle.changed,{weight:.61,response:{move:1,rotate:0,scale:1},speed:1.7});assert.equal(lifecycle.options.same,true);assert.deepEqual(lifecycle.options.state,lifecycle.before,'Changing the source must retain existing target motion');
   assert.equal(lifecycle.disabled,true);assert.deepEqual(lifecycle.removed,{count:10,selection:[],hidden:true});assert.equal(lifecycle.previewStarted,true);assert.equal(lifecycle.previewCleared,true);
+
+  await runStudioRobustnessSmoke(page);
 
   const stage=await page.$eval('#stage',el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height};});
   const head0=await page.evaluate(()=>({x:__NAGWEB_INTERACTION_STUDIO__.follower.state.x,y:__NAGWEB_INTERACTION_STUDIO__.follower.state.y}));

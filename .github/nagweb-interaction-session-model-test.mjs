@@ -63,3 +63,6 @@ assert.deepEqual(cleaned,[
 
 assert.throws(()=>S.deserialize('{"bad":true}'),/invalid session/);
 console.log('NagWeb Interaction Session V1.8 model tests: PASS');
+
+const specialIds=['__proto__','constructor','toString','card"\\[日本]'];
+assert.deepEqual(S.normalizeTargetSelection(specialIds.concat(specialIds).map(id=>({id}))).map(t=>t.id),specialIds,'Imported IDs must survive normalization and deduplication');

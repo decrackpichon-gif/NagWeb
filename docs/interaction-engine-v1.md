@@ -617,3 +617,12 @@ El Studio usa Target Registry 1.1 para observar objetivos activos e inactivos. A
 Cuando se elimina un objetivo seleccionado, desaparece de la selección y del panel. La vista previa libera los objetivos eliminados y termina si no queda ninguno. La exportación JSON y los controles usan el mismo parser que el field, incluidos los valores por defecto de un objetivo nuevo. Se corrigió el retorno sin atributo para que sea 100%, coherente con los controles y las sesiones.
 
 El browser smoke comprueba alta, configuración, desactivación y baja dentro del Studio, conservación exacta del estado físico con el field pausado, identidad del field al cambiar fuente, exportación de valores por defecto y eliminación durante una vista previa. Trabajo aislado en `feat/interaction-engine-v1`; sin integración al editor principal ni V4.
+
+
+## Studio · robustez con composiciones heterogéneas
+
+La selección resuelve los IDs literalmente, sin convertirlos en selectores CSS, y descarta referencias inexistentes. IDs importados con comillas, barras, corchetes o nombres como `__proto__`, `constructor` y `toString` se conservan en selección, exportación y restauración; el contrato de sesión y la aplicación de configuraciones usan colecciones sin claves heredadas.
+
+Probar reacción fuera del modo de edición pausa temporalmente el field principal. Al terminar, restaura su estado previo de pausa; cambiar opciones cancela la prueba antes de actualizar el motor. Así ambos fields no escriben movimiento sobre el mismo objetivo simultáneamente. Influence expone `paused` para conservar una pausa impuesta por otro consumidor.
+
+La batería del Studio incluye 140 objetivos nuevos con activación, intensidad, canales y retorno mixtos: actualización DOM agrupada, cambio de un canal sin pisar los demás, JSON ida/vuelta, eliminación parcial con 120 seleccionados, previsualización exclusiva con field activo o pausado y limpieza final sin recrear el field existente.

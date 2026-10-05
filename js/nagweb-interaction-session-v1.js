@@ -26,12 +26,12 @@
   }
   function normalizeTargetSelection(value){
     if(!Array.isArray(value))return [];
-    var seen={};
+    var seen=new Set();
     return value.slice(0,200).map(function(item){
       item=item||{};
       var id=String(item.id||'').trim().slice(0,120);
-      if(!id||seen[id])return null;
-      seen[id]=true;
+      if(!id||seen.has(id))return null;
+      seen.add(id);
       var weight=Number(item.weight);
       if(!Number.isFinite(weight))weight=1;
       weight=Math.max(0,Math.min(2,weight));

@@ -26,6 +26,7 @@ on:
       - '.github/nagweb-interaction-target-registry-browser-smoke.mjs'
       - '.github/nagweb-interaction-reaction-profiles-model-test.mjs'
       - '.github/nagweb-interaction-studio-browser-smoke.mjs'
+      - '.github/nagweb-interaction-studio-robustness-smoke.mjs'
       - '.github/workflows/nagweb-interaction-v1.yml'
       - 'docs/interaction-engine-v1.md'
   pull_request:

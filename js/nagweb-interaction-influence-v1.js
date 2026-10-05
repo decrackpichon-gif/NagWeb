@@ -305,6 +305,7 @@
     unsub=engine.subscribeFrame(frame);
     return {
       version:VERSION,
+      get paused(){return paused;},
       get options(){return Object.assign({},o);},
       get targetCount(){return targets.length;},
       get targetWeights(){return targets.map(function(t){return t.weight;});},
