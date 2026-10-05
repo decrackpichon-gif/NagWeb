@@ -25,9 +25,11 @@ try{
     analysis:__NAGWEB_ORGANIC_V4_AB__.analysis
   }));
   if(!boot.ready)throw new Error('V4 A/B boot failed · '+JSON.stringify({boot,errors,consoleErrors}));
-  assert.equal(boot.v3Version,'3.2.0-alpha.1');assert.equal(boot.v4Version,'4.0.0-alpha.1');
+  assert.equal(boot.v3Version,'3.2.0-alpha.1');assert.equal(boot.v4Version,'4.1.0-alpha.1');
   assert.equal(boot.v3Renderer,'webgl-mesh');assert.equal(boot.v4Renderer,'webgl-skin-v4');
   assert.equal(boot.rig.count,7);assert.equal(boot.topology.columns,36);assert.equal(boot.topology.rows,12);
+  assert.equal(await page.$eval('#skinMode',el=>el.value),'rigid2d');
+  assert.equal(await page.$eval('#lengthOut',el=>el.value),'380 px');
   assert.ok(Math.abs(boot.topology.weightStats.minSum-1)<1e-6);assert.ok(Math.abs(boot.topology.weightStats.maxSum-1)<1e-6);
   assert.ok(boot.topology.weightStats.maxInfluences<=4);assert.equal(boot.analysis.silhouetteReliable,true);
 
@@ -43,19 +45,25 @@ try{
   assert.ok(Math.hypot(after.v4.x-before.v4.x,after.v4.y-before.v4.y)>10);
   assert.equal(after.frames.length,7);assert.ok(after.frames.every(f=>Number.isFinite(f.x)&&Number.isFinite(f.y)&&Number.isFinite(f.angle)));
 
+  fs.mkdirSync('/tmp/nagweb-interaction-experimental',{recursive:true});
+  await page.screenshot({path:'/tmp/nagweb-interaction-experimental/organic-v3-v4-ab-default.png',fullPage:true});
+
   await page.$eval('#bones',el=>{el.value='9';el.dispatchEvent(new Event('input',{bubbles:true}));});
   await page.$eval('#radius',el=>{el.value='.33';el.dispatchEvent(new Event('input',{bubbles:true}));});
   await page.$eval('#influences',el=>{el.value='3';el.dispatchEvent(new Event('input',{bubbles:true}));});
   await new Promise(r=>setTimeout(r,180));
   const changed=await page.evaluate(()=>({rig:__NAGWEB_ORGANIC_V4_AB__.v4.rig,topology:__NAGWEB_ORGANIC_V4_AB__.v4.topology,options:__NAGWEB_ORGANIC_V4_AB__.v4.options}));
-  assert.equal(changed.rig.count,9);assert.equal(changed.options.maxInfluences,3);assert.ok(changed.topology.weightStats.maxInfluences<=3);
+  assert.equal(changed.rig.count,9);assert.equal(changed.options.maxInfluences,3);assert.equal(changed.options.skinMode,'rigid2d');assert.ok(changed.topology.weightStats.maxInfluences<=3);
+  await page.select('#skinMode','lbs');await new Promise(r=>setTimeout(r,100));
+  assert.equal(await page.evaluate(()=>__NAGWEB_ORGANIC_V4_AB__.v4.options.skinMode),'lbs');
+  await page.select('#skinMode','rigid2d');await new Promise(r=>setTimeout(r,100));
+  assert.equal(await page.evaluate(()=>__NAGWEB_ORGANIC_V4_AB__.v4.options.skinMode),'rigid2d');
   assert.ok(Math.abs(changed.topology.weightStats.minSum-1)<1e-6);assert.ok(Math.abs(changed.topology.weightStats.maxSum-1)<1e-6);
 
   const gl=await page.evaluate(()=>['canvasV3','canvasV4'].map(id=>{const c=document.getElementById(id),g=c.getContext('webgl')||c.getContext('experimental-webgl');return !!g&&g.getError()===g.NO_ERROR;}));
   assert.deepEqual(gl,[true,true]);
   assert.equal(errors.length,0,'V4 A/B lab should have no page errors: '+errors.join('\n'));
   assert.equal(consoleErrors.length,0,'V4 A/B lab should have no console errors: '+consoleErrors.join('\n'));
-  fs.mkdirSync('/tmp/nagweb-interaction-experimental',{recursive:true});
-  await page.screenshot({path:'/tmp/nagweb-interaction-experimental/organic-v3-v4-ab.png',fullPage:true});
-  console.log('NagWeb Organic V3 vs Skin V4.0 A/B browser smoke: PASS');
+  await page.screenshot({path:'/tmp/nagweb-interaction-experimental/organic-v3-v4-ab-tuned.png',fullPage:true});
+  console.log('NagWeb Organic V3 vs Skin V4.1 A/B browser smoke: PASS');
 }finally{await browser.close();}
