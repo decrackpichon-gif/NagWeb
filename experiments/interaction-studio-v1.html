@@ -111,6 +111,7 @@
 <script src="../js/nagweb-interaction-engine-v1.js"></script>
 <script src="../js/nagweb-interaction-asset-prep-v1.js"></script>
 <script src="../js/nagweb-interaction-influence-v1.js"></script>
+<script src="../js/nagweb-interaction-reaction-profiles-v1.js"></script>
 <script src="../js/nagweb-interaction-organic-v2.js"></script>
 <script src="../js/nagweb-interaction-organic-v3.js"></script>
 <script src="../js/nagweb-interaction-background-ai-v1.js"></script>
@@ -118,7 +119,7 @@
 <script src="../js/nagweb-interaction-session-v1.js"></script>
 <script>
 (function(){
-  var E=NAGWEB_INTERACTION_ENGINE,A=NAGWEB_INTERACTION_ASSET_PREP,I=NAGWEB_INTERACTION_INFLUENCE,O=NAGWEB_ORGANIC_FOLLOWER,M=NAGWEB_ORGANIC_MESH,P=NAGWEB_INTERACTION_PREPARATION,S=NAGWEB_INTERACTION_SESSION;
+  var E=NAGWEB_INTERACTION_ENGINE,A=NAGWEB_INTERACTION_ASSET_PREP,I=NAGWEB_INTERACTION_INFLUENCE,R=NAGWEB_INTERACTION_REACTION_PROFILES,O=NAGWEB_ORGANIC_FOLLOWER,M=NAGWEB_ORGANIC_MESH,P=NAGWEB_INTERACTION_PREPARATION,S=NAGWEB_INTERACTION_SESSION;
   var stage=document.getElementById('stage'),leaderEl=document.getElementById('leader'),visual=document.getElementById('followerVisual'),visualImg=document.getElementById('followerImage'),sourcePreview=document.getElementById('sourcePreview'),canvas=document.getElementById('organicCanvas'),meshCanvas=document.getElementById('organicMeshCanvas'),sourceImage=new Image();
   var originalUrl=null,preparedUrl=null,currentFile=null,pipeline=null,prepResult=null,organicPrepared=null,organicRenderer=null,influenceField=null;
   var axis={trail:{x:.12,y:.5},lead:{x:.88,y:.5},manual:false},zones={headEnd:.22,torsoEnd:.66,manual:false},activeMode='follower',activeOrganicEngine='mesh-v3',busy=false,targetEditing=false,selectedTargetId=null,selectedTargetIds=[];
