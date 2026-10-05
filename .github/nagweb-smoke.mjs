@@ -38,6 +38,8 @@ import {runMotionExpandSmoke} from './nagweb-motion-expand-smoke.mjs';
 import {runMotionDropSmoke} from './nagweb-motion-drop-smoke.mjs';
 import {runMotionStreamSmoke} from './nagweb-motion-stream-smoke.mjs';
 import {runMotionStreamPlacementSmoke} from './nagweb-motion-stream-placement-smoke.mjs';
+import './nagweb-toss-model-test.mjs';
+import {runMotionTossSmoke,runMotionTossDepthSmoke} from './nagweb-motion-toss-smoke.mjs';
 import './nagweb-focus-model-test.mjs';
 import {runMotionFocusSmoke,runMotionFocusDepthSmoke} from './nagweb-motion-focus-smoke.mjs';
 import './nagweb-stack-model-test.mjs';
@@ -244,6 +246,9 @@ if(Math.abs(workspaceState.rightWidth-savedInspectorWidth)>3) throw new Error('I
 await page.click('.nw-dock-toggle.left');
 
 if(suite!=='editor'){
+await runMotionTossSmoke(page);
+await runMotionTossDepthSmoke(page);
+await runMotionStreamPlacementSmoke(page,'card-toss');
 await runMotionFocusSmoke(page);
 await runMotionFocusDepthSmoke(page);
 await runMotionStreamPlacementSmoke(page,'iso-focus-sequence');
