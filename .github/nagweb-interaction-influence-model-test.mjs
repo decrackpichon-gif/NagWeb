@@ -64,6 +64,12 @@ assert.equal(impulse.x,20);assert.equal(impulse.y,-10);assert.equal(impulse.rota
 const pulseImpulse=I.impulseGoal({x:40,y:-20,rotation:10,scale:.1},1,{move:0,rotate:0,scale:1});
 assert.equal(pulseImpulse.x,0);assert.equal(pulseImpulse.y,0);assert.equal(pulseImpulse.rotation,0);assert.ok(Math.abs(pulseImpulse.scale-1.1)<1e-9);
 
+const restState={x:.001,y:-.001,vx:.001,vy:0,rotation:.001,vr:0,scale:1.00001,vs:0,strength:0};
+assert.equal(I.stateSettled(restState),true);
+assert.equal(I.goalActive({x:0,y:0,rotation:0,scale:1,strength:0}),false);
+assert.equal(I.goalActive({x:.01,y:0,rotation:0,scale:1,strength:0}),true);
+I.resetState(restState);assert.deepEqual(restState,{x:0,y:0,vx:0,vy:0,rotation:0,vr:0,scale:1,vs:0,strength:0});
+
 const telePrev=[{x:0,y:0},{x:30,y:0}],teleCurr=[{x:1000,y:0},{x:1030,y:0}];
 const noTeleport=I.computeSweptPathRepulsion(teleCurr,telePrev,{x:500,y:0,radius:0},o);
 assert.equal(noTeleport.strength,0,'large teleports should not push the whole page');
