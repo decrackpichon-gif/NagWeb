@@ -345,5 +345,5 @@
       }
     };
   }
-  return {version:VERSION,normalizeOptions:normalizeOptions,computeRepulsion:computeRepulsion,closestPointOnSegment:closestPointOnSegment,computePathRepulsion:computePathRepulsion,pathDistance:pathDistance,pathBounds:pathBounds,pointInBounds:pointInBounds,computeSweptPathRepulsion:computeSweptPathRepulsion,weightGoal:weightGoal,normalizeResponse:normalizeResponse,responseGoal:responseGoal,targetDynamics:targetDynamics,impulseGoal:impulseGoal,springStep:springStep,createField:createField};
+  return {version:VERSION,normalizeOptions:normalizeOptions,computeRepulsion:computeRepulsion,closestPointOnSegment:closestPointOnSegment,computePathRepulsion:computePathRepulsion,pathDistance:pathDistance,pathBounds:pathBounds,pointInBounds:pointInBounds,computeSweptPathRepulsion:computeSweptPathRepulsion,weightGoal:weightGoal,normalizeResponse:normalizeResponse,responseGoal:responseGoal,targetDynamics:targetDynamics,impulseGoal:impulseGoal,springStep:springStep,stateSettled:stateSettled,resetState:resetState,goalActive:goalActive,createField:createField};
 });
