@@ -143,6 +143,7 @@
       controlBend:controls.bend
     });
     delete base.adaptivePreset;delete base.adaptiveStrength;delete base.wideRigidity;delete base.thinFlexBoost;delete base.transitionStabilize;delete base.headLock;delete base.profileSamples;delete base.profileSmoothRadius;delete base.alphaThreshold;delete base.diagnostic;
+    delete base.leader;delete base.canvas;delete base.area;delete base.image;delete base.onContextLost;
     return {options:base,profile:profile,controls:controls,summary:summarizeProfile(profile,controls),adaptiveOptions:o};
   }
 
@@ -157,7 +158,7 @@
     }
     return {
       version:VERSION,renderer:'webgl-adaptive-curve-v4c',
-      get options(){return clone(merge(inner.options,derived.adaptiveOptions));},
+      get options(){var a=derived.adaptiveOptions;return Object.assign({},inner.options,{adaptivePreset:a.adaptivePreset,adaptiveStrength:a.adaptiveStrength,wideRigidity:a.wideRigidity,thinFlexBoost:a.thinFlexBoost,transitionStabilize:a.transitionStabilize,headLock:a.headLock,profileSamples:a.profileSamples,profileSmoothRadius:a.profileSmoothRadius,alphaThreshold:a.alphaThreshold,diagnostic:a.diagnostic});},
       get adaptiveProfile(){return clone(derived.profile);},
       get adaptiveControls(){return clone(derived.controls);},
       get adaptiveSummary(){return clone(derived.summary);},
