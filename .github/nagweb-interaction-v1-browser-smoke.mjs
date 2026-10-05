@@ -133,6 +133,43 @@ try{
   assert.equal(multi.final.active,multi.baseline.active,'destroy should release every stress tick');
   assert.equal(multi.final.pointerSubscribers,multi.baseline.pointerSubscribers,'destroy should release pointer subscriptions');
 
+  const broadphase=await page.evaluate(async()=>{
+    const stage=document.querySelector('#stage'),r=stage.getBoundingClientRect(),items=[];
+    for(let i=0;i<120;i++){
+      const d=document.createElement('div');
+      d.style.position='absolute';d.style.width='14px';d.style.height='14px';d.style.pointerEvents='none';
+      if(i<12){
+        d.style.left=(28+(i%6)*22)+'px';d.style.top=(28+Math.floor(i/6)*24)+'px';
+      }else{
+        d.style.left=Math.max(260,r.width-180+(i%6)*18)+'px';
+        d.style.top=Math.max(220,r.height-160+Math.floor((i%30)/6)*18)+'px';
+      }
+      stage.appendChild(d);items.push(d);
+    }
+    const field=NAGWEB_INTERACTION_INFLUENCE.createField({
+      source:()=>({points:[
+        {x:r.left+38,y:r.top+42},
+        {x:r.left+92,y:r.top+42},
+        {x:r.left+148,y:r.top+56}
+      ]}),
+      targets:items,
+      radius:72,
+      sourceRadius:10,
+      sweptBody:true,
+      maxSweepDistance:220
+    });
+    await new Promise(resolve=>setTimeout(resolve,160));
+    const stats=field.stats;
+    field.destroy();items.forEach(el=>el.remove());
+    return stats;
+  });
+  assert.equal(broadphase.broadphase,true);
+  assert.equal(broadphase.targetCount,120);
+  assert.equal(broadphase.lastEvaluated+broadphase.lastCulled,120);
+  assert.ok(broadphase.lastCulled>=80,'broadphase should reject most distant targets before path math');
+  assert.ok(broadphase.lastEvaluated>0,'nearby targets must still reach precise influence math');
+  assert.ok(broadphase.evaluatedTargets<broadphase.culledTargets,'stress run should spend less precise work on distant targets');
+
   const composed=await page.evaluate(async()=>{
     const stage=document.querySelector('#stage'),d=document.createElement('div');
     d.style.cssText='position:absolute;left:0;top:0;width:40px;height:40px;transform:rotate(12deg);background:#fff';
@@ -181,7 +218,7 @@ try{
   assert.ok(Math.hypot(r1.x-r0.x,r1.y-r0.y)<1,'reduced motion should keep follower resting');
   await reduced.close();
 
-  console.log('NagWeb Interaction Engine V1.4 browser smoke: PASS');
+  console.log('NagWeb Interaction Engine V1.9 broadphase browser smoke: PASS');
 } finally {
   await browser.close();
 }
