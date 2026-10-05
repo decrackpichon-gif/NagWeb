@@ -14,7 +14,7 @@
   }
 })(typeof window!=='undefined'?window:globalThis,function(v4b){
   'use strict';
-  var VERSION='4.3.0-alpha.1';
+  var VERSION='4.3.1-alpha.1';
   var PRESETS={
     character:{label:'Personaje',adaptiveStrength:.78,wideRigidity:.32,thinFlexBoost:.18,transitionStabilize:.46,headLock:.18,controlCount:9},
     creature:{label:'Criatura',adaptiveStrength:.62,wideRigidity:.16,thinFlexBoost:.34,transitionStabilize:.28,headLock:.10,controlCount:10},
@@ -27,6 +27,10 @@
     thinFlexBoost:.18,
     transitionStabilize:.46,
     headLock:.18,
+    thicknessGuard:true,
+    curvatureMargin:1.18,
+    minSafeBend:.045,
+    maxSafeBend:.30,
     profileSamples:96,
     profileSmoothRadius:3,
     alphaThreshold:8,
@@ -53,6 +57,11 @@
     o.thinFlexBoost=clamp(clean(o.thinFlexBoost,.18),0,.8);
     o.transitionStabilize=clamp(clean(o.transitionStabilize,.46),0,.9);
     o.headLock=clamp(clean(o.headLock,.18),0,.35);
+    o.thicknessGuard=o.thicknessGuard!==false;
+    o.curvatureMargin=clamp(clean(o.curvatureMargin,1.18),.75,2.5);
+    o.minSafeBend=clamp(clean(o.minSafeBend,.045),.02,.20);
+    o.maxSafeBend=clamp(clean(o.maxSafeBend,.30),o.minSafeBend,.60);
+    o.spinePoints=Math.round(clamp(clean(o.spinePoints,38),10,96));
     o.profileSamples=Math.round(clamp(clean(o.profileSamples,96),24,256));
     o.profileSmoothRadius=Math.round(clamp(clean(o.profileSmoothRadius,3),0,12));
     o.alphaThreshold=Math.round(clamp(clean(o.alphaThreshold,8),1,254));
@@ -105,6 +114,15 @@
     var out={u:u};['width','widthNorm','center','occupancy','gradient','gradientNorm'].forEach(function(k){out[k]=lerp(A[k],B[k],t);});return out;
   }
 
+  function curvatureSafetyAt(profile,u,opts){
+    var o=normalizeOptions(opts),p=profileAt(profile,u),aspect=Math.max(.05,profile.height/Math.max(1,profile.width));
+    var localHalfRatio=Math.max(.002,p.width*aspect*.5);
+    var segRatio=1/Math.max(1,o.spinePoints-1);
+    var geometric=segRatio/(localHalfRatio*Math.max(.01,o.curvatureMargin));
+    var safe=clamp(geometric,o.minSafeBend,o.maxSafeBend);
+    return {safeBend:safe,geometricBend:geometric,localHalfRatio:localHalfRatio,width:p.width,widthNorm:p.widthNorm,aspect:aspect};
+  }
+
   function deriveAdaptiveControls(profile,opts){
     var o=normalizeOptions(opts),count=o.controlCount,positions=[],flex=[],bend=[],details=[];
     for(var i=0;i<count;i++){
@@ -118,13 +136,15 @@
       var headMask=u<o.headLock?(u/Math.max(.001,o.headLock)):1;
       if(u<o.headLock){adaptiveFlex*=lerp(.30,1,headMask);adaptiveBend*=lerp(.58,1,headMask);}
       adaptiveFlex=clamp(adaptiveFlex,.012,1);adaptiveBend=clamp(adaptiveBend,.035,.42);
+      var safety=curvatureSafetyAt(profile,u,o),preSafetyBend=adaptiveBend,geometryCapped=false;
+      if(o.thicknessGuard&&adaptiveBend>safety.safeBend){adaptiveBend=safety.safeBend;geometryCapped=true;}
       positions.push(u);flex.push(adaptiveFlex);bend.push(adaptiveBend);
-      details.push({u:u,width:p.width,widthNorm:p.widthNorm,gradientNorm:p.gradientNorm,baseFlex:baseFlex,flex:adaptiveFlex,baseBend:baseBend,bend:adaptiveBend});
+      details.push({u:u,width:p.width,widthNorm:p.widthNorm,gradientNorm:p.gradientNorm,baseFlex:baseFlex,flex:adaptiveFlex,baseBend:baseBend,bend:adaptiveBend,preSafetyBend:preSafetyBend,safeBend:safety.safeBend,geometryCapped:geometryCapped,localHalfRatio:safety.localHalfRatio});
     }
-    // Keep a monotonic global character progression while preserving local adaptive dents.
-    for(var j=1;j<flex.length;j++)flex[j]=Math.max(flex[j],flex[j-1]*.90);
-    for(var k=1;k<bend.length;k++)bend[k]=Math.max(bend[k],bend[k-1]*.90);
-    details.forEach(function(d,idx){d.flex=flex[idx];d.bend=bend[idx];});
+    // Preserve local silhouette-derived dents. Only soften abrupt discontinuities.
+    for(var j=1;j<flex.length;j++)flex[j]=Math.max(flex[j],flex[j-1]*.82);
+    for(var k=1;k<bend.length;k++)bend[k]=Math.max(bend[k],bend[k-1]*.72);
+    details.forEach(function(d,idx){d.flex=flex[idx];d.bend=bend[idx];d.geometryCapped=d.bend<d.preSafetyBend-.000001;});
     return {positions:positions,flex:flex,bend:bend,details:details};
   }
 
@@ -141,9 +161,10 @@
       controlCount:controls.positions.length,
       controlPositions:controls.positions,
       controlFlex:controls.flex,
-      controlBend:controls.bend
+      controlBend:controls.bend,
+      preserveLocalControlDips:true
     });
-    delete base.adaptivePreset;delete base.adaptiveStrength;delete base.wideRigidity;delete base.thinFlexBoost;delete base.transitionStabilize;delete base.headLock;delete base.profileSamples;delete base.profileSmoothRadius;delete base.alphaThreshold;delete base.diagnostic;
+    delete base.adaptivePreset;delete base.adaptiveStrength;delete base.wideRigidity;delete base.thinFlexBoost;delete base.transitionStabilize;delete base.headLock;delete base.thicknessGuard;delete base.curvatureMargin;delete base.minSafeBend;delete base.maxSafeBend;delete base.profileSamples;delete base.profileSmoothRadius;delete base.alphaThreshold;delete base.diagnostic;
     delete base.leader;delete base.canvas;delete base.area;delete base.image;delete base.onContextLost;
     return {options:base,profile:profile,controls:controls,summary:summarizeProfile(profile,controls),adaptiveOptions:o};
   }
@@ -159,7 +180,7 @@
     }
     return {
       version:VERSION,renderer:'webgl-adaptive-curve-v4c',
-      get options(){var a=derived.adaptiveOptions;return Object.assign({},inner.options,{adaptivePreset:a.adaptivePreset,adaptiveStrength:a.adaptiveStrength,wideRigidity:a.wideRigidity,thinFlexBoost:a.thinFlexBoost,transitionStabilize:a.transitionStabilize,headLock:a.headLock,profileSamples:a.profileSamples,profileSmoothRadius:a.profileSmoothRadius,alphaThreshold:a.alphaThreshold,diagnostic:a.diagnostic});},
+      get options(){var a=derived.adaptiveOptions;return Object.assign({},inner.options,{adaptivePreset:a.adaptivePreset,adaptiveStrength:a.adaptiveStrength,wideRigidity:a.wideRigidity,thinFlexBoost:a.thinFlexBoost,transitionStabilize:a.transitionStabilize,headLock:a.headLock,thicknessGuard:a.thicknessGuard,curvatureMargin:a.curvatureMargin,minSafeBend:a.minSafeBend,maxSafeBend:a.maxSafeBend,profileSamples:a.profileSamples,profileSmoothRadius:a.profileSmoothRadius,alphaThreshold:a.alphaThreshold,diagnostic:a.diagnostic});},
       get adaptiveProfile(){return clone(derived.profile);},
       get adaptiveControls(){return clone(derived.controls);},
       get adaptiveSummary(){return clone(derived.summary);},
@@ -175,5 +196,5 @@
     return Promise.reject(new Error('NagWeb Organic Adaptive Curve: V4-B prepareAsset is required'));
   }
 
-  return {version:VERSION,presets:clone(PRESETS),defaults:clone(DEFAULTS),normalizeOptions:normalizeOptions,analyzeAlphaData:analyzeAlphaData,analyzeCanvas:analyzeCanvas,profileAt:profileAt,deriveAdaptiveControls:deriveAdaptiveControls,summarizeProfile:summarizeProfile,makeV4BOptions:makeV4BOptions,prepareAsset:prepareAsset,createRenderer:createRenderer};
+  return {version:VERSION,presets:clone(PRESETS),defaults:clone(DEFAULTS),normalizeOptions:normalizeOptions,analyzeAlphaData:analyzeAlphaData,analyzeCanvas:analyzeCanvas,profileAt:profileAt,curvatureSafetyAt:curvatureSafetyAt,deriveAdaptiveControls:deriveAdaptiveControls,summarizeProfile:summarizeProfile,makeV4BOptions:makeV4BOptions,prepareAsset:prepareAsset,createRenderer:createRenderer};
 });
