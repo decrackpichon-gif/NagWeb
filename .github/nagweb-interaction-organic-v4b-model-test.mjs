@@ -73,6 +73,13 @@ for(let c=0;c<=topo.columns;c+=6){
   assert.ok(h>1,'column must retain nonzero transverse width');
 }
 
+const localDips=V4B.normalizeOptions({controlCount:5,controlBend:[.05,.12,.07,.20,.26],controlFlex:[.03,.20,.12,.65,1],preserveLocalControlDips:true});
+assert.ok(localDips.controlBend[2]<localDips.controlBend[1],'local bend dips should survive when explicitly enabled');
+assert.ok(localDips.controlFlex[2]<localDips.controlFlex[1],'local flex dips should survive when explicitly enabled');
+const monotonic=V4B.normalizeOptions({controlCount:5,controlBend:[.05,.12,.07,.20,.26],controlFlex:[.03,.20,.12,.65,1]});
+assert.ok(monotonic.controlBend[2]>=monotonic.controlBend[1],'V4-B default should remain monotonic');
+assert.ok(monotonic.controlFlex[2]>=monotonic.controlFlex[1],'V4-B default flex should remain monotonic');
+
 const custom=V4B.normalizeOptions({controlCount:9,antiFold:false,weightRadius:.31});
 assert.equal(V4B.createControls(custom).count,9);
 const noGuard=V4B.antiFoldGuard(folded.map(p=>({...p})),length,0,custom);
