@@ -81,12 +81,13 @@
   }
   function weightGoal(goal,weight){
     weight=clamp(Number(weight)||0,0,2);
+    function clean(v){v=Number(v)||0;return Math.abs(v)<1e-12?0:v;}
     return {
-      x:goal.x*weight,
-      y:goal.y*weight,
-      rotation:goal.rotation*weight,
-      scale:1+(goal.scale-1)*weight,
-      strength:goal.strength*weight
+      x:clean(goal.x*weight),
+      y:clean(goal.y*weight),
+      rotation:clean(goal.rotation*weight),
+      scale:clean(1+(goal.scale-1)*weight),
+      strength:clean(goal.strength*weight)
     };
   }
   function springStep(state,target,o,dt){
