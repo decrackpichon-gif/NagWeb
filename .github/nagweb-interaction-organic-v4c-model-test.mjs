@@ -3,7 +3,7 @@ import { createRequire } from 'node:module';
 const require=createRequire(import.meta.url);
 const V4C=require('../js/nagweb-interaction-organic-v4c.js');
 
-assert.equal(V4C.version,'4.3.0-alpha.1');
+assert.equal(V4C.version,'4.3.1-alpha.1');
 assert.ok(V4C.presets.character&&V4C.presets.creature&&V4C.presets.soft);
 
 function makeImage(w,h,widthFn){
@@ -36,7 +36,7 @@ const head=V4C.profileAt(profile,.08),torso=V4C.profileAt(profile,.25),waist=V4C
 assert.ok(torso.width>head.width);
 assert.ok(robe.width>waist.width);
 
-const adaptive=V4C.deriveAdaptiveControls(profile,{adaptivePreset:'character',controlCount:9});
+const adaptive=V4C.deriveAdaptiveControls(profile,{adaptivePreset:'character',controlCount:9,spinePoints:38});
 assert.equal(adaptive.positions.length,9);
 assert.equal(adaptive.flex.length,9);
 assert.equal(adaptive.bend.length,9);
@@ -52,7 +52,7 @@ const dThin=adaptive.details.reduce((a,b)=>Math.abs(b.u-.48)<Math.abs(a.u-.48)?b
 assert.ok(dWide.widthNorm>dThin.widthNorm);
 assert.ok((dWide.flex/dWide.baseFlex)<(dThin.flex/dThin.baseFlex),'wide section should be relatively more rigid than thin section');
 
-const noAdapt=V4C.deriveAdaptiveControls(profile,{adaptivePreset:'character',adaptiveStrength:0,headLock:0,controlCount:9});
+const noAdapt=V4C.deriveAdaptiveControls(profile,{adaptivePreset:'character',adaptiveStrength:0,headLock:0,thicknessGuard:false,controlCount:9});
 for(const d of noAdapt.details){
   assert.ok(Math.abs(d.flex-d.baseFlex)<1e-8);
   assert.ok(Math.abs(d.bend-d.baseBend)<1e-8);
@@ -62,6 +62,14 @@ const creature=V4C.deriveAdaptiveControls(profile,{adaptivePreset:'creature'});
 const soft=V4C.deriveAdaptiveControls(profile,{adaptivePreset:'soft'});
 assert.ok(creature.details.at(-1).flex>=adaptive.details.at(-1).flex*.85);
 assert.ok(soft.details.some((d,i)=>d.flex>adaptive.details[i].flex),'soft preset should allow more flex somewhere');
+
+const wideSafety=V4C.curvatureSafetyAt(profile,.25,{adaptivePreset:'character',spinePoints:38});
+const thinSafety=V4C.curvatureSafetyAt(profile,.48,{adaptivePreset:'character',spinePoints:38});
+assert.ok(wideSafety.localHalfRatio>thinSafety.localHalfRatio);
+assert.ok(wideSafety.safeBend<thinSafety.safeBend,'wide silhouette should permit less local bend than thin silhouette');
+assert.ok(adaptive.details.some(d=>d.geometryCapped),'character profile should activate thickness curvature guard somewhere');
+const wideControl=adaptive.details.reduce((a,b)=>Math.abs(b.u-.25)<Math.abs(a.u-.25)?b:a);
+assert.ok(wideControl.bend<=wideControl.safeBend+1e-9);
 
 const summary=V4C.summarizeProfile(profile,adaptive);
 assert.equal(summary.controlCount,9);
