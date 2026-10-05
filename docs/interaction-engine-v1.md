@@ -499,3 +499,41 @@ Esto permite comparar perfiles sin salir del modo de edición ni mover el person
 ### QA
 
 La tanda final pasó model tests y browser smoke completos, incluyendo el preview físico dentro del editor.
+
+
+## Influence 1.9–1.10 · performance para composiciones grandes
+
+El campo de influencia mantiene el mismo resultado visual, pero evita trabajo innecesario cuando una composición contiene muchos objetivos reactivos.
+
+### Influence 1.9 · broadphase
+
+Antes de calcular la distancia precisa de cada target contra todos los segmentos de la spine:
+
+- se calcula una caja de influencia expandida alrededor del recorrido corporal;
+- se incluye el recorrido anterior sólo cuando el swept-body es válido;
+- los targets claramente lejanos se descartan antes del cálculo point-to-polyline;
+- la distancia media entre spine actual/anterior se calcula una sola vez por frame;
+- el field expone métricas de targets evaluados y descartados.
+
+El browser smoke usa 120 objetivos y exige que la mayoría de los elementos lejanos queden fuera de la fase geométrica precisa.
+
+### Influence 1.10 · sleep / wake
+
+Un target que está fuera de influencia y ya regresó completamente a su posición de reposo entra en estado dormido:
+
+- no ejecuta el spring mientras no haya una reacción que aplicar;
+- no escribe `translate`, `rotate`, `scale` ni variables CSS cada frame;
+- se despierta automáticamente cuando el cuerpo vuelve a entrar en su zona;
+- un target previamente desplazado continúa animando su retorno antes de dormirse.
+
+Las métricas del field incluyen DOM writes, writes evitados, wakes, sleeps y cantidad de targets dormidos.
+
+El browser QA prueba el ciclo completo:
+
+`activo → cuerpo lejos → todos dormidos → cero writes → cuerpo vuelve → objetivos cercanos despiertan`.
+
+### Carriles paralelos
+
+La línea estable de este documento continúa en `feat/interaction-engine-v1`.
+
+La investigación de deformación weighted-bone / Organic Skin V4 vive separada en `feat/interaction-engine-experimental-v1` y no se integra automáticamente. La comparación V3/V4 se hará cuando el prototipo experimental tenga suficiente madurez.
