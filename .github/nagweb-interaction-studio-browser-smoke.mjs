@@ -84,6 +84,12 @@ try{
   await page.$eval('#targetRotate',el=>{el.checked=false;el.dispatchEvent(new Event('change',{bubbles:true}));});
   await page.$eval('#targetScale',el=>{el.checked=false;el.dispatchEvent(new Event('change',{bubbles:true}));});
   await page.$eval('#targetReturn',el=>{el.value='1.65';el.dispatchEvent(new Event('input',{bubbles:true}));});
+  const headline2=await page.$('[data-nw-target-id="headline-1"]');
+  await page.keyboard.down('Shift');await headline2.click();await page.keyboard.up('Shift');await new Promise(r=>setTimeout(r,60));
+  assert.deepEqual((await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.selectedTargetIds)).sort(),['headline-0','headline-1']);
+  await page.$eval('#targetReturn',el=>{el.value='1.4';el.dispatchEvent(new Event('input',{bubbles:true}));});
+  assert.equal(await page.$eval('[data-nw-target-id="headline-0"]',el=>Number(el.getAttribute('data-nw-influence-return'))),1.4);
+  assert.equal(await page.$eval('[data-nw-target-id="headline-1"]',el=>Number(el.getAttribute('data-nw-influence-return'))),1.4);
   assert.equal(await page.$eval('[data-nw-target-id="headline-0"]',el=>Number(el.getAttribute('data-nw-influence-weight'))),.37);
   assert.deepEqual(await page.$eval('[data-nw-target-id="headline-0"]',el=>({
     move:Number(el.getAttribute('data-nw-influence-move')),
@@ -95,14 +101,15 @@ try{
   assert.equal(await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.targetEditing),false);
   assert.equal(await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.influenceField.getTargetWeight('headline-0')),.37);
   assert.deepEqual(await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.influenceField.getTargetResponse('headline-0')),{move:1,rotate:0,scale:0});
-  assert.equal(await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.influenceField.getTargetReturnSpeed('headline-0')),1.65);
+  assert.equal(await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.influenceField.getTargetReturnSpeed('headline-0')),1.4);
+  assert.equal(await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.influenceField.getTargetReturnSpeed('headline-1')),1.4);
 
   const bodyOpts=await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.influenceField.options);
   assert.equal(bodyOpts.sweptBody,true);assert.ok(bodyOpts.sourceRadius>0);
 
   await page.click('#export');
   const exported=await page.$eval('#sessionJson',el=>el.value);
-  const data=JSON.parse(exported);assert.equal(data.schema,'nagweb-interaction-session');assert.equal(data.version,1);assert.equal(data.organicRenderer,'mesh-v3');assert.ok(data.organicOptions.headFlex<data.organicOptions.torsoFlex);assert.ok(data.organicOptions.headZoneEnd<data.organicOptions.torsoZoneEnd);assert.equal(data.influenceOptions.sourceMode,'body');assert.equal(data.influenceOptions.targetScenario,'custom');assert.equal(data.influenceOptions.sweptBody,true);assert.ok(data.influenceOptions.targetSelection.length>10);assert.equal(data.influenceOptions.targetSelection.find(t=>t.id==='content-0').enabled,false);assert.equal(data.influenceOptions.targetSelection.find(t=>t.id==='headline-0').weight,.37);assert.deepEqual(data.influenceOptions.targetSelection.find(t=>t.id==='headline-0').response,{move:1,rotate:0,scale:0});assert.equal(data.influenceOptions.targetSelection.find(t=>t.id==='headline-0').returnSpeed,1.65);assert.ok(data.assetProfile);assert.ok(data.preparationReport);
+  const data=JSON.parse(exported);assert.equal(data.schema,'nagweb-interaction-session');assert.equal(data.version,1);assert.equal(data.organicRenderer,'mesh-v3');assert.ok(data.organicOptions.headFlex<data.organicOptions.torsoFlex);assert.ok(data.organicOptions.headZoneEnd<data.organicOptions.torsoZoneEnd);assert.equal(data.influenceOptions.sourceMode,'body');assert.equal(data.influenceOptions.targetScenario,'custom');assert.equal(data.influenceOptions.sweptBody,true);assert.ok(data.influenceOptions.targetSelection.length>10);assert.equal(data.influenceOptions.targetSelection.find(t=>t.id==='content-0').enabled,false);assert.equal(data.influenceOptions.targetSelection.find(t=>t.id==='headline-0').weight,.37);assert.deepEqual(data.influenceOptions.targetSelection.find(t=>t.id==='headline-0').response,{move:1,rotate:0,scale:0});assert.equal(data.influenceOptions.targetSelection.find(t=>t.id==='headline-0').returnSpeed,1.4);assert.equal(data.influenceOptions.targetSelection.find(t=>t.id==='headline-1').returnSpeed,1.4);assert.ok(data.assetProfile);assert.ok(data.preparationReport);
 
   const savedSize=data.display.size,savedHead=data.organicOptions.headZoneEnd;
   await page.$eval('#size',el=>{el.value='180';el.dispatchEvent(new Event('input',{bubbles:true}));});
@@ -115,7 +122,8 @@ try{
   assert.equal(restoredSelection.find(t=>t.id==='content-0').enabled,false);
   assert.equal(restoredSelection.find(t=>t.id==='headline-0').weight,.37);
   assert.deepEqual(restoredSelection.find(t=>t.id==='headline-0').response,{move:1,rotate:0,scale:0});
-  assert.equal(restoredSelection.find(t=>t.id==='headline-0').returnSpeed,1.65);
+  assert.equal(restoredSelection.find(t=>t.id==='headline-0').returnSpeed,1.4);
+  assert.equal(restoredSelection.find(t=>t.id==='headline-1').returnSpeed,1.4);
 
   await page.$eval('#organicMeshCanvas',c=>c.dispatchEvent(new Event('webglcontextlost',{cancelable:true})));
   await page.waitForFunction(()=>window.__NAGWEB_INTERACTION_STUDIO__.organicEngine==='slices-v2',{timeout:5000});
@@ -124,5 +132,5 @@ try{
   assert.equal(errors.length,0,'Interaction Studio should have no page errors: '+errors.join('\n'));
   fs.mkdirSync('/tmp/nagweb-interaction-v1',{recursive:true});
   await page.screenshot({path:'/tmp/nagweb-interaction-v1/interaction-studio-v1.png',fullPage:true});
-  console.log('NagWeb Interaction Studio V2.1 per-target return dynamics browser smoke: PASS');
+  console.log('NagWeb Interaction Studio V2.2 multi-target editing browser smoke: PASS');
 }finally{await browser.close();}
