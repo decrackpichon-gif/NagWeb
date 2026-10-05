@@ -135,6 +135,11 @@ try{
 
   const broadphase=await page.evaluate(async()=>{
     const stage=document.querySelector('#stage'),r=stage.getBoundingClientRect(),items=[];
+    let sourcePath=[
+      {x:r.left+38,y:r.top+42},
+      {x:r.left+92,y:r.top+42},
+      {x:r.left+148,y:r.top+56}
+    ];
     for(let i=0;i<120;i++){
       const d=document.createElement('div');
       d.style.position='absolute';d.style.width='14px';d.style.height='14px';d.style.pointerEvents='none';
@@ -147,33 +152,49 @@ try{
       stage.appendChild(d);items.push(d);
     }
     const field=NAGWEB_INTERACTION_INFLUENCE.createField({
-      source:()=>({points:[
-        {x:r.left+38,y:r.top+42},
-        {x:r.left+92,y:r.top+42},
-        {x:r.left+148,y:r.top+56}
-      ]}),
+      source:()=>({points:sourcePath}),
       targets:items,
       radius:72,
       sourceRadius:10,
       sweptBody:true,
       maxSweepDistance:220
     });
-    await new Promise(resolve=>setTimeout(resolve,160));
-    const stats=field.stats;
+    await new Promise(resolve=>setTimeout(resolve,180));
+    const near=field.stats;
+    sourcePath=[
+      {x:r.right+1600,y:r.bottom+1600},
+      {x:r.right+1700,y:r.bottom+1600},
+      {x:r.right+1800,y:r.bottom+1650}
+    ];
+    await new Promise(resolve=>setTimeout(resolve,1500));
+    const asleep=field.stats;
+    const wakesBefore=asleep.wakes;
+    sourcePath=[
+      {x:r.left+38,y:r.top+42},
+      {x:r.left+92,y:r.top+42},
+      {x:r.left+148,y:r.top+56}
+    ];
+    await new Promise(resolve=>setTimeout(resolve,180));
+    const rewake=field.stats;
     field.destroy();items.forEach(el=>el.remove());
-    return stats;
+    return {near,asleep,rewake,wakesBefore};
   });
-  assert.equal(broadphase.broadphase,true);
-  assert.equal(broadphase.targetCount,120);
-  assert.equal(broadphase.lastEvaluated+broadphase.lastCulled,120);
-  assert.ok(broadphase.lastCulled>=80,'broadphase should reject most distant targets before path math');
-  assert.ok(broadphase.lastEvaluated>0,'nearby targets must still reach precise influence math');
-  assert.ok(broadphase.evaluatedTargets<broadphase.culledTargets,'stress run should spend less precise work on distant targets');
-  assert.equal(broadphase.sleepWake,true);
-  assert.ok(broadphase.sleepingTargets>=80,'most distant targets should remain asleep');
-  assert.ok(broadphase.lastSkippedWrites>=80,'sleeping targets should skip per-frame DOM writes');
-  assert.ok(broadphase.lastDomWrites<40,'only nearby or settling targets should write motion styles');
-  assert.ok(broadphase.skippedWrites>broadphase.domWrites,'stress run should skip more DOM writes than it performs');
+  assert.equal(broadphase.near.broadphase,true);
+  assert.equal(broadphase.near.targetCount,120);
+  assert.equal(broadphase.near.lastEvaluated+broadphase.near.lastCulled,120);
+  assert.ok(broadphase.near.lastCulled>=80,'broadphase should reject most distant targets before path math');
+  assert.ok(broadphase.near.lastEvaluated>0,'nearby targets must still reach precise influence math');
+  assert.ok(broadphase.near.evaluatedTargets<broadphase.near.culledTargets,'stress run should spend less precise work on distant targets');
+  assert.equal(broadphase.near.sleepWake,true);
+  assert.ok(broadphase.near.sleepingTargets>=80,'most distant targets should remain asleep');
+  assert.ok(broadphase.near.lastSkippedWrites>=80,'sleeping targets should skip per-frame DOM writes');
+  assert.ok(broadphase.near.lastDomWrites<40,'only nearby or settling targets should write motion styles');
+  assert.ok(broadphase.near.skippedWrites>broadphase.near.domWrites,'stress run should skip more DOM writes than it performs');
+  assert.equal(broadphase.asleep.sleepingTargets,120,'all targets should sleep after the body moves far away and they settle');
+  assert.equal(broadphase.asleep.lastSkippedWrites,120,'a fully sleeping field should perform no unnecessary motion writes');
+  assert.equal(broadphase.asleep.lastDomWrites,0,'sleeping targets should leave the DOM untouched');
+  assert.ok(broadphase.rewake.wakes>broadphase.wakesBefore,'nearby targets should wake when the body returns');
+  assert.ok(broadphase.rewake.sleepingTargets<120,'returning body should reactivate nearby targets');
 
   const composed=await page.evaluate(async()=>{
     const stage=document.querySelector('#stage'),d=document.createElement('div');
