@@ -35,6 +35,24 @@
     var nx=dx/d,ny=dy/d;
     return {x:nx*push,y:ny*push,rotation:ny*o.maxRotate*k,scale:1+o.maxScale*k,strength:k};
   }
+  function closestPointOnSegment(point,a,b){
+    var abx=b.x-a.x,aby=b.y-a.y,den=abx*abx+aby*aby;
+    if(den<1e-9)return {x:a.x,y:a.y,t:0};
+    var t=((point.x-a.x)*abx+(point.y-a.y)*aby)/den;t=clamp(t,0,1);
+    return {x:a.x+abx*t,y:a.y+aby*t,t:t};
+  }
+  function computePathRepulsion(points,target,o){
+    points=Array.isArray(points)?points.filter(function(p){return p&&Number.isFinite(p.x)&&Number.isFinite(p.y);}):[];
+    if(!points.length)return {x:0,y:0,rotation:0,scale:1,strength:0};
+    if(points.length===1)return computeRepulsion(points[0],target,o);
+    var best=null,bestD=Infinity;
+    for(var i=0;i<points.length-1;i++){
+      var p=closestPointOnSegment(target,points[i],points[i+1]);
+      var d=Math.hypot(target.x-p.x,target.y-p.y);
+      if(d<bestD){bestD=d;best=p;}
+    }
+    return computeRepulsion(best||points[0],target,o);
+  }
   function springStep(state,target,o,dt){
     var frame=clamp((dt||16.6667)/16.6667,0.25,3);
     function axis(pos,vel,want){
