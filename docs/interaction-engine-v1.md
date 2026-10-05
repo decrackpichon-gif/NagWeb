@@ -224,3 +224,73 @@ El run **#102** pasó todos los model tests y browser smokes, incluyendo:
 - Interaction Studio V1.
 
 El Studio sigue siendo una superficie de laboratorio. No se agrega navegación ni UI al editor principal hasta alcanzar la etapa de integración final.
+
+
+## Organic Mesh V3 — estado validado
+
+La línea V2.x basada en slices queda conservada únicamente como referencia y fallback. El motor orgánico principal de laboratorio pasa a ser **Organic Mesh V3**, basado en WebGL y una única textura deformada sobre una malla continua de vértices compartidos.
+
+### V3.0 — malla continua
+
+- textura única, sin rebanadas independientes;
+- topología configurable por columnas/filas;
+- deformación siguiendo spine;
+- cabeza protegida frente a giros cerrados;
+- comparación A/B con Slices V2.2 dentro del Studio;
+- fallback a V2.2 si WebGL no está disponible.
+
+La prueba humana con un personaje vertical mostró una mejora visual fuerte respecto de V2.2, especialmente en continuidad de bordes y curvas internas.
+
+### V3.1 — zonas corporales
+
+La malla ya no usa una única transición rígido/flexible. Se definen tres regiones suaves:
+
+- cabeza;
+- torso;
+- parte inferior.
+
+Cada región tiene pesos independientes de flexibilidad y límites de curvatura. Los valores se interpolan para evitar quiebres entre zonas.
+
+El Studio ofrece perfiles `Personaje`, `Criatura flexible` y `Cinta / forma blanda`, más ajuste manual de rigidez. Los límites de cabeza y torso también pueden arrastrarse directamente sobre la miniatura del asset.
+
+La preparación automática recomienda de forma conservadora un perfil inicial a partir de orientación y elongación. La recomendación siempre puede sobrescribirse manualmente.
+
+### V3.2 — robustez WebGL
+
+- adaptación de texturas grandes al menor valor entre el límite configurado y `MAX_TEXTURE_SIZE` de la GPU;
+- reescalado con smoothing de alta calidad sin alterar proporciones;
+- información diagnóstica de textura disponible en el renderer;
+- detección de pérdida de contexto WebGL;
+- fallback automático del Studio a Slices V2.2 ante pérdida de contexto.
+
+### V3.3 — persistencia real
+
+Interaction Session V1.2 conserva:
+
+- modo;
+- renderer orgánico;
+- perfil corporal;
+- tamaño visual;
+- opciones del follower;
+- opciones V3 y límites de zonas;
+- campo de influencia;
+- perfil del asset;
+- reporte de preparación.
+
+El Studio permite generar JSON y volver a aplicarlo sobre el asset actual. El smoke de navegador verifica un ciclo completo de exportación, modificación y restauración.
+
+### QA acumulado
+
+Los runs más recientes pasan model tests + browser smoke para:
+
+- Interaction Engine;
+- Asset Prep;
+- Influence Field;
+- Organic V2.2;
+- Organic Mesh V3.2;
+- Background AI;
+- Preparation Pipeline 1.2;
+- Interaction Session 1.2;
+- Interaction Studio con zonas visuales, fallback WebGL y restore de sesión.
+
+La integración con NagWeb principal continúa bloqueada intencionalmente hasta completar el laboratorio y la prueba humana final.
