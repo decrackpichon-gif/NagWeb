@@ -136,7 +136,7 @@
 
   function makeV4BOptions(image,adaptiveInput){
     var o=normalizeOptions(adaptiveInput),profile=analyzeCanvas(image,o),controls=deriveAdaptiveControls(profile,o);
-    var base=merge(adaptiveInput||{},{
+    var base=Object.assign({},adaptiveInput||{},{
       controlCount:controls.positions.length,
       controlPositions:controls.positions,
       controlFlex:controls.flex,
@@ -149,9 +149,9 @@
   function createRenderer(input){
     if(!v4b||typeof v4b.createRenderer!=='function')throw new Error('NagWeb Organic Adaptive Curve: V4-B Weighted Curve is required');
     input=input||{};if(!input.image)throw new Error('NagWeb Organic Adaptive Curve: prepared image is required');
-    var currentInput=merge({},input),derived=makeV4BOptions(input.image,input),inner=v4b.createRenderer(merge(currentInput,derived.options));
+    var currentInput=Object.assign({},input),derived=makeV4BOptions(input.image,input),inner=v4b.createRenderer(Object.assign({},currentInput,derived.options));
     function rederive(next){
-      currentInput=merge(currentInput,next||{});
+      currentInput=Object.assign({},currentInput,next||{});
       derived=makeV4BOptions(currentInput.image,currentInput);
       inner.setOptions(derived.options);
     }
