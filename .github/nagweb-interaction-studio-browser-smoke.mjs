@@ -25,7 +25,7 @@ try{
     influenceVersion:NAGWEB_INTERACTION_INFLUENCE.version
   }));
   assert.equal(init.title,'NagWeb · Interaction Studio');assert.ok(init.quality>=72);assert.equal(init.recommended,'organic');assert.equal(init.mode,'organic');
-  assert.equal(init.sessionVersion,'1.3.0-alpha.1');assert.equal(init.assetVersion,'1.2.0');assert.equal(init.organicV2Version,'2.2.0-alpha.1');assert.equal(init.organicV3Version,'3.2.0-alpha.1');assert.equal(init.organicEngine,'mesh-v3');assert.equal(init.influence,true);assert.equal(init.influenceVersion,'1.2.0');
+  assert.equal(init.sessionVersion,'1.3.0-alpha.1');assert.equal(init.assetVersion,'1.2.0');assert.equal(init.organicV2Version,'2.2.0-alpha.1');assert.equal(init.organicV3Version,'3.2.0-alpha.1');assert.equal(init.organicEngine,'mesh-v3');assert.equal(init.influence,true);assert.equal(init.influenceVersion,'1.3.0');
 
   const stage=await page.$eval('#stage',el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height};});
   const head0=await page.evaluate(()=>({x:__NAGWEB_INTERACTION_STUDIO__.follower.state.x,y:__NAGWEB_INTERACTION_STUDIO__.follower.state.y}));
@@ -66,6 +66,8 @@ try{
   await page.select('#influenceTargets','all');await new Promise(r=>setTimeout(r,100));
   const allTargets=await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.influenceField.targetCount);
   assert.ok(allTargets>headlineTargets,'complex scenario should add content targets');
+  const weights=await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.influenceField.targetWeights);
+  assert.ok(weights.includes(1)&&weights.some(v=>v<.6)&&weights.some(v=>v>.6&&v<1),'real-content targets should expose headline, copy and CTA weights');
   const bodyOpts=await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.influenceField.options);
   assert.equal(bodyOpts.sweptBody,true);assert.ok(bodyOpts.sourceRadius>0);
 
@@ -88,5 +90,5 @@ try{
   assert.equal(errors.length,0,'Interaction Studio should have no page errors: '+errors.join('\n'));
   fs.mkdirSync('/tmp/nagweb-interaction-v1',{recursive:true});
   await page.screenshot({path:'/tmp/nagweb-interaction-v1/interaction-studio-v1.png',fullPage:true});
-  console.log('NagWeb Interaction Studio V1.7 swept body + complex text browser smoke: PASS');
+  console.log('NagWeb Interaction Studio V1.8 weighted real-content influence browser smoke: PASS');
 }finally{await browser.close();}
