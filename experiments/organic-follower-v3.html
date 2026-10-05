@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NagWeb · Organic Mesh V3.1 Lab</title><link rel="icon" href="data:,">
+<title>NagWeb · Organic Mesh V3.2 Lab</title><link rel="icon" href="data:,">
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#111117;color:#f4f0e8;font-family:Inter,system-ui,sans-serif}body{overflow:hidden}
 .app{height:100%;display:grid;grid-template-columns:320px 1fr}.panel{padding:18px;border-right:1px solid #30303a;background:#18181e;overflow:auto}.panel h1{font-size:18px;margin:0 0 6px}.panel p{font-size:12px;line-height:1.5;color:#aaa6b3;margin:0 0 16px}
@@ -13,7 +13,7 @@
 <body>
 <div class="app">
 <aside class="panel">
-  <h1>Organic Mesh V3.1</h1>
+  <h1>Organic Mesh V3.2</h1>
   <p>Renderer de malla WebGL continua con rigidez diferenciada para cabeza, torso y parte baja.</p>
   <label class="upload">Subir PNG / WebP transparente<input id="file" type="file" accept="image/png,image/webp"></label>
   <div class="preview"><img id="preview" alt="Asset"></div>
@@ -95,7 +95,7 @@
     preview.src=source.src;
     if(renderer)renderer.destroy();
     renderer=M.createRenderer(Object.assign({leader:follower,canvas:canvas,area:stage,image:prepared.canvas},opts()));
-    status.textContent='V3.1 listo · 3 zonas · WebGL mesh · '+renderer.topology.vertexCount+' vértices · '+(renderer.topology.indexCount/3)+' triángulos · eje '+prepared.axisAngle.toFixed(1)+'°';
+    status.textContent='V3.2 listo · 3 zonas · WebGL mesh · '+renderer.topology.vertexCount+' vértices · '+(renderer.topology.indexCount/3)+' triángulos · eje '+prepared.axisAngle.toFixed(1)+'°';
     window.__NAGWEB_ORGANIC_V3__.renderer=renderer;window.__NAGWEB_ORGANIC_V3__.analysis=analysis;window.__NAGWEB_ORGANIC_V3__.prepared=prepared;
   }
 
