@@ -34,7 +34,7 @@ try{
   }));
   assert.equal(initial.version,'1.5.0');
   assert.equal(initial.prepVersion,'1.2.0');
-  assert.equal(initial.influenceVersion,'1.9.0');
+  assert.equal(initial.influenceVersion,'1.10.0');
   assert.equal(initial.prep.ready,'1');
   assert.ok(initial.prep.text.includes('Recomendación'));
   assert.ok(initial.title.includes('Interaction Engine'));
@@ -169,6 +169,11 @@ try{
   assert.ok(broadphase.lastCulled>=80,'broadphase should reject most distant targets before path math');
   assert.ok(broadphase.lastEvaluated>0,'nearby targets must still reach precise influence math');
   assert.ok(broadphase.evaluatedTargets<broadphase.culledTargets,'stress run should spend less precise work on distant targets');
+  assert.equal(broadphase.sleepWake,true);
+  assert.ok(broadphase.sleepingTargets>=80,'most distant targets should remain asleep');
+  assert.ok(broadphase.lastSkippedWrites>=80,'sleeping targets should skip per-frame DOM writes');
+  assert.ok(broadphase.lastDomWrites<40,'only nearby or settling targets should write motion styles');
+  assert.ok(broadphase.skippedWrites>broadphase.domWrites,'stress run should skip more DOM writes than it performs');
 
   const composed=await page.evaluate(async()=>{
     const stage=document.querySelector('#stage'),d=document.createElement('div');
@@ -218,7 +223,7 @@ try{
   assert.ok(Math.hypot(r1.x-r0.x,r1.y-r0.y)<1,'reduced motion should keep follower resting');
   await reduced.close();
 
-  console.log('NagWeb Interaction Engine V1.9 broadphase browser smoke: PASS');
+  console.log('NagWeb Interaction Engine V1.10 sleep-wake browser smoke: PASS');
 } finally {
   await browser.close();
 }
