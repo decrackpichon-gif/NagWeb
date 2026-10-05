@@ -433,3 +433,69 @@ El run **#239** pasó model tests y browser smokes con:
 - selección múltiple con Shift;
 - reactivación de física;
 - exportación y restauración de sesión.
+
+
+## V3.7 · Perfiles de reacción y preview en edición
+
+La capa de comportamiento por target ya tiene perfiles reutilizables sin duplicar lógica física.
+
+### Reaction Profiles 1.1
+
+El catálogo canónico vive en `js/nagweb-interaction-reaction-profiles-v1.js`.
+
+Perfiles actuales:
+
+- `gentle` · Apartarse suave;
+- `shift` · Desplazar;
+- `tilt` · Inclinar;
+- `pulse` · Pulso;
+- `elastic` · Elástico;
+- `heavy` · Pesado;
+- `floating` · Flotante.
+
+Cada perfil es una receta de `weight + response(move/rotate/scale) + returnSpeed`. No son motores distintos.
+
+Los IDs legacy `soft` y `displace` migran a `gentle` y `shift`.
+
+### Arquitectura limpia
+
+El catálogo de presets quedó desacoplado de Influence Field:
+
+- Reaction Profiles define recetas;
+- Influence Field ejecuta física;
+- Session guarda IDs y parámetros;
+- Interaction Studio presenta y edita la configuración.
+
+Esto evita dos fuentes de verdad para un mismo preset.
+
+### Influence Field 1.9
+
+Se incorporó broadphase para la influencia corporal. Antes de calcular distancia exacta contra la spine, los targets claramente fuera del área relevante se descartan mediante bounds del recorrido actual/swept.
+
+El renderer expone estadísticas de targets evaluados y descartados para QA/performance.
+
+### Influence Field 1.10
+
+Se agregó un impulso físico reusable por target mediante `impulseTarget()`, junto con `getTargetState()`.
+
+El impulso respeta:
+
+- weight;
+- move;
+- rotate;
+- scale;
+- returnSpeed.
+
+No modifica el perfil ni la configuración persistente del target.
+
+### Preview dentro del editor visual
+
+Mientras `Editar objetivos visualmente` está activo aparece **Probar reacción**.
+
+La prueba crea un Influence Field temporal sólo para los targets seleccionados, les aplica un impulso y los deja regresar mediante la misma física real del runtime. Al terminar se destruye el campo temporal y los elementos vuelven al layout limpio.
+
+Esto permite comparar perfiles sin salir del modo de edición ni mover el personaje manualmente.
+
+### QA
+
+La tanda final pasó model tests y browser smoke completos, incluyendo el preview físico dentro del editor.
