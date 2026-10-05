@@ -76,6 +76,7 @@
       <label class="check"><input id="targetMove" type="checkbox" checked> Mover</label>
       <label class="check"><input id="targetRotate" type="checkbox" checked> Rotar</label>
       <label class="check"><input id="targetScale" type="checkbox" checked> Escalar</label>
+      <div class="field"><label>Retorno <output id="targetReturnOut">100%</output></label><input id="targetReturn" type="range" min=".25" max="2" step=".05" value="1"></div>
     </div>
     <div class="field"><label>Radio <output id="radiusOut"></output></label><input id="radius" type="range" min="70" max="420" step="5" value="210"></div>
     <div class="field"><label>Fuerza <output id="strengthOut"></output></label><input id="strength" type="range" min="0" max="2.5" step=".05" value="1"></div>
@@ -317,6 +318,7 @@
       if(!el.hasAttribute('data-nw-influence-move'))el.setAttribute('data-nw-influence-move','1');
       if(!el.hasAttribute('data-nw-influence-rotate'))el.setAttribute('data-nw-influence-rotate','1');
       if(!el.hasAttribute('data-nw-influence-scale'))el.setAttribute('data-nw-influence-scale','1');
+      if(!el.hasAttribute('data-nw-influence-return'))el.setAttribute('data-nw-influence-return','1');
     });
     Array.from(stage.querySelectorAll('.influenceContent')).forEach(function(el,i){
       if(!el.getAttribute('data-nw-target-id'))el.setAttribute('data-nw-target-id',(el.classList.contains('chip')?'cta-':'content-')+i);
@@ -324,6 +326,7 @@
       if(!el.hasAttribute('data-nw-influence-move'))el.setAttribute('data-nw-influence-move','1');
       if(!el.hasAttribute('data-nw-influence-rotate'))el.setAttribute('data-nw-influence-rotate','1');
       if(!el.hasAttribute('data-nw-influence-scale'))el.setAttribute('data-nw-influence-scale','1');
+      if(!el.hasAttribute('data-nw-influence-return'))el.setAttribute('data-nw-influence-return','1');
     });
     refreshTargetVisuals();
   }
@@ -337,7 +340,8 @@
           move:Math.max(0,Math.min(2,Number(el.getAttribute('data-nw-influence-move'))||0)),
           rotate:Math.max(0,Math.min(2,Number(el.getAttribute('data-nw-influence-rotate'))||0)),
           scale:Math.max(0,Math.min(2,Number(el.getAttribute('data-nw-influence-scale'))||0))
-        }
+        },
+        returnSpeed:Math.max(.25,Math.min(2,Number(el.getAttribute('data-nw-influence-return'))||1))
       };
     });
   }
@@ -369,6 +373,7 @@
       el.setAttribute('data-nw-influence-move',String(response.move==null?1:Math.max(0,Math.min(2,Number(response.move)||0))));
       el.setAttribute('data-nw-influence-rotate',String(response.rotate==null?1:Math.max(0,Math.min(2,Number(response.rotate)||0))));
       el.setAttribute('data-nw-influence-scale',String(response.scale==null?1:Math.max(0,Math.min(2,Number(response.scale)||0))));
+      el.setAttribute('data-nw-influence-return',String(item.returnSpeed==null?1:Math.max(.25,Math.min(2,Number(item.returnSpeed)||1))));
     });
     refreshTargetVisuals();
   }
@@ -387,6 +392,9 @@
     document.getElementById('targetMove').checked=Number(el.getAttribute('data-nw-influence-move'))!==0;
     document.getElementById('targetRotate').checked=Number(el.getAttribute('data-nw-influence-rotate'))!==0;
     document.getElementById('targetScale').checked=Number(el.getAttribute('data-nw-influence-scale'))!==0;
+    var returnSpeed=Math.max(.25,Math.min(2,Number(el.getAttribute('data-nw-influence-return'))||1));
+    document.getElementById('targetReturn').value=returnSpeed;
+    document.getElementById('targetReturnOut').value=Math.round(returnSpeed*100)+'%';
     refreshTargetVisuals();
   }
   function selectedInfluenceTarget(){
@@ -560,6 +568,14 @@
     if(!targetEditing&&influenceField&&el.getAttribute('data-nw-reactive')==='1')influenceField.setTargetResponse(selectedTargetId,response);
   }
   ['targetMove','targetRotate','targetScale'].forEach(function(id){document.getElementById(id).onchange=updateSelectedTargetResponse;});
+  document.getElementById('targetReturn').oninput=function(){
+    var el=selectedInfluenceTarget();if(!el)return;
+    var speed=Math.max(.25,Math.min(2,Number(this.value)||1));
+    el.setAttribute('data-nw-influence-return',String(speed));
+    document.getElementById('targetReturnOut').value=Math.round(speed*100)+'%';
+    document.getElementById('influenceTargets').value='custom';
+    if(!targetEditing&&influenceField&&el.getAttribute('data-nw-reactive')==='1')influenceField.setTargetReturnSpeed(selectedTargetId,speed);
+  };
   ['radius','strength'].forEach(function(id){document.getElementById(id).addEventListener('input',function(){if(influenceField)influenceField.setOptions(influenceOpts());output('radius',document.getElementById('radius').value+' px');output('strength',document.getElementById('strength').value);});});
   bindAnchor('trailAnchor','trail');bindAnchor('leadAnchor','lead');bindZoneMarker('headZoneMarker','headEnd');bindZoneMarker('torsoZoneMarker','torsoEnd');
   document.getElementById('swapAxis').onclick=function(){var t=axis.trail;axis.trail=axis.lead;axis.lead=t;axis.manual=true;drawAxis();status('Dirección invertida. Aplicá el eje para actualizar.','warn');};
