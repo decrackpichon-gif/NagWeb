@@ -82,9 +82,10 @@ try{
   const headline=await page.$('[data-nw-target-id="headline-0"]');await headline.click();await new Promise(r=>setTimeout(r,60));
   await page.$eval('#targetWeight',el=>{el.value='.37';el.dispatchEvent(new Event('input',{bubbles:true}));});await new Promise(r=>setTimeout(r,50));
   assert.equal(await page.$eval('[data-nw-target-id="headline-0"]',el=>Number(el.getAttribute('data-nw-influence-weight'))),.37);
-  assert.equal(await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.influenceField.getTargetWeight('headline-0')),.37);
-  await page.click('#editTargets');await new Promise(r=>setTimeout(r,80));
+  assert.equal(await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.influenceField),null);
+  await page.click('#editTargets');await new Promise(r=>setTimeout(r,120));
   assert.equal(await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.targetEditing),false);
+  assert.equal(await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.influenceField.getTargetWeight('headline-0')),.37);
 
   const bodyOpts=await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.influenceField.options);
   assert.equal(bodyOpts.sweptBody,true);assert.ok(bodyOpts.sourceRadius>0);
