@@ -38,6 +38,8 @@ import {runMotionExpandSmoke} from './nagweb-motion-expand-smoke.mjs';
 import {runMotionDropSmoke} from './nagweb-motion-drop-smoke.mjs';
 import {runMotionStreamSmoke} from './nagweb-motion-stream-smoke.mjs';
 import {runMotionStreamPlacementSmoke} from './nagweb-motion-stream-placement-smoke.mjs';
+import './nagweb-stage-model-test.mjs';
+import {runMotionStageSmoke} from './nagweb-motion-stage-smoke.mjs';
 import './nagweb-pop-model-test.mjs';
 import './nagweb-image-crop-model-test.mjs';
 import {runMotionImageCropSmoke} from './nagweb-motion-image-crop-smoke.mjs';
@@ -225,6 +227,8 @@ if(workspaceState.leftToggles!==1||workspaceState.rightToggles!==1) throw new Er
 if(Math.abs(workspaceState.rightWidth-savedInspectorWidth)>3) throw new Error('Inspector width did not survive reload: '+JSON.stringify({workspaceState,savedInspectorWidth}));
 await page.click('.nw-dock-toggle.left');
 
+await runMotionStageSmoke(page);
+await runMotionStreamPlacementSmoke(page,'center-stage');
 await runMotionImageCropSmoke(page);
 await runMotionStreamPlacementSmoke(page);
 await runMotionStreamSmoke(page);
