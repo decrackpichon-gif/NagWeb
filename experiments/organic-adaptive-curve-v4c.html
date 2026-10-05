@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,"><title>NagWeb · V3 vs V4-C Adaptive Curve</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,system-ui,sans-serif;background:#0d0d11;color:#eceaf1}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#0d0d11}
+.app{display:grid;grid-template-columns:300px 1fr;min-height:100vh}.panel{padding:18px;border-right:1px solid #292833;background:#14131a;overflow:auto}
+h1{font-size:18px;margin:0 0 6px}.sub{font-size:11px;line-height:1.45;color:#aaa5b4;margin-bottom:14px}.group{padding:12px 0;border-top:1px solid #2b2934}.group h2{font-size:11px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;color:#d0c9da}
+.upload{display:block;padding:10px;border:1px dashed #555061;border-radius:10px;text-align:center;font-size:11px;cursor:pointer}.upload input{display:none}.preview{width:100%;height:120px;object-fit:contain;background:#0c0b10;border:1px solid #2e2d37;border-radius:10px;margin-top:8px}
+.field{margin:10px 0}.field label{display:flex;justify-content:space-between;font-size:10px;color:#bbb6c6;margin-bottom:5px}.field input[type=range],.field select{width:100%}.check{display:flex;gap:8px;align-items:center;font-size:10px;color:#c6c0ce}
+.status{font:10px/1.5 ui-monospace,monospace;color:#a9dcb4;white-space:pre-wrap}.legend{font:10px/1.45 ui-monospace,monospace;color:#aaa5b4;margin-top:8px}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#2a2932;min-width:0}.stage{position:relative;overflow:hidden;background:radial-gradient(circle at 50% 42%,#282330 0,#15131a 46%,#0e0d12 100%);min-width:0;min-height:100vh}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.label{position:absolute;z-index:6;left:18px;top:18px;padding:6px 9px;border:1px solid rgba(255,255,255,.2);border-radius:999px;background:rgba(10,9,14,.65);font:700 10px ui-monospace,monospace}
+.desc{position:absolute;z-index:6;left:18px;top:52px;font:10px/1.35 ui-monospace,monospace;color:#aaa5b3;max-width:300px}.crosshair{position:absolute;z-index:7;width:10px;height:10px;border:1px solid rgba(255,255,255,.45);border-radius:50%;translate:-50% -50%;pointer-events:none}
+#diagCanvas{z-index:5}
+@media(max-width:900px){.app{grid-template-columns:1fr}.panel{border-right:0;border-bottom:1px solid #292833}.compare{height:75vh}.stage{min-height:75vh}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="panel">
+  <h1>V3 ↔ V4-C</h1>
+  <div class="sub">V4-C analiza automáticamente el grosor real de la silueta y adapta rigidez/curvatura sin mezclar posiciones de huesos.</div>
+
+  <div class="group">
+    <h2>Asset</h2>
+    <label class="upload">Subir PNG / JPG / WebP<input id="file" type="file" accept="image/png,image/jpeg,image/webp"></label>
+    <img id="preview" class="preview" alt="Preview">
+  </div>
+
+  <div class="group">
+    <h2>Comportamiento</h2>
+    <div class="field"><label>Preset</label><select id="preset"><option value="character">Personaje</option><option value="creature">Criatura</option><option value="soft">Forma blanda</option></select></div>
+    <div class="field"><label>Largo <output id="lengthOut"></output></label><input id="length" type="range" min="180" max="620" step="5" value="380"></div>
+    <div class="field"><label>Ondulación <output id="swayOut"></output></label><input id="sway" type="range" min="0" max=".11" step=".002" value=".035"></div>
+    <label class="check"><input id="diagnostic" type="checkbox" checked> Mostrar diagnóstico adaptativo</label>
+    <div class="legend">barra corta = zona fina · barra larga = zona ancha<br>azul = rígido · amarillo = flexible</div>
+  </div>
+
+  <div class="group"><div id="status" class="status">Preparando…</div></div>
+</aside>
+
+<main id="compare" class="compare">
+  <section id="stageV3" class="stage">
+    <div class="label">V3 · ZONAS</div><div class="desc">Referencia estable actual.</div>
+    <canvas id="canvasV3"></canvas><div id="leaderV3"></div><div id="crossV3" class="crosshair"></div>
+  </section>
+  <section id="stageV4C" class="stage">
+    <div class="label">V4-C · ADAPTIVE CURVE</div><div class="desc">Weighted Curve + análisis automático de silueta.</div>
+    <canvas id="canvasV4C"></canvas><canvas id="diagCanvas"></canvas><div id="leaderV4C"></div><div id="crossV4C" class="crosshair"></div>
+  </section>
+</main>
+</div>
+
+<script src="../js/nagweb-interaction-engine-v1.js"></script>
+<script src="../js/nagweb-interaction-asset-prep-v1.js"></script>
+<script src="../js/nagweb-interaction-organic-v3.js"></script>
+<script src="../js/nagweb-interaction-organic-v4b.js"></script>
+<script src="../js/nagweb-interaction-organic-v4c.js"></script>
+<script>
+(function(){
+  var E=NAGWEB_INTERACTION_ENGINE,A=NAGWEB_INTERACTION_ASSET_PREP,V3=NAGWEB_ORGANIC_MESH,V4C=NAGWEB_ORGANIC_ADAPTIVE_CURVE;
+  var compare=document.getElementById('compare'),s3=document.getElementById('stageV3'),s4=document.getElementById('stageV4C'),c3=document.getElementById('canvasV3'),c4=document.getElementById('canvasV4C'),diag=document.getElementById('diagCanvas');
+  var status=document.getElementById('status'),preview=document.getElementById('preview'),source=new Image(),url=null,r3=null,r4=null,analysis=null,prepared=null;
+  var preset=document.getElementById('preset'),length=document.getElementById('length'),sway=document.getElementById('sway'),diagnostic=document.getElementById('diagnostic'),lengthOut=document.getElementById('lengthOut'),swayOut=document.getElementById('swayOut'),cross3=document.getElementById('crossV3'),cross4=document.getElementById('crossV4C'),file=document.getElementById('file');
+  var fallback='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="360" height="620" viewBox="0 0 360 620"><g><ellipse cx="180" cy="92" rx="58" ry="72" fill="#ffd07a"/><path d="M122 84q58-88 116 0v22H122z" fill="#f6f0e7"/><circle cx="158" cy="92" r="7"/><circle cx="203" cy="92" r="7"/><path d="M151 127q30 20 58 0" fill="none" stroke="#2b1d23" stroke-width="8" stroke-linecap="round"/><path d="M102 176q78-52 156 0l34 185q-24 84-112 90-88-6-112-90z" fill="#d93118"/><path d="M145 178q35 44 70 0l16 262h-102z" fill="#ef4a2d"/><path d="M103 204 40 284l34 31 71-66zM257 204l63 80-34 31-71-66z" fill="#ffd07a"/><path d="M121 444 99 565h58l23-112zM239 444l22 121h-58l-23-112z" fill="#c32b17"/></g></svg>');
+
+  var f3=E.createFollower(document.getElementById('leaderV3'),{area:s3,preset:'character',renderMode:'none',distanceFromPointer:20,rotateToTarget:true,idle:{enabled:false}});
+  var f4=E.createFollower(document.getElementById('leaderV4C'),{area:s4,preset:'character',renderMode:'none',distanceFromPointer:20,rotateToTarget:true,idle:{enabled:false}});
+
+  function common(){return {length:+length.value,sway:+sway.value,swayWaves:4,columns:38,rows:12};}
+  function v3opts(){return Object.assign({headZoneEnd:.22,torsoZoneEnd:.66,headFlex:.035,torsoFlex:.42,lowerFlex:1,headMaxBend:.065,torsoMaxBend:.16,bodyMaxBend:.30},common());}
+  function v4opts(){return Object.assign({adaptivePreset:preset.value,diagnostic:diagnostic.checked,antiFold:true},common());}
+  function outputs(){lengthOut.value=length.value+' px';swayOut.value=sway.value;}
+  function report(){
+    if(!r3||!r4)return;
+    var s=r4.adaptiveSummary,g=r4.guard,o=r4.options,min=Number.isFinite(g.minDistance)?g.minDistance.toFixed(1):'∞';
+    status.textContent='Preset '+o.adaptivePreset+' · '+s.controlCount+' controles auto\n'+
+      'ancho silueta '+Math.round(s.minWidth*100)+'% … '+Math.round(s.maxWidth*100)+'% · '+s.transitions+' transición/es\n'+
+      'anti-fold '+(o.antiFold?'ON':'OFF')+' · '+g.conflicts+' correcciones · separación mín '+min+' px';
+  }
+  function sync(){outputs();if(r3)r3.setOptions(v3opts());if(r4)r4.setOptions(v4opts());report();}
+  [length,sway].forEach(function(x){x.addEventListener('input',sync);});preset.addEventListener('change',sync);diagnostic.addEventListener('change',sync);
+
+  function syncTarget(ev){
+    var r=compare.getBoundingClientRect(),nx=Math.max(0,Math.min(1,(ev.clientX-r.left)/r.width)),ny=Math.max(0,Math.min(1,(ev.clientY-r.top)/r.height));
+    f3.setTarget(nx*s3.clientWidth,ny*s3.clientHeight,'area');f4.setTarget(nx*s4.clientWidth,ny*s4.clientHeight,'area');
+    cross3.style.left=nx*100+'%';cross3.style.top=ny*100+'%';cross4.style.left=nx*100+'%';cross4.style.top=ny*100+'%';
+  }
+  compare.addEventListener('pointermove',syncTarget,{passive:true});
+
+  function diagColor(flex){
+    var t=Math.max(0,Math.min(1,flex)),r=Math.round(115+140*t),g=Math.round(185+38*t),b=Math.round(255-130*t);
+    return 'rgba('+r+','+g+','+b+',.92)';
+  }
+  function drawDiag(){
+    requestAnimationFrame(drawDiag);
+    var rect=s4.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2),w=Math.max(1,Math.round(rect.width*dpr)),h=Math.max(1,Math.round(rect.height*dpr));
+    if(diag.width!==w||diag.height!==h){diag.width=w;diag.height=h;diag.style.width=rect.width+'px';diag.style.height=rect.height+'px';}
+    var ctx=diag.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,rect.width,rect.height);
+    if(!r4||!diagnostic.checked)return;
+    var spine=r4.spine,controls=r4.adaptiveControls.details;if(spine.length<2)return;
+    ctx.lineWidth=1.2;ctx.strokeStyle='rgba(150,210,255,.40)';ctx.beginPath();
+    spine.forEach(function(p,i){var x=p.x-rect.left,y=p.y-rect.top;if(!i)ctx.moveTo(x,y);else ctx.lineTo(x,y);});ctx.stroke();
+
+    var imageHeight=prepared?length.value*(prepared.canvas.height/prepared.canvas.width):180;
+    controls.forEach(function(d){
+      var idx=Math.max(1,Math.min(spine.length-2,Math.round(d.u*(spine.length-1)))),p=spine[idx],a=spine[idx-1],b=spine[idx+1],ang=Math.atan2(a.y-b.y,a.x-b.x),nx=-Math.sin(ang),ny=Math.cos(ang),half=Math.max(5,d.width*imageHeight*.5);
+      var x=p.x-rect.left,y=p.y-rect.top;ctx.strokeStyle=diagColor(d.flex);ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x-nx*half,y-ny*half);ctx.lineTo(x+nx*half,y+ny*half);ctx.stroke();
+      ctx.fillStyle=diagColor(d.flex);ctx.beginPath();ctx.arc(x,y,d.gradientNorm>.55?5:3.3,0,Math.PI*2);ctx.fill();
+    });
+    report();
+  }
+
+  async function prepare(){
+    status.textContent='Analizando silueta y preparando…';
+    analysis=await A.analyzeImage(source,{maxDimension:512});
+    var profile=A.createProfile(analysis,{leadEnd:'right',cropPadding:.015});
+    prepared=await V3.prepareAsset(source,analysis,{profile:profile,paddingRatio:.015});
+    preview.src=source.src;if(r3)r3.destroy();if(r4)r4.destroy();
+    r3=V3.createRenderer(Object.assign({leader:f3,canvas:c3,area:s3,image:prepared.canvas},v3opts()));
+    r4=V4C.createRenderer(Object.assign({leader:f4,canvas:c4,area:s4,image:prepared.canvas},v4opts()));
+    window.__NAGWEB_V4C_AB__.v3=r3;window.__NAGWEB_V4C_AB__.v4c=r4;window.__NAGWEB_V4C_AB__.analysis=analysis;window.__NAGWEB_V4C_AB__.prepared=prepared;report();
+  }
+  function fail(err){status.textContent='ERROR · '+err.message;status.style.color='#ef9999';console.error(err);}
+  file.onchange=function(){var f=this.files&&this.files[0];if(!f)return;if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(f);source.onload=function(){prepare().catch(fail);};source.src=url;};
+  window.__NAGWEB_V4C_AB__={followerV3:f3,followerV4C:f4,v3:null,v4c:null,analysis:null,prepared:null};
+  outputs();drawDiag();source.onload=function(){prepare().catch(fail);};source.src=fallback;
+})();
+</script>
+</body></html>
