@@ -14,11 +14,25 @@
   if(root) root.NAGWEB_INTERACTION_SESSION=api;
 })(typeof window!=='undefined'?window:globalThis,function(engine,organic,influence,assetPrep){
   'use strict';
-  var VERSION='1.3.0-alpha.1';
+  var VERSION='1.4.0-alpha.1';
   var SCHEMA='nagweb-interaction-session';
 
   function clone(v){return v==null?v:JSON.parse(JSON.stringify(v));}
   function mode(v){return ['auto','follower','organic'].indexOf(v)>=0?v:'auto';}
+  function normalizeTargetSelection(value){
+    if(!Array.isArray(value))return [];
+    var seen={};
+    return value.slice(0,200).map(function(item){
+      item=item||{};
+      var id=String(item.id||'').trim().slice(0,120);
+      if(!id||seen[id])return null;
+      seen[id]=true;
+      var weight=Number(item.weight);
+      if(!Number.isFinite(weight))weight=1;
+      weight=Math.max(0,Math.min(2,weight));
+      return {id:id,enabled:item.enabled!==false,weight:weight};
+    }).filter(Boolean);
+  }
 
   function normalize(input){
     input=input||{};
@@ -30,7 +44,8 @@
     var displaySize=Math.max(40,Math.min(2400,Number(input.display&&input.display.size)||Number(organicOptions.length)||310));
     var rawInfluence=input.influenceOptions||{};
     var influenceOptions=influence&&influence.normalizeOptions?influence.normalizeOptions(rawInfluence):clone(rawInfluence);
-    influenceOptions.targetScenario=rawInfluence.targetScenario==='all'?'all':'headline';
+    influenceOptions.targetScenario=['headline','all','custom'].indexOf(rawInfluence.targetScenario)>=0?rawInfluence.targetScenario:'headline';
+    influenceOptions.targetSelection=normalizeTargetSelection(rawInfluence.targetSelection);
     return {
       schema:SCHEMA,
       version:1,
@@ -78,11 +93,13 @@
       organicRenderer:s.organicRenderer,
       bodyProfile:s.bodyProfile,
       displaySize:s.display.size,
+      targetScenario:s.influenceOptions.targetScenario,
+      reactiveTargetCount:s.influenceOptions.targetSelection.filter(function(t){return t.enabled;}).length,
       hasAssetProfile:!!s.assetProfile,
       quality:s.preparationReport&&s.preparationReport.quality?s.preparationReport.quality.score:null,
       name:s.metadata.name
     };
   }
 
-  return {version:VERSION,schema:SCHEMA,normalize:normalize,resolveMode:resolveMode,validate:validate,serialize:serialize,deserialize:deserialize,summary:summary};
+  return {version:VERSION,schema:SCHEMA,normalizeTargetSelection:normalizeTargetSelection,normalize:normalize,resolveMode:resolveMode,validate:validate,serialize:serialize,deserialize:deserialize,summary:summary};
 });
