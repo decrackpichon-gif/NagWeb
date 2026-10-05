@@ -47,7 +47,7 @@ export async function runStudioRobustnessSmoke(page){
   });
   assert.equal(result.added.same,true);assert.equal(result.added.count,result.originalCount+70);assert.equal(result.added.revision,1,'One DOM batch should publish one registry update');assert.deepEqual(result.added.state,result.before);
   assert.deepEqual(result.selected,result.expectedIds,'Unknown IDs must not inflate a real selection');
-  assert.deepEqual(result.mixed,{move:true,rotate:true,scale:true,weight:'Mixto',speed:'Mixto'});
+  assert.deepEqual(result.mixed,{move:false,rotate:true,scale:true,weight:'Mixto',speed:'Mixto'},'Different nonzero strengths still mean the Move channel is enabled for every target');
   result.channels.forEach((v,i)=>assert.deepEqual(v,{move:i%2?.5:1,rotate:1,scale:i%2?0:1},'A group edit changes only its selected channel'));
   assert.equal(result.special.length,4,'Special IDs must survive export');assert.equal(result.special.find(t=>t.id==='__proto__').weight,1.7);
   assert.deepEqual(result.restored.weights,[1.7,1.7]);assert.equal(result.restored.same,true);assert.deepEqual(result.restored.state,result.before,'Session restore must retain existing target physics');
