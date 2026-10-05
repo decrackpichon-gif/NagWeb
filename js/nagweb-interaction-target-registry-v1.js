@@ -8,7 +8,7 @@
   if(root) root.NAGWEB_INTERACTION_TARGET_REGISTRY=api;
 })(typeof window!=='undefined'?window:globalThis,function(){
   'use strict';
-  var VERSION='1.0.0';
+  var VERSION='1.1.0';
   function uniqueElements(list){
     return Array.from(new Set((Array.isArray(list)?list:Array.from(list||[])).filter(Boolean)));
   }
@@ -39,7 +39,7 @@
     var activeAttribute=input.activeAttribute||'data-nw-reactive';
     var includeInactive=input.includeInactive===true;
     var activeValue=input.activeValue==null?'1':String(input.activeValue);
-    var listeners=new Set(),elements=[],revision=0,destroyed=false,pending=false,observer=null,fieldBindings=new Set();
+    var listeners=new Set(),elements=[],revision=0,destroyed=false,pending=false,pendingReason=null,observer=null,fieldBindings=new Set();
 
     function collect(){
       var list=Array.from(root.querySelectorAll(selector));
@@ -56,23 +56,30 @@
         added:(diff&&diff.added||[]).slice(),
         removed:(diff&&diff.removed||[]).slice(),
         retained:(diff&&diff.retained||[]).slice(),
-        duplicates:duplicateIds(elements,'data-nw-target-id')
+        duplicates:duplicateIds(elements,'data-nw-target-id'),
+        membershipChanged:!!(diff&&((diff.added&&diff.added.length)||(diff.removed&&diff.removed.length))),
+        configChanged:reason==='attributes'
       };
     }
     function refresh(reason){
       if(destroyed)return snapshot(null,'destroyed');
       var next=collect(),diff=diffElements(elements,next);
       var changed=diff.added.length||diff.removed.length;
+      var shouldNotify=!!changed||reason==='manual'||reason==='attributes'||reason==='mutation';
       elements=next;
-      if(changed)revision++;
+      if(shouldNotify)revision++;
       var state=snapshot(diff,reason||'refresh');
-      if(changed||reason==='manual')listeners.forEach(function(fn){fn(state);});
+      if(shouldNotify)listeners.forEach(function(fn){fn(state);});
       return state;
     }
     function schedule(reason){
-      if(destroyed||pending)return;
+      if(destroyed)return;
+      if(reason==='mutation'||!pendingReason)pendingReason=reason||'mutation';
+      if(pending)return;
       pending=true;
-      Promise.resolve().then(function(){pending=false;refresh(reason||'mutation');});
+      Promise.resolve().then(function(){
+        var nextReason=pendingReason||'mutation';pending=false;pendingReason=null;refresh(nextReason);
+      });
     }
     function subscribe(fn,options){
       if(typeof fn!=='function')return function(){};
@@ -83,14 +90,23 @@
     function bindField(field){
       if(!field||typeof field.setTargets!=='function')throw new Error('NagWeb Target Registry: field.setTargets() is required');
       field.setTargets(elements);
-      var unsub=subscribe(function(state){field.setTargets(state.elements);});
+      var unsub=subscribe(function(state){
+        field.setTargets(state.elements);
+        if(typeof field.syncTargets==='function')field.syncTargets();
+      });
       var binding=function(){unsub();fieldBindings.delete(binding);};
       fieldBindings.add(binding);return binding;
     }
     elements=collect();
     if(typeof MutationObserver==='function'){
-      observer=new MutationObserver(function(){schedule('mutation');});
-      observer.observe(root,{subtree:true,childList:true,attributes:true,attributeFilter:['data-nw-target-id',activeAttribute]});
+      observer=new MutationObserver(function(records){
+        var structural=records.some(function(m){return m.type==='childList'||(m.type==='attributes'&&(m.attributeName==='data-nw-target-id'||m.attributeName===activeAttribute));});
+        schedule(structural?'mutation':'attributes');
+      });
+      observer.observe(root,{subtree:true,childList:true,attributes:true,attributeFilter:[
+        'data-nw-target-id',activeAttribute,'data-nw-influence-weight','data-nw-influence-move','data-nw-influence-rotate',
+        'data-nw-influence-scale','data-nw-influence-return','data-nw-reaction-profile'
+      ]});
     }
     return {
       version:VERSION,
