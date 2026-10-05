@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import puppeteer from 'puppeteer-core';
 import fs from 'node:fs';
-import {runStudioRobustnessSmoke,runStudioPreparationSmoke,runStudioOptionsSmoke} from './nagweb-interaction-studio-robustness-smoke.mjs';
+import {runStudioRobustnessSmoke,runStudioPreparationSmoke,runStudioOptionsSmoke,runStudioAssetSmoke} from './nagweb-interaction-studio-robustness-smoke.mjs';
 
 const candidates=['/usr/bin/google-chrome-stable','/usr/bin/google-chrome','/usr/bin/chromium','/usr/bin/chromium-browser'];
 const executablePath=candidates.find(p=>fs.existsSync(p));if(!executablePath)throw new Error('No Chromium/Chrome executable found');
@@ -244,6 +244,8 @@ try{
   await page.$eval('#organicMeshCanvas',c=>c.dispatchEvent(new Event('webglcontextlost',{cancelable:true})));
   await page.waitForFunction(()=>window.__NAGWEB_INTERACTION_STUDIO__.organicEngine==='slices-v2',{timeout:5000});
   assert.equal(await page.$eval('#organicCanvas',el=>getComputedStyle(el).display),'block');
+
+  await runStudioAssetSmoke(page);
 
   assert.equal(errors.length,0,'Interaction Studio should have no page errors: '+errors.join('\n'));
   fs.mkdirSync('/tmp/nagweb-interaction-v1',{recursive:true});

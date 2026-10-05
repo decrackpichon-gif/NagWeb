@@ -179,3 +179,53 @@ export async function runStudioOptionsSmoke(page){
   assert.deepEqual(result.reset,result.defaults,'A sparse session must not inherit advanced options from a previous import');
   console.log('Interaction Studio options: Mesh/Slices settings, influence zeros, follower rotation, edits, disable/re-enable, engine isolation, sparse restore and export PASS');
 }
+
+export async function runStudioAssetSmoke(page){
+  const result=await page.evaluate(async()=>{
+    const studio=__NAGWEB_INTERACTION_STUDIO__,P=NAGWEB_INTERACTION_PREPARATION,create=P.createPipeline,baseline=studio.prepResult,jobs=[];
+    const tick=async()=>{await Promise.resolve();await Promise.resolve();};
+    const status=()=>document.querySelector('#prepStatus').textContent;
+    const controls=()=>({busy:studio.preparing,prepare:document.querySelector('#prepare').disabled,cancel:document.querySelector('#cancel').disabled});
+    async function until(test){const start=performance.now();while(!test()){if(performance.now()-start>3000)throw new Error('Asset smoke did not settle');await new Promise(r=>setTimeout(r,10));}}
+    async function file(name,width,height){const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;const ctx=canvas.getContext('2d');ctx.fillStyle='#ef8d65';ctx.beginPath();ctx.ellipse(width/2,height/2,width*.43,height*.12,0,0,Math.PI*2);ctx.fill();return new File([await new Promise(r=>canvas.toBlob(r,'image/png'))],name,{type:'image/png'});}
+    function choose(file){const input=document.querySelector('#file'),data=new DataTransfer();data.items.add(file);input.files=data.files;input.dispatchEvent(new Event('change'));}
+    async function load(file){choose(file);await until(()=>studio.sourceReady);}
+    async function finish(job){const prepared=await create({...job.options,allowAI:false,progress:null}).prepare(job.image,job.run);job.resolve(prepared);return prepared;}
+    const first=await file('primera.png',420,240),second=await file('segunda.png',500,260);
+    P.createPipeline=function(options){
+      const job={options,canceled:0};jobs.push(job);
+      return {prepare(image,run){job.image=image;job.run=run;return new Promise((resolve,reject)=>{job.resolve=resolve;job.reject=reject;});},cancel(){job.canceled++;}};
+    };
+    try{
+      const obsolete=studio.prepare();choose(first);
+      const loading={ready:studio.sourceReady,disabled:document.querySelector('#prepare').disabled};await until(()=>studio.sourceReady);
+      const latest=studio.prepare(),currentStatus=status();jobs[0].options.progress({stage:'obsolete-progress'});jobs[0].resolve(baseline);await obsolete;
+      const overlap={controls:controls(),statusUntouched:status()===currentStatus,canceled:jobs[0].canceled,differentSource:jobs[0].image!==jobs[1].image};
+      const firstResult=await finish(jobs[1]);await latest;
+      const firstApplied={name:studio.getSession().assetRef.name,width:studio.prepResult.report.source.width,controls:controls()};
+      // A completed pipeline can still be waiting for canvas encoding.
+      let encode;const delayedEncoding=studio.prepare();jobs[2].resolve({...firstResult,image:{toBlob(callback){encode=callback;}}});await tick();await until(()=>!!encode);
+      await load(second);const secondPreparation=studio.prepare();await finish(jobs[3]);await secondPreparation;
+      const prepared=studio.prepResult,preview=document.querySelector('#sourcePreview').src;
+      encode(new Blob(['obsolete preview'],{type:'image/webp'}));await delayedEncoding;
+      const encoding={sameResult:studio.prepResult===prepared,samePreview:document.querySelector('#sourcePreview').src===preview,name:studio.getSession().assetRef.name,width:studio.prepResult.report.source.width};
+      const canceled=studio.prepare();document.querySelector('#cancel').click();const canceledControls=controls();
+      const retry=studio.prepare(),retryStatus=status();jobs[4].reject(new Error('Old processing failure'));await canceled;
+      const retryProtected={controls:controls(),statusUntouched:status()===retryStatus,canceled:jobs[4].canceled};
+      jobs[5].reject(new Error('Current processing failure'));await retry;
+      const failed={controls:controls(),status:status(),sameResult:studio.prepResult===prepared};
+      choose(new File(['invalid image bytes'],'rota.png',{type:'image/png'}));await until(()=>status().includes('No se pudo leer'));
+      const unreadable={ready:studio.sourceReady,controls:controls(),status:status(),prepareResult:await studio.prepare()};
+      return {loading,overlap,firstApplied,encoding,canceledControls,retryProtected,failed,unreadable};
+    }finally{P.createPipeline=create;await load(second);await studio.prepare();}
+  });
+  assert.deepEqual(result.loading,{ready:false,disabled:true},'Preparation must wait for the selected image to load');
+  assert.deepEqual(result.overlap,{controls:{busy:true,prepare:true,cancel:false},statusUntouched:true,canceled:1,differentSource:true},'An old completion must not release the new task or replace its input');
+  assert.deepEqual(result.firstApplied,{name:'primera.png',width:420,controls:{busy:false,prepare:false,cancel:true}});
+  assert.deepEqual(result.encoding,{sameResult:true,samePreview:true,name:'segunda.png',width:500},'A late canvas callback must not replace or revoke the current preview');
+  assert.deepEqual(result.canceledControls,{busy:false,prepare:false,cancel:true},'Cancel should allow an immediate retry');
+  assert.deepEqual(result.retryProtected,{controls:{busy:true,prepare:true,cancel:false},statusUntouched:true,canceled:1});
+  assert.deepEqual(result.failed.controls,{busy:false,prepare:false,cancel:true});assert.match(result.failed.status,/Current processing failure/);assert.equal(result.failed.sameResult,true);
+  assert.equal(result.unreadable.ready,false);assert.deepEqual(result.unreadable.controls,{busy:false,prepare:true,cancel:true});assert.match(result.unreadable.status,/rota.png/);assert.equal(result.unreadable.prepareResult,false);
+  console.log('Interaction Studio assets: immutable image inputs, overlapping pipelines, late canvas encoding, immediate cancel/retry, current errors and unreadable images PASS');
+}

@@ -649,3 +649,11 @@ El Studio conserva las opciones persistentes de Mesh V3 y Slices V2 por separado
 La exportación orgánica incluye sólo opciones reconocidas por el motor y conserva el motor seleccionado aunque esté en modo Seguidor. Las referencias al canvas, imagen, follower y callbacks permanecen en el runtime. Cada importación reemplaza los ajustes avanzados de la sesión anterior; los controles visibles siguen gobernando los parámetros que exponen y el radio corporal se calcula sobre el asset actual.
 
 El browser smoke comprueba ambas variantes, exportación/restauración, cambios de controles, recreación del field, aislamiento entre motores y recuperación de una sesión sin ajustes avanzados. Sin integración al editor principal ni cambios en V4.
+
+### Studio — carga de assets y cancelación
+
+Cada archivo usa su propia instancia de imagen. La preparación queda deshabilitada hasta que termina la carga; una imagen ilegible muestra un error y permite elegir otro archivo. Cambiar de archivo invalida y cancela la tarea anterior. Sus avances, resultados, errores y finalización no pueden modificar la imagen, el estado de los botones ni la preparación nueva.
+
+La protección incluye el callback asíncrono de conversión del canvas: un resultado obsoleto no crea una URL ni revoca la vista previa vigente. Cancelar libera los controles de inmediato para reintentar; los errores de una tarea cancelada no sobrescriben el estado del reintento. La preparación publica su análisis y reporte junto con la imagen vigente.
+
+El browser smoke usa archivos PNG reales y tareas con finalización controlada para comprobar cambios durante el procesamiento y la conversión, inputs independientes, cancelación/reintento, errores vigentes e imágenes ilegibles. Trabajo aislado en `feat/interaction-engine-v1`.

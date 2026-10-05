@@ -128,6 +128,7 @@
   var originalUrl=null,preparedUrl=null,currentFile=null,pipeline=null,prepResult=null,organicPrepared=null,organicRenderer=null,influenceField=null,previewField=null,previewTimer=null,marqueeState=null,suppressTargetClick=false,targetRegistry=null,previewMainField=null,previewMainWasPaused=false;
   var axis={trail:{x:.12,y:.5},lead:{x:.88,y:.5},manual:false},zones={headEnd:.22,torsoEnd:.66,manual:false},activeMode='follower',activeOrganicEngine='mesh-v3',organicRevision=0,busy=false,targetEditing=false,selectedTargetId=null,selectedTargetIds=[];
   var organicSettings={'mesh-v3':{},'slices-v2':{}},influenceSettings={};
+  var assetRevision=0,preparationRevision=0,sourceReady=false;
   var fallback='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="760" height="270" viewBox="0 0 760 270"><defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#ff7658"/><stop offset=".52" stop-color="#ffe3a8"/><stop offset="1" stop-color="#ff9867"/></linearGradient></defs><path d="M48 135c67-83 204-90 320-39 99-55 225-55 324 0l49-54-13 73 13 73-49-54c-99 55-225 55-324 0-116 51-253 44-320-39L8 135z" fill="url(#g)"/><circle cx="116" cy="111" r="14" fill="#31232b"/><circle cx="121" cy="106" r="4" fill="#fff"/></svg>');
 
   var follower=E.createFollower(leaderEl,{
@@ -145,13 +146,18 @@
   function status(text,cls){var el=document.getElementById('prepStatus');el.className='status '+(cls||'');el.textContent=text;}
   function output(id,text){document.getElementById(id+'Out').value=text;}
   function cleanPreparedUrl(){if(preparedUrl){URL.revokeObjectURL(preparedUrl);preparedUrl=null;}}
-  function imageUrlFromCanvas(c){
-    return new Promise(function(resolve,reject){c.toBlob(function(blob){if(!blob)return reject(new Error('No se pudo convertir el asset preparado'));cleanPreparedUrl();preparedUrl=URL.createObjectURL(blob);resolve(preparedUrl);},'image/webp',.94);});
+  function imageBlobFromCanvas(c){
+    return new Promise(function(resolve,reject){c.toBlob(function(blob){if(!blob)return reject(new Error('No se pudo convertir el asset preparado'));resolve(blob);},'image/webp',.94);});
   }
-  async function setPreparedVisual(image){
-    if(image&&image.toBlob){visualImg.src=await imageUrlFromCanvas(image);sourcePreview.src=visualImg.src;}
+  async function setPreparedVisual(image,current){
+    if(image&&image.toBlob){
+      var blob=await imageBlobFromCanvas(image);
+      if(!current())return false;
+      cleanPreparedUrl();preparedUrl=URL.createObjectURL(blob);visualImg.src=preparedUrl;sourcePreview.src=preparedUrl;
+    }
     else if(originalUrl){visualImg.src=originalUrl;sourcePreview.src=originalUrl;}
     else {visualImg.src=fallback;sourcePreview.src=fallback;}
+    return true;
   }
   function autoAxis(){
     if(!prepResult||!prepResult.analysis)return;
@@ -639,12 +645,24 @@
     window.__NAGWEB_INTERACTION_STUDIO__.influenceField=influenceField;
     output('radius',document.getElementById('radius').value+' px');output('strength',document.getElementById('strength').value);
   }
+  function invalidatePreparation(){
+    preparationRevision++;
+    var previous=pipeline;pipeline=null;busy=false;
+    if(previous)previous.cancel();
+    document.getElementById('prepare').disabled=!sourceReady;document.getElementById('cancel').disabled=true;
+  }
   async function prepare(){
-    if(busy)return;busy=true;document.getElementById('prepare').disabled=true;document.getElementById('cancel').disabled=false;setStep(2);
-    pipeline=P.createPipeline({allowAI:document.getElementById('allowAI').checked,autoRemoveBackground:true,autoTrim:true,progress:function(x){status('Preparando · '+x.stage,x.stage==='background-error'?'warn':'');}});
+    if(busy||!sourceReady)return false;
+    var revision=++preparationRevision,asset=assetRevision,image=sourceImage,file=currentFile;
+    function current(){return revision===preparationRevision&&asset===assetRevision;}
+    busy=true;document.getElementById('prepare').disabled=true;document.getElementById('cancel').disabled=false;setStep(2);
+    var task=P.createPipeline({allowAI:document.getElementById('allowAI').checked,autoRemoveBackground:true,autoTrim:true,progress:function(x){if(current())status('Preparando · '+x.stage,x.stage==='background-error'?'warn':'');}});
+    pipeline=task;
     try{
-      prepResult=await pipeline.prepare(sourceImage,{fileSizeBytes:currentFile&&currentFile.size||0,modeOverride:'auto'});
-      await setPreparedVisual(prepResult.image);autoAxis();setStep(3);
+      var result=await task.prepare(image,{fileSizeBytes:file&&file.size||0,modeOverride:'auto'});
+      if(!current()||!await setPreparedVisual(result.image,current))return false;
+      if(!current())return false;
+      prepResult=result;pipeline=null;document.getElementById('cancel').disabled=true;autoAxis();setStep(3);
       var q=prepResult.report.quality;
       if(prepResult.report.bodyProfileRecommendation){
         document.getElementById('bodyProfile').value=prepResult.report.bodyProfileRecommendation;
@@ -652,10 +670,13 @@
       }
       status('Compatibilidad '+q.label+' · '+q.score+'/100 · recomendado: '+prepResult.report.recommendedMode+(prepResult.report.bodyProfileRecommendation?' · perfil '+prepResult.report.bodyProfileRecommendation:'')+(prepResult.report.aiFallback?' · IA falló, original preservado':''),q.score>=72?'good':'warn');
       syncMotion();await updateModeUI();
+      return current();
     }catch(err){
+      if(!current())return false;
       if(err&&err.name==='AbortError')status('Preparación cancelada. El original sigue intacto.','warn');
       else status('Preparación falló. El original sigue intacto · '+err.message,'bad');
-    }finally{busy=false;document.getElementById('prepare').disabled=false;document.getElementById('cancel').disabled=true;}
+      return false;
+    }finally{if(current()){pipeline=null;busy=false;document.getElementById('prepare').disabled=!sourceReady;document.getElementById('cancel').disabled=true;}}
   }
   function session(){
     return S.normalize({
@@ -711,7 +732,10 @@
   }
 
   document.getElementById('prepare').onclick=prepare;
-  document.getElementById('cancel').onclick=function(){if(pipeline)pipeline.cancel();};
+  document.getElementById('cancel').onclick=function(){
+    if(!pipeline)return;
+    invalidatePreparation();setStep(prepResult?4:1);status('Preparación cancelada. El original sigue intacto.','warn');
+  };
   document.getElementById('mode').onchange=updateModeUI;
   document.getElementById('preset').onchange=syncMotion;
   document.getElementById('organicEngine').onchange=async function(){
@@ -814,16 +838,24 @@
     var f=this.files&&this.files[0];if(!f)return;
     var check=P.validateFile(f,{});
     if(check.blocked){status(check.warnings.join(' '),'bad');return;}
+    assetRevision++;sourceReady=false;invalidatePreparation();
     if(originalUrl)URL.revokeObjectURL(originalUrl);cleanPreparedUrl();currentFile=f;originalUrl=URL.createObjectURL(f);prepResult=null;organicPrepared=null;
     updateModeUI();setStep(1);
-    sourceImage.onload=function(){sourcePreview.src=originalUrl;visualImg.src=originalUrl;drawAxis();status('Original cargado · '+f.name+' · '+(f.size/1048576).toFixed(1)+' MB'+(check.warnings.length?' · '+check.warnings.join(' '):''),check.warnings.length?'warn':'');};
-    sourceImage.src=originalUrl;
+    var revision=assetRevision,url=originalUrl,image=new Image();sourceImage=image;
+    status('Cargando · '+f.name);
+    image.onload=function(){
+      if(revision!==assetRevision)return;
+      sourceReady=true;document.getElementById('prepare').disabled=false;
+      sourcePreview.src=url;visualImg.src=url;drawAxis();status('Original cargado · '+f.name+' · '+(f.size/1048576).toFixed(1)+' MB'+(check.warnings.length?' · '+check.warnings.join(' '):''),check.warnings.length?'warn':'');
+    };
+    image.onerror=function(){if(revision===assetRevision)status('No se pudo leer la imagen · '+f.name+'. Elegí otro archivo.','bad');};
+    image.src=url;
   };
   window.addEventListener('resize',function(){requestAnimationFrame(drawAxis);if(influenceField)influenceField.measure();});
 
   window.__NAGWEB_INTERACTION_STUDIO__={
     follower:follower,organicRenderer:null,influenceField:null,previewField:null,get targetRegistry(){return targetRegistry;},get prepResult(){return prepResult;},get axis(){return axis;},get zones(){return zones;},
-    get mode(){return activeMode;},get organicEngine(){return activeOrganicEngine;},get targetEditing(){return targetEditing;},get previewActive(){return !!previewField;},get marqueeActive(){return !!marqueeState;},get selectedTargetIds(){return selectedTargetIds.slice();},get targetSelection(){return targetSelection();},selectTargets:function(ids,mode){return setSelectedTargetIds(ids,mode||'replace',Array.isArray(ids)?ids[ids.length-1]:null);},previewTargets:previewSelectedTargets,clearPreview:clearTargetPreview,getSession:session,applySession:applySessionValue,prepare:prepare,
+    get mode(){return activeMode;},get organicEngine(){return activeOrganicEngine;},get sourceReady(){return sourceReady;},get preparing(){return busy;},get targetEditing(){return targetEditing;},get previewActive(){return !!previewField;},get marqueeActive(){return !!marqueeState;},get selectedTargetIds(){return selectedTargetIds.slice();},get targetSelection(){return targetSelection();},selectTargets:function(ids,mode){return setSelectedTargetIds(ids,mode||'replace',Array.isArray(ids)?ids[ids.length-1]:null);},previewTargets:previewSelectedTargets,clearPreview:clearTargetPreview,getSession:session,applySession:applySessionValue,prepare:prepare,
     switchMode:function(m){document.getElementById('mode').value=m;return updateModeUI();},
     switchOrganicEngine:async function(e){document.getElementById('organicEngine').value=e==='slices-v2'?'slices-v2':'mesh-v3';if(activeMode==='organic')await prepareOrganic();}
   };
@@ -831,7 +863,8 @@
   registerInfluenceCandidates();applyTargetScenario('headline',false);
   targetRegistry=T.createRegistry({root:stage,includeInactive:true});
   targetRegistry.subscribe(syncRegisteredTargets);
-  applyBodyProfile('character');updateInfluence();sourceImage.onload=function(){sourcePreview.src=fallback;visualImg.src=fallback;prepare();};sourceImage.src=fallback;
+  applyBodyProfile('character');updateInfluence();document.getElementById('prepare').disabled=true;
+  sourceImage.onload=function(){if(assetRevision!==0)return;sourceReady=true;sourcePreview.src=fallback;visualImg.src=fallback;prepare();};sourceImage.src=fallback;
 })();
 </script>
 </body></html>
