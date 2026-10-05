@@ -372,10 +372,11 @@
     document.getElementById('editTargets').textContent=targetEditing?'Terminar edición de objetivos':'Editar objetivos visualmente';
     if(targetEditing){
       if(document.getElementById('influenceTargets').value!=='custom')document.getElementById('influenceTargets').value='custom';
-      follower.pause();if(influenceField)influenceField.pause();
+      follower.pause();
+      if(influenceField){influenceField.destroy();influenceField=null;window.__NAGWEB_INTERACTION_STUDIO__.influenceField=null;}
       status('Edición de objetivos activa · hacé clic en un elemento de la composición.','warn');
     }else{
-      follower.resume();if(influenceField)influenceField.resume();
+      follower.resume();updateInfluence();
       status('Objetivos personalizados listos · '+document.getElementById('targetCount').textContent+'.','good');
     }
     refreshTargetVisuals();
@@ -509,8 +510,7 @@
     var el=selectedInfluenceTarget();if(!el)return;
     el.setAttribute('data-nw-reactive',this.checked?'1':'0');
     document.getElementById('influenceTargets').value='custom';
-    refreshTargetVisuals();updateInfluence();
-    if(targetEditing&&influenceField)influenceField.pause();
+    refreshTargetVisuals();if(!targetEditing)updateInfluence();
   };
   document.getElementById('targetWeight').oninput=function(){
     var el=selectedInfluenceTarget();if(!el)return;
@@ -518,7 +518,7 @@
     el.setAttribute('data-nw-influence-weight',String(weight));
     document.getElementById('targetWeightOut').value=Math.round(weight*100)+'%';
     document.getElementById('influenceTargets').value='custom';
-    if(influenceField&&el.getAttribute('data-nw-reactive')==='1')influenceField.setTargetWeight(selectedTargetId,weight);
+    if(!targetEditing&&influenceField&&el.getAttribute('data-nw-reactive')==='1')influenceField.setTargetWeight(selectedTargetId,weight);
   };
   ['radius','strength'].forEach(function(id){document.getElementById(id).addEventListener('input',function(){if(influenceField)influenceField.setOptions(influenceOpts());output('radius',document.getElementById('radius').value+' px');output('strength',document.getElementById('strength').value);});});
   bindAnchor('trailAnchor','trail');bindAnchor('leadAnchor','lead');bindZoneMarker('headZoneMarker','headEnd');bindZoneMarker('torsoZoneMarker','torsoEnd');
