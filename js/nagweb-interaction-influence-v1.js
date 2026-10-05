@@ -8,7 +8,7 @@
   if(root) root.NAGWEB_INTERACTION_INFLUENCE=api;
 })(typeof window!=='undefined'?window:globalThis,function(engine){
   'use strict';
-  var VERSION='1.1.0';
+  var VERSION='1.2.0';
   function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
   function num(v,d){v=Number(v);return Number.isFinite(v)?v:d;}
   function normalizeOptions(input){
@@ -22,12 +22,15 @@
       spring:clamp(num(input.spring,0.08),0.001,1),
       damping:clamp(num(input.damping,0.84),0.05,0.999),
       sourceMode:input.sourceMode==='head'?'head':'body',
+      sweptBody:input.sweptBody!==false,
+      maxSweepDistance:Math.max(0,num(input.maxSweepDistance,220)),
+      sourceRadius:Math.max(0,num(input.sourceRadius,0)),
       reducedMotion:input.reducedMotion||'respect'
     };
   }
   function computeRepulsion(source,target,o){
     var dx=target.x-source.x,dy=target.y-source.y,d=Math.hypot(dx,dy);
-    var r=Math.max(1,o.radius+(target.radius||0));
+    var r=Math.max(1,o.radius+(target.radius||0)+(source.radius||0)+o.sourceRadius);
     if(d>=r)return {x:0,y:0,rotation:0,scale:1,strength:0};
     if(d<0.001){dx=1;dy=0;d=1;}
     var k=Math.pow(1-d/r,2)*o.strength;
@@ -53,6 +56,29 @@
     }
     return computeRepulsion(best||points[0],target,o);
   }
+  function pathDistance(a,b){
+    if(!Array.isArray(a)||!Array.isArray(b)||!a.length||!b.length)return Infinity;
+    var n=Math.min(a.length,b.length),sum=0;
+    for(var i=0;i<n;i++)sum+=Math.hypot(a[i].x-b[i].x,a[i].y-b[i].y);
+    return sum/n;
+  }
+  function computeSweptPathRepulsion(points,previous,target,o){
+    var current=computePathRepulsion(points,target,o);
+    if(!o.sweptBody||!Array.isArray(previous)||previous.length<2)return current;
+    var avg=pathDistance(points,previous);
+    if(!Number.isFinite(avg)||avg<=0||avg>o.maxSweepDistance)return current;
+    var best=current;
+    var n=Math.min(points.length,previous.length);
+    for(var i=0;i<n;i++){
+      var p=closestPointOnSegment(target,previous[i],points[i]);
+      var rep=computeRepulsion(p,target,o);
+      if(rep.strength>best.strength)best=rep;
+    }
+    return best;
+  }
+  function clonePath(points){
+    return Array.isArray(points)?points.map(function(p){return {x:Number(p.x)||0,y:Number(p.y)||0,radius:Number(p.radius)||0};}):null;
+  }
   function springStep(state,target,o,dt){
     var frame=clamp((dt||16.6667)/16.6667,0.25,3);
     function axis(pos,vel,want){
@@ -72,7 +98,7 @@
     input=input||{};
     if(typeof input.source!=='function')throw new Error('NagWeb Influence: source() is required');
     if(!engine||typeof engine.subscribeFrame!=='function')throw new Error('NagWeb Influence: Interaction Engine v1.4+ is required');
-    var o=normalizeOptions(input),targets=[],paused=false,destroyed=false,unsub=null;
+    var o=normalizeOptions(input),targets=[],paused=false,destroyed=false,unsub=null,previousPath=null;
     var media=typeof matchMedia==='function'?matchMedia('(prefers-reduced-motion: reduce)'):null;
     var reduce=o.reducedMotion==='always'||(o.reducedMotion==='respect'&&media&&media.matches);
 
@@ -117,9 +143,10 @@
       var point=source&&Number.isFinite(source.x)&&Number.isFinite(source.y)?source:null;
       if(!path&&!point)return;
       targets.forEach(function(t){
-        var goal=reduce?{x:0,y:0,rotation:0,scale:1,strength:0}:(path?computePathRepulsion(path,t.rest,o):computeRepulsion(point,t.rest,o));
+        var goal=reduce?{x:0,y:0,rotation:0,scale:1,strength:0}:(path?computeSweptPathRepulsion(path,previousPath,t.rest,o):computeRepulsion(point,t.rest,o));
         springStep(t.state,goal,o,dt);apply(t);
       });
+      previousPath=path?clonePath(path):null;
     }
     function onResize(){measure();}
     setTargets(input.targets||[]);
@@ -131,7 +158,7 @@
     return {
       version:VERSION,
       get options(){return Object.assign({},o);},
-      setOptions:function(next){o=normalizeOptions(Object.assign({},o,next||{}));return Object.assign({},o);},
+      setOptions:function(next){o=normalizeOptions(Object.assign({},o,next||{}));previousPath=null;return Object.assign({},o);},
       setTargets:function(list){if(input.__ro)input.__ro.disconnect();setTargets(list);if(typeof ResizeObserver==='function'){input.__ro=new ResizeObserver(onResize);targets.forEach(function(t){input.__ro.observe(t.el);});}},
       measure:measure,
       pause:function(){paused=true;},
@@ -143,5 +170,5 @@
       }
     };
   }
-  return {version:VERSION,normalizeOptions:normalizeOptions,computeRepulsion:computeRepulsion,closestPointOnSegment:closestPointOnSegment,computePathRepulsion:computePathRepulsion,springStep:springStep,createField:createField};
+  return {version:VERSION,normalizeOptions:normalizeOptions,computeRepulsion:computeRepulsion,closestPointOnSegment:closestPointOnSegment,computePathRepulsion:computePathRepulsion,pathDistance:pathDistance,computeSweptPathRepulsion:computeSweptPathRepulsion,springStep:springStep,createField:createField};
 });
