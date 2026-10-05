@@ -166,7 +166,16 @@ try{
       {x:r.right+1700,y:r.bottom+1600},
       {x:r.right+1800,y:r.bottom+1650}
     ];
-    await new Promise(resolve=>setTimeout(resolve,1500));
+    await new Promise((resolve,reject)=>{
+      const deadline=performance.now()+4000;
+      function settled(){
+        const stats=field.stats;
+        if(stats.sleepingTargets===items.length&&stats.lastDomWrites===0&&stats.lastSkippedWrites===items.length)return resolve();
+        if(performance.now()>deadline)return reject(new Error('Targets did not settle: '+JSON.stringify(stats)));
+        requestAnimationFrame(settled);
+      }
+      requestAnimationFrame(settled);
+    });
     const asleep=field.stats;
     const wakesBefore=asleep.wakes;
     sourcePath=[
