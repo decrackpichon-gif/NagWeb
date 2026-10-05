@@ -15,7 +15,7 @@
 })(typeof window!=='undefined'?window:globalThis,function(engine,assetPrep,v3){
   'use strict';
 
-  var VERSION='4.0.0-alpha.1';
+  var VERSION='4.1.0-alpha.1';
   var DEFAULT_BONE_U=[0,.12,.28,.47,.66,.84,1];
   var DEFAULT_BONE_FLEX=[.02,.08,.22,.46,.70,.90,1];
   var DEFAULTS={
@@ -38,6 +38,7 @@
     weightRadius:.27,
     weightPower:2.2,
     maxInfluences:4,
+    skinMode:'rigid2d',
     leadEnd:'right',
     maxDpr:2,
     maxTextureDimension:4096,
@@ -83,6 +84,7 @@
     o.weightRadius=clamp(Number(o.weightRadius)||.27,.08,.65);
     o.weightPower=clamp(Number(o.weightPower)||2.2,.5,6);
     o.maxInfluences=Math.round(clamp(Number(o.maxInfluences)||4,1,4));
+    o.skinMode=o.skinMode==='lbs'?'lbs':'rigid2d';
     o.leadEnd=o.leadEnd==='left'?'left':'right';
     o.maxDpr=clamp(Number(o.maxDpr)||2,1,3);
     o.maxTextureDimension=Math.round(clamp(Number(o.maxTextureDimension)||4096,512,8192));
@@ -191,26 +193,51 @@
     return {x:frame.x+co*dx-si*dy,y:frame.y+si*dx+co*dy};
   }
 
-  function skinVertex(vertex,rig,frames,length,height){
-    var restX=-length*vertex.u,restY=(vertex.v-.5)*height,x=0,y=0,sum=0;
-    var weights=vertex.weights||[];
+  function boneTransform(bone,frame,length){
+    var bx=-length*bone.u,co=Math.cos(frame.angle),si=Math.sin(frame.angle);
+    return {co:co,si:si,tx:frame.x-co*bx,ty:frame.y-si*bx};
+  }
+
+  function skinPointLBS(restX,restY,weights,rig,frames,length){
+    var x=0,y=0,sum=0;
     for(var i=0;i<weights.length;i++){
       var w=weights[i],bone=rig.bones[w.index],frame=frames[w.index];
       if(!bone||!frame)continue;
       var p=transformRestPoint(restX,restY,bone,frame,length);
       x+=p.x*w.weight;y+=p.y*w.weight;sum+=w.weight;
     }
-    if(sum<=0){
-      var f=frames[0];return {x:f.x,y:f.y};
-    }
+    if(sum<=0){var f=frames[0];return {x:f.x,y:f.y};}
     return {x:x/sum,y:y/sum};
+  }
+
+  function skinPointRigid2D(restX,restY,weights,rig,frames,length){
+    var co=0,si=0,tx=0,ty=0,sum=0,dominant=null;
+    for(var i=0;i<weights.length;i++){
+      var w=weights[i],bone=rig.bones[w.index],frame=frames[w.index];
+      if(!bone||!frame)continue;
+      var t=boneTransform(bone,frame,length);
+      co+=t.co*w.weight;si+=t.si*w.weight;tx+=t.tx*w.weight;ty+=t.ty*w.weight;sum+=w.weight;
+      if(!dominant||w.weight>dominant.weight)dominant={weight:w.weight,t:t};
+    }
+    if(sum<=0){var f=frames[0];return {x:f.x,y:f.y};}
+    co/=sum;si/=sum;tx/=sum;ty/=sum;
+    var mag=Math.hypot(co,si);
+    if(mag<1e-5&&dominant){co=dominant.t.co;si=dominant.t.si;}else{co/=mag;si/=mag;}
+    return {x:co*restX-si*restY+tx,y:si*restX+co*restY+ty};
+  }
+
+  function skinVertex(vertex,rig,frames,length,height,opts){
+    var o=normalizeOptions(opts),restX=-length*vertex.u,restY=(vertex.v-.5)*height,weights=vertex.weights||[];
+    return o.skinMode==='lbs'
+      ? skinPointLBS(restX,restY,weights,rig,frames,length)
+      : skinPointRigid2D(restX,restY,weights,rig,frames,length);
   }
 
   function deformTopology(topology,spine,imageWidth,imageHeight,phase,opts,speedRatio){
     var o=normalizeOptions(opts),iw=Math.max(1,Number(imageWidth)||1),ih=Math.max(1,Number(imageHeight)||1),height=o.length*(ih/iw);
     var pose=poseRig(spine,phase,o,speedRatio),positions=new Float32Array(topology.vertices.length*2),texcoords=new Float32Array(topology.vertices.length*2);
     for(var i=0;i<topology.vertices.length;i++){
-      var v=topology.vertices[i],p=skinVertex(v,pose.rig,pose.frames,o.length,height);
+      var v=topology.vertices[i],p=skinVertex(v,pose.rig,pose.frames,o.length,height,o);
       positions[i*2]=p.x;positions[i*2+1]=p.y;texcoords[i*2]=v.tx;texcoords[i*2+1]=v.ty;
     }
     return {positions:positions,texcoords:texcoords,indices:new Uint16Array(topology.indices),height:height,rig:pose.rig,boneFrames:pose.frames};
@@ -320,6 +347,9 @@
     createWeightedTopology:createWeightedTopology,
     poseRig:poseRig,
     transformRestPoint:transformRestPoint,
+    boneTransform:boneTransform,
+    skinPointLBS:skinPointLBS,
+    skinPointRigid2D:skinPointRigid2D,
     skinVertex:skinVertex,
     deformTopology:deformTopology,
     weightStats:weightStats,
