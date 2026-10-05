@@ -34,7 +34,9 @@ try{
   }));
   assert.equal(initial.version,'1.5.0');
   assert.equal(initial.prepVersion,'1.2.0');
-  assert.equal(initial.influenceVersion,'1.6.0');
+  assert.equal(initial.influenceVersion,'1.7.0');
+  const reactionProfiles=await page.evaluate(()=>NAGWEB_INTERACTION_INFLUENCE.listReactionPresets().map(p=>p.id));
+  assert.deepEqual(reactionProfiles,['soft','displace','tilt','pulse','elastic','heavy']);
   assert.equal(initial.prep.ready,'1');
   assert.ok(initial.prep.text.includes('Recomendación'));
   assert.ok(initial.title.includes('Interaction Engine'));
