@@ -165,6 +165,7 @@
   }
   function readTargetConfig(el){
     var rawWeight=el&&el.getAttribute&&el.getAttribute('data-nw-influence-weight');
+    var rawReturn=el&&el.getAttribute&&el.getAttribute('data-nw-influence-return');
     return {
       id:el&&el.getAttribute&&el.getAttribute('data-nw-target-id')||null,
       weight:rawWeight==null?1:clamp(num(rawWeight,1),0,2),
@@ -173,7 +174,7 @@
         rotate:el&&el.getAttribute&&el.getAttribute('data-nw-influence-rotate'),
         scale:el&&el.getAttribute&&el.getAttribute('data-nw-influence-scale')
       }),
-      returnSpeed:clamp(num(el&&el.getAttribute&&el.getAttribute('data-nw-influence-return'),1),.25,2),
+      returnSpeed:rawReturn==null?1:clamp(num(rawReturn,1),.25,2),
       profile:String(el&&el.getAttribute&&el.getAttribute('data-nw-reaction-profile')||'custom').slice(0,48)
     };
   }

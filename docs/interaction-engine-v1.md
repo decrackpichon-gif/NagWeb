@@ -608,3 +608,12 @@ El browser QA comprueba:
 - borrar nodos y liberar su estado;
 - detectar IDs duplicados;
 - sincronizar automáticamente el field sin reconstruir los targets retenidos.
+
+
+## Studio · registro dinámico conectado
+
+El Studio usa Target Registry 1.1 para observar objetivos activos e inactivos. Altas, bajas y cambios de atributos actualizan el field existente de forma diferencial. Ajustar la fuente o un perfil tampoco reconstruye la física de los objetivos retenidos. Entrar en edición sigue pausando el personaje y separando la prueba de reacción del field principal.
+
+Cuando se elimina un objetivo seleccionado, desaparece de la selección y del panel. La vista previa libera los objetivos eliminados y termina si no queda ninguno. La exportación JSON y los controles usan el mismo parser que el field, incluidos los valores por defecto de un objetivo nuevo. Se corrigió el retorno sin atributo para que sea 100%, coherente con los controles y las sesiones.
+
+El browser smoke comprueba alta, configuración, desactivación y baja dentro del Studio, conservación exacta del estado físico con el field pausado, identidad del field al cambiar fuente, exportación de valores por defecto y eliminación durante una vista previa. Trabajo aislado en `feat/interaction-engine-v1`; sin integración al editor principal ni V4.

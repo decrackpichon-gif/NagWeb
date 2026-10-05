@@ -29,6 +29,30 @@ try{
   assert.equal(init.title,'NagWeb · Interaction Studio');assert.ok(init.quality>=72);assert.equal(init.recommended,'organic');assert.equal(init.mode,'organic');
   assert.equal(init.sessionVersion,'1.8.0-alpha.1');assert.equal(init.reactionProfilesVersion,'1.1.0');assert.equal(init.selectionVersion,'1.0.0');assert.equal(init.assetVersion,'1.2.0');assert.equal(init.organicV2Version,'2.2.0-alpha.1');assert.equal(init.organicV3Version,'3.2.0-alpha.1');assert.equal(init.organicEngine,'mesh-v3');assert.equal(init.influence,true);assert.equal(init.influenceVersion,'1.12.0');
 
+  const lifecycle=await page.evaluate(async()=>{
+    const studio=__NAGWEB_INTERACTION_STUDIO__,field=studio.influenceField;
+    const settle=()=>new Promise(r=>setTimeout(r,30));
+    field.pause();field.impulseTarget('headline-0',{x:31,y:-9,rotation:4,scale:.03,strength:1});
+    const before=field.getTargetState('headline-0');
+    const el=document.createElement('button');el.textContent='Objetivo dinámico';
+    el.setAttribute('data-nw-target-id','studio-dynamic');el.setAttribute('data-nw-reactive','1');
+    document.querySelector('#stage').append(el);await settle();
+    const added={same:studio.influenceField===field,count:field.targetCount,state:field.getTargetState('headline-0'),config:studio.getSession().influenceOptions.targetSelection.find(t=>t.id==='studio-dynamic')};
+    el.setAttribute('data-nw-influence-weight','.61');el.setAttribute('data-nw-influence-rotate','0');el.setAttribute('data-nw-influence-return','1.7');await settle();
+    const changed={weight:field.getTargetWeight('studio-dynamic'),response:field.getTargetResponse('studio-dynamic'),speed:field.getTargetReturnSpeed('studio-dynamic')};
+    const select=document.querySelector('#influenceSource'),old=select.value;select.value='head';select.dispatchEvent(new Event('change',{bubbles:true}));
+    const options={same:studio.influenceField===field,state:field.getTargetState('headline-0')};select.value=old;select.dispatchEvent(new Event('change',{bubbles:true}));
+    el.setAttribute('data-nw-reactive','0');await settle();const disabled=!field.hasTarget('studio-dynamic');
+    studio.selectTargets(['studio-dynamic']);el.remove();await settle();const removed={count:field.targetCount,selection:studio.selectedTargetIds,hidden:document.querySelector('#targetEditor').hidden};field.resume();
+    document.querySelector('#editTargets').click();
+    const preview=document.createElement('button');preview.textContent='Vista temporal';preview.setAttribute('data-nw-target-id','studio-preview');preview.setAttribute('data-nw-reactive','1');document.querySelector('#stage').append(preview);await settle();studio.selectTargets(['studio-preview']);studio.previewTargets();const previewStarted=studio.previewActive;preview.remove();await settle();const previewCleared=!studio.previewActive&&studio.selectedTargetIds.length===0;document.querySelector('#editTargets').click();
+    return {before,added,changed,options,disabled,removed,previewStarted,previewCleared};
+  });
+  assert.equal(lifecycle.added.same,true);assert.equal(lifecycle.added.count,11);assert.deepEqual(lifecycle.added.state,lifecycle.before,'Adding a target must retain the physical state of existing targets');
+  assert.equal(lifecycle.added.config.weight,1);assert.deepEqual(lifecycle.added.config.response,{move:1,rotate:1,scale:1});assert.equal(lifecycle.added.config.returnSpeed,1,'Export uses the same defaults as the field');
+  assert.deepEqual(lifecycle.changed,{weight:.61,response:{move:1,rotate:0,scale:1},speed:1.7});assert.equal(lifecycle.options.same,true);assert.deepEqual(lifecycle.options.state,lifecycle.before,'Changing the source must retain existing target motion');
+  assert.equal(lifecycle.disabled,true);assert.deepEqual(lifecycle.removed,{count:10,selection:[],hidden:true});assert.equal(lifecycle.previewStarted,true);assert.equal(lifecycle.previewCleared,true);
+
   const stage=await page.$eval('#stage',el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height};});
   const head0=await page.evaluate(()=>({x:__NAGWEB_INTERACTION_STUDIO__.follower.state.x,y:__NAGWEB_INTERACTION_STUDIO__.follower.state.y}));
   await page.mouse.move(stage.x+stage.w*.76,stage.y+stage.h*.28);await new Promise(r=>setTimeout(r,550));

@@ -20,6 +20,8 @@ assert.deepEqual(I.readTargetConfig(fakeConfigEl),{
   id:'cfg-a',weight:1.7,response:{move:0,rotate:1.4,scale:.25},returnSpeed:1.6,profile:'custom-x'
 });
 
+assert.deepEqual(I.readTargetConfig({getAttribute(){return null;}}),{id:null,weight:1,response:{move:1,rotate:1,scale:1},returnSpeed:1,profile:'custom'});
+
 const o=I.normalizeOptions({radius:100,strength:1,maxPush:50,maxRotate:10,maxScale:.1,spring:.08,damping:.84,sourceRadius:0});
 const far=I.computeRepulsion({x:0,y:0},{x:150,y:0,radius:0},o);
 assert.equal(far.strength,0);assert.equal(far.x,0);
