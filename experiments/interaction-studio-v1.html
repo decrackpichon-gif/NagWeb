@@ -289,7 +289,11 @@
       prepResult=await pipeline.prepare(sourceImage,{fileSizeBytes:currentFile&&currentFile.size||0,modeOverride:'auto'});
       await setPreparedVisual(prepResult.image);autoAxis();setStep(3);
       var q=prepResult.report.quality;
-      status('Compatibilidad '+q.label+' · '+q.score+'/100 · recomendado: '+prepResult.report.recommendedMode+(prepResult.report.aiFallback?' · IA falló, original preservado':''),q.score>=72?'good':'warn');
+      if(prepResult.report.bodyProfileRecommendation){
+        document.getElementById('bodyProfile').value=prepResult.report.bodyProfileRecommendation;
+        applyBodyProfile(prepResult.report.bodyProfileRecommendation);
+      }
+      status('Compatibilidad '+q.label+' · '+q.score+'/100 · recomendado: '+prepResult.report.recommendedMode+(prepResult.report.bodyProfileRecommendation?' · perfil '+prepResult.report.bodyProfileRecommendation:'')+(prepResult.report.aiFallback?' · IA falló, original preservado':''),q.score>=72?'good':'warn');
       updateModeUI();syncMotion();updateInfluence();
     }catch(err){
       if(err&&err.name==='AbortError')status('Preparación cancelada. El original sigue intacto.','warn');
