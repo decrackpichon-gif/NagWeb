@@ -231,7 +231,17 @@
     try{
       if(requested==='mesh-v3'){
         organicPrepared=await M.prepareAsset(asset,prepResult.analysis,{paddingRatio:.015,profile:profile});
-        organicRenderer=M.createRenderer(Object.assign({leader:follower,canvas:meshCanvas,area:stage,image:organicPrepared.canvas},organicV3Opts()));
+        organicRenderer=M.createRenderer(Object.assign({
+          leader:follower,canvas:meshCanvas,area:stage,image:organicPrepared.canvas,
+          onContextLost:function(){
+            setTimeout(function(){
+              if(activeOrganicEngine!=='mesh-v3'||activeMode!=='organic')return;
+              document.getElementById('organicEngine').value='slices-v2';
+              status('WebGL se perdió. Cambiando automáticamente a Slices V2.2…','warn');
+              prepareOrganic();
+            },0);
+          }
+        },organicV3Opts()));
         activeOrganicEngine='mesh-v3';
         status('Listo · Mesh V3 continuo · '+organicPrepared.width+'×'+organicPrepared.height+' · '+organicRenderer.topology.vertexCount+' vértices','good');
       }else{
