@@ -34,7 +34,7 @@ try{
   }));
   assert.equal(initial.version,'1.5.0');
   assert.equal(initial.prepVersion,'1.2.0');
-  assert.equal(initial.influenceVersion,'1.10.0');
+  assert.equal(initial.influenceVersion,'1.11.0');
   assert.equal(initial.prep.ready,'1');
   assert.ok(initial.prep.text.includes('Recomendación'));
   assert.ok(initial.title.includes('Interaction Engine'));
@@ -196,6 +196,51 @@ try{
   assert.ok(broadphase.rewake.wakes>broadphase.wakesBefore,'nearby targets should wake when the body returns');
   assert.ok(broadphase.rewake.sleepingTargets<120,'returning body should reactivate nearby targets');
 
+  const dynamicTargets=await page.evaluate(async()=>{
+    const stage=document.querySelector('#stage'),sr=stage.getBoundingClientRect();
+    function make(id,left){
+      const el=document.createElement('div');
+      el.setAttribute('data-nw-target-id',id);
+      el.style.cssText='position:absolute;width:18px;height:18px;left:'+left+'px;top:80px;pointer-events:none';
+      stage.appendChild(el);return el;
+    }
+    const a=make('dyn-a',80),b=make('dyn-b',140),c=make('dyn-c',200);
+    const field=NAGWEB_INTERACTION_INFLUENCE.createField({
+      source:()=>({x:sr.right+5000,y:sr.bottom+5000}),
+      targets:[a],
+      radius:80
+    });
+    field.setTargetWeight('dyn-a',.4);
+    field.impulseTarget('dyn-a',{x:30,y:-8,rotation:4,scale:.04,strength:1});
+    const aBefore=field.getTargetState('dyn-a');
+    const added=field.addTarget(b);
+    const duplicate=field.addTarget(b);
+    const aAfterAdd=field.getTargetState('dyn-a');
+    const countAfterAdd=field.targetCount;
+    const setCount=field.setTargets([a,b,c]);
+    const aAfterSet=field.getTargetState('dyn-a');
+    const weightAfterSet=field.getTargetWeight('dyn-a');
+    const removed=field.removeTarget('dyn-a');
+    const removedState=field.getTargetState('dyn-a');
+    const restoredA={translate:a.style.translate,rotate:a.style.rotate,scale:a.style.scale};
+    field.setTargetWeight('dyn-b',.73);
+    field.setTargets([b]);
+    const final={count:field.targetCount,bWeight:field.getTargetWeight('dyn-b'),hasB:field.hasTarget('dyn-b'),hasC:field.hasTarget('dyn-c')};
+    field.destroy();[a,b,c].forEach(el=>el.remove());
+    return {added,duplicate,countAfterAdd,setCount,aBefore,aAfterAdd,aAfterSet,weightAfterSet,removed,removedState,restoredA,final};
+  });
+  assert.equal(dynamicTargets.added,true);
+  assert.equal(dynamicTargets.duplicate,false,'adding the same DOM target twice should be ignored');
+  assert.equal(dynamicTargets.countAfterAdd,2);
+  assert.equal(dynamicTargets.setCount,3);
+  assert.equal(dynamicTargets.aAfterAdd.x,dynamicTargets.aBefore.x,'adding another target must preserve existing target state');
+  assert.equal(dynamicTargets.aAfterSet.x,dynamicTargets.aBefore.x,'setTargets diff must preserve retained target state');
+  assert.equal(dynamicTargets.weightAfterSet,.4,'setTargets diff must preserve retained target configuration');
+  assert.equal(dynamicTargets.removed,true);
+  assert.equal(dynamicTargets.removedState,null);
+  assert.deepEqual(dynamicTargets.restoredA,{translate:'',rotate:'',scale:''},'removing a target must restore its motion styles');
+  assert.deepEqual(dynamicTargets.final,{count:1,bWeight:.73,hasB:true,hasC:false});
+
   const composed=await page.evaluate(async()=>{
     const stage=document.querySelector('#stage'),d=document.createElement('div');
     d.style.cssText='position:absolute;left:0;top:0;width:40px;height:40px;transform:rotate(12deg);background:#fff';
@@ -244,7 +289,7 @@ try{
   assert.ok(Math.hypot(r1.x-r0.x,r1.y-r0.y)<1,'reduced motion should keep follower resting');
   await reduced.close();
 
-  console.log('NagWeb Interaction Engine V1.10 sleep-wake browser smoke: PASS');
+  console.log('NagWeb Interaction Engine V1.11 dynamic-target browser smoke: PASS');
 } finally {
   await browser.close();
 }
