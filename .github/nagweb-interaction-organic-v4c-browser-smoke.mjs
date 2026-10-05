@@ -27,10 +27,13 @@ try{
     analysis:__NAGWEB_V4C_AB__.analysis
   }));
   if(!boot.ready)throw new Error('V4-C A/B boot failed · '+JSON.stringify({boot,errors,consoleErrors}));
-  assert.equal(boot.v3Version,'3.2.0-alpha.1');assert.equal(boot.v4bVersion,'4.2.0-alpha.1');assert.equal(boot.v4cVersion,'4.3.0-alpha.1');
+  assert.equal(boot.v3Version,'3.2.0-alpha.1');assert.equal(boot.v4bVersion,'4.2.0-alpha.1');assert.equal(boot.v4cVersion,'4.3.1-alpha.1');
   assert.equal(boot.renderer,'webgl-adaptive-curve-v4c');assert.equal(boot.opts.adaptivePreset,'character');
+  assert.equal(boot.opts.thicknessGuard,true);assert.equal(boot.opts.preserveLocalControlDips,true);
   assert.equal(boot.summary.controlCount,9);assert.ok(boot.summary.maxWidth>boot.summary.minWidth);
   assert.ok(boot.controls.details.some(d=>Math.abs(d.flex-d.baseFlex)>.005||Math.abs(d.bend-d.baseBend)>.005),'adaptive silhouette should alter controls');
+  assert.ok(boot.controls.details.some(d=>d.geometryCapped),'thickness guard should cap at least one fallback silhouette zone');
+  assert.ok(boot.controls.details.filter(d=>d.geometryCapped).every(d=>d.bend<=d.safeBend+1e-9),'capped controls must stay under local safe bend');
   assert.equal(boot.analysis.silhouetteReliable,true);
   assert.equal(await page.$eval('#lengthOut',el=>el.value),'380 px');
 
