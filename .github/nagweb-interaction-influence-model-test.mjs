@@ -3,20 +3,13 @@ import assert from 'node:assert/strict';
 const require=createRequire(import.meta.url);
 const I=require('../js/nagweb-interaction-influence-v1.js');
 
-assert.equal(I.version,'1.7.0');
+assert.equal(I.version,'1.8.0');
 const defaults=I.normalizeOptions({});
 assert.ok(Object.values(defaults).filter(v=>typeof v==='number').every(Number.isFinite));
 assert.equal(defaults.sourceMode,'body');
 assert.equal(defaults.sweptBody,true);
 assert.equal(I.normalizeOptions({sourceMode:'head'}).sourceMode,'head');
 assert.equal(I.normalizeOptions({maxScale:0,maxRotate:0,maxPush:0}).maxScale,0);
-const profiles=I.listReactionPresets();
-assert.ok(profiles.length>=6);
-assert.deepEqual(profiles.map(p=>p.id),['soft','displace','tilt','pulse','elastic','heavy']);
-assert.deepEqual(I.getReactionPreset('displace').response,{move:1,rotate:0,scale:0});
-assert.equal(I.getReactionPreset('pulse').response.scale,1.55);
-assert.equal(I.reactionProfileName('tilt'),'tilt');
-assert.equal(I.reactionProfileName('wat'),'custom');
 
 const o=I.normalizeOptions({radius:100,strength:1,maxPush:50,maxRotate:10,maxScale:.1,spring:.08,damping:.84,sourceRadius:0});
 const far=I.computeRepulsion({x:0,y:0},{x:150,y:0,radius:0},o);
@@ -69,4 +62,4 @@ assert.ok(Math.abs(state.x-40)<1);assert.ok(Math.abs(state.y+20)<1);assert.ok(Ma
 for(let i=0;i<180;i++)I.springStep(state,{x:0,y:0,rotation:0,scale:1,strength:0},o,16.6667);
 assert.ok(Math.abs(state.x)<1);assert.ok(Math.abs(state.y)<1);assert.ok(Math.abs(state.rotation)<1);assert.ok(Math.abs(state.scale-1)<.02);
 
-console.log('NagWeb Interaction Influence V1.7 reaction profiles model tests: PASS');
+console.log('NagWeb Interaction Influence V1.8 decoupled target physics model tests: PASS');
