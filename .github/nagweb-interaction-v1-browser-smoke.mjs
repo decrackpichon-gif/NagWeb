@@ -34,7 +34,7 @@ try{
   }));
   assert.equal(initial.version,'1.5.0');
   assert.equal(initial.prepVersion,'1.2.0');
-  assert.equal(initial.influenceVersion,'1.11.0');
+  assert.equal(initial.influenceVersion,'1.12.0');
   assert.equal(initial.prep.ready,'1');
   assert.ok(initial.prep.text.includes('Recomendación'));
   assert.ok(initial.title.includes('Interaction Engine'));
@@ -289,7 +289,7 @@ try{
   assert.ok(Math.hypot(r1.x-r0.x,r1.y-r0.y)<1,'reduced motion should keep follower resting');
   await reduced.close();
 
-  console.log('NagWeb Interaction Engine V1.11 dynamic-target browser smoke: PASS');
+  console.log('NagWeb Interaction Engine V1.12 declarative-config browser smoke: PASS');
 } finally {
   await browser.close();
 }
