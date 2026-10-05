@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+const scope={window:{}};vm.runInNewContext(fs.readFileSync('js/nagweb-story-model.js','utf8'),scope);const model=scope.window.NAGWEB_STREAM_MODEL,plain=x=>JSON.parse(JSON.stringify(x)),c=model.config({kind:'ticker-tilt',backgroundType:'none'});
+assert.equal(c.zoom,32);assert.equal(c.tilt,30);assert.equal(c.perspective,60);assert.equal(c.flow,'opposed');assert.equal(c.direction,'left');assert.equal(c.cardRatio,'1:1');assert.equal(c.staggerDelay,8);assert.equal(c.backgroundType,'none');
+for(const [width,height] of [[1280,720],[390,844]])for(const count of [4,12,24])for(const tilt of [-55,0,55])for(const flow of ['opposed','same','staggered']){
+ const cfg={...c,tilt,flow,frameRatio:'auto'},layout=p=>model.layout(width,height,cfg,p,count),first=layout(0);assert.equal(first.length,count);assert.deepEqual(plain(first),plain(layout(1)),'Complete cycles close exactly');const seen=Array(count).fill(false);
+ for(const progress of Array.from({length:40},(_,i)=>i/40))for(const card of layout(progress)){
+  seen[card.slot]||=card.visible;assert.equal(card.instances.length>0,card.visible);assert.ok(card.width<=width+.001&&card.height<=height+.001,'Only viewport bounds are allocated');assert.equal(card.textureWidth,first[card.slot].textureWidth);assert.equal(card.textureHeight,first[card.slot].textureHeight);
+  for(const instance of card.instances){assert.equal(instance.vertical,true);assert.ok(instance.upper.length>=2);assert.equal(instance.upper.length,instance.lower.length);for(const p of [...instance.upper,...instance.lower])assert.ok(Number.isFinite(p.x)&&Number.isFinite(p.y));assert.ok(instance.upper.at(-1).y>instance.upper[0].y);}
+ }
+ assert.ok(seen.every(Boolean),'Every source image passes through the visible plane');
+ const a=layout(.21),b=model.layout(width*2,height*2,cfg,.21,count);for(let i=0;i<count;i++){assert.equal(a[i].instances.length,b[i].instances.length);for(let j=0;j<a[i].instances.length;j++)for(let k=0;k<4;k++)for(const axis of ['x','y'])assert.ok(Math.abs(a[i].instances[j].polygon[k][axis]*2-b[i].instances[j].polygon[k][axis])<1e-7,'Mouse scaling preserves the arrangement');}
+}
+const flat={...c,tilt:0,frameRatio:'auto'},a=model.layout(1000,600,flat,.1,4),b=model.layout(1000,600,flat,.105,4);let checked=0;
+for(const card of a)for(const tile of card.instances){const next=b[card.slot].instances.filter(t=>t.row===tile.row).sort((u,v)=>Math.abs(u.polygon[0].x-tile.polygon[0].x)-Math.abs(v.polygon[0].x-tile.polygon[0].x))[0];if(!next)continue;const dx=next.polygon[0].x-tile.polygon[0].x;if(Math.abs(dx)>100)continue;assert.ok(tile.row%2?dx>0:dx<0,'Opposed rows move in different directions');assert.equal(next.polygon[0].y,tile.polygon[0].y);checked++;}assert.ok(checked>4);
+assert.ok(a.some(card=>card.instances.length>1),'Several visual copies share a single editable source');
+const pose=(cfg,p)=>plain(model.layout(1280,720,cfg,p,12));assert.notDeepEqual(pose({...c,flow:'same'},.21),pose(c,.21));assert.notDeepEqual(pose({...c,flow:'staggered'},.21),pose(c,.21));assert.notDeepEqual(pose({...c,flow:'staggered',staggerDelay:20},.21),pose({...c,flow:'staggered',staggerDelay:2},.21));assert.notDeepEqual(pose({...c,tilt:0},.21),pose(c,.21));
+const sequence={...c,turns:3,start:20,end:80};assert.equal(model.phase(.1,sequence,true),0);assert.equal(model.phase(.5,sequence,true),1.5);assert.equal(model.phase(.9,sequence,true),3);assert.deepEqual(plain(model.layout(1280,720,sequence,.1,12,1,true)),plain(model.layout(1280,720,sequence,.9,12,1,true)));
+assert.equal(model.config({kind:'ticker-tilt',tilt:-1000}).tilt,-55);assert.equal(model.config({kind:'ticker-tilt',zoom:1000}).zoom,60);assert.equal(model.config({kind:'ticker-tilt',perspective:1000}).perspective,100);assert.equal(model.config({kind:'ticker-tilt',flow:'invalid',direction:'invalid'}).flow,'opposed');assert.equal(model.layout(1280,720,c,0,100).length,24);
+const serialized=vm.runInNewContext('('+scope.window.NAGWEB_CREATE_STREAM_MODEL.toString()+')()');assert.deepEqual(plain(serialized.layout(1280,720,{...sequence,tilt:-45,flow:'staggered'},.32,24,1,true)),plain(model.layout(1280,720,{...sequence,tilt:-45,flow:'staggered'},.32,24,1,true)));
+console.log('Ticker Tilt: 4–24 imágenes, copias enlazadas, plano/perspectiva, filas opuestas/uniformes/escalonadas, ciclo exacto, recursos acotados, escala proporcional, Scroll y fábrica exportada OK');

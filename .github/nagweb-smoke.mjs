@@ -38,6 +38,8 @@ import {runMotionExpandSmoke} from './nagweb-motion-expand-smoke.mjs';
 import {runMotionDropSmoke} from './nagweb-motion-drop-smoke.mjs';
 import {runMotionStreamSmoke} from './nagweb-motion-stream-smoke.mjs';
 import {runMotionStreamPlacementSmoke} from './nagweb-motion-stream-placement-smoke.mjs';
+import './nagweb-ticker-model-test.mjs';
+import {runMotionTickerSmoke} from './nagweb-motion-ticker-smoke.mjs';
 import './nagweb-orbit-bloom-model-test.mjs';
 import {runMotionOrbitBloomDepthSmoke} from './nagweb-motion-orbit-bloom-depth-smoke.mjs';
 import {runMotionOrbitBloomSmoke} from './nagweb-motion-orbit-bloom-smoke.mjs';
@@ -230,6 +232,8 @@ if(workspaceState.leftToggles!==1||workspaceState.rightToggles!==1) throw new Er
 if(Math.abs(workspaceState.rightWidth-savedInspectorWidth)>3) throw new Error('Inspector width did not survive reload: '+JSON.stringify({workspaceState,savedInspectorWidth}));
 await page.click('.nw-dock-toggle.left');
 
+await runMotionTickerSmoke(page);
+await runMotionStreamPlacementSmoke(page,'ticker-tilt');
 await runMotionOrbitBloomDepthSmoke(page);
 await runMotionOrbitBloomSmoke(page);
 await runMotionStreamPlacementSmoke(page,'orbit-bloom');
