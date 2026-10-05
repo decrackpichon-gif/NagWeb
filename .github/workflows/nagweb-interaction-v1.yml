@@ -22,6 +22,8 @@ on:
       - '.github/nagweb-interaction-v1-*.mjs'
       - '.github/nagweb-interaction-session-model-test.mjs'
       - '.github/nagweb-interaction-selection-model-test.mjs'
+      - '.github/nagweb-interaction-target-registry-model-test.mjs'
+      - '.github/nagweb-interaction-target-registry-browser-smoke.mjs'
       - '.github/nagweb-interaction-reaction-profiles-model-test.mjs'
       - '.github/nagweb-interaction-studio-browser-smoke.mjs'
       - '.github/workflows/nagweb-interaction-v1.yml'
@@ -35,6 +37,7 @@ on:
       - 'js/nagweb-interaction-influence-v1.js'
       - 'js/nagweb-interaction-reaction-profiles-v1.js'
       - 'js/nagweb-interaction-selection-v1.js'
+      - 'js/nagweb-interaction-target-registry-v1.js'
       - 'js/nagweb-interaction-organic-v2.js'
       - 'js/nagweb-interaction-organic-v3.js'
       - 'js/nagweb-interaction-background-ai-v1.js'
@@ -74,6 +77,7 @@ jobs:
           node .github/nagweb-interaction-influence-model-test.mjs
           node .github/nagweb-interaction-reaction-profiles-model-test.mjs
           node .github/nagweb-interaction-selection-model-test.mjs
+          node .github/nagweb-interaction-target-registry-model-test.mjs
           node .github/nagweb-interaction-organic-model-test.mjs
           node .github/nagweb-interaction-organic-v3-model-test.mjs
           node .github/nagweb-interaction-background-ai-model-test.mjs
@@ -93,6 +97,7 @@ jobs:
           node .github/nagweb-interaction-background-ai-browser-smoke.mjs
           node .github/nagweb-interaction-preparation-browser-smoke.mjs
           node .github/nagweb-interaction-studio-browser-smoke.mjs
+          node .github/nagweb-interaction-target-registry-browser-smoke.mjs
       - name: Build human QA kit
         run: |
           mkdir -p /tmp/nagweb-interaction-studio/experiments /tmp/nagweb-interaction-studio/js
@@ -103,6 +108,7 @@ jobs:
           cp js/nagweb-interaction-influence-v1.js /tmp/nagweb-interaction-studio/js/
           cp js/nagweb-interaction-reaction-profiles-v1.js /tmp/nagweb-interaction-studio/js/
           cp js/nagweb-interaction-selection-v1.js /tmp/nagweb-interaction-studio/js/
+          cp js/nagweb-interaction-target-registry-v1.js /tmp/nagweb-interaction-studio/js/
           cp js/nagweb-interaction-organic-v2.js /tmp/nagweb-interaction-studio/js/
           cp js/nagweb-interaction-organic-v3.js /tmp/nagweb-interaction-studio/js/
           cp experiments/organic-follower-v3.html /tmp/nagweb-interaction-studio/experiments/
