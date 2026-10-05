@@ -76,7 +76,7 @@ try{
   assert.equal(await page.$eval('#influenceTargets',el=>el.value),'custom');
 
   const marqueeBox=await page.$eval('[data-nw-target-id^="headline-"]',els=>{
-    const rs=els.slice(0,4).map(el=>el.getBoundingClientRect());
+    const rs=Array.from(els).slice(0,4).map(el=>el.getBoundingClientRect());
     return {
       left:Math.min(...rs.map(r=>r.left))-8,
       top:Math.min(...rs.map(r=>r.top))-8,
