@@ -35,6 +35,7 @@ try{
     await new Promise(r=>setTimeout(r,40));
     const afterAdd={ids:registry.ids,count:field.targetCount,aWeight:field.getTargetWeight('reg-a')};
 
+    field.pause();
     field.impulseTarget('reg-a',{x:28,y:-7,rotation:4,scale:.03,strength:1});
     const beforeConfigState=field.getTargetState('reg-a');
     a.setAttribute('data-nw-influence-weight','.77');
@@ -52,6 +53,7 @@ try{
       state:field.getTargetState('reg-a'),
       revision:registry.revision
     };
+    field.resume();
 
     a.remove();
     await new Promise(r=>setTimeout(r,40));
