@@ -38,6 +38,8 @@ import {runMotionExpandSmoke} from './nagweb-motion-expand-smoke.mjs';
 import {runMotionDropSmoke} from './nagweb-motion-drop-smoke.mjs';
 import {runMotionStreamSmoke} from './nagweb-motion-stream-smoke.mjs';
 import {runMotionStreamPlacementSmoke} from './nagweb-motion-stream-placement-smoke.mjs';
+import './nagweb-focus-model-test.mjs';
+import {runMotionFocusSmoke,runMotionFocusDepthSmoke} from './nagweb-motion-focus-smoke.mjs';
 import './nagweb-stack-model-test.mjs';
 import {runMotionStackSmoke} from './nagweb-motion-stack-smoke.mjs';
 import './nagweb-carousel-model-test.mjs';
@@ -242,6 +244,9 @@ if(Math.abs(workspaceState.rightWidth-savedInspectorWidth)>3) throw new Error('I
 await page.click('.nw-dock-toggle.left');
 
 if(suite!=='editor'){
+await runMotionFocusSmoke(page);
+await runMotionFocusDepthSmoke(page);
+await runMotionStreamPlacementSmoke(page,'iso-focus-sequence');
 await runMotionStackSmoke(page);
 await runMotionStreamPlacementSmoke(page,'stack-slide');
 await runMotionCarouselSmoke(page);
