@@ -348,16 +348,25 @@
       return {id:config.id,enabled:el.getAttribute('data-nw-reactive')==='1',weight:config.weight,response:config.response,returnSpeed:config.returnSpeed,profile:R.normalizeId(config.profile)};
     });
   }
-  function syncRegisteredTargets(){
-    var ids=influenceCandidates().map(function(el){return el.getAttribute('data-nw-target-id');});
-    selectedTargetIds=selectedTargetIds.filter(function(id){return ids.indexOf(id)>=0;});
-    if(previewField){
-      var els=selectedInfluenceTargets();
-      if(!els.length)clearTargetPreview();
-      else {previewField.setTargets(els);previewField.syncTargets();}
+  function syncRegisteredTargets(state){
+    var structural=!state||state.structureChanged||state.membershipChanged||state.fullSync;
+    if(structural){
+      var ids=influenceCandidates().map(function(el){return el.getAttribute('data-nw-target-id');});
+      selectedTargetIds=selectedTargetIds.filter(function(id){return ids.indexOf(id)>=0;});
     }
-    if(influenceField){influenceField.setTargets(influenceTargetList());influenceField.syncTargets();}
-    renderTargetSelection(selectedTargetId);
+    function syncField(field,els){
+      if(!field)return;
+      if(structural)field.setTargets(els());
+      if(!state||state.fullSync)field.syncTargets();
+      else (state.updated||[]).forEach(function(el){field.syncTarget(el);});
+    }
+    if(previewField){
+      if(structural&&!selectedInfluenceTargets().length)clearTargetPreview();
+      else syncField(previewField,selectedInfluenceTargets);
+    }
+    syncField(influenceField,influenceTargetList);
+    var selectedChanged=state&&(state.updated||[]).some(function(el){return selectedTargetIds.indexOf(el.getAttribute('data-nw-target-id'))>=0;});
+    if(structural||selectedChanged)renderTargetSelection(selectedTargetId);
   }
   function refreshTargetVisuals(){
     var list=influenceCandidates(),active=list.filter(function(el){return el.getAttribute('data-nw-reactive')==='1';});

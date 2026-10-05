@@ -38,6 +38,11 @@ try{
     field.pause();
     field.impulseTarget('reg-a',{x:28,y:-7,rotation:4,scale:.03,strength:1});
     const beforeConfigState=field.getTargetState('reg-a');
+    const calls={membership:0,all:0,updated:[]},setTargets=field.setTargets,syncTargets=field.syncTargets,syncTarget=field.syncTarget;
+    field.setTargets=function(list){calls.membership++;return setTargets(list);};
+    field.syncTargets=function(){calls.all++;return syncTargets();};
+    field.syncTarget=function(el){calls.updated.push(el.getAttribute('data-nw-target-id'));return syncTarget(el);};
+    let detail=null;const stopDetail=registry.subscribe(s=>{detail={updated:s.updated.map(el=>el.getAttribute('data-nw-target-id')),structure:s.structureChanged,config:s.configChanged};});
     a.setAttribute('data-nw-influence-weight','.77');
     a.setAttribute('data-nw-influence-move','0');
     a.setAttribute('data-nw-influence-rotate','1');
@@ -53,6 +58,11 @@ try{
       state:field.getTargetState('reg-a'),
       revision:registry.revision
     };
+    const incremental={calls:JSON.parse(JSON.stringify(calls)),detail};
+    // Structural and configuration changes in one batch must retain both kinds of information.
+    const d=make('reg-d',320);b.setAttribute('data-nw-influence-weight','.33');await new Promise(r=>setTimeout(r,40));
+    const mixedBatch={count:field.targetCount,weight:field.getTargetWeight('reg-b'),detail};
+    d.remove();await new Promise(r=>setTimeout(r,40));stopDetail();
     field.resume();
 
     a.remove();
@@ -66,7 +76,7 @@ try{
     await new Promise(r=>setTimeout(r,20));
 
     unbind();registry.destroy();field.destroy();root.remove();
-    return {initial,enabled,afterAdd,afterConfig,beforeConfigState,afterRemove,duplicates,changes};
+    return {initial,enabled,afterAdd,afterConfig,beforeConfigState,afterRemove,duplicates,changes,incremental,mixedBatch};
   });
 
   assert.deepEqual(result.initial,{ids:['reg-a'],count:1});
@@ -77,9 +87,13 @@ try{
   assert.equal(result.afterConfig.returnSpeed,1.65);assert.equal(result.afterConfig.profile,'external-profile');
   assert.equal(result.afterConfig.state.x,result.beforeConfigState.x,'attribute sync must preserve physical state');
   assert.equal(result.afterConfig.state.y,result.beforeConfigState.y,'attribute sync must preserve physical state');
+  assert.deepEqual(result.incremental.calls,{membership:0,all:0,updated:['reg-a']},'Six attribute changes synchronize one target without remeasuring the field');
+  assert.deepEqual(result.incremental.detail,{updated:['reg-a'],structure:false,config:true});
+  assert.equal(result.mixedBatch.count,4);assert.equal(result.mixedBatch.weight,.33);
+  assert.equal(result.mixedBatch.detail.structure,true);assert.equal(result.mixedBatch.detail.config,true);assert.deepEqual(result.mixedBatch.detail.updated,['reg-b']);
   assert.deepEqual(result.afterRemove.ids,['reg-b','reg-c']);assert.equal(result.afterRemove.count,2);assert.equal(result.afterRemove.aState,null);
   assert.deepEqual(result.duplicates,['reg-c']);
   assert.ok(result.changes.length>=4,'registry should publish coalesced membership changes');
   assert.equal(errors.length,0,'registry smoke should have no page errors: '+errors.join('\n'));
-  console.log('NagWeb Interaction Target Registry V1.1 config-sync browser smoke: PASS');
+  console.log('NagWeb Interaction Target Registry V1.2 incremental browser smoke: PASS');
 }finally{await browser.close();}

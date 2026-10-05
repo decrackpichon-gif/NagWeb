@@ -8,7 +8,7 @@
   if(root) root.NAGWEB_INTERACTION_TARGET_REGISTRY=api;
 })(typeof window!=='undefined'?window:globalThis,function(){
   'use strict';
-  var VERSION='1.1.0';
+  var VERSION='1.2.0';
   function uniqueElements(list){
     return Array.from(new Set((Array.isArray(list)?list:Array.from(list||[])).filter(Boolean)));
   }
@@ -39,14 +39,15 @@
     var activeAttribute=input.activeAttribute||'data-nw-reactive';
     var includeInactive=input.includeInactive===true;
     var activeValue=input.activeValue==null?'1':String(input.activeValue);
-    var listeners=new Set(),elements=[],revision=0,destroyed=false,pending=false,pendingReason=null,observer=null,fieldBindings=new Set();
+    var listeners=new Set(),elements=[],revision=0,destroyed=false,pending=false,pendingReason=null,observer=null,fieldBindings=new Set(),pendingUpdated=new Set(),pendingStructure=false;
 
     function collect(){
       var list=Array.from(root.querySelectorAll(selector));
       if(!includeInactive)list=list.filter(function(el){return el.getAttribute(activeAttribute)===activeValue;});
       return uniqueElements(list);
     }
-    function snapshot(diff,reason){
+    function snapshot(diff,reason,details){
+      details=details||{};
       return {
         version:VERSION,
         revision:revision,
@@ -58,27 +59,34 @@
         retained:(diff&&diff.retained||[]).slice(),
         duplicates:duplicateIds(elements,'data-nw-target-id'),
         membershipChanged:!!(diff&&((diff.added&&diff.added.length)||(diff.removed&&diff.removed.length))),
-        configChanged:reason==='attributes'
+        configChanged:reason==='attributes'||!!(details.updated&&details.updated.length),
+        updated:uniqueElements(details.updated||[]).filter(function(el){return elements.indexOf(el)>=0;}),
+        structureChanged:!!details.structureChanged,
+        fullSync:reason==='manual'||reason==='subscribe'
       };
     }
-    function refresh(reason){
+    function refresh(reason,details){
       if(destroyed)return snapshot(null,'destroyed');
-      var next=collect(),diff=diffElements(elements,next);
+      var next=reason==='attributes'?elements.slice():collect(),diff=diffElements(elements,next);
       var changed=diff.added.length||diff.removed.length;
       var shouldNotify=!!changed||reason==='manual'||reason==='attributes'||reason==='mutation';
       elements=next;
       if(shouldNotify)revision++;
-      var state=snapshot(diff,reason||'refresh');
+      var state=snapshot(diff,reason||'refresh',details);
       if(shouldNotify)listeners.forEach(function(fn){fn(state);});
       return state;
     }
-    function schedule(reason){
+    function schedule(reason,updated,structural){
       if(destroyed)return;
+      uniqueElements(updated||[]).forEach(function(el){pendingUpdated.add(el);});
+      pendingStructure=pendingStructure||!!structural;
       if(reason==='mutation'||!pendingReason)pendingReason=reason||'mutation';
       if(pending)return;
       pending=true;
       Promise.resolve().then(function(){
-        var nextReason=pendingReason||'mutation';pending=false;pendingReason=null;refresh(nextReason);
+        var nextReason=pendingReason||'mutation',details={updated:Array.from(pendingUpdated),structureChanged:pendingStructure};
+        pending=false;pendingReason=null;pendingUpdated.clear();pendingStructure=false;
+        if(!destroyed)refresh(nextReason,details);
       });
     }
     function subscribe(fn,options){
@@ -91,8 +99,10 @@
       if(!field||typeof field.setTargets!=='function')throw new Error('NagWeb Target Registry: field.setTargets() is required');
       field.setTargets(elements);
       var unsub=subscribe(function(state){
-        field.setTargets(state.elements);
-        if(typeof field.syncTargets==='function')field.syncTargets();
+        if(state.structureChanged||state.membershipChanged||state.fullSync)field.setTargets(state.elements);
+        if(state.fullSync||typeof field.syncTarget!=='function'){
+          if(typeof field.syncTargets==='function')field.syncTargets();
+        }else uniqueElements(state.updated.concat(state.added)).forEach(function(el){field.syncTarget(el);});
       });
       var binding=function(){unsub();fieldBindings.delete(binding);};
       fieldBindings.add(binding);return binding;
@@ -101,7 +111,8 @@
     if(typeof MutationObserver==='function'){
       observer=new MutationObserver(function(records){
         var structural=records.some(function(m){return m.type==='childList'||(m.type==='attributes'&&(m.attributeName==='data-nw-target-id'||m.attributeName===activeAttribute));});
-        schedule(structural?'mutation':'attributes');
+        var updated=records.filter(function(m){return m.type==='attributes';}).map(function(m){return m.target;});
+        schedule(structural?'mutation':'attributes',updated,structural);
       });
       observer.observe(root,{subtree:true,childList:true,attributes:true,attributeFilter:[
         'data-nw-target-id',activeAttribute,'data-nw-influence-weight','data-nw-influence-move','data-nw-influence-rotate',
@@ -120,7 +131,7 @@
       destroy:function(){
         if(destroyed)return;destroyed=true;if(observer)observer.disconnect();
         Array.from(fieldBindings).forEach(function(unbind){unbind();});
-        listeners.clear();elements=[];
+        listeners.clear();elements=[];pendingUpdated.clear();pendingStructure=false;
       }
     };
   }

@@ -21,6 +21,13 @@ export async function runStudioRobustnessSmoke(page){
     }
     root.append(fragment);await wait();
     const added={same:studio.influenceField===field,count:field.targetCount,revision:studio.targetRegistry.revision-revision,state:field.getTargetState('headline-0')};
+    const calls={membership:0,all:0,updated:[]},setTargets=field.setTargets,syncTargets=field.syncTargets,syncTarget=field.syncTarget;
+    field.setTargets=function(list){calls.membership++;return setTargets(list);};
+    field.syncTargets=function(){calls.all++;return syncTargets();};
+    field.syncTarget=function(el){calls.updated.push(el.getAttribute('data-nw-target-id'));return syncTarget(el);};
+    nodes[0].setAttribute('data-nw-influence-weight','1.31');nodes[0].setAttribute('data-nw-influence-weight','1.3');await wait();
+    const incremental={calls:JSON.parse(JSON.stringify(calls)),state:field.getTargetState('headline-0')};
+    field.setTargets=setTargets;field.syncTargets=syncTargets;field.syncTarget=syncTarget;
     const expectedIds=nodes.map(n=>n.getAttribute('data-nw-target-id'));
     const selected=studio.selectTargets(expectedIds.concat('missing-object'),'replace');
     const mixed={move:document.querySelector('#targetMove').indeterminate,rotate:document.querySelector('#targetRotate').indeterminate,scale:document.querySelector('#targetScale').indeterminate,weight:document.querySelector('#targetWeightOut').value,speed:document.querySelector('#targetReturnOut').value};
@@ -43,9 +50,10 @@ export async function runStudioRobustnessSmoke(page){
     studio.previewTargets();await wait();const config=document.querySelector('#influenceSource');config.value='head';config.dispatchEvent(new Event('change',{bubbles:true}));const clearedOnChange=!studio.previewActive&&!field.paused;config.value='body';config.dispatchEvent(new Event('change',{bubbles:true}));
     studio.selectTargets([]);root.remove();await wait();
     const final={count:field.targetCount,selected:studio.selectedTargetIds,hidden:document.querySelector('#targetEditor').hidden,same:studio.influenceField===field,preview:studio.previewActive};
-    return {originalCount,before,added,expectedIds,selected,mixed,channels,special,restored,removed,state,previewPaused,manualPauseKept,pausedDuringLivePreview,resumedAfterLivePreview,clearedOnChange,final};
+    return {originalCount,before,added,incremental,expectedIds,selected,mixed,channels,special,restored,removed,state,previewPaused,manualPauseKept,pausedDuringLivePreview,resumedAfterLivePreview,clearedOnChange,final};
   });
   assert.equal(result.added.same,true);assert.equal(result.added.count,result.originalCount+70);assert.equal(result.added.revision,1,'One DOM batch should publish one registry update');assert.deepEqual(result.added.state,result.before);
+  assert.deepEqual(result.incremental.calls,{membership:0,all:0,updated:['__proto__']},'Editing one target in a large composition must not synchronize or measure all targets');assert.deepEqual(result.incremental.state,result.before);
   assert.deepEqual(result.selected,result.expectedIds,'Unknown IDs must not inflate a real selection');
   assert.deepEqual(result.mixed,{move:false,rotate:true,scale:true,weight:'Mixto',speed:'Mixto'},'Different nonzero strengths still mean the Move channel is enabled for every target');
   result.channels.forEach((v,i)=>assert.deepEqual(v,{move:i%2?.5:1,rotate:1,scale:i%2?0:1},'A group edit changes only its selected channel'));

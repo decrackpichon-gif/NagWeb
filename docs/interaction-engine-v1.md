@@ -626,3 +626,12 @@ La selección resuelve los IDs literalmente, sin convertirlos en selectores CSS,
 Probar reacción fuera del modo de edición pausa temporalmente el field principal. Al terminar, restaura su estado previo de pausa; cambiar opciones cancela la prueba antes de actualizar el motor. Así ambos fields no escriben movimiento sobre el mismo objetivo simultáneamente. Influence expone `paused` para conservar una pausa impuesta por otro consumidor.
 
 La batería del Studio incluye 140 objetivos nuevos con activación, intensidad, canales y retorno mixtos: actualización DOM agrupada, cambio de un canal sin pisar los demás, JSON ida/vuelta, eliminación parcial con 120 seleccionados, previsualización exclusiva con field activo o pausado y limpieza final sin recrear el field existente.
+
+
+## Target Registry 1.2 · actualizaciones localizadas
+
+Cada evento del registro informa `updated`, `structureChanged` y `fullSync`, además de la diferencia de miembros. Los cambios de varios atributos del mismo objetivo se agrupan en una sola actualización. Modificar sólo intensidad, canales, retorno o perfil ya no reconstruye la lista ni mide otra vez toda la composición: se sincronizan únicamente los elementos modificados, tanto en `bindField()` como en el Studio.
+
+Cambios de activación, IDs, altas/bajas y contenido conservan la actualización estructural, porque pueden cambiar miembros o geometría. Si una tanda combina estructura y configuración, ambos cambios se conservan. `refresh()` manual sigue haciendo una sincronización completa; fields anteriores sin `syncTarget()` usan el fallback completo. Las vistas previas respetan el mismo contrato.
+
+La batería de navegador comprueba que seis atributos del mismo objetivo generan una sincronización localizada, que una tanda combinada añade un elemento y actualiza otro sin perder datos, y que editar un objetivo en la composición de 140 elementos no llama a `setTargets()` ni `syncTargets()` y conserva el estado físico del resto.
