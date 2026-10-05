@@ -8,7 +8,7 @@
   if(root) root.NAGWEB_INTERACTION_INFLUENCE=api;
 })(typeof window!=='undefined'?window:globalThis,function(engine){
   'use strict';
-  var VERSION='1.8.0';
+  var VERSION='1.9.0';
   function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
   function num(v,d){v=Number(v);return Number.isFinite(v)?v:d;}
   function normalizeOptions(input){
@@ -62,10 +62,27 @@
     for(var i=0;i<n;i++)sum+=Math.hypot(a[i].x-b[i].x,a[i].y-b[i].y);
     return sum/n;
   }
-  function computeSweptPathRepulsion(points,previous,target,o){
+  function pathBounds(points,extraPoints,padding){
+    var minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity,count=0;
+    function include(list){
+      if(!Array.isArray(list))return;
+      list.forEach(function(p){
+        if(!p||!Number.isFinite(p.x)||!Number.isFinite(p.y))return;
+        minX=Math.min(minX,p.x);minY=Math.min(minY,p.y);maxX=Math.max(maxX,p.x);maxY=Math.max(maxY,p.y);count++;
+      });
+    }
+    include(points);include(extraPoints);
+    if(!count)return null;
+    padding=Math.max(0,num(padding,0));
+    return {minX:minX-padding,minY:minY-padding,maxX:maxX+padding,maxY:maxY+padding};
+  }
+  function pointInBounds(point,bounds){
+    return !!(bounds&&point&&Number.isFinite(point.x)&&Number.isFinite(point.y)&&point.x>=bounds.minX&&point.x<=bounds.maxX&&point.y>=bounds.minY&&point.y<=bounds.maxY);
+  }
+  function computeSweptPathRepulsion(points,previous,target,o,knownPathDistance){
     var current=computePathRepulsion(points,target,o);
     if(!o.sweptBody||!Array.isArray(previous)||previous.length<2)return current;
-    var avg=pathDistance(points,previous);
+    var avg=Number.isFinite(knownPathDistance)?knownPathDistance:pathDistance(points,previous);
     if(!Number.isFinite(avg)||avg<=0||avg>o.maxSweepDistance)return current;
     var best=current;
     var n=Math.min(points.length,previous.length);
@@ -128,7 +145,8 @@
     input=input||{};
     if(typeof input.source!=='function')throw new Error('NagWeb Influence: source() is required');
     if(!engine||typeof engine.subscribeFrame!=='function')throw new Error('NagWeb Influence: Interaction Engine v1.4+ is required');
-    var o=normalizeOptions(input),targets=[],paused=false,destroyed=false,unsub=null,previousPath=null;
+    var o=normalizeOptions(input),targets=[],paused=false,destroyed=false,unsub=null,previousPath=null,maxTargetRadius=0;
+    var perf={frames:0,evaluatedTargets:0,culledTargets:0,lastEvaluated:0,lastCulled:0};
     var media=typeof matchMedia==='function'?matchMedia('(prefers-reduced-motion: reduce)'):null;
     var reduce=o.reducedMotion==='always'||(o.reducedMotion==='respect'&&media&&media.matches);
 
@@ -157,11 +175,13 @@
       ['--nw-influence-x','--nw-influence-y','--nw-influence-rotation','--nw-influence-scale','--nw-influence-strength'].forEach(function(k){t.el.style.removeProperty(k);});
     }
     function measure(){
+      maxTargetRadius=0;
       targets.forEach(function(t){
         var tr=t.el.style.translate,rr=t.el.style.rotate,sr=t.el.style.scale;
         t.el.style.translate=t.original.translate;t.el.style.rotate=t.original.rotate;t.el.style.scale=t.original.scale;
         var r=t.el.getBoundingClientRect();
         t.rest.x=r.left+r.width/2;t.rest.y=r.top+r.height/2;t.rest.radius=Math.hypot(r.width,r.height)*0.20;
+        maxTargetRadius=Math.max(maxTargetRadius,t.rest.radius);
         t.el.style.translate=tr;t.el.style.rotate=rr;t.el.style.scale=sr;
       });
     }
@@ -182,12 +202,27 @@
       var path=source&&Array.isArray(source.points)?source.points:null;
       var point=source&&Number.isFinite(source.x)&&Number.isFinite(source.y)?source:null;
       if(!path&&!point)return;
+      var zero={x:0,y:0,rotation:0,scale:1,strength:0},evaluated=0,culled=0,sweepDistance=Infinity,sweepActive=false,bounds=null;
+      if(path){
+        if(o.sweptBody&&Array.isArray(previousPath)&&previousPath.length>1){
+          sweepDistance=pathDistance(path,previousPath);
+          sweepActive=Number.isFinite(sweepDistance)&&sweepDistance>0&&sweepDistance<=o.maxSweepDistance;
+        }
+        bounds=pathBounds(path,sweepActive?previousPath:null,o.radius+o.sourceRadius+maxTargetRadius);
+      }
       targets.forEach(function(t){
-        var goal=reduce?{x:0,y:0,rotation:0,scale:1,strength:0}:(path?computeSweptPathRepulsion(path,previousPath,t.rest,o):computeRepulsion(point,t.rest,o));
+        var goal;
+        if(reduce)goal=zero;
+        else if(path&&bounds&&!pointInBounds(t.rest,bounds)){goal=zero;culled++;}
+        else{
+          goal=path?computeSweptPathRepulsion(path,previousPath,t.rest,o,sweepDistance):computeRepulsion(point,t.rest,o);
+          evaluated++;
+        }
         if(!reduce&&t.weight!==1)goal=weightGoal(goal,t.weight);
         if(!reduce)goal=responseGoal(goal,t.response);
         springStep(t.state,goal,targetDynamics(o,t.returnSpeed),dt);apply(t);
       });
+      perf.frames++;perf.lastEvaluated=evaluated;perf.lastCulled=culled;perf.evaluatedTargets+=evaluated;perf.culledTargets+=culled;
       previousPath=path?clonePath(path):null;
     }
     function onResize(){measure();}
@@ -206,6 +241,7 @@
       get targetResponses(){return targets.map(function(t){return Object.assign({},t.response);});},
       get targetReturnSpeeds(){return targets.map(function(t){return t.returnSpeed;});},
       get targetProfiles(){return targets.map(function(t){return t.profile;});},
+      get stats(){return {frames:perf.frames,targetCount:targets.length,evaluatedTargets:perf.evaluatedTargets,culledTargets:perf.culledTargets,lastEvaluated:perf.lastEvaluated,lastCulled:perf.lastCulled,broadphase:true};},
       getTargetProfile:function(ref){
         var hit=targets.find(function(t){return t.el===ref||t.id===ref;});
         return hit?hit.profile:null;
@@ -261,5 +297,5 @@
       }
     };
   }
-  return {version:VERSION,normalizeOptions:normalizeOptions,computeRepulsion:computeRepulsion,closestPointOnSegment:closestPointOnSegment,computePathRepulsion:computePathRepulsion,pathDistance:pathDistance,computeSweptPathRepulsion:computeSweptPathRepulsion,weightGoal:weightGoal,normalizeResponse:normalizeResponse,responseGoal:responseGoal,targetDynamics:targetDynamics,springStep:springStep,createField:createField};
+  return {version:VERSION,normalizeOptions:normalizeOptions,computeRepulsion:computeRepulsion,closestPointOnSegment:closestPointOnSegment,computePathRepulsion:computePathRepulsion,pathDistance:pathDistance,pathBounds:pathBounds,pointInBounds:pointInBounds,computeSweptPathRepulsion:computeSweptPathRepulsion,weightGoal:weightGoal,normalizeResponse:normalizeResponse,responseGoal:responseGoal,targetDynamics:targetDynamics,springStep:springStep,createField:createField};
 });
