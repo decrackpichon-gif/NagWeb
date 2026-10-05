@@ -15,7 +15,7 @@
 .stage{position:relative;overflow:hidden;touch-action:none;background:radial-gradient(100% 100% at 60% 40%,#45335b 0,#221c2d 47%,#0e0d13 100%)}.stage:after{content:"INTERACTION STUDIO";position:absolute;right:18px;bottom:16px;font:10px ui-monospace,monospace;color:#686370;pointer-events:none}
 .hero{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}.headline{display:flex;flex-wrap:wrap;justify-content:center;max-width:84%;gap:.01em;font:900 clamp(58px,11vw,180px)/.78 Arial Black,Impact,sans-serif;letter-spacing:-.07em;text-align:center;color:#f1eadc}.headline span{display:inline-block}.headline .break{flex-basis:100%;height:0}
 .sub{position:absolute;top:24px;left:28px;font-size:11px;color:#bcb6c5;pointer-events:none}.sub b{color:#fff}.contentCard{position:absolute;right:5.5%;bottom:7%;width:min(360px,34vw);padding:18px 20px;border:1px solid rgba(255,255,255,.18);background:rgba(17,15,24,.42);backdrop-filter:blur(12px);border-radius:18px;pointer-events:none}.contentCard .eyebrow{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:#bdb6c9;margin-bottom:8px}.contentCard h3{font-size:clamp(18px,2.3vw,34px);line-height:1.02;margin:0 0 10px}.contentCard p{font-size:12px;line-height:1.5;color:#c6c1cc;margin:0 0 14px}.contentCard .word,.contentCard .chip,.headline span{display:inline-block}.contentCard .chip{padding:8px 12px;border:1px solid rgba(255,255,255,.32);border-radius:999px;color:#fff;font-size:11px}.followerVisual{position:absolute;left:0;top:0;width:240px;height:240px;display:grid;place-items:center;pointer-events:none;transform-origin:50% 50%;will-change:transform}.followerVisual img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 18px 19px rgba(0,0,0,.38))}.leader{position:absolute;width:2px;height:2px;opacity:0;pointer-events:none}#organicCanvas,#organicMeshCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-.pill{display:inline-flex;align-items:center;padding:3px 7px;border:1px solid #4a4853;border-radius:999px;font-size:9px;color:#bbb6c3}.modeNote{margin-top:6px;font-size:10px;color:#8f8b96}.targetMeta{display:flex;justify-content:space-between;gap:8px;align-items:center;margin:7px 0 0;font-size:10px;color:#9e99a7}.targetEditor{margin-top:8px;padding:10px;border:1px solid #45434e;background:#111116}.targetEditor[hidden]{display:none}.targetName{font-size:10px;color:#f1edf5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:8px}.stage.target-editing .hero,.stage.target-editing .contentCard{pointer-events:auto}.stage.target-editing [data-nw-target-id]{pointer-events:auto;cursor:pointer;outline:1px dashed rgba(255,255,255,.22);outline-offset:3px;border-radius:3px}.stage.target-editing [data-nw-target-id][data-nw-reactive="1"]{outline-color:rgba(145,224,169,.8)}.stage.target-editing [data-nw-target-id][data-nw-selected="1"]{outline:2px solid #ffd38f;outline-offset:5px}.stage.target-editing:before{content:"EDITANDO OBJETIVOS";position:absolute;z-index:20;left:24px;top:48px;padding:5px 8px;border:1px solid #8a754e;background:#17140e;color:#ffd38f;font:700 9px ui-monospace,monospace;pointer-events:none}.export{margin-top:8px;width:100%;height:120px;background:#101014;color:#a9c9ff;border:1px solid #33343c;padding:8px;font:9px/1.45 ui-monospace,monospace;resize:vertical}
+.pill{display:inline-flex;align-items:center;padding:3px 7px;border:1px solid #4a4853;border-radius:999px;font-size:9px;color:#bbb6c3}.modeNote{margin-top:6px;font-size:10px;color:#8f8b96}.targetMeta{display:flex;justify-content:space-between;gap:8px;align-items:center;margin:7px 0 0;font-size:10px;color:#9e99a7}.targetEditor{margin-top:8px;padding:10px;border:1px solid #45434e;background:#111116}.targetEditor[hidden]{display:none}.targetName{font-size:10px;color:#f1edf5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:8px}.stage.target-editing .hero,.stage.target-editing .contentCard{pointer-events:auto}.stage.target-editing [data-nw-target-id]{pointer-events:auto;cursor:pointer;outline:1px dashed rgba(255,255,255,.22);outline-offset:3px;border-radius:3px}.stage.target-editing [data-nw-target-id][data-nw-reactive="1"]{outline-color:rgba(145,224,169,.8)}.stage.target-editing [data-nw-target-id][data-nw-selected="1"]{outline:2px solid #ffd38f;outline-offset:5px}.targetMarquee{position:absolute;z-index:45;border:1px solid #ffd38f;background:rgba(255,211,143,.10);box-shadow:0 0 0 1px rgba(0,0,0,.18) inset;pointer-events:none}.targetMarquee[hidden]{display:none}.stage.target-editing{cursor:crosshair}.stage.target-editing [data-nw-target-id]{cursor:pointer}.stage.target-editing:before{content:"EDITANDO OBJETIVOS";position:absolute;z-index:20;left:24px;top:48px;padding:5px 8px;border:1px solid #8a754e;background:#17140e;color:#ffd38f;font:700 9px ui-monospace,monospace;pointer-events:none}.export{margin-top:8px;width:100%;height:120px;background:#101014;color:#a9c9ff;border:1px solid #33343c;padding:8px;font:9px/1.45 ui-monospace,monospace;resize:vertical}
 @media(max-width:800px){body{overflow:auto}.app{grid-template-columns:1fr;grid-template-rows:auto 62vh;height:auto;min-height:100%}.panel{border-right:0;border-bottom:1px solid var(--line);max-height:none}.stage{min-height:62vh}.followerVisual{width:180px;height:180px}}
 </style>
 </head>
@@ -67,7 +67,7 @@
     <div class="field"><label>Influencia desde</label><select id="influenceSource"><option value="body">Cuerpo completo</option><option value="head">Cabeza / cursor</option></select></div>
     <div class="field"><label>Objetivos</label><select id="influenceTargets"><option value="headline">Sólo título</option><option value="all">Título + contenido</option><option value="custom">Selección personalizada</option></select></div>
     <button id="editTargets" class="btn">Editar objetivos visualmente</button>
-    <div class="targetMeta"><span id="targetCount">0 reactivos</span><span>Shift + clic = selección múltiple</span></div>
+    <div class="targetMeta"><span id="targetCount">0 reactivos</span><span>Arrastrá = área · Shift suma · Alt quita</span></div>
     <div id="targetEditor" class="targetEditor" hidden>
       <div id="targetName" class="targetName">Sin elemento seleccionado</div>
       <label class="check"><input id="targetEnabled" type="checkbox"> Este elemento reacciona</label>
@@ -95,6 +95,7 @@
 
 <main id="stage" class="stage">
   <div class="sub"><b>Mové el cursor</b> para probar · la tipografía reacciona al campo de influencia</div>
+  <div id="targetMarquee" class="targetMarquee" hidden aria-hidden="true"></div>
   <div class="hero"><div id="headline" class="headline" aria-label="MOVE WITH ME"><span class="influenceHeadline" data-nw-influence-weight="1">M</span><span class="influenceHeadline" data-nw-influence-weight="1">O</span><span class="influenceHeadline" data-nw-influence-weight="1">V</span><span class="influenceHeadline" data-nw-influence-weight="1">E</span><i class="break"></i><span class="influenceHeadline" data-nw-influence-weight="1">W</span><span class="influenceHeadline" data-nw-influence-weight="1">I</span><span class="influenceHeadline" data-nw-influence-weight="1">T</span><span class="influenceHeadline" data-nw-influence-weight="1">H</span><i class="break"></i><span class="influenceHeadline" data-nw-influence-weight="1">M</span><span class="influenceHeadline" data-nw-influence-weight="1">E</span></div></div>
   <section id="contentCard" class="contentCard" aria-label="Bloque de prueba">
     <div class="eyebrow"><span class="word influenceContent" data-nw-influence-weight=".52">Diseño</span> <span class="word influenceContent" data-nw-influence-weight=".52">interactivo</span></div>
@@ -113,6 +114,7 @@
 <script src="../js/nagweb-interaction-asset-prep-v1.js"></script>
 <script src="../js/nagweb-interaction-influence-v1.js"></script>
 <script src="../js/nagweb-interaction-reaction-profiles-v1.js"></script>
+<script src="../js/nagweb-interaction-selection-v1.js"></script>
 <script src="../js/nagweb-interaction-organic-v2.js"></script>
 <script src="../js/nagweb-interaction-organic-v3.js"></script>
 <script src="../js/nagweb-interaction-background-ai-v1.js"></script>
@@ -120,9 +122,9 @@
 <script src="../js/nagweb-interaction-session-v1.js"></script>
 <script>
 (function(){
-  var E=NAGWEB_INTERACTION_ENGINE,A=NAGWEB_INTERACTION_ASSET_PREP,I=NAGWEB_INTERACTION_INFLUENCE,R=NAGWEB_INTERACTION_REACTION_PROFILES,O=NAGWEB_ORGANIC_FOLLOWER,M=NAGWEB_ORGANIC_MESH,P=NAGWEB_INTERACTION_PREPARATION,S=NAGWEB_INTERACTION_SESSION;
+  var E=NAGWEB_INTERACTION_ENGINE,A=NAGWEB_INTERACTION_ASSET_PREP,I=NAGWEB_INTERACTION_INFLUENCE,R=NAGWEB_INTERACTION_REACTION_PROFILES,Q=NAGWEB_INTERACTION_SELECTION,O=NAGWEB_ORGANIC_FOLLOWER,M=NAGWEB_ORGANIC_MESH,P=NAGWEB_INTERACTION_PREPARATION,S=NAGWEB_INTERACTION_SESSION;
   var stage=document.getElementById('stage'),leaderEl=document.getElementById('leader'),visual=document.getElementById('followerVisual'),visualImg=document.getElementById('followerImage'),sourcePreview=document.getElementById('sourcePreview'),canvas=document.getElementById('organicCanvas'),meshCanvas=document.getElementById('organicMeshCanvas'),sourceImage=new Image();
-  var originalUrl=null,preparedUrl=null,currentFile=null,pipeline=null,prepResult=null,organicPrepared=null,organicRenderer=null,influenceField=null,previewField=null,previewTimer=null;
+  var originalUrl=null,preparedUrl=null,currentFile=null,pipeline=null,prepResult=null,organicPrepared=null,organicRenderer=null,influenceField=null,previewField=null,previewTimer=null,marqueeState=null,suppressTargetClick=false;
   var axis={trail:{x:.12,y:.5},lead:{x:.88,y:.5},manual:false},zones={headEnd:.22,torsoEnd:.66,manual:false},activeMode='follower',activeOrganicEngine='mesh-v3',busy=false,targetEditing=false,selectedTargetId=null,selectedTargetIds=[];
   var fallback='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="760" height="270" viewBox="0 0 760 270"><defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#ff7658"/><stop offset=".52" stop-color="#ffe3a8"/><stop offset="1" stop-color="#ff9867"/></linearGradient></defs><path d="M48 135c67-83 204-90 320-39 99-55 225-55 324 0l49-54-13 73 13 73-49-54c-99 55-225 55-324 0-116 51-253 44-320-39L8 135z" fill="url(#g)"/><circle cx="116" cy="111" r="14" fill="#31232b"/><circle cx="121" cy="106" r="4" fill="#fff"/></svg>');
 
@@ -391,16 +393,19 @@
   function selectedInfluenceTargets(){
     return selectedTargetIds.map(function(id){return stage.querySelector('[data-nw-target-id="'+id.replace(/"/g,'')+'"]');}).filter(Boolean);
   }
-  function selectInfluenceTarget(el,additive){
-    clearTargetPreview();
-    if(!el)return;
-    var id=el.getAttribute('data-nw-target-id'),idx=selectedTargetIds.indexOf(id);
-    if(additive){
-      if(idx>=0)selectedTargetIds.splice(idx,1);else selectedTargetIds.push(id);
-    }else selectedTargetIds=[id];
-    if(selectedTargetIds.length===0){selectedTargetId=null;document.getElementById('targetEditor').hidden=true;refreshTargetVisuals();return;}
-    selectedTargetId=selectedTargetIds.indexOf(id)>=0?id:selectedTargetIds[selectedTargetIds.length-1];
-    var primary=stage.querySelector('[data-nw-target-id="'+selectedTargetId.replace(/"/g,'')+'"]')||el;
+  function renderTargetSelection(primaryId){
+    if(selectedTargetIds.length===0){
+      selectedTargetId=null;
+      document.getElementById('targetEditor').hidden=true;
+      refreshTargetVisuals();
+      return;
+    }
+    selectedTargetId=selectedTargetIds.indexOf(primaryId)>=0?primaryId:selectedTargetIds[selectedTargetIds.length-1];
+    var primary=stage.querySelector('[data-nw-target-id="'+String(selectedTargetId).replace(/"/g,'')+'"]');
+    if(!primary){
+      selectedTargetIds=selectedTargetIds.filter(function(id){return !!stage.querySelector('[data-nw-target-id="'+String(id).replace(/"/g,'')+'"]');});
+      return renderTargetSelection(selectedTargetIds[selectedTargetIds.length-1]||null);
+    }
     document.getElementById('targetEditor').hidden=false;
     document.getElementById('targetName').textContent=selectedTargetIds.length>1
       ? selectedTargetIds.length+' elementos seleccionados · cambios grupales'
@@ -422,6 +427,17 @@
     document.getElementById('targetReturnOut').value=Math.round(returnSpeed*100)+'%'+(selectedTargetIds.length>1?' · selección':'');
     refreshTargetVisuals();
   }
+  function setSelectedTargetIds(ids,mode,primaryId){
+    clearTargetPreview();
+    selectedTargetIds=Q.applySelection(selectedTargetIds,ids,mode||'replace');
+    renderTargetSelection(primaryId||selectedTargetIds[selectedTargetIds.length-1]||null);
+    return selectedTargetIds.slice();
+  }
+  function selectInfluenceTarget(el,additive){
+    if(!el)return;
+    var id=el.getAttribute('data-nw-target-id');
+    setSelectedTargetIds([id],additive?'toggle':'replace',id);
+  }
   function selectedInfluenceTarget(){return selectedInfluenceTargets()[0]||null;}
   function clearTargetPreview(){
     if(previewTimer){clearTimeout(previewTimer);previewTimer=null;}
@@ -442,6 +458,47 @@
     previewTimer=setTimeout(clearTargetPreview,1300);
     status('Vista previa · '+els.length+' objetivo'+(els.length===1?'':'s')+'.','good');
   }
+  function marqueeRectToStage(box){
+    var sr=stage.getBoundingClientRect();
+    return {left:box.left-sr.left,top:box.top-sr.top,width:box.width,height:box.height};
+  }
+  function drawTargetMarquee(clientX,clientY){
+    if(!marqueeState)return;
+    marqueeState.current={x:clientX,y:clientY};
+    var box=Q.normalizeRect(marqueeState.start,marqueeState.current);
+    if(!marqueeState.moved&&Math.hypot(box.width,box.height)<5)return;
+    marqueeState.moved=true;
+    var local=marqueeRectToStage(box),el=document.getElementById('targetMarquee');
+    el.hidden=false;el.style.left=local.left+'px';el.style.top=local.top+'px';el.style.width=local.width+'px';el.style.height=local.height+'px';
+  }
+  function beginTargetMarquee(ev){
+    if(!targetEditing||ev.button!==0)return;
+    var hit=ev.target.closest&&ev.target.closest('[data-nw-target-id]');
+    if(hit&&stage.contains(hit))return;
+    clearTargetPreview();
+    marqueeState={pointerId:ev.pointerId,start:{x:ev.clientX,y:ev.clientY},current:{x:ev.clientX,y:ev.clientY},moved:false,add:!!ev.shiftKey,subtract:!!ev.altKey};
+    try{stage.setPointerCapture(ev.pointerId);}catch(e){}
+    ev.preventDefault();
+  }
+  function finishTargetMarquee(ev,cancelled){
+    if(!marqueeState||ev.pointerId!==marqueeState.pointerId)return;
+    var state=marqueeState;marqueeState=null;
+    var visual=document.getElementById('targetMarquee');visual.hidden=true;visual.style.width='0px';visual.style.height='0px';
+    try{stage.releasePointerCapture(ev.pointerId);}catch(e){}
+    if(cancelled)return;
+    if(!state.moved){
+      if(!state.add&&!state.subtract)setSelectedTargetIds([],'replace',null);
+      return;
+    }
+    var box=Q.normalizeRect(state.start,state.current);
+    var entries=influenceCandidates().map(function(el){return {id:el.getAttribute('data-nw-target-id'),rect:el.getBoundingClientRect()};});
+    var hits=Q.hitIds(entries,box,{minOverlap:.35});
+    var mode=state.subtract?'subtract':(state.add?'add':'replace');
+    setSelectedTargetIds(hits,mode,hits[hits.length-1]||null);
+    document.getElementById('influenceTargets').value='custom';
+    suppressTargetClick=true;setTimeout(function(){suppressTargetClick=false;},0);
+    status((mode==='subtract'?'Selección ajustada':'Selección por área')+' · '+selectedTargetIds.length+' elemento'+(selectedTargetIds.length===1?'':'s')+'.','good');
+  }
   function setTargetEditing(next){
     clearTargetPreview();
     targetEditing=!!next;
@@ -451,7 +508,7 @@
       if(document.getElementById('influenceTargets').value!=='custom')document.getElementById('influenceTargets').value='custom';
       follower.pause();
       if(influenceField){influenceField.destroy();influenceField=null;window.__NAGWEB_INTERACTION_STUDIO__.influenceField=null;}
-      status('Edición de objetivos activa · hacé clic en un elemento de la composición.','warn');
+      status('Edición de objetivos activa · clic o arrastre para seleccionar. Shift suma y Alt quita.','warn');
     }else{
       follower.resume();updateInfluence();
       status('Objetivos personalizados listos · '+document.getElementById('targetCount').textContent+'.','good');
@@ -610,8 +667,12 @@
   document.getElementById('influenceSource').onchange=updateInfluence;
   document.getElementById('influenceTargets').onchange=function(){applyTargetScenario(this.value,true);};
   document.getElementById('editTargets').onclick=function(){setTargetEditing(!targetEditing);};
+  stage.addEventListener('pointerdown',beginTargetMarquee);
+  stage.addEventListener('pointermove',function(ev){if(marqueeState&&ev.pointerId===marqueeState.pointerId)drawTargetMarquee(ev.clientX,ev.clientY);});
+  stage.addEventListener('pointerup',function(ev){finishTargetMarquee(ev,false);});
+  stage.addEventListener('pointercancel',function(ev){finishTargetMarquee(ev,true);});
   stage.addEventListener('click',function(ev){
-    if(!targetEditing)return;
+    if(!targetEditing||suppressTargetClick)return;
     var el=ev.target.closest&&ev.target.closest('[data-nw-target-id]');
     if(!el||!stage.contains(el))return;
     ev.preventDefault();ev.stopPropagation();selectInfluenceTarget(el,ev.shiftKey);
