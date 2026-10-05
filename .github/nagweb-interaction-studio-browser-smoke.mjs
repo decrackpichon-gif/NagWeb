@@ -77,11 +77,12 @@ try{
 
   const marqueeBox=await page.$eval('[data-nw-target-id^="headline-"]',els=>{
     const rs=Array.from(els).slice(0,4).map(el=>el.getBoundingClientRect());
+    const sr=document.querySelector('#stage').getBoundingClientRect();
     return {
-      left:Math.min(...rs.map(r=>r.left))-24,
-      top:Math.min(...rs.map(r=>r.top))-24,
-      right:Math.max(...rs.map(r=>r.right))+12,
-      bottom:Math.max(...rs.map(r=>r.bottom))+12
+      left:Math.max(sr.left+6,Math.min(...rs.map(r=>r.left))-18),
+      top:Math.max(sr.top+6,Math.min(...rs.map(r=>r.top))-18),
+      right:Math.min(sr.right-6,Math.max(...rs.map(r=>r.right))+12),
+      bottom:Math.min(sr.bottom-6,Math.max(...rs.map(r=>r.bottom))+12)
     };
   });
   const marqueeStart=await page.evaluate(({x,y})=>{
