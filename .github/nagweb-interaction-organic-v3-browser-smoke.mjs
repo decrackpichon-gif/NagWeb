@@ -4,12 +4,18 @@ import fs from 'node:fs';
 
 const candidates=['/usr/bin/google-chrome-stable','/usr/bin/google-chrome','/usr/bin/chromium','/usr/bin/chromium-browser'];
 const executablePath=candidates.find(p=>fs.existsSync(p));if(!executablePath)throw new Error('No Chromium/Chrome executable found');
-const browser=await puppeteer.launch({headless:true,executablePath,args:['--no-sandbox','--disable-dev-shm-usage','--enable-webgl','--use-gl=swiftshader']});
+const browser=await puppeteer.launch({headless:true,executablePath,args:['--no-sandbox','--disable-dev-shm-usage','--enable-webgl','--enable-unsafe-swiftshader','--use-gl=angle','--use-angle=swiftshader','--disable-gpu-sandbox']});
 try{
   const page=await browser.newPage();await page.setViewport({width:1360,height:820,deviceScaleFactor:1});
-  const errors=[];page.on('pageerror',e=>errors.push(String(e&&e.stack||e)));
+  const errors=[],consoleErrors=[];page.on('pageerror',e=>errors.push(String(e&&e.stack||e)));page.on('console',m=>{if(m.type()==='error')consoleErrors.push(m.text());});
   await page.goto('http://127.0.0.1:4173/experiments/organic-follower-v3.html',{waitUntil:'domcontentloaded',timeout:30000});
-  await page.waitForFunction(()=>window.__NAGWEB_ORGANIC_V3__&&window.__NAGWEB_ORGANIC_V3__.renderer,{timeout:15000});
+  await page.waitForFunction(()=>{
+    const ready=window.__NAGWEB_ORGANIC_V3__&&window.__NAGWEB_ORGANIC_V3__.renderer;
+    const status=document.querySelector('#status')?.textContent||'';
+    return !!ready||/^ERROR/.test(status);
+  },{timeout:15000});
+  const boot=await page.evaluate(()=>({ready:!!(window.__NAGWEB_ORGANIC_V3__&&window.__NAGWEB_ORGANIC_V3__.renderer),status:document.querySelector('#status')?.textContent||'',webgl:!!(document.querySelector('#meshCanvas')?.getContext('webgl')||document.querySelector('#meshCanvas')?.getContext('experimental-webgl'))}));
+  if(!boot.ready)throw new Error('V3 boot failed · '+JSON.stringify({boot,errors,consoleErrors}));
 
   const initial=await page.evaluate(()=>({
     version:NAGWEB_ORGANIC_MESH.version,
@@ -39,7 +45,7 @@ try{
 
   const glOk=await page.$eval('#meshCanvas',c=>{const gl=c.getContext('webgl')||c.getContext('experimental-webgl');return !!gl&&gl.getError()===gl.NO_ERROR;});
   assert.equal(glOk,true);
-  assert.equal(errors.length,0,'V3 lab should have no page errors: '+errors.join('\n'));
+  assert.equal(errors.length,0,'V3 lab should have no page errors: '+errors.join('\n'));assert.equal(consoleErrors.length,0,'V3 lab should have no console errors: '+consoleErrors.join('\n'));
   fs.mkdirSync('/tmp/nagweb-interaction-v1',{recursive:true});
   await page.screenshot({path:'/tmp/nagweb-interaction-v1/organic-v3-mesh.png',fullPage:true});
   console.log('NagWeb Organic Mesh V3.0 browser smoke: PASS');
