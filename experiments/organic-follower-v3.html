@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NagWeb · Organic Mesh V3.2 Lab</title><link rel="icon" href="data:,">
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#111117;color:#f4f0e8;font-family:Inter,system-ui,sans-serif}body{overflow:hidden}
+.app{height:100%;display:grid;grid-template-columns:320px 1fr}.panel{padding:18px;border-right:1px solid #30303a;background:#18181e;overflow:auto}.panel h1{font-size:18px;margin:0 0 6px}.panel p{font-size:12px;line-height:1.5;color:#aaa6b3;margin:0 0 16px}
+.group{border-top:1px solid #32323a;padding:14px 0}.group h2{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#aaa6b3;margin:0 0 10px}.field{margin:0 0 12px}.field label{display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px}.field input{width:100%}.upload,.btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:38px;border:1px solid #55525e;background:#23232a;color:#fff;font:600 11px inherit;cursor:pointer}.upload input{display:none}.status{margin-top:10px;padding:10px;border:1px solid #34333d;background:#111116;font:10px/1.5 ui-monospace,monospace;color:#b8d9ff}.stage{position:relative;overflow:hidden;touch-action:none;background:radial-gradient(circle at 55% 42%,#403153 0,#211b2c 52%,#0f0e14 100%)}#meshCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.hint{position:absolute;left:22px;top:20px;font-size:11px;color:#b9b4c1;pointer-events:none}.hint b{color:#fff}.badge{display:inline-block;margin-top:8px;padding:3px 7px;border:1px solid #3f5d49;color:#aee9ba;font-size:9px}.preview{height:120px;margin-top:10px;border:1px solid #34333b;background:#101015;display:grid;place-items:center;overflow:hidden}.preview img{max-width:90%;max-height:90%;object-fit:contain}
+@media(max-width:760px){body{overflow:auto}.app{grid-template-columns:1fr;grid-template-rows:auto 62vh;height:auto}.panel{border-right:0;border-bottom:1px solid #30303a}.stage{min-height:62vh}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="panel">
+  <h1>Organic Mesh V3.2</h1>
+  <p>Renderer de malla WebGL continua con rigidez diferenciada para cabeza, torso y parte baja.</p>
+  <label class="upload">Subir PNG / WebP transparente<input id="file" type="file" accept="image/png,image/webp"></label>
+  <div class="preview"><img id="preview" alt="Asset"></div>
+  <div id="status" class="status">Cargando benchmark…</div>
+  <span class="badge">LAB AISLADO</span>
+
+  <div class="group">
+    <h2>Movimiento</h2>
+    <div class="field"><label>Tamaño <output id="lengthOut"></output></label><input id="length" type="range" min="160" max="760" step="5" value="430"></div>
+    <div class="field"><label>Ondulación <output id="swayOut"></output></label><input id="sway" type="range" min="0" max=".10" step=".0025" value=".0325"></div>
+    <div class="field"><label>Ondas <output id="wavesOut"></output></label><input id="waves" type="range" min="1" max="8" step=".2" value="4"></div>
+  </div>
+  <div class="group">
+    <h2>Zonas del personaje</h2>
+    <div class="field"><label>Fin de cabeza <output id="headZoneOut"></output></label><input id="headZone" type="range" min=".10" max=".36" step=".01" value=".22"></div>
+    <div class="field"><label>Fin de torso <output id="torsoZoneOut"></output></label><input id="torsoZone" type="range" min=".45" max=".84" step=".01" value=".66"></div>
+    <div class="field"><label>Rigidez cabeza <output id="headRigidityOut"></output></label><input id="headRigidity" type="range" min=".65" max="1" step=".01" value=".965"></div>
+    <div class="field"><label>Rigidez torso <output id="torsoRigidityOut"></output></label><input id="torsoRigidity" type="range" min=".10" max=".90" step=".01" value=".58"></div>
+    <div class="field"><label>Flexibilidad inferior <output id="lowerFlexOut"></output></label><input id="lowerFlex" type="range" min=".45" max="1" step=".01" value="1"></div>
+    <div class="field"><label>Curvatura cabeza <output id="headBendOut"></output></label><input id="headBend" type="range" min=".025" max=".18" step=".005" value=".065"></div>
+    <div class="field"><label>Curvatura torso <output id="torsoBendOut"></output></label><input id="torsoBend" type="range" min=".07" max=".30" step=".005" value=".16"></div>
+    <div class="field"><label>Curvatura inferior <output id="bodyBendOut"></output></label><input id="bodyBend" type="range" min=".16" max=".55" step=".01" value=".30"></div>
+  </div>
+  <div class="group">
+    <h2>Malla</h2>
+    <div class="field"><label>Columnas <output id="columnsOut"></output></label><input id="columns" type="range" min="16" max="56" step="2" value="32"></div>
+    <div class="field"><label>Filas <output id="rowsOut"></output></label><input id="rows" type="range" min="4" max="18" step="1" value="10"></div>
+  </div>
+</aside>
+<main id="stage" class="stage">
+  <div class="hint"><b>Mové el cursor</b> y hacé giros cerrados para estresar la malla.</div>
+  <canvas id="meshCanvas"></canvas>
+  <div id="leader" style="position:absolute;width:2px;height:2px;opacity:0"></div>
+</main>
+</div>
+<script src="../js/nagweb-interaction-engine-v1.js"></script>
+<script src="../js/nagweb-interaction-asset-prep-v1.js"></script>
+<script src="../js/nagweb-interaction-organic-v3.js"></script>
+<script>
+(function(){
+  var E=NAGWEB_INTERACTION_ENGINE,A=NAGWEB_INTERACTION_ASSET_PREP,M=NAGWEB_ORGANIC_MESH;
+  var stage=document.getElementById('stage'),canvas=document.getElementById('meshCanvas'),preview=document.getElementById('preview'),status=document.getElementById('status'),source=new Image();
+  var renderer=null,analysis=null,prepared=null,url=null;
+  var fallback='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="360" height="620" viewBox="0 0 360 620"><g><ellipse cx="180" cy="92" rx="58" ry="72" fill="#ffd07a"/><path d="M122 84q58-88 116 0v22H122z" fill="#f6f0e7"/><circle cx="158" cy="92" r="7"/><circle cx="203" cy="92" r="7"/><path d="M151 127q30 20 58 0" fill="none" stroke="#2b1d23" stroke-width="8" stroke-linecap="round"/><path d="M102 176q78-52 156 0l34 185q-24 84-112 90-88-6-112-90z" fill="#d93118"/><path d="M145 178q35 44 70 0l16 262h-102z" fill="#ef4a2d"/><path d="M103 204 40 284l34 31 71-66zM257 204l63 80-34 31-71-66z" fill="#ffd07a"/><path d="M121 444 99 565h58l23-112zM239 444l22 121h-58l-23-112z" fill="#c32b17"/><rect x="85" y="560" width="92" height="24" rx="10" fill="#754521"/><rect x="183" y="560" width="92" height="24" rx="10" fill="#754521"/></g></svg>');
+  var follower=E.createFollower(document.getElementById('leader'),{area:stage,preset:'soft',renderMode:'none',distanceFromPointer:20,rotateToTarget:true});
+
+  function opts(){
+    return {
+      length:Number(document.getElementById('length').value),
+      sway:Number(document.getElementById('sway').value),
+      swayWaves:Number(document.getElementById('waves').value),
+      headZoneEnd:Number(document.getElementById('headZone').value),
+      torsoZoneEnd:Number(document.getElementById('torsoZone').value),
+      headFlex:1-Number(document.getElementById('headRigidity').value),
+      torsoFlex:1-Number(document.getElementById('torsoRigidity').value),
+      lowerFlex:Number(document.getElementById('lowerFlex').value),
+      headMaxBend:Number(document.getElementById('headBend').value),
+      torsoMaxBend:Number(document.getElementById('torsoBend').value),
+      bodyMaxBend:Number(document.getElementById('bodyBend').value),
+      columns:Number(document.getElementById('columns').value),
+      rows:Number(document.getElementById('rows').value)
+    };
+  }
+  function syncOutputs(){
+    lengthOut.value=length.value+' px';swayOut.value=sway.value;wavesOut.value=waves.value;
+    headZoneOut.value=Math.round(Number(headZone.value)*100)+'%';torsoZoneOut.value=Math.round(Number(torsoZone.value)*100)+'%';
+    headRigidityOut.value=Math.round(Number(headRigidity.value)*100)+'%';torsoRigidityOut.value=Math.round(Number(torsoRigidity.value)*100)+'%';lowerFlexOut.value=Math.round(Number(lowerFlex.value)*100)+'%';
+    headBendOut.value=headBend.value;torsoBendOut.value=torsoBend.value;bodyBendOut.value=bodyBend.value;
+    columnsOut.value=columns.value;rowsOut.value=rows.value;
+  }
+  function applyLive(){syncOutputs();if(renderer)renderer.setOptions(opts());}
+  ['length','sway','waves','headZone','torsoZone','headRigidity','torsoRigidity','lowerFlex','headBend','torsoBend','bodyBend','columns','rows'].forEach(function(id){document.getElementById(id).addEventListener('input',applyLive);});
+
+  async function prepare(){
+    status.textContent='Analizando y preparando…';
+    analysis=await A.analyzeImage(source,{maxDimension:512});
+    var profile=A.createProfile(analysis,{leadEnd:'right',cropPadding:.015});
+    prepared=await M.prepareAsset(source,analysis,{profile:profile,paddingRatio:.015});
+    preview.src=source.src;
+    if(renderer)renderer.destroy();
+    renderer=M.createRenderer(Object.assign({leader:follower,canvas:canvas,area:stage,image:prepared.canvas},opts()));
+    status.textContent='V3.2 listo · 3 zonas · WebGL mesh · '+renderer.topology.vertexCount+' vértices · '+(renderer.topology.indexCount/3)+' triángulos · eje '+prepared.axisAngle.toFixed(1)+'°';
+    window.__NAGWEB_ORGANIC_V3__.renderer=renderer;window.__NAGWEB_ORGANIC_V3__.analysis=analysis;window.__NAGWEB_ORGANIC_V3__.prepared=prepared;
+  }
+
+  document.getElementById('file').onchange=function(){
+    var f=this.files&&this.files[0];if(!f)return;
+    if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(f);source.onload=function(){prepare().catch(fail);};source.src=url;
+  };
+  function fail(err){status.textContent='ERROR · '+err.message;status.style.color='#ef9999';console.error(err);}
+  window.__NAGWEB_ORGANIC_V3__={follower:follower,renderer:null,analysis:null,prepared:null};
+  syncOutputs();source.onload=function(){prepare().catch(fail);};source.src=fallback;
+})();
+</script>
+</body></html>
