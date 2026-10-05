@@ -19,6 +19,8 @@
 
   function clone(v){return v==null?v:JSON.parse(JSON.stringify(v));}
   function mode(v){return ['auto','follower','organic'].indexOf(v)>=0?v:'auto';}
+  var TARGET_PROFILES={soft:1,displace:1,tilt:1,pulse:1,elastic:1,heavy:1};
+  function targetProfile(v){return TARGET_PROFILES[v]?v:'custom';}
   function normalizeTargetSelection(value){
     if(!Array.isArray(value))return [];
     var seen={};
@@ -33,7 +35,7 @@
       var response=item.response||{};
       function channel(v){v=Number(v);return Number.isFinite(v)?Math.max(0,Math.min(2,v)):1;}
       var returnSpeed=Number(item.returnSpeed);if(!Number.isFinite(returnSpeed))returnSpeed=1;returnSpeed=Math.max(.25,Math.min(2,returnSpeed));
-      var profile=influence&&influence.reactionProfileName?influence.reactionProfileName(item.profile):'custom';
+      var profile=targetProfile(item.profile);
       return {id:id,enabled:item.enabled!==false,weight:weight,response:{move:channel(response.move),rotate:channel(response.rotate),scale:channel(response.scale)},returnSpeed:returnSpeed,profile:profile};
     }).filter(Boolean);
   }
@@ -105,5 +107,5 @@
     };
   }
 
-  return {version:VERSION,schema:SCHEMA,normalizeTargetSelection:normalizeTargetSelection,normalize:normalize,resolveMode:resolveMode,validate:validate,serialize:serialize,deserialize:deserialize,summary:summary};
+  return {version:VERSION,schema:SCHEMA,targetProfile:targetProfile,normalizeTargetSelection:normalizeTargetSelection,normalize:normalize,resolveMode:resolveMode,validate:validate,serialize:serialize,deserialize:deserialize,summary:summary};
 });
