@@ -152,3 +152,86 @@ Usar `ponjita.png` en `experiments/organic-skin-v4.html` y comparar:
 7. sensación general de naturalidad.
 
 No avanzar a auto-rig anatómico, DWPose o GPU skinning hasta saber si el principio de weighted bones aporta una mejora real frente a V3.
+
+
+## Resultado humano de V4.1
+
+La prueba con `ponjita.png` mostró una falla estructural clara del weighted-bone positional skinning:
+
+- en recorridos curvos y giros cerrados;
+- cuando frames/huesos virtuales no vecinos se acercaban;
+- especialmente en cuello, torso y ropa;
+
+la malla podía plegarse, comprimirse y formar abanicos/triángulos severos.
+
+V3 se mantuvo visualmente mucho más estable bajo las mismas condiciones.
+
+Conclusión: V4.1 queda congelada como experimento de referencia. No se intenta reparar solamente ajustando weights, LBS o rigid2d porque el problema principal es la ambigüedad de mezclar varias posiciones de huesos sobre una spine que puede replegarse.
+
+## V4-B / V4.2 · Weighted Curve
+
+Archivo:
+
+`js/nagweb-interaction-organic-v4b.js`
+
+Cambio de arquitectura:
+
+- cada columna longitudinal de la malla vuelve a tener una única coordenada `u` sobre la spine;
+- no se mezclan posiciones finales de varios huesos;
+- los controles virtuales generan un campo continuo de `flex` y `bend`;
+- los weights modifican comportamiento, no posición;
+- cabeza y zonas iniciales permanecen más rígidas;
+- la flexibilidad aumenta gradualmente hacia la parte trasera.
+
+Esto conserva la propiedad que hizo robusta a V3: orden longitudinal único.
+
+### Anti-fold guard
+
+V4-B agrega detección entre segmentos no vecinos de la spine.
+
+El guard:
+
+1. calcula distancia mínima entre pares de segmentos;
+2. ignora vecinos cercanos en índice;
+3. si dos ramas se aproximan por debajo de un umbral relativo al largo de segmento, desplaza conservadoramente la rama posterior;
+4. resegmenta la spine;
+5. vuelve a aplicar límites de curvatura;
+6. repite pocas iteraciones.
+
+El objetivo no es impedir curvas cerradas, sino evitar cruces y compresiones que generan folds geométricos.
+
+### Laboratorio
+
+`experiments/organic-weighted-curve-v4b.html`
+
+Compara en paralelo:
+
+- V3.2 estable;
+- V4-B Weighted Curve.
+
+Expone:
+
+- cantidad de controles virtuales;
+- radio de weights;
+- anti-fold ON/OFF;
+- distancia de protección;
+- fuerza de corrección.
+
+El overlay muestra la spine y posiciones de controles de V4-B.
+
+### QA
+
+- test sintético de segmentos que se cruzan;
+- validación de que anti-fold aumenta separación no vecina;
+- pesos normalizados;
+- campos flex/bend continuos;
+- pose recta estable;
+- una sola frame longitudinal por columna;
+- browser smoke Chromium/WebGL;
+- recorrido curvo automatizado;
+- controles live;
+- screenshot A/B.
+
+Run verde inicial: **#368**.
+
+Próxima decisión: prueba humana con `ponjita.png`. V4-B sólo continúa si reduce claramente las rupturas observadas en V4.1 y mantiene al menos la continuidad visual de V3.
