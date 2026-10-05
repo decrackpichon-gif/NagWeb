@@ -163,6 +163,20 @@
   function goalActive(goal){
     return !!goal&&(Math.abs(goal.x)>1e-6||Math.abs(goal.y)>1e-6||Math.abs(goal.rotation)>1e-6||Math.abs(goal.scale-1)>1e-6||Math.abs(goal.strength)>1e-6);
   }
+  function readTargetConfig(el){
+    var rawWeight=el&&el.getAttribute&&el.getAttribute('data-nw-influence-weight');
+    return {
+      id:el&&el.getAttribute&&el.getAttribute('data-nw-target-id')||null,
+      weight:rawWeight==null?1:clamp(num(rawWeight,1),0,2),
+      response:normalizeResponse({
+        move:el&&el.getAttribute&&el.getAttribute('data-nw-influence-move'),
+        rotate:el&&el.getAttribute&&el.getAttribute('data-nw-influence-rotate'),
+        scale:el&&el.getAttribute&&el.getAttribute('data-nw-influence-scale')
+      }),
+      returnSpeed:clamp(num(el&&el.getAttribute&&el.getAttribute('data-nw-influence-return'),1),.25,2),
+      profile:String(el&&el.getAttribute&&el.getAttribute('data-nw-reaction-profile')||'custom').slice(0,48)
+    };
+  }
   function createField(input){
     if(typeof document==='undefined')throw new Error('NagWeb Influence: browser environment required');
     input=input||{};
@@ -173,20 +187,6 @@
     var media=typeof matchMedia==='function'?matchMedia('(prefers-reduced-motion: reduce)'):null;
     var reduce=o.reducedMotion==='always'||(o.reducedMotion==='respect'&&media&&media.matches);
 
-    function readTargetConfig(el){
-      var rawWeight=el&&el.getAttribute&&el.getAttribute('data-nw-influence-weight');
-      return {
-        id:el&&el.getAttribute&&el.getAttribute('data-nw-target-id')||null,
-        weight:rawWeight==null?1:clamp(num(rawWeight,1),0,2),
-        response:normalizeResponse({
-          move:el&&el.getAttribute&&el.getAttribute('data-nw-influence-move'),
-          rotate:el&&el.getAttribute&&el.getAttribute('data-nw-influence-rotate'),
-          scale:el&&el.getAttribute&&el.getAttribute('data-nw-influence-scale')
-        }),
-        returnSpeed:clamp(num(el&&el.getAttribute&&el.getAttribute('data-nw-influence-return'),1),.25,2),
-        profile:String(el&&el.getAttribute&&el.getAttribute('data-nw-reaction-profile')||'custom').slice(0,48)
-      };
-    }
     function applyTargetConfig(record,config){
       if(!record||!config)return null;
       record.id=config.id;record.weight=config.weight;record.response=normalizeResponse(config.response);
