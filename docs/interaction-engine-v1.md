@@ -635,3 +635,9 @@ Cada evento del registro informa `updated`, `structureChanged` y `fullSync`, ade
 Cambios de activación, IDs, altas/bajas y contenido conservan la actualización estructural, porque pueden cambiar miembros o geometría. Si una tanda combina estructura y configuración, ambos cambios se conservan. `refresh()` manual sigue haciendo una sincronización completa; fields anteriores sin `syncTarget()` usan el fallback completo. Las vistas previas respetan el mismo contrato.
 
 La batería de navegador comprueba que seis atributos del mismo objetivo generan una sincronización localizada, que una tanda combinada añade un elemento y actualiza otro sin perder datos, y que editar un objetivo en la composición de 140 elementos no llama a `setTargets()` ni `syncTargets()` y conserva el estado físico del resto.
+
+### Studio — preparación orgánica sin resultados obsoletos
+
+La recuperación de una sesión y `switchMode()` ahora esperan la preparación del renderer. Un cambio posterior de motor, modo o asset invalida las preparaciones anteriores: sus resultados y errores no pueden instalar otro renderer, iniciar un fallback ni anunciar una restauración terminada. Volver a Seguidor destruye el renderer orgánico y limpia la referencia de inspección. Al terminar una preparación vigente se actualiza también el radio corporal del campo de influencia.
+
+El browser smoke controla el orden de resolución de Mesh y Slices para comprobar resultados y errores obsoletos, restauración pendiente, cancelación por cambio de modo, liberación de renderers y fallback WebGL vigente o cancelado. Trabajo aislado en `feat/interaction-engine-v1`; no integra al editor principal ni modifica el motor experimental V4.

@@ -65,3 +65,67 @@ export async function runStudioRobustnessSmoke(page){
   assert.deepEqual(result.final,{count:result.originalCount,selected:[],hidden:true,same:true,preview:false});
   console.log('Interaction Studio robustness: 140 mixed targets, batched updates, literal IDs, group channels, session roundtrip, partial removal, exclusive previews and final cleanup PASS');
 }
+
+export async function runStudioPreparationSmoke(page){
+  const result=await page.evaluate(async()=>{
+    const studio=__NAGWEB_INTERACTION_STUDIO__,M=NAGWEB_ORGANIC_MESH,O=NAGWEB_ORGANIC_FOLLOWER;
+    const originals={mesh:M.prepareAsset,slices:O.rotateAndCrop,meshRenderer:M.createRenderer,slicesRenderer:O.createRenderer};
+    const jobs=[],created={mesh:0,slices:0},destroyed={mesh:0,slices:0};
+    const tick=async()=>{await Promise.resolve();await Promise.resolve();};
+    function defer(kind,args){return new Promise((resolve,reject)=>jobs.push({kind,args,resolve,reject}));}
+    async function release(job){job.resolve(await originals[job.kind](...job.args));}
+    function wrap(kind,fn){return function(options){
+      created[kind]++;const renderer=fn(options),destroy=renderer.destroy;
+      renderer.destroy=function(){destroyed[kind]++;return destroy();};return renderer;
+    };}
+    M.prepareAsset=(...args)=>defer('mesh',args);O.rotateAndCrop=(...args)=>defer('slices',args);
+    M.createRenderer=wrap('mesh',originals.meshRenderer);O.createRenderer=wrap('slices',originals.slicesRenderer);
+    try{
+      await studio.switchMode('follower');
+      // An old failed Mesh request must not start fallback after Slices won.
+      const oldFailure=studio.switchMode('organic'),newSlices=studio.switchOrganicEngine('slices-v2');
+      await release(jobs[1]);await newSlices;const winningSlices=studio.organicRenderer;
+      jobs[0].reject(new Error('Obsolete mesh request'));await oldFailure;
+      const staleFailure={same:studio.organicRenderer===winningSlices,engine:studio.organicEngine,jobs:jobs.length,created:{...created}};
+      // Likewise, an old successful preparation cannot install a renderer.
+      const oldSuccess=studio.switchOrganicEngine('mesh-v3'),latest=studio.switchOrganicEngine('slices-v2');
+      await release(jobs[3]);await latest;const latestRenderer=studio.organicRenderer;
+      await release(jobs[2]);await oldSuccess;
+      const staleSuccess={same:studio.organicRenderer===latestRenderer,engine:studio.organicEngine,created:{...created},destroyed:{...destroyed}};
+      const pendingMode=studio.switchOrganicEngine('mesh-v3');await studio.switchMode('follower');
+      await release(jobs[4]);await pendingMode;
+      const follower={mode:studio.mode,renderer:studio.organicRenderer,display:getComputedStyle(document.querySelector('#followerVisual')).display,radius:studio.influenceField.options.sourceRadius,created:{...created},destroyed:{...destroyed}};
+      // Session application stays pending until its renderer is installed.
+      const saved=studio.getSession();saved.mode='organic';saved.organicRenderer='mesh-v3';
+      document.querySelector('#prepStatus').textContent='Esperando';
+      let settled=false;const restoring=studio.applySession(JSON.stringify(saved)).then(v=>{settled=true;return v;});await tick();
+      const pendingRestore={settled,renderer:studio.organicRenderer,status:document.querySelector('#prepStatus').textContent};
+      await release(jobs[5]);await restoring;
+      const restored={settled,engine:studio.organicEngine,renderer:!!studio.organicRenderer,radius:studio.influenceField.options.sourceRadius,status:document.querySelector('#prepStatus').textContent};
+      const supersededRestore=studio.applySession(JSON.stringify(saved));await studio.switchMode('follower');
+      document.querySelector('#prepStatus').textContent='Última elección';jobs[6].reject(new Error('Obsolete session'));await supersededRestore;
+      const canceledRestore={mode:studio.mode,renderer:studio.organicRenderer,status:document.querySelector('#prepStatus').textContent};
+      // A current failure still falls back, and that fallback can itself be canceled.
+      const fallback=studio.switchMode('organic');jobs[7].reject(new Error('Expected WebGL failure'));await tick();
+      await release(jobs[8]);await fallback;
+      const fallbackResult={engine:studio.organicEngine,renderer:!!studio.organicRenderer,radius:studio.influenceField.options.sourceRadius,status:document.querySelector('#prepStatus').textContent};
+      const pendingFallback=studio.switchOrganicEngine('mesh-v3');jobs[9].reject(new Error('Delayed fallback'));await tick();
+      await studio.switchMode('follower');await release(jobs[10]);await pendingFallback;
+      const canceledFallback={mode:studio.mode,renderer:studio.organicRenderer,created:{...created},destroyed:{...destroyed}};
+      return {staleFailure,staleSuccess,follower,pendingRestore,restored,canceledRestore,fallbackResult,canceledFallback};
+    }finally{
+      M.prepareAsset=originals.mesh;O.rotateAndCrop=originals.slices;
+      M.createRenderer=originals.meshRenderer;O.createRenderer=originals.slicesRenderer;
+      document.querySelector('#organicEngine').value='mesh-v3';await studio.switchMode('organic');
+    }
+  });
+  assert.deepEqual(result.staleFailure,{same:true,engine:'slices-v2',jobs:2,created:{mesh:0,slices:1}},'Obsolete errors must not launch fallback or overwrite the latest renderer');
+  assert.deepEqual(result.staleSuccess,{same:true,engine:'slices-v2',created:{mesh:0,slices:2},destroyed:{mesh:0,slices:1}});
+  assert.deepEqual(result.follower,{mode:'follower',renderer:null,display:'grid',radius:0,created:{mesh:0,slices:2},destroyed:{mesh:0,slices:2}},'Follower mode must release the organic renderer and cancel pending work');
+  assert.deepEqual(result.pendingRestore,{settled:false,renderer:null,status:'Esperando'});
+  assert.equal(result.restored.settled,true);assert.equal(result.restored.engine,'mesh-v3');assert.equal(result.restored.renderer,true);assert.ok(result.restored.radius>0);assert.match(result.restored.status,/Configuración restaurada/);
+  assert.deepEqual(result.canceledRestore,{mode:'follower',renderer:null,status:'Última elección'},'A superseded session must not report success');
+  assert.equal(result.fallbackResult.engine,'slices-v2');assert.equal(result.fallbackResult.renderer,true);assert.ok(result.fallbackResult.radius>0);assert.match(result.fallbackResult.status,/Fallback automático/);
+  assert.deepEqual(result.canceledFallback,{mode:'follower',renderer:null,created:{mesh:1,slices:3},destroyed:{mesh:1,slices:3}});
+  console.log('Interaction Studio preparation: awaited sessions, out-of-order results, stale errors, renderer cleanup and cancelable WebGL fallback PASS');
+}
