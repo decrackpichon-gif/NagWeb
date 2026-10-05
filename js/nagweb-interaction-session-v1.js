@@ -14,7 +14,7 @@
   if(root) root.NAGWEB_INTERACTION_SESSION=api;
 })(typeof window!=='undefined'?window:globalThis,function(engine,organic,influence,assetPrep){
   'use strict';
-  var VERSION='1.0.0-alpha.1';
+  var VERSION='1.1.0-alpha.1';
   var SCHEMA='nagweb-interaction-session';
 
   function clone(v){return v==null?v:JSON.parse(JSON.stringify(v));}
@@ -24,7 +24,8 @@
     input=input||{};
     var resolved=mode(input.mode);
     var followerOptions=engine&&engine.normalizeOptions?engine.normalizeOptions(input.followerOptions||{}):clone(input.followerOptions||{});
-    var organicOptions=organic&&organic.normalizeOptions?organic.normalizeOptions(input.organicOptions||{}):clone(input.organicOptions||{});
+    var organicOptions=clone(input.organicOptions||{});
+    var organicRenderer=input.organicRenderer==='mesh-v3'?'mesh-v3':'slices-v2';
     var influenceOptions=influence&&influence.normalizeOptions?influence.normalizeOptions(input.influenceOptions||{}):clone(input.influenceOptions||{});
     return {
       schema:SCHEMA,
@@ -32,6 +33,7 @@
       mode:resolved,
       influenceEnabled:input.influenceEnabled!==false,
       followerOptions:followerOptions,
+      organicRenderer:organicRenderer,
       organicOptions:organicOptions,
       influenceOptions:influenceOptions,
       assetProfile:input.assetProfile?clone(input.assetProfile):null,
@@ -67,6 +69,7 @@
       mode:s.mode,
       resolvedMode:resolved,
       influenceEnabled:s.influenceEnabled,
+      organicRenderer:s.organicRenderer,
       hasAssetProfile:!!s.assetProfile,
       quality:s.preparationReport&&s.preparationReport.quality?s.preparationReport.quality.score:null,
       name:s.metadata.name
