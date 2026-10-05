@@ -370,3 +370,66 @@ Los IDs de laboratorio son deterministas; la integración futura deberá usar lo
 ### QA
 
 El run **#213** pasó model tests, browser smokes, edición visual por clic, cambio de enabled/peso, reactivación de física, exportación de JSON y restauración exacta de la selección personalizada.
+
+
+## V3.6 · Comportamiento por objetivo
+
+La selección visual validada en V3.5 se amplía para configurar **cómo** reacciona cada elemento, no sólo si reacciona.
+
+### Influence Field 1.5
+
+Cada target conserva una respuesta independiente para tres canales:
+
+- `move`: desplazamiento;
+- `rotate`: rotación;
+- `scale`: escala.
+
+El motor expone `setTargetResponse()` / `getTargetResponse()` y aplica los canales después del peso general. Desactivar un canal no afecta los demás.
+
+### Influence Field 1.6
+
+Cada target puede usar además un `returnSpeed` propio entre 0.25 y 2. El valor escala el resorte de retorno sin alterar la configuración global del campo.
+
+Esto permite, por ejemplo:
+
+- título estable con retorno rápido;
+- copy con retorno más flotante;
+- CTA con desplazamiento + inclinación + escala y retorno intermedio.
+
+### Interaction Session 1.6
+
+La selección persistida de cada objetivo contiene:
+
+- `id`;
+- `enabled`;
+- `weight`;
+- `response.move`;
+- `response.rotate`;
+- `response.scale`;
+- `returnSpeed`.
+
+Las sesiones antiguas migran con todos los canales activos y retorno 1.
+
+### Interaction Studio · edición múltiple
+
+El editor visual admite ahora:
+
+- clic para selección individual;
+- **Shift + clic** para sumar o quitar objetivos;
+- activar/desactivar toda la selección;
+- cambiar intensidad de toda la selección;
+- configurar Mover / Rotar / Escalar;
+- cambiar Retorno para el grupo.
+
+Los cambios grupales modifican sólo las propiedades editadas, por lo que objetivos con configuraciones distintas pueden compartir un nuevo retorno sin perder sus canales individuales.
+
+### QA
+
+El run **#239** pasó model tests y browser smokes con:
+
+- respuesta por canales;
+- retorno individual;
+- edición visual;
+- selección múltiple con Shift;
+- reactivación de física;
+- exportación y restauración de sesión.
