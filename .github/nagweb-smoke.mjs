@@ -225,6 +225,7 @@ if(workspaceState.leftToggles!==1||workspaceState.rightToggles!==1) throw new Er
 if(Math.abs(workspaceState.rightWidth-savedInspectorWidth)>3) throw new Error('Inspector width did not survive reload: '+JSON.stringify({workspaceState,savedInspectorWidth}));
 await page.click('.nw-dock-toggle.left');
 
+await runMotionImageCropSmoke(page);
 await runMotionStreamPlacementSmoke(page);
 await runMotionStreamSmoke(page);
 await runMotionStreamPlacementSmoke(page,'iso-orbit');
@@ -232,7 +233,6 @@ await runMotionIsoOrbitSmoke(page);
 await runMotionStreamPlacementSmoke(page,'pop-grid');
 await runMotionPopGridSmoke(page);
 await runMotionBatchImagesSmoke(page);
-await runMotionImageCropSmoke(page);
 await runMotionDropSmoke(page);
 await runMotionExpandSmoke(page);
 await runHistorySmoke(page);
