@@ -58,10 +58,10 @@ try{
 
   await page.click('#export');
   const exported=await page.$eval('#sessionJson',el=>el.value);
-  const data=JSON.parse(exported);assert.equal(data.schema,'nagweb-interaction-session');assert.equal(data.version,1);assert.equal(data.organicRenderer,'mesh-v3');assert.ok(data.organicOptions.headFlex<data.organicOptions.torsoFlex);assert.ok(data.assetProfile);assert.ok(data.preparationReport);
+  const data=JSON.parse(exported);assert.equal(data.schema,'nagweb-interaction-session');assert.equal(data.version,1);assert.equal(data.organicRenderer,'mesh-v3');assert.ok(data.organicOptions.headFlex<data.organicOptions.torsoFlex);assert.ok(data.organicOptions.headZoneEnd<data.organicOptions.torsoZoneEnd);assert.ok(data.assetProfile);assert.ok(data.preparationReport);
 
   assert.equal(errors.length,0,'Interaction Studio should have no page errors: '+errors.join('\n'));
   fs.mkdirSync('/tmp/nagweb-interaction-v1',{recursive:true});
   await page.screenshot({path:'/tmp/nagweb-interaction-v1/interaction-studio-v1.png',fullPage:true});
-  console.log('NagWeb Interaction Studio V1.2 V3.1 zones browser smoke: PASS');
+  console.log('NagWeb Interaction Studio V1.3 V3.1 visual zones browser smoke: PASS');
 }finally{await browser.close();}
