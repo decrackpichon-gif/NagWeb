@@ -122,6 +122,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: interaction-engine-v1-visual
-          path: /tmp/nagweb-interaction-v1
+          path: |
+            /tmp/nagweb-interaction-v1
+            /tmp/nagweb-interaction-experimental
           if-no-files-found: ignore
           retention-days: 7
