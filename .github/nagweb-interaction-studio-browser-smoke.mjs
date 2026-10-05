@@ -27,7 +27,7 @@ try{
     influenceVersion:NAGWEB_INTERACTION_INFLUENCE.version
   }));
   assert.equal(init.title,'NagWeb · Interaction Studio');assert.ok(init.quality>=72);assert.equal(init.recommended,'organic');assert.equal(init.mode,'organic');
-  assert.equal(init.sessionVersion,'1.8.0-alpha.1');assert.equal(init.reactionProfilesVersion,'1.1.0');assert.equal(init.selectionVersion,'1.0.0');assert.equal(init.assetVersion,'1.2.0');assert.equal(init.organicV2Version,'2.2.0-alpha.1');assert.equal(init.organicV3Version,'3.2.0-alpha.1');assert.equal(init.organicEngine,'mesh-v3');assert.equal(init.influence,true);assert.equal(init.influenceVersion,'1.10.0');
+  assert.equal(init.sessionVersion,'1.8.0-alpha.1');assert.equal(init.reactionProfilesVersion,'1.1.0');assert.equal(init.selectionVersion,'1.0.0');assert.equal(init.assetVersion,'1.2.0');assert.equal(init.organicV2Version,'2.2.0-alpha.1');assert.equal(init.organicV3Version,'3.2.0-alpha.1');assert.equal(init.organicEngine,'mesh-v3');assert.equal(init.influence,true);assert.equal(init.influenceVersion,'1.11.0');
 
   const stage=await page.$eval('#stage',el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height};});
   const head0=await page.evaluate(()=>({x:__NAGWEB_INTERACTION_STUDIO__.follower.state.x,y:__NAGWEB_INTERACTION_STUDIO__.follower.state.y}));
@@ -219,5 +219,5 @@ try{
   assert.equal(errors.length,0,'Interaction Studio should have no page errors: '+errors.join('\n'));
   fs.mkdirSync('/tmp/nagweb-interaction-v1',{recursive:true});
   await page.screenshot({path:'/tmp/nagweb-interaction-v1/interaction-studio-v1.png',fullPage:true});
-  console.log('NagWeb Interaction Studio V2.8 mixed multiselect browser smoke: PASS');
+  console.log('NagWeb Interaction Studio V2.9 Influence 1.11 browser smoke: PASS');
 }finally{await browser.close();}
