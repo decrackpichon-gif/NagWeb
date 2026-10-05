@@ -8,7 +8,7 @@
   if(root) root.NAGWEB_INTERACTION_INFLUENCE=api;
 })(typeof window!=='undefined'?window:globalThis,function(engine){
   'use strict';
-  var VERSION='1.0.0';
+  var VERSION='1.1.0';
   function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
   function num(v,d){v=Number(v);return Number.isFinite(v)?v:d;}
   function normalizeOptions(input){
@@ -21,6 +21,7 @@
       maxScale:Math.max(0,num(input.maxScale,0.08)),
       spring:clamp(num(input.spring,0.08),0.001,1),
       damping:clamp(num(input.damping,0.84),0.05,0.999),
+      sourceMode:input.sourceMode==='head'?'head':'body',
       reducedMotion:input.reducedMotion||'respect'
     };
   }
@@ -94,9 +95,11 @@
     function frame(now,dt){
       if(paused||destroyed)return;
       var source=input.source();
-      if(!source||!Number.isFinite(source.x)||!Number.isFinite(source.y))return;
+      var path=source&&Array.isArray(source.points)?source.points:null;
+      var point=source&&Number.isFinite(source.x)&&Number.isFinite(source.y)?source:null;
+      if(!path&&!point)return;
       targets.forEach(function(t){
-        var goal=reduce?{x:0,y:0,rotation:0,scale:1,strength:0}:computeRepulsion(source,t.rest,o);
+        var goal=reduce?{x:0,y:0,rotation:0,scale:1,strength:0}:(path?computePathRepulsion(path,t.rest,o):computeRepulsion(point,t.rest,o));
         springStep(t.state,goal,o,dt);apply(t);
       });
     }
@@ -122,5 +125,5 @@
       }
     };
   }
-  return {version:VERSION,normalizeOptions:normalizeOptions,computeRepulsion:computeRepulsion,springStep:springStep,createField:createField};
+  return {version:VERSION,normalizeOptions:normalizeOptions,computeRepulsion:computeRepulsion,closestPointOnSegment:closestPointOnSegment,computePathRepulsion:computePathRepulsion,springStep:springStep,createField:createField};
 });
