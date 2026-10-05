@@ -14,7 +14,7 @@
 .thumb{position:relative;height:120px;margin-top:10px;border:1px solid #33343c;background:#101014;display:grid;place-items:center;overflow:hidden}.thumb img{max-width:88%;max-height:84%;object-fit:contain}.axisline{position:absolute;height:2px;background:rgba(255,255,255,.45);transform-origin:0 50%;pointer-events:none}.anchor{position:absolute;width:44px;height:44px;border-radius:50%;translate:-50% -50%;border:1px solid #777482;background:#23232b;color:#fff;font:700 8px/1 Inter,sans-serif;cursor:grab;touch-action:none}.anchor.lead{background:#f5f1e9;color:#111}.anchor:active{cursor:grabbing}.zoneMarker{position:absolute;translate:-50% -50%;padding:4px 6px;border:1px solid #7b7587;border-radius:999px;background:#1e1e26;color:#eee;font:700 7px/1 Inter,sans-serif;cursor:ew-resize;touch-action:none;white-space:nowrap;box-shadow:0 3px 12px rgba(0,0,0,.28)}.zoneMarker.head{border-color:#d39b65;color:#ffd4a0}.zoneMarker.torso{border-color:#6c96c7;color:#bcdcff}.axisActions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:7px}
 .stage{position:relative;overflow:hidden;touch-action:none;background:radial-gradient(100% 100% at 60% 40%,#45335b 0,#221c2d 47%,#0e0d13 100%)}.stage:after{content:"INTERACTION STUDIO";position:absolute;right:18px;bottom:16px;font:10px ui-monospace,monospace;color:#686370;pointer-events:none}
 .hero{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}.headline{display:flex;flex-wrap:wrap;justify-content:center;max-width:84%;gap:.01em;font:900 clamp(58px,11vw,180px)/.78 Arial Black,Impact,sans-serif;letter-spacing:-.07em;text-align:center;color:#f1eadc}.headline span{display:inline-block}.headline .break{flex-basis:100%;height:0}
-.sub{position:absolute;top:24px;left:28px;font-size:11px;color:#bcb6c5;pointer-events:none}.sub b{color:#fff}.followerVisual{position:absolute;left:0;top:0;width:240px;height:240px;display:grid;place-items:center;pointer-events:none;transform-origin:50% 50%;will-change:transform}.followerVisual img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 18px 19px rgba(0,0,0,.38))}.leader{position:absolute;width:2px;height:2px;opacity:0;pointer-events:none}#organicCanvas,#organicMeshCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.sub{position:absolute;top:24px;left:28px;font-size:11px;color:#bcb6c5;pointer-events:none}.sub b{color:#fff}.contentCard{position:absolute;right:5.5%;bottom:7%;width:min(360px,34vw);padding:18px 20px;border:1px solid rgba(255,255,255,.18);background:rgba(17,15,24,.42);backdrop-filter:blur(12px);border-radius:18px;pointer-events:none}.contentCard .eyebrow{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:#bdb6c9;margin-bottom:8px}.contentCard h3{font-size:clamp(18px,2.3vw,34px);line-height:1.02;margin:0 0 10px}.contentCard p{font-size:12px;line-height:1.5;color:#c6c1cc;margin:0 0 14px}.contentCard .word,.contentCard .chip,.headline span{display:inline-block}.contentCard .chip{padding:8px 12px;border:1px solid rgba(255,255,255,.32);border-radius:999px;color:#fff;font-size:11px}.followerVisual{position:absolute;left:0;top:0;width:240px;height:240px;display:grid;place-items:center;pointer-events:none;transform-origin:50% 50%;will-change:transform}.followerVisual img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 18px 19px rgba(0,0,0,.38))}.leader{position:absolute;width:2px;height:2px;opacity:0;pointer-events:none}#organicCanvas,#organicMeshCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .pill{display:inline-flex;align-items:center;padding:3px 7px;border:1px solid #4a4853;border-radius:999px;font-size:9px;color:#bbb6c3}.modeNote{margin-top:6px;font-size:10px;color:#8f8b96}.export{margin-top:8px;width:100%;height:120px;background:#101014;color:#a9c9ff;border:1px solid #33343c;padding:8px;font:9px/1.45 ui-monospace,monospace;resize:vertical}
 @media(max-width:800px){body{overflow:auto}.app{grid-template-columns:1fr;grid-template-rows:auto 62vh;height:auto;min-height:100%}.panel{border-right:0;border-bottom:1px solid var(--line);max-height:none}.stage{min-height:62vh}.followerVisual{width:180px;height:180px}}
 </style>
@@ -65,6 +65,7 @@
     <h2>Campo de influencia</h2>
     <label class="check"><input id="influence" type="checkbox" checked> Empujar elementos cercanos</label>
     <div class="field"><label>Influencia desde</label><select id="influenceSource"><option value="body">Cuerpo completo</option><option value="head">Cabeza / cursor</option></select></div>
+    <div class="field"><label>Objetivos de prueba</label><select id="influenceTargets"><option value="headline">Sólo título</option><option value="all">Título + contenido</option></select></div>
     <div class="field"><label>Radio <output id="radiusOut"></output></label><input id="radius" type="range" min="70" max="420" step="5" value="210"></div>
     <div class="field"><label>Fuerza <output id="strengthOut"></output></label><input id="strength" type="range" min="0" max="2.5" step=".05" value="1"></div>
   </div>
@@ -79,7 +80,13 @@
 
 <main id="stage" class="stage">
   <div class="sub"><b>Mové el cursor</b> para probar · la tipografía reacciona al campo de influencia</div>
-  <div class="hero"><div id="headline" class="headline" aria-label="MOVE WITH ME"><span>M</span><span>O</span><span>V</span><span>E</span><i class="break"></i><span>W</span><span>I</span><span>T</span><span>H</span><i class="break"></i><span>M</span><span>E</span></div></div>
+  <div class="hero"><div id="headline" class="headline" aria-label="MOVE WITH ME"><span class="influenceHeadline">M</span><span class="influenceHeadline">O</span><span class="influenceHeadline">V</span><span class="influenceHeadline">E</span><i class="break"></i><span class="influenceHeadline">W</span><span class="influenceHeadline">I</span><span class="influenceHeadline">T</span><span class="influenceHeadline">H</span><i class="break"></i><span class="influenceHeadline">M</span><span class="influenceHeadline">E</span></div></div>
+  <section id="contentCard" class="contentCard" aria-label="Bloque de prueba">
+    <div class="eyebrow"><span class="word influenceContent">Diseño</span> <span class="word influenceContent">interactivo</span></div>
+    <h3><span class="word influenceContent">Un</span> <span class="word influenceContent">personaje</span> <span class="word influenceContent">que</span> <span class="word influenceContent">habita</span> <span class="word influenceContent">la</span> <span class="word influenceContent">interfaz</span></h3>
+    <p><span class="word influenceContent">Probamos</span> <span class="word influenceContent">cómo</span> <span class="word influenceContent">reaccionan</span> <span class="word influenceContent">palabras,</span> <span class="word influenceContent">texto</span> <span class="word influenceContent">corrido</span> <span class="word influenceContent">y</span> <span class="word influenceContent">controles</span> <span class="word influenceContent">cuando</span> <span class="word influenceContent">el</span> <span class="word influenceContent">cuerpo</span> <span class="word influenceContent">pasa</span> <span class="word influenceContent">cerca.</span></p>
+    <span class="chip influenceContent">Explorar interacción</span>
+  </section>
   <canvas id="organicCanvas" aria-hidden="true"></canvas>
   <canvas id="organicMeshCanvas" aria-hidden="true"></canvas>
   <div id="followerVisual" class="followerVisual"><img id="followerImage" alt=""></div>
@@ -286,7 +293,17 @@
     output('torsoRigidity',Math.round(Number(document.getElementById('torsoRigidity').value)*100)+'%');
     output('lowerFlex',Math.round(Number(document.getElementById('lowerFlex').value)*100)+'%');
   }
-  function influenceOpts(){return {radius:Number(document.getElementById('radius').value),strength:Number(document.getElementById('strength').value),maxPush:85,maxRotate:11,maxScale:.09,spring:.08,damping:.84,sourceMode:document.getElementById('influenceSource').value==='head'?'head':'body'};}
+  function influencePhysicalRadius(){
+    if(document.getElementById('influenceSource').value!=='body'||activeMode!=='organic'||!organicPrepared)return 0;
+    var size=Number(document.getElementById('size').value),ratio=(organicPrepared.height||1)/Math.max(1,organicPrepared.width||1);
+    return Math.max(6,Math.min(90,size*ratio*.16));
+  }
+  function influenceTargetList(){
+    return document.getElementById('influenceTargets').value==='all'
+      ? document.querySelectorAll('.influenceHeadline,.influenceContent')
+      : document.querySelectorAll('.influenceHeadline');
+  }
+  function influenceOpts(){return {radius:Number(document.getElementById('radius').value),strength:Number(document.getElementById('strength').value),maxPush:85,maxRotate:11,maxScale:.09,spring:.08,damping:.84,sourceMode:document.getElementById('influenceSource').value==='head'?'head':'body',sweptBody:true,maxSweepDistance:220,sourceRadius:influencePhysicalRadius()};}
   function updateInfluence(){
     var enabled=document.getElementById('influence').checked;
     if(influenceField){influenceField.destroy();influenceField=null;}
@@ -298,7 +315,7 @@
           }
           return {x:follower.state.x,y:follower.state.y};
         },
-        targets:document.querySelectorAll('#headline span'),
+        targets:influenceTargetList(),
         ...influenceOpts()
       });
     }
@@ -330,7 +347,7 @@
       organicRenderer:activeOrganicEngine,
       bodyProfile:document.getElementById('bodyProfile').value,
       display:{size:Number(document.getElementById('size').value)},
-      organicOptions:organicRenderer?organicRenderer.options:(selectedOrganicEngine()==='mesh-v3'?organicV3Opts():organicV2Opts()),influenceOptions:influenceOpts(),
+      organicOptions:organicRenderer?organicRenderer.options:(selectedOrganicEngine()==='mesh-v3'?organicV3Opts():organicV2Opts()),influenceOptions:Object.assign({},influenceOpts(),{targetScenario:document.getElementById('influenceTargets').value}),
       assetProfile:currentAssetProfile(),preparationReport:prepResult&&prepResult.report,
       assetRef:currentFile?{name:currentFile.name,type:currentFile.type,size:currentFile.size}:{name:'demo-asset.svg',type:'image/svg+xml'},
       metadata:{name:currentFile?currentFile.name:'Demo Interaction Studio'}
@@ -363,6 +380,7 @@
     if(Number.isFinite(Number(io.radius)))document.getElementById('radius').value=io.radius;
     if(Number.isFinite(Number(io.strength)))document.getElementById('strength').value=io.strength;
     document.getElementById('influenceSource').value=io.sourceMode==='head'?'head':'body';
+    if(io.targetScenario)document.getElementById('influenceTargets').value=io.targetScenario==='all'?'all':'headline';
     follower.setOptions(fo);
     drawAxis();syncMotion();updateInfluence();
     await updateModeUI();
@@ -398,6 +416,7 @@
   });
   document.getElementById('influence').onchange=updateInfluence;
   document.getElementById('influenceSource').onchange=updateInfluence;
+  document.getElementById('influenceTargets').onchange=updateInfluence;
   ['radius','strength'].forEach(function(id){document.getElementById(id).addEventListener('input',function(){if(influenceField)influenceField.setOptions(influenceOpts());output('radius',document.getElementById('radius').value+' px');output('strength',document.getElementById('strength').value);});});
   bindAnchor('trailAnchor','trail');bindAnchor('leadAnchor','lead');bindZoneMarker('headZoneMarker','headEnd');bindZoneMarker('torsoZoneMarker','torsoEnd');
   document.getElementById('swapAxis').onclick=function(){var t=axis.trail;axis.trail=axis.lead;axis.lead=t;axis.manual=true;drawAxis();status('Dirección invertida. Aplicá el eje para actualizar.','warn');};
