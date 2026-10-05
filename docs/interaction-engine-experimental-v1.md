@@ -235,3 +235,90 @@ El overlay muestra la spine y posiciones de controles de V4-B.
 Run verde inicial: **#368**.
 
 Próxima decisión: prueba humana con `ponjita.png`. V4-B sólo continúa si reduce claramente las rupturas observadas en V4.1 y mantiene al menos la continuidad visual de V3.
+
+
+## V4-C / V4.3 · Adaptive Curve por silueta
+
+Archivo:
+
+`js/nagweb-interaction-organic-v4c.js`
+
+V4-C mantiene la arquitectura estable de V4-B:
+
+- una sola posición longitudinal `u` por columna;
+- sin mezcla posicional de huesos;
+- anti-fold guard intacto.
+
+La novedad es que el asset preparado se analiza automáticamente después de ser rotado a su eje y recortado.
+
+### Perfil de silueta
+
+El módulo escanea alpha a lo largo del eje longitudinal y calcula:
+
+- ancho local;
+- ocupación alpha;
+- centro transversal;
+- gradiente de ancho;
+- ancho normalizado respecto del máximo.
+
+El perfil se suaviza y se remapea a `u=0..1`, con extremos anclados exactamente a 0 y 1.
+
+### Adaptación
+
+A partir del perfil se derivan automáticamente controles de:
+
+- `flex`;
+- `bend`.
+
+Principios actuales:
+
+- zonas anchas reciben más rigidez relativa;
+- zonas finas pueden recibir algo más de flexibilidad;
+- transiciones bruscas de ancho se estabilizan;
+- la región inicial/cabeza conserva un lock adicional;
+- el resultado sigue respetando una progresión global de personaje.
+
+No se altera la posición longitudinal ni se introduce skinning multi-bone.
+
+### Presets
+
+La interfaz expone tres presets comprensibles:
+
+- `Personaje`;
+- `Criatura`;
+- `Forma blanda`.
+
+Los parámetros técnicos siguen disponibles en el módulo, pero el laboratorio no obliga al usuario a manipularlos.
+
+### Diagnóstico
+
+`experiments/organic-adaptive-curve-v4c.html`
+
+El overlay diagnóstico muestra:
+
+- spine;
+- controles adaptativos;
+- barra transversal proporcional al ancho de la silueta;
+- color aproximado de rígido → flexible;
+- nodos mayores en transiciones fuertes.
+
+Esto permite verificar visualmente que el análisis automático coincide con la forma del asset.
+
+### QA
+
+- perfil alpha sintético con zonas anchas/finas;
+- detección de cambios de grosor;
+- adaptación distinta de baseline en múltiples controles;
+- wide regions relativamente más rígidas que thin regions;
+- `adaptiveStrength=0` recupera baseline;
+- presets generan campos diferentes;
+- recorrido curvo Chromium/WebGL;
+- anti-fold heredado de V4-B;
+- diagnóstico ON/OFF;
+- screenshot A/B.
+
+El primer run V4-C (#373) falló porque el centro del primer bin de muestreo producía `u=0.0031` en vez de 0. Se corrigió el algoritmo anclando explícitamente los extremos del perfil.
+
+Run verde: **#374**.
+
+Próximo criterio de decisión: comparar con `ponjita.png` contra V3, usando primero preset `Personaje`. V4-C sólo continúa si mantiene la integridad de V4-B y aporta una diferencia visual útil en cuello, torso/ropa o transiciones de volumen.
