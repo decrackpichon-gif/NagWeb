@@ -25,7 +25,7 @@ try{
     canvas:{w:document.querySelector('#meshCanvas').width,h:document.querySelector('#meshCanvas').height},
     filter:getComputedStyle(document.querySelector('#meshCanvas')).filter
   }));
-  assert.equal(initial.version,'3.0.0-alpha.1');assert.equal(initial.renderer,'webgl-mesh');
+  assert.equal(initial.version,'3.1.0-alpha.1');assert.equal(initial.renderer,'webgl-mesh');
   assert.equal(initial.topology.columns,32);assert.equal(initial.topology.rows,10);
   assert.equal(initial.topology.vertexCount,(32+1)*(10+1));
   assert.ok(initial.canvas.w>500&&initial.canvas.h>300);assert.equal(initial.analysis.silhouetteReliable,true);
@@ -37,6 +37,11 @@ try{
   const moved=await page.evaluate(()=>({head:__NAGWEB_ORGANIC_V3__.renderer.spine[0],topology:__NAGWEB_ORGANIC_V3__.renderer.topology}));
   assert.ok(Math.hypot(moved.head.x-h0.x,moved.head.y-h0.y)>10,'V3 head should follow pointer');
 
+  await page.$eval('#headRigidity',el=>{el.value='.99';el.dispatchEvent(new Event('input',{bubbles:true}));});
+  await page.$eval('#torsoRigidity',el=>{el.value='.72';el.dispatchEvent(new Event('input',{bubbles:true}));});
+  await page.$eval('#lowerFlex',el=>{el.value='.94';el.dispatchEvent(new Event('input',{bubbles:true}));});
+  const zones=await page.evaluate(()=>__NAGWEB_ORGANIC_V3__.renderer.options);
+  assert.ok(zones.headFlex<zones.torsoFlex&&zones.torsoFlex<zones.lowerFlex,'live zone controls should preserve head < torso < lower flexibility');
   await page.$eval('#columns',el=>{el.value='40';el.dispatchEvent(new Event('input',{bubbles:true}));});
   await page.$eval('#rows',el=>{el.value='12';el.dispatchEvent(new Event('input',{bubbles:true}));});
   await new Promise(r=>setTimeout(r,150));
@@ -48,5 +53,5 @@ try{
   assert.equal(errors.length,0,'V3 lab should have no page errors: '+errors.join('\n'));assert.equal(consoleErrors.length,0,'V3 lab should have no console errors: '+consoleErrors.join('\n'));
   fs.mkdirSync('/tmp/nagweb-interaction-v1',{recursive:true});
   await page.screenshot({path:'/tmp/nagweb-interaction-v1/organic-v3-mesh.png',fullPage:true});
-  console.log('NagWeb Organic Mesh V3.0 browser smoke: PASS');
+  console.log('NagWeb Organic Mesh V3.1 browser smoke: PASS');
 }finally{await browser.close();}
