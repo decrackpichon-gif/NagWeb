@@ -8,21 +8,9 @@
   if(root) root.NAGWEB_INTERACTION_INFLUENCE=api;
 })(typeof window!=='undefined'?window:globalThis,function(engine){
   'use strict';
-  var VERSION='1.7.0';
+  var VERSION='1.8.0';
   function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
   function num(v,d){v=Number(v);return Number.isFinite(v)?v:d;}
-  var REACTION_PRESETS={
-    soft:{id:'soft',label:'Apartarse suave',weight:.62,response:{move:.78,rotate:.22,scale:.12},returnSpeed:.72},
-    displace:{id:'displace',label:'Desplazar',weight:1,response:{move:1,rotate:0,scale:0},returnSpeed:1.15},
-    tilt:{id:'tilt',label:'Inclinar',weight:.78,response:{move:.34,rotate:1.35,scale:.08},returnSpeed:1.05},
-    pulse:{id:'pulse',label:'Pulso',weight:.72,response:{move:.12,rotate:0,scale:1.55},returnSpeed:1.35},
-    elastic:{id:'elastic',label:'Elástico',weight:1.05,response:{move:1,rotate:.72,scale:.45},returnSpeed:.58},
-    heavy:{id:'heavy',label:'Pesado',weight:.72,response:{move:.58,rotate:.18,scale:.08},returnSpeed:.42}
-  };
-  function clonePreset(p){return p?{id:p.id,label:p.label,weight:p.weight,response:{move:p.response.move,rotate:p.response.rotate,scale:p.response.scale},returnSpeed:p.returnSpeed}:null;}
-  function reactionProfileName(value){return REACTION_PRESETS[value]?value:'custom';}
-  function getReactionPreset(name){return clonePreset(REACTION_PRESETS[name]||null);}
-  function listReactionPresets(){return Object.keys(REACTION_PRESETS).map(function(k){return clonePreset(REACTION_PRESETS[k]);});}
   function normalizeOptions(input){
     input=input||{};
     return {
@@ -150,7 +138,7 @@
       var rawWeight=el.getAttribute&&el.getAttribute('data-nw-influence-weight');
       var weight=rawWeight==null?1:clamp(num(rawWeight,1),0,2);
       var id=el.getAttribute&&el.getAttribute('data-nw-target-id')||null;
-      var profile=reactionProfileName(el.getAttribute&&el.getAttribute('data-nw-influence-profile'));
+      var profile=String(el.getAttribute&&el.getAttribute('data-nw-reaction-profile')||'custom').slice(0,48);
       var returnSpeed=clamp(num(el.getAttribute&&el.getAttribute('data-nw-influence-return'),1),.25,2);
       var response=normalizeResponse({
         move:el.getAttribute&&el.getAttribute('data-nw-influence-move'),
@@ -218,20 +206,6 @@
       get targetResponses(){return targets.map(function(t){return Object.assign({},t.response);});},
       get targetReturnSpeeds(){return targets.map(function(t){return t.returnSpeed;});},
       get targetProfiles(){return targets.map(function(t){return t.profile;});},
-      applyTargetPreset:function(ref,name){
-        var hit=targets.find(function(t){return t.el===ref||t.id===ref;}),p=getReactionPreset(name);
-        if(!hit||!p)return null;
-        hit.weight=p.weight;hit.response=normalizeResponse(p.response);hit.returnSpeed=p.returnSpeed;hit.profile=p.id;
-        if(hit.el&&hit.el.setAttribute){
-          hit.el.setAttribute('data-nw-influence-weight',String(hit.weight));
-          hit.el.setAttribute('data-nw-influence-move',String(hit.response.move));
-          hit.el.setAttribute('data-nw-influence-rotate',String(hit.response.rotate));
-          hit.el.setAttribute('data-nw-influence-scale',String(hit.response.scale));
-          hit.el.setAttribute('data-nw-influence-return',String(hit.returnSpeed));
-          hit.el.setAttribute('data-nw-influence-profile',hit.profile);
-        }
-        return {profile:hit.profile,weight:hit.weight,response:Object.assign({},hit.response),returnSpeed:hit.returnSpeed};
-      },
       getTargetProfile:function(ref){
         var hit=targets.find(function(t){return t.el===ref||t.id===ref;});
         return hit?hit.profile:null;
@@ -241,7 +215,7 @@
         var hit=targets.find(function(t){return t.el===ref||t.id===ref;});
         if(!hit)return null;
         hit.weight=weight;hit.profile='custom';
-        if(hit.el&&hit.el.setAttribute){hit.el.setAttribute('data-nw-influence-weight',String(weight));hit.el.setAttribute('data-nw-influence-profile','custom');}
+        if(hit.el&&hit.el.setAttribute){hit.el.setAttribute('data-nw-influence-weight',String(weight));hit.el.setAttribute('data-nw-reaction-profile','custom');}
         return hit.weight;
       },
       getTargetWeight:function(ref){
@@ -253,7 +227,7 @@
         if(!hit)return null;
         hit.response=normalizeResponse(Object.assign({},hit.response,next||{}));hit.profile='custom';
         if(hit.el&&hit.el.setAttribute){
-          hit.el.setAttribute('data-nw-influence-profile','custom');
+          hit.el.setAttribute('data-nw-reaction-profile','custom');
           hit.el.setAttribute('data-nw-influence-move',String(hit.response.move));
           hit.el.setAttribute('data-nw-influence-rotate',String(hit.response.rotate));
           hit.el.setAttribute('data-nw-influence-scale',String(hit.response.scale));
@@ -268,7 +242,7 @@
         var hit=targets.find(function(t){return t.el===ref||t.id===ref;});
         if(!hit)return null;
         hit.returnSpeed=clamp(num(speed,1),.25,2);hit.profile='custom';
-        if(hit.el&&hit.el.setAttribute){hit.el.setAttribute('data-nw-influence-return',String(hit.returnSpeed));hit.el.setAttribute('data-nw-influence-profile','custom');}
+        if(hit.el&&hit.el.setAttribute){hit.el.setAttribute('data-nw-influence-return',String(hit.returnSpeed));hit.el.setAttribute('data-nw-reaction-profile','custom');}
         return hit.returnSpeed;
       },
       getTargetReturnSpeed:function(ref){
@@ -287,5 +261,5 @@
       }
     };
   }
-  return {version:VERSION,reactionProfiles:listReactionPresets(),listReactionPresets:listReactionPresets,getReactionPreset:getReactionPreset,reactionProfileName:reactionProfileName,normalizeOptions:normalizeOptions,computeRepulsion:computeRepulsion,closestPointOnSegment:closestPointOnSegment,computePathRepulsion:computePathRepulsion,pathDistance:pathDistance,computeSweptPathRepulsion:computeSweptPathRepulsion,weightGoal:weightGoal,normalizeResponse:normalizeResponse,responseGoal:responseGoal,targetDynamics:targetDynamics,springStep:springStep,createField:createField};
+  return {version:VERSION,normalizeOptions:normalizeOptions,computeRepulsion:computeRepulsion,closestPointOnSegment:closestPointOnSegment,computePathRepulsion:computePathRepulsion,pathDistance:pathDistance,computeSweptPathRepulsion:computeSweptPathRepulsion,weightGoal:weightGoal,normalizeResponse:normalizeResponse,responseGoal:responseGoal,targetDynamics:targetDynamics,springStep:springStep,createField:createField};
 });
