@@ -33,7 +33,14 @@ try{
   const h0=initial.spine[0];
   await page.mouse.move(stage.x+stage.width*.78,stage.y+stage.height*.28);
   await new Promise(r=>setTimeout(r,650));
-  const moved=await page.evaluate(()=>({spine:__NAGWEB_ORGANIC_V2__.renderer.spine,state:__NAGWEB_ORGANIC_V2__.follower.state}));
+  const moved=await page.evaluate(()=>{
+    const r=__NAGWEB_ORGANIC_V2__.renderer;
+    return {
+      spine:r.spine,
+      state:__NAGWEB_ORGANIC_V2__.follower.state,
+      headLimits:Array.from({length:5},(_,i)=>NAGWEB_ORGANIC_FOLLOWER.bendLimitAt((i+1.5)/(r.options.points-1),r.options))
+    };
+  });
   assert.ok(Math.hypot(moved.spine[0].x-h0.x,moved.spine[0].y-h0.y)>10,'organic head should follow pointer');
   const expected=initial.options.length/(initial.options.points-1);
   const lengths=moved.spine.slice(1).map((p,i)=>Math.hypot(p.x-moved.spine[i].x,p.y-moved.spine[i].y));
@@ -43,7 +50,7 @@ try{
     const a0=Math.atan2(p1.y-p0.y,p1.x-p0.x),a1=Math.atan2(p.y-p1.y,p.x-p1.x);
     return Math.abs(Math.atan2(Math.sin(a1-a0),Math.cos(a1-a0)));
   });
-  assert.ok(bends.slice(0,5).every((v,i)=>v<=NAGWEB_ORGANIC_FOLLOWER.bendLimitAt((i+1.5)/(initial.options.points-1),initial.options)+.015),'head zone bend should be protected');
+  assert.ok(bends.slice(0,5).every((v,i)=>v<=moved.headLimits[i]+.015),'head zone bend should be protected');
 
   const sway=await page.evaluate(()=>{
     const r=__NAGWEB_ORGANIC_V2__.renderer;
