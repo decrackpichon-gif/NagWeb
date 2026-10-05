@@ -89,6 +89,7 @@
       var u=1-p.sourceX; // prepared assets use leadEnd:right, so u=0 is right/head side
       return {u:u,width:widths[i],widthNorm:widths[i]/maxWidth,center:centers[i],occupancy:p.occupancy,gradient:gradient[i],gradientNorm:gradient[i]/maxGrad};
     }).sort(function(a,b){return a.u-b.u;});
+    if(points.length){points[0].u=0;points[points.length-1].u=1;}
     return {samples:samples,width:width,height:height,maxWidth:maxWidth,meanWidth:meanWidth,maxGradient:maxGrad,points:points};
   }
 
