@@ -330,3 +330,43 @@ El escenario de prueba ya no se limita a `MOVE WITH ME`. Incluye un bloque simil
 El QA comprueba cantidad de objetivos, pesos diferenciados, swept body, radio corporal, persistencia del escenario y compatibilidad con Session 1.3.
 
 El run **#197** pasó model tests y browser smokes para esta implementación antes del commit documental.
+
+
+## V3.5 · Selección visual de objetivos reactivos
+
+El Interaction Studio deja de depender sólo de presets globales de objetivos.
+
+### Influence Field 1.4
+
+Cada objetivo puede tener un ID estable mediante `data-nw-target-id` y su intensidad puede actualizarse en caliente con `setTargetWeight(id, weight)`, sin recrear el campo completo.
+
+La API también expone IDs y pesos activos para QA e integración futura.
+
+### Interaction Session 1.4
+
+La sesión preserva una selección personalizada de objetivos:
+
+- `id`;
+- `enabled`;
+- `weight` entre 0 y 2.
+
+El escenario puede ser `headline`, `all` o `custom`. La selección se normaliza, limita y deduplica antes de persistirse.
+
+### Interaction Studio · editor visual de objetivos
+
+Se agregó un modo **Editar objetivos visualmente**:
+
+1. el personaje y el campo de influencia vuelven a reposo y se congelan;
+2. los candidatos aparecen delineados;
+3. clic sobre un elemento lo selecciona;
+4. el panel permite activar/desactivar su reacción;
+5. la intensidad se ajusta de 0% a 200%;
+6. al salir, la física vuelve a activarse desde el layout limpio.
+
+Los estados activo, inactivo y seleccionado se distinguen visualmente. Los presets `Sólo título` y `Título + contenido` siguen existiendo como punto de partida y cualquier edición pasa a `Selección personalizada`.
+
+Los IDs de laboratorio son deterministas; la integración futura deberá usar los IDs reales de los elementos de NagWeb.
+
+### QA
+
+El run **#213** pasó model tests, browser smokes, edición visual por clic, cambio de enabled/peso, reactivación de física, exportación de JSON y restauración exacta de la selección personalizada.
