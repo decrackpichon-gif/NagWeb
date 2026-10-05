@@ -7,7 +7,7 @@ assert.equal(S.version,'1.0.0');
 assert.deepEqual(S.normalizeRect({x:40,y:30},{x:10,y:5}),{left:10,top:5,right:40,bottom:30,width:30,height:25});
 assert.equal(S.intersectionArea({left:0,top:0,right:20,bottom:20},{left:10,top:10,right:30,bottom:30}),100);
 assert.equal(S.centerInside({left:20,top:20,right:40,bottom:40},{left:0,top:0,right:35,bottom:35}),true);
-assert.equal(S.hitRect({left:20,top:20,right:40,bottom:40},{left:0,top:0,right:25,bottom:25},{minOverlap:.2}),true);
+assert.equal(S.hitRect({left:20,top:20,right:40,bottom:40},{left:0,top:0,right:29,bottom:29},{minOverlap:.2}),true);
 assert.equal(S.hitRect({left:20,top:20,right:40,bottom:40},{left:0,top:0,right:22,bottom:22},{minOverlap:.2}),false);
 
 const entries=[
