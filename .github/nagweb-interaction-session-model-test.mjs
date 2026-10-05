@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 const require=createRequire(import.meta.url);
 const S=require('../js/nagweb-interaction-session-v1.js');
 
-assert.equal(S.version,'1.3.0-alpha.1');
+assert.equal(S.version,'1.4.0-alpha.1');
 const s=S.normalize({
   mode:'auto',
   organicRenderer:'mesh-v3',
@@ -12,7 +12,11 @@ const s=S.normalize({
   influenceEnabled:true,
   followerOptions:{follow:.12,maxSpeed:44,distanceFromPointer:36,assetForwardAngle:90},
   organicOptions:{length:510,sway:.06,columns:36,rows:12,headZoneEnd:.2,torsoZoneEnd:.64,headFlex:.04,torsoFlex:.4,lowerFlex:1},
-  influenceOptions:{radius:240,strength:1.2,sourceMode:'body',sweptBody:true,targetScenario:'all'},
+  influenceOptions:{radius:240,strength:1.2,sourceMode:'body',sweptBody:true,targetScenario:'custom',targetSelection:[
+    {id:'headline-0',enabled:true,weight:1},
+    {id:'content-0',enabled:false,weight:.52},
+    {id:'cta-0',enabled:true,weight:.72}
+  ]},
   preparationReport:{recommendedMode:'organic',quality:{score:96}},
   metadata:{name:'Prueba'}
 });
@@ -32,7 +36,10 @@ assert.equal(S.resolveMode(forced),'follower');
 const round=S.deserialize(S.serialize(s));
 assert.equal(round.organicOptions.length,510);
 assert.equal(round.organicOptions.columns,36);
-assert.equal(round.influenceOptions.radius,240);assert.equal(round.influenceOptions.targetScenario,'all');assert.equal(round.influenceOptions.sweptBody,true);
+assert.equal(round.influenceOptions.radius,240);assert.equal(round.influenceOptions.targetScenario,'custom');assert.equal(round.influenceOptions.sweptBody,true);
+assert.equal(round.influenceOptions.targetSelection.length,3);
+assert.deepEqual(round.influenceOptions.targetSelection[0],{id:'headline-0',enabled:true,weight:1});
+assert.equal(S.summary(round).reactiveTargetCount,2);
 assert.equal(round.organicRenderer,'mesh-v3');
 assert.equal(round.bodyProfile,'character');
 assert.equal(round.display.size,540);
@@ -40,7 +47,15 @@ assert.equal(round.display.size,540);
 const legacy=S.normalize({mode:'organic',organicOptions:{length:380}});
 assert.equal(legacy.organicRenderer,'slices-v2');
 assert.equal(legacy.bodyProfile,'custom');
-assert.equal(legacy.display.size,380);assert.equal(legacy.influenceOptions.targetScenario,'headline');
+assert.equal(legacy.display.size,380);assert.equal(legacy.influenceOptions.targetScenario,'headline');assert.deepEqual(legacy.influenceOptions.targetSelection,[]);
+
+const cleaned=S.normalizeTargetSelection([
+  {id:'a',enabled:true,weight:4},
+  {id:'a',enabled:false,weight:.2},
+  {id:'',enabled:true,weight:1},
+  {id:'b',enabled:false,weight:-1}
+]);
+assert.deepEqual(cleaned,[{id:'a',enabled:true,weight:2},{id:'b',enabled:false,weight:0}]);
 
 assert.throws(()=>S.deserialize('{"bad":true}'),/invalid session/);
-console.log('NagWeb Interaction Session V1.3 model tests: PASS');
+console.log('NagWeb Interaction Session V1.4 model tests: PASS');
