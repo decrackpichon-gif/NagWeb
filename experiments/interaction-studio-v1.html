@@ -42,7 +42,7 @@
   <div class="group">
     <h2>Comportamiento</h2>
     <div class="field"><label>Modo <span id="resolvedMode" class="pill">auto</span></label><select id="mode"><option value="auto">Automático</option><option value="follower">Seguidor</option><option value="organic">Orgánico</option></select></div>
-    <div class="field"><label>Preset</label><select id="preset"><option value="soft">Suave</option><option value="floating">Flotante</option><option value="agile">Ágil</option><option value="heavy">Pesado</option><option value="magnetic">Magnético</option><option value="character">Personaje</option></select></div>
+    <div class="field"><label>Preset</label><select id="preset"><option value="soft">Suave</option><option value="floating">Flotante</option><option value="agile">Ágil</option><option value="heavy">Pesado</option><option value="magnetic">Magnético</option><option value="character">Personaje</option><option value="custom">Personalizado</option></select></div>
     <div class="field"><label>Tamaño <output id="sizeOut"></output></label><input id="size" type="range" min="100" max="680" step="5" value="310"></div>
     <div class="field"><label>Distancia del cursor <output id="distanceOut"></output></label><input id="distance" type="range" min="0" max="180" step="2" value="28"></div>
     <div id="followerDirection" class="field"><label>Frente del asset</label><select id="forward"><option value="0">Derecha →</option><option value="90">Abajo ↓</option><option value="180">Izquierda ←</option><option value="-90">Arriba ↑</option></select></div>
@@ -71,7 +71,8 @@
   <div class="group">
     <h2>Configuración portable</h2>
     <div class="row"><button id="export" class="btn">Generar JSON</button><button id="copy" class="btn">Copiar</button></div>
-    <textarea id="sessionJson" class="export" spellcheck="false" placeholder="La configuración aparecerá acá…"></textarea>
+    <button id="applySession" class="btn" style="margin-top:7px">Aplicar JSON al asset actual</button>
+    <textarea id="sessionJson" class="export" spellcheck="false" placeholder="Generá o pegá una configuración acá…"></textarea>
   </div>
 </aside>
 
@@ -274,7 +275,9 @@
   }
   function syncMotion(){
     var preset=document.getElementById('preset').value;
-    follower.applyPreset(preset,{distanceFromPointer:Number(document.getElementById('distance').value),assetForwardAngle:Number(document.getElementById('forward').value),rotateToTarget:true});
+    var pointerOverrides={distanceFromPointer:Number(document.getElementById('distance').value),assetForwardAngle:Number(document.getElementById('forward').value),rotateToTarget:true};
+    if(preset==='custom')follower.setOptions(pointerOverrides);
+    else follower.applyPreset(preset,pointerOverrides);
     var size=Number(document.getElementById('size').value);visual.style.width=size+'px';visual.style.height=size+'px';
     if(organicRenderer)organicRenderer.setOptions(activeOrganicEngine==='mesh-v3'?organicV3Opts():organicV2Opts());
     output('size',size+' px');output('distance',document.getElementById('distance').value+' px');output('sway',document.getElementById('sway').value);output('waves',document.getElementById('waves').value);
@@ -315,11 +318,45 @@
       mode:document.getElementById('mode').value,influenceEnabled:document.getElementById('influence').checked,
       followerOptions:Object.assign({},follower.options,{assetForwardAngle:Number(document.getElementById('forward').value)}),
       organicRenderer:activeOrganicEngine,
+      bodyProfile:document.getElementById('bodyProfile').value,
+      display:{size:Number(document.getElementById('size').value)},
       organicOptions:organicRenderer?organicRenderer.options:(selectedOrganicEngine()==='mesh-v3'?organicV3Opts():organicV2Opts()),influenceOptions:influenceOpts(),
       assetProfile:currentAssetProfile(),preparationReport:prepResult&&prepResult.report,
       assetRef:currentFile?{name:currentFile.name,type:currentFile.type,size:currentFile.size}:{name:'demo-asset.svg',type:'image/svg+xml'},
       metadata:{name:currentFile?currentFile.name:'Demo Interaction Studio'}
     });
+  }
+
+  async function applySessionValue(value){
+    var saved=S.deserialize(value),oo=saved.organicOptions||{},fo=saved.followerOptions||{},io=saved.influenceOptions||{};
+    document.getElementById('mode').value=saved.mode;
+    document.getElementById('organicEngine').value=saved.organicRenderer;
+    document.getElementById('bodyProfile').value=saved.bodyProfile||'custom';
+    document.getElementById('preset').value='custom';
+    document.getElementById('influence').checked=saved.influenceEnabled;
+    document.getElementById('size').value=saved.display&&saved.display.size||oo.length||310;
+    if(Number.isFinite(Number(fo.distanceFromPointer)))document.getElementById('distance').value=fo.distanceFromPointer;
+    if(Number.isFinite(Number(fo.assetForwardAngle)))document.getElementById('forward').value=fo.assetForwardAngle;
+    if(Number.isFinite(Number(oo.sway)))document.getElementById('sway').value=oo.sway;
+    if(Number.isFinite(Number(oo.swayWaves)))document.getElementById('waves').value=oo.swayWaves;
+    if(Number.isFinite(Number(oo.headZoneEnd)))zones.headEnd=oo.headZoneEnd;
+    if(Number.isFinite(Number(oo.torsoZoneEnd)))zones.torsoEnd=oo.torsoZoneEnd;
+    zones.manual=true;
+    if(Number.isFinite(Number(oo.headFlex)))document.getElementById('headRigidity').value=1-oo.headFlex;
+    if(Number.isFinite(Number(oo.torsoFlex)))document.getElementById('torsoRigidity').value=1-oo.torsoFlex;
+    if(Number.isFinite(Number(oo.lowerFlex)))document.getElementById('lowerFlex').value=oo.lowerFlex;
+    if(saved.assetProfile&&saved.assetProfile.organic){
+      if(saved.assetProfile.organic.trailAnchor)axis.trail={...saved.assetProfile.organic.trailAnchor};
+      if(saved.assetProfile.organic.leadAnchor)axis.lead={...saved.assetProfile.organic.leadAnchor};
+      axis.manual=saved.assetProfile.organic.directionSource==='manual';
+    }
+    if(Number.isFinite(Number(io.radius)))document.getElementById('radius').value=io.radius;
+    if(Number.isFinite(Number(io.strength)))document.getElementById('strength').value=io.strength;
+    follower.setOptions(fo);
+    drawAxis();syncMotion();updateInfluence();
+    await updateModeUI();
+    status('Configuración restaurada sobre el asset actual.','good');
+    return saved;
   }
 
   document.getElementById('prepare').onclick=prepare;
@@ -356,6 +393,10 @@
   document.getElementById('applyAxis').onclick=async function(){await prepareOrganic();setStep(4);};
   document.getElementById('export').onclick=function(){document.getElementById('sessionJson').value=S.serialize(session());};
   document.getElementById('copy').onclick=async function(){var ta=document.getElementById('sessionJson');if(!ta.value)ta.value=S.serialize(session());try{await navigator.clipboard.writeText(ta.value);status('Configuración copiada al portapapeles.','good');}catch(e){ta.select();status('JSON seleccionado. Copialo manualmente.','warn');}};
+  document.getElementById('applySession').onclick=async function(){
+    var ta=document.getElementById('sessionJson');
+    try{await applySessionValue(ta.value);}catch(err){status('No se pudo aplicar el JSON · '+err.message,'bad');}
+  };
   document.getElementById('file').onchange=function(){
     var f=this.files&&this.files[0];if(!f)return;
     var check=P.validateFile(f,{});
@@ -369,7 +410,7 @@
 
   window.__NAGWEB_INTERACTION_STUDIO__={
     follower:follower,organicRenderer:null,influenceField:null,get prepResult(){return prepResult;},get axis(){return axis;},get zones(){return zones;},
-    get mode(){return activeMode;},get organicEngine(){return activeOrganicEngine;},getSession:session,prepare:prepare,
+    get mode(){return activeMode;},get organicEngine(){return activeOrganicEngine;},getSession:session,applySession:applySessionValue,prepare:prepare,
     switchMode:function(m){document.getElementById('mode').value=m;updateModeUI();},
     switchOrganicEngine:async function(e){document.getElementById('organicEngine').value=e==='slices-v2'?'slices-v2':'mesh-v3';if(activeMode==='organic')await prepareOrganic();}
   };
