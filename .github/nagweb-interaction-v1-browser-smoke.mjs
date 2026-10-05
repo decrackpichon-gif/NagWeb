@@ -34,7 +34,7 @@ try{
   }));
   assert.equal(initial.version,'1.5.0');
   assert.equal(initial.prepVersion,'1.2.0');
-  assert.equal(initial.influenceVersion,'1.5.0');
+  assert.equal(initial.influenceVersion,'1.6.0');
   assert.equal(initial.prep.ready,'1');
   assert.ok(initial.prep.text.includes('Recomendación'));
   assert.ok(initial.title.includes('Interaction Engine'));
