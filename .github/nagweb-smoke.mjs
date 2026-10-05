@@ -38,6 +38,9 @@ import {runMotionExpandSmoke} from './nagweb-motion-expand-smoke.mjs';
 import {runMotionDropSmoke} from './nagweb-motion-drop-smoke.mjs';
 import {runMotionStreamSmoke} from './nagweb-motion-stream-smoke.mjs';
 import {runMotionStreamPlacementSmoke} from './nagweb-motion-stream-placement-smoke.mjs';
+import './nagweb-orbit-bloom-model-test.mjs';
+import {runMotionOrbitBloomDepthSmoke} from './nagweb-motion-orbit-bloom-depth-smoke.mjs';
+import {runMotionOrbitBloomSmoke} from './nagweb-motion-orbit-bloom-smoke.mjs';
 import './nagweb-stage-model-test.mjs';
 import {runMotionStageSmoke} from './nagweb-motion-stage-smoke.mjs';
 import './nagweb-pop-model-test.mjs';
@@ -227,6 +230,9 @@ if(workspaceState.leftToggles!==1||workspaceState.rightToggles!==1) throw new Er
 if(Math.abs(workspaceState.rightWidth-savedInspectorWidth)>3) throw new Error('Inspector width did not survive reload: '+JSON.stringify({workspaceState,savedInspectorWidth}));
 await page.click('.nw-dock-toggle.left');
 
+await runMotionOrbitBloomDepthSmoke(page);
+await runMotionOrbitBloomSmoke(page);
+await runMotionStreamPlacementSmoke(page,'orbit-bloom');
 await runMotionStageSmoke(page);
 await runMotionStreamPlacementSmoke(page,'center-stage');
 await runMotionImageCropSmoke(page);

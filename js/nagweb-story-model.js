@@ -97,15 +97,17 @@ function createStreamModel(){
  var specs={ringTilt:[0,-60,60,1],ringOpening:[55,15,85,1],ringSize:[80,50,95,1],cardSize:[21,12,80,1],backFade:[70,10,95,5],perspective:[18,0,40,2],padding:[6,0,20,.5],cornerRadius:[3,0,12,.5],turns:[1,.25,20,.25],start:[0,0,99,1],end:[100,1,100,1],scrollLength:[320,140,900,20]};
  var orbitSpecs={orbitSize:[85,40,130,1],spacing:[18,0,60,1],tilt:[55,20,100,1],swingAngle:[30,5,80,1],float:[2.5,0,8,.5]};
  var popSpecs={gap:[3,0,10,.5],visible:[62,30,85,1]};
+ var bloomSpecs={pulse:[60,10,90,5],lean:[0,0,100,5],ringWidth:[50,30,95,1],ringHeight:[25,8,95,1],ringTilt:[-29,-45,45,1],cardSize:[24,10,80,1],perspective:[55,0,100,5],backFade:[45,0,90,5],curve:[0,-100,100,5]};
  var stageSpecs={travel:[60,20,120,5],cardSize:[86,60,100,1]};
  var ratios={'1:1':1,'4:3':4/3,'3:4':3/4,'4:5':4/5,'16:9':16/9,'9:16':9/16};
- function config(raw){raw=raw||{};var out={},orbit=raw.kind==='iso-orbit',pop=raw.kind==='pop-grid',stage=raw.kind==='center-stage',fields=stage?Object.assign({},specs,stageSpecs):orbit?Object.assign({},specs,orbitSpecs):pop?Object.assign({},specs,popSpecs):specs;Object.keys(fields).forEach(function(k){var s=fields[k],n=raw[k];out[k]=Math.max(s[1],Math.min(s[2],n!==''&&n!=null&&isFinite(+n)?+n:s[0]));});out.end=Math.max(out.start+1,out.end);out.cardRatio=raw.cardRatio==='auto'||ratios[raw.cardRatio]?raw.cardRatio:orbit?'1:1':'16:9';out.frameRatio=raw.frameRatio==='auto'||ratios[raw.frameRatio]?raw.frameRatio:'16:9';out.shadow=!!raw.shadow;out.backgroundType=['none','color','gradient','image'].indexOf(raw.backgroundType)>=0?raw.backgroundType:'color';out.backgroundColor=/^#[0-9a-f]{6}$/i.test(raw.backgroundColor||'')?raw.backgroundColor:'#101014';out.gradientColor=/^#[0-9a-f]{6}$/i.test(raw.gradientColor||'')?raw.gradientColor:'#3a3a5a';out.backgroundId=typeof raw.backgroundId==='string'?raw.backgroundId:'';if(orbit){out.kind='iso-orbit';out.motion=raw.motion==='spin'?'spin':'swing';}if(pop)out.kind='pop-grid';if(stage){out.kind='center-stage';out.ghosts=raw.ghosts!==false;}return out;}
+ function config(raw){raw=raw||{};var out={},orbit=raw.kind==='iso-orbit',pop=raw.kind==='pop-grid',stage=raw.kind==='center-stage',bloom=raw.kind==='orbit-bloom',fields=bloom?Object.assign({},specs,bloomSpecs):stage?Object.assign({},specs,stageSpecs):orbit?Object.assign({},specs,orbitSpecs):pop?Object.assign({},specs,popSpecs):specs;Object.keys(fields).forEach(function(k){var s=fields[k],n=raw[k];out[k]=Math.max(s[1],Math.min(s[2],n!==''&&n!=null&&isFinite(+n)?+n:s[0]));});out.end=Math.max(out.start+1,out.end);out.cardRatio=raw.cardRatio==='auto'||ratios[raw.cardRatio]?raw.cardRatio:orbit||bloom?'1:1':'16:9';out.frameRatio=raw.frameRatio==='auto'||ratios[raw.frameRatio]?raw.frameRatio:'16:9';out.shadow=!!raw.shadow;out.backgroundType=['none','color','gradient','image'].indexOf(raw.backgroundType)>=0?raw.backgroundType:'color';out.backgroundColor=/^#[0-9a-f]{6}$/i.test(raw.backgroundColor||'')?raw.backgroundColor:'#101014';out.gradientColor=/^#[0-9a-f]{6}$/i.test(raw.gradientColor||'')?raw.gradientColor:'#3a3a5a';out.backgroundId=typeof raw.backgroundId==='string'?raw.backgroundId:'';if(orbit){out.kind='iso-orbit';out.motion=raw.motion==='spin'?'spin':'swing';}if(bloom){out.kind='orbit-bloom';out.direction=raw.direction==='left'?'left':'right';out.motion=raw.motion==='pulse'?'pulse':'linear';}if(pop)out.kind='pop-grid';if(stage){out.kind='center-stage';out.ghosts=raw.ghosts!==false;}return out;}
  function imageFocus(raw){raw=raw||{};var out={};['x','y'].forEach(function(k){var n=raw[k];out[k]=n!==''&&n!=null&&isFinite(+n)?Math.max(0,Math.min(100,+n)):50;});return out;}
  function imageCrop(iw,ih,width,height,raw){var focus=imageFocus(raw),scale=Math.max(width/iw,height/ih),w=iw*scale,h=ih*scale;return{x:(width-w)*focus.x/100,y:(height-h)*focus.y/100,width:w,height:h};}
  function phase(progress,c,scroll){var p=scroll?Math.max(0,Math.min(1,(progress*100-c.start)/(c.end-c.start))):progress;return p*c.turns;}
  function layout(width,height,raw,progress,count,imageRatio,scroll){
   var c=config(raw),fw=width,fh=height,ratio=ratios[c.frameRatio];if(ratio){if(fw/fh>ratio)fw=fh*ratio;else fh=fw/ratio;}
   if(c.kind==='iso-orbit')return orbitLayout(width,height,fw,fh,c,progress,imageRatio,scroll);
+  if(c.kind==='orbit-bloom')return bloomLayout(width,height,fw,fh,c,progress,count,imageRatio,scroll);
   if(c.kind==='center-stage')return stageLayout(width,height,fw,fh,c,progress,count,scroll);
   if(c.kind==='pop-grid')return popLayout(width,height,fw,fh,c,progress,count,scroll);
   var unit=Math.min(fw,fh)/100,inset=unit*c.padding,radius=Math.min(fw-2*inset,fh-2*inset)/2*c.ringSize/100*1.15,cardW=unit*c.cardSize,cardH=cardW/(ratios[c.cardRatio]||Math.max(.25,Math.min(4,imageRatio||1))),tilt=c.ringTilt*Math.PI/180,opening=c.ringOpening/100,axis=Math.sqrt(1-opening*opening),co=Math.cos(tilt),si=Math.sin(tilt),angle=2*Math.PI*((phase(progress,c,scroll)%1+1)%1),cards=[];
@@ -136,6 +138,19 @@ function createStreamModel(){
   }
   return cards;
  }
+ function bloomLayout(width,height,fw,fh,c,progress,count,imageRatio,scroll){
+  var total=Math.max(4,Math.min(16,Math.round(count)||12)),cycle=(phase(progress,c,scroll)%1+1)%1;if(c.motion==='pulse')cycle+=c.pulse/100/(2*Math.PI)*Math.sin(cycle*2*Math.PI);
+  var unit=Math.min(fw,fh)/100,pad=unit*c.padding,rx=(fw-2*pad)/2*c.ringWidth/100,ry=(fh-2*pad)/2*c.ringHeight/100,ratio=rx>0?Math.min(ry/rx,.92):.92,axis=Math.sqrt(1-ratio*ratio),lean=c.lean/100*Math.PI/2,lc=Math.cos(lean),ls=Math.sin(lean),tilt=c.ringTilt*Math.PI/180,co=Math.cos(tilt),si=Math.sin(tilt),perspective=c.perspective/100,near=1+.35*perspective,far=1-.55*perspective,baseW=unit*c.cardSize,aspect=ratios[c.cardRatio]||Math.max(.25,Math.min(4,imageRatio||1)),textureW=baseW*near,textureH=textureW/aspect,bend=Math.abs(c.curve)>3?Math.abs(c.curve)/100*Math.PI/2.2:0,sign=Math.sign(c.curve),steps=bend>.03?Math.min(128,Math.max(24,Math.ceil(textureW/3))):1,cards=[];
+  for(var i=0;i<total;i++){
+   var angle=2*Math.PI*((c.direction==='left'?-cycle:cycle)+i/total),sn=Math.sin(angle),cs=Math.cos(angle),depth=(cs+1)/2,scale=far+(near-far)*depth,cx=sn*rx*(1+.18*perspective*cs),cy=cs*ry,w=baseW*scale,h=w/aspect,ux=sn*lc,uy=-ls*axis+cs*lc*ratio,vx=sn*ls,vy=lc*axis+cs*ls*ratio,upper=[],lower=[],stripDepth=[];
+   function point(t,edge){var x=(t-.5)*w,z=0;if(bend>.03){x=-w/2+w/bend*Math.sin(t*bend);z=sign*w/bend*(1-Math.cos(t*bend));}var px=cx+x*ux-z*cs+edge*h/2*vx,py=cy+x*uy+z*sn*ratio+edge*h/2*vy;return{x:width/2+px*co-py*si,y:height/2+px*si+py*co};}
+   for(var j=0;j<=steps;j++){upper.push(point(j/steps,-1));lower.push(point(j/steps,1));if(j<steps){var t=(j+.5)/steps,x=(t-.5)*w,z=0;if(bend>.03){x=-w/2+w/bend*Math.sin(t*bend);z=sign*w/bend*(1-Math.cos(t*bend));}stripDepth.push(rx*cs*axis+x*cs*lc+z*sn);}}
+   var points=upper.concat(lower.slice().reverse()),area=0;for(var k=0;k<points.length;k++){var a=points[k],b=points[(k+1)%points.length];area+=a.x*b.y-a.y*b.x;}
+   var left=Math.floor(Math.min.apply(null,points.map(function(p){return p.x;})))-3,top=Math.floor(Math.min.apply(null,points.map(function(p){return p.y;})))-3,right=Math.ceil(Math.max.apply(null,points.map(function(p){return p.x;})))+3,bottom=Math.ceil(Math.max.apply(null,points.map(function(p){return p.y;})))+3;
+   cards.push({slot:i,depth:depth,alpha:1-c.backFade/100*(1-depth),visible:Math.abs(area)>textureW*textureH*.002,stripDepth:bend>.03?stripDepth:null,left:left,top:top,width:Math.max(1,right-left),height:Math.max(1,bottom-top),upper:upper,lower:lower,textureWidth:textureW,textureHeight:textureH,corner:unit*c.cornerRadius*near});
+  }
+  return cards.sort(function(a,b){return a.depth-b.depth;});
+ }
  function stageLayout(width,height,fw,fh,c,progress,count,scroll){
   var total=Math.max(2,Math.min(6,Math.round(count)||3)),cycle=(phase(progress,c,scroll)%1+1)%1,step=cycle*total,active=Math.floor(step),local=step-active,unit=Math.min(fw,fh)/100,pad=unit*c.padding,baseW=(fw-pad*2)*c.cardSize/100,baseH=(fh-pad*2)*c.cardSize/100,travel=width*c.travel/100,cards=[];
   function ease(t){t=Math.max(0,Math.min(1,t));return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}
@@ -148,7 +163,7 @@ function createStreamModel(){
   }
   return cards.sort(function(a,b){return a.depth-b.depth;});
  }
- return{config:config,imageFocus:imageFocus,imageCrop:imageCrop,specs:specs,orbitSpecs:orbitSpecs,popSpecs:popSpecs,stageSpecs:stageSpecs,ratios:ratios,phase:phase,layout:layout};
+ return{config:config,imageFocus:imageFocus,imageCrop:imageCrop,specs:specs,orbitSpecs:orbitSpecs,popSpecs:popSpecs,stageSpecs:stageSpecs,bloomSpecs:bloomSpecs,ratios:ratios,phase:phase,layout:layout};
 }
 window.NAGWEB_CREATE_STREAM_MODEL=createStreamModel;
 window.NAGWEB_STREAM_MODEL=createStreamModel();
