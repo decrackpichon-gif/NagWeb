@@ -12,6 +12,11 @@ jobs:
   browser-smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [procedural, editor]
+    name: browser-smoke (${{ matrix.suite }})
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -25,12 +30,14 @@ jobs:
           echo $! > /tmp/nagweb-http.pid
           sleep 2
       - name: Run browser smoke
+        env:
+          NAGWEB_SMOKE_SUITE: ${{ matrix.suite }}
         run: node .github/nagweb-smoke.mjs
       - name: Save Motion Lab visual checks
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: motion-lab-visuals
+          name: motion-lab-visuals-${{ matrix.suite }}
           path: /tmp/nagweb-motion-visuals
           if-no-files-found: ignore
           retention-days: 7

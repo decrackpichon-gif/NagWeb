@@ -6,7 +6,7 @@ export async function runMotionBankSmoke(page){
   await page.evaluate(()=>{project.pages[0].sections=[mkSection({layout:'free',sdEnabled:false,elements:[]})];curPage=0;curSec=0;curEl=0;selection=[];secFocus=false;saveProject();renderPane();renderPreview();history=[];future=[];});
   const before=await page.evaluate(()=>({project:JSON.stringify(project),assets:project.assets.images.length,stored:localStorage.getItem(STORE_KEY)}));
   await page.click('.tb-left [data-motion-open]');await page.waitForFunction(()=>document.querySelector('.nw-motion-dialog iframe')?.contentDocument?.querySelector('[data-motion-canvas]'));
-  assert.deepEqual(await page.$$eval('[data-motion-template]:not([data-motion-saved])',ns=>ns.map(n=>n.dataset.motionTemplate)),['iso-focus','soft-orbit','card-tunnel','card-bloom','showcase-stream','iso-orbit','pop-grid','center-stage','orbit-bloom','ticker-tilt','ticker-loop','carousel-flow']);
+  assert.deepEqual(await page.$$eval('[data-motion-template]:not([data-motion-saved])',ns=>ns.map(n=>n.dataset.motionTemplate)),['iso-focus','soft-orbit','card-tunnel','card-bloom','showcase-stream','iso-orbit','pop-grid','center-stage','orbit-bloom','ticker-tilt','ticker-loop','carousel-flow','stack-slide']);
   const focusId=await page.evaluate(()=>document.querySelector('.nw-motion-dialog iframe').contentDocument.querySelector('.sc').dataset.id);
   async function change(selector,value){await page.$eval(selector,(n,v)=>{n.value=v;n.dispatchEvent(new Event('change',{bubbles:true}));},value);}
   await change('[data-motion-content="3"]','Mi foco');await change('[data-motion-config="duration"]','6');
@@ -35,7 +35,7 @@ export async function runMotionBankSmoke(page){
   const exported=await page.evaluate(id=>{const f=document.getElementById('orbit-export');f.contentWindow.__NAG_SCROLL_DIRECTOR[id].set(.5);const n=f.contentDocument.querySelector('[data-id="'+id+'"] [data-nw-sd-el]');return n.style.getPropertyValue('--nw-sd-z');},inserted.group.id);assert.equal(exported,poses.middle[2]);
   await page.setViewport({width:390,height:844,deviceScaleFactor:1});await page.evaluate(()=>NAGWEB_MOTION_LAB.open());await page.click('[data-motion-template="soft-orbit"]');assert.ok(await page.evaluate(()=>{const d=document.querySelector('.nw-motion-dialog'),lib=d.querySelector('.nw-motion-library');return d.scrollWidth<=d.clientWidth+2&&lib.scrollWidth>=lib.clientWidth;}));
   await page.click('[data-motion-close]');assert.equal(await page.evaluate(()=>JSON.stringify(project)),inserted.project);
-  console.log('Banco Motion Lab: doce plantillas, selección y preview distintos, ciclo de órbita continuo, borradores por plantilla, inserción sin recursos extra, reapertura, historial, exportación y móvil OK');
+  console.log('Banco Motion Lab: trece plantillas, selección y preview distintos, ciclo de órbita continuo, borradores por plantilla, inserción sin recursos extra, reapertura, historial, exportación y móvil OK');
  }finally{
   await page.setViewport(viewport);await page.evaluate(p=>{document.querySelector('.nw-motion-dialog').close();document.getElementById('orbit-export')?.remove();clearTimeout(previewTimer);project=JSON.parse(p.project);curPage=p.curPage;curSec=p.curSec;curEl=p.curEl;curPane=p.curPane;selection=p.selection;secFocus=p.secFocus;history=[];future=[];NAGWEB_STORY_EDITOR.setCanvasMode(p.mode);NAGWEB_STORY_TIMELINE_UI.setState(p.timeline);saveProject();renderScenes();renderPane();renderPreview();},previous);
  }
