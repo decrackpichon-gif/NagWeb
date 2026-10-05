@@ -38,6 +38,7 @@
     controlBend:DEFAULT_BEND,
     weightRadius:.24,
     weightPower:2.1,
+    preserveLocalControlDips:false,
     turnProtection:.80,
     antiFold:true,
     antiFoldDistance:1.15,
@@ -87,6 +88,7 @@
     o.controlCount=Math.round(clamp(clean(o.controlCount,7),4,12));
     o.weightRadius=clamp(clean(o.weightRadius,.24),.08,.60);
     o.weightPower=clamp(clean(o.weightPower,2.1),.5,6);
+    o.preserveLocalControlDips=o.preserveLocalControlDips===true;
     o.turnProtection=clamp(clean(o.turnProtection,.80),0,1);
     o.antiFold=o.antiFold!==false;
     o.antiFoldDistance=clamp(clean(o.antiFoldDistance,1.15),.55,2.5);
@@ -109,8 +111,10 @@
     o.controlPositions=pos;
     o.controlFlex=resampleSeries(o.controlFlex,o.controlCount,DEFAULT_FLEX).map(function(v){return clamp(v,0,1);});
     o.controlBend=resampleSeries(o.controlBend,o.controlCount,DEFAULT_BEND).map(function(v){return clamp(v,.02,.8);});
-    for(var j=1;j<o.controlFlex.length;j++)o.controlFlex[j]=Math.max(o.controlFlex[j],o.controlFlex[j-1]);
-    for(var k=1;k<o.controlBend.length;k++)o.controlBend[k]=Math.max(o.controlBend[k],o.controlBend[k-1]);
+    if(!o.preserveLocalControlDips){
+      for(var j=1;j<o.controlFlex.length;j++)o.controlFlex[j]=Math.max(o.controlFlex[j],o.controlFlex[j-1]);
+      for(var k=1;k<o.controlBend.length;k++)o.controlBend[k]=Math.max(o.controlBend[k],o.controlBend[k-1]);
+    }
     return o;
   }
 
