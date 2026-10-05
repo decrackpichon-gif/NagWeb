@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import puppeteer from 'puppeteer-core';
 import fs from 'node:fs';
-import {runStudioRobustnessSmoke,runStudioPreparationSmoke} from './nagweb-interaction-studio-robustness-smoke.mjs';
+import {runStudioRobustnessSmoke,runStudioPreparationSmoke,runStudioOptionsSmoke} from './nagweb-interaction-studio-robustness-smoke.mjs';
 
 const candidates=['/usr/bin/google-chrome-stable','/usr/bin/google-chrome','/usr/bin/chromium','/usr/bin/chromium-browser'];
 const executablePath=candidates.find(p=>fs.existsSync(p));if(!executablePath)throw new Error('No Chromium/Chrome executable found');
@@ -56,6 +56,7 @@ try{
 
   await runStudioRobustnessSmoke(page);
   await runStudioPreparationSmoke(page);
+  await runStudioOptionsSmoke(page);
 
   const stage=await page.$eval('#stage',el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height};});
   const head0=await page.evaluate(()=>({x:__NAGWEB_INTERACTION_STUDIO__.follower.state.x,y:__NAGWEB_INTERACTION_STUDIO__.follower.state.y}));

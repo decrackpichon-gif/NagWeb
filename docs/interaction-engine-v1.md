@@ -641,3 +641,11 @@ La batería de navegador comprueba que seis atributos del mismo objetivo generan
 La recuperación de una sesión y `switchMode()` ahora esperan la preparación del renderer. Un cambio posterior de motor, modo o asset invalida las preparaciones anteriores: sus resultados y errores no pueden instalar otro renderer, iniciar un fallback ni anunciar una restauración terminada. Volver a Seguidor destruye el renderer orgánico y limpia la referencia de inspección. Al terminar una preparación vigente se actualiza también el radio corporal del campo de influencia.
 
 El browser smoke controla el orden de resolución de Mesh y Slices para comprobar resultados y errores obsoletos, restauración pendiente, cancelación por cambio de modo, liberación de renderers y fallback WebGL vigente o cancelado. Trabajo aislado en `feat/interaction-engine-v1`; no integra al editor principal ni modifica el motor experimental V4.
+
+### Studio — restauración de opciones fuera del panel
+
+El Studio conserva las opciones persistentes de Mesh V3 y Slices V2 por separado. Importar una sesión restaura resolución, límites de curvatura, protección de giro, sombras y otros parámetros que no tienen controles visibles; mover los controles, cambiar de modo o reconstruir el renderer conserva esos ajustes. Las opciones de influencia también sobreviven a la desactivación y reactivación, incluidos valores cero y `sweptBody:false`. Una configuración personalizada conserva `rotateToTarget:false`; elegir un preset aplica nuevamente su comportamiento.
+
+La exportación orgánica incluye sólo opciones reconocidas por el motor y conserva el motor seleccionado aunque esté en modo Seguidor. Las referencias al canvas, imagen, follower y callbacks permanecen en el runtime. Cada importación reemplaza los ajustes avanzados de la sesión anterior; los controles visibles siguen gobernando los parámetros que exponen y el radio corporal se calcula sobre el asset actual.
+
+El browser smoke comprueba ambas variantes, exportación/restauración, cambios de controles, recreación del field, aislamiento entre motores y recuperación de una sesión sin ajustes avanzados. Sin integración al editor principal ni cambios en V4.

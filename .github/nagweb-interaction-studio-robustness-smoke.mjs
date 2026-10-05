@@ -129,3 +129,53 @@ export async function runStudioPreparationSmoke(page){
   assert.deepEqual(result.canceledFallback,{mode:'follower',renderer:null,created:{mesh:1,slices:3},destroyed:{mesh:1,slices:3}});
   console.log('Interaction Studio preparation: awaited sessions, out-of-order results, stale errors, renderer cleanup and cancelable WebGL fallback PASS');
 }
+
+export async function runStudioOptionsSmoke(page){
+  const result=await page.evaluate(async()=>{
+    const studio=__NAGWEB_INTERACTION_STUDIO__,baseline=JSON.stringify(studio.getSession());
+    const mesh={columns:48,rows:14,spinePoints:44,zoneBlend:.11,headMaxBend:.09,torsoMaxBend:.21,bodyMaxBend:.38,turnProtection:.54,shadow:false,maxDpr:1,phaseBase:0,phaseSpeed:.25,activityBase:.62,swayPower:2.4,leadEnd:'left'};
+    const influence={maxPush:31,maxRotate:0,maxScale:0,spring:.13,damping:.91,sweptBody:false,maxSweepDistance:0,reducedMotion:'never'};
+    const follower={follow:.18,damping:.73,maxSpeed:24,rotateToTarget:false,rotationOffset:23,turnSmoothing:.31,tilt:7,speedScale:0};
+    const slices={points:42,slices:96,overlap:2.1,seamGuard:1.1,sourceBleed:.18,headRigidFraction:.31,headMaxBend:.15,bodyMaxBend:.47,shadow:false,shadowBlur:.09,maxDpr:1,leadEnd:'left'};
+    function pick(value,keys){return Object.fromEntries(Object.keys(keys).map(key=>[key,value[key]]));}
+    function state(){const saved=studio.getSession();return {
+      organic:pick(studio.organicRenderer?studio.organicRenderer.options:saved.organicOptions,mesh),
+      influence:pick(studio.influenceField?studio.influenceField.options:saved.influenceOptions,influence),
+      follower:pick(studio.follower.options,follower),
+      exported:{organic:pick(saved.organicOptions,mesh),influence:pick(saved.influenceOptions,influence),follower:pick(saved.followerOptions,follower)}
+    };}
+    function input(id,value){const el=document.querySelector('#'+id);el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}));}
+    try{
+      const saved=JSON.parse(baseline);saved.mode='organic';saved.organicRenderer='mesh-v3';
+      Object.assign(saved.organicOptions,mesh,{leader:null,canvas:null,area:null,image:null,onContextLost:null});
+      Object.assign(saved.influenceOptions,influence,{sourceRadius:999});Object.assign(saved.followerOptions,follower);
+      await studio.applySession(JSON.stringify(saved));const restored=state();
+      const runtimeKeys=['leader','canvas','area','image','onContextLost'].filter(key=>key in studio.getSession().organicOptions);
+      input('size','410');input('sway','.065');input('radius','250');const edited=state();
+      const toggle=document.querySelector('#influence');toggle.checked=false;toggle.dispatchEvent(new Event('change'));
+      const disabled=pick(studio.getSession().influenceOptions,influence);
+      toggle.checked=true;toggle.dispatchEvent(new Event('change'));const reenabled=state();
+      await studio.switchMode('follower');const pausedEngine=studio.getSession().organicRenderer,withoutRenderer=state();
+      await studio.switchMode('organic');const rebuilt=state();
+      await studio.switchOrganicEngine('slices-v2');const isolated={shadow:studio.organicRenderer.options.shadow,headMaxBend:studio.organicRenderer.options.headMaxBend};
+      await studio.switchOrganicEngine('mesh-v3');const returned=state();
+      const sliceSession=JSON.parse(baseline);sliceSession.mode='organic';sliceSession.organicRenderer='slices-v2';sliceSession.organicOptions=slices;
+      await studio.applySession(JSON.stringify(sliceSession));const restoredSlices=pick(studio.organicRenderer.options,slices);
+      input('size','405');input('waves','5.2');const editedSlices=pick(studio.organicRenderer.options,slices);
+      await studio.switchMode('follower');const followerExport=studio.getSession();
+      const sparse=JSON.parse(baseline);sparse.mode='organic';sparse.organicRenderer='mesh-v3';sparse.organicOptions={};sparse.influenceOptions={};
+      await studio.applySession(JSON.stringify(sparse));const reset={mesh:pick(studio.organicRenderer.options,mesh),influence:pick(studio.influenceField.options,influence)};
+      const defaults={mesh:pick(NAGWEB_ORGANIC_MESH.normalizeOptions({}),mesh),influence:pick(NAGWEB_INTERACTION_INFLUENCE.normalizeOptions({}),influence)};
+      return {mesh,influence,follower,slices,restored,runtimeKeys,edited,disabled,reenabled,pausedEngine,withoutRenderer,rebuilt,isolated,returned,restoredSlices,editedSlices,followerExport:{engine:followerExport.organicRenderer,options:pick(followerExport.organicOptions,slices)},reset,defaults};
+    }finally{await studio.applySession(baseline);}
+  });
+  const expected={organic:result.mesh,influence:result.influence,follower:result.follower,exported:{organic:result.mesh,influence:result.influence,follower:result.follower}};
+  for(const name of ['restored','edited','reenabled','withoutRenderer','rebuilt','returned'])assert.deepEqual(result[name],expected,name+' must retain non-panel options in runtime and export');
+  assert.deepEqual(result.runtimeKeys,[],'Imported configuration cannot replace renderer bindings');
+  assert.deepEqual(result.disabled,result.influence);assert.equal(result.pausedEngine,'mesh-v3');
+  assert.deepEqual(result.isolated,{shadow:true,headMaxBend:.11},'Mesh options must not become Slices defaults');
+  assert.deepEqual(result.restoredSlices,result.slices);assert.deepEqual(result.editedSlices,result.slices);
+  assert.deepEqual(result.followerExport,{engine:'slices-v2',options:result.slices},'A session exported in Follower mode must retain the selected organic engine');
+  assert.deepEqual(result.reset,result.defaults,'A sparse session must not inherit advanced options from a previous import');
+  console.log('Interaction Studio options: Mesh/Slices settings, influence zeros, follower rotation, edits, disable/re-enable, engine isolation, sparse restore and export PASS');
+}

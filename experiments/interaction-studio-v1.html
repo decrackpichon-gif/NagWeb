@@ -127,6 +127,7 @@
   var stage=document.getElementById('stage'),leaderEl=document.getElementById('leader'),visual=document.getElementById('followerVisual'),visualImg=document.getElementById('followerImage'),sourcePreview=document.getElementById('sourcePreview'),canvas=document.getElementById('organicCanvas'),meshCanvas=document.getElementById('organicMeshCanvas'),sourceImage=new Image();
   var originalUrl=null,preparedUrl=null,currentFile=null,pipeline=null,prepResult=null,organicPrepared=null,organicRenderer=null,influenceField=null,previewField=null,previewTimer=null,marqueeState=null,suppressTargetClick=false,targetRegistry=null,previewMainField=null,previewMainWasPaused=false;
   var axis={trail:{x:.12,y:.5},lead:{x:.88,y:.5},manual:false},zones={headEnd:.22,torsoEnd:.66,manual:false},activeMode='follower',activeOrganicEngine='mesh-v3',organicRevision=0,busy=false,targetEditing=false,selectedTargetId=null,selectedTargetIds=[];
+  var organicSettings={'mesh-v3':{},'slices-v2':{}},influenceSettings={};
   var fallback='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="760" height="270" viewBox="0 0 760 270"><defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#ff7658"/><stop offset=".52" stop-color="#ffe3a8"/><stop offset="1" stop-color="#ff9867"/></linearGradient></defs><path d="M48 135c67-83 204-90 320-39 99-55 225-55 324 0l49-54-13 73 13 73-49-54c-99 55-225 55-324 0-116 51-253 44-320-39L8 135z" fill="url(#g)"/><circle cx="116" cy="111" r="14" fill="#31232b"/><circle cx="121" cy="106" r="4" fill="#fff"/></svg>');
 
   var follower=E.createFollower(leaderEl,{
@@ -210,16 +211,26 @@
     return A.createProfile(prepResult.analysis,{trailAnchor:axis.trail,leadAnchor:axis.lead,cropPadding:.015,directionSource:axis.manual?'manual':'auto'});
   }
   function organicBaseOpts(){
-    return {length:Number(document.getElementById('size').value),sway:Number(document.getElementById('sway').value),swayWaves:Number(document.getElementById('waves').value),leadEnd:'right'};
+    return {length:Number(document.getElementById('size').value),sway:Number(document.getElementById('sway').value),swayWaves:Number(document.getElementById('waves').value)};
   }
-  function organicV2Opts(){return Object.assign({points:30,slices:72},organicBaseOpts());}
+  function persistentOrganicOptions(api,input){
+    var clean={};
+    Object.keys(api.defaults).forEach(function(key){
+      var value=input[key],type=typeof api.defaults[key];
+      if(type==='number'&&value!=null&&Number.isFinite(Number(value)))clean[key]=Number(value);
+      else if((type==='boolean'||type==='string')&&typeof value===type)clean[key]=value;
+    });
+    return api.normalizeOptions(clean);
+  }
+  function organicV2Opts(){return Object.assign({points:30,slices:72,leadEnd:'right'},organicSettings['slices-v2'],organicBaseOpts());}
   function organicV3Opts(){return Object.assign({
-    spinePoints:34,columns:32,rows:10,
-    headZoneEnd:zones.headEnd,torsoZoneEnd:zones.torsoEnd,zoneBlend:.075,
+    spinePoints:34,columns:32,rows:10,leadEnd:'right',zoneBlend:.075,
+    headMaxBend:.065,torsoMaxBend:.16,bodyMaxBend:.30
+  },organicSettings['mesh-v3'],{
+    headZoneEnd:zones.headEnd,torsoZoneEnd:zones.torsoEnd,
     headFlex:1-Number(document.getElementById('headRigidity').value),
     torsoFlex:1-Number(document.getElementById('torsoRigidity').value),
-    lowerFlex:Number(document.getElementById('lowerFlex').value),
-    headMaxBend:.065,torsoMaxBend:.16,bodyMaxBend:.30
+    lowerFlex:Number(document.getElementById('lowerFlex').value)
   },organicBaseOpts());}
   function selectedOrganicEngine(){return document.getElementById('organicEngine').value==='slices-v2'?'slices-v2':'mesh-v3';}
   function syncOrganicCanvases(){
@@ -324,9 +335,9 @@
   }
   function syncMotion(){
     var preset=document.getElementById('preset').value;
-    var pointerOverrides={distanceFromPointer:Number(document.getElementById('distance').value),assetForwardAngle:Number(document.getElementById('forward').value),rotateToTarget:true};
+    var pointerOverrides={distanceFromPointer:Number(document.getElementById('distance').value),assetForwardAngle:Number(document.getElementById('forward').value)};
     if(preset==='custom')follower.setOptions(pointerOverrides);
-    else follower.applyPreset(preset,pointerOverrides);
+    else follower.applyPreset(preset,Object.assign({rotateToTarget:true},pointerOverrides));
     var size=Number(document.getElementById('size').value);visual.style.width=size+'px';visual.style.height=size+'px';
     if(organicRenderer)organicRenderer.setOptions(activeOrganicEngine==='mesh-v3'?organicV3Opts():organicV2Opts());
     output('size',size+' px');output('distance',document.getElementById('distance').value+' px');output('sway',document.getElementById('sway').value);output('waves',document.getElementById('waves').value);
@@ -603,7 +614,7 @@
     document.getElementById('influenceTargets').value='custom';
     if(!targetEditing)updateInfluence();
   }
-  function influenceOpts(){return {radius:Number(document.getElementById('radius').value),strength:Number(document.getElementById('strength').value),maxPush:85,maxRotate:11,maxScale:.09,spring:.08,damping:.84,sourceMode:document.getElementById('influenceSource').value==='head'?'head':'body',sweptBody:true,maxSweepDistance:220,sourceRadius:influencePhysicalRadius()};}
+  function influenceOpts(){return Object.assign({maxPush:85,maxRotate:11,maxScale:.09,spring:.08,damping:.84,sweptBody:true,maxSweepDistance:220},influenceSettings,{radius:Number(document.getElementById('radius').value),strength:Number(document.getElementById('strength').value),sourceMode:document.getElementById('influenceSource').value==='head'?'head':'body',sourceRadius:influencePhysicalRadius()});}
   function updateInfluence(){
     clearTargetPreview();
     var enabled=document.getElementById('influence').checked&&!targetEditing;
@@ -650,10 +661,10 @@
     return S.normalize({
       mode:document.getElementById('mode').value,influenceEnabled:document.getElementById('influence').checked,
       followerOptions:Object.assign({},follower.options,{assetForwardAngle:Number(document.getElementById('forward').value)}),
-      organicRenderer:activeOrganicEngine,
+      organicRenderer:organicRenderer?activeOrganicEngine:selectedOrganicEngine(),
       bodyProfile:document.getElementById('bodyProfile').value,
       display:{size:Number(document.getElementById('size').value)},
-      organicOptions:organicRenderer?organicRenderer.options:(selectedOrganicEngine()==='mesh-v3'?organicV3Opts():organicV2Opts()),influenceOptions:Object.assign({},influenceOpts(),{targetScenario:document.getElementById('influenceTargets').value,targetSelection:targetSelection()}),
+      organicOptions:persistentOrganicOptions((organicRenderer?activeOrganicEngine:selectedOrganicEngine())==='mesh-v3'?M:O,organicRenderer?organicRenderer.options:(selectedOrganicEngine()==='mesh-v3'?organicV3Opts():organicV2Opts())),influenceOptions:Object.assign({},influenceOpts(),{targetScenario:document.getElementById('influenceTargets').value,targetSelection:targetSelection()}),
       assetProfile:currentAssetProfile(),preparationReport:prepResult&&prepResult.report,
       assetRef:currentFile?{name:currentFile.name,type:currentFile.type,size:currentFile.size}:{name:'demo-asset.svg',type:'image/svg+xml'},
       metadata:{name:currentFile?currentFile.name:'Demo Interaction Studio'}
@@ -662,6 +673,9 @@
 
   async function applySessionValue(value){
     var saved=S.deserialize(value),oo=saved.organicOptions||{},fo=saved.followerOptions||{},io=saved.influenceOptions||{};
+    organicSettings={'mesh-v3':{},'slices-v2':{}};
+    organicSettings[saved.organicRenderer]=persistentOrganicOptions(saved.organicRenderer==='mesh-v3'?M:O,oo);
+    influenceSettings=I.normalizeOptions(io);
     document.getElementById('mode').value=saved.mode;
     document.getElementById('organicEngine').value=saved.organicRenderer;
     document.getElementById('bodyProfile').value=saved.bodyProfile||'custom';
