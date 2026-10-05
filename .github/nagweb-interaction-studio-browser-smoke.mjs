@@ -78,12 +78,18 @@ try{
   const marqueeBox=await page.$eval('[data-nw-target-id^="headline-"]',els=>{
     const rs=Array.from(els).slice(0,4).map(el=>el.getBoundingClientRect());
     return {
-      left:Math.min(...rs.map(r=>r.left))-8,
-      top:Math.min(...rs.map(r=>r.top))-8,
-      right:Math.max(...rs.map(r=>r.right))+8,
-      bottom:Math.max(...rs.map(r=>r.bottom))+8
+      left:Math.min(...rs.map(r=>r.left))-24,
+      top:Math.min(...rs.map(r=>r.top))-24,
+      right:Math.max(...rs.map(r=>r.right))+12,
+      bottom:Math.max(...rs.map(r=>r.bottom))+12
     };
   });
+  const marqueeStart=await page.evaluate(({x,y})=>{
+    const el=document.elementFromPoint(x,y),target=el&&el.closest&&el.closest('[data-nw-target-id]');
+    return {insideStage:!!(el&&document.querySelector('#stage').contains(el)),targetId:target&&target.getAttribute('data-nw-target-id')};
+  },{x:marqueeBox.left,y:marqueeBox.top});
+  assert.equal(marqueeStart.insideStage,true,'marquee must begin inside the stage');
+  assert.equal(marqueeStart.targetId,null,'marquee must begin on empty canvas, not on a target');
   await page.mouse.move(marqueeBox.left,marqueeBox.top);
   await page.mouse.down();
   await page.mouse.move(marqueeBox.right,marqueeBox.bottom,{steps:8});
