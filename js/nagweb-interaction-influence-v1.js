@@ -8,7 +8,7 @@
   if(root) root.NAGWEB_INTERACTION_INFLUENCE=api;
 })(typeof window!=='undefined'?window:globalThis,function(engine){
   'use strict';
-  var VERSION='1.10.0';
+  var VERSION='1.11.0';
   function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
   function num(v,d){v=Number(v);return Number.isFinite(v)?v:d;}
   function normalizeOptions(input){
@@ -188,10 +188,34 @@
       });
       return {el:el,id:id,state:newState(),rest:{x:0,y:0,radius:0},weight:weight,response:response,returnSpeed:returnSpeed,profile:profile,sleeping:true,original:original};
     }
+    function targetIndex(ref){
+      return targets.findIndex(function(t){return t.el===ref||t.id===ref;});
+    }
+    function validTargetElement(el){
+      return !!(el&&el.style&&typeof el.getBoundingClientRect==='function');
+    }
+    function addTarget(el,skipMeasure){
+      if(!validTargetElement(el)||targetIndex(el)>=0)return false;
+      var rec=makeRecord(el);targets.push(rec);
+      if(input.__ro)input.__ro.observe(el);
+      if(!skipMeasure)measure();
+      return true;
+    }
+    function removeTarget(ref,skipMeasure){
+      var idx=targetIndex(ref);if(idx<0)return false;
+      var rec=targets[idx];
+      if(input.__ro)try{input.__ro.unobserve(rec.el);}catch(e){}
+      restore(rec);targets.splice(idx,1);
+      if(!skipMeasure)measure();
+      return true;
+    }
     function setTargets(list){
-      targets.forEach(function(t){restore(t);});
-      targets=Array.from(list||[]).filter(Boolean).map(makeRecord);
+      var wanted=Array.from(list||[]).filter(validTargetElement);
+      wanted=Array.from(new Set(wanted));
+      targets.slice().forEach(function(t){if(wanted.indexOf(t.el)<0)removeTarget(t.el,true);});
+      wanted.forEach(function(el){if(targetIndex(el)<0)addTarget(el,true);});
       measure();
+      return targets.length;
     }
     function restore(t){
       t.el.style.translate=t.original.translate;t.el.style.rotate=t.original.rotate;t.el.style.scale=t.original.scale;t.el.style.willChange=t.original.willChange;
@@ -326,6 +350,7 @@
         var goal=impulseGoal(impulse,hit.weight,hit.response);
         hit.state.x=goal.x;hit.state.y=goal.y;hit.state.rotation=goal.rotation;hit.state.scale=goal.scale;hit.state.strength=goal.strength;
         hit.state.vx=0;hit.state.vy=0;hit.state.vr=0;hit.state.vs=0;
+        if(hit.sleeping){hit.sleeping=false;perf.wakes++;}
         apply(hit);
         return {x:hit.state.x,y:hit.state.y,rotation:hit.state.rotation,scale:hit.state.scale,strength:hit.state.strength};
       },
@@ -334,7 +359,10 @@
         return hit?Object.assign({},hit.state):null;
       },
       setOptions:function(next){o=normalizeOptions(Object.assign({},o,next||{}));previousPath=null;return Object.assign({},o);},
-      setTargets:function(list){if(input.__ro)input.__ro.disconnect();setTargets(list);if(typeof ResizeObserver==='function'){input.__ro=new ResizeObserver(onResize);targets.forEach(function(t){input.__ro.observe(t.el);});}},
+      hasTarget:function(ref){return targetIndex(ref)>=0;},
+      addTarget:function(el){return addTarget(el,false);},
+      removeTarget:function(ref){return removeTarget(ref,false);},
+      setTargets:function(list){return setTargets(list);},
       measure:measure,
       pause:function(){paused=true;},
       resume:function(){paused=false;},
