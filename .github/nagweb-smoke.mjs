@@ -95,7 +95,7 @@ try{
 const page=await browser.newPage();
 await page.setViewport({width:1440,height:900,deviceScaleFactor:1});
 const pageErrors=[];
-page.on('pageerror',e=>pageErrors.push(String(e&&e.stack||e)));
+page.on('pageerror',e=>{const detail=String(e&&e.stack||e);pageErrors.push(detail);console.error('Browser page error:',detail);});
 
 await page.goto(process.env.NAGWEB_SMOKE_URL||'http://127.0.0.1:4173/index.html',{waitUntil:'domcontentloaded',timeout:60000});
 await page.waitForFunction(()=>window.NAGWEB_FEEDBACK16===1 && !!window.NAGWEB_UNIVERSAL && !!window.NAGWEB_SCROLL_DIRECTOR,{timeout:30000});
