@@ -75,25 +75,38 @@ try{
   assert.equal(await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.targetEditing),true);
   assert.equal(await page.$eval('#influenceTargets',el=>el.value),'custom');
 
-  const marqueeBox=await page.$eval('[data-nw-target-id^="headline-"]',els=>{
+  const marqueeGesture=await page.$$eval('[data-nw-target-id^="headline-"]',els=>{
     const rs=Array.from(els).slice(0,4).map(el=>el.getBoundingClientRect());
-    const sr=document.querySelector('#stage').getBoundingClientRect();
+    const stage=document.querySelector('#stage'),sr=stage.getBoundingClientRect();
+    const union={
+      left:Math.min(...rs.map(r=>r.left)),
+      top:Math.min(...rs.map(r=>r.top)),
+      right:Math.max(...rs.map(r=>r.right)),
+      bottom:Math.max(...rs.map(r=>r.bottom))
+    };
+    const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+    const candidates=[
+      {x:clamp(union.left-18,sr.left+8,sr.right-8),y:clamp(union.top-18,sr.top+8,sr.bottom-8)},
+      {x:sr.left+14,y:sr.top+14},
+      {x:sr.left+14,y:clamp(union.top-18,sr.top+8,sr.bottom-8)},
+      {x:clamp(union.left-18,sr.left+8,sr.right-8),y:sr.top+14}
+    ];
+    const start=candidates.find(p=>{
+      const el=document.elementFromPoint(p.x,p.y);
+      return !!(el&&stage.contains(el)&&!(el.closest&&el.closest('[data-nw-target-id]')));
+    });
+    if(!start)throw new Error('No empty in-stage point available for marquee smoke');
     return {
-      left:Math.max(sr.left+6,Math.min(...rs.map(r=>r.left))-18),
-      top:Math.max(sr.top+6,Math.min(...rs.map(r=>r.top))-18),
-      right:Math.min(sr.right-6,Math.max(...rs.map(r=>r.right))+12),
-      bottom:Math.min(sr.bottom-6,Math.max(...rs.map(r=>r.bottom))+12)
+      start,
+      end:{
+        x:clamp(union.right+12,sr.left+8,sr.right-8),
+        y:clamp(union.bottom+12,sr.top+8,sr.bottom-8)
+      }
     };
   });
-  const marqueeStart=await page.evaluate(({x,y})=>{
-    const el=document.elementFromPoint(x,y),target=el&&el.closest&&el.closest('[data-nw-target-id]');
-    return {insideStage:!!(el&&document.querySelector('#stage').contains(el)),targetId:target&&target.getAttribute('data-nw-target-id')};
-  },{x:marqueeBox.left,y:marqueeBox.top});
-  assert.equal(marqueeStart.insideStage,true,'marquee must begin inside the stage');
-  assert.equal(marqueeStart.targetId,null,'marquee must begin on empty canvas, not on a target');
-  await page.mouse.move(marqueeBox.left,marqueeBox.top);
+  await page.mouse.move(marqueeGesture.start.x,marqueeGesture.start.y);
   await page.mouse.down();
-  await page.mouse.move(marqueeBox.right,marqueeBox.bottom,{steps:8});
+  await page.mouse.move(marqueeGesture.end.x,marqueeGesture.end.y,{steps:8});
   assert.equal(await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.marqueeActive),true);
   assert.equal(await page.$eval('#targetMarquee',el=>el.hidden),false);
   await page.mouse.up();await new Promise(r=>setTimeout(r,80));
