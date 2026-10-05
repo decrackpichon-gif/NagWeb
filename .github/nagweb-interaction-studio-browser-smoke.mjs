@@ -90,6 +90,15 @@ try{
     scale:Number(el.getAttribute('data-nw-influence-scale'))
   })),{move:1,rotate:1,scale:0});
   assert.equal(await page.$eval('[data-nw-target-id="headline-0"]',el=>Number(el.getAttribute('data-nw-influence-return'))),1.05);
+  await page.click('#previewTargets');await new Promise(r=>setTimeout(r,80));
+  assert.equal(await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.previewActive),true);
+  const previewState=await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.previewField.getTargetState('headline-0'));
+  assert.ok(Math.abs(previewState.x)>1,'reaction preview should displace the selected target');
+  assert.ok(Math.abs(previewState.rotation)>.1,'tilt preview should rotate the selected target');
+  assert.ok(Math.abs(previewState.scale-1)<.001,'tilt preview should keep scale disabled');
+  await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.clearPreview());
+  assert.equal(await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.previewActive),false);
+  assert.equal(await page.$eval('[data-nw-target-id="headline-0"]',el=>el.style.translate),'');
   await page.$eval('#targetWeight',el=>{el.value='.37';el.dispatchEvent(new Event('input',{bubbles:true}));});await new Promise(r=>setTimeout(r,50));
   assert.equal(await page.$eval('#targetReactionProfile',el=>el.value),'custom');
   assert.equal(await page.$eval('[data-nw-target-id="headline-0"]',el=>el.getAttribute('data-nw-reaction-profile')),'custom');
