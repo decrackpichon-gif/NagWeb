@@ -14,7 +14,7 @@
   if(root) root.NAGWEB_INTERACTION_SESSION=api;
 })(typeof window!=='undefined'?window:globalThis,function(engine,organic,influence,assetPrep){
   'use strict';
-  var VERSION='1.2.0-alpha.1';
+  var VERSION='1.3.0-alpha.1';
   var SCHEMA='nagweb-interaction-session';
 
   function clone(v){return v==null?v:JSON.parse(JSON.stringify(v));}
@@ -28,7 +28,9 @@
     var organicRenderer=input.organicRenderer==='mesh-v3'?'mesh-v3':'slices-v2';
     var bodyProfile=['character','creature','ribbon','custom'].indexOf(input.bodyProfile)>=0?input.bodyProfile:'custom';
     var displaySize=Math.max(40,Math.min(2400,Number(input.display&&input.display.size)||Number(organicOptions.length)||310));
-    var influenceOptions=influence&&influence.normalizeOptions?influence.normalizeOptions(input.influenceOptions||{}):clone(input.influenceOptions||{});
+    var rawInfluence=input.influenceOptions||{};
+    var influenceOptions=influence&&influence.normalizeOptions?influence.normalizeOptions(rawInfluence):clone(rawInfluence);
+    influenceOptions.targetScenario=rawInfluence.targetScenario==='all'?'all':'headline';
     return {
       schema:SCHEMA,
       version:1,
