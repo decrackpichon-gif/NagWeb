@@ -10,7 +10,7 @@
 })(typeof window!=='undefined'?window:globalThis,function(engine,assetPrep){
   'use strict';
 
-  var VERSION='3.0.0-alpha.1';
+  var VERSION='3.1.0-alpha.1';
   var DEFAULTS={
     spinePoints:34,
     columns:32,
@@ -23,10 +23,15 @@
     phaseSpeed:0.12,
     activityBase:0.38,
     activitySpeed:0.68,
-    headRigidFraction:0.22,
-    rigidBlendWidth:0.10,
-    headMaxBend:0.085,
-    bodyMaxBend:0.28,
+    headZoneEnd:0.22,
+    torsoZoneEnd:0.66,
+    zoneBlend:0.075,
+    headFlex:0.035,
+    torsoFlex:0.42,
+    lowerFlex:1,
+    headMaxBend:0.065,
+    torsoMaxBend:0.16,
+    bodyMaxBend:0.30,
     turnProtection:0.78,
     leadEnd:'right',
     maxDpr:2,
@@ -58,10 +63,19 @@
     o.phaseSpeed=clamp(Number(o.phaseSpeed)||0,0,1);
     o.activityBase=clamp(Number(o.activityBase)||0,0,2);
     o.activitySpeed=clamp(Number(o.activitySpeed)||0,0,3);
-    o.headRigidFraction=clamp(Number(o.headRigidFraction)||0,0,.6);
-    o.rigidBlendWidth=clamp(Number(o.rigidBlendWidth)||0,.01,.4);
-    o.headMaxBend=clamp(Number(o.headMaxBend)||.085,.01,.8);
-    o.bodyMaxBend=clamp(Number(o.bodyMaxBend)||.28,o.headMaxBend,1.2);
+    if(input&&input.headZoneEnd==null&&input.headRigidFraction!=null)o.headZoneEnd=input.headRigidFraction;
+    if(input&&input.zoneBlend==null&&input.rigidBlendWidth!=null)o.zoneBlend=input.rigidBlendWidth;
+    o.headZoneEnd=clamp(Number(o.headZoneEnd)||.22,.04,.55);
+    o.torsoZoneEnd=clamp(Number(o.torsoZoneEnd)||.66,o.headZoneEnd+.08,.94);
+    o.zoneBlend=clamp(Number(o.zoneBlend)||.075,.015,.22);
+    o.headFlex=clamp(o.headFlex==null?.035:Number(o.headFlex),0,1);
+    o.torsoFlex=clamp(o.torsoFlex==null?.42:Number(o.torsoFlex),o.headFlex,1);
+    o.lowerFlex=clamp(o.lowerFlex==null?1:Number(o.lowerFlex),o.torsoFlex,1);
+    o.headMaxBend=clamp(Number(o.headMaxBend)||.065,.01,.8);
+    o.torsoMaxBend=clamp(Number(o.torsoMaxBend)||.16,o.headMaxBend,1);
+    o.bodyMaxBend=clamp(Number(o.bodyMaxBend)||.30,o.torsoMaxBend,1.2);
+    o.headRigidFraction=o.headZoneEnd;
+    o.rigidBlendWidth=o.zoneBlend;
     o.turnProtection=clamp(Number(o.turnProtection)||0,0,1);
     o.leadEnd=o.leadEnd==='left'?'left':'right';
     o.maxDpr=clamp(Number(o.maxDpr)||2,1,3);
@@ -74,9 +88,26 @@
     return o;
   }
 
+  function zoneBlendValue(u,a,b,c,opts){
+    var o=normalizeOptions(opts),x=clamp(Number(u)||0,0,1);
+    var t1=smoothstep(Math.max(0,o.headZoneEnd-o.zoneBlend),Math.min(1,o.headZoneEnd+o.zoneBlend),x);
+    var t2=smoothstep(Math.max(0,o.torsoZoneEnd-o.zoneBlend),Math.min(1,o.torsoZoneEnd+o.zoneBlend),x);
+    return lerp(lerp(a,b,t1),c,t2);
+  }
+
+  function zoneFlexAt(u,opts){
+    var o=normalizeOptions(opts);
+    return zoneBlendValue(u,o.headFlex,o.torsoFlex,o.lowerFlex,o);
+  }
+
   function bendLimitAt(u,opts){
-    var o=normalizeOptions(opts),t=smoothstep(o.headRigidFraction,1,clamp(Number(u)||0,0,1));
-    return lerp(o.headMaxBend,o.bodyMaxBend,t);
+    var o=normalizeOptions(opts);
+    return zoneBlendValue(u,o.headMaxBend,o.torsoMaxBend,o.bodyMaxBend,o);
+  }
+
+  function zoneAt(u,opts){
+    var o=normalizeOptions(opts),x=clamp(Number(u)||0,0,1);
+    return x<o.headZoneEnd?'head':(x<o.torsoZoneEnd?'torso':'lower');
   }
 
   function createSpine(count,x,y,heading,length){
@@ -132,7 +163,7 @@
     var curvature=localCurvature(spine,Math.round(pos));
     var ref=Math.max(.001,bendLimitAt(u,o)),turnDamp=1-o.turnProtection*clamp(curvature/ref,0,1);
     var activity=o.activityBase+o.activitySpeed*clamp(Number(speedRatio)||0,0,1);
-    var flex=smoothstep(0,Math.max(.001,o.headRigidFraction),u);
+    var flex=zoneFlexAt(u,o);
     var sway=Math.sin((Number(phase)||0)-u*o.swayWaves)*o.length*o.sway*activity*Math.pow(u,o.swayPower)*flex*turnDamp;
     x+=-Math.sin(angle)*sway;y+=Math.cos(angle)*sway;
     return {x:x,y:y,angle:angle,sway:sway,curvature:curvature,turnDamp:turnDamp};
@@ -140,14 +171,14 @@
 
   function rigidFrame(spine,u,phase,opts,speedRatio){
     var o=normalizeOptions(opts),p=sampleCenterline(spine,u,phase,o,speedRatio),head=sampleCenterline(spine,0,phase,o,speedRatio);
-    var start=Math.max(0,o.headRigidFraction-o.rigidBlendWidth),end=o.headRigidFraction+o.rigidBlendWidth;
-    var flexible=smoothstep(start,end,u);
+    var flexible=zoneFlexAt(u,o);
     var straightX=head.x-Math.cos(head.angle)*o.length*u,straightY=head.y-Math.sin(head.angle)*o.length*u;
     return {
       x:lerp(straightX,p.x,flexible),
       y:lerp(straightY,p.y,flexible),
       angle:head.angle+angleDelta(p.angle,head.angle)*flexible,
       flexible:flexible,
+      zone:zoneAt(u,o),
       curvature:p.curvature
     };
   }
@@ -321,6 +352,8 @@
     defaults:clone(DEFAULTS),
     normalizeOptions:normalizeOptions,
     bendLimitAt:bendLimitAt,
+    zoneFlexAt:zoneFlexAt,
+    zoneAt:zoneAt,
     createSpine:createSpine,
     resegmentSpine:resegmentSpine,
     limitSpineBend:limitSpineBend,
