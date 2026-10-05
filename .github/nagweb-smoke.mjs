@@ -38,6 +38,8 @@ import {runMotionExpandSmoke} from './nagweb-motion-expand-smoke.mjs';
 import {runMotionDropSmoke} from './nagweb-motion-drop-smoke.mjs';
 import {runMotionStreamSmoke} from './nagweb-motion-stream-smoke.mjs';
 import {runMotionStreamPlacementSmoke} from './nagweb-motion-stream-placement-smoke.mjs';
+import './nagweb-carousel-model-test.mjs';
+import {runMotionCarouselSmoke} from './nagweb-motion-carousel-smoke.mjs';
 import './nagweb-ticker-loop-model-test.mjs';
 import {runMotionTickerLoopSmoke} from './nagweb-motion-ticker-loop-smoke.mjs';
 import './nagweb-ticker-model-test.mjs';
@@ -234,6 +236,8 @@ if(workspaceState.leftToggles!==1||workspaceState.rightToggles!==1) throw new Er
 if(Math.abs(workspaceState.rightWidth-savedInspectorWidth)>3) throw new Error('Inspector width did not survive reload: '+JSON.stringify({workspaceState,savedInspectorWidth}));
 await page.click('.nw-dock-toggle.left');
 
+await runMotionCarouselSmoke(page);
+await runMotionStreamPlacementSmoke(page,'carousel-flow');
 await runMotionTickerLoopSmoke(page);
 await runMotionStreamPlacementSmoke(page,'ticker-loop');
 await runMotionTickerSmoke(page);
