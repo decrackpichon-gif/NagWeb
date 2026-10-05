@@ -154,9 +154,22 @@ try{
   const headline2=await page.$('[data-nw-target-id="headline-1"]');
   await page.keyboard.down('Shift');await headline2.click();await page.keyboard.up('Shift');await new Promise(r=>setTimeout(r,60));
   assert.deepEqual((await page.evaluate(()=>__NAGWEB_INTERACTION_STUDIO__.selectedTargetIds)).sort(),['headline-0','headline-1']);
+  assert.equal(await page.$eval('#targetRotate',el=>el.indeterminate),true,'mixed rotation should render indeterminate');
+  assert.equal(await page.$eval('#targetScale',el=>el.indeterminate),true,'mixed scale should render indeterminate');
+  assert.equal(await page.$eval('#targetReturnOut',el=>el.value||el.textContent),'Mixto');
+  await page.$eval('#targetRotate',el=>{el.checked=false;el.dispatchEvent(new Event('change',{bubbles:true}));});await new Promise(r=>setTimeout(r,40));
+  assert.equal(await page.$eval('#targetRotate',el=>el.indeterminate),false);
+  assert.equal(await page.$eval('#targetScale',el=>el.indeterminate),true,'editing rotation must preserve mixed scale');
+  assert.equal(await page.$eval('[data-nw-target-id="headline-0"]',el=>Number(el.getAttribute('data-nw-influence-scale'))),0);
+  assert.equal(await page.$eval('[data-nw-target-id="headline-1"]',el=>Number(el.getAttribute('data-nw-influence-scale'))),1);
   await page.$eval('#targetReturn',el=>{el.value='1.4';el.dispatchEvent(new Event('input',{bubbles:true}));});
   assert.equal(await page.$eval('[data-nw-target-id="headline-0"]',el=>Number(el.getAttribute('data-nw-influence-return'))),1.4);
   assert.equal(await page.$eval('[data-nw-target-id="headline-1"]',el=>Number(el.getAttribute('data-nw-influence-return'))),1.4);
+  assert.deepEqual(await page.$eval('[data-nw-target-id="headline-1"]',el=>({
+    move:Number(el.getAttribute('data-nw-influence-move')),
+    rotate:Number(el.getAttribute('data-nw-influence-rotate')),
+    scale:Number(el.getAttribute('data-nw-influence-scale'))
+  })),{move:1,rotate:0,scale:1},'editing return/rotation must preserve headline-1 scale');
   assert.equal(await page.$eval('[data-nw-target-id="headline-0"]',el=>Number(el.getAttribute('data-nw-influence-weight'))),.37);
   const headline3=await page.$('[data-nw-target-id="headline-2"]');await headline3.click();await new Promise(r=>setTimeout(r,50));
   await page.select('#targetReactionProfile','pulse');await new Promise(r=>setTimeout(r,50));
@@ -206,5 +219,5 @@ try{
   assert.equal(errors.length,0,'Interaction Studio should have no page errors: '+errors.join('\n'));
   fs.mkdirSync('/tmp/nagweb-interaction-v1',{recursive:true});
   await page.screenshot({path:'/tmp/nagweb-interaction-v1/interaction-studio-v1.png',fullPage:true});
-  console.log('NagWeb Interaction Studio V2.7 marquee selection browser smoke: PASS');
+  console.log('NagWeb Interaction Studio V2.8 mixed multiselect browser smoke: PASS');
 }finally{await browser.close();}
