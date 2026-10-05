@@ -37,7 +37,7 @@ const round=S.deserialize(S.serialize(s));
 assert.equal(round.organicOptions.length,510);
 assert.equal(round.organicOptions.columns,36);
 assert.equal(round.influenceOptions.radius,240);assert.equal(round.influenceOptions.targetScenario,'custom');assert.equal(round.influenceOptions.sweptBody,true);
-assert.equal(round.influenceOptions.targetSelection.length,3);
+assert.equal(round.influenceOptions.targetSelection.length,3);assert.equal(round.influenceOptions.targetSelection[1].profile,'floating');
 assert.deepEqual(round.influenceOptions.targetSelection[0],{id:'headline-0',enabled:true,weight:1,response:{move:1,rotate:0,scale:0},returnSpeed:1.5,profile:'displace'});
 assert.equal(S.summary(round).reactiveTargetCount,2);
 assert.equal(round.organicRenderer,'mesh-v3');
