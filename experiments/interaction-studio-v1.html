@@ -49,6 +49,12 @@
     <div id="organicControls">
       <div class="field"><label>Motor orgánico</label><select id="organicEngine"><option value="mesh-v3">Mesh V3 · continuo</option><option value="slices-v2">Slices V2.2 · referencia</option></select></div>
       <div id="organicEngineNote" class="modeNote">Mesh V3 usa una textura WebGL continua; V2.2 queda disponible para comparar.</div>
+      <div id="meshZoneControls">
+        <div class="field"><label>Perfil corporal</label><select id="bodyProfile"><option value="character">Personaje</option><option value="creature">Criatura flexible</option><option value="ribbon">Cinta / forma blanda</option><option value="custom">Personalizado</option></select></div>
+        <div class="field"><label>Rigidez cabeza <output id="headRigidityOut"></output></label><input id="headRigidity" type="range" min=".55" max="1" step=".01" value=".965"></div>
+        <div class="field"><label>Rigidez torso <output id="torsoRigidityOut"></output></label><input id="torsoRigidity" type="range" min=".05" max=".90" step=".01" value=".58"></div>
+        <div class="field"><label>Flexibilidad inferior <output id="lowerFlexOut"></output></label><input id="lowerFlex" type="range" min=".40" max="1" step=".01" value="1"></div>
+      </div>
       <div class="field"><label>Flexibilidad <output id="swayOut"></output></label><input id="sway" type="range" min="0" max=".12" step=".005" value=".04"></div>
       <div class="field"><label>Ondas <output id="wavesOut"></output></label><input id="waves" type="range" min="1" max="8" step=".2" value="4.2"></div>
     </div>
@@ -149,7 +155,14 @@
     return {length:Number(document.getElementById('size').value),sway:Number(document.getElementById('sway').value),swayWaves:Number(document.getElementById('waves').value),leadEnd:'right'};
   }
   function organicV2Opts(){return Object.assign({points:30,slices:72},organicBaseOpts());}
-  function organicV3Opts(){return Object.assign({spinePoints:34,columns:32,rows:10,headRigidFraction:.22,headMaxBend:.085,bodyMaxBend:.28},organicBaseOpts());}
+  function organicV3Opts(){return Object.assign({
+    spinePoints:34,columns:32,rows:10,
+    headZoneEnd:.22,torsoZoneEnd:.66,zoneBlend:.075,
+    headFlex:1-Number(document.getElementById('headRigidity').value),
+    torsoFlex:1-Number(document.getElementById('torsoRigidity').value),
+    lowerFlex:Number(document.getElementById('lowerFlex').value),
+    headMaxBend:.065,torsoMaxBend:.16,bodyMaxBend:.30
+  },organicBaseOpts());}
   function selectedOrganicEngine(){return document.getElementById('organicEngine').value==='slices-v2'?'slices-v2':'mesh-v3';}
   function syncOrganicCanvases(){
     var organic=activeMode==='organic';
@@ -167,6 +180,7 @@
     var requested=document.getElementById('mode').value,resolved=resolveMode();activeMode=resolved;
     document.getElementById('resolvedMode').textContent=requested==='auto'?'auto → '+resolved:resolved;
     document.getElementById('organicControls').style.display=resolved==='organic'?'block':'none';
+    document.getElementById('meshZoneControls').style.display=resolved==='organic'&&selectedOrganicEngine()==='mesh-v3'?'block':'none';
     document.getElementById('followerDirection').style.display=resolved==='follower'?'block':'none';
     document.getElementById('axisActions').style.opacity=prepResult&&prepResult.analysis&&prepResult.analysis.silhouetteReliable?'1':'.4';
     document.getElementById('applyAxis').disabled=!(prepResult&&prepResult.analysis&&prepResult.analysis.silhouetteReliable);
@@ -224,6 +238,9 @@
     var size=Number(document.getElementById('size').value);visual.style.width=size+'px';visual.style.height=size+'px';
     if(organicRenderer)organicRenderer.setOptions(activeOrganicEngine==='mesh-v3'?organicV3Opts():organicV2Opts());
     output('size',size+' px');output('distance',document.getElementById('distance').value+' px');output('sway',document.getElementById('sway').value);output('waves',document.getElementById('waves').value);
+    output('headRigidity',Math.round(Number(document.getElementById('headRigidity').value)*100)+'%');
+    output('torsoRigidity',Math.round(Number(document.getElementById('torsoRigidity').value)*100)+'%');
+    output('lowerFlex',Math.round(Number(document.getElementById('lowerFlex').value)*100)+'%');
   }
   function influenceOpts(){return {radius:Number(document.getElementById('radius').value),strength:Number(document.getElementById('strength').value),maxPush:85,maxRotate:11,maxScale:.09,spring:.08,damping:.84};}
   function updateInfluence(){
@@ -265,8 +282,28 @@
   document.getElementById('cancel').onclick=function(){if(pipeline)pipeline.cancel();};
   document.getElementById('mode').onchange=updateModeUI;
   document.getElementById('preset').onchange=syncMotion;
-  document.getElementById('organicEngine').onchange=async function(){if(activeMode==='organic'&&prepResult)await prepareOrganic();};
+  document.getElementById('organicEngine').onchange=async function(){
+    document.getElementById('meshZoneControls').style.display=selectedOrganicEngine()==='mesh-v3'?'block':'none';
+    if(activeMode==='organic'&&prepResult)await prepareOrganic();
+  };
+  function applyBodyProfile(name){
+    var presets={
+      character:{head:.965,torso:.58,lower:1,sway:.035},
+      creature:{head:.86,torso:.34,lower:1,sway:.05},
+      ribbon:{head:.52,torso:.16,lower:1,sway:.072}
+    };
+    var p=presets[name];if(!p)return;
+    document.getElementById('headRigidity').value=p.head;
+    document.getElementById('torsoRigidity').value=p.torso;
+    document.getElementById('lowerFlex').value=p.lower;
+    document.getElementById('sway').value=p.sway;
+    syncMotion();
+  }
+  document.getElementById('bodyProfile').onchange=function(){applyBodyProfile(this.value);};
   ['size','distance','forward','sway','waves'].forEach(function(id){document.getElementById(id).addEventListener('input',syncMotion);document.getElementById(id).addEventListener('change',syncMotion);});
+  ['headRigidity','torsoRigidity','lowerFlex'].forEach(function(id){
+    document.getElementById(id).addEventListener('input',function(){document.getElementById('bodyProfile').value='custom';syncMotion();});
+  });
   document.getElementById('influence').onchange=updateInfluence;
   ['radius','strength'].forEach(function(id){document.getElementById(id).addEventListener('input',function(){if(influenceField)influenceField.setOptions(influenceOpts());output('radius',document.getElementById('radius').value+' px');output('strength',document.getElementById('strength').value);});});
   bindAnchor('trailAnchor','trail');bindAnchor('leadAnchor','lead');
@@ -292,7 +329,7 @@
     switchMode:function(m){document.getElementById('mode').value=m;updateModeUI();},
     switchOrganicEngine:async function(e){document.getElementById('organicEngine').value=e==='slices-v2'?'slices-v2':'mesh-v3';if(activeMode==='organic')await prepareOrganic();}
   };
-  syncMotion();updateInfluence();sourceImage.onload=function(){sourcePreview.src=fallback;visualImg.src=fallback;prepare();};sourceImage.src=fallback;
+  applyBodyProfile('character');updateInfluence();sourceImage.onload=function(){sourcePreview.src=fallback;visualImg.src=fallback;prepare();};sourceImage.src=fallback;
 })();
 </script>
 </body></html>
