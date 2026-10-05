@@ -22,7 +22,7 @@ try{
     spine:__NAGWEB_ORGANIC_V2__.renderer.spine,
     canvas:{w:document.querySelector('#organicCanvas').width,h:document.querySelector('#organicCanvas').height}
   }));
-  assert.equal(initial.organicVersion,'2.1.0-alpha.1');
+  assert.equal(initial.organicVersion,'2.2.0-alpha.1');
   assert.equal(initial.engineVersion,'1.5.0');
   assert.equal(initial.analysis.silhouetteReliable,true);
   assert.ok(initial.analysis.elongation>1.75);
@@ -38,6 +38,12 @@ try{
   const expected=initial.options.length/(initial.options.points-1);
   const lengths=moved.spine.slice(1).map((p,i)=>Math.hypot(p.x-moved.spine[i].x,p.y-moved.spine[i].y));
   assert.ok(lengths.every(v=>Math.abs(v-expected)<.05),'spine segments should preserve length');
+  const bends=moved.spine.slice(2).map((p,i)=>{
+    const p0=moved.spine[i],p1=moved.spine[i+1];
+    const a0=Math.atan2(p1.y-p0.y,p1.x-p0.x),a1=Math.atan2(p.y-p1.y,p.x-p1.x);
+    return Math.abs(Math.atan2(Math.sin(a1-a0),Math.cos(a1-a0)));
+  });
+  assert.ok(bends.slice(0,5).every((v,i)=>v<=NAGWEB_ORGANIC_FOLLOWER.bendLimitAt((i+1.5)/(initial.options.points-1),initial.options)+.015),'head zone bend should be protected');
 
   const sway=await page.evaluate(()=>{
     const r=__NAGWEB_ORGANIC_V2__.renderer;
@@ -88,5 +94,5 @@ try{
   assert.equal(rs.sway,0);
   await reduced.close();
 
-  console.log('NagWeb Organic Follower V2.1 browser smoke: PASS');
+  console.log('NagWeb Organic Follower V2.2 browser smoke: PASS');
 }finally{await browser.close();}
