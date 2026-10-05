@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 const require=createRequire(import.meta.url);
 const M=require('../js/nagweb-interaction-organic-v3.js');
 
-assert.equal(M.version,'3.1.0-alpha.1');
+assert.equal(M.version,'3.2.0-alpha.1');
 
 const o=M.normalizeOptions({columns:32,rows:10,length:420});
 assert.equal(o.columns,32);assert.equal(o.rows,10);assert.equal(o.length,420);
@@ -65,7 +65,12 @@ assert.ok(head.flexible<torso.flexible&&torso.flexible<lower.flexible,'mesh fram
 assert.ok(head.flexible<.12,'head stays almost rigid');
 assert.ok(lower.flexible>.9,'lower body remains highly flexible');
 
+const fit=M.fitTextureDimensions(8000,4000,4096);
+assert.equal(fit.width,4096);assert.equal(fit.height,2048);assert.equal(fit.scaled,true);
+const fitSmall=M.fitTextureDimensions(1200,900,4096);
+assert.equal(fitSmall.width,1200);assert.equal(fitSmall.height,900);assert.equal(fitSmall.scaled,false);
+
 const p0=M.advancePhase(0,0,o,16.6667),p1=M.advancePhase(0,1,o,16.6667);
 assert.ok(p1>p0);
 
-console.log('NagWeb Organic Mesh V3.1 model tests: PASS');
+console.log('NagWeb Organic Mesh V3.2 model tests: PASS');
