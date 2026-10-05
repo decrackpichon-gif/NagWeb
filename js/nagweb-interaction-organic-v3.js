@@ -10,7 +10,7 @@
 })(typeof window!=='undefined'?window:globalThis,function(engine,assetPrep){
   'use strict';
 
-  var VERSION='3.1.0-alpha.1';
+  var VERSION='3.2.0-alpha.1';
   var DEFAULTS={
     spinePoints:34,
     columns:32,
@@ -35,6 +35,7 @@
     turnProtection:0.78,
     leadEnd:'right',
     maxDpr:2,
+    maxTextureDimension:4096,
     reducedMotion:'respect',
     shadow:true,
     shadowBlur:18,
@@ -79,6 +80,7 @@
     o.turnProtection=clamp(Number(o.turnProtection)||0,0,1);
     o.leadEnd=o.leadEnd==='left'?'left':'right';
     o.maxDpr=clamp(Number(o.maxDpr)||2,1,3);
+    o.maxTextureDimension=Math.round(clamp(Number(o.maxTextureDimension)||4096,512,8192));
     o.reducedMotion=['respect','always','never'].indexOf(o.reducedMotion)>=0?o.reducedMotion:'respect';
     o.shadow=o.shadow!==false;
     o.shadowBlur=clamp(Number(o.shadowBlur)||0,0,80);
@@ -214,6 +216,12 @@
     return {positions:positions,texcoords:texcoords,indices:new Uint16Array(topology.indices),height:height,frames:frames};
   }
 
+  function fitTextureDimensions(width,height,maxDimension){
+    width=Math.max(1,Math.round(Number(width)||1));height=Math.max(1,Math.round(Number(height)||1));maxDimension=Math.max(1,Math.round(Number(maxDimension)||1));
+    var scale=Math.min(1,maxDimension/Math.max(width,height));
+    return {width:Math.max(1,Math.round(width*scale)),height:Math.max(1,Math.round(height*scale)),scale:scale,scaled:scale<.999999};
+  }
+
   function advancePhase(phase,speedRatio,opts,dt){
     var o=normalizeOptions(opts),frame=clamp((Number(dt)||16.6667)/16.6667,.25,3);
     return (Number(phase)||0)+(o.phaseBase+o.phaseSpeed*clamp(Number(speedRatio)||0,0,1))*frame;
@@ -268,18 +276,29 @@
     var prog=program(gl,VS,FS),posLoc=gl.getAttribLocation(prog,'a_position'),texLoc=gl.getAttribLocation(prog,'a_texcoord'),resLoc=gl.getUniformLocation(prog,'u_resolution'),imgLoc=gl.getUniformLocation(prog,'u_image');
     var posBuffer=gl.createBuffer(),texBuffer=gl.createBuffer(),indexBuffer=gl.createBuffer(),texture=gl.createTexture();
     var o=normalizeOptions(input),leader=input.leader,area=input.area||canvas.parentElement||document.documentElement,img=input.image;
-    var topology=createTopology(o.columns,o.rows,o.leadEnd),indexCount=topology.indices.length,phase=0,lastHeading=0,destroyed=false,paused=false,bounds={left:0,top:0,width:1,height:1},dpr=1;
+    var topology=createTopology(o.columns,o.rows,o.leadEnd),indexCount=topology.indices.length,phase=0,lastHeading=0,destroyed=false,paused=false,contextLost=false,bounds={left:0,top:0,width:1,height:1},dpr=1;
+    var textureSource=null,textureInfo=null,gpuTextureLimit=Math.max(512,Number(gl.getParameter(gl.MAX_TEXTURE_SIZE))||4096);
     var media=typeof matchMedia==='function'?matchMedia('(prefers-reduced-motion: reduce)'):null;
     function reduced(){return o.reducedMotion==='always'||(o.reducedMotion==='respect'&&media&&media.matches);}
     var speed0=Math.hypot(leader.state.vx||0,leader.state.vy||0);if(speed0>.05)lastHeading=Math.atan2(leader.state.vy,leader.state.vx);
     var spine=createSpine(o.spinePoints,leader.state.x,leader.state.y,lastHeading,o.length);
 
-    gl.useProgram(prog);
-    gl.bindTexture(gl.TEXTURE_2D,texture);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
-    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
-    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,img);
+    function uploadTexture(){
+      var iw=img.width||img.naturalWidth,ih=img.height||img.naturalHeight;
+      var limit=Math.min(gpuTextureLimit,o.maxTextureDimension),fit=fitTextureDimensions(iw,ih,limit);
+      textureSource=img;
+      if(fit.scaled){
+        var tc=document.createElement('canvas');tc.width=fit.width;tc.height=fit.height;
+        var tctx=tc.getContext('2d');tctx.imageSmoothingEnabled=true;tctx.imageSmoothingQuality='high';tctx.drawImage(img,0,0,fit.width,fit.height);
+        textureSource=tc;
+      }
+      textureInfo={sourceWidth:iw,sourceHeight:ih,width:fit.width,height:fit.height,scale:fit.scale,scaled:fit.scaled,gpuLimit:gpuTextureLimit,limit:limit};
+      gl.useProgram(prog);gl.bindTexture(gl.TEXTURE_2D,texture);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,textureSource);
+    }
+    uploadTexture();
     gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
     gl.disable(gl.DEPTH_TEST);
 
@@ -320,7 +339,13 @@
       ensureSpine();advanceSpine(spine,leader.state,o.length,lastHeading,o);if(!reduced())phase=advancePhase(phase,ratio,o,dt);render(ratio);
     }
     function onMeasure(){measure();}
+    function onContextLost(ev){
+      if(ev&&typeof ev.preventDefault==='function')ev.preventDefault();
+      contextLost=true;paused=true;
+      if(typeof input.onContextLost==='function')try{input.onContextLost({renderer:'mesh-v3',reason:'webgl-context-lost'});}catch(e){}
+    }
     rebuildTopology();measure();updateShadow();
+    canvas.addEventListener('webglcontextlost',onContextLost,false);
     window.addEventListener('resize',onMeasure,{passive:true});window.addEventListener('scroll',onMeasure,true);
     var ro=null;if(typeof ResizeObserver==='function'){ro=new ResizeObserver(onMeasure);ro.observe(area);}
     var unsub=engine.subscribeFrame(frame);
@@ -331,18 +356,24 @@
       get options(){return clone(o);},
       get spine(){return spine.map(function(p){return {x:p.x,y:p.y};});},
       get topology(){return {columns:topology.columns,rows:topology.rows,vertexCount:topology.vertices.length,indexCount:indexCount};},
+      get textureInfo(){return clone(textureInfo);},
+      get contextLost(){return contextLost;},
       setOptions:function(next){
-        var prevCols=o.columns,prevRows=o.rows,prevLead=o.leadEnd;o=normalizeOptions(merge(o,next||{}));
+        var prevCols=o.columns,prevRows=o.rows,prevLead=o.leadEnd,prevTexture=o.maxTextureDimension;o=normalizeOptions(merge(o,next||{}));
         ensureSpine();limitSpineBend(spine,o.length,lastHeading,o);
-        if(prevCols!==o.columns||prevRows!==o.rows||prevLead!==o.leadEnd)rebuildTopology();updateShadow();measure();return clone(o);
+        if(prevCols!==o.columns||prevRows!==o.rows||prevLead!==o.leadEnd)rebuildTopology();
+        if(prevTexture!==o.maxTextureDimension&&!contextLost)uploadTexture();
+        updateShadow();measure();return clone(o);
       },
       pause:function(){paused=true;},
       resume:function(){paused=false;},
       redraw:function(){render(clamp(Math.hypot(leader.state.vx||0,leader.state.vy||0)/Math.max(1,(leader.options&&leader.options.maxSpeed)||34),0,1));},
       destroy:function(){
         if(destroyed)return;destroyed=true;if(unsub)unsub();if(ro)ro.disconnect();
+        canvas.removeEventListener('webglcontextlost',onContextLost,false);
         window.removeEventListener('resize',onMeasure);window.removeEventListener('scroll',onMeasure,true);
-        gl.deleteBuffer(posBuffer);gl.deleteBuffer(texBuffer);gl.deleteBuffer(indexBuffer);gl.deleteTexture(texture);gl.deleteProgram(prog);canvas.style.filter='';
+        if(!contextLost){gl.deleteBuffer(posBuffer);gl.deleteBuffer(texBuffer);gl.deleteBuffer(indexBuffer);gl.deleteTexture(texture);gl.deleteProgram(prog);}
+        textureSource=null;canvas.style.filter='';
       }
     };
   }
@@ -362,6 +393,7 @@
     rigidFrame:rigidFrame,
     createTopology:createTopology,
     deformTopology:deformTopology,
+    fitTextureDimensions:fitTextureDimensions,
     advancePhase:advancePhase,
     prepareAsset:prepareAsset,
     createRenderer:createRenderer
