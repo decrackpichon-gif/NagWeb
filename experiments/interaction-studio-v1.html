@@ -754,7 +754,7 @@
 
   window.__NAGWEB_INTERACTION_STUDIO__={
     follower:follower,organicRenderer:null,influenceField:null,previewField:null,get prepResult(){return prepResult;},get axis(){return axis;},get zones(){return zones;},
-    get mode(){return activeMode;},get organicEngine(){return activeOrganicEngine;},get targetEditing(){return targetEditing;},get previewActive(){return !!previewField;},get selectedTargetIds(){return selectedTargetIds.slice();},get targetSelection(){return targetSelection();},previewTargets:previewSelectedTargets,clearPreview:clearTargetPreview,getSession:session,applySession:applySessionValue,prepare:prepare,
+    get mode(){return activeMode;},get organicEngine(){return activeOrganicEngine;},get targetEditing(){return targetEditing;},get previewActive(){return !!previewField;},get marqueeActive(){return !!marqueeState;},get selectedTargetIds(){return selectedTargetIds.slice();},get targetSelection(){return targetSelection();},selectTargets:function(ids,mode){return setSelectedTargetIds(ids,mode||'replace',Array.isArray(ids)?ids[ids.length-1]:null);},previewTargets:previewSelectedTargets,clearPreview:clearTargetPreview,getSession:session,applySession:applySessionValue,prepare:prepare,
     switchMode:function(m){document.getElementById('mode').value=m;updateModeUI();},
     switchOrganicEngine:async function(e){document.getElementById('organicEngine').value=e==='slices-v2'?'slices-v2':'mesh-v3';if(activeMode==='organic')await prepareOrganic();}
   };
