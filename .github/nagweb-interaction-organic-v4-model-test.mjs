@@ -4,11 +4,12 @@ const require=createRequire(import.meta.url);
 const V4=require('../js/nagweb-interaction-organic-v4.js');
 const V3=require('../js/nagweb-interaction-organic-v3.js');
 
-assert.equal(V4.version,'4.0.0-alpha.1');
+assert.equal(V4.version,'4.1.0-alpha.1');
 
 const o=V4.normalizeOptions({});
 assert.equal(o.boneCount,7);
 assert.equal(o.maxInfluences,4);
+assert.equal(o.skinMode,'rigid2d');
 assert.equal(o.bonePositions[0],0);
 assert.equal(o.bonePositions.at(-1),1);
 for(let i=1;i<o.bonePositions.length;i++)assert.ok(o.bonePositions[i]>o.bonePositions[i-1]);
@@ -55,7 +56,7 @@ assert.ok(mesh.positions.every(Number.isFinite));
 assert.equal(mesh.boneFrames.length,7);
 
 for(const sample of [topo.vertices[0],topo.vertices[Math.floor(topo.vertices.length/2)],topo.vertices.at(-1)]){
-  const p=V4.skinVertex(sample,mesh.rig,mesh.boneFrames,length,length*.5);
+  const p=V4.skinVertex(sample,mesh.rig,mesh.boneFrames,length,length*.5,o);
   const expectedX=500-length*sample.u;
   const expectedY=300+(sample.v-.5)*(length*.5);
   assert.ok(Math.abs(p.x-expectedX)<1e-4,'straight rig preserves longitudinal rest position');
@@ -74,8 +75,18 @@ assert.ok(bentMesh.positions.every(Number.isFinite));
 assert.ok(bentMesh.boneFrames[0].flex<bentMesh.boneFrames[3].flex);
 assert.ok(bentMesh.boneFrames[3].flex<bentMesh.boneFrames.at(-1).flex);
 
+const testRig={bones:[{index:0,id:'a',u:.5},{index:1,id:'b',u:.5}]};
+const testFrames=[{x:0,y:0,angle:-Math.PI/6},{x:0,y:0,angle:Math.PI/6}];
+const testWeights=[{index:0,weight:.5},{index:1,weight:.5}];
+const lbs=V4.skinPointLBS(0,50,testWeights,testRig,testFrames,0);
+const rigid=V4.skinPointRigid2D(0,50,testWeights,testRig,testFrames,0);
+assert.ok(Math.hypot(lbs.x,lbs.y)<49,'classic LBS should demonstrate expected shrink under opposing rotations');
+assert.ok(Math.abs(Math.hypot(rigid.x,rigid.y)-50)<1e-8,'rigid2d blend should preserve radial length');
+assert.equal(V4.normalizeOptions({skinMode:'lbs'}).skinMode,'lbs');
+assert.equal(V4.normalizeOptions({skinMode:'unknown'}).skinMode,'rigid2d');
+
 const custom=V4.normalizeOptions({boneCount:5,bonePositions:[0,.2,.5,.8,1],boneFlex:[0,.1,.4,.8,1],maxInfluences:2,weightRadius:.35});
 assert.equal(V4.createRig(custom).count,5);
 assert.ok(V4.boneWeightsAt(.5,V4.createRig(custom),custom).length<=2);
 
-console.log('NagWeb Organic Skin V4.0 weighted-bone model tests: PASS');
+console.log('NagWeb Organic Skin V4.1 weighted-bone + rigid2d model tests: PASS');
