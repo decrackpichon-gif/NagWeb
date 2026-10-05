@@ -14,7 +14,7 @@
   if(root) root.NAGWEB_INTERACTION_SESSION=api;
 })(typeof window!=='undefined'?window:globalThis,function(engine,organic,influence,assetPrep){
   'use strict';
-  var VERSION='1.5.0-alpha.1';
+  var VERSION='1.6.0-alpha.1';
   var SCHEMA='nagweb-interaction-session';
 
   function clone(v){return v==null?v:JSON.parse(JSON.stringify(v));}
@@ -32,7 +32,8 @@
       weight=Math.max(0,Math.min(2,weight));
       var response=item.response||{};
       function channel(v){v=Number(v);return Number.isFinite(v)?Math.max(0,Math.min(2,v)):1;}
-      return {id:id,enabled:item.enabled!==false,weight:weight,response:{move:channel(response.move),rotate:channel(response.rotate),scale:channel(response.scale)}};
+      var returnSpeed=Number(item.returnSpeed);if(!Number.isFinite(returnSpeed))returnSpeed=1;returnSpeed=Math.max(.25,Math.min(2,returnSpeed));
+      return {id:id,enabled:item.enabled!==false,weight:weight,response:{move:channel(response.move),rotate:channel(response.rotate),scale:channel(response.scale)},returnSpeed:returnSpeed};
     }).filter(Boolean);
   }
 
