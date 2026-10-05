@@ -14,7 +14,7 @@
   if(root) root.NAGWEB_INTERACTION_SESSION=api;
 })(typeof window!=='undefined'?window:globalThis,function(engine,organic,influence,assetPrep){
   'use strict';
-  var VERSION='1.1.0-alpha.1';
+  var VERSION='1.2.0-alpha.1';
   var SCHEMA='nagweb-interaction-session';
 
   function clone(v){return v==null?v:JSON.parse(JSON.stringify(v));}
@@ -26,6 +26,8 @@
     var followerOptions=engine&&engine.normalizeOptions?engine.normalizeOptions(input.followerOptions||{}):clone(input.followerOptions||{});
     var organicOptions=clone(input.organicOptions||{});
     var organicRenderer=input.organicRenderer==='mesh-v3'?'mesh-v3':'slices-v2';
+    var bodyProfile=['character','creature','ribbon','custom'].indexOf(input.bodyProfile)>=0?input.bodyProfile:'custom';
+    var displaySize=Math.max(40,Math.min(2400,Number(input.display&&input.display.size)||Number(organicOptions.length)||310));
     var influenceOptions=influence&&influence.normalizeOptions?influence.normalizeOptions(input.influenceOptions||{}):clone(input.influenceOptions||{});
     return {
       schema:SCHEMA,
@@ -34,6 +36,8 @@
       influenceEnabled:input.influenceEnabled!==false,
       followerOptions:followerOptions,
       organicRenderer:organicRenderer,
+      bodyProfile:bodyProfile,
+      display:{size:displaySize},
       organicOptions:organicOptions,
       influenceOptions:influenceOptions,
       assetProfile:input.assetProfile?clone(input.assetProfile):null,
@@ -70,6 +74,8 @@
       resolvedMode:resolved,
       influenceEnabled:s.influenceEnabled,
       organicRenderer:s.organicRenderer,
+      bodyProfile:s.bodyProfile,
+      displaySize:s.display.size,
       hasAssetProfile:!!s.assetProfile,
       quality:s.preparationReport&&s.preparationReport.quality?s.preparationReport.quality.score:null,
       name:s.metadata.name
