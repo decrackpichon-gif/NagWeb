@@ -412,6 +412,9 @@
     document.getElementById('targetScale').checked=Number(primary.getAttribute('data-nw-influence-scale'))!==0;
     ['targetMove','targetRotate','targetScale'].forEach(function(cid){document.getElementById(cid).indeterminate=false;});
     var returnSpeed=Math.max(.25,Math.min(2,Number(primary.getAttribute('data-nw-influence-return'))||1));
+    var profileId=R.normalizeId(primary.getAttribute('data-nw-reaction-profile')||'custom'),profile=R.get(profileId);
+    document.getElementById('targetReactionProfile').value=profile?profile.id:'custom';
+    document.getElementById('targetProfileNote').textContent=profile?profile.description:'Configuración manual.';
     document.getElementById('targetReturn').value=returnSpeed;
     document.getElementById('targetReturnOut').value=Math.round(returnSpeed*100)+'%'+(selectedTargetIds.length>1?' · selección':'');
     refreshTargetVisuals();
@@ -431,6 +434,37 @@
       status('Objetivos personalizados listos · '+document.getElementById('targetCount').textContent+'.','good');
     }
     refreshTargetVisuals();
+  }
+  function markSelectedReactionCustom(){
+    selectedInfluenceTargets().forEach(function(el){el.setAttribute('data-nw-reaction-profile','custom');});
+    document.getElementById('targetReactionProfile').value='custom';
+    document.getElementById('targetProfileNote').textContent='Configuración manual.';
+  }
+  function syncTargetEditorFromPreset(p){
+    document.getElementById('targetWeight').value=p.weight;
+    document.getElementById('targetWeightOut').value=Math.round(p.weight*100)+'%'+(selectedTargetIds.length>1?' · selección':'');
+    document.getElementById('targetMove').checked=p.response.move!==0;
+    document.getElementById('targetRotate').checked=p.response.rotate!==0;
+    document.getElementById('targetScale').checked=p.response.scale!==0;
+    ['targetMove','targetRotate','targetScale'].forEach(function(cid){document.getElementById(cid).indeterminate=false;});
+    document.getElementById('targetReturn').value=p.returnSpeed;
+    document.getElementById('targetReturnOut').value=Math.round(p.returnSpeed*100)+'%'+(selectedTargetIds.length>1?' · selección':'');
+  }
+  function applyReactionProfile(id){
+    var p=R.get(id),els=selectedInfluenceTargets();if(!p||!els.length)return;
+    els.forEach(function(el){
+      el.setAttribute('data-nw-reaction-profile',p.id);
+      el.setAttribute('data-nw-influence-weight',String(p.weight));
+      el.setAttribute('data-nw-influence-move',String(p.response.move));
+      el.setAttribute('data-nw-influence-rotate',String(p.response.rotate));
+      el.setAttribute('data-nw-influence-scale',String(p.response.scale));
+      el.setAttribute('data-nw-influence-return',String(p.returnSpeed));
+    });
+    document.getElementById('targetReactionProfile').value=p.id;
+    document.getElementById('targetProfileNote').textContent=p.description;
+    syncTargetEditorFromPreset(p);
+    document.getElementById('influenceTargets').value='custom';
+    if(!targetEditing)updateInfluence();
   }
   function influenceOpts(){return {radius:Number(document.getElementById('radius').value),strength:Number(document.getElementById('strength').value),maxPush:85,maxRotate:11,maxScale:.09,spring:.08,damping:.84,sourceMode:document.getElementById('influenceSource').value==='head'?'head':'body',sweptBody:true,maxSweepDistance:220,sourceRadius:influencePhysicalRadius()};}
   function updateInfluence(){
@@ -593,6 +627,10 @@
     document.getElementById('influenceTargets').value='custom';
   }
   ['targetMove','targetRotate','targetScale'].forEach(function(id){document.getElementById(id).onchange=updateSelectedTargetResponse;});
+  document.getElementById('targetReactionProfile').onchange=function(){
+    if(this.value==='custom'){markSelectedReactionCustom();return;}
+    applyReactionProfile(this.value);
+  };
   document.getElementById('targetReturn').oninput=function(){
     var els=selectedInfluenceTargets();if(!els.length)return;
     var speed=Math.max(.25,Math.min(2,Number(this.value)||1));
@@ -632,6 +670,7 @@
     switchMode:function(m){document.getElementById('mode').value=m;updateModeUI();},
     switchOrganicEngine:async function(e){document.getElementById('organicEngine').value=e==='slices-v2'?'slices-v2':'mesh-v3';if(activeMode==='organic')await prepareOrganic();}
   };
+  R.list().forEach(function(p){var opt=document.createElement('option');opt.value=p.id;opt.textContent=p.label;document.getElementById('targetReactionProfile').appendChild(opt);});
   registerInfluenceCandidates();applyTargetScenario('headline',false);applyBodyProfile('character');updateInfluence();sourceImage.onload=function(){sourcePreview.src=fallback;visualImg.src=fallback;prepare();};sourceImage.src=fallback;
 })();
 </script>
