@@ -153,13 +153,23 @@
     return state;
   }
   function newState(){return {x:0,y:0,vx:0,vy:0,rotation:0,vr:0,scale:1,vs:0,strength:0};}
+  function stateSettled(s){
+    return Math.abs(s.x)<.02&&Math.abs(s.y)<.02&&Math.abs(s.vx)<.02&&Math.abs(s.vy)<.02&&
+      Math.abs(s.rotation)<.02&&Math.abs(s.vr)<.02&&Math.abs(s.scale-1)<.0005&&Math.abs(s.vs)<.0005;
+  }
+  function resetState(s){
+    s.x=0;s.y=0;s.vx=0;s.vy=0;s.rotation=0;s.vr=0;s.scale=1;s.vs=0;s.strength=0;return s;
+  }
+  function goalActive(goal){
+    return !!goal&&(Math.abs(goal.x)>1e-6||Math.abs(goal.y)>1e-6||Math.abs(goal.rotation)>1e-6||Math.abs(goal.scale-1)>1e-6||Math.abs(goal.strength)>1e-6);
+  }
   function createField(input){
     if(typeof document==='undefined')throw new Error('NagWeb Influence: browser environment required');
     input=input||{};
     if(typeof input.source!=='function')throw new Error('NagWeb Influence: source() is required');
     if(!engine||typeof engine.subscribeFrame!=='function')throw new Error('NagWeb Influence: Interaction Engine v1.4+ is required');
     var o=normalizeOptions(input),targets=[],paused=false,destroyed=false,unsub=null,previousPath=null,maxTargetRadius=0;
-    var perf={frames:0,evaluatedTargets:0,culledTargets:0,lastEvaluated:0,lastCulled:0};
+    var perf={frames:0,evaluatedTargets:0,culledTargets:0,lastEvaluated:0,lastCulled:0,domWrites:0,skippedWrites:0,lastDomWrites:0,lastSkippedWrites:0,wakes:0,sleeps:0};
     var media=typeof matchMedia==='function'?matchMedia('(prefers-reduced-motion: reduce)'):null;
     var reduce=o.reducedMotion==='always'||(o.reducedMotion==='respect'&&media&&media.matches);
 
@@ -176,7 +186,7 @@
         rotate:el.getAttribute&&el.getAttribute('data-nw-influence-rotate'),
         scale:el.getAttribute&&el.getAttribute('data-nw-influence-scale')
       });
-      return {el:el,id:id,state:newState(),rest:{x:0,y:0,radius:0},weight:weight,response:response,returnSpeed:returnSpeed,profile:profile,original:original};
+      return {el:el,id:id,state:newState(),rest:{x:0,y:0,radius:0},weight:weight,response:response,returnSpeed:returnSpeed,profile:profile,sleeping:true,original:original};
     }
     function setTargets(list){
       targets.forEach(function(t){restore(t);});
@@ -197,6 +207,10 @@
         maxTargetRadius=Math.max(maxTargetRadius,t.rest.radius);
         t.el.style.translate=tr;t.el.style.rotate=rr;t.el.style.scale=sr;
       });
+    }
+    function clearMotion(t){
+      t.el.style.translate=t.original.translate;t.el.style.rotate=t.original.rotate;t.el.style.scale=t.original.scale;
+      ['--nw-influence-x','--nw-influence-y','--nw-influence-rotation','--nw-influence-scale','--nw-influence-strength'].forEach(function(k){t.el.style.removeProperty(k);});
     }
     function apply(t){
       var s=t.state;
@@ -223,6 +237,7 @@
         }
         bounds=pathBounds(path,sweepActive?previousPath:null,o.radius+o.sourceRadius+maxTargetRadius);
       }
+      var writes=0,skipped=0;
       targets.forEach(function(t){
         var goal;
         if(reduce)goal=zero;
@@ -233,9 +248,16 @@
         }
         if(!reduce&&t.weight!==1)goal=weightGoal(goal,t.weight);
         if(!reduce)goal=responseGoal(goal,t.response);
-        springStep(t.state,goal,targetDynamics(o,t.returnSpeed),dt);apply(t);
+        var active=goalActive(goal);
+        if(t.sleeping&&!active){skipped++;return;}
+        if(t.sleeping&&active){t.sleeping=false;perf.wakes++;}
+        springStep(t.state,goal,targetDynamics(o,t.returnSpeed),dt);
+        if(!active&&stateSettled(t.state)){
+          resetState(t.state);clearMotion(t);writes++;t.sleeping=true;perf.sleeps++;
+        }else{apply(t);writes++;}
       });
       perf.frames++;perf.lastEvaluated=evaluated;perf.lastCulled=culled;perf.evaluatedTargets+=evaluated;perf.culledTargets+=culled;
+      perf.lastDomWrites=writes;perf.lastSkippedWrites=skipped;perf.domWrites+=writes;perf.skippedWrites+=skipped;
       previousPath=path?clonePath(path):null;
     }
     function onResize(){measure();}
@@ -254,7 +276,7 @@
       get targetResponses(){return targets.map(function(t){return Object.assign({},t.response);});},
       get targetReturnSpeeds(){return targets.map(function(t){return t.returnSpeed;});},
       get targetProfiles(){return targets.map(function(t){return t.profile;});},
-      get stats(){return {frames:perf.frames,targetCount:targets.length,evaluatedTargets:perf.evaluatedTargets,culledTargets:perf.culledTargets,lastEvaluated:perf.lastEvaluated,lastCulled:perf.lastCulled,broadphase:true};},
+      get stats(){return {frames:perf.frames,targetCount:targets.length,evaluatedTargets:perf.evaluatedTargets,culledTargets:perf.culledTargets,lastEvaluated:perf.lastEvaluated,lastCulled:perf.lastCulled,domWrites:perf.domWrites,skippedWrites:perf.skippedWrites,lastDomWrites:perf.lastDomWrites,lastSkippedWrites:perf.lastSkippedWrites,wakes:perf.wakes,sleeps:perf.sleeps,sleepingTargets:targets.filter(function(t){return t.sleeping;}).length,broadphase:true,sleepWake:true};},
       getTargetProfile:function(ref){
         var hit=targets.find(function(t){return t.el===ref||t.id===ref;});
         return hit?hit.profile:null;
