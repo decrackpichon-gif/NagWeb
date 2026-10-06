@@ -534,4 +534,15 @@ Funcionan como loop de tiempo o secuencia por scroll con ciclos, inicio, fin y r
 
 Validación: `.github/nagweb-diagonal-model-test.mjs` cubre direcciones, ciclos, modos, texturas estables, escala proporcional, copias y fábrica exportada. `.github/nagweb-motion-diagonal-smoke.mjs` cubre controles, archivos propios, píxeles y clics sobre tarjetas superpuestas, cantidad/recuperación, Biblioteca, grupo reeditable, historial, scroll real, exportación y móvil. La nueva suite `diagonal` corre separada de `procedural` y `editor` para mantener las verificaciones dentro del límite de tiempo.
 
-Referencias pendientes del HAR para futuras etapas: Grid Reveal (orden de aparición y separación), Zoom Parallax (zoom y dirección de paneo), Cascade Drop (giro y apilado), Focus Shift (riel y foco), Spiral Stream (hélice y profundidad), entre otras. Esto es una lista de candidatos recuperados, no una prioridad acordada en el chat anterior. Mantener el trabajo en `internal-motion-lab`, sin despliegue Vercel ni integración con ramas de Storytelling/Interaction durante esta etapa.
+Referencias pendientes del HAR para futuras etapas: Zoom Parallax (zoom y dirección de paneo), Cascade Drop (giro y apilado), Focus Shift (riel y foco), Spiral Stream (hélice y profundidad), entre otras. Esto es una lista de candidatos recuperados, no una prioridad acordada en el chat anterior. Mantener el trabajo en `internal-motion-lab`, sin despliegue Vercel ni integración con ramas de Storytelling/Interaction durante esta etapa.
+
+
+## Grid Reveal: armado y retiro de una grilla
+
+Se incorpora la referencia `grid-reveal` del mismo HAR de Animos. El catálogo pasa de 17 a 18 composiciones. La grilla inicial tiene 4 imágenes y un ciclo de 6 segundos; admite 2–9 imágenes y orden de aparición por filas, columnas o diagonales. Separación 0–10%, margen 0–20%, esquinas, sombra y fondo conservan los controles de Motion Lab.
+
+El ciclo arma las tarjetas durante el primer 35%, mantiene la grilla completa hasta el 65% y retira las tarjetas en orden inverso durante el tramo final. Cada tarjeta combina opacidad y tamaño (70–100%) sin alterar la proporción de su casilla. La disposición de 2, 3 o 4 imágenes y las grillas de hasta 3 columnas siguen la referencia. La proporción de imagen depende de la casilla; el encuadre individual permite elegir el recorte.
+
+La cantidad, carga múltiple, orden de contenido y recuperación de posiciones funcionan con la infraestructura existente. Loop, scroll con ciclos/inicio/fin/recorrido, Biblioteca, grupo o escena reeditable, undo/redo y JSON/HTML comparten el Director y la fábrica exportada. Las texturas no cambian durante la aparición o salida. Con movimiento reducido se muestra la grilla completa.
+
+Verificación: `nagweb-reveal-model-test.mjs` cubre órdenes reales de 9 posiciones, armado/permanencia/salida inversa, geometría proporcional, límites, textura estable, scroll y fábrica exportada. `nagweb-motion-grid-reveal-smoke.mjs` verifica los controles en navegador y el flujo de edición/guardado/exportación/móvil. La suite `grid` agrega colocación y cambio de tamaño con mouse y carga múltiple de archivos reales. Continúa en `internal-motion-lab`, sin despliegue Vercel. Próximo candidato: Zoom Parallax.
