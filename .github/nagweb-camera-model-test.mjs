@@ -283,3 +283,16 @@ for(const p of [0,.1,.5,.9,1]){
 }
 assert.equal(normalizations,1,'Prepared camera should not normalize keyframes on each paint');
 console.log('Stacked scope and prepared camera track parity OK');
+const adaptive=C.config({...scene,sdCameraResponsive:true,sdCameraReferenceWidth:1000});
+assert.equal(C.viewportScale(adaptive,375),.375);assert.equal(C.viewportScale(adaptive,2000),1);
+assert.equal(C.viewportScale(C.config(scene),375),1,'Existing scenes preserve fixed pixel movement');
+assert.equal(C.viewportScale(adaptive,0),1);assert.equal(C.viewportScale(adaptive,NaN),1);
+const basePose={x:200,y:-100,z:300,rotateX:10,rotateY:20,rotate:30};
+assert.deepEqual(JSON.parse(JSON.stringify(C.scalePose(basePose,.5))),{x:100,y:-50,z:150,rotateX:10,rotateY:20,rotate:30});
+assert.equal(basePose.x,200);
+assert.equal(C.layerPose({z:100},{z:200},false,.5).z,150);
+assert.equal(C.layerPose({z:100},null,false,.5).z,100,'Excluded layers keep their authored depth');
+assert.equal(exported.viewportScale(JSON.parse(JSON.stringify(adaptive)),375),.375);
+editable={...scene,id:'first-test',sdCameraFrames:[{at:15,x:100},{at:80,x:300}]};pct=65;
+const beforeFirst=history.length;click('cameraFirst','');assert.equal(pct,15);assert.equal(history.length,beforeFirst);
+console.log('Camera adaptive width: proportional positions/depth, stable angles, default compatibility, serialization and first-key navigation OK');

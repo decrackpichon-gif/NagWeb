@@ -279,10 +279,11 @@ function rt(DATA,createModel,createStreamModel,createCamera){
   function paint(){
    var scrollRoot=cfg.group?sec.closest('.sc'):sec,r=(scrollRoot.__nwStoryLayout||scrollRoot).getBoundingClientRect(),span=Math.max(1,scrollRoot.offsetHeight-innerHeight),timeP=cfg.loop?(elapsed%cfg.duration)/cfg.duration:Math.min(1,elapsed/cfg.duration),p=manual==null?(cfg.time?(motion.matches?.5:timeP):model.clamp(-r.top/span,0,1)):manual;
    last=p;
-   if(cameraPaint)cameraPaint(camera.pose(cfg.camera,p,model,cfg.ease,motion.matches,cameraTrack));
+   var cameraScale=camera.viewportScale(cfg.camera,stage.clientWidth);
+   if(cameraPaint)cameraPaint(camera.scalePose(camera.pose(cfg.camera,p,model,cfg.ease,motion.matches,cameraTrack),cameraScale),cameraScale);
    if(ordered.length)ordered.slice().sort(function(a,b){return model.evaluate(a.c,p,cfg.ease,motion.matches).z-model.evaluate(b.c,p,cfg.ease,motion.matches).z;}).forEach(function(q,i){q.n.style.zIndex=i+1;});
    els.forEach(function(q){
-    var n=q.n,v=camera.layerPose(model.evaluate(q.c,p,cfg.ease,motion.matches),q.cameraLayer,motion.matches),op=v.opacity/100;
+    var n=q.n,v=camera.layerPose(model.evaluate(q.c,p,cfg.ease,motion.matches),q.cameraLayer,motion.matches,cameraScale),op=v.opacity/100;
     n.style.setProperty('--nw-sd-x',v.x.toFixed(2)+'px');
     n.style.setProperty('--nw-sd-y',v.y.toFixed(2)+'px');
     n.style.setProperty('--nw-sd-scale',(v.scale/100).toFixed(4));

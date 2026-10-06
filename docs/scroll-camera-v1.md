@@ -123,3 +123,18 @@ absolutos. Las escenas horizontales no activan esta cámara.
 El runtime prepara el track de cámara una vez por escena y reutiliza sus
 fotogramas normalizados en cada paint. Los resultados coinciden con el
 cálculo anterior, evitando repetir esa preparación durante la reproducción.
+
+## Adaptación opcional a pantallas angostas
+Adaptar recorrido al ancho está apagado por defecto. Al activarlo, el ancho
+de referencia (1000 px por defecto, configurable entre 320 y 2400) define la
+escala. Por debajo de ese ancho se reducen X/Y/Z de cámara, la perspectiva
+compartida y la profundidad Z de los planos admitidos en la misma proporción.
+Los ángulos conservan sus valores. Por encima no se amplifica el recorrido.
+Los datos guardados y el mapa usan las coordenadas del ancho de referencia.
+Las animaciones X/Y de los elementos y las capas excluidas siguen usando sus
+valores originales. No sustituye los ajustes de diseño móvil de la app.
+El runtime recalcula esta escala al cambiar el ancho, conservando un momento
+pausado. Volver al primer encuadre navega al primer punto sin cambiar el proyecto.
+Pruebas: exportación con ancho angosto, resize en pausa, perspectiva neutral,
+opción desactivada, serialización, ángulos estables y navegación sin historial.
+La verificación visual en celular sigue pendiente.

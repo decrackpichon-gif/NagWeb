@@ -6,11 +6,11 @@ function createCamera(){
  function angle(v){return Number.isFinite(+v)?Math.max(-3600,Math.min(3600,+v)):0;}
  function config(s){
   if(!s.sdCameraEnabled||!s.sdEnabled||s.nwMotionSource==='time'||s.layout==='horizontal')return null;
-  return {containers:(s.elements||[]).filter(function(e){return e.type==='container'&&s.layout==='free'&&layerEligible(e,s);}).map(function(e){return e.id;}),layers:(s.elements||[]).filter(function(e){return layerEligible(e,s);}).map(function(e){return {id:e.id,z:number(e.sdCameraDepth)};}),frames:normalize(s.sdCameraFrames),start:{x:number(s.sdCameraStartX),y:number(s.sdCameraStartY),z:number(s.sdCameraStartZ)},end:{x:number(s.sdCameraEndX),y:number(s.sdCameraEndY),z:number(s.sdCameraEndZ)}};
+  return {responsive:!!s.sdCameraResponsive,referenceWidth:Math.max(320,Math.min(2400,Number.isFinite(+s.sdCameraReferenceWidth)&&+s.sdCameraReferenceWidth>0?+s.sdCameraReferenceWidth:1000)),containers:(s.elements||[]).filter(function(e){return e.type==='container'&&s.layout==='free'&&layerEligible(e,s);}).map(function(e){return e.id;}),layers:(s.elements||[]).filter(function(e){return layerEligible(e,s);}).map(function(e){return {id:e.id,z:number(e.sdCameraDepth)};}),frames:normalize(s.sdCameraFrames),start:{x:number(s.sdCameraStartX),y:number(s.sdCameraStartY),z:number(s.sdCameraStartZ)},end:{x:number(s.sdCameraEndX),y:number(s.sdCameraEndY),z:number(s.sdCameraEndZ)}};
  }
  function layerEligible(e,s){return !!e&&!e.parent&&!e.fixed&&!e.modal&&!e.nwMotionInstance&&['shape3d','light3d','spacer'].indexOf(e.type)<0&&(e.type!=='container'||!!s&&(s.layout==='free'||s.layout!=='horizontal'&&!!e.stackDir));}
  function layer(c,id){return c&&(c.layers||[]).find(function(l){return l.id===id;})||null;}
- function layerPose(v,l,reduced){return Object.assign({},v,{z:v.z+(l&&!reduced?number(l.z):0)});}
+ function layerPose(v,l,reduced,scale){var factor=l&&Number.isFinite(+scale)&&+scale>0?+scale:1;return Object.assign({},v,{z:(v.z+(l&&!reduced?number(l.z):0))*factor});}
  function layerTransform(v,perspective,shared){
   return (shared?'':'perspective('+perspective+'px) ')+'translateZ('+v.z.toFixed(3)+'px) rotateX('+v.rotateX.toFixed(3)+'deg) rotateY('+v.rotateY.toFixed(3)+'deg)';
  }
@@ -31,6 +31,11 @@ function createCamera(){
  function pose(c,p,model,ease,reduced,compiled){
   var pose=model.evaluate(compiled||compile(c,model,ease),p,ease,reduced);return {x:pose.x,y:pose.y,z:pose.z,rotateX:pose.rotateX,rotateY:pose.rotateY,rotate:pose.rotate};
  }
+ function viewportScale(c,width){
+  if(!c||!c.responsive||!Number.isFinite(+width)||+width<=0)return 1;
+  return Math.min(1,+width/c.referenceWidth);
+ }
+ function scalePose(v,scale){return Object.assign({},v,{x:v.x*scale,y:v.y*scale,z:v.z*scale});}
  function transform(v){
   // Inverse of camera T(x,y,-z) * Rx(pitch) * Ry(yaw) * Rz(roll).
   var rx=angle(v.rotateX),ry=angle(v.rotateY),rz=angle(v.rotate);
@@ -81,7 +86,8 @@ function createCamera(){
   stage.style.perspective=perspective+'px';stage.style.perspectiveOrigin='50% 50%';
   world.style.transformStyle='preserve-3d';world.setAttribute('data-nw-camera-world','');
   var animation=null,last='';
-  return function(v){
+  return function(v,scale){
+   stage.style.perspective=(perspective*(Number.isFinite(+scale)&&+scale>0?+scale:1))+'px';
    // Camera translation is the inverse world translation. Positive Z travels forward.
    var value=transform(v);
    if(value===last)return;last=value;
@@ -91,7 +97,7 @@ function createCamera(){
    else{animation=world.animate(frames,{duration:1,fill:'both',composite:'add'});animation.pause();animation.currentTime=0;}
   };
  }
- return {config:config,compile:compile,pose:pose,attach:attach,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial,copyFrame:copyFrame,holdFrame:holdFrame,preset:preset};
+ return {config:config,compile:compile,pose:pose,viewportScale:viewportScale,scalePose:scalePose,attach:attach,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial,copyFrame:copyFrame,holdFrame:holdFrame,preset:preset};
 }
 window.NAGWEB_CREATE_SCROLL_CAMERA=createCamera;
 window.NAGWEB_SCROLL_CAMERA=createCamera();
@@ -126,6 +132,7 @@ function spatialMap(s,list,k){
  list.forEach(function(f){var p=C.mapPoint(f,spec);html+='<circle data-camera-map-dot="'+f.at+'" cx="'+p.x+'" cy="'+p.y+'" r="1.5" fill="currentColor"/>';});
  html+='<circle data-camera-position cx="'+now.x+'" cy="'+now.y+'" r="3" fill="none" stroke="var(--accent)" stroke-width="1"/>';
  html+='</svg><button type="button" class="btn tiny" data-camera-map-point="'+k.at+'" aria-label="Mover encuadre '+k.at+'% en el mapa" style="position:absolute;left:'+point.x+'%;top:'+point.y+'%;transform:translate(-50%,-50%);touch-action:none;padding:3px;outline:2px solid var(--accent)">◆</button></div>';
+ if(s.sdCameraResponsive)html+='<p class="hint gh">El mapa muestra el recorrido con el ancho de referencia.</p>';
  html+='<p class="hint gh" data-camera-position-label>'+mapLabel(current,progress(s))+'</p>';
  html+='<p class="hint gh">◆ encuadre seleccionado · ○ posición actual. Arrastrá el punto seleccionado. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Flechas: 25 px; Shift: 100 px. Escala: ±'+Math.round(spec.range)+' px. Elegí otro encuadre en la pista.</p></details>';
  return html;
@@ -134,6 +141,9 @@ C.panel=function(s){
  var html=cRow('Cámara 3D',cSeg('sec.sdCameraEnabled',!!s.sdCameraEnabled,[['false','Desactivada'],['true','Activada']],'bool'));
  if(!s.sdCameraEnabled||!C.config(s))return html;
  var list=keys(s),k=choose(s,list);
+ html+=cRow('Adaptar recorrido al ancho',cSeg('sec.sdCameraResponsive',!!s.sdCameraResponsive,[['false','No'],['true','Sí']],'bool'));
+ if(s.sdCameraResponsive)html+=cRow('Ancho de referencia',cNum('sec.sdCameraReferenceWidth',C.config(s).referenceWidth,'px',{min:320,max:2400,step:100}))+'<p class="hint gh">En pantallas más angostas, reduce el recorrido, la profundidad y la perspectiva en la misma proporción. Conserva los valores guardados.</p>';
+ html+='<button type="button" class="btn tiny" data-camera-first>Volver al primer encuadre</button>';
  html+='<p class="hint gh">Elegí un encuadre para editarlo. +X: derecha · +Y: abajo · +Z: adelante. Desactivar conserva el recorrido.</p>';
  html+='<div class="nw-camera-timeline" style="margin:10px 8px"><div role="group" aria-label="Encuadres de cámara" data-camera-track style="position:relative;height:32px;border-bottom:2px solid var(--line);touch-action:none">';
  html+='<i data-camera-head style="position:absolute;top:0;bottom:0;width:2px;background:var(--accent);pointer-events:none;left:'+progress(s)+'%"></i>';
@@ -237,9 +247,10 @@ if(pane){
   if(retime(s,from,to)){var next=pane.querySelector('[data-camera-jump="'+to+'"]');if(next)next.focus();}
  });
  pane.addEventListener('click',function(ev){
-  var button=ev.target.closest('[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-copy],[data-camera-hold],[data-camera-preset]');if(!button)return;
+  var button=ev.target.closest('[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset]');if(!button)return;
   if(button===suppressedClick){suppressedClick=null;return;}
   var s=sec();if(!C.config(s))return;var list=keys(s);
+  if(button.dataset.cameraFirst!==undefined){jump(s,list[0].at);return;}
   if(button.dataset.cameraCopy!==undefined||button.dataset.cameraHold!==undefined){
    var k=choose(s,list),result=button.dataset.cameraCopy!==undefined?C.copyFrame(list,k.at,progress(s)):C.holdFrame(list,k.at,holdDurations[s.id]||10);
    if(result.error){toast(result.error);return;}snapshot();persist(s,result.frames,result.at);return;
