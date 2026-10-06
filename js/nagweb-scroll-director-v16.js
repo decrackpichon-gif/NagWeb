@@ -129,6 +129,7 @@ paneElementNew=function(){
 };
 
 function postScrub(id,p){
+ if(id===sec().id&&window.NAGWEB_SCROLL_CAMERA)window.NAGWEB_SCROLL_CAMERA.paint(p*100);
  try{preview.contentWindow.postMessage({sc:true,type:'nw-sd-scrub',secId:id,progress:p},'*');}catch(_){}
 }
 function postLive(id){
@@ -139,6 +140,7 @@ function currentProgress(id){
  try{var states=preview.contentWindow.__NAG_SCROLL_DIRECTOR;return states&&states[id]?states[id].progress()*100:0;}catch(_){return 0;}
 }
 function paintPlayhead(id,pct){
+ if(id===sec().id&&window.NAGWEB_SCROLL_CAMERA)window.NAGWEB_SCROLL_CAMERA.paint(pct);
  var inp=pane.querySelector('[data-sd-scrub="'+id+'"]'),tl=pane.querySelector('[data-sd-timeline="'+id+'"]');
  if(inp){inp.value=pct;var val=inp.closest('.field').querySelector('[data-sd-val]');if(val)val.textContent=Math.round(pct)+'%';}
  if(tl){tl.style.setProperty('--sd-play',pct+'%');var now=tl.querySelector('[data-story-timeline-now]');if(now)now.textContent=Math.round(pct)+'%';}

@@ -49,7 +49,7 @@ function createCamera(){
 }
 window.NAGWEB_CREATE_SCROLL_CAMERA=createCamera;
 window.NAGWEB_SCROLL_CAMERA=createCamera();
-var selected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
+var suppressedClick=null,selected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
 function keys(s){return C.frames(C.config(s),s.sdEase);}
 function progress(s){return window.NAGWEB_SCROLL_DIRECTOR?window.NAGWEB_SCROLL_DIRECTOR.progress(s.id):0;}
 function choose(s,list){var at=selected[s.id],k=list.find(function(k){return k.at===at;});return k||list[0];}
@@ -60,10 +60,11 @@ C.panel=function(s){
  if(!s.sdCameraEnabled||!C.config(s))return html;
  var list=keys(s),k=choose(s,list);
  html+='<p class="hint gh">Elegí un encuadre para editarlo. +X: derecha · +Y: abajo · +Z: adelante. Desactivar conserva el recorrido.</p>';
- html+='<div role="group" aria-label="Encuadres de cámara" style="display:flex;flex-wrap:wrap;gap:4px;margin:8px 0">';
- list.forEach(function(f){html+='<button type="button" class="btn tiny" data-camera-jump="'+f.at+'" aria-pressed="'+(f.at===k.at)+'"'+(f.at===k.at?' style="outline:2px solid var(--accent)"':'')+'>◇ '+f.at+'%</button>';});
- html+='</div><button type="button" class="btn tiny" data-camera-add>Agregar encuadre aquí</button>';
- html+='<p class="hint gh">Ubicate con “Previsualizar momento” y agregá un encuadre. Se conserva la posición actual de cámara.</p>';
+ html+='<div class="nw-camera-timeline" style="margin:10px 8px"><div role="group" aria-label="Encuadres de cámara" data-camera-track style="position:relative;height:32px;border-bottom:2px solid var(--line);touch-action:none">';
+ html+='<i data-camera-head style="position:absolute;top:0;bottom:0;width:2px;background:var(--accent);pointer-events:none;left:'+progress(s)+'%"></i>';
+ list.forEach(function(f){html+='<button type="button" class="btn tiny" data-camera-jump="'+f.at+'" aria-label="Encuadre de cámara en '+f.at+' por ciento" title="Arrastrá para cambiar el momento" aria-pressed="'+(f.at===k.at)+'" style="position:absolute;left:'+f.at+'%;top:3px;transform:translateX(-50%);padding:3px;min-width:20px;touch-action:none;'+(f.at===k.at?'outline:2px solid var(--accent)':'')+'">◆</button>';});
+ html+='</div><input type="range" aria-label="Recorrer cámara" data-camera-seek min="0" max="100" step="0.1" value="'+progress(s)+'" style="width:100%;margin:4px 0"><div style="display:flex;justify-content:space-between;font-size:10px"><span>0%</span><span>50%</span><span>100%</span></div></div><button type="button" class="btn tiny" data-camera-add>Agregar encuadre aquí</button>';
+ html+='<p class="hint gh">Clic en la pista: recorrer · Arrastrar punto: mover encuadre. Flechas: 1%; Shift: 10%. Escape cancela el arrastre.</p>';
  function field(label,key,value,min,max,step){return cRow(label,'<input class="cnum" type="number" aria-label="'+label+'" data-camera-field="'+key+'" data-camera-at="'+k.at+'" value="'+value+'" min="'+min+'" max="'+max+'" step="'+step+'">');}
  html+=field('Momento (%)','at',k.at,0,100,.1);
  ['x','y','z'].forEach(function(axis){html+=field('Cámara '+axis.toUpperCase(),axis,k[axis],-4000,4000,25);});
@@ -73,10 +74,54 @@ C.panel=function(s){
  html+='<button type="button" class="btn tiny" data-camera-delete="'+k.at+'"'+(list.length<=2?' disabled':'')+'>Eliminar encuadre</button>';
  return html;
 };
+C.paint=function(pct){
+ var pane=document.getElementById('pane');if(!pane)return;
+ var head=pane.querySelector('[data-camera-head]'),seek=pane.querySelector('[data-camera-seek]');
+ if(head)head.style.left=pct+'%';if(seek)seek.value=pct;
+};
+function retime(s,from,to){
+ var list=keys(s),k=list.find(function(k){return k.at===from;});
+ to=Math.round(Math.max(0,Math.min(100,to))*10)/10;
+ if(!k||to===from)return false;
+ if(list.some(function(f){return f!==k&&f.at===to;})){toast('Ya existe un encuadre en ese momento.');return false;}
+ snapshot();k.at=to;persist(s,list,to);return true;
+}
 var pane=document.getElementById('pane');
 if(pane){
+ pane.addEventListener('input',function(ev){
+  if(!ev.target.matches('[data-camera-seek]'))return;
+  var s=sec();if(C.config(s))window.NAGWEB_SCROLL_DIRECTOR.scrub(s.id,+ev.target.value/100);
+ });
+ pane.addEventListener('pointerdown',function(ev){
+  if(ev.button!==0)return;
+  var track=ev.target.closest('[data-camera-track]');if(!track)return;
+  var s=sec();if(!C.config(s))return;
+  var button=ev.target.closest('[data-camera-jump]'),rect=track.getBoundingClientRect();
+  if(!rect.width)return;
+  function at(x){return Math.round(Math.max(0,Math.min(100,(x-rect.left)/rect.width*100))*10)/10;}
+  if(!button){window.NAGWEB_SCROLL_DIRECTOR.scrub(s.id,at(ev.clientX)/100);return;}
+  ev.preventDefault();button.focus();suppressedClick=null;
+  var from=+button.dataset.cameraJump,start=ev.clientX,to=from,moved=false,done=false;
+  function move(e){if(e.pointerId!==ev.pointerId)return;if(Math.abs(e.clientX-start)<3&&!moved)return;moved=true;to=Math.round(Math.max(0,Math.min(100,from+(e.clientX-start)/rect.width*100))*10)/10;button.style.left=to+'%';button.title=to+'%';}
+  function finish(e,cancel){
+   if(done||e.pointerId!=null&&e.pointerId!==ev.pointerId)return;done=true;
+   if(!cancel&&e.clientX!=null)move(e);
+   button.removeEventListener('pointermove',move);button.removeEventListener('pointerup',up);button.removeEventListener('pointercancel',abort);button.removeEventListener('lostpointercapture',abort);button.removeEventListener('keydown',key);
+   if(button.hasPointerCapture(ev.pointerId))button.releasePointerCapture(ev.pointerId);
+   if(moved){suppressedClick=button;if(cancel||sec()!==s||!retime(s,from,to)){button.style.left=from+'%';button.title='Arrastrá para cambiar el momento';}}
+  }
+  function up(e){finish(e,false);}function abort(e){finish(e,true);}function key(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();finish(e,true);}}
+  button.setPointerCapture(ev.pointerId);button.addEventListener('pointermove',move);button.addEventListener('pointerup',up);button.addEventListener('pointercancel',abort);button.addEventListener('lostpointercapture',abort);button.addEventListener('keydown',key);
+ });
+ pane.addEventListener('keydown',function(ev){
+  var button=ev.target.closest('[data-camera-jump]');if(!button||['ArrowLeft','ArrowRight'].indexOf(ev.key)<0)return;
+  var s=sec();if(!C.config(s))return;ev.preventDefault();ev.stopPropagation();
+  var from=+button.dataset.cameraJump,to=Math.round(Math.max(0,Math.min(100,from+(ev.key==='ArrowLeft'?-1:1)*(ev.shiftKey?10:1)))*10)/10;
+  if(retime(s,from,to)){var next=pane.querySelector('[data-camera-jump="'+to+'"]');if(next)next.focus();}
+ });
  pane.addEventListener('click',function(ev){
   var button=ev.target.closest('[data-camera-jump],[data-camera-add],[data-camera-delete]');if(!button)return;
+  if(button===suppressedClick){suppressedClick=null;return;}
   var s=sec();if(!C.config(s))return;var list=keys(s);
   if(button.hasAttribute('data-camera-jump')){jump(s,+button.dataset.cameraJump);return;}
   if(button.hasAttribute('data-camera-add')){

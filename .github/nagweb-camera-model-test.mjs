@@ -42,7 +42,7 @@ console.log('Camera keyframes: segments, exact moments, bounds, collisions and J
 const listeners={},history=[];
 let editable={...scene,id:'camera-test',sdEase:'linear'},pct=50,refreshes=0,saves=0;
 const ui={window:{NAGWEB_STORY_MODEL:M,NAGWEB_SCROLL_DIRECTOR:{progress(){return pct;},scrub(id,p){pct=p*100;}}},
- document:{getElementById(){return{addEventListener(type,fn){listeners[type]=fn;}};}},
+ document:{getElementById(){return{addEventListener(type,fn){listeners[type]=fn;},querySelector(){return null;}};}},
  sec(){return editable;},snapshot(){history.push(JSON.stringify(editable));},saveProject(){saves++;},renderPane(){refreshes++;},schedulePreview(){},toast(){}};
 vm.runInNewContext(fs.readFileSync('js/nagweb-scroll-camera.js','utf8'),ui);
 function click(action,value){const button={dataset:{[action]:String(value)},hasAttribute(attr){return attr==='data-camera-add'&&action==='cameraAdd'||attr==='data-camera-jump'&&action==='cameraJump';}};listeners.click({target:{closest(){return button;}}});}
@@ -87,3 +87,43 @@ assert.equal(editable.sdCameraFrames[0].rotateY,0,'Rotation edit is local to sel
 pct=50;click('cameraAdd',true);
 assert.equal(editable.sdCameraFrames[1].rotateY,22.5,'New keys capture interpolated orientation');
 console.log('Camera orientation: inverse transform order, full turns, isolated edits, legacy defaults and reduced motion OK');
+// Pointer transactions commit once on release; cancel never mutates project/history.
+const track={getBoundingClientRect(){return{left:0,width:1000};}};
+function marker(at){
+ const handlers={};let captured=false;
+ return {dataset:{cameraJump:String(at)},style:{left:at+'%'},title:'',handlers,
+ closest(selector){return selector==='[data-camera-track]'?track:this;},focus(){},
+ setPointerCapture(){captured=true;},hasPointerCapture(){return captured;},releasePointerCapture(){captured=false;},
+ addEventListener(type,fn){handlers[type]=fn;},removeEventListener(type){delete handlers[type];}};
+}
+function pointerStart(button,x){listeners.pointerdown({button:0,pointerId:7,clientX:x,target:button,preventDefault(){}});}
+function pointerMove(button,x){button.handlers.pointermove({pointerId:7,clientX:x});}
+let point=marker(50),beforeDrag=JSON.stringify(editable),undoBefore=history.length;
+pointerStart(point,500);pointerMove(point,620);
+assert.equal(point.style.left,'62%');
+assert.equal(JSON.stringify(editable),beforeDrag,'Dragging changes only the marker until release');
+point.handlers.pointerup({pointerId:7,clientX:620});
+assert.equal(editable.sdCameraFrames[1].at,62);
+assert.equal(history.length,undoBefore+1,'One drag creates exactly one undo snapshot');
+assert.equal(Object.keys(point.handlers).length,0,'All drag listeners removed');
+point=marker(62);beforeDrag=JSON.stringify(editable);undoBefore=history.length;
+pointerStart(point,620);pointerMove(point,750);point.handlers.pointercancel({pointerId:7});
+assert.equal(JSON.stringify(editable),beforeDrag);assert.equal(history.length,undoBefore);assert.equal(point.style.left,'62%');
+point=marker(62);pointerStart(point,620);pointerMove(point,850);
+point.handlers.keydown({key:'Escape',preventDefault(){},stopPropagation(){}});
+assert.equal(JSON.stringify(editable),beforeDrag);assert.equal(history.length,undoBefore);
+point=marker(62);pointerStart(point,620);pointerMove(point,1000);point.handlers.pointerup({pointerId:7,clientX:1000});
+assert.equal(JSON.stringify(editable),beforeDrag,'Cannot overwrite endpoint by dragging');
+assert.equal(history.length,undoBefore);
+point=marker(62);pointerStart(point,620);pointerMove(point,-500);point.handlers.lostpointercapture({pointerId:7});
+assert.equal(JSON.stringify(editable),beforeDrag,'Losing capture cancels gesture');
+listeners.input({target:{matches(){return true;},value:'37.5'}});assert.equal(pct,37.5);
+const blank={closest(selector){return selector==='[data-camera-track]'?track:null;}};
+listeners.pointerdown({button:0,pointerId:8,clientX:800,target:blank});assert.equal(pct,80);
+console.log('Camera track: drag commit, cancel, Escape, collision, capture loss, seek and click OK');
+
+listeners.keydown({target:marker(62),key:'ArrowRight',shiftKey:true,preventDefault(){},stopPropagation(){}});
+assert.equal(editable.sdCameraFrames[1].at,72);
+listeners.keydown({target:marker(72),key:'ArrowLeft',shiftKey:false,preventDefault(){},stopPropagation(){}});
+assert.equal(editable.sdCameraFrames[1].at,71);
+console.log('Camera track keyboard: arrow and Shift adjustment OK');
