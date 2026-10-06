@@ -270,3 +270,16 @@ assert.ok(readout.textContent.includes('40%'));
 ui.window.matchMedia=()=>({matches:true});ui.window.NAGWEB_SCROLL_CAMERA.paint(40);
 assert.equal(position.values.cx,50);assert.equal(position.values.cy,50);
 console.log('Camera batch: holds, copies, presets, action undo snapshots, untouched elements and live map cursor OK');
+
+const stackConfig=C.config({...free,layout:'stack',elements:[{id:'flow',type:'container',stackDir:'column',sdCameraDepth:200},{id:'absolute',type:'container',sdCameraDepth:500}]});
+assert.equal(stackConfig.containers.length,0,'Stacked roots must not be reparented');
+assert.equal(C.layer(stackConfig,'flow').z,200);assert.equal(C.layer(stackConfig,'absolute'),null);
+assert.equal(C.config({...scene,layout:'horizontal'}),null);
+let normalizations=0;const countingModel={...M,normalize(input){normalizations++;return M.normalize(input);}};
+const prepared=C.compile(rotating,countingModel,'linear');
+assert.equal(normalizations,1);
+for(const p of [0,.1,.5,.9,1]){
+ assert.equal(JSON.stringify(C.pose(rotating,p,countingModel,'linear',false,prepared)),JSON.stringify(C.pose(rotating,p,M,'linear')));
+}
+assert.equal(normalizations,1,'Prepared camera should not normalize keyframes on each paint');
+console.log('Stacked scope and prepared camera track parity OK');

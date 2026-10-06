@@ -37,10 +37,11 @@ class Node {
  animate(keys,options){const e={keys,options,cancelled:false,pause(){this.paused=true;},cancel(){this.cancelled=true;}};e.effect={setKeyframes(k){e.keys=k;}};this.effects.push(e);return e;}
  get activeTransform(){return this.effects.filter(e=>!e.cancelled).at(-1)?.keys[0].transform||'none';}
 }
-function run(script){
+function run(script,stacked=false){
  const root=new Node('camera-scene',['sc','free']),world=new Node('', ['inner']),picture=new Node('image'),group=new Node('group',['container-box']),child=new Node('child');
  picture.style.transform='rotate(8deg)';group.style.left='10%';child.style.left='25%';
- root.appendChild(world);world.appendChild(picture);root.appendChild(group);group.appendChild(child);
+ root.appendChild(world);world.appendChild(picture);(stacked?world:root).appendChild(group);group.appendChild(child);
+ if(stacked)root.className='sc';
  const callbacks={},mediaCallbacks={},raf=[];
  const motion={matches:false,addEventListener(type,fn){mediaCallbacks[type]=fn;}};
  const context={window:null,document:{hidden:false,querySelector(){return root;},createElement(){return new Node('');},addEventListener(){}},
@@ -78,3 +79,15 @@ assert.equal(off.world.activeTransform,'none');assert.equal(off.group.parentNode
 assert.equal(off.picture.activeTransform,'perspective(1000px) translateZ(50.000px) rotateX(0.000deg) rotateY(0.000deg)');
 assert.equal(JSON.stringify(scene.elements),original);
 console.log('Exported camera runtime: preview/export parity, scroll progress, parent messaging, holds, depth composition, container hierarchy, reduced motion and disabled compatibility OK');
+
+const stackedScene={...scene,layout:'stack',elements:scene.elements.map(e=>e.id==='group'?{...e,stackDir:'column'}:e)};
+const stack=run(exportScript(stackedScene),true);stack.state.set(.5);
+assert.equal(stack.group.parentNode,stack.world,'In-flow container keeps the same parent');
+assert.equal(stack.group.activeTransform,'translateZ(-300.000px) rotateX(0.000deg) rotateY(0.000deg)');
+assert.equal(stack.child.parentNode,stack.group);
+assert.equal(stack.world.activeTransform,'rotateY(-20deg) translate3d(-200px,0px,100px)');
+const restored=run(exportScript(JSON.parse(JSON.stringify(stackedScene))),true);restored.state.set(.5);
+assert.equal(restored.world.activeTransform,stack.world.activeTransform);
+assert.equal(restored.group.activeTransform,stack.group.activeTransform);
+assert.equal(restored.child.style['--nw-sd-x'],stack.child.style['--nw-sd-x']);
+console.log('Stacked camera: in-flow container hierarchy, shared depth and JSON restore OK');

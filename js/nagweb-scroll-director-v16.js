@@ -262,7 +262,7 @@ function rt(DATA,createModel,createStreamModel,createCamera){
   stage.style.justifyContent=sec.classList.contains('a-center')?'center':sec.classList.contains('a-right')?'flex-end':'flex-start';
   while(sec.firstChild)stage.appendChild(sec.firstChild);sec.appendChild(stage);
   }
-  var cameraPaint=camera.attach(stage,cfg.camera,cfg.perspective);
+  var cameraPaint=camera.attach(stage,cfg.camera,cfg.perspective),cameraTrack=cfg.camera?camera.compile(cfg.camera,model,cfg.ease):null;
   var els=[];
   (cfg.elements||[]).forEach(function(c){
    var n=stage.querySelector('[data-id="'+c.id+'"]');if(!n)return;
@@ -279,7 +279,7 @@ function rt(DATA,createModel,createStreamModel,createCamera){
   function paint(){
    var scrollRoot=cfg.group?sec.closest('.sc'):sec,r=(scrollRoot.__nwStoryLayout||scrollRoot).getBoundingClientRect(),span=Math.max(1,scrollRoot.offsetHeight-innerHeight),timeP=cfg.loop?(elapsed%cfg.duration)/cfg.duration:Math.min(1,elapsed/cfg.duration),p=manual==null?(cfg.time?(motion.matches?.5:timeP):model.clamp(-r.top/span,0,1)):manual;
    last=p;
-   if(cameraPaint)cameraPaint(camera.pose(cfg.camera,p,model,cfg.ease,motion.matches));
+   if(cameraPaint)cameraPaint(camera.pose(cfg.camera,p,model,cfg.ease,motion.matches,cameraTrack));
    if(ordered.length)ordered.slice().sort(function(a,b){return model.evaluate(a.c,p,cfg.ease,motion.matches).z-model.evaluate(b.c,p,cfg.ease,motion.matches).z;}).forEach(function(q,i){q.n.style.zIndex=i+1;});
    els.forEach(function(q){
     var n=q.n,v=camera.layerPose(model.evaluate(q.c,p,cfg.ease,motion.matches),q.cameraLayer,motion.matches),op=v.opacity/100;

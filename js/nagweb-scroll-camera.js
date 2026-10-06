@@ -5,10 +5,10 @@ function createCamera(){
  function number(v){return Number.isFinite(+v)?Math.max(-4000,Math.min(4000,+v)):0;}
  function angle(v){return Number.isFinite(+v)?Math.max(-3600,Math.min(3600,+v)):0;}
  function config(s){
-  if(!s.sdCameraEnabled||!s.sdEnabled||s.nwMotionSource==='time')return null;
-  return {containers:(s.elements||[]).filter(function(e){return e.type==='container'&&layerEligible(e,s);}).map(function(e){return e.id;}),layers:(s.elements||[]).filter(function(e){return layerEligible(e,s);}).map(function(e){return {id:e.id,z:number(e.sdCameraDepth)};}),frames:normalize(s.sdCameraFrames),start:{x:number(s.sdCameraStartX),y:number(s.sdCameraStartY),z:number(s.sdCameraStartZ)},end:{x:number(s.sdCameraEndX),y:number(s.sdCameraEndY),z:number(s.sdCameraEndZ)}};
+  if(!s.sdCameraEnabled||!s.sdEnabled||s.nwMotionSource==='time'||s.layout==='horizontal')return null;
+  return {containers:(s.elements||[]).filter(function(e){return e.type==='container'&&s.layout==='free'&&layerEligible(e,s);}).map(function(e){return e.id;}),layers:(s.elements||[]).filter(function(e){return layerEligible(e,s);}).map(function(e){return {id:e.id,z:number(e.sdCameraDepth)};}),frames:normalize(s.sdCameraFrames),start:{x:number(s.sdCameraStartX),y:number(s.sdCameraStartY),z:number(s.sdCameraStartZ)},end:{x:number(s.sdCameraEndX),y:number(s.sdCameraEndY),z:number(s.sdCameraEndZ)}};
  }
- function layerEligible(e,s){return !!e&&!e.parent&&!e.fixed&&!e.modal&&!e.nwMotionInstance&&['shape3d','light3d','spacer'].indexOf(e.type)<0&&(e.type!=='container'||!!s&&s.layout==='free');}
+ function layerEligible(e,s){return !!e&&!e.parent&&!e.fixed&&!e.modal&&!e.nwMotionInstance&&['shape3d','light3d','spacer'].indexOf(e.type)<0&&(e.type!=='container'||!!s&&(s.layout==='free'||s.layout!=='horizontal'&&!!e.stackDir));}
  function layer(c,id){return c&&(c.layers||[]).find(function(l){return l.id===id;})||null;}
  function layerPose(v,l,reduced){return Object.assign({},v,{z:v.z+(l&&!reduced?number(l.z):0)});}
  function layerTransform(v,perspective,shared){
@@ -25,9 +25,11 @@ function createCamera(){
  function frames(c,ease){
   return c.frames&&c.frames.length?normalize(c.frames):normalize([{at:0,x:c.start.x,y:c.start.y,z:c.start.z,ease:ease},{at:100,x:c.end.x,y:c.end.y,z:c.end.z}]);
  }
- function pose(c,p,model,ease,reduced){
-  var list=frames(c,ease),compiled={keyframes:model.normalize(list.map(function(k){return Object.assign({},k,{ease:k.ease||ease||'cinematic'});} ))};
-  var pose=model.evaluate(compiled,p,ease,reduced);return {x:pose.x,y:pose.y,z:pose.z,rotateX:pose.rotateX,rotateY:pose.rotateY,rotate:pose.rotate};
+ function compile(c,model,ease){
+  var list=frames(c,ease);return {keyframes:model.normalize(list.map(function(k){return Object.assign({},k,{ease:k.ease||ease||'cinematic'});} ))};
+ }
+ function pose(c,p,model,ease,reduced,compiled){
+  var pose=model.evaluate(compiled||compile(c,model,ease),p,ease,reduced);return {x:pose.x,y:pose.y,z:pose.z,rotateX:pose.rotateX,rotateY:pose.rotateY,rotate:pose.rotate};
  }
  function transform(v){
   // Inverse of camera T(x,y,-z) * Rx(pitch) * Ry(yaw) * Rz(roll).
@@ -89,7 +91,7 @@ function createCamera(){
    else{animation=world.animate(frames,{duration:1,fill:'both',composite:'add'});animation.pause();animation.currentTime=0;}
   };
  }
- return {config:config,pose:pose,attach:attach,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial,copyFrame:copyFrame,holdFrame:holdFrame,preset:preset};
+ return {config:config,compile:compile,pose:pose,attach:attach,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial,copyFrame:copyFrame,holdFrame:holdFrame,preset:preset};
 }
 window.NAGWEB_CREATE_SCROLL_CAMERA=createCamera;
 window.NAGWEB_SCROLL_CAMERA=createCamera();

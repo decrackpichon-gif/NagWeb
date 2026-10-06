@@ -67,8 +67,12 @@ su profundidad se aplica a todo el conjunto, conservando la jerarquía interna.
 El runtime los coloca dentro del mundo de cámara sin modificar los estilos
 de posición y tamaño ni los datos guardados. Al apagar la cámara, la siguiente
 previsualización/exportación vuelve al markup original.
-No incluye planos independientes para hijos de contenedores, contenedores de
-escenas apiladas, elementos fijos, composiciones MotionLab ni objetos Three.js. La perspectiva compartida todavía requiere
+En escenas apiladas admite también contenedores raíz con distribución
+automática (stackDir). Ya están dentro del mundo de cámara y no se cambia
+su jerarquía ni su posición en el flujo. Los contenedores absolutos de una
+escena apilada siguen pendientes.
+No incluye planos independientes para hijos de contenedores, elementos fijos,
+composiciones MotionLab ni objetos Three.js. La perspectiva compartida todavía requiere
 verificación visual en navegador.
 
 Implementación aislada en js/nagweb-scroll-camera.js; hooks mínimos en el
@@ -77,7 +81,7 @@ Motion Lab ni los motores de personajes. Resolver estos hooks al integrar.
 
 Alcance: cámara CSS 2.5D sobre .inner, hasta 128 encuadres, sin reloj adicional.
 Pendiente: verificación visual del mapa espacial,
-profundidad de grupos en escenas apiladas y compatibilidad visual con los efectos
+contenedores absolutos en escenas apiladas y compatibilidad visual con los efectos
 2.5D existentes. No constituye una cámara Three.js: los objetos WebGL y sus
 anclas requieren una integración posterior. Los contenedores raíz admitidos
 se incorporan a .inner; el resto de nodos externos permanece fuera de la cámara. La cámara puede acercarse hasta atravesar el plano.
@@ -111,3 +115,11 @@ mensajes del editor, permanencias, planos de profundidad, contenedores,
 movimiento reducido y comportamiento con cámara desactivada. No renderiza
 CSS ni verifica layout o interacción real del navegador. Las pruebas del
 modelo cubren también pausas, copias, recorridos y cursor del mapa.
+
+## Escenas apiladas y preparación del recorrido
+Las pruebas cubren profundidad compartida en contenedores con auto layout,
+conservación de jerarquía, restauración desde JSON y exclusión de contenedores
+absolutos. Las escenas horizontales no activan esta cámara.
+El runtime prepara el track de cámara una vez por escena y reutiliza sus
+fotogramas normalizados en cada paint. Los resultados coinciden con el
+cálculo anterior, evitando repetir esa preparación durante la reproducción.
