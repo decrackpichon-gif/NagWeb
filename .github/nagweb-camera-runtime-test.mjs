@@ -14,7 +14,7 @@ const scene={id:'camera-scene',layout:'free',sdEnabled:true,sdCameraEnabled:true
  elements:[
   {id:'image',type:'image',sdCameraDepth:150,sdKeyframes:[{at:0,z:0,ease:'linear'},{at:100,z:100}]},
   {id:'group',type:'container',universal:true,sdCameraDepth:-300,sdEnter:'none',sdEnd:100},
-  {id:'child',type:'heading',parent:'group',sdKeyframes:[{at:0,x:0,ease:'linear'},{at:100,x:100}]}
+  {id:'child',type:'heading',parent:'group',sdKeyframes:[{at:0,x:0,z:0,rotateY:0,ease:'linear'},{at:100,x:100,z:100,rotateY:20}]}
  ]};
 const original=JSON.stringify(scene.elements);
 function exportScript(s,edit=false){
@@ -60,8 +60,9 @@ assert.equal(live.world.activeTransform,'rotateY(-20deg) translate3d(-200px,0px,
 assert.equal(live.picture.activeTransform,'translateZ(200.000px) rotateX(0.000deg) rotateY(0.000deg)');
 assert.equal(live.group.activeTransform,'translateZ(-300.000px) rotateX(0.000deg) rotateY(0.000deg)');
 assert.equal(live.child.style['--nw-sd-x'],'50.00px');
+assert.equal(live.child.activeTransform,'translateZ(50.000px) rotateX(0.000deg) rotateY(10.000deg)','Nested 2.5D child reuses the shared camera perspective');
 assert.equal(live.picture.style.transform,'rotate(8deg)','Camera preserves authored transforms');
-assert.equal(live.group.style.left,'10%');assert.equal(live.child.style.left,'25%');
+assert.equal(live.group.style.left,'10%');assert.equal(live.child.style.left,'25%');assert.equal(live.group.style.transformStyle,'preserve-3d');
 assert.equal(live.root.events.at(-1).detail.progress,.5);
 const holdPose=live.world.activeTransform;live.state.set(.45);assert.equal(live.world.activeTransform,holdPose);live.state.set(.55);assert.equal(live.world.activeTransform,holdPose);
 const preview=run(exportScript(scene,true));preview.state.set(.55);
@@ -77,6 +78,7 @@ live.motion.matches=false;live.mediaCallbacks.change();assert.equal(live.world.a
 const off=run(exportScript({...scene,sdCameraEnabled:false}));off.state.set(.5);
 assert.equal(off.world.activeTransform,'none');assert.equal(off.group.parentNode,off.root.children[0]);
 assert.equal(off.picture.activeTransform,'perspective(1000px) translateZ(50.000px) rotateX(0.000deg) rotateY(0.000deg)');
+assert.equal(off.child.activeTransform,'perspective(1000px) translateZ(50.000px) rotateX(0.000deg) rotateY(10.000deg)','Camera off preserves the legacy per-element perspective');
 assert.equal(JSON.stringify(scene.elements),original);
 console.log('Exported camera runtime: preview/export parity, scroll progress, parent messaging, holds, depth composition, container hierarchy, reduced motion and disabled compatibility OK');
 
@@ -84,7 +86,8 @@ const stackedScene={...scene,layout:'stack',elements:scene.elements.map(e=>e.id=
 const stack=run(exportScript(stackedScene),true);stack.state.set(.5);
 assert.equal(stack.group.parentNode,stack.world,'In-flow container keeps the same parent');
 assert.equal(stack.group.activeTransform,'translateZ(-300.000px) rotateX(0.000deg) rotateY(0.000deg)');
-assert.equal(stack.child.parentNode,stack.group);
+assert.equal(stack.child.parentNode,stack.group);assert.equal(stack.group.style.transformStyle,'preserve-3d');
+assert.equal(stack.child.activeTransform,'translateZ(50.000px) rotateX(0.000deg) rotateY(10.000deg)');
 assert.equal(stack.world.activeTransform,'rotateY(-20deg) translate3d(-200px,0px,100px)');
 const restored=run(exportScript(JSON.parse(JSON.stringify(stackedScene))),true);restored.state.set(.5);
 assert.equal(restored.world.activeTransform,stack.world.activeTransform);
@@ -97,7 +100,8 @@ assert.equal(absoluteStack.group.parentNode,absoluteStack.world,'Absolute stacke
 assert.equal(absoluteStack.child.parentNode,absoluteStack.group,'Absolute stacked children keep their hierarchy');
 assert.equal(absoluteStack.group.activeTransform,'translateZ(-300.000px) rotateX(0.000deg) rotateY(0.000deg)');
 assert.equal(absoluteStack.child.style['--nw-sd-x'],'50.00px');
-assert.equal(absoluteStack.group.style.left,'10%','Absolute stacked root preserves authored positioning');
+assert.equal(absoluteStack.group.style.left,'10%','Absolute stacked root preserves authored positioning');assert.equal(absoluteStack.group.style.transformStyle,'preserve-3d');
+assert.equal(absoluteStack.child.activeTransform,'translateZ(50.000px) rotateX(0.000deg) rotateY(10.000deg)');
 assert.equal(absoluteStack.world.activeTransform,'rotateY(-20deg) translate3d(-200px,0px,100px)');
 console.log('Stacked absolute camera: reparenting, hierarchy, authored positioning and shared depth OK');
 const adaptiveScene={...scene,sdCameraResponsive:true,sdCameraReferenceWidth:1000};
