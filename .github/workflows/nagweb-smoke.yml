@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [procedural, editor, diagonal, grid]
+        suite: [procedural, editor, diagonal, grid, zoom]
     name: browser-smoke (${{ matrix.suite }})
     steps:
       - uses: actions/checkout@v4
