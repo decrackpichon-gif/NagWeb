@@ -5,6 +5,7 @@ on:
     branches:
       - feature/creativos-v14
       - feat/storytelling-engine-v2
+      - feat/scroll-camera-v1
   workflow_dispatch:
 
 jobs:
@@ -31,5 +32,13 @@ jobs:
         with:
           name: motion-lab-visuals
           path: /tmp/nagweb-motion-visuals
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Save camera visual checks
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scroll-camera-visuals
+          path: /tmp/nagweb-camera-visuals
           if-no-files-found: ignore
           retention-days: 7
