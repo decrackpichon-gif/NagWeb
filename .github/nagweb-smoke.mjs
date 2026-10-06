@@ -38,6 +38,8 @@ import {runMotionExpandSmoke} from './nagweb-motion-expand-smoke.mjs';
 import {runMotionDropSmoke} from './nagweb-motion-drop-smoke.mjs';
 import {runMotionStreamSmoke} from './nagweb-motion-stream-smoke.mjs';
 import {runMotionStreamPlacementSmoke} from './nagweb-motion-stream-placement-smoke.mjs';
+import './nagweb-diagonal-model-test.mjs';
+import {runMotionDiagonalSmoke} from './nagweb-motion-diagonal-smoke.mjs';
 import './nagweb-toss-model-test.mjs';
 import {runMotionTossSmoke,runMotionTossDepthSmoke} from './nagweb-motion-toss-smoke.mjs';
 import './nagweb-focus-model-test.mjs';
@@ -63,7 +65,7 @@ import {runMotionIsoOrbitSmoke} from './nagweb-motion-iso-orbit-smoke.mjs';
 import {runMotionBatchImagesSmoke} from './nagweb-motion-batch-images-smoke.mjs';
 
 const suite=process.env.NAGWEB_SMOKE_SUITE||'all';
-if(!['all','procedural','editor'].includes(suite))throw new Error('Unknown NagWeb smoke suite: '+suite);
+if(!['all','procedural','editor','diagonal'].includes(suite))throw new Error('Unknown NagWeb smoke suite: '+suite);
 
 const feedbackSource=fs.readFileSync(new URL('../js/nagweb-feedback-v16.js',import.meta.url),'utf8');
 const directorSource=fs.readFileSync(new URL('../js/nagweb-scroll-director-v16.js',import.meta.url),'utf8');
@@ -245,7 +247,7 @@ if(workspaceState.leftToggles!==1||workspaceState.rightToggles!==1) throw new Er
 if(Math.abs(workspaceState.rightWidth-savedInspectorWidth)>3) throw new Error('Inspector width did not survive reload: '+JSON.stringify({workspaceState,savedInspectorWidth}));
 await page.click('.nw-dock-toggle.left');
 
-if(suite!=='editor'){
+if(suite==='all'||suite==='procedural'){
 await runMotionTossSmoke(page);
 await runMotionTossDepthSmoke(page);
 await runMotionStreamPlacementSmoke(page,'card-toss');
@@ -274,7 +276,7 @@ await runMotionStreamPlacementSmoke(page,'pop-grid');
 await runMotionPopGridSmoke(page);
 await runMotionBatchImagesSmoke(page);
 }
-if(suite!=='procedural'){
+if(suite==='all'||suite==='editor'){
 await runMotionDropSmoke(page);
 await runMotionExpandSmoke(page);
 await runHistorySmoke(page);
@@ -308,6 +310,9 @@ await runMotionSearchSmoke(page);
 await runStorytellingSmoke(page);
 await runCompositionSmoke(page);
 await runTransparentSmoke(page);
+}
+if(suite==='all'||suite==='diagonal'){
+for(const kind of ['diagonal-carousel','iso-cascade']){await runMotionDiagonalSmoke(page,kind);await runMotionStreamPlacementSmoke(page,kind);}
 }
 if(pageErrors.length) throw new Error('Browser page errors:\n'+pageErrors.join('\n\n'));
 console.log('NagWeb smoke OK',suite,state);
