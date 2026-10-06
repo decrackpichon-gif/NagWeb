@@ -92,7 +92,7 @@ const track={getBoundingClientRect(){return{left:0,width:1000};}};
 function marker(at){
  const handlers={};let captured=false;
  return {dataset:{cameraJump:String(at)},style:{left:at+'%'},title:'',handlers,
- closest(selector){return selector==='[data-camera-track]'?track:this;},focus(){},
+ closest(selector){return selector==='[data-camera-track]'?track:selector==='[data-camera-jump]'?this:null;},focus(){},
  setPointerCapture(){captured=true;},hasPointerCapture(){return captured;},releasePointerCapture(){captured=false;},
  addEventListener(type,fn){handlers[type]=fn;},removeEventListener(type){delete handlers[type];}};
 }
@@ -201,3 +201,36 @@ listeners.change({target:{dataset:{cameraDepth:''},value:'-450'}});
 assert.equal(editable.elements[ui.curEl].sdCameraDepth,-450);
 assert.equal(editable.elements.find(e=>e.id==='nested-container').sdCameraDepth,300);
 console.log('Camera containers: free-layout scope, rigid hierarchy, untouched styles, excluded groups, export and depth edit OK');
+// Spatial editor: top view maps upward to forward Z; front maps down to positive Y.
+const specTop=C.mapSpec([{x:0,y:0,z:0}], 'top');
+assert.equal(specTop.range,500);
+assert.deepEqual(JSON.parse(JSON.stringify(C.mapPoint({x:100,z:200},specTop))),{x:60,y:30});
+const sourcePose={at:50,x:100,y:200,z:300,rotateX:15,rotateY:20,rotate:25,ease:'linear'};
+const shifted=C.moveSpatial(sourcePose,specTop,.5,-.25);
+assert.equal(shifted.x,600);assert.equal(shifted.y,200);assert.equal(shifted.z,550);
+assert.equal(shifted.rotateY,20);assert.equal(shifted.at,50);assert.equal(sourcePose.x,100);
+const specFront=C.mapSpec([sourcePose],'front');
+assert.equal(C.moveSpatial(sourcePose,specFront,0,.1).y,300);
+assert.equal(C.moveSpatial(sourcePose,specFront,0,.1).z,300);
+assert.equal(C.moveSpatial(sourcePose,specTop,100,-100).x,4000);
+assert.equal(exported.mapSpec([sourcePose],'top').axis,'z');
+editable={...scene,id:'map-edit',sdCameraFrames:[{at:0,x:0,y:0,z:0},sourcePose,{at:100,x:300,y:400,z:500}]};
+const mapBox={dataset:{plane:'top',range:'500'},getBoundingClientRect(){return{width:200,height:200};}};
+function mapMarker(){const point=marker(50);point.dataset={cameraMapPoint:'50'};point.closest=function(selector){return selector==='[data-camera-map]'?mapBox:selector==='[data-camera-map-point]'?this:null;};return point;}
+let spatialPoint=mapMarker(),beforeMap=JSON.stringify(editable),mapHistory=history.length;
+listeners.pointerdown({button:0,pointerId:7,clientX:100,clientY:100,target:spatialPoint,preventDefault(){}});
+spatialPoint.handlers.pointermove({pointerId:7,clientX:150,clientY:80});
+assert.equal(JSON.stringify(editable),beforeMap);
+spatialPoint.handlers.pointerup({pointerId:7,clientX:150,clientY:80});
+assert.equal(editable.sdCameraFrames[1].x,350);assert.equal(editable.sdCameraFrames[1].z,400);
+assert.equal(editable.sdCameraFrames[1].y,200);assert.equal(editable.sdCameraFrames[1].rotateX,15);
+assert.equal(editable.sdCameraFrames[0].x,0);assert.equal(history.length,mapHistory+1);
+spatialPoint=mapMarker();beforeMap=JSON.stringify(editable);mapHistory=history.length;
+listeners.pointerdown({button:0,pointerId:7,clientX:100,clientY:100,target:spatialPoint,preventDefault(){}});
+spatialPoint.handlers.pointermove({pointerId:7,clientX:20,clientY:30});
+spatialPoint.handlers.keydown({key:'Escape',preventDefault(){},stopPropagation(){}});
+assert.equal(JSON.stringify(editable),beforeMap);assert.equal(history.length,mapHistory);
+mapBox.dataset.plane='front';
+listeners.keydown({target:mapMarker(),key:'ArrowDown',shiftKey:true,preventDefault(){},stopPropagation(){}});
+assert.equal(editable.sdCameraFrames[1].y,300);assert.equal(editable.sdCameraFrames[1].z,400);
+console.log('Camera spatial map: projections, independent axes, drag transaction, cancellation, keyboard and bounds OK');

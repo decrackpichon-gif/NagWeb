@@ -1,4 +1,4 @@
-# Cámara de escena: pista, orientación y planos de profundidad
+# Cámara de escena: pista, mapa espacial y planos de profundidad
 
 Rama: `feat/scroll-camera-v1`.
 Base: `feat/storytelling-engine-v2` en `ed98713506b669bed1f0fedaf5731594880ff577`.
@@ -27,6 +27,17 @@ Se usa el mismo progreso del Director, también en exportación. Cada tramo
 puede tener su propio ritmo; los antiguos encuadres heredan el del Director.
 Movimiento reducido deja la cámara y la profundidad fija en posición neutral.
 
+## Mapa del recorrido
+Abrir el panel plegable Mapa del recorrido. La vista Desde arriba muestra X/Z;
+De frente muestra X/Y. Elegir el encuadre desde la pista y arrastrar el punto
+resaltado. El mapa se ajusta al alcance del recorrido después de guardar.
+Se cambia solamente la posición de ese encuadre; momento, orientación, ritmo
+y los demás encuadres se conservan. La línea muestra la conexión entre puntos.
+El cambio se confirma al soltar, con una sola entrada de deshacer. Escape,
+cancelación del puntero o pérdida de captura cancelan el gesto. Las flechas
+mueven 25 px y Shift + flecha 100 px. Las coordenadas siguen editables por número.
+El mapa es una proyección del recorrido, no una previsualización de los objetos.
+
 ## Profundidad fija por elemento
 Con la cámara activada, seleccionar un texto, imagen u otro elemento suelto
 y ajustar Profundidad fija (px) en Momento en la historia. Negativo aleja,
@@ -49,7 +60,7 @@ Director y una etiqueta script en index.html. No se modifica story-editor,
 Motion Lab ni los motores de personajes. Resolver estos hooks al integrar.
 
 Alcance: cámara CSS 2.5D sobre .inner, hasta 128 encuadres, sin reloj adicional.
-Pendiente: editor visual del recorrido espacial,
+Pendiente: verificación visual del mapa espacial,
 profundidad de grupos en escenas apiladas y compatibilidad visual con los efectos
 2.5D existentes. No constituye una cámara Three.js: los objetos WebGL y sus
 anclas requieren una integración posterior. Los contenedores raíz admitidos
@@ -72,3 +83,6 @@ de capas admitidas, perspectiva compartida, JSON y conservación al desactivar.
 
 Pruebas de contenedores: traslado de raíz a mundo de cámara en Lienzo libre,
 conservación de hijos/estilos, exclusiones, fábrica exportada y edición aislada.
+
+Pruebas del mapa: proyección X/Z y X/Y, límites, ejes independientes,
+transacción de arrastre, Escape, teclado y fábrica exportada.
