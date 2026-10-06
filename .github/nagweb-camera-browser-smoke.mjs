@@ -54,23 +54,37 @@ export async function runCameraBrowserSmoke(page){
    const f=document.querySelector('#camera-browser-export'),w=f.contentWindow,d=f.contentDocument;
    w.__NAG_SCROLL_DIRECTOR['camera-browser-scene'].set(.5);
    const scene=d.querySelector('.sc[data-id="camera-browser-scene"]'),world=scene.querySelector('.inner'),group=d.querySelector('[data-id="camera-abs"]'),child=d.querySelector('[data-id="camera-child"]');
-   const frame=a=>a?.effect?.getKeyframes?.()[0]?.transform||'';
+   const entries=['m11','m12','m13','m14','m21','m22','m23','m24','m31','m32','m33','m34','m41','m42','m43','m44'];
+   function matrixFromAnimation(n){
+    const a=n.getAnimations().find(a=>a.playState==='paused'),t=a?.effect?.getKeyframes?.()[0]?.transform||'none';
+    return {matrix:new w.DOMMatrix(t),raw:t};
+   }
+   function matrixFromTransform(t){
+    const probe=d.createElement('i');probe.style.transform=t;d.body.append(probe);
+    const m=new w.DOMMatrix(w.getComputedStyle(probe).transform);probe.remove();return m;
+   }
+   function error(a,b){return Math.max(...entries.map(k=>Math.abs(a[k]-b[k])));}
+   const worldA=matrixFromAnimation(world),groupA=matrixFromAnimation(group),childA=matrixFromAnimation(child);
+   const worldE=matrixFromTransform('rotateZ(-5deg) rotateY(-20deg) rotateX(-10deg) translate3d(-225px,-125px,100px)');
+   const groupE=matrixFromTransform('translateZ(-300px) rotateX(0deg) rotateY(0deg)');
+   const childE=matrixFromTransform('translateZ(50px) rotateX(10deg) rotateY(-15deg)');
    return{
     groupInWorld:group.parentNode===world,
     childInGroup:child.parentNode===group,
-    groupStyle:getComputedStyle(group).transformStyle,
+    groupStyle:w.getComputedStyle(group).transformStyle,
     authoredLeft:group.style.left,
-    worldTransform:frame(world.getAnimations().find(a=>a.playState==='paused')),
-    groupTransform:frame(group.getAnimations().find(a=>a.playState==='paused')),
-    childTransform:frame(child.getAnimations().find(a=>a.playState==='paused')),
-    perspective:getComputedStyle(scene.querySelector('.nw-sd-stage')).perspective
+    worldError:error(worldA.matrix,worldE),
+    groupError:error(groupA.matrix,groupE),
+    childError:error(childA.matrix,childE),
+    childRaw:childA.raw,
+    perspective:w.getComputedStyle(scene.querySelector('.nw-sd-stage')).perspective
    };
   });
   assert.equal(runtime.groupInWorld,true);assert.equal(runtime.childInGroup,true);assert.equal(runtime.groupStyle,'preserve-3d');
-  assert.ok(runtime.worldTransform.includes('rotateY(-20deg)')&&runtime.worldTransform.includes('translate3d(-225px,-125px,100px)'));
-  assert.ok(runtime.groupTransform.includes('translateZ(-300.000px)'));
-  assert.ok(runtime.childTransform.includes('translateZ(50.000px)')&&runtime.childTransform.includes('rotateX(10.000deg)')&&runtime.childTransform.includes('rotateY(-15.000deg)'));
-  assert.ok(!runtime.childTransform.includes('perspective('),'Nested child must reuse shared camera perspective');
+  assert.ok(runtime.worldError<.001,'Camera matrix mismatch: '+JSON.stringify(runtime));
+  assert.ok(runtime.groupError<.001,'Container depth matrix mismatch: '+JSON.stringify(runtime));
+  assert.ok(runtime.childError<.001,'Nested 2.5D matrix mismatch: '+JSON.stringify(runtime));
+  assert.ok(!runtime.childRaw.includes('perspective('),'Nested child must reuse shared camera perspective');
   assert.equal(runtime.perspective,'1000px');
 
   fs.mkdirSync('/tmp/nagweb-camera-visuals',{recursive:true});
