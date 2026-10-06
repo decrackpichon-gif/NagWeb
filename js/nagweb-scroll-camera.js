@@ -3,6 +3,7 @@
 'use strict';
 function createCamera(){
  function number(v){return Number.isFinite(+v)?Math.max(-4000,Math.min(4000,+v)):0;}
+ function angle(v){return Number.isFinite(+v)?Math.max(-3600,Math.min(3600,+v)):0;}
  function config(s){
   if(!s.sdCameraEnabled||!s.sdEnabled||s.nwMotionSource==='time')return null;
   return {frames:normalize(s.sdCameraFrames),start:{x:number(s.sdCameraStartX),y:number(s.sdCameraStartY),z:number(s.sdCameraStartZ)},end:{x:number(s.sdCameraEndX),y:number(s.sdCameraEndY),z:number(s.sdCameraEndZ)}};
@@ -10,17 +11,22 @@ function createCamera(){
  function normalize(input){
   var out=[];
   (Array.isArray(input)?input:[]).filter(function(k){return k&&Number.isFinite(+k.at);}).slice(0,128).sort(function(a,b){return +a.at-+b.at;}).forEach(function(k){
-   var frame={at:Math.round(Math.max(0,Math.min(100,+k.at))*10)/10,x:number(k.x),y:number(k.y),z:number(k.z)};
+   var frame={at:Math.round(Math.max(0,Math.min(100,+k.at))*10)/10,x:number(k.x),y:number(k.y),z:number(k.z),rotateX:angle(k.rotateX),rotateY:angle(k.rotateY),rotate:angle(k.rotate)};
    if(['linear','smooth','cinematic','ease-in','ease-out','ease-in-out'].indexOf(k.ease)>=0)frame.ease=k.ease;
    if(out.length&&out[out.length-1].at===frame.at)out.pop();out.push(frame);
   });return out;
  }
  function frames(c,ease){
-  return c.frames&&c.frames.length?normalize(c.frames):[{at:0,x:c.start.x,y:c.start.y,z:c.start.z,ease:ease},{at:100,x:c.end.x,y:c.end.y,z:c.end.z}];
+  return c.frames&&c.frames.length?normalize(c.frames):normalize([{at:0,x:c.start.x,y:c.start.y,z:c.start.z,ease:ease},{at:100,x:c.end.x,y:c.end.y,z:c.end.z}]);
  }
  function pose(c,p,model,ease,reduced){
   var list=frames(c,ease),compiled={keyframes:model.normalize(list.map(function(k){return Object.assign({},k,{ease:k.ease||ease||'cinematic'});} ))};
-  var pose=model.evaluate(compiled,p,ease,reduced);return {x:pose.x,y:pose.y,z:pose.z};
+  var pose=model.evaluate(compiled,p,ease,reduced);return {x:pose.x,y:pose.y,z:pose.z,rotateX:pose.rotateX,rotateY:pose.rotateY,rotate:pose.rotate};
+ }
+ function transform(v){
+  // Inverse of camera T(x,y,-z) * Rx(pitch) * Ry(yaw) * Rz(roll).
+  var rx=angle(v.rotateX),ry=angle(v.rotateY),rz=angle(v.rotate);
+  return (rz?'rotateZ('+(-rz)+'deg) ':'')+(ry?'rotateY('+(-ry)+'deg) ':'')+(rx?'rotateX('+(-rx)+'deg) ':'')+'translate3d('+(-number(v.x))+'px,'+(-number(v.y))+'px,'+number(v.z)+'px)';
  }
  function attach(stage,c,perspective){
   if(!c)return null;
@@ -31,15 +37,15 @@ function createCamera(){
   var animation=null,last='';
   return function(v){
    // Camera translation is the inverse world translation. Positive Z travels forward.
-   var value='translate3d('+(-v.x)+'px,'+(-v.y)+'px,'+v.z+'px)';
+   var value=transform(v);
    if(value===last)return;last=value;
-   if(!v.x&&!v.y&&!v.z){if(animation)animation.cancel();animation=null;return;}
+   if(!v.x&&!v.y&&!v.z&&!v.rotateX&&!v.rotateY&&!v.rotate){if(animation)animation.cancel();animation=null;return;}
    var frames=[{transform:value},{transform:value}];
    if(animation)animation.effect.setKeyframes(frames);
    else{animation=world.animate(frames,{duration:1,fill:'both',composite:'add'});animation.pause();animation.currentTime=0;}
   };
  }
- return {config:config,pose:pose,attach:attach,normalize:normalize,frames:frames};
+ return {config:config,pose:pose,attach:attach,normalize:normalize,frames:frames,transform:transform};
 }
 window.NAGWEB_CREATE_SCROLL_CAMERA=createCamera;
 window.NAGWEB_SCROLL_CAMERA=createCamera();
@@ -61,6 +67,8 @@ C.panel=function(s){
  function field(label,key,value,min,max,step){return cRow(label,'<input class="cnum" type="number" aria-label="'+label+'" data-camera-field="'+key+'" data-camera-at="'+k.at+'" value="'+value+'" min="'+min+'" max="'+max+'" step="'+step+'">');}
  html+=field('Momento (%)','at',k.at,0,100,.1);
  ['x','y','z'].forEach(function(axis){html+=field('Cámara '+axis.toUpperCase(),axis,k[axis],-4000,4000,25);});
+ [['rotateX','Inclinar arriba / abajo (°)'],['rotateY','Mirar izquierda / derecha (°)'],['rotate','Girar el horizonte (°)']].forEach(function(axis){html+=field(axis[1],axis[0],k[axis[0]],-3600,3600,5);});
+ html+='<p class="hint gh">Los ángulos se recorren tal como los escribís: 0° → 360° da una vuelta completa.</p>';
  html+=cRow('Movimiento hacia el siguiente','<select class="csel" aria-label="Movimiento de cámara" data-camera-field="ease" data-camera-at="'+k.at+'">'+[['linear','Directo'],['smooth','Suave'],['cinematic','Cinemático'],['ease-in','Acelerar'],['ease-out','Frenar'],['ease-in-out','Acelerar y frenar']].map(function(e){return '<option value="'+e[0]+'"'+((k.ease||s.sdEase||'cinematic')===e[0]?' selected':'')+'>'+e[1]+'</option>';}).join('')+'</select>');
  html+='<button type="button" class="btn tiny" data-camera-delete="'+k.at+'"'+(list.length<=2?' disabled':'')+'>Eliminar encuadre</button>';
  return html;

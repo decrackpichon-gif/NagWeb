@@ -10,9 +10,9 @@ assert.equal(C.config({...scene,sdEnabled:false}),null);
 assert.equal(C.config({...scene,nwMotionSource:'time'}),null);
 const c=C.config(scene),before=JSON.stringify(scene);
 for(const [p,x,y,z] of [[0,0,0,0],[.5,100,-50,150],[1,200,-100,300]]){
- const v=C.pose(c,p,M,'linear',false);assert.deepEqual(JSON.parse(JSON.stringify(v)),{x,y,z});
+ const v=C.pose(c,p,M,'linear',false);assert.deepEqual(JSON.parse(JSON.stringify(v)),{x,y,z,rotateX:0,rotateY:0,rotate:0});
 }
-assert.deepEqual(JSON.parse(JSON.stringify(C.pose(c,.7,M,'linear',true))),{x:0,y:0,z:0});
+assert.deepEqual(JSON.parse(JSON.stringify(C.pose(c,.7,M,'linear',true))),{x:0,y:0,z:0,rotateX:0,rotateY:0,rotate:0});
 assert.equal(JSON.stringify(scene),before);
 assert.equal(C.config({...scene,sdCameraEndX:Infinity}).end.x,0);
 const exported=vm.runInNewContext('('+ctx.window.NAGWEB_CREATE_SCROLL_CAMERA.toString()+')()');
@@ -27,8 +27,8 @@ paint(C.pose(c,0,M,'linear'));assert.equal(cancelled,true);
 console.log('Camera: opt-in, interpolation, inverse translation, reduced motion, export factory and neutral reset OK');
 
 const path=C.config({...scene,sdCameraFrames:[{at:0,x:0,y:0,z:0,ease:'linear'},{at:40,x:200,y:100,z:300,ease:'linear'},{at:100,x:-100,y:-200,z:0}]});
-assert.deepEqual(JSON.parse(JSON.stringify(C.pose(path,.2,M,'linear'))),{x:100,y:50,z:150});
-assert.deepEqual(JSON.parse(JSON.stringify(C.pose(path,.7,M,'linear'))),{x:50,y:-50,z:150});
+assert.deepEqual(JSON.parse(JSON.stringify(C.pose(path,.2,M,'linear'))),{x:100,y:50,z:150,rotateX:0,rotateY:0,rotate:0});
+assert.deepEqual(JSON.parse(JSON.stringify(C.pose(path,.7,M,'linear'))),{x:50,y:-50,z:150,rotateX:0,rotateY:0,rotate:0});
 assert.equal(C.pose(path,.4,M,'linear').x,200);
 assert.equal(C.pose(path,-1,M,'linear').x,0);
 assert.equal(C.pose(path,2,M,'linear').x,-100);
@@ -67,3 +67,23 @@ editable.sdCameraEnabled=false;
 assert.equal(ui.window.NAGWEB_SCROLL_CAMERA.config(editable),null);
 assert.equal(JSON.stringify(editable.sdCameraFrames),retained);
 console.log('Camera editor: add, isolated edit, retime, collision, deletion, history and disabled retention OK');
+
+// Orientations are camera angles, so the world receives their inverse in reverse order.
+const rotating=C.config({...scene,sdCameraFrames:[{at:0,ease:'linear'},{at:100,x:100,y:40,z:200,rotateX:30,rotateY:60,rotate:360}]});
+const middle=C.pose(rotating,.5,M,'linear');
+assert.deepEqual(JSON.parse(JSON.stringify(middle)),{x:50,y:20,z:100,rotateX:15,rotateY:30,rotate:180});
+assert.equal(C.transform(middle),'rotateZ(-180deg) rotateY(-30deg) rotateX(-15deg) translate3d(-50px,-20px,100px)');
+assert.equal(C.pose(rotating,.75,M,'linear').rotate,270,'Full turns must not take the shortest angular path');
+assert.deepEqual(JSON.parse(JSON.stringify(C.pose(rotating,.5,M,'linear',true))),{x:0,y:0,z:0,rotateX:0,rotateY:0,rotate:0});
+assert.equal(C.normalize([{at:0,rotateX:Infinity,rotateY:9999,rotate:-9999}])[0].rotateX,0);
+assert.equal(C.normalize([{at:0,rotateY:9999}])[0].rotateY,3600);
+assert.equal(C.transform({x:0,y:0,z:0,rotateY:90}),'rotateY(-90deg) translate3d(0px,0px,0px)');
+assert.equal(exported.transform(middle),C.transform(middle));
+paint({x:0,y:0,z:0,rotateY:90});assert.equal(current,'rotateY(-90deg) translate3d(0px,0px,0px)','Pure rotation should create an effect even at zero translation');
+editable.sdCameraEnabled=true;
+change(100,'rotateY',45);
+assert.equal(editable.sdCameraFrames[1].rotateY,45);
+assert.equal(editable.sdCameraFrames[0].rotateY,0,'Rotation edit is local to selected key');
+pct=50;click('cameraAdd',true);
+assert.equal(editable.sdCameraFrames[1].rotateY,22.5,'New keys capture interpolated orientation');
+console.log('Camera orientation: inverse transform order, full turns, isolated edits, legacy defaults and reduced motion OK');
