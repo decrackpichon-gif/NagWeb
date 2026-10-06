@@ -6,9 +6,9 @@ function createCamera(){
  function angle(v){return Number.isFinite(+v)?Math.max(-3600,Math.min(3600,+v)):0;}
  function config(s){
   if(!s.sdCameraEnabled||!s.sdEnabled||s.nwMotionSource==='time')return null;
-  return {layers:(s.elements||[]).filter(layerEligible).map(function(e){return {id:e.id,z:number(e.sdCameraDepth)};}),frames:normalize(s.sdCameraFrames),start:{x:number(s.sdCameraStartX),y:number(s.sdCameraStartY),z:number(s.sdCameraStartZ)},end:{x:number(s.sdCameraEndX),y:number(s.sdCameraEndY),z:number(s.sdCameraEndZ)}};
+  return {containers:(s.elements||[]).filter(function(e){return e.type==='container'&&layerEligible(e,s);}).map(function(e){return e.id;}),layers:(s.elements||[]).filter(function(e){return layerEligible(e,s);}).map(function(e){return {id:e.id,z:number(e.sdCameraDepth)};}),frames:normalize(s.sdCameraFrames),start:{x:number(s.sdCameraStartX),y:number(s.sdCameraStartY),z:number(s.sdCameraStartZ)},end:{x:number(s.sdCameraEndX),y:number(s.sdCameraEndY),z:number(s.sdCameraEndZ)}};
  }
- function layerEligible(e){return !!e&&!e.parent&&!e.fixed&&!e.modal&&!e.nwMotionInstance&&['container','shape3d','light3d','spacer'].indexOf(e.type)<0;}
+ function layerEligible(e,s){return !!e&&!e.parent&&!e.fixed&&!e.modal&&!e.nwMotionInstance&&['shape3d','light3d','spacer'].indexOf(e.type)<0&&(e.type!=='container'||!!s&&s.layout==='free');}
  function layer(c,id){return c&&(c.layers||[]).find(function(l){return l.id===id;})||null;}
  function layerPose(v,l,reduced){return Object.assign({},v,{z:v.z+(l&&!reduced?number(l.z):0)});}
  function layerTransform(v,perspective,shared){
@@ -38,6 +38,13 @@ function createCamera(){
   if(!c)return null;
   var world=Array.from(stage.children).find(function(n){return n.classList.contains('inner');});
   if(!world)return null;
+  // Free-layout containers are generated beside .inner. Both use the full
+  // viewport box, so reparenting the eligible roots retains percentage geometry.
+  // Keep their children intact: camera motion is applied exactly once to the world.
+  var containers=c.containers||[];
+  if(containers.length)Array.from(stage.children).forEach(function(n){
+   if(n!==world&&n.classList.contains('container-box')&&containers.indexOf(n.getAttribute('data-id'))>=0)world.appendChild(n);
+  });
   stage.style.perspective=perspective+'px';stage.style.perspectiveOrigin='50% 50%';
   world.style.transformStyle='preserve-3d';world.setAttribute('data-nw-camera-world','');
   var animation=null,last='';
@@ -62,9 +69,9 @@ function choose(s,list){var at=selected[s.id],k=list.find(function(k){return k.a
 function jump(s,at){selected[s.id]=at;window.NAGWEB_SCROLL_DIRECTOR.scrub(s.id,at/100);renderPane();}
 function persist(s,list,at){s.sdCameraFrames=C.normalize(list);selected[s.id]=at;saveProject();renderPane();schedulePreview();window.NAGWEB_SCROLL_DIRECTOR.scrub(s.id,at/100);}
 C.elementPanel=function(s,e){
- if(!C.config(s)||!C.layerEligible(e))return '';
+ if(!C.config(s)||!C.layerEligible(e,s))return '';
  var z=C.layer(C.config(s),e.id);z=z?z.z:0;
- return '<h4 class="gsub">Plano en la escena de cámara</h4>'+cRow('Profundidad fija (px)','<input type="number" class="cnum" aria-label="Profundidad fija del elemento" data-camera-depth value="'+z+'" min="-4000" max="4000" step="25">')+'<p class="hint gh">Negativo: más lejos · 0: plano original · Positivo: más cerca. Se suma a la animación de profundidad. Al desactivar la cámara se conserva este ajuste.</p>';
+ return (e.type==='container'?'<p class="hint gh">Este plano mueve el contenedor completo con sus elementos internos.</p>':'')+'<h4 class="gsub">Plano en la escena de cámara</h4>'+cRow('Profundidad fija (px)','<input type="number" class="cnum" aria-label="Profundidad fija del elemento" data-camera-depth value="'+z+'" min="-4000" max="4000" step="25">')+'<p class="hint gh">Negativo: más lejos · 0: plano original · Positivo: más cerca. Se suma a la animación de profundidad. Al desactivar la cámara se conserva este ajuste.</p>';
 };
 C.panel=function(s){
  var html=cRow('Cámara 3D',cSeg('sec.sdCameraEnabled',!!s.sdCameraEnabled,[['false','Desactivada'],['true','Activada']],'bool'));
@@ -149,7 +156,7 @@ if(pane){
   var input=ev.target;
   if(input.dataset.cameraDepth!==undefined){
    var scene=sec(),element=scene.elements[curEl];
-   if(!C.config(scene)||!C.layerEligible(element)||selection.length!==1)return;
+   if(!C.config(scene)||!C.layerEligible(element,scene)||selection.length!==1)return;
    if(input.value===''||!Number.isFinite(+input.value)){renderPane();return;}
    var depth=Math.max(-4000,Math.min(4000,+input.value));if((+element.sdCameraDepth||0)===depth)return;
    snapshot();element.sdCameraDepth=depth;saveProject();renderPane();schedulePreview();return;

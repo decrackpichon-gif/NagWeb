@@ -160,3 +160,44 @@ assert.equal(editable.elements[0].sdCameraDepth,375);
 editable.sdCameraEnabled=false;
 assert.equal(C.config(editable),null);assert.equal(editable.elements[0].sdCameraDepth,375);
 console.log('Camera layers: eligibility, independent edit, additive Z, shared perspective, legacy behavior and serialization OK');
+// Container reparenting is limited to eligible free-layout roots; children retain
+// their authored coordinates and one shared camera transform on the world.
+function domNode(id,classes=[]){return {id,children:[],parentNode:null,style:{},attributes:{},
+ classList:{contains(name){return classes.includes(name);}},
+ getAttribute(name){return name==='data-id'?id:this.attributes[name];},
+ setAttribute(name,value){this.attributes[name]=value;},
+ appendChild(node){if(node.parentNode)node.parentNode.children=node.parentNode.children.filter(n=>n!==node);node.parentNode=this;this.children.push(node);},
+ animate(){throw new Error('Neutral camera must not animate');}};}
+const free={...layersScene,layout:'free',elements:[...layersScene.elements,
+ {id:'universal',type:'container',universal:true,sdCameraDepth:-300},
+ {id:'nested-container',type:'container',parent:'universal',sdCameraDepth:300},
+ {id:'modal-container',type:'container',modal:true},
+ {id:'fixed-container',type:'container',fixed:true},
+ {id:'motion-container',type:'container',nwMotionInstance:{source:'time'}}]};
+const cfg=C.config(free);
+assert.deepEqual(Array.from(cfg.containers),['group','universal']);
+assert.equal(C.layer(cfg,'universal').z,-300);
+assert.equal(C.layer(cfg,'nested-container'),null);
+assert.equal(C.layerEligible(free.elements.find(e=>e.id==='universal'),{layout:'stack'}),false);
+const stage2=domNode('stage'),world2=domNode('world',['inner']);stage2.appendChild(world2);
+const group=domNode('universal',['container-box']),child=domNode('child',['el']);
+child.style.left='35%';child.style.top='20%';group.style.left='10%';group.style.width='80%';
+group.appendChild(child);stage2.appendChild(group);
+const other=domNode('motion-container',['container-box']),modal=domNode('modal-container',['container-box']);stage2.appendChild(other);stage2.appendChild(modal);
+const originalChildren=group.children.slice(),groupStyle=JSON.stringify(group.style),childStyle=JSON.stringify(child.style);
+const containerPaint=C.attach(stage2,cfg,1000);
+assert.equal(group.parentNode,world2);
+assert.equal(child.parentNode,group);
+assert.deepEqual(group.children,originalChildren);
+assert.equal(JSON.stringify(group.style),groupStyle);
+assert.equal(JSON.stringify(child.style),childStyle);
+assert.equal(other.parentNode,stage2);assert.equal(modal.parentNode,stage2);
+containerPaint({x:0,y:0,z:0,rotateX:0,rotateY:0,rotate:0});
+const offStage=domNode('off'),offWorld=domNode('off-world',['inner']),offGroup=domNode('universal',['container-box']);offStage.appendChild(offWorld);offStage.appendChild(offGroup);
+assert.equal(C.attach(offStage,null,1000),null);assert.equal(offGroup.parentNode,offStage);
+assert.equal(JSON.stringify(exported.config(free)),JSON.stringify(cfg));
+editable={...free,id:'container-edit'};ui.curEl=editable.elements.findIndex(e=>e.id==='universal');ui.selection=['universal'];
+listeners.change({target:{dataset:{cameraDepth:''},value:'-450'}});
+assert.equal(editable.elements[ui.curEl].sdCameraDepth,-450);
+assert.equal(editable.elements.find(e=>e.id==='nested-container').sdCameraDepth,300);
+console.log('Camera containers: free-layout scope, rigid hierarchy, untouched styles, excluded groups, export and depth edit OK');

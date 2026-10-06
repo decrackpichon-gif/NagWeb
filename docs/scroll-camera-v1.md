@@ -35,8 +35,13 @@ Desactivar la cámara conserva el valor guardado pero deja de aplicarlo.
 Los planos usan la perspectiva común de la cámara, evitando sumar otra
 perspectiva individual. Los elementos fuera de este modo mantienen el
 comportamiento anterior. Los planos se limitan a ±4000 px.
-No incluye hijos de contenedores, contenedores, elementos fijos, composiciones
-MotionLab ni objetos Three.js. La perspectiva compartida todavía requiere
+En Lienzo libre también incluye contenedores raíz, incluidos los universales:
+su profundidad se aplica a todo el conjunto, conservando la jerarquía interna.
+El runtime los coloca dentro del mundo de cámara sin modificar los estilos
+de posición y tamaño ni los datos guardados. Al apagar la cámara, la siguiente
+previsualización/exportación vuelve al markup original.
+No incluye planos independientes para hijos de contenedores, contenedores de
+escenas apiladas, elementos fijos, composiciones MotionLab ni objetos Three.js. La perspectiva compartida todavía requiere
 verificación visual en navegador.
 
 Implementación aislada en js/nagweb-scroll-camera.js; hooks mínimos en el
@@ -45,10 +50,10 @@ Motion Lab ni los motores de personajes. Resolver estos hooks al integrar.
 
 Alcance: cámara CSS 2.5D sobre .inner, hasta 128 encuadres, sin reloj adicional.
 Pendiente: editor visual del recorrido espacial,
-profundidad de grupos y compatibilidad visual con los efectos
+profundidad de grupos en escenas apiladas y compatibilidad visual con los efectos
 2.5D existentes. No constituye una cámara Three.js: los objetos WebGL y sus
-anclas requieren una integración posterior. Los nodos fuera de .inner no se
-mueven con esta cámara. La cámara puede acercarse hasta atravesar el plano.
+anclas requieren una integración posterior. Los contenedores raíz admitidos
+se incorporan a .inner; el resto de nodos externos permanece fuera de la cámara. La cámara puede acercarse hasta atravesar el plano.
 
 Verificación: node .github/nagweb-camera-model-test.mjs y
 node .github/nagweb-depth-model-test.mjs. Se verifican neutralidad, opt-in,
@@ -64,3 +69,6 @@ No desplegar manualmente hasta que el usuario lo solicite.
 
 Pruebas adicionales: profundidad por elemento, suma con Z animado, selección
 de capas admitidas, perspectiva compartida, JSON y conservación al desactivar.
+
+Pruebas de contenedores: traslado de raíz a mundo de cámara en Lienzo libre,
+conservación de hijos/estilos, exclusiones, fábrica exportada y edición aislada.
