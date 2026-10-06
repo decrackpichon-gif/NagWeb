@@ -89,8 +89,8 @@ export async function runCameraBrowserSmoke(page){
 
   fs.mkdirSync('/tmp/nagweb-camera-visuals',{recursive:true});
   await page.screenshot({path:'/tmp/nagweb-camera-visuals/camera-editor.png',fullPage:true});
-  const exportFrame=await (await page.$('#camera-browser-export')).contentFrame();
-  await exportFrame.screenshot({path:'/tmp/nagweb-camera-visuals/camera-export.png'});
+  const exportElement=await page.$('#camera-browser-export');
+  await exportElement.screenshot({path:'/tmp/nagweb-camera-visuals/camera-export.png'});
   console.log('Camera browser: mapa real, teclado, runtime exportado, stack absoluto y perspectiva 2.5D compartida OK');
  }finally{
   await page.evaluate(previous=>{
