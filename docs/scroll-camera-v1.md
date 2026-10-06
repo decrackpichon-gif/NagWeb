@@ -71,9 +71,11 @@ En escenas apiladas admite contenedores raíz tanto con distribución automátic
 (stackDir) como absolutos. Los de flujo permanecen dentro de .inner; los absolutos
 que estén junto a .inner se incorporan al mundo de cámara conservando hijos,
 estilos de posición y jerarquía.
-No incluye planos independientes para hijos de contenedores, elementos fijos,
-composiciones MotionLab ni objetos Three.js. La perspectiva compartida todavía requiere
-verificación visual en navegador.
+No incluye profundidad fija independiente para hijos de contenedores, elementos
+fijos, composiciones MotionLab ni objetos Three.js. Los hijos conservan, sin embargo,
+sus animaciones Z/rotateX/rotateY del Story Model dentro del mismo mundo de cámara:
+el contenedor raíz usa preserve-3d y esos hijos reutilizan la perspectiva compartida,
+evitando sumar una segunda perspective(). La verificación visual sigue pendiente.
 
 Implementación aislada en js/nagweb-scroll-camera.js; hooks mínimos en el
 Director y una etiqueta script en index.html. No se modifica story-editor,
@@ -100,8 +102,9 @@ No desplegar manualmente hasta que el usuario lo solicite.
 Pruebas adicionales: profundidad por elemento, suma con Z animado, selección
 de capas admitidas, perspectiva compartida, JSON y conservación al desactivar.
 
-Pruebas de contenedores: traslado de raíz a mundo de cámara en Lienzo libre,
-conservación de hijos/estilos, exclusiones, fábrica exportada y edición aislada.
+Pruebas de contenedores: traslado de raíz a mundo de cámara en Lienzo libre y
+escenas apiladas, conservación de hijos y estilos de posición, contexto preserve-3d,
+exclusiones, fábrica exportada y edición aislada.
 
 Pruebas del mapa: proyección X/Z y X/Y, límites, ejes independientes,
 transacción de arrastre, Escape, teclado y fábrica exportada.
@@ -111,7 +114,7 @@ transacción de arrastre, Escape, teclado y fábrica exportada.
 su script exportado y lo ejecuta en un entorno aislado con un DOM simulado.
 Cubre paridad preview/export, cálculo del progreso a partir del scroll,
 mensajes del editor, permanencias, planos de profundidad, contenedores,
-movimiento reducido y comportamiento con cámara desactivada. No renderiza
+herencia de perspectiva 2.5D, movimiento reducido y comportamiento con cámara desactivada. No renderiza
 CSS ni verifica layout o interacción real del navegador. Las pruebas del
 modelo cubren también pausas, copias, recorridos y cursor del mapa.
 
