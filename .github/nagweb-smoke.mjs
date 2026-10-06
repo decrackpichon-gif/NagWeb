@@ -38,6 +38,8 @@ import {runMotionExpandSmoke} from './nagweb-motion-expand-smoke.mjs';
 import {runMotionDropSmoke} from './nagweb-motion-drop-smoke.mjs';
 import {runMotionStreamSmoke} from './nagweb-motion-stream-smoke.mjs';
 import {runMotionStreamPlacementSmoke} from './nagweb-motion-stream-placement-smoke.mjs';
+import './nagweb-spiral-model-test.mjs';
+import {runMotionSpiralSmoke} from './nagweb-motion-spiral-smoke.mjs';
 import './nagweb-shift-model-test.mjs';
 import {runMotionFocusShiftSmoke,runMotionFocusShiftDepthSmoke} from './nagweb-motion-focus-shift-smoke.mjs';
 import './nagweb-drop-model-test.mjs';
@@ -73,7 +75,7 @@ import {runMotionIsoOrbitSmoke} from './nagweb-motion-iso-orbit-smoke.mjs';
 import {runMotionBatchImagesSmoke} from './nagweb-motion-batch-images-smoke.mjs';
 
 const suite=process.env.NAGWEB_SMOKE_SUITE||'all';
-if(!['all','procedural','editor','diagonal','grid','zoom','drop','shift'].includes(suite))throw new Error('Unknown NagWeb smoke suite: '+suite);
+if(!['all','procedural','editor','diagonal','grid','zoom','drop','shift','spiral'].includes(suite))throw new Error('Unknown NagWeb smoke suite: '+suite);
 
 const feedbackSource=fs.readFileSync(new URL('../js/nagweb-feedback-v16.js',import.meta.url),'utf8');
 const directorSource=fs.readFileSync(new URL('../js/nagweb-scroll-director-v16.js',import.meta.url),'utf8');
@@ -322,6 +324,7 @@ await runTransparentSmoke(page);
 if(suite==='all'||suite==='diagonal'){
 for(const kind of ['diagonal-carousel','iso-cascade']){await runMotionDiagonalSmoke(page,kind);await runMotionStreamPlacementSmoke(page,kind);}
 }
+if(suite==='all'||suite==='spiral'){await runMotionSpiralSmoke(page);await runMotionStreamPlacementSmoke(page,'spiral-stream');await runMotionBatchImagesSmoke(page,['spiral-stream']);}
 if(suite==='all'||suite==='shift'){await runMotionFocusShiftSmoke(page);await runMotionFocusShiftDepthSmoke(page);await runMotionStreamPlacementSmoke(page,'focus-shift');await runMotionImageCropSmoke(page,['focus-shift']);await runMotionBatchImagesSmoke(page,['focus-shift']);}
 if(suite==='all'||suite==='drop'){await runMotionDropCascadeSmoke(page);await runMotionDropCascadeDepthSmoke(page);await runMotionStreamPlacementSmoke(page,'cascade-drop');await runMotionImageCropSmoke(page,['cascade-drop']);await runMotionBatchImagesSmoke(page,['cascade-drop']);}
 if(suite==='all'||suite==='zoom'){await runMotionZoomSmoke(page);await runMotionStreamPlacementSmoke(page,'zoom-parallax');await runMotionBatchImagesSmoke(page,['zoom-parallax']);}
