@@ -271,7 +271,7 @@ function rt(DATA,createModel,createStreamModel,createCamera){
    var cs=getComputedStyle(n),baseOpacity=parseFloat(cs.opacity),baseFilter=cs.filter&&cs.filter!=='none'?cs.filter:'blur(0px)',basePointer=cs.pointerEvents||'auto';
    n.style.setProperty('--nw-sd-base-opacity',isFinite(baseOpacity)?baseOpacity:1);
    n.style.setProperty('--nw-sd-base-filter',baseFilter);n.setAttribute('data-nw-sd-el','1');
-   els.push({n:n,c:c,cameraLayer:cameraPaint?camera.layer(cfg.camera,c.id):null,basePointer:basePointer,depth:null,depthValue:''});
+   els.push({n:n,c:c,cameraLayer:cameraPaint?camera.layer(cfg.camera,c.id):null,cameraShared:cameraPaint?cameraPaint.contains(n):false,basePointer:basePointer,depth:null,depthValue:''});
   });
   var ordered=cfg.depthOrder?els.filter(function(q){return q.c.keyframes&&q.c.keyframes.length;}):[];
   var streamPaint=streamRenderer(stage,cfg);
@@ -296,7 +296,7 @@ function rt(DATA,createModel,createStreamModel,createCamera){
     var depth=Math.abs(v.z)+Math.abs(v.rotateX)+Math.abs(v.rotateY)>.0001;
     if(!depth){if(q.depth){q.depth.cancel();q.depth=null;}q.depthValue='';}
     else{
-     var transform=camera.layerTransform(v,cfg.perspective,!!q.cameraLayer);
+     var transform=camera.layerTransform(v,cfg.perspective,q.cameraShared);
      if(transform!==q.depthValue){
       var keys=[{transform:transform},{transform:transform}];
       if(q.depth)q.depth.effect.setKeyframes(keys);
