@@ -23,6 +23,8 @@ export async function runCameraBrowserSmoke(page){
   await page.waitForFunction(()=>document.querySelector('[data-camera-map-box]')&&document.querySelector('#preview')?.contentWindow?.__NAG_SCROLL_DIRECTOR?.['camera-browser-scene']);
   await page.$eval('[data-camera-map-box]',n=>{n.open=true;n.dispatchEvent(new Event('toggle',{bubbles:true}));});
   await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',.5));
+  await page.click('[data-camera-jump="50"]');
+  await page.waitForFunction(()=>document.querySelector('[data-camera-map-point="50"]'));
 
   const ui=await page.evaluate(()=>({
    markers:document.querySelectorAll('[data-camera-jump]').length,
