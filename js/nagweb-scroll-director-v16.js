@@ -82,6 +82,7 @@ paneSceneNew=function(){
   body+='<p class="hint gh">La escena se convierte en una pequeña película controlada por el scroll: queda fija mientras el recorrido avanza de 0% a 100%.</p>';
   body+=cRow('Longitud del recorrido',cNum('sec.sdLength',s.sdLength,'vh',{step:20,min:140,max:900}));
   body+=cRow('Perspectiva',cNum('sec.sdPerspective',s.sdPerspective,'px',{step:50,min:200,max:5000}));
+  body+=window.NAGWEB_SCROLL_CAMERA.panel(s);
   body+=cRow('Ritmo',cSeg('sec.sdEase',s.sdEase||'cinematic',[['linear','Directa'],['smooth','Suave'],['cinematic','Cinemática']]));
   body+='<div class="field cstack"><label>Previsualizar momento <span class="val" data-sd-val>'+Math.round(val)+'%</span></label><input type="range" class="crange" data-sd-scrub="'+s.id+'" min="0" max="100" step="1" value="'+val+'"></div>';
   body+=timelineHTML(s,val);
@@ -219,7 +220,8 @@ if(preview)preview.addEventListener('load',function(){
 });
 
 /* ---------- export / preview runtime ---------- */
-function rt(DATA,createModel,createStreamModel){
+function rt(DATA,createModel,createStreamModel,createCamera){
+ var camera=createCamera();
  var model=createModel(),streamModel=createStreamModel(),motion=window.matchMedia('(prefers-reduced-motion:reduce)'),states={},paints=[],clocks=[],clockResets=[],clockRAF=0,busy=0;
  function clockTick(t){clockRAF=0;var active=false;clocks.forEach(function(fn){if(fn(t))active=true;});if(active)clockRAF=requestAnimationFrame(clockTick);}
  function clockStart(){if(!clockRAF&&!document.hidden&&!motion.matches)clockRAF=requestAnimationFrame(clockTick);}
@@ -257,6 +259,7 @@ function rt(DATA,createModel,createStreamModel){
   stage.style.justifyContent=sec.classList.contains('a-center')?'center':sec.classList.contains('a-right')?'flex-end':'flex-start';
   while(sec.firstChild)stage.appendChild(sec.firstChild);sec.appendChild(stage);
   }
+  var cameraPaint=camera.attach(stage,cfg.camera,cfg.perspective);
   var els=[];
   (cfg.elements||[]).forEach(function(c){
    var n=stage.querySelector('[data-id="'+c.id+'"]');if(!n)return;
@@ -273,6 +276,7 @@ function rt(DATA,createModel,createStreamModel){
   function paint(){
    var scrollRoot=cfg.group?sec.closest('.sc'):sec,r=(scrollRoot.__nwStoryLayout||scrollRoot).getBoundingClientRect(),span=Math.max(1,scrollRoot.offsetHeight-innerHeight),timeP=cfg.loop?(elapsed%cfg.duration)/cfg.duration:Math.min(1,elapsed/cfg.duration),p=manual==null?(cfg.time?(motion.matches?.5:timeP):model.clamp(-r.top/span,0,1)):manual;
    last=p;
+   if(cameraPaint)cameraPaint(camera.pose(cfg.camera,p,model,cfg.ease,motion.matches));
    if(ordered.length)ordered.slice().sort(function(a,b){return model.evaluate(a.c,p,cfg.ease,motion.matches).z-model.evaluate(b.c,p,cfg.ease,motion.matches).z;}).forEach(function(q,i){q.n.style.zIndex=i+1;});
    els.forEach(function(q){
     var n=q.n,v=model.evaluate(q.c,p,cfg.ease,motion.matches),op=v.opacity/100;
@@ -338,11 +342,11 @@ generateSite=function(p,edit,minify,mobile){
  var secs=(p.sections||[]).filter(function(s){return directed(s)&&s.layout!=='horizontal';});
 
  function streamData(s,c){if(c.template!=='showcase-stream'&&c.template!=='iso-orbit')return{};var id=c.stream&&c.stream.backgroundId,a=(p.assets.images||[]).find(function(a){return a.id===id;});return{stream:c.template==='iso-orbit'?Object.assign({},c.stream,{kind:'iso-orbit'}):c.stream||{},streamScroll:!!s.nwStreamPreviewScroll,streamBackground:a&&a.data||'',streamSlots:(s.elements||[]).filter(function(e){return e.nwStreamSlot&&(c.id?groupOwner(s,e)&&groupOwner(s,e).id===c.id:!groupOwner(s,e));}).map(function(e){return e.id;})};}
- var data=secs.map(function(s){return Object.assign({id:s.id,time:temporal(s),edit:!!edit,duration:Math.max(.5,Math.min(120,+s.nwMotionDuration||8))*1000,loop:s.nwMotionLoop!==false,depthOrder:s.sdMotionTemplate==='card-tunnel'||s.sdMotionTemplate==='card-bloom',length:Math.max(140,Math.min(900,+s.sdLength||320)),perspective:Math.max(200,Math.min(5000,+s.sdPerspective||1000)),ease:s.sdEase||'cinematic',elements:(s.elements||[]).filter(function(e){return model.eligible(e,s)&&!groupOwner(s,e);}).map(function(e){return model.compile(e);})},streamData(s,{template:s.sdMotionTemplate,stream:s.nwStream}));});
+ var data=secs.map(function(s){return Object.assign({id:s.id,camera:window.NAGWEB_SCROLL_CAMERA.config(s),time:temporal(s),edit:!!edit,duration:Math.max(.5,Math.min(120,+s.nwMotionDuration||8))*1000,loop:s.nwMotionLoop!==false,depthOrder:s.sdMotionTemplate==='card-tunnel'||s.sdMotionTemplate==='card-bloom',length:Math.max(140,Math.min(900,+s.sdLength||320)),perspective:Math.max(200,Math.min(5000,+s.sdPerspective||1000)),ease:s.sdEase||'cinematic',elements:(s.elements||[]).filter(function(e){return model.eligible(e,s)&&!groupOwner(s,e);}).map(function(e){return model.compile(e);})},streamData(s,{template:s.sdMotionTemplate,stream:s.nwStream}));});
  (p.sections||[]).forEach(function(s){if(s.layout==='horizontal')return;(s.elements||[]).filter(function(g){return g.nwMotionInstance;}).forEach(function(g){var c=g.nwMotionInstance;data.push(Object.assign({id:g.id,group:true,time:c.source!=='scroll',edit:!!edit,duration:Math.max(.5,Math.min(120,+c.duration||8))*1000,loop:c.loop!==false,depthOrder:c.template==='card-tunnel'||c.template==='card-bloom',perspective:Math.max(200,Math.min(5000,+c.perspective||1000)),ease:s.sdEase||'cinematic',elements:(s.elements||[]).filter(function(e){return e!==g&&groupOwner(s,e)===g&&model.eligible(e,s);}).map(function(e){return model.compile(e);})},streamData(s,Object.assign({id:g.id},c))));});});
  if(!data.length)return html;
  html=html.replace('</head>','<style id="nw-scroll-director-css">'+SD_CSS+'</style></head>');
- html=html.replace('</body>','<script id="nw-scroll-director-runtime">('+rt.toString()+')('+JSON.stringify(data).replace(/</g,'\\u003c')+','+window.NAGWEB_CREATE_STORY_MODEL.toString()+','+window.NAGWEB_CREATE_STREAM_MODEL.toString()+');</script></body>');
+ html=html.replace('</body>','<script id="nw-scroll-director-runtime">('+rt.toString()+')('+JSON.stringify(data).replace(/</g,'\\u003c')+','+window.NAGWEB_CREATE_STORY_MODEL.toString()+','+window.NAGWEB_CREATE_STREAM_MODEL.toString()+','+window.NAGWEB_CREATE_SCROLL_CAMERA.toString()+');</script></body>');
  return html;
 };
 
