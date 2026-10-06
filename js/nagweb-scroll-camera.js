@@ -6,7 +6,13 @@ function createCamera(){
  function angle(v){return Number.isFinite(+v)?Math.max(-3600,Math.min(3600,+v)):0;}
  function config(s){
   if(!s.sdCameraEnabled||!s.sdEnabled||s.nwMotionSource==='time')return null;
-  return {frames:normalize(s.sdCameraFrames),start:{x:number(s.sdCameraStartX),y:number(s.sdCameraStartY),z:number(s.sdCameraStartZ)},end:{x:number(s.sdCameraEndX),y:number(s.sdCameraEndY),z:number(s.sdCameraEndZ)}};
+  return {layers:(s.elements||[]).filter(layerEligible).map(function(e){return {id:e.id,z:number(e.sdCameraDepth)};}),frames:normalize(s.sdCameraFrames),start:{x:number(s.sdCameraStartX),y:number(s.sdCameraStartY),z:number(s.sdCameraStartZ)},end:{x:number(s.sdCameraEndX),y:number(s.sdCameraEndY),z:number(s.sdCameraEndZ)}};
+ }
+ function layerEligible(e){return !!e&&!e.parent&&!e.fixed&&!e.modal&&!e.nwMotionInstance&&['container','shape3d','light3d','spacer'].indexOf(e.type)<0;}
+ function layer(c,id){return c&&(c.layers||[]).find(function(l){return l.id===id;})||null;}
+ function layerPose(v,l,reduced){return Object.assign({},v,{z:v.z+(l&&!reduced?number(l.z):0)});}
+ function layerTransform(v,perspective,shared){
+  return (shared?'':'perspective('+perspective+'px) ')+'translateZ('+v.z.toFixed(3)+'px) rotateX('+v.rotateX.toFixed(3)+'deg) rotateY('+v.rotateY.toFixed(3)+'deg)';
  }
  function normalize(input){
   var out=[];
@@ -45,7 +51,7 @@ function createCamera(){
    else{animation=world.animate(frames,{duration:1,fill:'both',composite:'add'});animation.pause();animation.currentTime=0;}
   };
  }
- return {config:config,pose:pose,attach:attach,normalize:normalize,frames:frames,transform:transform};
+ return {config:config,pose:pose,attach:attach,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform};
 }
 window.NAGWEB_CREATE_SCROLL_CAMERA=createCamera;
 window.NAGWEB_SCROLL_CAMERA=createCamera();
@@ -55,6 +61,11 @@ function progress(s){return window.NAGWEB_SCROLL_DIRECTOR?window.NAGWEB_SCROLL_D
 function choose(s,list){var at=selected[s.id],k=list.find(function(k){return k.at===at;});return k||list[0];}
 function jump(s,at){selected[s.id]=at;window.NAGWEB_SCROLL_DIRECTOR.scrub(s.id,at/100);renderPane();}
 function persist(s,list,at){s.sdCameraFrames=C.normalize(list);selected[s.id]=at;saveProject();renderPane();schedulePreview();window.NAGWEB_SCROLL_DIRECTOR.scrub(s.id,at/100);}
+C.elementPanel=function(s,e){
+ if(!C.config(s)||!C.layerEligible(e))return '';
+ var z=C.layer(C.config(s),e.id);z=z?z.z:0;
+ return '<h4 class="gsub">Plano en la escena de cámara</h4>'+cRow('Profundidad fija (px)','<input type="number" class="cnum" aria-label="Profundidad fija del elemento" data-camera-depth value="'+z+'" min="-4000" max="4000" step="25">')+'<p class="hint gh">Negativo: más lejos · 0: plano original · Positivo: más cerca. Se suma a la animación de profundidad. Al desactivar la cámara se conserva este ajuste.</p>';
+};
 C.panel=function(s){
  var html=cRow('Cámara 3D',cSeg('sec.sdCameraEnabled',!!s.sdCameraEnabled,[['false','Desactivada'],['true','Activada']],'bool'));
  if(!s.sdCameraEnabled||!C.config(s))return html;
@@ -135,7 +146,15 @@ if(pane){
   snapshot();list=list.filter(function(k){return k.at!==+button.dataset.cameraDelete;});persist(s,list,list[0].at);
  });
  pane.addEventListener('change',function(ev){
-  var input=ev.target;if(!input.matches('[data-camera-field]'))return;
+  var input=ev.target;
+  if(input.dataset.cameraDepth!==undefined){
+   var scene=sec(),element=scene.elements[curEl];
+   if(!C.config(scene)||!C.layerEligible(element)||selection.length!==1)return;
+   if(input.value===''||!Number.isFinite(+input.value)){renderPane();return;}
+   var depth=Math.max(-4000,Math.min(4000,+input.value));if((+element.sdCameraDepth||0)===depth)return;
+   snapshot();element.sdCameraDepth=depth;saveProject();renderPane();schedulePreview();return;
+  }
+  if(!input.matches('[data-camera-field]'))return;
   var s=sec();if(!C.config(s))return;var list=keys(s),k=list.find(function(k){return k.at===+input.dataset.cameraAt;}),field=input.dataset.cameraField;
   if(!k)return;var value=field==='ease'?input.value:+input.value;
   if(field!=='ease'&&(!Number.isFinite(value)||input.value==='')){renderPane();return;}

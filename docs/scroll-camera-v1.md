@@ -1,4 +1,4 @@
-# Cámara de escena: pista visual, encuadres y orientación
+# Cámara de escena: pista, orientación y planos de profundidad
 
 Rama: `feat/scroll-camera-v1`.
 Base: `feat/storytelling-engine-v2` en `ed98713506b669bed1f0fedaf5731594880ff577`.
@@ -25,7 +25,19 @@ la primera edición, cuando se convierten automáticamente al formato múltiple.
 X positivo desplaza la cámara a la derecha, Y hacia abajo y Z hacia delante.
 Se usa el mismo progreso del Director, también en exportación. Cada tramo
 puede tener su propio ritmo; los antiguos encuadres heredan el del Director.
-Movimiento reducido deja la cámara en posición neutral.
+Movimiento reducido deja la cámara y la profundidad fija en posición neutral.
+
+## Profundidad fija por elemento
+Con la cámara activada, seleccionar un texto, imagen u otro elemento suelto
+y ajustar Profundidad fija (px) en Momento en la historia. Negativo aleja,
+cero conserva el plano y positivo acerca. Se suma al Z animado del elemento.
+Desactivar la cámara conserva el valor guardado pero deja de aplicarlo.
+Los planos usan la perspectiva común de la cámara, evitando sumar otra
+perspectiva individual. Los elementos fuera de este modo mantienen el
+comportamiento anterior. Los planos se limitan a ±4000 px.
+No incluye hijos de contenedores, contenedores, elementos fijos, composiciones
+MotionLab ni objetos Three.js. La perspectiva compartida todavía requiere
+verificación visual en navegador.
 
 Implementación aislada en js/nagweb-scroll-camera.js; hooks mínimos en el
 Director y una etiqueta script en index.html. No se modifica story-editor,
@@ -33,7 +45,7 @@ Motion Lab ni los motores de personajes. Resolver estos hooks al integrar.
 
 Alcance: cámara CSS 2.5D sobre .inner, hasta 128 encuadres, sin reloj adicional.
 Pendiente: editor visual del recorrido espacial,
-profundidad estática por capa y composición de perspectiva con los efectos
+profundidad de grupos y compatibilidad visual con los efectos
 2.5D existentes. No constituye una cámara Three.js: los objetos WebGL y sus
 anclas requieren una integración posterior. Los nodos fuera de .inner no se
 mueven con esta cámara. La cámara puede acercarse hasta atravesar el plano.
@@ -49,3 +61,6 @@ con movimiento reducido.
 Falta prueba visual en navegador de layout, interacción y exportación completa.
 vercel.json desactiva despliegues Git para feat/scroll-camera-v1.
 No desplegar manualmente hasta que el usuario lo solicite.
+
+Pruebas adicionales: profundidad por elemento, suma con Z animado, selección
+de capas admitidas, perspectiva compartida, JSON y conservación al desactivar.

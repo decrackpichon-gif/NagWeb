@@ -125,6 +125,7 @@ paneElementNew=function(){
   timing+='<p class="hint gh">'+(raw.anchor!==false?'Este objeto 3D está anclado al lienzo: el Director mueve su ancla, así que el objeto Three.js la sigue.':'Este 3D no está anclado al lienzo. Activá su opción de anclaje si querés dirigirlo desde esta línea de tiempo.')+'</p>';
  }
  if(editor)timing=(editor.active(raw)?'':timing)+editor.panel(s,raw);
+ timing+=window.NAGWEB_SCROLL_CAMERA.elementPanel(s,raw);
  return html+grp('el-scroll-director','Momento en la historia',timing);
 };
 
@@ -270,7 +271,7 @@ function rt(DATA,createModel,createStreamModel,createCamera){
    var cs=getComputedStyle(n),baseOpacity=parseFloat(cs.opacity),baseFilter=cs.filter&&cs.filter!=='none'?cs.filter:'blur(0px)',basePointer=cs.pointerEvents||'auto';
    n.style.setProperty('--nw-sd-base-opacity',isFinite(baseOpacity)?baseOpacity:1);
    n.style.setProperty('--nw-sd-base-filter',baseFilter);n.setAttribute('data-nw-sd-el','1');
-   els.push({n:n,c:c,basePointer:basePointer,depth:null,depthValue:''});
+   els.push({n:n,c:c,cameraLayer:cameraPaint?camera.layer(cfg.camera,c.id):null,basePointer:basePointer,depth:null,depthValue:''});
   });
   var ordered=cfg.depthOrder?els.filter(function(q){return q.c.keyframes&&q.c.keyframes.length;}):[];
   var streamPaint=streamRenderer(stage,cfg);
@@ -281,7 +282,7 @@ function rt(DATA,createModel,createStreamModel,createCamera){
    if(cameraPaint)cameraPaint(camera.pose(cfg.camera,p,model,cfg.ease,motion.matches));
    if(ordered.length)ordered.slice().sort(function(a,b){return model.evaluate(a.c,p,cfg.ease,motion.matches).z-model.evaluate(b.c,p,cfg.ease,motion.matches).z;}).forEach(function(q,i){q.n.style.zIndex=i+1;});
    els.forEach(function(q){
-    var n=q.n,v=model.evaluate(q.c,p,cfg.ease,motion.matches),op=v.opacity/100;
+    var n=q.n,v=camera.layerPose(model.evaluate(q.c,p,cfg.ease,motion.matches),q.cameraLayer,motion.matches),op=v.opacity/100;
     n.style.setProperty('--nw-sd-x',v.x.toFixed(2)+'px');
     n.style.setProperty('--nw-sd-y',v.y.toFixed(2)+'px');
     n.style.setProperty('--nw-sd-scale',(v.scale/100).toFixed(4));
@@ -294,7 +295,7 @@ function rt(DATA,createModel,createStreamModel,createCamera){
     var depth=Math.abs(v.z)+Math.abs(v.rotateX)+Math.abs(v.rotateY)>.0001;
     if(!depth){if(q.depth){q.depth.cancel();q.depth=null;}q.depthValue='';}
     else{
-     var transform='perspective('+cfg.perspective+'px) translateZ('+v.z.toFixed(3)+'px) rotateX('+v.rotateX.toFixed(3)+'deg) rotateY('+v.rotateY.toFixed(3)+'deg)';
+     var transform=camera.layerTransform(v,cfg.perspective,!!q.cameraLayer);
      if(transform!==q.depthValue){
       var keys=[{transform:transform},{transform:transform}];
       if(q.depth)q.depth.effect.setKeyframes(keys);

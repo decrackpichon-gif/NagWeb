@@ -127,3 +127,36 @@ assert.equal(editable.sdCameraFrames[1].at,72);
 listeners.keydown({target:marker(72),key:'ArrowLeft',shiftKey:false,preventDefault(){},stopPropagation(){}});
 assert.equal(editable.sdCameraFrames[1].at,71);
 console.log('Camera track keyboard: arrow and Shift adjustment OK');
+const layersScene={...scene,elements:[
+ {id:'near',type:'image',sdCameraDepth:250},
+ {id:'far',type:'heading',sdCameraDepth:-600},
+ {id:'neutral',type:'paragraph'},
+ {id:'nested',type:'image',parent:'group',sdCameraDepth:200},
+ {id:'group',type:'container',sdCameraDepth:200},
+ {id:'fixed',type:'image',fixed:true,sdCameraDepth:200},
+ {id:'webgl',type:'shape3d',sdCameraDepth:200},
+ {id:'motion',type:'image',nwMotionInstance:{},sdCameraDepth:200}
+]};
+const layers=C.config(layersScene);
+assert.deepEqual(Array.from(layers.layers,l=>l.id),['near','far','neutral']);
+assert.equal(C.layer(layers,'far').z,-600);
+assert.equal(C.layer(layers,'missing'),null);
+const animated={x:10,y:20,z:100,rotateX:0,rotateY:0};
+assert.equal(C.layerPose(animated,C.layer(layers,'near'),false).z,350);
+assert.equal(animated.z,100,'Composition must not mutate evaluated animation');
+assert.equal(C.layerPose(animated,null,false).z,100,'Camera off leaves original depth untouched');
+assert.equal(C.layerPose({z:0},C.layer(layers,'near'),true).z,0,'Reduced motion neutralizes fixed camera depth');
+assert.equal(C.layerTransform(C.layerPose(animated,C.layer(layers,'far'),false),1000,true),'translateZ(-500.000px) rotateX(0.000deg) rotateY(0.000deg)');
+assert.equal(C.layerTransform(animated,1000,false),'perspective(1000px) translateZ(100.000px) rotateX(0.000deg) rotateY(0.000deg)','Legacy perspective is unchanged');
+const savedLayers=JSON.parse(JSON.stringify(layers));
+assert.equal(exported.layer(savedLayers,'near').z,250);
+assert.equal(exported.layerPose(animated,exported.layer(savedLayers,'near'),false).z,350);
+ui.curEl=0;ui.selection=['near'];editable={...layersScene,id:'depth-edit'};
+listeners.change({target:{dataset:{cameraDepth:''},value:'375'}});
+assert.equal(editable.elements[0].sdCameraDepth,375);
+assert.equal(editable.elements[1].sdCameraDepth,-600);
+listeners.change({target:{dataset:{cameraDepth:''},value:'Infinity'}});
+assert.equal(editable.elements[0].sdCameraDepth,375);
+editable.sdCameraEnabled=false;
+assert.equal(C.config(editable),null);assert.equal(editable.elements[0].sdCameraDepth,375);
+console.log('Camera layers: eligibility, independent edit, additive Z, shared perspective, legacy behavior and serialization OK');
