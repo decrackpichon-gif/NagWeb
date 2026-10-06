@@ -83,10 +83,18 @@ function createCamera(){
   if(containers.length)Array.from(stage.children).forEach(function(n){
    if(n!==world&&n.classList.contains('container-box')&&containers.indexOf(n.getAttribute('data-id'))>=0)world.appendChild(n);
   });
+  function find(root,id){
+   if(root.getAttribute&&root.getAttribute('data-id')===id)return root;
+   var children=Array.from(root.children||[]);
+   for(var i=0;i<children.length;i++){var hit=find(children[i],id);if(hit)return hit;}
+   return null;
+  }
+  function inside(root,node){for(var p=node;p;p=p.parentNode)if(p===root)return true;return false;}
   stage.style.perspective=perspective+'px';stage.style.perspectiveOrigin='50% 50%';
   world.style.transformStyle='preserve-3d';world.setAttribute('data-nw-camera-world','');
+  containers.forEach(function(id){var n=find(world,id);if(n&&n.style)n.style.transformStyle='preserve-3d';});
   var animation=null,last='';
-  return function(v,scale){
+  function paint(v,scale){
    stage.style.perspective=(perspective*(Number.isFinite(+scale)&&+scale>0?+scale:1))+'px';
    // Camera translation is the inverse world translation. Positive Z travels forward.
    var value=transform(v);
@@ -95,7 +103,9 @@ function createCamera(){
    var frames=[{transform:value},{transform:value}];
    if(animation)animation.effect.setKeyframes(frames);
    else{animation=world.animate(frames,{duration:1,fill:'both',composite:'add'});animation.pause();animation.currentTime=0;}
-  };
+  }
+  paint.contains=function(n){return inside(world,n);};
+  return paint;
  }
  return {config:config,compile:compile,pose:pose,viewportScale:viewportScale,scalePose:scalePose,attach:attach,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial,copyFrame:copyFrame,holdFrame:holdFrame,preset:preset};
 }
