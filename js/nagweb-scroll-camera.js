@@ -34,6 +34,30 @@ function createCamera(){
   var rx=angle(v.rotateX),ry=angle(v.rotateY),rz=angle(v.rotate);
   return (rz?'rotateZ('+(-rz)+'deg) ':'')+(ry?'rotateY('+(-ry)+'deg) ':'')+(rx?'rotateX('+(-rx)+'deg) ':'')+'translate3d('+(-number(v.x))+'px,'+(-number(v.y))+'px,'+number(v.z)+'px)';
  }
+ function copyFrame(input,from,to){
+  var list=normalize(input),key=list.find(function(k){return k.at===from;});
+  if(!key||!Number.isFinite(+to))return {error:'Elegí un encuadre y un momento válidos.'};
+  to=Math.round(Math.max(0,Math.min(100,+to))*10)/10;
+  if(list.length>=128)return {error:'Máximo: 128 encuadres de cámara.'};
+  if(list.some(function(k){return k.at===to;}))return {error:'Ya existe un encuadre en ese momento. Mové el indicador a un lugar libre.'};
+  list.push(Object.assign({},key,{at:to}));return {frames:normalize(list),at:to};
+ }
+ function holdFrame(input,from,duration){
+  var list=normalize(input),next=list.find(function(k){return k.at>from;});
+  if(!Number.isFinite(+duration)||+duration<=0)return {error:'La permanencia debe ser mayor que cero.'};
+  var to=Math.round((from+(+duration))*10)/10;
+  if(to>100||next&&to>=next.at)return {error:'La permanencia debe terminar antes del siguiente encuadre y dentro del recorrido.'};
+  return copyFrame(list,from,to);
+ }
+ function preset(name,perspective){
+  var d=Math.min(240,Math.max(200,Number.isFinite(+perspective)?+perspective:1000)/4),list;
+  if(name==='approach')list=[{at:0,z:-d},{at:70,z:d*.5},{at:100,z:d*.5}];
+  else if(name==='lateral')list=[{at:0,x:-220},{at:50,x:0},{at:100,x:220}];
+  else if(name==='rise')list=[{at:0,y:180,z:-d*.5},{at:60,y:-120,z:0},{at:100,y:-120,z:0}];
+  else if(name==='tour')list=[{at:0,x:-180,z:-d*.5,rotateY:-8},{at:40,x:0,z:d*.3},{at:65,x:0,z:d*.3},{at:100,x:180,z:-d*.5,rotateY:8}];
+  else return null;
+  return normalize(list.map(function(k){return Object.assign({ease:'smooth'},k);}));
+ }
  function mapSpec(list,plane){
   var axis=plane==='front'?'y':'z',range=500;
   list.forEach(function(k){range=Math.max(range,Math.abs(number(k.x))*1.2,Math.abs(number(k[axis]))*1.2);});
@@ -65,11 +89,11 @@ function createCamera(){
    else{animation=world.animate(frames,{duration:1,fill:'both',composite:'add'});animation.pause();animation.currentTime=0;}
   };
  }
- return {config:config,pose:pose,attach:attach,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial};
+ return {config:config,pose:pose,attach:attach,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial,copyFrame:copyFrame,holdFrame:holdFrame,preset:preset};
 }
 window.NAGWEB_CREATE_SCROLL_CAMERA=createCamera;
 window.NAGWEB_SCROLL_CAMERA=createCamera();
-var mapOpen=Object.create(null),mapPlanes=Object.create(null),suppressedClick=null,selected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
+var presetChoices=Object.create(null),holdDurations=Object.create(null),mapOpen=Object.create(null),mapPlanes=Object.create(null),suppressedClick=null,selected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
 function keys(s){return C.frames(C.config(s),s.sdEase);}
 function progress(s){return window.NAGWEB_SCROLL_DIRECTOR?window.NAGWEB_SCROLL_DIRECTOR.progress(s.id):0;}
 function choose(s,list){var at=selected[s.id],k=list.find(function(k){return k.at===at;});return k||list[0];}
@@ -80,15 +104,28 @@ C.elementPanel=function(s,e){
  var z=C.layer(C.config(s),e.id);z=z?z.z:0;
  return (e.type==='container'?'<p class="hint gh">Este plano mueve el contenedor completo con sus elementos internos.</p>':'')+'<h4 class="gsub">Plano en la escena de cámara</h4>'+cRow('Profundidad fija (px)','<input type="number" class="cnum" aria-label="Profundidad fija del elemento" data-camera-depth value="'+z+'" min="-4000" max="4000" step="25">')+'<p class="hint gh">Negativo: más lejos · 0: plano original · Positivo: más cerca. Se suma a la animación de profundidad. Al desactivar la cámara se conserva este ajuste.</p>';
 };
+function mapCurrent(s,pct){
+ var reduced=typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+ return C.pose(C.config(s),pct/100,window.NAGWEB_STORY_MODEL,s.sdEase,reduced);
+}
+function mapLabel(v,pct){return 'Ahora: '+Math.round(pct*10)/10+'% · X '+Math.round(v.x)+' · Y '+Math.round(v.y)+' · Z '+Math.round(v.z);}
+function mapDraw(map,list,spec){
+ if(!map.querySelector)return;
+ var path=map.querySelector('[data-camera-map-path]');
+ if(path)path.setAttribute('points',list.map(function(k){var p=C.mapPoint(k,spec);return p.x+','+p.y;}).join(' '));
+ list.forEach(function(k){var dot=map.querySelector('[data-camera-map-dot="'+k.at+'"]'),p=C.mapPoint(k,spec);if(dot){dot.setAttribute('cx',p.x);dot.setAttribute('cy',p.y);}});
+}
 function spatialMap(s,list,k){
- var plane=mapPlanes[s.id]||'top',spec=C.mapSpec(list,plane),point=C.mapPoint(k,spec);
+ var plane=mapPlanes[s.id]||'top',spec=C.mapSpec(list,plane),point=C.mapPoint(k,spec),current=mapCurrent(s,progress(s)),now=C.mapPoint(current,spec);
  var path=list.map(function(f){var p=C.mapPoint(f,spec);return p.x+','+p.y;}).join(' ');
  var html='<details data-camera-map-box'+(mapOpen[s.id]?' open':'')+'><summary style="cursor:pointer;margin:8px 0">Mapa del recorrido</summary><label>Vista <select class="csel" data-camera-map-plane><option value="top"'+(plane==='top'?' selected':'')+'>Desde arriba · X/Z</option><option value="front"'+(plane==='front'?' selected':'')+'>De frente · X/Y</option></select></label>';
  html+='<div data-camera-map data-plane="'+plane+'" data-range="'+spec.range+'" style="position:relative;width:100%;aspect-ratio:1.5;border:1px solid var(--line);margin-top:8px;touch-action:none">';
- html+='<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"><path d="M50 0V100M0 50H100" stroke="currentColor" opacity=".2" stroke-width=".5"/><polyline points="'+path+'" fill="none" stroke="currentColor" opacity=".65" stroke-width=".7"/>';
- list.forEach(function(f){var p=C.mapPoint(f,spec);html+='<circle cx="'+p.x+'" cy="'+p.y+'" r="1.5" fill="currentColor"/>';});
+ html+='<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"><path d="M50 0V100M0 50H100" stroke="currentColor" opacity=".2" stroke-width=".5"/><polyline data-camera-map-path points="'+path+'" fill="none" stroke="currentColor" opacity=".65" stroke-width=".7"/>';
+ list.forEach(function(f){var p=C.mapPoint(f,spec);html+='<circle data-camera-map-dot="'+f.at+'" cx="'+p.x+'" cy="'+p.y+'" r="1.5" fill="currentColor"/>';});
+ html+='<circle data-camera-position cx="'+now.x+'" cy="'+now.y+'" r="3" fill="none" stroke="var(--accent)" stroke-width="1"/>';
  html+='</svg><button type="button" class="btn tiny" data-camera-map-point="'+k.at+'" aria-label="Mover encuadre '+k.at+'% en el mapa" style="position:absolute;left:'+point.x+'%;top:'+point.y+'%;transform:translate(-50%,-50%);touch-action:none;padding:3px;outline:2px solid var(--accent)">◆</button></div>';
- html+='<p class="hint gh">Arrastrá el punto seleccionado. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Flechas: 25 px; Shift: 100 px. Escala: ±'+Math.round(spec.range)+' px. Elegí otro encuadre en la pista.</p></details>';
+ html+='<p class="hint gh" data-camera-position-label>'+mapLabel(current,progress(s))+'</p>';
+ html+='<p class="hint gh">◆ encuadre seleccionado · ○ posición actual. Arrastrá el punto seleccionado. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Flechas: 25 px; Shift: 100 px. Escala: ±'+Math.round(spec.range)+' px. Elegí otro encuadre en la pista.</p></details>';
  return html;
 }
 C.panel=function(s){
@@ -102,6 +139,9 @@ C.panel=function(s){
  html+='</div><input type="range" aria-label="Recorrer cámara" data-camera-seek min="0" max="100" step="0.1" value="'+progress(s)+'" style="width:100%;margin:4px 0"><div style="display:flex;justify-content:space-between;font-size:10px"><span>0%</span><span>50%</span><span>100%</span></div></div><button type="button" class="btn tiny" data-camera-add>Agregar encuadre aquí</button>';
  html+='<p class="hint gh">Clic en la pista: recorrer · Arrastrar punto: mover encuadre. Flechas: 1%; Shift: 10%. Escape cancela el arrastre.</p>';
  function field(label,key,value,min,max,step){return cRow(label,'<input class="cnum" type="number" aria-label="'+label+'" data-camera-field="'+key+'" data-camera-at="'+k.at+'" value="'+value+'" min="'+min+'" max="'+max+'" step="'+step+'">');}
+ html+='<details><summary style="cursor:pointer;margin:8px 0">Pausas y recorridos rápidos</summary><button type="button" class="btn tiny" data-camera-copy>Copiar encuadre al momento actual</button><p class="hint gh">Copiá este encuadre en el porcentaje elegido con la barra de progreso.</p>';
+ html+=cRow('Permanencia (%)','<input class="cnum" type="number" data-camera-hold-duration aria-label="Duración de la permanencia" min="0.1" max="100" step="1" value="'+(holdDurations[s.id]||10)+'">')+'<button type="button" class="btn tiny" data-camera-hold>Mantener este encuadre</button>';
+ html+=cRow('Recorrido','<select class="csel" data-camera-preset-choice aria-label="Recorrido de cámara">'+[['approach','Acercamiento con pausa'],['lateral','Viaje lateral'],['rise','Ascenso y descanso'],['tour','Visita con profundidad']].map(function(p){return '<option value="'+p[0]+'"'+((presetChoices[s.id]||'approach')===p[0]?' selected':'')+'>'+p[1]+'</option>';}).join('')+'</select>')+'<button type="button" class="btn tiny" data-camera-preset>Aplicar recorrido</button><p class="hint gh">Reemplaza los encuadres de cámara. Podés recuperarlos con Deshacer. Los elementos conservan su diseño y sus animaciones.</p></details>';
  html+=spatialMap(s,list,k);
  html+=field('Momento (%)','at',k.at,0,100,.1);
  ['x','y','z'].forEach(function(axis){html+=field('Cámara '+axis.toUpperCase(),axis,k[axis],-4000,4000,25);});
@@ -115,6 +155,11 @@ C.paint=function(pct){
  var pane=document.getElementById('pane');if(!pane)return;
  var head=pane.querySelector('[data-camera-head]'),seek=pane.querySelector('[data-camera-seek]');
  if(head)head.style.left=pct+'%';if(seek)seek.value=pct;
+ var map=pane.querySelector('[data-camera-map]'),s=sec();
+ if(map&&C.config(s)){
+  var spec={range:+map.dataset.range,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1},v=mapCurrent(s,pct),p=C.mapPoint(v,spec),dot=map.querySelector('[data-camera-position]'),label=pane.querySelector('[data-camera-position-label]');
+  if(dot){dot.setAttribute('cx',p.x);dot.setAttribute('cy',p.y);}if(label)label.textContent=mapLabel(v,pct);
+ }
 };
 function retime(s,from,to){
  var list=keys(s),k=list.find(function(k){return k.at===from;});
@@ -135,13 +180,13 @@ function spatialDrag(ev,button){
  if(!original||!r.width||!r.height)return;
  var spec={range:+map.dataset.range,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1},next=original,done=false;
  ev.preventDefault();button.focus();button.setPointerCapture(ev.pointerId);
- function move(e){if(e.pointerId!==ev.pointerId)return;next=C.moveSpatial(original,spec,(e.clientX-ev.clientX)/r.width,(e.clientY-ev.clientY)/r.height);var p=C.mapPoint(next,spec);button.style.left=p.x+'%';button.style.top=p.y+'%';}
+ function move(e){if(e.pointerId!==ev.pointerId)return;next=C.moveSpatial(original,spec,(e.clientX-ev.clientX)/r.width,(e.clientY-ev.clientY)/r.height);var p=C.mapPoint(next,spec);button.style.left=p.x+'%';button.style.top=p.y+'%';mapDraw(map,list.map(function(k){return k.at===original.at?next:k;}),spec);}
  function finish(e,cancel){
   if(done||e.pointerId!=null&&e.pointerId!==ev.pointerId)return;done=true;
   if(!cancel&&e.clientX!=null)move(e);
   button.removeEventListener('pointermove',move);button.removeEventListener('pointerup',up);button.removeEventListener('pointercancel',abort);button.removeEventListener('lostpointercapture',abort);button.removeEventListener('keydown',key);
   if(button.hasPointerCapture(ev.pointerId))button.releasePointerCapture(ev.pointerId);
-  if(cancel||!spatialCommit(s,original,next)){var p=C.mapPoint(original,spec);button.style.left=p.x+'%';button.style.top=p.y+'%';}
+  if(cancel||!spatialCommit(s,original,next)){var p=C.mapPoint(original,spec);button.style.left=p.x+'%';button.style.top=p.y+'%';mapDraw(map,list,spec);}
  }
  function up(e){finish(e,false);}function abort(e){finish(e,true);}function key(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();finish(e,true);}}
  button.addEventListener('pointermove',move);button.addEventListener('pointerup',up);button.addEventListener('pointercancel',abort);button.addEventListener('lostpointercapture',abort);button.addEventListener('keydown',key);
@@ -190,9 +235,17 @@ if(pane){
   if(retime(s,from,to)){var next=pane.querySelector('[data-camera-jump="'+to+'"]');if(next)next.focus();}
  });
  pane.addEventListener('click',function(ev){
-  var button=ev.target.closest('[data-camera-jump],[data-camera-add],[data-camera-delete]');if(!button)return;
+  var button=ev.target.closest('[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-copy],[data-camera-hold],[data-camera-preset]');if(!button)return;
   if(button===suppressedClick){suppressedClick=null;return;}
   var s=sec();if(!C.config(s))return;var list=keys(s);
+  if(button.dataset.cameraCopy!==undefined||button.dataset.cameraHold!==undefined){
+   var k=choose(s,list),result=button.dataset.cameraCopy!==undefined?C.copyFrame(list,k.at,progress(s)):C.holdFrame(list,k.at,holdDurations[s.id]||10);
+   if(result.error){toast(result.error);return;}snapshot();persist(s,result.frames,result.at);return;
+  }
+  if(button.dataset.cameraPreset!==undefined){
+   var frames=C.preset(presetChoices[s.id]||'approach',s.sdPerspective);if(!frames)return;
+   snapshot();persist(s,frames,0);toast('Recorrido aplicado. Cada encuadre sigue siendo editable.');return;
+  }
   if(button.hasAttribute('data-camera-jump')){jump(s,+button.dataset.cameraJump);return;}
   if(button.hasAttribute('data-camera-add')){
    var at=Math.round(progress(s)*10)/10;
@@ -206,6 +259,8 @@ if(pane){
  });
  pane.addEventListener('change',function(ev){
   var input=ev.target;
+  if(input.dataset.cameraPresetChoice!==undefined){presetChoices[sec().id]=input.value;return;}
+  if(input.dataset.cameraHoldDuration!==undefined){if(Number.isFinite(+input.value)&&+input.value>0)holdDurations[sec().id]=Math.min(100,+input.value);else{input.value=holdDurations[sec().id]||10;toast('Ingresá una duración mayor que cero.');}return;}
   if(input.dataset.cameraMapPlane!==undefined){mapPlanes[sec().id]=input.value==='front'?'front':'top';renderPane();return;}
   if(input.dataset.cameraDepth!==undefined){
    var scene=sec(),element=scene.elements[curEl];

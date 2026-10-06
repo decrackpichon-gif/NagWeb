@@ -27,6 +27,18 @@ Se usa el mismo progreso del Director, también en exportación. Cada tramo
 puede tener su propio ritmo; los antiguos encuadres heredan el del Director.
 Movimiento reducido deja la cámara y la profundidad fija en posición neutral.
 
+## Pausas, copias y recorridos rápidos
+Abrir Pausas y recorridos rápidos. Mantener este encuadre crea una copia con
+la misma posición y orientación al final de una permanencia (en porcentaje
+del recorrido). El tramo queda quieto; los encuadres posteriores no cambian de
+momento. Se rechaza una permanencia que alcance otro encuadre o supere 100%.
+Copiar encuadre al momento actual duplica el seleccionado en el porcentaje
+elegido con la barra. No sobrescribe un encuadre existente.
+Hay cuatro recorridos: Acercamiento con pausa, Viaje lateral, Ascenso y descanso,
+y Visita con profundidad. Se elige uno y se pulsa Aplicar recorrido: reemplaza
+solo los encuadres de cámara, conserva los elementos y sus animaciones, y crea
+una entrada de Deshacer. Los puntos del recorrido siguen editables.
+
 ## Mapa del recorrido
 Abrir el panel plegable Mapa del recorrido. La vista Desde arriba muestra X/Z;
 De frente muestra X/Y. Elegir el encuadre desde la pista y arrastrar el punto
@@ -37,6 +49,10 @@ El cambio se confirma al soltar, con una sola entrada de deshacer. Escape,
 cancelación del puntero o pérdida de captura cancelan el gesto. Las flechas
 mueven 25 px y Shift + flecha 100 px. Las coordenadas siguen editables por número.
 El mapa es una proyección del recorrido, no una previsualización de los objetos.
+El círculo indica la posición actual durante la reproducción o el scroll;
+el rombo es el encuadre seleccionado para editar. Debajo se muestran porcentaje
+y coordenadas actuales. La línea se actualiza durante el arrastre y vuelve al
+estado original si se cancela. Movimiento reducido también neutraliza el cursor.
 
 ## Profundidad fija por elemento
 Con la cámara activada, seleccionar un texto, imagen u otro elemento suelto
@@ -86,3 +102,12 @@ conservación de hijos/estilos, exclusiones, fábrica exportada y edición aisla
 
 Pruebas del mapa: proyección X/Z y X/Y, límites, ejes independientes,
 transacción de arrastre, Escape, teclado y fábrica exportada.
+
+## Verificación de la tanda de herramientas
+`node .github/nagweb-camera-runtime-test.mjs` carga el Director real, obtiene
+su script exportado y lo ejecuta en un entorno aislado con un DOM simulado.
+Cubre paridad preview/export, cálculo del progreso a partir del scroll,
+mensajes del editor, permanencias, planos de profundidad, contenedores,
+movimiento reducido y comportamiento con cámara desactivada. No renderiza
+CSS ni verifica layout o interacción real del navegador. Las pruebas del
+modelo cubren también pausas, copias, recorridos y cursor del mapa.
