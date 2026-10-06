@@ -160,7 +160,7 @@ assert.equal(editable.elements[0].sdCameraDepth,375);
 editable.sdCameraEnabled=false;
 assert.equal(C.config(editable),null);assert.equal(editable.elements[0].sdCameraDepth,375);
 console.log('Camera layers: eligibility, independent edit, additive Z, shared perspective, legacy behavior and serialization OK');
-// Container reparenting is limited to eligible free-layout roots; children retain
+// Container reparenting is limited to eligible scene roots; children retain
 // their authored coordinates and one shared camera transform on the world.
 function domNode(id,classes=[]){return {id,children:[],parentNode:null,style:{},attributes:{},
  classList:{contains(name){return classes.includes(name);}},
@@ -178,7 +178,7 @@ const cfg=C.config(free);
 assert.deepEqual(Array.from(cfg.containers),['group','universal']);
 assert.equal(C.layer(cfg,'universal').z,-300);
 assert.equal(C.layer(cfg,'nested-container'),null);
-assert.equal(C.layerEligible(free.elements.find(e=>e.id==='universal'),{layout:'stack'}),false);
+assert.equal(C.layerEligible(free.elements.find(e=>e.id==='universal'),{layout:'stack'}),true);
 const stage2=domNode('stage'),world2=domNode('world',['inner']);stage2.appendChild(world2);
 const group=domNode('universal',['container-box']),child=domNode('child',['el']);
 child.style.left='35%';child.style.top='20%';group.style.left='10%';group.style.width='80%';
@@ -272,8 +272,18 @@ assert.equal(position.values.cx,50);assert.equal(position.values.cy,50);
 console.log('Camera batch: holds, copies, presets, action undo snapshots, untouched elements and live map cursor OK');
 
 const stackConfig=C.config({...free,layout:'stack',elements:[{id:'flow',type:'container',stackDir:'column',sdCameraDepth:200},{id:'absolute',type:'container',sdCameraDepth:500}]});
-assert.equal(stackConfig.containers.length,0,'Stacked roots must not be reparented');
-assert.equal(C.layer(stackConfig,'flow').z,200);assert.equal(C.layer(stackConfig,'absolute'),null);
+assert.deepEqual(Array.from(stackConfig.containers),['flow','absolute']);
+assert.equal(C.layer(stackConfig,'flow').z,200);assert.equal(C.layer(stackConfig,'absolute').z,500);
+const stackStage=domNode('stack-stage'),stackWorld=domNode('stack-world',['inner']);stackStage.appendChild(stackWorld);
+const flowRoot=domNode('flow',['container-box']),absoluteRoot=domNode('absolute',['container-box']),absoluteChild=domNode('absolute-child',['el']);
+stackWorld.appendChild(flowRoot);absoluteRoot.appendChild(absoluteChild);stackStage.appendChild(absoluteRoot);
+const absoluteStyle=JSON.stringify(absoluteRoot.style),absoluteChildren=absoluteRoot.children.slice();
+const stackPaint=C.attach(stackStage,stackConfig,1000);
+assert.equal(flowRoot.parentNode,stackWorld,'In-flow stacked roots stay in the camera world');
+assert.equal(absoluteRoot.parentNode,stackWorld,'Absolute stacked roots join the camera world');
+assert.equal(absoluteChild.parentNode,absoluteRoot);assert.deepEqual(absoluteRoot.children,absoluteChildren);
+assert.equal(JSON.stringify(absoluteRoot.style),absoluteStyle);
+stackPaint({x:0,y:0,z:0,rotateX:0,rotateY:0,rotate:0});
 assert.equal(C.config({...scene,layout:'horizontal'}),null);
 let normalizations=0;const countingModel={...M,normalize(input){normalizations++;return M.normalize(input);}};
 const prepared=C.compile(rotating,countingModel,'linear');
@@ -282,7 +292,7 @@ for(const p of [0,.1,.5,.9,1]){
  assert.equal(JSON.stringify(C.pose(rotating,p,countingModel,'linear',false,prepared)),JSON.stringify(C.pose(rotating,p,M,'linear')));
 }
 assert.equal(normalizations,1,'Prepared camera should not normalize keyframes on each paint');
-console.log('Stacked scope and prepared camera track parity OK');
+console.log('Stacked roots: in-flow and absolute containers share camera scope; prepared track parity OK');
 const adaptive=C.config({...scene,sdCameraResponsive:true,sdCameraReferenceWidth:1000});
 assert.equal(C.viewportScale(adaptive,375),.375);assert.equal(C.viewportScale(adaptive,2000),1);
 assert.equal(C.viewportScale(C.config(scene),375),1,'Existing scenes preserve fixed pixel movement');
