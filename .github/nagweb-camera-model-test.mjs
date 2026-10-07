@@ -481,6 +481,19 @@ const smoothLook={...lookConfig,lookPathMode:'smooth',lookFrames:C.normalizeLook
  {at:0,x:-200,y:0,z:900,ease:'linear'},{at:50,x:0,y:200,z:1200,ease:'linear'},{at:100,x:300,y:-100,z:800}
 ])};
 assert.ok(C.lookSamples(smoothLook,M,'linear').length>smoothLook.lookFrames.length);
+const smoothLookAuto=C.lookTarget(smoothLook,.75,M,'linear'),lookFreeOut=C.setLookHandleMode(smoothLook.lookFrames,50,'out',true),lookFreeKey=lookFreeOut.find(k=>k.at===50);
+assert.equal(C.handleFree(lookFreeKey,'out'),true);assert.equal(C.handleFree(lookFreeKey,'in'),false);
+const smoothLookFree={...smoothLook,lookFrames:lookFreeOut},smoothLookCaptured=C.lookTarget(smoothLookFree,.75,M,'linear');
+assert.ok(Math.hypot(smoothLookCaptured.x-smoothLookAuto.x,smoothLookCaptured.y-smoothLookAuto.y,smoothLookCaptured.z-smoothLookAuto.z)<1e-9,'Look free mode captures current automatic tangent without moving target path');
+const movedLookFree=C.setLookFreeHandle(lookFreeOut,50,'out',{x:180,y:320,z:1450}),movedLookCfg={...smoothLook,lookFrames:movedLookFree},movedLookTarget=C.lookTarget(movedLookCfg,.75,M,'linear');
+assert.ok(Math.hypot(movedLookTarget.x-smoothLookAuto.x,movedLookTarget.y-smoothLookAuto.y,movedLookTarget.z-smoothLookAuto.z)>1,'Moving free look handle changes independent target path');
+assert.equal(C.lookTarget(movedLookCfg,.5,M,'linear').x,0);assert.equal(C.lookTarget(movedLookCfg,1,M,'linear').x,300);
+const lookRoundTrip=C.normalizeLook(JSON.parse(JSON.stringify(movedLookFree))),lookRoundKey=lookRoundTrip.find(k=>k.at===50);
+assert.equal(lookRoundKey.curveOutFree,true);assert.equal(lookRoundKey.curveOutDX,180);assert.equal(lookRoundKey.curveOutDY,120);assert.equal(lookRoundKey.curveOutDZ,250);
+const autoLookAgain=C.setLookHandleMode(movedLookFree,50,'out',false),autoLookTarget=C.lookTarget({...smoothLook,lookFrames:autoLookAgain},.75,M,'linear');
+assert.equal(C.handleFree(autoLookAgain.find(k=>k.at===50),'out'),false);assert.ok(Math.hypot(autoLookTarget.x-smoothLookAuto.x,autoLookTarget.y-smoothLookAuto.y,autoLookTarget.z-smoothLookAuto.z)<1e-9);
+const linkedLookRound=C.normalizeLook([{at:0,targetId:'focus',x:0,y:0,z:1000,curveOutFree:true,curveOutDX:20,curveOutDY:-10,curveOutDZ:30},{at:100,targetId:'focus',x:0,y:0,z:1000}]);
+assert.equal(linkedLookRound[0].targetId,'focus');assert.equal(linkedLookRound[0].curveOutFree,true);
 editable={...lookScene,id:'look-insert-ui',sdEase:'linear'};
 const lookInsertCfg=ui.window.NAGWEB_SCROLL_CAMERA.config(editable),lookInsertList=ui.window.NAGWEB_SCROLL_CAMERA.lookFrames(lookInsertCfg),lookInsertSize={width:1000,height:1000},lookInsertResolved=lookInsertList,lookInsertSpec=ui.window.NAGWEB_SCROLL_CAMERA.mapSpec(ui.window.NAGWEB_SCROLL_CAMERA.frames(lookInsertCfg,'linear').concat(lookInsertResolved),'top'),lookInsertTarget=ui.window.NAGWEB_SCROLL_CAMERA.lookTarget(lookInsertCfg,.25,M,'linear',lookInsertSize),lookInsertPoint=ui.window.NAGWEB_SCROLL_CAMERA.mapPoint(lookInsertTarget,lookInsertSpec);
 const lookInsertMap={dataset:{plane:'top',range:String(lookInsertSpec.range)},getBoundingClientRect(){return{left:0,top:0,width:300,height:200};}},lookPathTarget={closest(selector){if(selector==='[data-camera-map]')return lookInsertMap;if(selector==='[data-camera-look-map-path-hit],[data-camera-look-map-path]')return this;return null;}};
