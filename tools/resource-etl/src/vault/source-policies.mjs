@@ -15,6 +15,14 @@ export const SOURCE_POLICIES = {
     noticeRequired: true,
     notes: "Registry component source may be mirrored. Preserve the MIT copyright and permission notice."
   },
+  animxyz: {
+    mirrorMode: "full",
+    licenseId: "MIT",
+    licenseName: "MIT License",
+    licenseUrl: "https://github.com/ingram-projects/animxyz/blob/master/LICENSE",
+    noticeRequired: true,
+    notes: "Core CSS/SCSS source may be mirrored. NagWeb also derives native motion presets from documented utility semantics."
+  },
   "motion-primitives": {
     mirrorMode: "full",
     licenseId: "MIT",

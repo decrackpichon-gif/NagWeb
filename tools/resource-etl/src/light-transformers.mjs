@@ -552,3 +552,217 @@ export function transformMotionPrimitive({ repository, commit, item }) {
     }
   };
 }
+
+
+function animXyzEditableProps() {
+  return [
+    {
+      id: "duration",
+      label: "Duración",
+      group: "Movimiento",
+      valueType: "number",
+      control: "slider",
+      defaultValue: 0.5,
+      binding: { type: "runtime", path: "motion.duration" },
+      constraints: { min: 0.05, max: 5, step: 0.05, unit: "s" },
+      animatable: false
+    },
+    {
+      id: "delay",
+      label: "Demora",
+      group: "Movimiento",
+      valueType: "number",
+      control: "slider",
+      defaultValue: 0,
+      binding: { type: "runtime", path: "motion.delay" },
+      constraints: { min: 0, max: 5, step: 0.05, unit: "s" },
+      animatable: false
+    },
+    {
+      id: "ease",
+      label: "Curva",
+      group: "Movimiento",
+      valueType: "enum",
+      control: "select",
+      defaultValue: "ease",
+      binding: { type: "runtime", path: "motion.ease" },
+      constraints: {
+        options: [
+          { label: "Ease", value: "ease" },
+          { label: "Linear", value: "linear" },
+          { label: "Ease in", value: "ease-in" },
+          { label: "Ease out", value: "ease-out" },
+          { label: "Ease in-out", value: "ease-in-out" }
+        ]
+      }
+    }
+  ];
+}
+
+export function transformAnimXyzCore(raw) {
+  const fetchedAt = now();
+  const policy = getSourcePolicy("animxyz");
+
+  return {
+    schemaVersion: "1.0",
+    id: "animxyz:core",
+    slug: "animxyz-core",
+    name: "animxyz-core",
+    title: "AnimXYZ Core",
+    description: "Composable CSS/SCSS animation engine mirrored for NagWeb.",
+    family: "animation",
+    kind: "motion-preset",
+    source: {
+      provider: "animxyz",
+      externalId: "core",
+      sourceUrl: "https://animxyz.com",
+      repositoryUrl: raw.repository,
+      fetchedAt,
+      commit: raw.commit
+    },
+    license: {
+      id: policy.licenseId,
+      name: policy.licenseName,
+      url: policy.licenseUrl,
+      commercialUse: true,
+      modificationAllowed: true,
+      redistributionAllowed: true,
+      attributionRequired: true,
+      attributionText: "AnimXYZ · MIT License",
+      verified: true
+    },
+    taxonomy: {
+      categories: ["animation", "css", "motion"],
+      tags: ["animxyz", "css", "scss", "animation", "motion"]
+    },
+    previews: [],
+    artifacts: raw.files.map((file, index) => ({
+      id: `source-${index + 1}`,
+      role: "source",
+      format: file.path.split(".").pop()?.toLowerCase(),
+      mimeType: "text/plain",
+      content: file.content,
+      sourceUrl: file.url,
+      sourcePath: file.path,
+      targetPath: file.path.replace("packages/core/", "")
+    })),
+    runtime: {
+      type: "css",
+      renderer: "nagweb-css-motion"
+    },
+    editableProps: [],
+    compatibility: {
+      nagweb: { supported: true, renderer: "css-motion", tested: false }
+    },
+    capabilities: ["animatable"],
+    technical: {
+      type: "motion-engine-source",
+      nativePresetCount: raw.presets.length
+    },
+    search: {
+      text: "AnimXYZ CSS SCSS composable animation motion",
+      keywords: ["animxyz", "css", "scss", "animation", "motion"]
+    },
+    ingestion: {
+      extractor: "animxyz",
+      extractorVersion: EXTRACTOR_VERSION,
+      fetchedAt,
+      transformedAt: now(),
+      sourceHash: hash(raw.files.map((file) => file.content).join("\n")),
+      status: "validated",
+      warnings: []
+    }
+  };
+}
+
+export function transformAnimXyzPreset({ preset, commit, repository }) {
+  const fetchedAt = now();
+  const policy = getSourcePolicy("animxyz");
+  const motionSpec = {
+    schema: "nagweb-motion-preset/0.1",
+    sourceSemantic: `animxyz:${preset.name}`,
+    direction: "in",
+    duration: 0.5,
+    delay: 0,
+    ease: "ease",
+    tracks: preset.tracks
+  };
+
+  return {
+    schemaVersion: "1.0",
+    id: `animxyz:preset:${preset.name}`,
+    slug: `animxyz-${preset.name}`,
+    name: preset.name,
+    title: titleFromSlug(preset.name),
+    description: `NagWeb native motion preset derived from AnimXYZ utility "${preset.name}".`,
+    family: "animation",
+    kind: "motion-preset",
+    source: {
+      provider: "animxyz",
+      externalId: `preset/${preset.name}`,
+      sourceUrl: "https://animxyz.com/docs",
+      repositoryUrl: repository,
+      fetchedAt,
+      commit
+    },
+    license: {
+      id: policy.licenseId,
+      name: policy.licenseName,
+      url: policy.licenseUrl,
+      commercialUse: true,
+      modificationAllowed: true,
+      redistributionAllowed: true,
+      attributionRequired: true,
+      attributionText: "Derived from AnimXYZ utility semantics · MIT License",
+      verified: true
+    },
+    taxonomy: {
+      categories: ["animation", "motion-preset", "css-derived"],
+      tags: [preset.name, "motion", "animation", "animxyz"]
+    },
+    previews: [],
+    artifacts: [{
+      id: "preset",
+      role: "animation-data",
+      format: "json",
+      mimeType: "application/json",
+      content: JSON.stringify(motionSpec, null, 2),
+      targetPath: "preset.json"
+    }],
+    runtime: {
+      type: "none",
+      renderer: "nagweb-motion-native",
+      entryArtifactId: "preset",
+      setup: motionSpec
+    },
+    editableProps: animXyzEditableProps(),
+    compatibility: {
+      nagweb: {
+        supported: true,
+        renderer: "motion-native",
+        tested: false
+      }
+    },
+    capabilities: ["animatable"],
+    technical: {
+      type: "motion-preset",
+      nativeSchema: motionSpec.schema,
+      tracks: preset.tracks
+    },
+    search: {
+      text: `${preset.name} animxyz motion animation preset`,
+      keywords: [preset.name, "animxyz", "motion", "animation"]
+    },
+    ingestion: {
+      extractor: "animxyz-native",
+      extractorVersion: EXTRACTOR_VERSION,
+      fetchedAt,
+      transformedAt: now(),
+      sourceHash: hash(JSON.stringify(motionSpec)),
+      status: "validated",
+      warnings: [
+        "Native preset is an interoperability layer; final MotionLab adapter should map nagweb-motion-preset/0.1 into the current MotionLab model."
+      ]
+    }
+  };
+}

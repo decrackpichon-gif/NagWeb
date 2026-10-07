@@ -2,10 +2,13 @@ import path from "node:path";
 import { extractLucideIcons } from "./extractors/lucide.mjs";
 import { extractMagicUiComponents } from "./extractors/magicui.mjs";
 import { extractMotionPrimitives } from "./extractors/motion-primitives.mjs";
+import { extractAnimXyzCore } from "./extractors/animxyz.mjs";
 import {
   transformLucideIcon,
   transformMagicUiComponent,
-  transformMotionPrimitive
+  transformMotionPrimitive,
+  transformAnimXyzCore,
+  transformAnimXyzPreset
 } from "./light-transformers.mjs";
 import {
   writeResourceToVault,
@@ -29,7 +32,7 @@ function parseArgs(argv) {
 }
 
 function parseSources(value) {
-  return String(value || "lucide,magicui,motion-primitives")
+  return String(value || "lucide,magicui,motion-primitives,animxyz")
     .split(",")
     .map((source) => source.trim().toLowerCase())
     .filter(Boolean);
@@ -70,6 +73,21 @@ async function collectSource(source, args) {
         item
       })
     );
+  }
+
+  if (source === "animxyz") {
+    assertFullMirrorAllowed("animxyz");
+    const raw = await extractAnimXyzCore();
+    return [
+      transformAnimXyzCore(raw),
+      ...raw.presets.map((preset) =>
+        transformAnimXyzPreset({
+          preset,
+          commit: raw.commit,
+          repository: raw.repository
+        })
+      )
+    ];
   }
 
   throw new Error(`Unsupported code-vault source: ${source}`);
