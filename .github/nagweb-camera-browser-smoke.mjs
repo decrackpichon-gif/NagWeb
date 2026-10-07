@@ -171,6 +171,45 @@ export async function runCameraBrowserSmoke(page){
   assert.equal(anchorBridge.moved,true,'3D anchor did not follow camera motion: '+JSON.stringify(anchorBridge));
   assert.equal(anchorBridge.projected,true);assert.equal(anchorBridge.rectMoved,true);assert.equal(anchorBridge.cleaned,true);
 
+  // Look-at mode keeps its own target timeline and derives pitch/yaw from it.
+  await page.evaluate(()=>{
+   const s=sec();
+   s.sdCameraOrientationMode='lookAt';s.sdCameraLookPathMode='linear';
+   s.sdCameraLookFrames=[
+    {at:0,x:0,y:0,z:1000,ease:'linear'},
+    {at:50,x:1225,y:125,z:100,ease:'linear'},
+    {at:100,x:400,y:-100,z:1000,ease:'linear'}
+   ];
+   renderPane();renderPreview();
+  });
+  await page.waitForFunction(()=>document.querySelector('[data-camera-orientation-mode]')?.value==='lookAt'&&document.querySelectorAll('[data-camera-look-jump]').length===3);
+  const lookUi=await page.evaluate(()=>({
+   targets:document.querySelectorAll('[data-camera-look-jump]').length,
+   hasPath:!!document.querySelector('[data-camera-look-map-path]'),
+   hasCurrent:!!document.querySelector('[data-camera-look-position]'),
+   mode:document.querySelector('[data-camera-look-path-mode]')?.value
+  }));
+  assert.equal(lookUi.targets,3);assert.equal(lookUi.hasPath,true);assert.equal(lookUi.hasCurrent,true);assert.equal(lookUi.mode,'linear');
+  await page.click('[data-camera-look-jump="50"]');
+  await page.waitForFunction(()=>document.querySelector('[data-camera-look-field="x"][data-camera-look-at="50"]'));
+  assert.equal(await page.$eval('[data-camera-look-field="x"][data-camera-look-at="50"]',n=>+n.value),1225);
+
+  await page.evaluate(()=>{
+   const html=generateSite(flattenPage(page()),false,false,false),f=document.createElement('iframe');
+   f.id='camera-look-export';f.style.cssText='width:1000px;height:650px;border:0';f.srcdoc=html;document.body.append(f);
+  });
+  await page.waitForFunction(()=>document.querySelector('#camera-look-export')?.contentWindow?.__NAG_SCROLL_DIRECTOR?.['camera-browser-scene']);
+  const lookRuntime=await page.evaluate(()=>{
+   const f=document.querySelector('#camera-look-export'),w=f.contentWindow,d=f.contentDocument,api=w.__NAG_SCROLL_DIRECTOR['camera-browser-scene'];
+   api.set(.5);
+   const world=d.querySelector('.sc[data-id="camera-browser-scene"] .inner'),entries=['m11','m12','m13','m14','m21','m22','m23','m24','m31','m32','m33','m34','m41','m42','m43','m44'];
+   const a=world.getAnimations().find(a=>a.playState==='paused'),raw=a?.effect?.getKeyframes?.()[0]?.transform||'none',actual=new w.DOMMatrix(raw);
+   const probe=d.createElement('i');probe.style.transform='rotateZ(-5deg) rotateY(90deg) translate3d(-225px,-125px,100px)';d.body.append(probe);
+   const expected=new w.DOMMatrix(w.getComputedStyle(probe).transform);probe.remove();
+   return{raw,error:Math.max(...entries.map(k=>Math.abs(actual[k]-expected[k])))};
+  });
+  assert.ok(lookRuntime.error<.001,'Look-at runtime matrix mismatch: '+JSON.stringify(lookRuntime));
+
   fs.mkdirSync('/tmp/nagweb-camera-visuals',{recursive:true});
   await page.screenshot({path:'/tmp/nagweb-camera-visuals/camera-editor.png',fullPage:true});
   const exportElement=await page.$('#camera-browser-export');
@@ -179,10 +218,11 @@ export async function runCameraBrowserSmoke(page){
   await page.evaluate(()=>document.querySelector('#camera-browser-export').contentWindow.dispatchEvent(new Event('resize')));
   await new Promise(r=>setTimeout(r,80));
   await exportElement.screenshot({path:'/tmp/nagweb-camera-visuals/camera-export.png'});
-  console.log('Camera browser: mapa real, teclado, runtime exportado, resize mobile, stack absoluto, perspectiva 2.5D y puente de anclas 3D OK');
+  const lookExport=await page.$('#camera-look-export');await lookExport.screenshot({path:'/tmp/nagweb-camera-visuals/camera-lookat.png'});
+  console.log('Camera browser: mapa real, teclado, runtime exportado, resize mobile, look-at independiente, stack absoluto, perspectiva 2.5D y puente de anclas 3D OK');
  }finally{
   await page.evaluate(previous=>{
-   document.getElementById('camera-browser-export')?.remove();clearTimeout(previewTimer);project=JSON.parse(previous.project);
+   document.getElementById('camera-browser-export')?.remove();document.getElementById('camera-look-export')?.remove();clearTimeout(previewTimer);project=JSON.parse(previous.project);
    curPage=previous.curPage;curSec=previous.curSec;curEl=previous.curEl;curPane=previous.curPane;selection=previous.selection;secFocus=previous.secFocus;
    history=[];future=[];saveProject();renderScenes();renderPane();renderPreview();
   },previous);
