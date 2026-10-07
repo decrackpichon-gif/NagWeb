@@ -331,3 +331,59 @@ const smoothHold=C.pose(holdCurve,.1,M,'linear',false);
 assert.equal(smoothHold.x,50);assert.equal(smoothHold.y,25);assert.equal(smoothHold.z,-10);
 assert.equal(C.pose(curvedConfig,.495,M,'linear',true).x,0,'Reduced motion still neutralizes the camera');
 console.log('Camera smooth path: exact keys, curved XYZ, preserved angle timing, real holds, samples and reduced motion OK');
+
+
+const lookScene={...scene,sdCameraOrientationMode:'lookAt',sdCameraLookPathMode:'linear',sdCameraFrames:[
+ {at:0,x:0,y:0,z:0,rotate:0,ease:'linear'},
+ {at:100,x:0,y:0,z:0,rotate:40,ease:'linear'}
+],sdCameraLookFrames:[
+ {at:0,x:0,y:0,z:1000,ease:'linear'},
+ {at:50,x:1000,y:0,z:0,ease:'linear'},
+ {at:100,x:0,y:1000,z:1000,ease:'linear'}
+]};
+const lookConfig=C.config(lookScene);
+assert.equal(lookConfig.orientationMode,'lookAt');assert.equal(C.config(scene).orientationMode,'manual');
+assert.equal(lookConfig.lookPathMode,'linear');assert.equal(lookConfig.lookFrames.length,3);
+let lookPose=C.pose(lookConfig,0,M,'linear',false);
+assert.ok(Math.abs(lookPose.rotateX)<1e-9&&Math.abs(lookPose.rotateY)<1e-9);
+lookPose=C.pose(lookConfig,.5,M,'linear',false);
+assert.ok(Math.abs(lookPose.rotateX)<1e-9);assert.ok(Math.abs(lookPose.rotateY+90)<1e-9);
+assert.equal(lookPose.rotate,20,'LookAt keeps authored horizon roll');
+lookPose=C.pose(lookConfig,1,M,'linear',false);
+assert.ok(Math.abs(lookPose.rotateX-45)<1e-9&&Math.abs(lookPose.rotateY)<1e-9);
+const targetAt30=C.lookTarget({...lookConfig,lookFrames:C.normalizeLook([
+ {at:0,x:0,y:0,z:1000,ease:'linear'},{at:30,x:300,y:0,z:1000,ease:'linear'},{at:100,x:-100,y:0,z:1000}
+])},.3,M,'linear');
+assert.equal(targetAt30.x,300,'Look target owns its own timing independent from camera keys');
+const smoothLook={...lookConfig,lookPathMode:'smooth',lookFrames:C.normalizeLook([
+ {at:0,x:-200,y:0,z:900,ease:'linear'},{at:50,x:0,y:200,z:1200,ease:'linear'},{at:100,x:300,y:-100,z:800}
+])};
+assert.ok(C.lookSamples(smoothLook,M,'linear').length>smoothLook.lookFrames.length);
+const authoredPose={x:120,y:-40,z:80,rotateX:25,rotateY:-40,rotate:15},forward=C.forwardTarget(authoredPose,750),roundTrip=C.lookAngles(authoredPose,forward);
+assert.ok(Math.abs(roundTrip.rotateX-authoredPose.rotateX)<1e-9);
+assert.ok(Math.abs(roundTrip.rotateY-authoredPose.rotateY)<1e-9);
+const manualLookSource=C.config({...scene,sdEase:'linear',sdCameraFrames:[
+ {at:0,x:0,y:0,z:0,rotateX:10,rotateY:-20,rotate:0,ease:'linear'},
+ {at:100,x:200,y:100,z:300,rotateX:-15,rotateY:35,rotate:10,ease:'linear'}
+]});
+const generatedLook=C.defaultLookFrames(manualLookSource,M,'linear',800);
+assert.equal(generatedLook.length,2);assert.equal(generatedLook[0].at,0);assert.equal(generatedLook[1].at,100);
+const generatedConfig={...manualLookSource,orientationMode:'lookAt',lookPathMode:'linear',lookFrames:generatedLook};
+const generatedStart=C.pose(generatedConfig,0,M,'linear',false),generatedEnd=C.pose(generatedConfig,1,M,'linear',false);
+assert.ok(Math.abs(generatedStart.rotateX-10)<1e-9&&Math.abs(generatedStart.rotateY+20)<1e-9);
+assert.ok(Math.abs(generatedEnd.rotateX+15)<1e-9&&Math.abs(generatedEnd.rotateY-35)<1e-9);
+assert.deepEqual(JSON.parse(JSON.stringify(C.pose(lookConfig,.5,M,'linear',true))),{x:0,y:0,z:0,rotateX:0,rotateY:0,rotate:0});
+editable={...scene,id:'look-ui',sdEase:'linear',sdCameraFrames:[
+ {at:0,x:0,y:0,z:0,rotateX:0,rotateY:0,ease:'linear'},
+ {at:100,x:100,y:0,z:0,rotateX:0,rotateY:45,ease:'linear'}
+]};
+const beforeLookMode=history.length;
+listeners.change({target:{dataset:{cameraOrientationMode:''},value:'lookAt'}});
+assert.equal(editable.sdCameraOrientationMode,'lookAt');assert.equal(editable.sdCameraLookFrames.length,2);assert.equal(history.length,beforeLookMode+1);
+const retainedLook=JSON.stringify(editable.sdCameraLookFrames);
+listeners.change({target:{dataset:{cameraLookField:'x',cameraLookAt:String(editable.sdCameraLookFrames[0].at)},value:'250'}});
+assert.equal(editable.sdCameraLookFrames[0].x,250);
+listeners.change({target:{dataset:{cameraOrientationMode:''},value:'manual'}});
+assert.equal(editable.sdCameraOrientationMode,'manual');assert.equal(JSON.stringify(editable.sdCameraLookFrames).includes('250'),true,'Manual mode preserves look targets');
+assert.notEqual(JSON.stringify(editable.sdCameraLookFrames),retainedLook);
+console.log('Camera look-at: independent target timing/path, angle solving, roll preservation, manual-to-look conversion, reduced motion and editor retention OK');
