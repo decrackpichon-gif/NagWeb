@@ -263,7 +263,11 @@ export async function runCameraBrowserSmoke(page){
   const insertedLookBrowser=await page.evaluate(()=>({frame:sec().sdCameraLookFrames.find(k=>![0,50,100].includes(k.at)),history:history.length}));
   assert.ok(insertedLookBrowser.frame&&!insertedLookBrowser.frame.targetId,'Dotted-path double click should create a manual look target');
   assert.ok(Math.abs(insertedLookBrowser.frame.at-25)<1);
-  assert.ok(Math.hypot(insertedLookBrowser.frame.x-lookInsertHit.target.x,insertedLookBrowser.frame.y-lookInsertHit.target.y,insertedLookBrowser.frame.z-lookInsertHit.target.z)<5);
+  const expectedInsertedLook=await page.evaluate(at=>{
+   const s=sec(),cfg=NAGWEB_SCROLL_CAMERA.config(s),originals=cfg.lookFrames.filter(k=>[0,50,100].includes(k.at));
+   return NAGWEB_SCROLL_CAMERA.lookTarget({...cfg,lookFrames:originals},at/100,NAGWEB_STORY_MODEL,s.sdEase,{width:1000,height:1000});
+  },insertedLookBrowser.frame.at);
+  assert.ok(Math.hypot(insertedLookBrowser.frame.x-expectedInsertedLook.x,insertedLookBrowser.frame.y-expectedInsertedLook.y,insertedLookBrowser.frame.z-expectedInsertedLook.z)<.5,'Inserted look target should capture the original dotted-path pose');
   assert.equal(insertedLookBrowser.history,lookInsertHit.history+1);
   const insertedLookAt=insertedLookBrowser.frame.at;
   await page.click('[data-camera-look-delete="'+insertedLookAt+'"]');
