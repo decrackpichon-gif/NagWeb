@@ -4,9 +4,12 @@
 function createCamera(){
  function number(v){return Number.isFinite(+v)?Math.max(-4000,Math.min(4000,+v)):0;}
  function angle(v){return Number.isFinite(+v)?Math.max(-3600,Math.min(3600,+v)):0;}
+ function targetEligible(e,s){return !!e&&!!s&&s.layout==='free'&&layerEligible(e,s)&&Number.isFinite(+e.x)&&Number.isFinite(+e.y);}
+ function targetMotion(e){return {id:e.id,sdKeyframesEnabled:e.sdKeyframesEnabled,sdKeyframes:Array.isArray(e.sdKeyframes)?e.sdKeyframes:[],sdStart:e.sdStart,sdEnd:e.sdEnd,sdSpan:e.sdSpan,sdEnter:e.sdEnter,sdExit:e.sdExit,sdMoveX:e.sdMoveX,sdMoveY:e.sdMoveY,sdRotate:e.sdRotate,sdScale:e.sdScale};}
+ function targetConfig(e){return {id:String(e.id),x:+e.x,y:+e.y,z:number(e.sdCameraDepth),motion:targetMotion(e)};}
  function config(s){
   if(!s.sdCameraEnabled||!s.sdEnabled||s.nwMotionSource==='time'||s.layout==='horizontal')return null;
-  return {pathMode:s.sdCameraPathMode==='smooth'?'smooth':'linear',orientationMode:s.sdCameraOrientationMode==='lookAt'?'lookAt':'manual',lookPathMode:s.sdCameraLookPathMode==='smooth'?'smooth':'linear',lookFrames:normalizeLook(s.sdCameraLookFrames),responsive:!!s.sdCameraResponsive,referenceWidth:Math.max(320,Math.min(2400,Number.isFinite(+s.sdCameraReferenceWidth)&&+s.sdCameraReferenceWidth>0?+s.sdCameraReferenceWidth:1000)),containers:(s.elements||[]).filter(function(e){return e.type==='container'&&layerEligible(e,s);}).map(function(e){return e.id;}),layers:(s.elements||[]).filter(function(e){return layerEligible(e,s);}).map(function(e){return {id:e.id,z:number(e.sdCameraDepth)};}),frames:normalize(s.sdCameraFrames),start:{x:number(s.sdCameraStartX),y:number(s.sdCameraStartY),z:number(s.sdCameraStartZ)},end:{x:number(s.sdCameraEndX),y:number(s.sdCameraEndY),z:number(s.sdCameraEndZ)}};
+  return {pathMode:s.sdCameraPathMode==='smooth'?'smooth':'linear',orientationMode:s.sdCameraOrientationMode==='lookAt'?'lookAt':'manual',lookPathMode:s.sdCameraLookPathMode==='smooth'?'smooth':'linear',lookFrames:normalizeLook(s.sdCameraLookFrames),targets:(s.elements||[]).filter(function(e){return targetEligible(e,s);}).map(targetConfig),responsive:!!s.sdCameraResponsive,referenceWidth:Math.max(320,Math.min(2400,Number.isFinite(+s.sdCameraReferenceWidth)&&+s.sdCameraReferenceWidth>0?+s.sdCameraReferenceWidth:1000)),containers:(s.elements||[]).filter(function(e){return e.type==='container'&&layerEligible(e,s);}).map(function(e){return e.id;}),layers:(s.elements||[]).filter(function(e){return layerEligible(e,s);}).map(function(e){return {id:e.id,z:number(e.sdCameraDepth)};}),frames:normalize(s.sdCameraFrames),start:{x:number(s.sdCameraStartX),y:number(s.sdCameraStartY),z:number(s.sdCameraStartZ)},end:{x:number(s.sdCameraEndX),y:number(s.sdCameraEndY),z:number(s.sdCameraEndZ)}};
  }
  function layerEligible(e,s){return !!e&&!e.parent&&!e.fixed&&!e.modal&&!e.nwMotionInstance&&['shape3d','light3d','spacer'].indexOf(e.type)<0&&(e.type!=='container'||!!s&&(s.layout==='free'||s.layout==='stack'));}
  function layer(c,id){return c&&(c.layers||[]).find(function(l){return l.id===id;})||null;}
@@ -26,6 +29,7 @@ function createCamera(){
   var out=[];
   (Array.isArray(input)?input:[]).filter(function(k){return k&&Number.isFinite(+k.at);}).slice(0,128).sort(function(a,b){return +a.at-+b.at;}).forEach(function(k){
    var frame={at:Math.round(Math.max(0,Math.min(100,+k.at))*10)/10,x:number(k.x),y:number(k.y),z:number(k.z)};
+   if(typeof k.targetId==='string'&&k.targetId)frame.targetId=k.targetId;
    if(['linear','smooth','cinematic','ease-in','ease-out','ease-in-out'].indexOf(k.ease)>=0)frame.ease=k.ease;
    if(out.length&&out[out.length-1].at===frame.at)out.pop();out.push(frame);
   });return out;
@@ -35,7 +39,9 @@ function createCamera(){
  }
  function lookFrames(c){return c&&c.lookFrames&&c.lookFrames.length?normalizeLook(c.lookFrames):[];}
  function compile(c,model,ease){
-  var list=frames(c,ease);return {keyframes:model.normalize(list.map(function(k){return Object.assign({},k,{ease:k.ease||ease||'cinematic'});} ))};
+  var list=frames(c,ease),targetTracks={};
+  (c.targets||[]).forEach(function(t){if(t&&t.id)targetTracks[t.id]=model.compile(t.motion||{id:t.id});});
+  return {keyframes:model.normalize(list.map(function(k){return Object.assign({},k,{ease:k.ease||ease||'cinematic'});} )),targetTracks:targetTracks};
  }
  function catmull(a,b,c,d,t){
   var t2=t*t,t3=t2*t;
@@ -57,7 +63,19 @@ function createCamera(){
   return {x:number(b.x+(cc.x-b.x)*t),y:number(b.y+(cc.y-b.y)*t),z:number(b.z+(cc.z-b.z)*t)};
  }
  function smoothPosition(c,p,model,ease){return pointAt(frames(c,ease),p,model,ease,'smooth');}
- function lookTarget(c,p,model,ease){return pointAt(lookFrames(c),p,model,ease,c&&c.lookPathMode==='smooth'?'smooth':'linear');}
+ function targetById(c,id){return c&&id&&(c.targets||[]).find(function(t){return t.id===id;})||null;}
+ function elementTarget(c,id,p,model,ease,size,compiled){
+  var t=targetById(c,id);if(!t)return null;
+  var width=size&&Number.isFinite(+size.width)&&+size.width>0?+size.width:(c.referenceWidth||1000);
+  var height=size&&Number.isFinite(+size.height)&&+size.height>0?+size.height:width;
+  var track=compiled&&compiled.targetTracks&&compiled.targetTracks[id]||model.compile(t.motion||{id:t.id});
+  var motion=model.evaluate(track,p,ease,false);
+  return {x:number((t.x-50)/100*width+motion.x),y:number((t.y-50)/100*height+motion.y),z:number(t.z+motion.z)};
+ }
+ function resolvedLookFrames(c,p,model,ease,size,compiled){
+  return lookFrames(c).map(function(f){if(!f.targetId)return f;var t=elementTarget(c,f.targetId,p,model,ease,size,compiled);return t?Object.assign({},f,t):f;});
+ }
+ function lookTarget(c,p,model,ease,size,compiled){return pointAt(resolvedLookFrames(c,p,model,ease,size,compiled),p,model,ease,c&&c.lookPathMode==='smooth'?'smooth':'linear');}
  function lookAngles(position,target){
   if(!position||!target)return null;
   var dx=number(target.x)-number(position.x),dy=number(target.y)-number(position.y),dz=number(target.z)-number(position.z),flat=Math.hypot(dx,dz);
@@ -73,10 +91,10 @@ function createCamera(){
   var manual=Object.assign({},c,{orientationMode:'manual'}),list=frames(c,ease);
   return normalizeLook(list.map(function(k){var v=pose(manual,k.at/100,model,ease,false),t=forwardTarget(v,distance);return {at:k.at,x:t.x,y:t.y,z:t.z,ease:k.ease||ease||'cinematic'};}));
  }
- function pose(c,p,model,ease,reduced,compiled){
-  var v=model.evaluate(compiled||compile(c,model,ease),p,ease,reduced);
+ function pose(c,p,model,ease,reduced,compiled,size){
+  var prepared=compiled||compile(c,model,ease),v=model.evaluate(prepared,p,ease,reduced);
   if(!reduced&&c&&c.pathMode==='smooth'){var s=smoothPosition(c,p,model,ease);if(s){v.x=s.x;v.y=s.y;v.z=s.z;}}
-  if(!reduced&&c&&c.orientationMode==='lookAt'){var target=lookTarget(c,p,model,ease),angles=lookAngles(v,target);if(angles){v.rotateX=angles.rotateX;v.rotateY=angles.rotateY;}}
+  if(!reduced&&c&&c.orientationMode==='lookAt'){var target=lookTarget(c,p,model,ease,size,prepared),angles=lookAngles(v,target);if(angles){v.rotateX=angles.rotateX;v.rotateY=angles.rotateY;}}
   return {x:v.x,y:v.y,z:v.z,rotateX:v.rotateX,rotateY:v.rotateY,rotate:v.rotate};
  }
  function pathSamples(c,model,ease,steps){
@@ -86,12 +104,12 @@ function createCamera(){
   for(var i=0;i<=count;i++){var p=start+(end-start)*(i/count),v=pose(c,p,model,ease,false);out.push({at:p*100,x:v.x,y:v.y,z:v.z,rotateX:v.rotateX,rotateY:v.rotateY,rotate:v.rotate});}
   return out;
  }
- function lookSamples(c,model,ease,steps){
-  var list=lookFrames(c);
+ function lookSamples(c,model,ease,steps,size,compiled){
+  var list=lookFrames(c),dynamic=list.some(function(k){return !!k.targetId;});
   if(!list.length)return [];
-  if(!c||c.lookPathMode!=='smooth'||list.length<3)return list;
+  if((!c||c.lookPathMode!=='smooth'||list.length<3)&&!dynamic)return list;
   var count=Math.max(16,Math.min(128,Number.isFinite(+steps)?Math.round(+steps):Math.max(24,(list.length-1)*12))),start=list[0].at/100,end=list[list.length-1].at/100,out=[];
-  for(var i=0;i<=count;i++){var p=start+(end-start)*(i/count),v=lookTarget(c,p,model,ease);out.push({at:p*100,x:v.x,y:v.y,z:v.z});}
+  for(var i=0;i<=count;i++){var p=start+(end-start)*(i/count),v=lookTarget(c,p,model,ease,size,compiled);out.push({at:p*100,x:v.x,y:v.y,z:v.z});}
   return out;
  }
  function viewportScale(c,width){
@@ -170,7 +188,7 @@ function createCamera(){
   paint.contains=function(n){return inside(world,n);};
   return paint;
  }
- return {config:config,compile:compile,pose:pose,pathSamples:pathSamples,lookSamples:lookSamples,lookTarget:lookTarget,lookAngles:lookAngles,forwardTarget:forwardTarget,defaultLookFrames:defaultLookFrames,normalizeLook:normalizeLook,lookFrames:lookFrames,viewportScale:viewportScale,scalePose:scalePose,attach:attach,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial,copyFrame:copyFrame,holdFrame:holdFrame,preset:preset};
+ return {config:config,compile:compile,pose:pose,pathSamples:pathSamples,lookSamples:lookSamples,lookTarget:lookTarget,lookAngles:lookAngles,forwardTarget:forwardTarget,defaultLookFrames:defaultLookFrames,normalizeLook:normalizeLook,lookFrames:lookFrames,targetEligible:targetEligible,elementTarget:elementTarget,viewportScale:viewportScale,scalePose:scalePose,attach:attach,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial,copyFrame:copyFrame,holdFrame:holdFrame,preset:preset};
 }
 window.NAGWEB_CREATE_SCROLL_CAMERA=createCamera;
 window.NAGWEB_SCROLL_CAMERA=createCamera();
