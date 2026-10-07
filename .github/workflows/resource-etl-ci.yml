@@ -117,6 +117,20 @@ jobs:
           console.log("Registry dependency resolution: OK");
           NODE
 
+      - name: Measure Shadcn React preview coverage
+        working-directory: tools/resource-etl
+        shell: bash
+        run: |
+          node src/vault-cli.mjs \
+            --sources=shadcn \
+            --limit=30 \
+            --out=ci-vault-shadcn-coverage \
+            --react-previews \
+            --react-preview-limit=50
+
+          node src/report/react-preview-coverage.mjs \
+            --file=ci-vault-shadcn-coverage/react-preview-audit.json
+
       - name: Smoke test external ETL sources
         working-directory: tools/resource-etl
         shell: bash
