@@ -177,6 +177,16 @@ function createCamera(){
  }
  function mapPoint(k,spec){return {x:50+number(k.x)/spec.range*50,y:50+number(k[spec.axis])/spec.range*50*spec.sign};}
  function moveSpatial(k,spec,dx,dy){var copy=Object.assign({},k);copy.x=number(Math.round(k.x+dx*spec.range*2));copy[spec.axis]=number(Math.round(k[spec.axis]+dy*spec.range*2*spec.sign));return copy;}
+ function nearestPathAt(samples,spec,point,scale){
+  if(!Array.isArray(samples)||samples.length<2||!spec||!point)return null;
+  var sx=scale&&Number.isFinite(+scale.x)&&+scale.x>0?+scale.x:1,sy=scale&&Number.isFinite(+scale.y)&&+scale.y>0?+scale.y:1,best=null;
+  for(var i=0;i<samples.length-1;i++){
+   var a=mapPoint(samples[i],spec),b=mapPoint(samples[i+1],spec),vx=(b.x-a.x)*sx,vy=(b.y-a.y)*sy,qx=(+point.x-a.x)*sx,qy=(+point.y-a.y)*sy,len=vx*vx+vy*vy;
+   var u=len>.000001?Math.max(0,Math.min(1,(qx*vx+qy*vy)/len)):0,dx=qx-vx*u,dy=qy-vy*u,dist=Math.hypot(dx,dy);
+   if(!best||dist<best.distance){best={at:samples[i].at+(samples[i+1].at-samples[i].at)*u,distance:dist,segment:i,t:u};}
+  }
+  return best;
+ }
  function attach(stage,c,perspective){
   if(!c)return null;
   var world=Array.from(stage.children).find(function(n){return n.classList.contains('inner');});
@@ -212,7 +222,7 @@ function createCamera(){
   paint.contains=function(n){return inside(world,n);};
   return paint;
  }
- return {config:config,compile:compile,pose:pose,pathSamples:pathSamples,lookSamples:lookSamples,lookTarget:lookTarget,lookAngles:lookAngles,forwardTarget:forwardTarget,defaultLookFrames:defaultLookFrames,normalizeLook:normalizeLook,lookFrames:lookFrames,targetEligible:targetEligible,elementTarget:elementTarget,curveTension:curveTension,tangentHandle:tangentHandle,tensionFromHandle:tensionFromHandle,viewportScale:viewportScale,scalePose:scalePose,attach:attach,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial,copyFrame:copyFrame,holdFrame:holdFrame,preset:preset};
+ return {config:config,compile:compile,pose:pose,pathSamples:pathSamples,lookSamples:lookSamples,lookTarget:lookTarget,lookAngles:lookAngles,forwardTarget:forwardTarget,defaultLookFrames:defaultLookFrames,normalizeLook:normalizeLook,lookFrames:lookFrames,targetEligible:targetEligible,elementTarget:elementTarget,curveTension:curveTension,tangentHandle:tangentHandle,tensionFromHandle:tensionFromHandle,nearestPathAt:nearestPathAt,viewportScale:viewportScale,scalePose:scalePose,attach:attach,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial,copyFrame:copyFrame,holdFrame:holdFrame,preset:preset};
 }
 window.NAGWEB_CREATE_SCROLL_CAMERA=createCamera;
 window.NAGWEB_SCROLL_CAMERA=createCamera();
@@ -288,7 +298,7 @@ function spatialMap(s,list,k){
  html+='</div>';
  if(s.sdCameraResponsive)html+='<p class="hint gh">El mapa muestra el recorrido con el ancho de referencia.</p>';
  html+='<p class="hint gh" data-camera-position-label>'+mapLabel(current,progress(s))+'</p>';
- html+='<p class="hint gh">◆ encuadre seleccionado · ○ posición actual'+(tangentPoint?' · ◯ tensión del tramo':'')+(cfg&&cfg.orientationMode==='lookAt'?' · ● objetivo seleccionado · línea punteada: recorrido de mirada':'')+'. Clic cerca de un punto: seleccionar · Arrastrá ◆ o ● · Arrastrá ◯: ajustar curva · Shift + arrastre: bloquear al eje dominante. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Flechas: 25 px; Shift + flecha: 100 px. Escape cancela. Escala: ±'+Math.round(spec.range)+' px.</p></details>';
+ html+='<p class="hint gh">◆ encuadre seleccionado · ○ posición actual'+(tangentPoint?' · ◯ tensión del tramo':'')+(cfg&&cfg.orientationMode==='lookAt'?' · ● objetivo seleccionado · línea punteada: recorrido de mirada':'')+'. Clic cerca de un punto: seleccionar · Doble clic sobre la trayectoria: agregar ◆ · Arrastrá ◆ o ● · Arrastrá ◯: ajustar curva · Shift + arrastre: bloquear al eje dominante. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Flechas: 25 px; Shift + flecha: 100 px. Escape cancela. Escala: ±'+Math.round(spec.range)+' px.</p></details>';
  return html;
 }
 C.panel=function(s){
@@ -383,6 +393,20 @@ function pickSpatial(s,map,clientX,clientY){
  var best=near.find(function(h){return h.kind==='camera'?h.at!==cameraAt:h.at!==lookAt;})||near[0];
  if(best.kind==='look')jumpLook(s,best.at);else jump(s,best.at);
  return true;
+}
+function insertOnPath(s,map,clientX,clientY){
+ var cfg=C.config(s),r=map&&map.getBoundingClientRect(),list=keys(s);if(!cfg||!r||!r.width||!r.height||list.length>=128)return false;
+ var spec={range:+map.dataset.range||500,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1};
+ var draw=C.pathSamples(Object.assign({},cfg,{frames:list}),window.NAGWEB_STORY_MODEL,s.sdEase,128);
+ var point={x:(clientX-r.left)/r.width*100,y:(clientY-r.top)/r.height*100},hit=C.nearestPathAt(draw,spec,point,{x:r.width/100,y:r.height/100});
+ if(!hit||hit.distance>14)return false;
+ var at=Math.round(Math.max(0,Math.min(100,hit.at))*10)/10,existing=list.find(function(k){return k.at===at;});
+ if(existing){jump(s,at);return true;}
+ var pathCfg=Object.assign({},cfg,{frames:list}),v=C.pose(pathCfg,at/100,window.NAGWEB_STORY_MODEL,s.sdEase,false,undefined,previewReferenceSize(s));
+ var source=list[0];for(var i=0;i<list.length;i++){if(list[i].at<=at)source=list[i];else break;}
+ var frame=Object.assign({at:at,ease:source.ease||s.sdEase||'cinematic'},v);
+ if(cfg.pathMode==='smooth'&&source.tension!==undefined)frame.tension=source.tension;
+ snapshot();list.push(frame);persist(s,list,at);toast('Encuadre agregado sobre la trayectoria.');return true;
 }
 function tensionCommit(s,at,value){
  if(sec()!==s||!C.config(s))return false;
@@ -486,6 +510,12 @@ if(pane){
  pane.addEventListener('input',function(ev){
   if(!ev.target.matches('[data-camera-seek]'))return;
   var s=sec();if(C.config(s))window.NAGWEB_SCROLL_DIRECTOR.scrub(s.id,+ev.target.value/100);
+ });
+ pane.addEventListener('dblclick',function(ev){
+  if(ev.button!==undefined&&ev.button!==0)return;
+  var map=ev.target.closest('[data-camera-map]');if(!map)return;
+  if(ev.target.closest('[data-camera-map-point],[data-camera-look-map-point],[data-camera-tension-handle],[data-camera-map-dot],[data-camera-look-map-dot],[data-camera-position],[data-camera-look-position]'))return;
+  if(insertOnPath(sec(),map,ev.clientX,ev.clientY)){ev.preventDefault();ev.stopPropagation();}
  });
  pane.addEventListener('pointerdown',function(ev){
   if(ev.button!==0)return;

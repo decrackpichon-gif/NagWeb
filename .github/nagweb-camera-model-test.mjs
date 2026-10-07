@@ -389,6 +389,13 @@ assert.equal(C.tensionFromHandle(curvedConfig.frames,33,tangentSpec,tangentDefau
 assert.equal(C.tensionFromHandle(curvedConfig.frames,33,tangentSpec,tangentTight),100);
 assert.equal(C.tensionFromHandle(curvedConfig.frames,33,tangentSpec,tangentLoose),-100);
 assert.equal(C.tensionFromHandle(curvedConfig.frames,100,tangentSpec,tangentDefault),null);
+const nearestSpec=C.mapSpec(curvedConfig.frames,'top'),nearestSample=curveSamples[Math.floor(curveSamples.length*.25)],nearestPoint=C.mapPoint(nearestSample,nearestSpec);
+const nearestHit=C.nearestPathAt(curveSamples,nearestSpec,nearestPoint,{x:3,y:2});
+assert.ok(nearestHit&&nearestHit.distance<1e-9&&Math.abs(nearestHit.at-nearestSample.at)<1e-9,'Projected path lookup recovers the sampled narrative moment');
+const aSample=curveSamples[5],bSample=curveSamples[6],ap=C.mapPoint(aSample,nearestSpec),bp=C.mapPoint(bSample,nearestSpec);
+const midpointHit=C.nearestPathAt(curveSamples,nearestSpec,{x:(ap.x+bp.x)/2,y:(ap.y+bp.y)/2},{x:3,y:2});
+assert.ok(Math.abs(midpointHit.at-(aSample.at+bSample.at)/2)<.01,'Projected segment lookup interpolates narrative time between samples');
+assert.equal(C.nearestPathAt([],nearestSpec,{x:50,y:50}),null);
 const holdCurve={...curvedConfig,frames:C.normalize([{at:0,x:50,y:25,z:-10,ease:'linear'},{at:20,x:50,y:25,z:-10,ease:'linear'},{at:100,x:300,y:0,z:0}])};
 const smoothHold=C.pose(holdCurve,.1,M,'linear',false);
 assert.equal(smoothHold.x,50);assert.equal(smoothHold.y,25);assert.equal(smoothHold.z,-10);
@@ -399,7 +406,21 @@ listeners.change({target:{dataset:{cameraField:'tension',cameraAt:'33'},matches(
 assert.equal(editable.sdCameraFrames.find(k=>k.at===33).tension,80);assert.equal(history.length,tensionHistory+1);
 listeners.change({target:{dataset:{cameraField:'tension',cameraAt:'33'},matches(){return true;},value:'500'}});
 assert.equal(editable.sdCameraFrames.find(k=>k.at===33).tension,100,'Editor persistence clamps tension through camera normalization');
-console.log('Camera smooth path: exact keys, per-segment tension, compatibility, editor history, holds, samples and reduced motion OK');
+editable={...curvedScene,id:'curve-insert-ui'};
+const insertCfg=ui.window.NAGWEB_SCROLL_CAMERA.config(editable),insertList=ui.window.NAGWEB_SCROLL_CAMERA.frames(insertCfg,editable.sdEase),insertSpec=ui.window.NAGWEB_SCROLL_CAMERA.mapSpec(insertList,'top'),insertPose=ui.window.NAGWEB_SCROLL_CAMERA.pose(insertCfg,.2,M,'linear',false),insertPoint=ui.window.NAGWEB_SCROLL_CAMERA.mapPoint(insertPose,insertSpec);
+const insertMap={dataset:{plane:'top',range:String(insertSpec.range)},getBoundingClientRect(){return{left:0,top:0,width:300,height:200};}};
+const insertHistory=history.length,insertTarget={closest(selector){return selector==='[data-camera-map]'?insertMap:null;}};
+listeners.dblclick({button:0,clientX:insertPoint.x/100*300,clientY:insertPoint.y/100*200,target:insertTarget,preventDefault(){},stopPropagation(){}});
+assert.equal(editable.sdCameraFrames.length,5,'Double click on sampled curve inserts a camera key');
+const inserted=editable.sdCameraFrames.find(k=>![0,33,66,100].includes(k.at));assert.ok(inserted);
+const expectedInserted=ui.window.NAGWEB_SCROLL_CAMERA.pose(insertCfg,inserted.at/100,M,'linear',false);
+assert.ok(Math.hypot(inserted.x-expectedInserted.x,inserted.y-expectedInserted.y,inserted.z-expectedInserted.z)<.01,'Inserted key captures the pre-insertion camera pose');
+assert.equal(history.length,insertHistory+1,'Curve insertion creates one undo snapshot');
+const insertionCount=editable.sdCameraFrames.length,repeatHistory=history.length,repeatPoint=ui.window.NAGWEB_SCROLL_CAMERA.mapPoint(inserted,insertSpec);
+listeners.dblclick({button:0,clientX:repeatPoint.x/100*300,clientY:repeatPoint.y/100*200,target:insertTarget,preventDefault(){},stopPropagation(){}});
+assert.equal(editable.sdCameraFrames.length,insertionCount,'Double clicking an occupied moment does not duplicate the key');
+assert.equal(history.length,repeatHistory,'Selecting an existing curve key does not create history');
+console.log('Camera smooth path: exact keys, per-segment tension, curve insertion, editor history, holds, samples and reduced motion OK');
 
 
 const lookScene={...scene,sdCameraOrientationMode:'lookAt',sdCameraLookPathMode:'linear',sdCameraFrames:[

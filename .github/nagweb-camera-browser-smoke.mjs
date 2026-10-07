@@ -40,6 +40,23 @@ export async function runCameraBrowserSmoke(page){
   assert.ok(ui.label.includes('50%')&&ui.label.includes('X 200')&&ui.label.includes('Y 100')&&ui.label.includes('Z 100'));
   assert.ok((await page.$eval('[data-camera-map-box]',n=>n.textContent)).includes('ancho de referencia'));
   const curveBefore=await page.$eval('[data-camera-map-path]',n=>n.getAttribute('points'));
+  await page.$eval('[data-camera-map]',n=>n.scrollIntoView({block:'center',inline:'nearest'}));
+  const insertHit=await page.evaluate(()=>{
+   const s=sec(),cfg=NAGWEB_SCROLL_CAMERA.config(s),list=NAGWEB_SCROLL_CAMERA.frames(cfg,s.sdEase),map=document.querySelector('[data-camera-map]'),r=map.getBoundingClientRect(),spec={range:+map.dataset.range,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1};
+   const samples=NAGWEB_SCROLL_CAMERA.pathSamples({...cfg,frames:list},NAGWEB_STORY_MODEL,s.sdEase,128),sample=samples.reduce((a,v)=>Math.abs(v.at-25)<Math.abs(a.at-25)?v:a,samples[0]),p=NAGWEB_SCROLL_CAMERA.mapPoint(sample,spec);
+   return{x:r.left+p.x/100*r.width,y:r.top+p.y/100*r.height,at:sample.at,pose:NAGWEB_SCROLL_CAMERA.pose({...cfg,frames:list},sample.at/100,NAGWEB_STORY_MODEL,s.sdEase,false),history:history.length};
+  });
+  await page.mouse.click(insertHit.x,insertHit.y,{count:2,delay:45});
+  await page.waitForFunction(()=>sec().sdCameraFrames.length===4);
+  const insertedBrowser=await page.evaluate(()=>({frame:sec().sdCameraFrames.find(k=>![0,50,100].includes(k.at)),history:history.length}));
+  assert.ok(insertedBrowser.frame,'Double click on map path did not create a camera key');
+  assert.ok(Math.abs(insertedBrowser.frame.at-insertHit.at)<1,'Inserted map key should use the clicked path moment: '+JSON.stringify({insertHit,insertedBrowser}));
+  assert.ok(Math.hypot(insertedBrowser.frame.x-insertHit.pose.x,insertedBrowser.frame.y-insertHit.pose.y,insertedBrowser.frame.z-insertHit.pose.z)<3,'Inserted map key should capture the clicked curve pose');
+  assert.equal(insertedBrowser.history,insertHit.history+1,'Map curve insertion should create one undo snapshot');
+  const insertedAt=insertedBrowser.frame.at;
+  await page.click('[data-camera-delete="'+insertedAt+'"]');
+  await page.waitForFunction(()=>sec().sdCameraFrames.length===3);
+  assert.equal(await page.$eval('[data-camera-map-path]',n=>n.getAttribute('points')),curveBefore,'Deleting the inserted key should restore the original sampled path');
   const tangentBefore=await page.evaluate(()=>{
    const h=document.querySelector('[data-camera-tangent-handle]'),k=document.querySelector('[data-camera-map-dot="50"]');
    return{exists:!!h,hx:+h?.getAttribute('cx'),hy:+h?.getAttribute('cy'),kx:+k?.getAttribute('cx'),ky:+k?.getAttribute('cy')};
