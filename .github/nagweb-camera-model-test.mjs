@@ -408,3 +408,30 @@ listeners.change({target:{dataset:{cameraOrientationMode:''},value:'manual'}});
 assert.equal(editable.sdCameraOrientationMode,'manual');assert.equal(JSON.stringify(editable.sdCameraLookFrames).includes('250'),true,'Manual mode preserves look targets');
 assert.notEqual(JSON.stringify(editable.sdCameraLookFrames),retainedLook);
 console.log('Camera look-at: independent target timing/path, angle solving, roll preservation, manual-to-look conversion, reduced motion and editor retention OK');
+
+const targetScene={...scene,layout:'free',sdEase:'linear',elements:[
+ {id:'focus',type:'heading',x:75,y:25,sdCameraDepth:100,sdKeyframes:[{at:0,x:0,y:0,z:0,ease:'linear'},{at:100,x:100,y:50,z:50}]},
+ {id:'nested',type:'heading',parent:'focus',x:50,y:50},
+ {id:'fixed-target',type:'heading',x:50,y:50,fixed:true}
+],sdCameraOrientationMode:'lookAt',sdCameraLookPathMode:'linear',
+sdCameraFrames:[{at:0,x:0,y:0,z:0,ease:'linear'},{at:100,x:0,y:0,z:0}],
+sdCameraLookFrames:[{at:0,targetId:'focus',x:0,y:0,z:1000,ease:'linear'},{at:100,targetId:'focus',x:0,y:0,z:1000}]
+};
+const targetCfg=C.config(targetScene),targetCompiled=C.compile(targetCfg,M,'linear');
+assert.deepEqual(Array.from(targetCfg.targets).map(x=>x.id),['focus']);
+assert.equal(C.targetEligible(targetScene.elements[0],targetScene),true);
+assert.equal(C.targetEligible(targetScene.elements[1],targetScene),false);assert.equal(C.targetEligible(targetScene.elements[2],targetScene),false);
+assert.equal(C.targetEligible(targetScene.elements[0],{...targetScene,layout:'stack'}),false);
+assert.equal(C.normalizeLook(targetScene.sdCameraLookFrames)[0].targetId,'focus','Look target binding survives normalization');
+const resolvedTarget=C.elementTarget(targetCfg,'focus',.5,M,'linear',{width:1000,height:800},targetCompiled);
+assert.deepEqual(JSON.parse(JSON.stringify(resolvedTarget)),{x:300,y:-175,z:125});
+const targetPose=C.pose(targetCfg,.5,M,'linear',false,targetCompiled,{width:1000,height:800});
+const expectedAngles=C.lookAngles({x:0,y:0,z:0},resolvedTarget);
+assert.ok(Math.abs(targetPose.rotateX-expectedAngles.rotateX)<1e-9&&Math.abs(targetPose.rotateY-expectedAngles.rotateY)<1e-9);
+const targetAtStart=C.elementTarget(targetCfg,'focus',0,M,'linear',{width:500,height:400},targetCompiled);
+assert.deepEqual(JSON.parse(JSON.stringify(targetAtStart)),{x:125,y:-100,z:100},'Percent target resolves against current scene size');
+const fallbackCfg={...targetCfg,targets:[]};
+const fallback=C.lookTarget(fallbackCfg,.5,M,'linear',{width:1000,height:800},targetCompiled);
+assert.equal(fallback.x,0);assert.equal(fallback.z,1000,'Deleted target falls back to stored XYZ');
+assert.deepEqual(JSON.parse(JSON.stringify(C.pose(targetCfg,.5,M,'linear',true,targetCompiled,{width:1000,height:800}))),{x:0,y:0,z:0,rotateX:0,rotateY:0,rotate:0});
+console.log('Camera element target: free-layout eligibility, responsive coordinates, Director XYZ following, fallback and reduced motion OK');

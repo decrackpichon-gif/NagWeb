@@ -193,6 +193,8 @@ function createCamera(){
 window.NAGWEB_CREATE_SCROLL_CAMERA=createCamera;
 window.NAGWEB_SCROLL_CAMERA=createCamera();
 var presetChoices=Object.create(null),holdDurations=Object.create(null),mapOpen=Object.create(null),mapPlanes=Object.create(null),suppressedClick=null,selected=Object.create(null),lookSelected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
+function safeLabel(v){return String(v==null?'':v).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,42).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];});}
+function targetLabel(e){var label=safeLabel(e&&((e.name||e.text||e.label)||e.type));return label||'Elemento';}
 function keys(s){return C.frames(C.config(s),s.sdEase);}
 function lookKeys(s){var cfg=C.config(s);return cfg?C.lookFrames(cfg):[];}
 function progress(s){return window.NAGWEB_SCROLL_DIRECTOR?window.NAGWEB_SCROLL_DIRECTOR.progress(s.id):0;}
@@ -207,9 +209,20 @@ C.elementPanel=function(s,e){
  var z=C.layer(C.config(s),e.id);z=z?z.z:0;
  return (e.type==='container'?'<p class="hint gh">Este plano mueve el contenedor completo con sus elementos internos.</p>':'')+'<h4 class="gsub">Plano en la escena de cámara</h4>'+cRow('Profundidad fija (px)','<input type="number" class="cnum" aria-label="Profundidad fija del elemento" data-camera-depth value="'+z+'" min="-4000" max="4000" step="25">')+'<p class="hint gh">Negativo: más lejos · 0: plano original · Positivo: más cerca. Se suma a la animación de profundidad. Al desactivar la cámara se conserva este ajuste.</p>';
 };
+function previewReferenceSize(s){
+ var cfg=C.config(s),width=cfg?cfg.referenceWidth:1000,height=width;
+ try{
+  var f=document.getElementById('preview'),doc=f&&f.contentDocument,scene=doc&&doc.querySelector('.sc[data-id="'+s.id+'"]'),stage=scene&&(scene.querySelector('.nw-sd-stage')||scene);
+  if(stage&&stage.clientWidth&&stage.clientHeight){var scale=C.viewportScale(cfg,stage.clientWidth);width=stage.clientWidth/Math.max(.0001,scale);height=stage.clientHeight/Math.max(.0001,scale);}
+ }catch(_){}
+ return {width:width,height:height};
+}
+function resolvedLookKeys(s,cfg,list,size){
+ return list.map(function(k){if(!k.targetId)return k;var v=C.elementTarget(cfg,k.targetId,k.at/100,window.NAGWEB_STORY_MODEL,s.sdEase,size);return v?Object.assign({},k,v):k;});
+}
 function mapCurrent(s,pct){
  var reduced=typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
- return C.pose(C.config(s),pct/100,window.NAGWEB_STORY_MODEL,s.sdEase,reduced);
+ return C.pose(C.config(s),pct/100,window.NAGWEB_STORY_MODEL,s.sdEase,reduced,undefined,previewReferenceSize(s));
 }
 function mapLabel(v,pct){return 'Ahora: '+Math.round(pct*10)/10+'% · X '+Math.round(v.x)+' · Y '+Math.round(v.y)+' · Z '+Math.round(v.z);}
 function mapDraw(map,list,spec,s,lookList){
@@ -219,26 +232,26 @@ function mapDraw(map,list,spec,s,lookList){
  if(path)path.setAttribute('points',draw.map(function(k){var p=C.mapPoint(k,spec);return p.x+','+p.y;}).join(' '));
  list.forEach(function(k){var dot=map.querySelector('[data-camera-map-dot="'+k.at+'"]'),p=C.mapPoint(k,spec);if(dot){dot.setAttribute('cx',p.x);dot.setAttribute('cy',p.y);}});
  if(cfg&&cfg.orientationMode==='lookAt'){
-  var looks=lookList||lookKeys(s),lookPath=map.querySelector('[data-camera-look-map-path]'),lookCfg=Object.assign({},cfg,{lookFrames:looks});
-  var lookDraw=C.lookSamples(lookCfg,window.NAGWEB_STORY_MODEL,s.sdEase);
+  var looks=lookList||lookKeys(s),size=previewReferenceSize(s),lookPath=map.querySelector('[data-camera-look-map-path]'),lookCfg=Object.assign({},cfg,{lookFrames:looks});
+  var lookDraw=C.lookSamples(lookCfg,window.NAGWEB_STORY_MODEL,s.sdEase,undefined,size),resolved=resolvedLookKeys(s,lookCfg,looks,size);
   if(lookPath)lookPath.setAttribute('points',lookDraw.map(function(k){var p=C.mapPoint(k,spec);return p.x+','+p.y;}).join(' '));
-  looks.forEach(function(k){var dot=map.querySelector('[data-camera-look-map-dot="'+k.at+'"]'),p=C.mapPoint(k,spec);if(dot){dot.setAttribute('cx',p.x);dot.setAttribute('cy',p.y);}});
+  resolved.forEach(function(k){var dot=map.querySelector('[data-camera-look-map-dot="'+k.at+'"]'),p=C.mapPoint(k,spec);if(dot){dot.setAttribute('cx',p.x);dot.setAttribute('cy',p.y);}});
  }
 }
 function spatialMap(s,list,k){
- var plane=mapPlanes[s.id]||'top',cfg=C.config(s),looks=cfg&&cfg.orientationMode==='lookAt'?lookKeys(s):[],lk=looks.length?chooseLook(s,looks):null,spec=C.mapSpec(list.concat(looks),plane),point=C.mapPoint(k,spec),lookKeyPoint=lk?C.mapPoint(lk,spec):null,current=mapCurrent(s,progress(s)),now=C.mapPoint(current,spec);
+ var plane=mapPlanes[s.id]||'top',cfg=C.config(s),looks=cfg&&cfg.orientationMode==='lookAt'?lookKeys(s):[],lk=looks.length?chooseLook(s,looks):null,size=previewReferenceSize(s),resolvedLooks=resolvedLookKeys(s,cfg,looks,size),spec=C.mapSpec(list.concat(resolvedLooks),plane),point=C.mapPoint(k,spec),resolvedLk=lk&&lk.targetId?(C.elementTarget(cfg,lk.targetId,lk.at/100,window.NAGWEB_STORY_MODEL,s.sdEase,size)||lk):lk,lookKeyPoint=resolvedLk?C.mapPoint(resolvedLk,spec):null,current=mapCurrent(s,progress(s)),now=C.mapPoint(current,spec);
  var draw=C.pathSamples(Object.assign({},cfg,{frames:list}),window.NAGWEB_STORY_MODEL,s.sdEase),path=draw.map(function(f){var p=C.mapPoint(f,spec);return p.x+','+p.y;}).join(' ');
- var lookDraw=cfg&&cfg.orientationMode==='lookAt'?C.lookSamples(cfg,window.NAGWEB_STORY_MODEL,s.sdEase):[],lookPath=lookDraw.map(function(f){var p=C.mapPoint(f,spec);return p.x+','+p.y;}).join(' '),lookNow=cfg&&cfg.orientationMode==='lookAt'?C.lookTarget(cfg,progress(s)/100,window.NAGWEB_STORY_MODEL,s.sdEase):null,lookPoint=lookNow?C.mapPoint(lookNow,spec):null;
+ var lookDraw=cfg&&cfg.orientationMode==='lookAt'?C.lookSamples(cfg,window.NAGWEB_STORY_MODEL,s.sdEase,undefined,size):[],lookPath=lookDraw.map(function(f){var p=C.mapPoint(f,spec);return p.x+','+p.y;}).join(' '),lookNow=cfg&&cfg.orientationMode==='lookAt'?C.lookTarget(cfg,progress(s)/100,window.NAGWEB_STORY_MODEL,s.sdEase,size):null,lookPoint=lookNow?C.mapPoint(lookNow,spec):null;
  var html='<details data-camera-map-box'+(mapOpen[s.id]?' open':'')+'><summary style="cursor:pointer;margin:8px 0">Mapa del recorrido</summary><label>Vista <select class="csel" data-camera-map-plane><option value="top"'+(plane==='top'?' selected':'')+'>Desde arriba · X/Z</option><option value="front"'+(plane==='front'?' selected':'')+'>De frente · X/Y</option></select></label>';
  html+='<div data-camera-map data-plane="'+plane+'" data-range="'+spec.range+'" style="position:relative;width:100%;aspect-ratio:1.5;border:1px solid var(--line);margin-top:8px;touch-action:none">';
  html+='<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"><path d="M50 0V100M0 50H100" stroke="currentColor" opacity=".2" stroke-width=".5"/><polyline data-camera-map-path points="'+path+'" fill="none" stroke="currentColor" opacity=".65" stroke-width=".7"/>';
  if(lookPath)html+='<polyline data-camera-look-map-path points="'+lookPath+'" fill="none" stroke="var(--accent)" opacity=".65" stroke-width=".7" stroke-dasharray="2 2"/>';
  list.forEach(function(f){var p=C.mapPoint(f,spec);html+='<circle data-camera-map-dot="'+f.at+'" cx="'+p.x+'" cy="'+p.y+'" r="1.5" fill="currentColor"/>';});
- looks.forEach(function(f){var p=C.mapPoint(f,spec);html+='<circle data-camera-look-map-dot="'+f.at+'" cx="'+p.x+'" cy="'+p.y+'" r="1.25" fill="var(--accent)" opacity=".65"/>';});
+ resolvedLooks.forEach(function(f){var p=C.mapPoint(f,spec);html+='<circle data-camera-look-map-dot="'+f.at+'" cx="'+p.x+'" cy="'+p.y+'" r="1.25" fill="var(--accent)" opacity=".65"/>';});
  html+='<circle data-camera-position cx="'+now.x+'" cy="'+now.y+'" r="3" fill="none" stroke="var(--accent)" stroke-width="1"/>';
  if(lookPoint)html+='<circle data-camera-look-position cx="'+lookPoint.x+'" cy="'+lookPoint.y+'" r="2.2" fill="var(--accent)" opacity=".8"/>';
  html+='</svg><button type="button" class="btn tiny" data-camera-map-point="'+k.at+'" aria-label="Mover encuadre '+k.at+'% en el mapa" style="position:absolute;left:'+point.x+'%;top:'+point.y+'%;transform:translate(-50%,-50%);touch-action:none;padding:3px;outline:2px solid var(--accent)">◆</button>';
- if(lk&&lookKeyPoint)html+='<button type="button" class="btn tiny" data-camera-look-map-point="'+lk.at+'" aria-label="Mover objetivo de mirada '+lk.at+'% en el mapa" style="position:absolute;left:'+lookKeyPoint.x+'%;top:'+lookKeyPoint.y+'%;transform:translate(-50%,-50%);touch-action:none;padding:2px 5px;outline:2px dashed var(--accent)">●</button>';
+ if(lk&&lookKeyPoint)html+='<button type="button" class="btn tiny" data-camera-look-map-point="'+lk.at+'" aria-label="'+(lk.targetId?'Objetivo vinculado a un elemento':'Mover objetivo de mirada '+lk.at+'% en el mapa')+'"'+(lk.targetId?' disabled title="Desvinculá el elemento para mover este punto manualmente."':'')+' style="position:absolute;left:'+lookKeyPoint.x+'%;top:'+lookKeyPoint.y+'%;transform:translate(-50%,-50%);touch-action:none;padding:2px 5px;outline:2px dashed var(--accent)">●</button>';
  html+='</div>';
  if(s.sdCameraResponsive)html+='<p class="hint gh">El mapa muestra el recorrido con el ancho de referencia.</p>';
  html+='<p class="hint gh" data-camera-position-label>'+mapLabel(current,progress(s))+'</p>';
@@ -260,9 +273,15 @@ C.panel=function(s){
    html+='<div style="margin:8px 8px 10px"><div style="position:relative;height:30px;border-bottom:2px dotted var(--line)">';
    lookList.forEach(function(f){html+='<button type="button" class="btn tiny" data-camera-look-jump="'+f.at+'" aria-label="Objetivo de mirada en '+f.at+' por ciento" style="position:absolute;left:'+f.at+'%;top:3px;transform:translateX(-50%);padding:3px;min-width:20px;'+(lk&&f.at===lk.at?'outline:2px solid var(--accent)':'')+'">●</button>';});
    html+='</div></div><button type="button" class="btn tiny" data-camera-look-add>Agregar objetivo aquí</button>';
+   var targetEls=(s.elements||[]).filter(function(e){return C.targetEligible(e,s);}),targetFound=!lk.targetId||targetEls.some(function(e){return e.id===lk.targetId;});
+   var targetOptions='<option value="">Punto XYZ</option>'+targetEls.map(function(e){return '<option value="'+safeLabel(e.id)+'"'+(lk.targetId===e.id?' selected':'')+'>'+targetLabel(e)+'</option>';}).join('');
+   if(lk.targetId&&!targetFound)targetOptions+='<option value="'+safeLabel(lk.targetId)+'" selected>Elemento no disponible · usa respaldo XYZ</option>';
+   html+=cRow('Objetivo de mirada','<select class="csel" data-camera-look-target data-camera-look-at="'+lk.at+'">'+targetOptions+'</select>');
+   if(s.layout!=='free')html+='<p class="hint gh">“Mirar elemento” se habilita primero en Lienzo libre. En otras disposiciones, usá Punto XYZ.</p>';
+   else if(lk.targetId)html+='<p class="hint gh">La cámara sigue el centro del elemento y sus keyframes X/Y/Z del Director. Elegí Punto XYZ para volver a editar el ● a mano.</p>';
    function lookField(label,key,value,min,max,step){return cRow(label,'<input class="cnum" type="number" aria-label="'+label+'" data-camera-look-field="'+key+'" data-camera-look-at="'+lk.at+'" value="'+value+'" min="'+min+'" max="'+max+'" step="'+step+'">');}
    html+=lookField('Momento objetivo (%)','at',lk.at,0,100,.1);
-   ['x','y','z'].forEach(function(axis){html+=lookField('Objetivo '+axis.toUpperCase(),axis,lk[axis],-4000,4000,25);});
+   if(!lk.targetId)['x','y','z'].forEach(function(axis){html+=lookField('Objetivo '+axis.toUpperCase(),axis,lk[axis],-4000,4000,25);});
    html+=cRow('Movimiento del objetivo','<select class="csel" data-camera-look-field="ease" data-camera-look-at="'+lk.at+'">'+[['linear','Directo'],['smooth','Suave'],['cinematic','Cinemático'],['ease-in','Acelerar'],['ease-out','Frenar'],['ease-in-out','Acelerar y frenar']].map(function(e){return '<option value="'+e[0]+'"'+((lk.ease||s.sdEase||'cinematic')===e[0]?' selected':'')+'>'+e[1]+'</option>';}).join('')+'</select>');
    html+='<button type="button" class="btn tiny" data-camera-look-delete="'+lk.at+'"'+(lookList.length<=1?' disabled':'')+'>Eliminar objetivo</button>';
   }else html+='<button type="button" class="btn tiny" data-camera-look-init>Crear objetivos desde los ángulos actuales</button>';
@@ -297,7 +316,7 @@ C.paint=function(pct){
  if(map&&C.config(s)){
   var spec={range:+map.dataset.range,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1},v=mapCurrent(s,pct),p=C.mapPoint(v,spec),dot=map.querySelector('[data-camera-position]'),label=pane.querySelector('[data-camera-position-label]');
   if(dot){dot.setAttribute('cx',p.x);dot.setAttribute('cy',p.y);}if(label)label.textContent=mapLabel(v,pct);
-  var cfg=C.config(s),lookDot=map.querySelector('[data-camera-look-position]'),look=cfg&&cfg.orientationMode==='lookAt'?C.lookTarget(cfg,pct/100,window.NAGWEB_STORY_MODEL,s.sdEase):null;
+  var cfg=C.config(s),lookDot=map.querySelector('[data-camera-look-position]'),look=cfg&&cfg.orientationMode==='lookAt'?C.lookTarget(cfg,pct/100,window.NAGWEB_STORY_MODEL,s.sdEase,previewReferenceSize(s)):null;
   if(lookDot&&look){var lp=C.mapPoint(look,spec);lookDot.setAttribute('cx',lp.x);lookDot.setAttribute('cy',lp.y);}
  }
 };
@@ -466,6 +485,13 @@ if(pane){
   if(input.dataset.cameraLookPathMode!==undefined){
    var ls=sec(),lm=input.value==='smooth'?'smooth':'linear',lc=ls.sdCameraLookPathMode==='smooth'?'smooth':'linear';if(lm===lc)return;
    snapshot();ls.sdCameraLookPathMode=lm;saveProject();renderPane();schedulePreview();return;
+  }
+  if(input.dataset.cameraLookTarget!==undefined){
+   var ts=sec(),tc=C.config(ts),tl=lookKeys(ts),tk=tl.find(function(k){return k.at===+input.dataset.cameraLookAt;}),tid=input.value;if(!tk||!tc)return;
+   var oldId=tk.targetId||'';if(oldId===tid)return;snapshot();
+   if(tid){var tv=C.elementTarget(tc,tid,tk.at/100,window.NAGWEB_STORY_MODEL,ts.sdEase,previewReferenceSize(ts));tk.targetId=tid;if(tv){tk.x=tv.x;tk.y=tv.y;tk.z=tv.z;}}
+   else delete tk.targetId;
+   persistLook(ts,tl,tk.at);return;
   }
   if(input.dataset.cameraLookField!==undefined){
    var lookScene=sec(),lookList=lookKeys(lookScene),lk=lookList.find(function(k){return k.at===+input.dataset.cameraLookAt;}),lf=input.dataset.cameraLookField;if(!lk)return;
