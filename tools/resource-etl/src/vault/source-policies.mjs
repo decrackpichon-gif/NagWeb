@@ -83,6 +83,16 @@ export function getSourcePolicy(provider) {
   };
 }
 
+export function assertCodeMirrorAllowed(provider) {
+  const policy = getSourcePolicy(provider);
+  if (!["full", "code-only"].includes(policy.mirrorMode)) {
+    throw new Error(
+      `Provider ${provider} is not approved for code mirroring (mode: ${policy.mirrorMode}).`
+    );
+  }
+  return policy;
+}
+
 export function assertFullMirrorAllowed(provider) {
   const policy = getSourcePolicy(provider);
   if (policy.mirrorMode !== "full") {

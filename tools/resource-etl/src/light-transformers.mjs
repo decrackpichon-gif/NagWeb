@@ -766,3 +766,135 @@ export function transformAnimXyzPreset({ preset, commit, repository }) {
     }
   };
 }
+
+
+export function transformThreeCodeScene({ repository, commit, item }) {
+  const fetchedAt = now();
+  const policy = getSourcePolicy("threejs");
+  const name = item.path
+    .replace(/^examples\//, "")
+    .replace(/\.html$/, "");
+  const isShader = /shader/i.test(name);
+  const titleMatch = item.html.match(/<title>([^<]+)<\/title>/i);
+  const title = titleMatch?.[1]?.replace(/^three\.js\s*/i, "").trim() || titleFromSlug(name);
+
+  return {
+    schemaVersion: "1.0",
+    id: `threejs:example:${name}`,
+    slug: `threejs-${name}`,
+    name,
+    title,
+    description: "Code-only Three.js example mirrored for offline NagWeb use.",
+    family: isShader ? "animation" : "3d",
+    kind: isShader ? "shader" : "code-scene",
+    source: {
+      provider: "threejs",
+      externalId: item.path,
+      sourceUrl: `https://threejs.org/examples/#${name}`,
+      repositoryUrl: repository,
+      fetchedAt,
+      commit
+    },
+    license: {
+      id: policy.licenseId,
+      name: policy.licenseName,
+      url: policy.licenseUrl,
+      commercialUse: true,
+      modificationAllowed: true,
+      redistributionAllowed: true,
+      attributionRequired: true,
+      attributionText: "three.js authors · MIT License",
+      verified: true
+    },
+    taxonomy: {
+      categories: [
+        "three.js",
+        isShader ? "shader" : "scene",
+        name.split("_")[0]
+      ],
+      tags: [
+        name,
+        "three.js",
+        "webgl",
+        ...(isShader ? ["shader", "glsl"] : [])
+      ]
+    },
+    previews: [],
+    artifacts: [{
+      id: "scene-source",
+      role: "source",
+      format: "html",
+      mimeType: "text/html",
+      content: item.html,
+      sourcePath: item.path,
+      targetPath: `${name}.html`,
+      checksum: `git-sha1:${item.sha}`
+    }],
+    runtime: {
+      type: "three",
+      renderer: "three",
+      entryArtifactId: "scene-source",
+      dependencies: [{ name: "three" }],
+      imports: item.analysis.imports,
+      setup: {
+        codeOnly: true,
+        externalAssets: false
+      }
+    },
+    editableProps: [
+      {
+        id: "speed",
+        label: "Velocidad global",
+        group: "Escena",
+        valueType: "number",
+        control: "slider",
+        defaultValue: 1,
+        binding: { type: "runtime", path: "scene.timeScale" },
+        constraints: { min: 0, max: 4, step: 0.05 },
+        animatable: true
+      }
+    ],
+    compatibility: {
+      nagweb: {
+        supported: true,
+        renderer: "three",
+        tested: false
+      },
+      three: true
+    },
+    capabilities: [
+      "three-dimensional",
+      "interactive",
+      "animatable"
+    ],
+    technical: {
+      type: isShader ? "shader" : "code-scene",
+      codeOnly: true,
+      imports: item.analysis.imports,
+      originalPath: item.path
+    },
+    search: {
+      text: `${title} ${name} three.js code scene ${isShader ? "shader glsl" : ""}`,
+      keywords: [
+        name,
+        "three.js",
+        "webgl",
+        ...(isShader ? ["shader", "glsl"] : [])
+      ]
+    },
+    ingestion: {
+      extractor: "threejs-code-only",
+      extractorVersion: EXTRACTOR_VERSION,
+      fetchedAt,
+      transformedAt: now(),
+      sourceHash: hash(item.html),
+      status: "validated",
+      warnings: [
+        "Example source is code-only by static scan. Adapter work is still required before direct insertion into the NagWeb canvas."
+      ]
+    },
+    sourceData: {
+      codeOnlyAnalysis: item.analysis
+    }
+  };
+}

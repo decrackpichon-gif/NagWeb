@@ -3,12 +3,14 @@ import { extractLucideIcons } from "./extractors/lucide.mjs";
 import { extractMagicUiComponents } from "./extractors/magicui.mjs";
 import { extractMotionPrimitives } from "./extractors/motion-primitives.mjs";
 import { extractAnimXyzCore } from "./extractors/animxyz.mjs";
+import { extractThreeCodeScenes } from "./extractors/threejs.mjs";
 import {
   transformLucideIcon,
   transformMagicUiComponent,
   transformMotionPrimitive,
   transformAnimXyzCore,
-  transformAnimXyzPreset
+  transformAnimXyzPreset,
+  transformThreeCodeScene
 } from "./light-transformers.mjs";
 import {
   writeResourceToVault,
@@ -16,7 +18,10 @@ import {
   writePortableBundle,
   writeThirdPartyNotices
 } from "./vault/store.mjs";
-import { assertFullMirrorAllowed } from "./vault/source-policies.mjs";
+import {
+  assertFullMirrorAllowed,
+  assertCodeMirrorAllowed
+} from "./vault/source-policies.mjs";
 import { importLocalLottieDirectory } from "./importers/lottie-local.mjs";
 
 function parseArgs(argv) {
@@ -32,7 +37,7 @@ function parseArgs(argv) {
 }
 
 function parseSources(value) {
-  return String(value || "lucide,magicui,motion-primitives,animxyz")
+  return String(value || "lucide,magicui,motion-primitives,animxyz,threejs")
     .split(",")
     .map((source) => source.trim().toLowerCase())
     .filter(Boolean);
@@ -88,6 +93,21 @@ async function collectSource(source, args) {
         })
       )
     ];
+  }
+
+  if (source === "threejs" || source === "three.js") {
+    assertCodeMirrorAllowed("threejs");
+    const raw = await extractThreeCodeScenes({ limit, all });
+    console.log(
+      `[threejs] ${raw.totalCodeOnly}/${raw.totalScanned} examples passed the code-only filter.`
+    );
+    return raw.items.map((item) =>
+      transformThreeCodeScene({
+        repository: raw.repository,
+        commit: raw.commit,
+        item
+      })
+    );
   }
 
   throw new Error(`Unsupported code-vault source: ${source}`);
