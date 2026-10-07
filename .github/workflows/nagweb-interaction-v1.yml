@@ -14,6 +14,9 @@ on:
       - 'js/nagweb-interaction-organic-v4.js'
       - 'js/nagweb-interaction-organic-v4b.js'
       - 'js/nagweb-interaction-organic-v4c.js'
+      - 'js/nagweb-scene-composer-v1.js'
+      - 'js/nagweb-scene-composer-view-v1.js'
+      - 'js/nagweb-scene-composer-app-v1.js'
       - 'js/nagweb-interaction-background-ai-v1.js'
       - 'js/nagweb-interaction-preparation-v1.js'
       - 'js/nagweb-interaction-session-v1.js'
@@ -23,6 +26,7 @@ on:
       - 'experiments/organic-skin-v4.html'
       - 'experiments/organic-weighted-curve-v4b.html'
       - 'experiments/organic-adaptive-curve-v4c.html'
+      - 'experiments/scene-composer-v1.html'
       - 'experiments/background-ai-v1.html'
       - 'experiments/preparation-pipeline-v1.html'
       - 'experiments/interaction-studio-v1.html'
@@ -35,6 +39,9 @@ on:
       - '.github/nagweb-interaction-organic-v4b-browser-smoke.mjs'
       - '.github/nagweb-interaction-organic-v4c-model-test.mjs'
       - '.github/nagweb-interaction-organic-v4c-browser-smoke.mjs'
+      - '.github/nagweb-interaction-v4c-assets-model-test.mjs'
+      - '.github/nagweb-scene-composer-v1-model-test.mjs'
+      - '.github/nagweb-scene-composer-v1-browser-smoke.mjs'
       - '.github/workflows/nagweb-interaction-v1.yml'
       - 'docs/interaction-engine-v1.md'
   pull_request:
@@ -86,6 +93,8 @@ jobs:
           node .github/nagweb-interaction-organic-v4-model-test.mjs
           node .github/nagweb-interaction-organic-v4b-model-test.mjs
           node .github/nagweb-interaction-organic-v4c-model-test.mjs
+          node .github/nagweb-interaction-v4c-assets-model-test.mjs
+          node .github/nagweb-scene-composer-v1-model-test.mjs
           node .github/nagweb-interaction-background-ai-model-test.mjs
           node .github/nagweb-interaction-preparation-model-test.mjs
           node .github/nagweb-interaction-session-model-test.mjs
@@ -103,6 +112,7 @@ jobs:
           node .github/nagweb-interaction-organic-v4-browser-smoke.mjs
           node .github/nagweb-interaction-organic-v4b-browser-smoke.mjs
           node .github/nagweb-interaction-organic-v4c-browser-smoke.mjs
+          node .github/nagweb-scene-composer-v1-browser-smoke.mjs
           node .github/nagweb-interaction-background-ai-browser-smoke.mjs
           node .github/nagweb-interaction-preparation-browser-smoke.mjs
           node .github/nagweb-interaction-studio-browser-smoke.mjs
@@ -119,10 +129,14 @@ jobs:
           cp js/nagweb-interaction-organic-v4.js /tmp/nagweb-interaction-studio/js/
           cp js/nagweb-interaction-organic-v4b.js /tmp/nagweb-interaction-studio/js/
           cp js/nagweb-interaction-organic-v4c.js /tmp/nagweb-interaction-studio/js/
+          cp js/nagweb-scene-composer-v1.js /tmp/nagweb-interaction-studio/js/
+          cp js/nagweb-scene-composer-view-v1.js /tmp/nagweb-interaction-studio/js/
+          cp js/nagweb-scene-composer-app-v1.js /tmp/nagweb-interaction-studio/js/
           cp experiments/organic-follower-v3.html /tmp/nagweb-interaction-studio/experiments/
           cp experiments/organic-skin-v4.html /tmp/nagweb-interaction-studio/experiments/
           cp experiments/organic-weighted-curve-v4b.html /tmp/nagweb-interaction-studio/experiments/
           cp experiments/organic-adaptive-curve-v4c.html /tmp/nagweb-interaction-studio/experiments/
+          cp experiments/scene-composer-v1.html /tmp/nagweb-interaction-studio/experiments/
           cp js/nagweb-interaction-background-ai-v1.js /tmp/nagweb-interaction-studio/js/
           cp js/nagweb-interaction-preparation-v1.js /tmp/nagweb-interaction-studio/js/
           cp js/nagweb-interaction-session-v1.js /tmp/nagweb-interaction-studio/js/
