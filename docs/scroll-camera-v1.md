@@ -326,3 +326,27 @@ arrastrable y la tensión puede liberarse desde el campo numérico o teclado.
 
 Las pruebas cubren la conversión handle → tensión, clamps, arrastre físico en Chromium,
 un único undo y cancelación con Escape.
+
+
+## Inserción directa sobre la trayectoria
+El mapa espacial permite crear un nuevo encuadre `◆` con doble clic sobre la
+trayectoria de cámara. NagWeb proyecta el clic contra los tramos muestreados del
+recorrido, encuentra el punto visual más cercano y recupera su momento narrativo
+`at`. El nuevo keyframe captura la pose XYZ y orientación que tenía la cámara en
+ese instante, además del easing del tramo de origen.
+
+La captura admite una tolerancia de 14 px respecto de la trayectoria. Antes de crear
+un punto, una zona más pequeña de 8 px alrededor de cada keyframe existente tiene
+prioridad: un doble clic allí selecciona el `◆` existente en lugar de crear un
+vecino casi duplicado. El porcentaje final se redondea a 0,1%, igual que el resto de
+la pista de cámara.
+
+La operación crea una sola entrada de Deshacer y selecciona inmediatamente el nuevo
+encuadre para editarlo. Se mantiene el límite de 128 keyframes. Borrar el punto recién
+insertado restaura los datos originales del recorrido.
+
+En Curva suave, el punto se captura exactamente sobre la trayectoria existente en el
+momento de inserción. Al convertirse en un nuevo control de la spline, su presencia
+puede recalcular las tangentes vecinas, igual que al agregar un nodo nuevo a una curva.
+Las pruebas verifican la búsqueda proyectada, captura XYZ, prevención de duplicados,
+historial, interacción física por doble clic en Chromium y restauración tras borrar.
