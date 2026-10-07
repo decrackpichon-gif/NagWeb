@@ -47,6 +47,21 @@ export function buildInsertDescriptor(resource, options = {}) {
     };
   }
 
+  if (renderer === "nagweb-css-class-effect") {
+    const artifact = selectArtifact(resource, instance, "animation-data");
+    return {
+      version: "1.0",
+      kind: "css-effect",
+      resourceId: resource.id,
+      instance,
+      payload: {
+        effect: parseJsonArtifact(artifact) || resource.runtime?.setup || null,
+        dependencies: resource.runtime?.registryDependencies || [],
+        trigger: instance.values.trigger || "hover"
+      }
+    };
+  }
+
   if (renderer === "nagweb-motion-native") {
     const artifact = selectArtifact(resource, instance, "animation-data");
     return {

@@ -15,6 +15,7 @@ import {
   transformMagicUiComponent
 } from "./light-transformers.mjs";
 import { looksLikeLottie } from "./importers/lottie-local.mjs";
+import { CSSSHAKE_EFFECTS } from "./extractors/csshake.mjs";
 import { ANIMXYZ_NATIVE_PRESETS } from "./extractors/animxyz.mjs";
 import { analyzeThreeExample } from "./extractors/threejs.mjs";
 import {
@@ -322,5 +323,8 @@ const motionResource = {
 };
 assert.equal(buildInsertDescriptor(motionResource).kind, "motion-preset");
 assert.equal(buildStaticPreview(motionResource).supported, true);
+
+assert.equal(CSSSHAKE_EFFECTS.length, 10);
+assert.ok(CSSSHAKE_EFFECTS.some((effect) => effect.name === "shake-crazy"));
 
 console.log("NagWeb Resource ETL self-test: OK");

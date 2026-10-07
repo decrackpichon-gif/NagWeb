@@ -39,7 +39,7 @@ jobs:
         working-directory: tools/resource-etl
         run: >
           node src/vault-cli.mjs
-          --sources=lucide,magicui,motion-primitives,animxyz,threejs,hyperui
+          --sources=lucide,magicui,motion-primitives,animxyz,threejs,hyperui,csshake
           --limit=2
           --out=ci-vault
 

@@ -43,6 +43,17 @@ function htmlPreview(descriptor, title, resource) {
 </head><body>${body}</body></html>`;
 }
 
+function cssEffectPreview(descriptor, title) {
+  const effect = descriptor.payload.effect || {};
+  const classNames = effect.previewClassNames || [effect.className, "shake-constant"];
+  return `<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<title>${escapeHtml(title)}</title>
+<link rel="stylesheet" href="../providers/csshake/csshake-runtime/files/csshake.css">
+<style>html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#f3f4f6;font-family:system-ui}.demo{padding:24px 34px;border-radius:18px;background:white;box-shadow:0 20px 60px #0002;font-weight:700}</style>
+</head><body><div class="demo ${classNames.join(" ")}">${escapeHtml(title)}</div></body></html>`;
+}
+
 function motionPreview(descriptor, title) {
   const preset = descriptor.payload.preset || {};
   const payload = JSON.stringify(preset).replaceAll("<", "\\u003c");
@@ -82,6 +93,10 @@ export function buildStaticPreview(resource, options = {}) {
 
   if (descriptor.kind === "html") {
     return { supported: true, html: htmlPreview(descriptor, resource.title, resource) };
+  }
+
+  if (descriptor.kind === "css-effect") {
+    return { supported: true, html: cssEffectPreview(descriptor, resource.title) };
   }
 
   if (descriptor.kind === "motion-preset") {

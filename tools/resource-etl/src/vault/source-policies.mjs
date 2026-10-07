@@ -1,4 +1,28 @@
 export const SOURCE_POLICIES = {
+  "animate-css": {
+    mirrorMode: "blocked-pending-review",
+    licenseId: "Hippocratic-2.1",
+    licenseName: "Hippocratic License 2.1",
+    licenseUrl: "https://github.com/animate-css/animate.css/blob/main/LICENSE",
+    noticeRequired: true,
+    notes: "Not mirrored automatically because the current license adds use restrictions beyond a permissive open-source license."
+  },
+  "hover-css": {
+    mirrorMode: "blocked-pending-review",
+    licenseId: "custom",
+    licenseName: "Hover.css dual/commercial license",
+    licenseUrl: "https://github.com/IanLunn/Hover/blob/master/license.txt",
+    noticeRequired: true,
+    notes: "Do not mirror for NagWeb without OEM commercial permission; the license explicitly calls out application builders/toolkits."
+  },
+  csshake: {
+    mirrorMode: "full",
+    licenseId: "MIT",
+    licenseName: "MIT License",
+    licenseUrl: "https://github.com/elrumordelaluz/csshake/blob/master/LICENSE",
+    noticeRequired: true,
+    notes: "CSS/SCSS animation code may be mirrored. Preserve the MIT notice."
+  },
   lucide: {
     mirrorMode: "full",
     licenseId: "ISC",

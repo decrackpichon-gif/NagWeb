@@ -4,6 +4,7 @@ import { extractMagicUiComponents } from "./extractors/magicui.mjs";
 import { extractHyperUiBlocks } from "./extractors/hyperui.mjs";
 import { extractMotionPrimitives } from "./extractors/motion-primitives.mjs";
 import { extractAnimXyzCore } from "./extractors/animxyz.mjs";
+import { extractCssShake } from "./extractors/csshake.mjs";
 import { extractThreeCodeScenes } from "./extractors/threejs.mjs";
 import {
   transformLucideIcon,
@@ -13,6 +14,8 @@ import {
   transformMotionPrimitive,
   transformAnimXyzCore,
   transformAnimXyzPreset,
+  transformCssShakeRuntime,
+  transformCssShakeEffect,
   transformThreeCodeScene
 } from "./light-transformers.mjs";
 import {
@@ -41,7 +44,7 @@ function parseArgs(argv) {
 }
 
 function parseSources(value) {
-  return String(value || "lucide,magicui,motion-primitives,animxyz,threejs,hyperui")
+  return String(value || "lucide,magicui,motion-primitives,animxyz,threejs,hyperui,csshake")
     .split(",")
     .map((source) => source.trim().toLowerCase())
     .filter(Boolean);
@@ -100,6 +103,17 @@ async function collectSource(source, args) {
         item
       })
     );
+  }
+
+  if (source === "csshake") {
+    assertFullMirrorAllowed("csshake");
+    const raw = await extractCssShake();
+    return [
+      transformCssShakeRuntime(raw),
+      ...raw.effects.map((effect) =>
+        transformCssShakeEffect({ raw, effect })
+      )
+    ];
   }
 
   if (source === "animxyz") {

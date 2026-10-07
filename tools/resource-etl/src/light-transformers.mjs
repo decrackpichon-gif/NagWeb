@@ -1127,3 +1127,189 @@ export function transformHyperUiBlock({ repository, commit, item }) {
     }
   };
 }
+
+
+export function transformCssShakeRuntime(raw) {
+  const fetchedAt = now();
+  const policy = getSourcePolicy("csshake");
+
+  return {
+    schemaVersion: "1.0",
+    id: "csshake:runtime",
+    slug: "csshake-runtime",
+    name: "csshake-runtime",
+    title: "CSSShake Runtime",
+    description: "Complete CSSShake runtime mirrored for offline NagWeb use.",
+    family: "animation",
+    kind: "motion-preset",
+    source: {
+      provider: "csshake",
+      externalId: "runtime",
+      sourceUrl: "https://elrumordelaluz.github.io/csshake/",
+      repositoryUrl: raw.repository,
+      fetchedAt,
+      commit: raw.commit
+    },
+    license: {
+      id: policy.licenseId,
+      name: policy.licenseName,
+      url: policy.licenseUrl,
+      commercialUse: true,
+      modificationAllowed: true,
+      redistributionAllowed: true,
+      attributionRequired: true,
+      attributionText: "CSSShake · MIT License",
+      verified: true
+    },
+    taxonomy: {
+      categories: ["animation", "css", "hover"],
+      tags: ["csshake", "css", "shake", "hover", "animation"]
+    },
+    previews: [],
+    artifacts: [
+      {
+        id: "css",
+        role: "stylesheet",
+        format: "css",
+        mimeType: "text/css",
+        content: raw.css,
+        targetPath: "csshake.css"
+      },
+      {
+        id: "scss",
+        role: "source",
+        format: "scss",
+        mimeType: "text/plain",
+        content: raw.scss,
+        targetPath: "csshake.scss"
+      }
+    ],
+    runtime: {
+      type: "css",
+      renderer: "nagweb-css-runtime",
+      entryArtifactId: "css"
+    },
+    editableProps: [],
+    compatibility: {
+      nagweb: { supported: true, renderer: "css", tested: false }
+    },
+    capabilities: ["animatable", "interactive"],
+    technical: {
+      type: "css-animation-runtime",
+      effectCount: raw.effects.length,
+      packageVersion: raw.packageJson?.version
+    },
+    search: {
+      text: "CSSShake shake hover CSS animation",
+      keywords: ["csshake", "css", "shake", "hover", "animation"]
+    },
+    ingestion: {
+      extractor: "csshake",
+      extractorVersion: EXTRACTOR_VERSION,
+      fetchedAt,
+      transformedAt: now(),
+      sourceHash: hash(raw.css + raw.scss),
+      status: "validated",
+      warnings: []
+    }
+  };
+}
+
+export function transformCssShakeEffect({ raw, effect }) {
+  const fetchedAt = now();
+  const policy = getSourcePolicy("csshake");
+  const spec = {
+    schema: "nagweb-css-effect/0.1",
+    className: effect.className,
+    trigger: "hover",
+    previewClassNames: [effect.className, "shake-constant"]
+  };
+
+  return {
+    schemaVersion: "1.0",
+    id: `csshake:${effect.name}`,
+    slug: `csshake-${effect.name}`,
+    name: effect.name,
+    title: titleFromSlug(effect.name),
+    description: `CSSShake effect "${effect.name}" ready for NagWeb elements.`,
+    family: "animation",
+    kind: "motion-preset",
+    source: {
+      provider: "csshake",
+      externalId: effect.name,
+      sourceUrl: "https://elrumordelaluz.github.io/csshake/",
+      repositoryUrl: raw.repository,
+      fetchedAt,
+      commit: raw.commit
+    },
+    license: {
+      id: policy.licenseId,
+      name: policy.licenseName,
+      url: policy.licenseUrl,
+      commercialUse: true,
+      modificationAllowed: true,
+      redistributionAllowed: true,
+      attributionRequired: true,
+      attributionText: "CSSShake · MIT License",
+      verified: true
+    },
+    taxonomy: {
+      categories: ["animation", "css-effect", "hover"],
+      tags: [effect.name, "csshake", "shake", "hover"]
+    },
+    previews: [],
+    artifacts: [{
+      id: "effect",
+      role: "animation-data",
+      format: "json",
+      mimeType: "application/json",
+      content: JSON.stringify(spec, null, 2),
+      targetPath: "effect.json"
+    }],
+    runtime: {
+      type: "css",
+      renderer: "nagweb-css-class-effect",
+      entryArtifactId: "effect",
+      registryDependencies: ["csshake:runtime"],
+      setup: spec
+    },
+    editableProps: [
+      {
+        id: "trigger",
+        label: "Activación",
+        group: "Interacción",
+        valueType: "enum",
+        control: "select",
+        defaultValue: "hover",
+        binding: { type: "runtime", path: "cssEffect.trigger" },
+        constraints: {
+          options: [
+            { label: "Hover", value: "hover" },
+            { label: "Siempre", value: "constant" }
+          ]
+        }
+      }
+    ],
+    compatibility: {
+      nagweb: { supported: true, renderer: "css-effect", tested: false }
+    },
+    capabilities: ["animatable", "interactive"],
+    technical: {
+      type: "css-class-effect",
+      className: effect.className
+    },
+    search: {
+      text: `${effect.name} CSSShake hover animation`,
+      keywords: [effect.name, "csshake", "hover", "animation"]
+    },
+    ingestion: {
+      extractor: "csshake",
+      extractorVersion: EXTRACTOR_VERSION,
+      fetchedAt,
+      transformedAt: now(),
+      sourceHash: hash(JSON.stringify(spec)),
+      status: "validated",
+      warnings: []
+    }
+  };
+}
