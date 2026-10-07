@@ -28,8 +28,8 @@
       weight:clamp(num(input.weight,1),0,2),
       radiusScale:clamp(num(input.radiusScale,1),.25,3),
       move:clamp(num(input.move,response.move==null?1:response.move),0,2),
-      rotate:clamp(num(input.rotate,response.rotate==null?.35:response.rotate),0,2),
-      scale:clamp(num(input.scale,response.scale==null?.15:response.scale),0,2),
+      rotate:clamp(num(input.rotate,(response.rotate==null ? .35 : response.rotate)),0,2),
+      scale:clamp(num(input.scale,(response.scale==null ? .15 : response.scale)),0,2),
       returnSpeed:clamp(num(input.returnSpeed,1),.25,2)
     };
   }
