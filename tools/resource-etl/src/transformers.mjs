@@ -1,4 +1,8 @@
 import { flattenPolyHavenFiles } from "./extractors/polyhaven.mjs";
+import {
+  flattenAmbientCgDownloads,
+  selectAmbientCgDownload
+} from "./extractors/ambientcg.mjs";
 
 const EXTRACTOR_VERSION = "0.1.0";
 
@@ -327,6 +331,249 @@ export function transformShadcnItem({ registry, item }) {
       registryName: registry.name,
       registryHomepage: registry.homepage,
       registryType: raw.type
+    }
+  };
+}
+
+
+function ambientCgMaterialEditableProps() {
+  return [
+    {
+      id: "tiling",
+      label: "Repetición",
+      group: "Material",
+      valueType: "number",
+      control: "slider",
+      defaultValue: 1,
+      binding: { type: "runtime", path: "material.textureRepeat" },
+      constraints: { min: 0.1, max: 20, step: 0.1 },
+      animatable: true
+    },
+    {
+      id: "roughness",
+      label: "Rugosidad",
+      group: "Material",
+      valueType: "number",
+      control: "slider",
+      defaultValue: 1,
+      binding: { type: "material-property", property: "roughness" },
+      constraints: { min: 0, max: 1, step: 0.01 },
+      animatable: true
+    },
+    {
+      id: "metalness",
+      label: "Metalizado",
+      group: "Material",
+      valueType: "number",
+      control: "slider",
+      defaultValue: 0,
+      binding: { type: "material-property", property: "metalness" },
+      constraints: { min: 0, max: 1, step: 0.01 },
+      animatable: true
+    }
+  ];
+}
+
+function ambientCgModelEditableProps() {
+  return [
+    {
+      id: "position",
+      label: "Posición",
+      group: "Transformación",
+      valueType: "vector3",
+      control: "vector3",
+      defaultValue: [0, 0, 0],
+      binding: { type: "transform", property: "position", axis: "xyz" },
+      animatable: true
+    },
+    {
+      id: "rotation",
+      label: "Rotación",
+      group: "Transformación",
+      valueType: "vector3",
+      control: "rotation",
+      defaultValue: [0, 0, 0],
+      binding: { type: "transform", property: "rotation", axis: "xyz" },
+      animatable: true
+    },
+    {
+      id: "scale",
+      label: "Escala",
+      group: "Transformación",
+      valueType: "number",
+      control: "slider",
+      defaultValue: 1,
+      binding: { type: "transform", property: "scale", axis: "xyz" },
+      constraints: { min: 0.01, max: 10, step: 0.01 },
+      animatable: true
+    }
+  ];
+}
+
+export function transformAmbientCgAsset(asset) {
+  const fetchedAt = now();
+  const isModel = String(asset.dataType).toLowerCase() === "3dmodel";
+  const downloads = flattenAmbientCgDownloads(asset);
+  const selected = selectAmbientCgDownload(asset, {
+    resolution: "1K",
+    fileType: "JPG"
+  });
+
+  const previewUrl =
+    asset.previewImage?.["512-WEBP"] ||
+    asset.previewImage?.["512-JPG-FFFFFF"] ||
+    asset.previewImage?.["256-WEBP"];
+
+  const downloadArtifacts = downloads.map((download, index) => ({
+    id: `download-${index + 1}`,
+    role: isModel ? "model" : "material",
+    format:
+      download.fileName.split(".").pop()?.toLowerCase() ||
+      "zip",
+    sourceUrl: download.url,
+    targetPath: download.fileName,
+    size: download.size,
+    checksum: download.checksum,
+    variant: {
+      attribute: download.attribute,
+      category: download.category
+    }
+  }));
+
+  const selectedArtifact = selected
+    ? downloadArtifacts.find((artifact) => artifact.sourceUrl === selected.url)
+    : undefined;
+
+  return {
+    schemaVersion: "1.0",
+    id: `ambientcg:${asset.assetId}`,
+    slug: slugify(asset.assetId),
+    name: asset.assetId,
+    title: asset.displayName || asset.assetId,
+    description: asset.description || asset.dataTypeDescription || "",
+    family: isModel ? "3d" : "material",
+    kind: isModel ? "model-3d" : "pbr-material",
+    source: {
+      provider: "ambientcg",
+      externalId: asset.assetId,
+      sourceUrl: asset.shortLink || `https://ambientcg.com/a/${asset.assetId}`,
+      apiUrl: "https://ambientcg.com/api/v2/full_json",
+      author: "ambientCG",
+      fetchedAt
+    },
+    license: {
+      id: "CC0",
+      name: "CC0 1.0",
+      url: "https://creativecommons.org/publicdomain/zero/1.0/",
+      commercialUse: true,
+      modificationAllowed: true,
+      redistributionAllowed: true,
+      attributionRequired: false,
+      verified: true
+    },
+    taxonomy: {
+      categories: [
+        asset.dataType,
+        asset.displayCategory || asset.category
+      ].filter(Boolean),
+      tags: asset.tags || [],
+      sourceCategories: [asset.category, asset.displayCategory].filter(Boolean)
+    },
+    previews: previewUrl
+      ? [{ type: "thumbnail", url: previewUrl }]
+      : [],
+    artifacts: [
+      ...(previewUrl
+        ? [{
+            id: "thumbnail",
+            role: "thumbnail",
+            format: extensionFromUrl(previewUrl) || "webp",
+            sourceUrl: previewUrl
+          }]
+        : []),
+      ...downloadArtifacts
+    ],
+    runtime: {
+      type: "three",
+      renderer: "react-three-fiber",
+      entryArtifactId: selectedArtifact?.id
+    },
+    editableProps: isModel
+      ? ambientCgModelEditableProps()
+      : ambientCgMaterialEditableProps(),
+    compatibility: {
+      nagweb: {
+        supported: true,
+        renderer: "three",
+        tested: false
+      },
+      three: true,
+      r3f: true
+    },
+    capabilities: isModel
+      ? [
+          "three-dimensional",
+          "transformable",
+          "editable-materials",
+          "editable-textures",
+          "animatable"
+        ]
+      : [
+          "editable-materials",
+          "editable-textures",
+          "animatable"
+        ],
+    technical: {
+      type: isModel ? "model-3d" : "pbr-material",
+      ambientCgDataType: asset.dataType,
+      creationMethod: asset.creationMethod,
+      maps: asset.maps || [],
+      hasUsd: Boolean(asset.hasUsd),
+      dimensions: {
+        x: Number(asset.dimensionX || 0),
+        y: Number(asset.dimensionY || 0),
+        z: Number(asset.dimensionZ || 0)
+      },
+      selectedDownload: selected
+        ? {
+            attribute: selected.attribute,
+            fileName: selected.fileName,
+            category: selected.category
+          }
+        : null
+    },
+    search: {
+      text: [
+        asset.displayName,
+        asset.description,
+        asset.displayCategory,
+        ...(asset.tags || [])
+      ].filter(Boolean).join(" "),
+      keywords: asset.tags || [],
+      semanticText: [
+        asset.displayName,
+        asset.dataTypeName,
+        asset.displayCategory,
+        asset.description
+      ].filter(Boolean).join(". "),
+      popularity: Number(asset.downloadCount || asset.popularityScore || 0)
+    },
+    ingestion: {
+      extractor: "ambientcg",
+      extractorVersion: EXTRACTOR_VERSION,
+      fetchedAt,
+      transformedAt: now(),
+      status: "validated",
+      warnings: selected
+        ? []
+        : ["No downloadable package was returned by ambientCG for this asset."]
+    },
+    sourceData: {
+      releaseDate: asset.releaseDate,
+      earlyReleaseDate: asset.earlyReleaseDate,
+      creationMethod: asset.creationMethod,
+      previewType: asset.previewType,
+      variations: asset.variations || []
     }
   };
 }

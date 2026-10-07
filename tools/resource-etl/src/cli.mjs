@@ -6,8 +6,13 @@ import {
 } from "./extractors/polyhaven.mjs";
 import { extractShadcnComponents } from "./extractors/shadcn.mjs";
 import {
+  extractAmbientCgAssets,
+  selectAmbientCgDownload
+} from "./extractors/ambientcg.mjs";
+import {
   transformPolyHavenModel,
-  transformShadcnItem
+  transformShadcnItem,
+  transformAmbientCgAsset
 } from "./transformers.mjs";
 import { downloadFile, safeRelativePath } from "./lib/http.mjs";
 
@@ -142,6 +147,62 @@ async function ingestShadcn(args, rootDir, dryRun, download) {
   }
 }
 
+
+async function ingestAmbientCg(args, rootDir, dryRun, download) {
+  const limit = intArg(args.limit, 10);
+  const resolution = String(args.resolution || "1K").toUpperCase();
+  const fileType = String(args["file-type"] || "JPG").toUpperCase();
+  const requestedType = String(args.type || "all").toLowerCase();
+  const types =
+    requestedType === "model"
+      ? ["3DModel"]
+      : requestedType === "material"
+        ? ["Material"]
+        : ["3DModel", "Material"];
+
+  const raw = await extractAmbientCgAssets({ limit, types });
+  const resources = raw.items.map(transformAmbientCgAsset);
+
+  printSummary(resources, dryRun ? "DRY RUN" : download ? "DOWNLOAD" : "WRITE");
+
+  if (dryRun) {
+    console.log(JSON.stringify(resources.slice(0, 2), null, 2));
+    return;
+  }
+
+  await writeJson(path.join(rootDir, "ambientcg", "catalog.json"), resources);
+
+  for (let index = 0; index < resources.length; index += 1) {
+    const resource = resources[index];
+    const asset = raw.items[index];
+    const resourceDir = path.join(rootDir, "ambientcg", resource.slug);
+
+    await writeJson(path.join(resourceDir, "resource.json"), resource);
+
+    if (!download) continue;
+
+    const selected = selectAmbientCgDownload(asset, {
+      resolution,
+      fileType
+    });
+
+    if (!selected) {
+      console.warn(`[ambientcg] No downloadable package for ${resource.id}`);
+      continue;
+    }
+
+    const relative = safeRelativePath(
+      selected.fileName || `${resource.slug}.zip`
+    );
+    const destination = path.join(resourceDir, "files", relative);
+
+    console.log(
+      `[ambientcg] ↓ ${resource.id} / ${selected.attribute || relative}`
+    );
+    await downloadFile(selected.url, destination);
+  }
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const source = String(args.source || "polyhaven").toLowerCase();
@@ -153,9 +214,9 @@ async function main() {
     String(args.out || "output")
   );
 
-  if (!["polyhaven", "shadcn"].includes(source)) {
+  if (!["polyhaven", "shadcn", "ambientcg"].includes(source)) {
     throw new Error(
-      `Unknown source "${source}". Pilot sources: polyhaven, shadcn.`
+      `Unknown source "${source}". Sources: polyhaven, shadcn, ambientcg.`
     );
   }
 
@@ -166,6 +227,8 @@ async function main() {
 
   if (source === "polyhaven") {
     await ingestPolyHaven(args, rootDir, dryRun, download);
+  } else if (source === "ambientcg") {
+    await ingestAmbientCg(args, rootDir, dryRun, download);
   } else {
     await ingestShadcn(args, rootDir, dryRun, download);
   }

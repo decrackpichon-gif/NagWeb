@@ -41,12 +41,19 @@ Shadcn:
 npm run ingest -- --source=shadcn --limit=5 --dry-run
 ```
 
+ambientCG:
+
+```bash
+npm run ingest -- --source=ambientcg --limit=5 --dry-run
+```
+
 Si no se especifica `--write` ni `--download`, el CLI también entra en dry-run por seguridad.
 
 ## 2. Crear el catálogo local sin binarios
 
 ```bash
 npm run ingest -- --source=polyhaven --limit=25 --write
+npm run ingest -- --source=ambientcg --limit=25 --write
 npm run ingest -- --source=shadcn --limit=25 --write
 ```
 
@@ -69,6 +76,14 @@ npm run ingest -- --source=shadcn --limit=10 --download
 ```
 
 Esto guarda el código fuente de cada componente además de su manifest universal.
+
+ambientCG:
+
+```bash
+npm run ingest -- --source=ambientcg --limit=5 --download --resolution=1K --file-type=JPG
+```
+
+Por defecto ambientCG indexa modelos 3D y materiales. Se puede limitar con `--type=model` o `--type=material`. El piloto descarga el paquete elegido por la API y conserva todas las alternativas en el manifest universal.
 
 ## Salida
 
@@ -108,7 +123,7 @@ Después de validar Poly Haven + Shadcn:
 1. persistencia en Supabase;
 2. deduplicación por `source.provider + source.externalId + sourceHash`;
 3. sincronización incremental;
-4. ambientCG;
+4. ambientCG; ✅ extractor v0.1
 5. PMNDRS;
 6. Kenney;
 7. Aceternity;
@@ -119,3 +134,10 @@ Después de validar Poly Haven + Shadcn:
 12. Lottie;
 13. inferencia más rica de `editableProps` desde AST/CSS/schema;
 14. panel de catálogo dentro de NagWeb.
+
+
+## ambientCG v0.1
+
+La API se consulta con `downloadData`, `previewData` y metadatos técnicos. El transformador normaliza tanto `3DModel` como `Material` y mantiene todos los paquetes disponibles como artifacts. Para una descarga piloto elige 1K-JPG cuando existe.
+
+No se descomprime el ZIP automáticamente todavía: primero preservamos el paquete original y su metadata; la extracción/optimización web queda para una etapa posterior.

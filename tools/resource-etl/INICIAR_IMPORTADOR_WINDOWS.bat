@@ -29,7 +29,9 @@ echo  1. PROBAR Poly Haven ^(5 modelos, NO descarga archivos^)
 echo  2. DESCARGAR Poly Haven ^(5 modelos 3D, glTF 1K^)
 echo  3. PROBAR Shadcn ^(5 componentes, NO guarda archivos^)
 echo  4. DESCARGAR Shadcn ^(10 componentes^)
-echo  5. CREAR catalogo local ^(25 Poly Haven + 25 Shadcn^)
+echo  5. PROBAR ambientCG ^(5 recursos, NO descarga archivos^)
+echo  6. DESCARGAR ambientCG ^(5 recursos, 1K JPG^)
+echo  7. CREAR catalogo local ^(25 por fuente^)
 echo.
 echo  0. Salir
 echo.
@@ -39,7 +41,9 @@ if "%choice%"=="1" goto poly_test
 if "%choice%"=="2" goto poly_download
 if "%choice%"=="3" goto shadcn_test
 if "%choice%"=="4" goto shadcn_download
-if "%choice%"=="5" goto catalog
+if "%choice%"=="5" goto ambient_test
+if "%choice%"=="6" goto ambient_download
+if "%choice%"=="7" goto catalog
 if "%choice%"=="0" exit /b 0
 
 echo.
@@ -75,11 +79,27 @@ echo.
 node src\cli.mjs --source=shadcn --limit=10 --download
 goto done
 
+:ambient_test
+cls
+echo Probando ambientCG sin descargar archivos...
+echo.
+node src\cli.mjs --source=ambientcg --limit=5 --dry-run
+goto done
+
+:ambient_download
+cls
+echo Descargando 5 recursos ambientCG en paquete 1K JPG...
+echo.
+node src\cli.mjs --source=ambientcg --limit=5 --download --resolution=1K --file-type=JPG
+goto done
+
 :catalog
 cls
-echo Creando catalogo local sin bajar binarios 3D...
+echo Creando catalogo local sin bajar binarios pesados...
 echo.
 node src\cli.mjs --source=polyhaven --limit=25 --write
+if errorlevel 1 goto done
+node src\cli.mjs --source=ambientcg --limit=25 --write
 if errorlevel 1 goto done
 node src\cli.mjs --source=shadcn --limit=25 --write
 goto done

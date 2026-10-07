@@ -8,6 +8,7 @@
   },
   "scripts": {
     "ingest": "node src/cli.mjs",
-    "dry-run": "node src/cli.mjs --dry-run"
+    "dry-run": "node src/cli.mjs --dry-run",
+    "test": "node src/selftest.mjs"
   }
 }
