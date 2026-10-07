@@ -417,3 +417,34 @@ de handles, el historial y la curva renderizada.
 
 Las pruebas verifican que el campo de entrada modifica exclusivamente el tramo
 anterior, conserva el keyframe seleccionado y no altera la salida.
+
+
+## Handles Bézier libres
+Cada lado de un `◆` en Curva suave puede pasar de `Automática` a `Libre`
+de forma independiente. El cambio es opt-in: los proyectos existentes siguen usando
+Catmull-Rom exactamente como antes mientras no se libere ningún handle.
+
+Al activar `Libre`, NagWeb captura la posición actual del control automático como
+un vector relativo al encuadre. Por eso activar el modo no altera la trayectoria.
+A partir de ahí, el handle puede moverse libremente en el plano visible del mapa:
+X/Z en vista superior y X/Y en vista frontal. Cambiar de vista permite editar las
+tres dimensiones sin introducir un segundo editor 3D.
+
+Los datos libres se guardan como offsets relativos al keyframe:
+`curveInDX/DY/DZ` y `curveOutDX/DY/DZ`, acompañados por
+`curveInFree` o `curveOutFree`. Al mover el `◆`, sus controles libres se
+desplazan con él.
+
+Un tramo solo pasa a interpolación Bézier cúbica explícita cuando su salida o su
+entrada están en modo Libre. Si ambos lados siguen automáticos, NagWeb mantiene la
+implementación Catmull-Rom histórica sin cambiar su resultado. Si solo un lado es
+libre, el otro control se deriva automáticamente de la misma tangente/tensión de
+antes.
+
+El arrastre libre es transaccional, admite Shift para bloquear el eje dominante,
+Escape para cancelar y flechas para mover el handle en el plano actual. Cada gesto
+confirmado crea una sola entrada de Deshacer.
+
+Preview y exportación usan los mismos controles Bézier. Las pruebas verifican:
+compatibilidad exacta al activar Libre, dirección libre real, JSON round-trip,
+independencia entre entrada/salida, exportación Chromium y retorno a Automática.
