@@ -122,7 +122,7 @@ paneElementNew=function(){
  timing+=cRow('Giro / tamaño',cNum('el.sdRotate',e.sdRotate,'°',{step:5,min:-720,max:720})+cNum('el.sdScale',e.sdScale,'%',{step:5,min:10,max:500}));
  timing+='<p class="hint gh">En movimiento: − horizontal va a la izquierda y + a la derecha; − vertical va hacia arriba y + hacia abajo. Ejemplo: 20% → 55% hace que empiece cerca del 20% y complete su recorrido alrededor del 55%.</p>';
  if(raw.type==='shape3d'){
-  timing+='<p class="hint gh">'+(raw.anchor!==false?'Este objeto 3D está anclado al lienzo: el Director mueve su ancla, así que el objeto Three.js la sigue.':'Este 3D no está anclado al lienzo. Activá su opción de anclaje si querés dirigirlo desde esta línea de tiempo.')+'</p>';
+  timing+='<p class="hint gh">'+(raw.anchor!==false?(s.sdCameraEnabled?'Este objeto 3D está anclado al lienzo: sigue el movimiento del Director y también la cámara de escena mediante su ancla DOM. La cámara de Three.js conserva su orientación propia.':'Este objeto 3D está anclado al lienzo: el Director mueve su ancla, así que el objeto Three.js la sigue.'):'Este 3D no está anclado al lienzo. Activá su opción de anclaje si querés dirigirlo desde esta línea de tiempo.')+'</p>';
  }
  if(editor)timing=(editor.active(raw)?'':timing)+editor.panel(s,raw);
  timing+=window.NAGWEB_SCROLL_CAMERA.elementPanel(s,raw);
