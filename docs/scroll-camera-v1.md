@@ -198,3 +198,18 @@ posición actual con un punto sólido. Preview y exportación usan el mismo cál
 Reduced motion sigue neutralizando toda la cámara, y la adaptación responsive no
 cambia los ángulos porque cámara y objetivo comparten la misma escala espacial.
 La prueba Chromium cubre UI, trayectoria independiente y matriz exportada.
+
+
+## Edición espacial de objetivos de mirada
+Con `Mirar hacia` activo, el mapa espacial muestra el objetivo seleccionado como
+un control `●` independiente del encuadre `◆`. El objetivo puede arrastrarse en
+las vistas X/Z y X/Y sin modificar la posición de cámara ni los otros ejes.
+
+El arrastre es transaccional: durante el gesto solo cambia la previsualización del
+mapa; al soltar se guarda una única operación de Deshacer. Escape o pérdida de captura
+cancelan el gesto sin tocar el proyecto. Las flechas desplazan 25 px y Shift + flecha
+100 px, incluso cuando el mapa amplía automáticamente su rango por coordenadas grandes.
+La trayectoria punteada se recalcula en vivo mientras se arrastra el objetivo.
+
+La prueba de Chromium cubre teclado, arrastre real con Pointer Events, un único undo y
+cancelación con Escape.

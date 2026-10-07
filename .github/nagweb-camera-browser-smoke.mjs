@@ -210,6 +210,32 @@ export async function runCameraBrowserSmoke(page){
   });
   assert.ok(lookRuntime.error<.001,'Look-at runtime matrix mismatch: '+JSON.stringify(lookRuntime));
 
+  // Selected look target is editable directly on the spatial map.
+  await page.waitForFunction(()=>document.querySelector('[data-camera-look-map-point="50"]'));
+  await page.focus('[data-camera-look-map-point="50"]');await page.keyboard.press('ArrowRight');
+  let lookEdited=await page.evaluate(()=>sec().sdCameraLookFrames.find(k=>k.at===50));
+  assert.equal(lookEdited.x,1250,'Look-map ArrowRight must move exactly 25px');
+  await page.select('[data-camera-map-plane]','front');
+  await page.waitForFunction(()=>document.querySelector('[data-camera-map]')?.dataset.plane==='front'&&document.querySelector('[data-camera-look-map-point="50"]'));
+  await page.focus('[data-camera-look-map-point="50"]');await page.keyboard.press('ArrowDown');
+  lookEdited=await page.evaluate(()=>sec().sdCameraLookFrames.find(k=>k.at===50));
+  assert.equal(lookEdited.y,150,'Look-map ArrowDown must move exactly 25px');
+  const dragStart=await page.evaluate(()=>{
+   const map=document.querySelector('[data-camera-map]'),point=document.querySelector('[data-camera-look-map-point="50"]'),mr=map.getBoundingClientRect(),pr=point.getBoundingClientRect(),k=sec().sdCameraLookFrames.find(k=>k.at===50);
+   return{cx:pr.left+pr.width/2,cy:pr.top+pr.height/2,width:mr.width,height:mr.height,range:+map.dataset.range,frame:{...k},history:history.length};
+  });
+  const dx=28,dy=-18;
+  await page.mouse.move(dragStart.cx,dragStart.cy);await page.mouse.down();await page.mouse.move(dragStart.cx+dx,dragStart.cy+dy,{steps:4});await page.mouse.up();
+  const dragEnd=await page.evaluate(()=>({frame:{...sec().sdCameraLookFrames.find(k=>k.at===50)},history:history.length}));
+  assert.equal(dragEnd.frame.x,Math.max(-4000,Math.min(4000,Math.round(dragStart.frame.x+dx/dragStart.width*dragStart.range*2))));
+  assert.equal(dragEnd.frame.y,Math.max(-4000,Math.min(4000,Math.round(dragStart.frame.y+dy/dragStart.height*dragStart.range*2))));
+  assert.equal(dragEnd.frame.z,dragStart.frame.z);assert.equal(dragEnd.history,dragStart.history+1,'Look-map drag should create one undo snapshot');
+  const cancelStart=await page.evaluate(()=>({frame:JSON.stringify(sec().sdCameraLookFrames),history:history.length}));
+  const cancelBox=await page.$eval('[data-camera-look-map-point="50"]',n=>{const r=n.getBoundingClientRect();return{cx:r.left+r.width/2,cy:r.top+r.height/2};});
+  await page.mouse.move(cancelBox.cx,cancelBox.cy);await page.mouse.down();await page.mouse.move(cancelBox.cx-35,cancelBox.cy+25,{steps:3});await page.keyboard.press('Escape');await page.mouse.up();
+  const cancelEnd=await page.evaluate(()=>({frame:JSON.stringify(sec().sdCameraLookFrames),history:history.length}));
+  assert.equal(cancelEnd.frame,cancelStart.frame,'Escape must cancel look target drag');assert.equal(cancelEnd.history,cancelStart.history);
+
   fs.mkdirSync('/tmp/nagweb-camera-visuals',{recursive:true});
   await page.screenshot({path:'/tmp/nagweb-camera-visuals/camera-editor.png',fullPage:true});
   const exportElement=await page.$('#camera-browser-export');
