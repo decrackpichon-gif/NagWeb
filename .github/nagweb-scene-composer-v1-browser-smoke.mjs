@@ -19,6 +19,10 @@ try{
  await page.$eval('#content',el=>{el.value='Texto del usuario';el.dispatchEvent(new Event('input',{bubbles:true}));});await new Promise(r=>setTimeout(r,80));
  assert.equal(await page.evaluate(()=>__NAGWEB_SCENE_COMPOSER__.scene.elements.find(e=>e.id===__NAGWEB_SCENE_COMPOSER__.view.selected).content),'Texto del usuario');
 
+ await page.$eval('#zIndex',el=>{el.value='32';el.dispatchEvent(new Event('change',{bubbles:true}));});
+ await page.$eval('#opacity',el=>{el.value='.65';el.dispatchEvent(new Event('change',{bubbles:true}));});await new Promise(r=>setTimeout(r,80));
+ let visual=await page.evaluate(()=>{const e=__NAGWEB_SCENE_COMPOSER__.scene.elements.find(e=>e.id===__NAGWEB_SCENE_COMPOSER__.view.selected);return {z:e.zIndex,opacity:e.opacity}});
+ assert.equal(visual.z,32);assert.equal(visual.opacity,.65);
  await page.$eval('#radiusScale',el=>{el.value='1.75';el.dispatchEvent(new Event('input',{bubbles:true}));});await new Promise(r=>setTimeout(r,80));
  let per=await page.evaluate(()=>({radius:__NAGWEB_SCENE_COMPOSER__.scene.elements.find(e=>e.id===__NAGWEB_SCENE_COMPOSER__.view.selected).interaction.radiusScale,field:__NAGWEB_SCENE_COMPOSER__.field.targetRadiusScales}));
  assert.equal(per.radius,1.75);assert.ok(per.field.includes(1.75));
