@@ -469,3 +469,35 @@ mismo `◆` y aplica límites de -4000..4000 px por componente. Volver el handle
 
 Las pruebas cubren edición numérica, sincronización mouse/campos, proyección X/Z,
 historial y conservación del keyframe seleccionado.
+
+
+## Curvas Bézier independientes para Mirar hacia
+La trayectoria del objetivo de mirada `●` puede usar la misma edición de curva que
+la posición de cámara `◆`, pero ambos recorridos siguen siendo independientes.
+
+En `Trayectoria de mirada > Curva suave`, los objetivos XYZ manuales intermedios
+muestran handles de entrada y salida. Cada lado puede permanecer en `Automática`
+(Catmull-Rom + tensión por tramo) o pasar a `Libre`, donde se guarda un control
+Bézier relativo al propio `●`.
+
+Activar `Libre` captura primero el control automático equivalente, por lo que el
+cambio de modo no mueve la trayectoria. El tramo solo pasa a Bézier cúbico explícito
+cuando una de sus puntas es libre. Volver a `Automática` elimina el vector libre y
+restaura exactamente la curva derivada de Catmull-Rom.
+
+Los vectores libres de mirada usan las mismas propiedades relativas
+`curveInDX/DY/DZ` y `curveOutDX/DY/DZ`, pero viven dentro de
+`sdCameraLookFrames`; no comparten estado con los encuadres de cámara. El panel
+muestra X/Y/Z para edición precisa y el mapa permite arrastre en X/Z o X/Y,
+Shift para bloquear el eje dominante, Escape para cancelar y flechas para mover
+25 px (100 px con Shift).
+
+Los objetivos vinculados a elementos mantienen tangentes automáticas. Esto evita
+congelar un vector libre contra una referencia cuyo centro puede moverse por sus
+propios keyframes. Para diseñar libremente esa trayectoria, se cambia primero el
+objetivo a `Punto XYZ`.
+
+Preview y exportación resuelven la misma trayectoria de mirada. Las pruebas en
+Chromium cubren activación sin salto, edición numérica, arrastre físico, historial,
+sincronización de campos, cambio real de orientación y paridad de la matriz
+exportada.
