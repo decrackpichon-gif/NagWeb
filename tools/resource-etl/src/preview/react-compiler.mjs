@@ -23,6 +23,10 @@ export const REACT_PREVIEW_RUNTIME_PACKAGES = new Set([
   "react-use-measure"
 ]);
 
+export const REACT_PREVIEW_VIRTUAL_PACKAGES = new Set([
+  "next-themes"
+]);
+
 function normalizePath(value) {
   return String(value || "")
     .replaceAll("\\", "/")
@@ -58,6 +62,21 @@ function flattenClassValue(value, output) {
     }
   }
 }
+
+const virtualNextThemes = `
+export function useTheme() {
+  return {
+    theme: "light",
+    systemTheme: "light",
+    resolvedTheme: "light",
+    themes: ["light", "dark", "system"],
+    setTheme() {}
+  };
+}
+export function ThemeProvider({ children }) {
+  return children ?? null;
+}
+`;
 
 const virtualUtils = `
 export function cn(...inputs) {
@@ -259,7 +278,9 @@ export async function compileReactResource(resource) {
   }
 
   const unsupportedRuntimePackages = licenseAudit.npmPackages.filter(
-    (packageName) => !REACT_PREVIEW_RUNTIME_PACKAGES.has(packageName)
+    (packageName) =>
+      !REACT_PREVIEW_RUNTIME_PACKAGES.has(packageName) &&
+      !REACT_PREVIEW_VIRTUAL_PACKAGES.has(packageName)
   );
   if (unsupportedRuntimePackages.length) {
     return {
@@ -270,7 +291,9 @@ export async function compileReactResource(resource) {
   }
 
   const missingPackages = licenseAudit.npmPackages.filter(
-    (packageName) => !packageInstalled(packageName)
+    (packageName) =>
+      !REACT_PREVIEW_VIRTUAL_PACKAGES.has(packageName) &&
+      !packageInstalled(packageName)
   );
   if (missingPackages.length) {
     return {
@@ -354,6 +377,11 @@ root.render(React.createElement(App));
         namespace: "nagweb-virtual"
       }));
 
+      build.onResolve({ filter: /^next-themes$/ }, () => ({
+        path: "nagweb-next-themes",
+        namespace: "nagweb-virtual"
+      }));
+
       build.onResolve(
         { filter: /^\.\.?\//, namespace: "nagweb-resource" },
         (args) => {
@@ -370,7 +398,7 @@ root.render(React.createElement(App));
       );
 
       build.onResolve(
-        { filter: /^[^./@]|^@(?!\/)/, namespace: "nagweb-resource" },
+        { filter: /^[^./]/, namespace: "nagweb-resource" },
         async (args) => {
           const packageName = npmPackageRoot(args.path);
           if (packageName && !REACT_PREVIEW_RUNTIME_PACKAGES.has(packageName)) {
@@ -410,6 +438,14 @@ root.render(React.createElement(App));
         () => ({
           contents: virtualUtils,
           loader: "js"
+        })
+      );
+
+      build.onLoad(
+        { filter: /^nagweb-next-themes$/, namespace: "nagweb-virtual" },
+        () => ({
+          contents: virtualNextThemes,
+          loader: "jsx"
         })
       );
     }

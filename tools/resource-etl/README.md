@@ -405,3 +405,12 @@ En Windows también existe la opción 14 del lanzador, que instala las dependenc
 El extractor Shadcn existente ahora también alimenta el Code Vault. Los archivos TSX del registry oficial se conservan localmente bajo el mismo esquema universal que Magic UI y Motion Primitives.
 
 Las dependencias internas de registry se mantienen explícitas. Un componente puede estar completamente guardado aunque su preview React quede diferida hasta que el resolver de registry tenga todas sus piezas.
+
+
+### Ajustes del sandbox React
+
+El detector reconoce tanto `export function Component` como el patrón habitual de Shadcn/Motion Primitives `export { Component, SubComponent }`.
+
+Los props obligatorios de subcomponentes se registran como información pero ya no bloquean automáticamente el bundle principal.
+
+`next-themes` se virtualiza en preview con un tema local fijo. Esto permite previsualizar componentes como Magic Card sin añadir una dependencia de runtime ni leer preferencias del sistema.

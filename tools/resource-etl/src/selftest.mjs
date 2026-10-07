@@ -390,4 +390,29 @@ assert.ok(scanBrowserSource('window.open("https://example.test")').includes("bro
 assert.equal(isPermissiveLicenseExpression("MIT OR Apache-2.0"), true);
 assert.equal(isPermissiveLicenseExpression("GPL-3.0"), false);
 
+const exportListResource = {
+  ...safeReactResource,
+  artifacts: [{
+    id: "component-1",
+    role: "component",
+    targetPath: "components/accordion.tsx",
+    content: `
+import React from "react"
+function Accordion({ children }: { children: React.ReactNode }) {
+  return <div>{children}</div>
+}
+function AccordionItem({ value, children }: {
+  value: string
+  children: React.ReactNode
+}) {
+  return <div data-value={value}>{children}</div>
+}
+export { Accordion, AccordionItem }
+`
+  }]
+};
+const exportListAudit = auditReactResourceStatic(exportListResource);
+assert.equal(exportListAudit.exportedComponent?.name, "Accordion");
+assert.equal(exportListAudit.eligibleForBundle, true);
+
 console.log("NagWeb Resource ETL self-test: OK");

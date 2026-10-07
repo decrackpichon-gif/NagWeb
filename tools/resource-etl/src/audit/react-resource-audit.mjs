@@ -137,6 +137,23 @@ export function inferExportedComponent(code) {
     return { name: "default", isDefault: true };
   }
 
+  const exportList = source.match(/export\s*\{([\s\S]*?)\}\s*;?/m);
+  if (exportList) {
+    const names = exportList[1]
+      .split(",")
+      .map((part) => part.trim().split(/\s+as\s+/i)[0]?.trim())
+      .filter((name) => /^[A-Z][A-Za-z0-9_$]*$/.test(name || ""));
+
+    for (const name of names) {
+      const definition = new RegExp(
+        `(?:function|class|const|let)\\s+${name}\\b`
+      );
+      if (definition.test(source)) {
+        return { name, isDefault: false };
+      }
+    }
+  }
+
   return null;
 }
 
@@ -219,7 +236,9 @@ export function auditReactResourceStatic(resource) {
   if ((resource.runtime?.registryDependencies || []).length) {
     blockers.push("registry-dependencies");
   }
-  if (requiredProps.length) blockers.push("required-props");
+  // Required props are advisory only. A source file may export several
+  // components, so required props belonging to a secondary component must
+  // not block the primary preview automatically.
 
   return {
     resourceId: resource.id,
