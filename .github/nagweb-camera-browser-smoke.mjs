@@ -80,6 +80,31 @@ export async function runCameraBrowserSmoke(page){
   assert.deepEqual(numericDual,{prev:30,current:0,selected:'50'},'Incoming numeric control must edit only the previous segment and preserve selection');
   await page.$eval('[data-camera-incoming-tension][data-camera-at="50"]',n=>{n.value='0';n.dispatchEvent(new Event('change',{bubbles:true}));});
   await page.waitForFunction(()=>sec().sdCameraFrames.find(k=>k.at===0)?.tension===0);
+  const freeBefore=await page.evaluate(()=>NAGWEB_SCROLL_CAMERA.pose(NAGWEB_SCROLL_CAMERA.config(sec()),.75,NAGWEB_STORY_MODEL,sec().sdEase,false));
+  await page.select('[data-camera-handle-mode][data-camera-handle-side="out"]','free');
+  await page.waitForFunction(()=>sec().sdCameraFrames.find(k=>k.at===50)?.curveOutFree===true&&document.querySelector('[data-camera-tension-handle][data-camera-tension-side="out"]')?.dataset.cameraHandleFree==='true');
+  const freeEnabled=await page.evaluate(()=>({pose:NAGWEB_SCROLL_CAMERA.pose(NAGWEB_SCROLL_CAMERA.config(sec()),.75,NAGWEB_STORY_MODEL,sec().sdEase,false),frame:sec().sdCameraFrames.find(k=>k.at===50),disabled:document.querySelector('[data-camera-field="tension"][data-camera-at="50"]')?.disabled}));
+  assert.ok(Math.hypot(freeEnabled.pose.x-freeBefore.x,freeEnabled.pose.y-freeBefore.y,freeEnabled.pose.z-freeBefore.z)<.001,'Switching to free handle must preserve current curve');
+  assert.equal(freeEnabled.frame.curveOutFree,true);assert.equal(freeEnabled.disabled,true);
+  await page.$eval('[data-camera-tension-handle][data-camera-tension-side="out"]',n=>n.scrollIntoView({block:'center'}));
+  const freeDragStart=await page.evaluate(()=>{const h=document.querySelector('[data-camera-tension-handle][data-camera-tension-side="out"]').getBoundingClientRect();return{x:h.left+h.width/2,y:h.top+h.height/2,history:history.length,path:document.querySelector('[data-camera-map-path]').getAttribute('points')};});
+  await page.mouse.move(freeDragStart.x,freeDragStart.y);await page.mouse.down();await page.mouse.move(freeDragStart.x,freeDragStart.y+35,{steps:5});await page.mouse.up();
+  const freeDragEnd=await page.evaluate(()=>({frame:sec().sdCameraFrames.find(k=>k.at===50),history:history.length,path:document.querySelector('[data-camera-map-path]').getAttribute('points'),pose:NAGWEB_SCROLL_CAMERA.pose(NAGWEB_SCROLL_CAMERA.config(sec()),.75,NAGWEB_STORY_MODEL,sec().sdEase,false)}));
+  assert.equal(freeDragEnd.frame.curveOutFree,true);assert.ok(Math.abs(freeDragEnd.frame.curveOutDZ)>10,'Top-view free drag should bend the handle in Z');
+  assert.notEqual(freeDragEnd.path,freeDragStart.path);assert.equal(freeDragEnd.history,freeDragStart.history+1);
+  assert.ok(Math.hypot(freeDragEnd.pose.x-freeBefore.x,freeDragEnd.pose.y-freeBefore.y,freeDragEnd.pose.z-freeBefore.z)>1,'Free direction must change spatial path');
+  await page.evaluate(()=>{const html=generateSite(flattenPage(page()),false,false,false),f=document.createElement('iframe');f.id='camera-free-export';f.style.cssText='width:1000px;height:600px;border:0';f.srcdoc=html;document.body.append(f);});
+  await page.waitForFunction(()=>document.querySelector('#camera-free-export')?.contentWindow?.__NAG_SCROLL_DIRECTOR?.['camera-browser-scene']);
+  const freeExportError=await page.evaluate(expected=>{
+   const f=document.querySelector('#camera-free-export'),w=f.contentWindow,d=f.contentDocument;w.__NAG_SCROLL_DIRECTOR['camera-browser-scene'].set(.75);
+   const world=d.querySelector('.sc[data-id="camera-browser-scene"] .inner'),a=world.getAnimations().find(a=>a.playState==='paused'),raw=a?.effect?.getKeyframes?.()[0]?.transform||'none',actual=new w.DOMMatrix(raw);
+   const probe=d.createElement('i');probe.style.transform=(expected.rotate?'rotateZ('+(-expected.rotate)+'deg) ':'')+(expected.rotateY?'rotateY('+(-expected.rotateY)+'deg) ':'')+(expected.rotateX?'rotateX('+(-expected.rotateX)+'deg) ':'')+'translate3d('+(-expected.x)+'px,'+(-expected.y)+'px,'+expected.z+'px)';d.body.append(probe);
+   const target=new w.DOMMatrix(w.getComputedStyle(probe).transform);probe.remove();const keys=['m11','m12','m13','m14','m21','m22','m23','m24','m31','m32','m33','m34','m41','m42','m43','m44'];return Math.max(...keys.map(k=>Math.abs(actual[k]-target[k])));
+  },freeDragEnd.pose);
+  assert.ok(freeExportError<.001,'Free Bezier handle must serialize into exported runtime');
+  await page.$eval('#camera-free-export',n=>n.remove());
+  await page.select('[data-camera-handle-mode][data-camera-handle-side="out"]','auto');
+  await page.waitForFunction(()=>!sec().sdCameraFrames.find(k=>k.at===50)?.curveOutFree&&document.querySelector('[data-camera-tension-handle][data-camera-tension-side="out"]')?.dataset.cameraHandleFree==='false');
   const incomingStart=await page.evaluate(()=>{
    const h=document.querySelector('[data-camera-tension-handle][data-camera-tension-side="in"]').getBoundingClientRect(),k=document.querySelector('[data-camera-map-point="50"]').getBoundingClientRect();
    return{hx:h.left+h.width/2,hy:h.top+h.height/2,kx:k.left+k.width/2,ky:k.top+k.height/2,prev:sec().sdCameraFrames.find(k=>k.at===0).tension??0,current:sec().sdCameraFrames.find(k=>k.at===50).tension??0,history:history.length};
