@@ -295,7 +295,7 @@ export function inferCvaEditableProps(code) {
     }
   }
 
-  for (const prop of inferCvaEditableProps(source)) {
+  for (const prop of inferEditablePropsFromTsx(source)) {
     if (seen.has(prop.id)) continue;
     seen.add(prop.id);
     props.push(prop);
