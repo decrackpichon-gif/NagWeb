@@ -106,15 +106,83 @@ export function cn(...inputs) {
 }
 `;
 
-function artifactMap(resource) {
+function artifactMap(resources) {
   const map = new Map();
 
-  for (const artifact of resource.artifacts || []) {
+  for (const resource of resources) {
+    for (const artifact of resource.artifacts || []) {
     if (artifact.role !== "component" || typeof artifact.content !== "string") continue;
     const artifactPath = normalizePath(
       artifact.targetPath || artifact.sourcePath || artifact.id
     );
-    map.set(artifactPath, artifact.content);
+      map.set(artifactPath, artifact.content);
+    }
+  }
+
+  return map;
+}
+
+function registryDependencyName(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+
+  try {
+    const url = new URL(raw);
+    return url.pathname.split("/").filter(Boolean).pop()?.replace(/\.json$/i, "") || raw;
+  } catch {
+    return raw.split("/").filter(Boolean).pop()?.replace(/\.json$/i, "") || raw;
+  }
+}
+
+function aliasCandidatesForRegistryResource(resource) {
+  const aliases = new Set();
+  const name = resource.name || registryDependencyName(resource.id);
+
+  if (name) {
+    aliases.add(`@/components/ui/${name}`);
+    aliases.add(`@/registry/new-york-v4/ui/${name}`);
+    aliases.add(`@/components/magicui/${name}`);
+    aliases.add(`@/registry/magicui/${name}`);
+  }
+
+  for (const artifact of resource.artifacts || []) {
+    if (artifact.role !== "component") continue;
+    const values = [artifact.targetPath, artifact.sourcePath].filter(Boolean);
+
+    for (const value of values) {
+      const normalized = normalizePath(value).replace(/\.(?:[cm]?[jt]sx?)$/i, "");
+
+      const componentIndex = normalized.indexOf("components/");
+      if (componentIndex >= 0) {
+        aliases.add(`@/${normalized.slice(componentIndex)}`);
+      }
+
+      const registryIndex = normalized.indexOf("registry/");
+      if (registryIndex >= 0) {
+        aliases.add(`@/${normalized.slice(registryIndex)}`);
+      }
+    }
+  }
+
+  return [...aliases];
+}
+
+function buildRegistryAliasMap(registryResources) {
+  const map = new Map();
+
+  for (const resource of registryResources) {
+    const artifact = (resource.artifacts || []).find(
+      (item) => item.role === "component" && typeof item.content === "string"
+    );
+    if (!artifact) continue;
+
+    const artifactPath = normalizePath(
+      artifact.targetPath || artifact.sourcePath || artifact.id
+    );
+
+    for (const alias of aliasCandidatesForRegistryResource(resource)) {
+      map.set(alias, artifactPath);
+    }
   }
 
   return map;
@@ -262,8 +330,22 @@ async function ensurePreviewRuntime(previewsDir) {
   };
 }
 
-export async function compileReactResource(resource) {
-  const staticAudit = auditReactResourceStatic(resource);
+export async function compileReactResource(
+  resource,
+  { registryResources = [], resolvedRegistryDependencies = [] } = {}
+) {
+  const allResources = [resource, ...registryResources];
+  const registryAliasMap = buildRegistryAliasMap(registryResources);
+  const auditResource = {
+    ...resource,
+    artifacts: allResources.flatMap((item) => item.artifacts || [])
+  };
+  const auditOptions = {
+    resolvedAliases: [...registryAliasMap.keys()],
+    resolvedRegistryDependencies
+  };
+
+  const staticAudit = auditReactResourceStatic(auditResource, auditOptions);
   if (!staticAudit.eligibleForBundle) {
     return {
       ok: false,
@@ -272,7 +354,10 @@ export async function compileReactResource(resource) {
     };
   }
 
-  const licenseAudit = await auditReactResourceWithLicenses(resource);
+  const licenseAudit = await auditReactResourceWithLicenses(
+    auditResource,
+    auditOptions
+  );
   if (!licenseAudit.eligibleForBundle) {
     return {
       ok: false,
@@ -326,7 +411,7 @@ export async function compileReactResource(resource) {
     };
   }
 
-  const files = artifactMap(resource);
+  const files = artifactMap(allResources);
   const entryArtifact = (resource.artifacts || []).find(
     (artifact) => artifact.role === "component" && typeof artifact.content === "string"
   );
@@ -392,6 +477,18 @@ root.render(React.createElement(App));
       }));
 
       build.onResolve(
+        { filter: /^@\//, namespace: "nagweb-resource" },
+        (args) => {
+          const resolved = registryAliasMap.get(args.path);
+          if (!resolved) return;
+          return {
+            path: resolved,
+            namespace: "nagweb-resource"
+          };
+        }
+      );
+
+      build.onResolve(
         { filter: /^\.\.?\//, namespace: "nagweb-resource" },
         (args) => {
           const resolved = resolveVirtualRelative(args.importer, args.path, files);
@@ -409,6 +506,14 @@ root.render(React.createElement(App));
       build.onResolve(
         { filter: /^[^./]/, namespace: "nagweb-resource" },
         async (args) => {
+          if (args.path.startsWith("@/")) {
+            return {
+              errors: [{
+                text: `Unresolved Vault alias ${args.path}`
+              }]
+            };
+          }
+
           const packageName = npmPackageRoot(args.path);
           if (packageName && !REACT_PREVIEW_RUNTIME_PACKAGES.has(packageName)) {
             return {
@@ -506,6 +611,85 @@ async function readJson(filePath) {
   return JSON.parse(await readFile(filePath, "utf8"));
 }
 
+function catalogDependencyCandidates(catalog, ownerResource, dependency) {
+  const name = registryDependencyName(dependency);
+  const ownerProvider = ownerResource.source?.provider;
+
+  return (catalog.resources || [])
+    .filter((entry) => entry.vaultPath && entry.kind === "react-component")
+    .sort((a, b) => {
+      const score = (entry) => {
+        if (entry.id === `${ownerProvider}:${name}`) return 0;
+        if (entry.id === `shadcn:${name}`) return 1;
+        if (entry.id === `magicui:${name}`) return 2;
+        if (entry.name === name) return 3;
+        return 10;
+      };
+      return score(a) - score(b);
+    })
+    .filter((entry) => {
+      const entryName = entry.name || registryDependencyName(entry.id);
+      return entryName === name || entry.id.endsWith(`:${name}`);
+    });
+}
+
+async function resolveRegistryResources(rootDir, catalog, resource, cache) {
+  const resolved = [];
+  const resolvedDependencies = [];
+  const missing = [];
+  const visited = new Set([resource.id]);
+
+  async function loadEntry(entry) {
+    if (cache.has(entry.id)) return cache.get(entry.id);
+    const loaded = await readJson(path.join(rootDir, entry.vaultPath));
+    cache.set(entry.id, loaded);
+    return loaded;
+  }
+
+  async function visit(owner, dependency) {
+    const candidates = catalogDependencyCandidates(catalog, owner, dependency);
+    const entry = candidates[0];
+
+    if (!entry) {
+      missing.push({ owner: owner.id, dependency });
+      return;
+    }
+
+    const dependencyResource = await loadEntry(entry);
+
+    if (
+      !dependencyResource.license?.verified ||
+      dependencyResource.license?.redistributionAllowed === false
+    ) {
+      missing.push({
+        owner: owner.id,
+        dependency,
+        reason: "dependency-license-not-approved"
+      });
+      return;
+    }
+
+    resolvedDependencies.push(dependency);
+    if (visited.has(dependencyResource.id)) return;
+    visited.add(dependencyResource.id);
+    resolved.push(dependencyResource);
+
+    for (const nested of dependencyResource.runtime?.registryDependencies || []) {
+      await visit(dependencyResource, nested);
+    }
+  }
+
+  for (const dependency of resource.runtime?.registryDependencies || []) {
+    await visit(resource, dependency);
+  }
+
+  return {
+    resources: resolved,
+    resolvedDependencies,
+    missing
+  };
+}
+
 export async function buildReactVaultPreviews(rootDir, catalog, { max = Infinity } = {}) {
   const previewsDir = path.join(rootDir, "previews");
   const reactDir = path.join(previewsDir, "react");
@@ -516,19 +700,42 @@ export async function buildReactVaultPreviews(rootDir, catalog, { max = Infinity
   let ready = 0;
   let deferred = 0;
   const audits = [];
+  const resourceCache = new Map();
 
   for (const entry of catalog.resources || []) {
     if (ready + deferred >= max) break;
     if (entry.kind !== "react-component" || !entry.vaultPath) continue;
 
     const resource = await readJson(path.join(rootDir, entry.vaultPath));
-    const result = await compileReactResource(resource);
+    resourceCache.set(resource.id, resource);
+
+    const registryResolution = await resolveRegistryResources(
+      rootDir,
+      catalog,
+      resource,
+      resourceCache
+    );
+
+    const result = registryResolution.missing.length
+      ? {
+          ok: false,
+          reason: `missing-registry-dependencies:${registryResolution.missing
+            .map((item) => item.dependency)
+            .join(",")}`,
+          audit: auditReactResourceStatic(resource)
+        }
+      : await compileReactResource(resource, {
+          registryResources: registryResolution.resources,
+          resolvedRegistryDependencies: registryResolution.resolvedDependencies
+        });
 
     audits.push({
       resourceId: resource.id,
       ok: result.ok,
       reason: result.ok ? null : result.reason,
-      audit: result.audit
+      audit: result.audit,
+      registryResources: registryResolution.resources.map((item) => item.id),
+      registryMissing: registryResolution.missing
     });
 
     if (!result.ok) {
@@ -560,7 +767,8 @@ export async function buildReactVaultPreviews(rootDir, catalog, { max = Infinity
     entry.previewPath = `previews/react/${htmlName}`;
     entry.previewAudit = {
       npmPackages: result.audit.npmPackages,
-      npmLicenses: result.audit.npmAudit?.packages || []
+      npmLicenses: result.audit.npmAudit?.packages || [],
+      registryResources: registryResolution.resources.map((item) => item.id)
     };
     ready += 1;
   }

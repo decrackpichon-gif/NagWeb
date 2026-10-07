@@ -64,6 +64,37 @@ jobs:
           test -f ci-vault/react-preview-audit.json
           node -e "const fs=require('fs'); const c=JSON.parse(fs.readFileSync('ci-vault/catalog.json','utf8')); if (!c.count || c.count < 5) process.exit(1); console.log('Vault resources:', c.count)"
 
+      - name: Verify Vault registry dependency resolution
+        working-directory: tools/resource-etl
+        shell: bash
+        run: |
+          node src/vault-cli.mjs \
+            --sources=shadcn \
+            --limit=10 \
+            --out=ci-vault-shadcn \
+            --react-previews \
+            --react-preview-limit=4
+
+          node - <<'NODE'
+          const fs = require("fs");
+          const audit = JSON.parse(
+            fs.readFileSync("ci-vault-shadcn/react-preview-audit.json", "utf8")
+          );
+          const item = audit.items.find(
+            (entry) => entry.resourceId === "shadcn:alert-dialog"
+          );
+          if (!item || !item.ok) {
+            console.error("shadcn:alert-dialog did not resolve from the local Vault");
+            console.error(JSON.stringify(item, null, 2));
+            process.exit(1);
+          }
+          if (!item.registryResources.includes("shadcn:button")) {
+            console.error("Expected shadcn:button as a local registry dependency");
+            process.exit(1);
+          }
+          console.log("Registry dependency resolution: OK");
+          NODE
+
       - name: Smoke test external ETL sources
         working-directory: tools/resource-etl
         shell: bash

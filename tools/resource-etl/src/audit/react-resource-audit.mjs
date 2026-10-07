@@ -176,7 +176,13 @@ export function inferRequiredProps(code) {
   return unique(required);
 }
 
-export function auditReactResourceStatic(resource) {
+export function auditReactResourceStatic(
+  resource,
+  {
+    resolvedAliases = [],
+    resolvedRegistryDependencies = []
+  } = {}
+) {
   const componentArtifacts = (resource.artifacts || []).filter(
     (artifact) => artifact.role === "component" && typeof artifact.content === "string"
   );
@@ -212,8 +218,12 @@ export function auditReactResourceStatic(resource) {
   const remoteImports = uniqueImports.filter(isRemoteSpecifier);
   const nodeBuiltins = uniqueImports.filter(isNodeBuiltin);
   const aliases = uniqueImports.filter((value) => value.startsWith("@/"));
+  const allowedAliases = new Set([
+    ...SAFE_VIRTUAL_IMPORTS,
+    ...resolvedAliases
+  ]);
   const unsupportedAliases = aliases.filter(
-    (value) => !SAFE_VIRTUAL_IMPORTS.has(value)
+    (value) => !allowedAliases.has(value)
   );
   const npmPackages = unique(
     uniqueImports.map(npmPackageRoot)
@@ -233,7 +243,12 @@ export function auditReactResourceStatic(resource) {
   if (unsupportedAliases.length) blockers.push("unsupported-aliases");
   if (unresolvedRelativeImports.length) blockers.push("unresolved-relative-imports");
   if (securityFindings.length) blockers.push("security-findings");
-  if ((resource.runtime?.registryDependencies || []).length) {
+  const resolvedRegistrySet = new Set(resolvedRegistryDependencies);
+  const unresolvedRegistryDependencies = (
+    resource.runtime?.registryDependencies || []
+  ).filter((dependency) => !resolvedRegistrySet.has(dependency));
+
+  if (unresolvedRegistryDependencies.length) {
     blockers.push("registry-dependencies");
   }
   // Required props are advisory only. A source file may export several
@@ -254,7 +269,12 @@ export function auditReactResourceStatic(resource) {
     securityFindings: unique(securityFindings),
     requiredProps,
     exportedComponent,
-    virtualImports: aliases.filter((value) => SAFE_VIRTUAL_IMPORTS.has(value))
+    virtualImports: aliases.filter((value) => SAFE_VIRTUAL_IMPORTS.has(value)),
+    resolvedAliases: [...allowedAliases].filter(
+      (value) => !SAFE_VIRTUAL_IMPORTS.has(value)
+    ),
+    resolvedRegistryDependencies: [...resolvedRegistrySet],
+    unresolvedRegistryDependencies
   };
 }
 
@@ -335,8 +355,8 @@ export async function auditNpmPackages(packageNames) {
   };
 }
 
-export async function auditReactResourceWithLicenses(resource) {
-  const staticAudit = auditReactResourceStatic(resource);
+export async function auditReactResourceWithLicenses(resource, options = {}) {
+  const staticAudit = auditReactResourceStatic(resource, options);
   const npmAudit = await auditNpmPackages(staticAudit.npmPackages);
 
   const blockers = [...staticAudit.blockers];

@@ -426,3 +426,30 @@ El sandbox reconoce el formato actual de Shadcn v4:
 - `class-variance-authority@0.7.1` forma parte del runtime permitido.
 
 Esto amplía el coverage de preview sin instalar todo el ecosistema Shadcn.
+
+
+## Registry dependencies locales
+
+El compilador React puede resolver dependencias entre recursos ya guardados en el Vault.
+
+Ejemplos:
+
+```text
+shadcn:alert-dialog
+└─ necesita button
+   └─ resuelve shadcn:button desde el Vault
+
+shadcn:button-group
+├─ button
+└─ separator
+```
+
+Se reconocen aliases de origen como:
+
+- `@/components/ui/button`;
+- `@/registry/new-york-v4/ui/button`;
+- `@/components/magicui/...`.
+
+La resolución es recursiva y sólo acepta dependencias con licencia verificada. Si una pieza no está presente en el Vault, la preview queda diferida en lugar de descargarla silenciosamente desde Internet.
+
+CI prueba explícitamente que `shadcn:alert-dialog` compila utilizando `shadcn:button` local.
