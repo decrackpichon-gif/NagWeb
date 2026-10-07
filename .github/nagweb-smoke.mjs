@@ -124,7 +124,7 @@ if(!executablePath) throw new Error('No Chromium/Chrome executable found on runn
 
 const browserArgs=['--no-sandbox','--disable-dev-shm-usage'];
 if(process.env.NAGWEB_BROWSER_PROXY) browserArgs.push('--proxy-server='+process.env.NAGWEB_BROWSER_PROXY);
-const browser=await puppeteer.launch({headless:true,executablePath,args:browserArgs});
+const browser=await puppeteer.launch({headless:true,executablePath,args:browserArgs,pipe:true,timeout:60000});
 try{
 const page=await browser.newPage();
 await page.setViewport({width:1440,height:900,deviceScaleFactor:1});
