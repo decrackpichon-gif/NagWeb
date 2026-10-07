@@ -389,6 +389,14 @@ assert.equal(C.tensionFromHandle(curvedConfig.frames,33,tangentSpec,tangentDefau
 assert.equal(C.tensionFromHandle(curvedConfig.frames,33,tangentSpec,tangentTight),100);
 assert.equal(C.tensionFromHandle(curvedConfig.frames,33,tangentSpec,tangentLoose),-100);
 assert.equal(C.tensionFromHandle(curvedConfig.frames,100,tangentSpec,tangentDefault),null);
+const incomingDefault=C.tangentHandle(curvedConfig.frames,66,'in');
+assert.ok(incomingDefault&&incomingDefault.side==='in'&&incomingDefault.ownerAt===33);
+assert.ok(Math.abs(incomingDefault.x-166.66666666666666)<1e-9&&Math.abs(incomingDefault.z-83.33333333333333)<1e-9,'Incoming handle is the Bezier/Hermite control of the previous segment');
+const incomingTightFrames=curvedConfig.frames.map(k=>k.at===33?{...k,tension:100}:k),incomingTight=C.tangentHandle(incomingTightFrames,66,'in');
+assert.equal(incomingTight.x,200);assert.equal(incomingTight.y,0);assert.equal(incomingTight.z,100,'Previous segment +100 retracts incoming handle onto selected key');
+assert.equal(C.tensionFromHandle(curvedConfig.frames,66,tangentSpec,incomingDefault,'in'),0);
+assert.equal(C.tensionFromHandle(incomingTightFrames,66,tangentSpec,incomingTight,'in'),100);
+assert.equal(C.tangentHandle(curvedConfig.frames,0,'in'),null);assert.equal(C.tangentHandle(curvedConfig.frames,100,'out'),null);
 const nearestSpec=C.mapSpec(curvedConfig.frames,'top'),nearestSample=curveSamples[Math.floor(curveSamples.length*.25)],nearestPoint=C.mapPoint(nearestSample,nearestSpec);
 const nearestHit=C.nearestPathAt(curveSamples,nearestSpec,nearestPoint,{x:3,y:2});
 assert.ok(nearestHit&&nearestHit.distance<1e-9&&Math.abs(nearestHit.at-nearestSample.at)<1e-9,'Projected path lookup recovers the sampled narrative moment');

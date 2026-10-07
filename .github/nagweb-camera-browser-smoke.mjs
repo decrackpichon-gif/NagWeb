@@ -60,14 +60,32 @@ export async function runCameraBrowserSmoke(page){
   await page.click('[data-camera-jump="50"]');
   await page.waitForFunction(()=>document.querySelector('[data-camera-field="tension"][data-camera-at="50"]'));
   const tangentBefore=await page.evaluate(()=>{
-   const h=document.querySelector('[data-camera-tangent-handle]'),k=document.querySelector('[data-camera-map-dot="50"]');
+   const h=document.querySelector('[data-camera-tangent-handle="out"]'),k=document.querySelector('[data-camera-map-dot="50"]');
    return{exists:!!h,hx:+h?.getAttribute('cx'),hy:+h?.getAttribute('cy'),kx:+k?.getAttribute('cx'),ky:+k?.getAttribute('cy')};
   });
   assert.equal(tangentBefore.exists,true);assert.ok(Math.hypot(tangentBefore.hx-tangentBefore.kx,tangentBefore.hy-tangentBefore.ky)>.1,'0% tension should show a visible outgoing tangent');
   assert.equal(await page.$eval('[data-camera-field="tension"][data-camera-at="50"]',n=>+n.value),0);
-  await page.$eval('[data-camera-tension-handle]',n=>n.scrollIntoView({block:'center'}));
+  const dualHandles=await page.evaluate(()=>({
+   incoming:!!document.querySelector('[data-camera-tension-handle][data-camera-tension-side="in"]'),
+   outgoing:!!document.querySelector('[data-camera-tension-handle][data-camera-tension-side="out"]'),
+   inSvg:!!document.querySelector('[data-camera-tangent-handle="in"]'),
+   outSvg:!!document.querySelector('[data-camera-tangent-handle="out"]')
+  }));
+  assert.deepEqual(dualHandles,{incoming:true,outgoing:true,inSvg:true,outSvg:true},'Middle camera key should expose incoming and outgoing curve handles');
+  const incomingStart=await page.evaluate(()=>{
+   const h=document.querySelector('[data-camera-tension-handle][data-camera-tension-side="in"]').getBoundingClientRect(),k=document.querySelector('[data-camera-map-point="50"]').getBoundingClientRect();
+   return{hx:h.left+h.width/2,hy:h.top+h.height/2,kx:k.left+k.width/2,ky:k.top+k.height/2,prev:sec().sdCameraFrames.find(k=>k.at===0).tension??0,current:sec().sdCameraFrames.find(k=>k.at===50).tension??0,history:history.length};
+  });
+  await page.mouse.move(incomingStart.hx,incomingStart.hy);await page.mouse.down();await page.mouse.move((incomingStart.hx+incomingStart.kx)/2,(incomingStart.hy+incomingStart.ky)/2,{steps:4});await page.mouse.up();
+  const incomingEnd=await page.evaluate(()=>({prev:sec().sdCameraFrames.find(k=>k.at===0).tension??0,current:sec().sdCameraFrames.find(k=>k.at===50).tension??0,history:history.length}));
+  assert.ok(incomingEnd.prev>=45&&incomingEnd.prev<=55,'Incoming handle should edit previous segment tension: '+JSON.stringify(incomingEnd));
+  assert.equal(incomingEnd.current,incomingStart.current,'Incoming handle must not alter outgoing segment tension');
+  assert.equal(incomingEnd.history,incomingStart.history+1,'Incoming tangent drag creates one undo snapshot');
+  await page.evaluate(()=>{const s=sec(),k=s.sdCameraFrames.find(k=>k.at===0);k.tension=0;saveProject();renderPane();});
+  await page.waitForFunction(()=>document.querySelector('[data-camera-tension-handle][data-camera-tension-side="in"]'));
+  await page.$eval('[data-camera-tension-handle][data-camera-tension-side="out"]',n=>n.scrollIntoView({block:'center'}));
   const tensionDragStart=await page.evaluate(()=>{
-   const h=document.querySelector('[data-camera-tension-handle]').getBoundingClientRect(),k=document.querySelector('[data-camera-map-point="50"]').getBoundingClientRect();
+   const h=document.querySelector('[data-camera-tension-handle][data-camera-tension-side="out"]').getBoundingClientRect(),k=document.querySelector('[data-camera-map-point="50"]').getBoundingClientRect();
    return{hx:h.left+h.width/2,hy:h.top+h.height/2,kx:k.left+k.width/2,ky:k.top+k.height/2,history:history.length};
   });
   await page.mouse.move(tensionDragStart.hx,tensionDragStart.hy);await page.mouse.down();
@@ -76,7 +94,7 @@ export async function runCameraBrowserSmoke(page){
   assert.ok(tensionDragEnd.value>=45&&tensionDragEnd.value<=55,'Half-length tangent drag should produce about +50 tension: '+JSON.stringify(tensionDragEnd));
   assert.equal(tensionDragEnd.history,tensionDragStart.history+1,'Tangent drag should create one undo snapshot');
   const tensionCancelStart=await page.evaluate(()=>({value:sec().sdCameraFrames.find(k=>k.at===50).tension,history:history.length}));
-  const tensionBox=await page.$eval('[data-camera-tension-handle]',n=>{const r=n.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2};});
+  const tensionBox=await page.$eval('[data-camera-tension-handle][data-camera-tension-side="out"]',n=>{const r=n.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2};});
   await page.mouse.move(tensionBox.x,tensionBox.y);await page.mouse.down();await page.mouse.move(tensionBox.x+35,tensionBox.y-25,{steps:3});await page.keyboard.press('Escape');await page.mouse.up();
   const tensionCancelEnd=await page.evaluate(()=>({value:sec().sdCameraFrames.find(k=>k.at===50).tension,history:history.length}));
   assert.deepEqual(tensionCancelEnd,tensionCancelStart,'Escape must cancel tangent drag without history mutation');
@@ -87,14 +105,14 @@ export async function runCameraBrowserSmoke(page){
   const curveAfter=await page.$eval('[data-camera-map-path]',n=>n.getAttribute('points'));
   assert.notEqual(curveAfter,curveBefore,'Changing segment tension must redraw the sampled spatial path');
   const tangentAfter=await page.evaluate(()=>{
-   const h=document.querySelector('[data-camera-tangent-handle]'),k=document.querySelector('[data-camera-map-dot="50"]');
+   const h=document.querySelector('[data-camera-tangent-handle="out"]'),k=document.querySelector('[data-camera-map-dot="50"]');
    return{hx:+h?.getAttribute('cx'),hy:+h?.getAttribute('cy'),kx:+k?.getAttribute('cx'),ky:+k?.getAttribute('cy')};
   });
   assert.ok(Math.hypot(tangentAfter.hx-tangentAfter.kx,tangentAfter.hy-tangentAfter.ky)<.001,'+100% tension should retract the tangent preview onto the selected key');
   await page.select('[data-camera-path-mode]','linear');
-  await page.waitForFunction(()=>!document.querySelector('[data-camera-field="tension"]')&&!document.querySelector('[data-camera-tangent-handle]'));
+  await page.waitForFunction(()=>!document.querySelector('[data-camera-field="tension"]')&&!document.querySelector('[data-camera-tangent-handle="out"]'));
   await page.select('[data-camera-path-mode]','smooth');
-  await page.waitForFunction(()=>document.querySelector('[data-camera-field="tension"][data-camera-at="50"]')&&document.querySelector('[data-camera-tangent-handle]'));
+  await page.waitForFunction(()=>document.querySelector('[data-camera-field="tension"][data-camera-at="50"]')&&document.querySelector('[data-camera-tangent-handle="out"]'));
   assert.equal(await page.$eval('[data-camera-field="tension"][data-camera-at="50"]',n=>+n.value),100,'Tension survives temporary linear mode');
 
   await page.focus('[data-camera-map-point="50"]');await page.keyboard.press('ArrowRight');
