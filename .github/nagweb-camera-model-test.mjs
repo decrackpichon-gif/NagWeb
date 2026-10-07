@@ -268,8 +268,8 @@ pct=0;listeners.click({target:{closest(){return{dataset:{cameraLookMapSelect:'10
 mapBox.dataset.plane='front';
 listeners.keydown({target:lookMapMarker(),key:'ArrowLeft',shiftKey:false,preventDefault(){},stopPropagation(){}});
 assert.equal(editable.sdCameraLookFrames[1].x,475,'Look keyboard move stays exactly 25px at an 800px map range');
-assert.equal(editable.sdCameraLookFrames[1].y,100);assert.equal(editable.sdCameraLookFrames[1].z,900);
-console.log('Camera spatial map: camera + look target drag transactions, cancellation, dynamic-range keyboard steps and bounds OK');
+assert.equal(editable.sdCameraLookFrames[1].y,100);assert.equal(editable.sdCameraLookFrames[1].z,500);
+console.log('Camera spatial map: camera + look target drag transactions, cancellation, direct selection, axis locking, dynamic-range keyboard steps and bounds OK');
 const initialPath=C.normalize([{at:0,x:100,y:50,z:20,rotateY:30,ease:'linear'},{at:50,x:200,z:100},{at:100,x:0}]);
 const unchangedPath=JSON.stringify(initialPath),hold=C.holdFrame(initialPath,0,15);
 assert.equal(hold.error,undefined);assert.equal(hold.frames.length,4);assert.equal(hold.at,15);
