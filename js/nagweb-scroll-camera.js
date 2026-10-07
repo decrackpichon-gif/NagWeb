@@ -399,6 +399,8 @@ if(pane){
  });
  pane.addEventListener('pointerdown',function(ev){
   if(ev.button!==0)return;
+  var mapPick=ev.target.closest('[data-camera-map-select]');if(mapPick){ev.preventDefault();ev.stopPropagation();jump(sec(),+mapPick.dataset.cameraMapSelect);return;}
+  var lookPick=ev.target.closest('[data-camera-look-map-select]');if(lookPick){ev.preventDefault();ev.stopPropagation();jumpLook(sec(),+lookPick.dataset.cameraLookMapSelect);return;}
   var lookSpatial=ev.target.closest('[data-camera-look-map-point]');if(lookSpatial){lookSpatialDrag(ev,lookSpatial);return;}
   var spatial=ev.target.closest('[data-camera-map-point]');if(spatial){spatialDrag(ev,spatial);return;}
   var track=ev.target.closest('[data-camera-track]');if(!track)return;
