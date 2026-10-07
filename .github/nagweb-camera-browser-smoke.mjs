@@ -46,6 +46,23 @@ export async function runCameraBrowserSmoke(page){
   });
   assert.equal(tangentBefore.exists,true);assert.ok(Math.hypot(tangentBefore.hx-tangentBefore.kx,tangentBefore.hy-tangentBefore.ky)>.1,'0% tension should show a visible outgoing tangent');
   assert.equal(await page.$eval('[data-camera-field="tension"][data-camera-at="50"]',n=>+n.value),0);
+  await page.$eval('[data-camera-tension-handle]',n=>n.scrollIntoView({block:'center'}));
+  const tensionDragStart=await page.evaluate(()=>{
+   const h=document.querySelector('[data-camera-tension-handle]').getBoundingClientRect(),k=document.querySelector('[data-camera-map-point="50"]').getBoundingClientRect();
+   return{hx:h.left+h.width/2,hy:h.top+h.height/2,kx:k.left+k.width/2,ky:k.top+k.height/2,history:history.length};
+  });
+  await page.mouse.move(tensionDragStart.hx,tensionDragStart.hy);await page.mouse.down();
+  await page.mouse.move((tensionDragStart.hx+tensionDragStart.kx)/2,(tensionDragStart.hy+tensionDragStart.ky)/2,{steps:4});await page.mouse.up();
+  const tensionDragEnd=await page.evaluate(()=>({value:sec().sdCameraFrames.find(k=>k.at===50).tension,history:history.length}));
+  assert.ok(tensionDragEnd.value>=45&&tensionDragEnd.value<=55,'Half-length tangent drag should produce about +50 tension: '+JSON.stringify(tensionDragEnd));
+  assert.equal(tensionDragEnd.history,tensionDragStart.history+1,'Tangent drag should create one undo snapshot');
+  const tensionCancelStart=await page.evaluate(()=>({value:sec().sdCameraFrames.find(k=>k.at===50).tension,history:history.length}));
+  const tensionBox=await page.$eval('[data-camera-tension-handle]',n=>{const r=n.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2};});
+  await page.mouse.move(tensionBox.x,tensionBox.y);await page.mouse.down();await page.mouse.move(tensionBox.x+35,tensionBox.y-25,{steps:3});await page.keyboard.press('Escape');await page.mouse.up();
+  const tensionCancelEnd=await page.evaluate(()=>({value:sec().sdCameraFrames.find(k=>k.at===50).tension,history:history.length}));
+  assert.deepEqual(tensionCancelEnd,tensionCancelStart,'Escape must cancel tangent drag without history mutation');
+  await page.$eval('[data-camera-field="tension"][data-camera-at="50"]',n=>{n.value='0';n.dispatchEvent(new Event('change',{bubbles:true}));});
+  await page.waitForFunction(()=>sec().sdCameraFrames.find(k=>k.at===50)?.tension===0);
   await page.$eval('[data-camera-field="tension"][data-camera-at="50"]',n=>{n.value='100';n.dispatchEvent(new Event('change',{bubbles:true}));});
   await page.waitForFunction(()=>sec().sdCameraFrames.find(k=>k.at===50)?.tension===100&&document.querySelector('[data-camera-field="tension"][data-camera-at="50"]'));
   const curveAfter=await page.$eval('[data-camera-map-path]',n=>n.getAttribute('points'));

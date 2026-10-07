@@ -159,6 +159,17 @@ function createCamera(){
   if(Math.hypot(dx,dy,dz)<.000001)return null;
   return {at:b.at,x:number(b.x+dx*scale),y:number(b.y+dy*scale),z:number(b.z+dz*scale),keyX:b.x,keyY:b.y,keyZ:b.z,scale:scale,tension:curveTension(b.tension)};
  }
+ function tensionFromHandle(input,at,spec,point){
+  var list=normalize(input),i=list.findIndex(function(k){return k.at===at;});
+  if(i<0||i>=list.length-1||list.length<3||!spec||!point)return null;
+  var a=list[Math.max(0,i-1)],b=list[i],cc=list[i+1],axis=spec.axis==='y'?'y':'z';
+  if(b.x===cc.x&&b.y===cc.y&&b.z===cc.z)return null;
+  var bx=(cc.x-a.x)/6,by=(cc[axis]-a[axis])/6,den=bx*bx+by*by;
+  if(den<.000001)return null;
+  var px=(+point.x||0)-b.x,py=(+point[axis]||0)-b[axis],scale=(px*bx+py*by)/den;
+  scale=Math.max(0,Math.min(2,scale));
+  return curveTension(Math.round((1-scale)*100));
+ }
  function mapSpec(list,plane){
   var axis=plane==='front'?'y':'z',range=500;
   list.forEach(function(k){range=Math.max(range,Math.abs(number(k.x))*1.2,Math.abs(number(k[axis]))*1.2);});
@@ -201,7 +212,7 @@ function createCamera(){
   paint.contains=function(n){return inside(world,n);};
   return paint;
  }
- return {config:config,compile:compile,pose:pose,pathSamples:pathSamples,lookSamples:lookSamples,lookTarget:lookTarget,lookAngles:lookAngles,forwardTarget:forwardTarget,defaultLookFrames:defaultLookFrames,normalizeLook:normalizeLook,lookFrames:lookFrames,targetEligible:targetEligible,elementTarget:elementTarget,curveTension:curveTension,tangentHandle:tangentHandle,viewportScale:viewportScale,scalePose:scalePose,attach:attach,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial,copyFrame:copyFrame,holdFrame:holdFrame,preset:preset};
+ return {config:config,compile:compile,pose:pose,pathSamples:pathSamples,lookSamples:lookSamples,lookTarget:lookTarget,lookAngles:lookAngles,forwardTarget:forwardTarget,defaultLookFrames:defaultLookFrames,normalizeLook:normalizeLook,lookFrames:lookFrames,targetEligible:targetEligible,elementTarget:elementTarget,curveTension:curveTension,tangentHandle:tangentHandle,tensionFromHandle:tensionFromHandle,viewportScale:viewportScale,scalePose:scalePose,attach:attach,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial,copyFrame:copyFrame,holdFrame:holdFrame,preset:preset};
 }
 window.NAGWEB_CREATE_SCROLL_CAMERA=createCamera;
 window.NAGWEB_SCROLL_CAMERA=createCamera();
@@ -244,11 +255,11 @@ function mapDraw(map,list,spec,s,lookList){
  var draw=cfg?C.pathSamples(Object.assign({},cfg,{frames:list}),window.NAGWEB_STORY_MODEL,s.sdEase):list;
  if(path)path.setAttribute('points',draw.map(function(k){var p=C.mapPoint(k,spec);return p.x+','+p.y;}).join(' '));
  list.forEach(function(k){var dot=map.querySelector('[data-camera-map-dot="'+k.at+'"]'),p=C.mapPoint(k,spec);if(dot){dot.setAttribute('cx',p.x);dot.setAttribute('cy',p.y);}});
- var tangentLine=map.querySelector('[data-camera-tangent-line]'),tangentDot=map.querySelector('[data-camera-tangent-handle]'),selectedButton=map.querySelector('[data-camera-map-point]');
+ var tangentLine=map.querySelector('[data-camera-tangent-line]'),tangentDot=map.querySelector('[data-camera-tangent-handle]'),tangentButton=map.querySelector('[data-camera-tension-handle]'),selectedButton=map.querySelector('[data-camera-map-point]');
  if(tangentLine&&tangentDot&&selectedButton&&cfg&&cfg.pathMode==='smooth'){
   var selectedAt=+selectedButton.dataset.cameraMapPoint,selectedKey=list.find(function(k){return k.at===selectedAt;}),th=C.tangentHandle(list,selectedAt);
-  if(selectedKey&&th){var kp=C.mapPoint(selectedKey,spec),hp=C.mapPoint(th,spec);tangentLine.setAttribute('x1',kp.x);tangentLine.setAttribute('y1',kp.y);tangentLine.setAttribute('x2',hp.x);tangentLine.setAttribute('y2',hp.y);tangentDot.setAttribute('cx',hp.x);tangentDot.setAttribute('cy',hp.y);tangentLine.style.display='';tangentDot.style.display='';}
-  else{tangentLine.style.display='none';tangentDot.style.display='none';}
+  if(selectedKey&&th){var kp=C.mapPoint(selectedKey,spec),hp=C.mapPoint(th,spec);tangentLine.setAttribute('x1',kp.x);tangentLine.setAttribute('y1',kp.y);tangentLine.setAttribute('x2',hp.x);tangentLine.setAttribute('y2',hp.y);tangentDot.setAttribute('cx',hp.x);tangentDot.setAttribute('cy',hp.y);tangentLine.style.display='';tangentDot.style.display='';if(tangentButton){tangentButton.style.left=hp.x+'%';tangentButton.style.top=hp.y+'%';tangentButton.style.display='';}}
+  else{tangentLine.style.display='none';tangentDot.style.display='none';if(tangentButton)tangentButton.style.display='none';}
  }
  if(cfg&&cfg.orientationMode==='lookAt'){
   var looks=lookList||lookKeys(s),size=previewReferenceSize(s),lookPath=map.querySelector('[data-camera-look-map-path]'),lookCfg=Object.assign({},cfg,{lookFrames:looks});
@@ -270,12 +281,14 @@ function spatialMap(s,list,k){
  resolvedLooks.forEach(function(f){var p=C.mapPoint(f,spec);html+='<circle data-camera-look-map-dot="'+f.at+'" cx="'+p.x+'" cy="'+p.y+'" r="1.55" fill="var(--accent)" opacity=".65" stroke="transparent" stroke-width="5" style="cursor:pointer;pointer-events:all"/>';});
  html+='<circle data-camera-position cx="'+now.x+'" cy="'+now.y+'" r="3" fill="none" stroke="var(--accent)" stroke-width="1"/>';
  if(lookPoint)html+='<circle data-camera-look-position cx="'+lookPoint.x+'" cy="'+lookPoint.y+'" r="2.2" fill="var(--accent)" opacity=".8"/>';
- html+='</svg><button type="button" class="btn tiny" data-camera-map-point="'+k.at+'" aria-label="Mover encuadre '+k.at+'% en el mapa" style="position:absolute;left:'+point.x+'%;top:'+point.y+'%;transform:translate(-50%,-50%);touch-action:none;padding:3px;outline:2px solid var(--accent);z-index:20">◆</button>';
+ html+='</svg>';
+ if(tangentPoint)html+='<button type="button" class="btn tiny" data-camera-tension-handle="'+k.at+'" aria-label="Editar tensión del tramo desde el mapa" title="Arrastrá para ajustar la tensión" style="position:absolute;left:'+tangentPoint.x+'%;top:'+tangentPoint.y+'%;transform:translate(-50%,-50%);touch-action:none;padding:1px 4px;border-radius:50%;z-index:19">◯</button>';
+ html+='<button type="button" class="btn tiny" data-camera-map-point="'+k.at+'" aria-label="Mover encuadre '+k.at+'% en el mapa" style="position:absolute;left:'+point.x+'%;top:'+point.y+'%;transform:translate(-50%,-50%);touch-action:none;padding:3px;outline:2px solid var(--accent);z-index:20">◆</button>';
  if(lk&&lookKeyPoint)html+='<button type="button" class="btn tiny" data-camera-look-map-point="'+lk.at+'" aria-label="'+(lk.targetId?'Objetivo vinculado a un elemento':'Mover objetivo de mirada '+lk.at+'% en el mapa')+'"'+(lk.targetId?' disabled title="Desvinculá el elemento para mover este punto manualmente."':'')+' style="position:absolute;left:'+lookKeyPoint.x+'%;top:'+lookKeyPoint.y+'%;transform:translate(-50%,-50%);touch-action:none;padding:2px 5px;outline:2px dashed var(--accent);z-index:21">●</button>';
  html+='</div>';
  if(s.sdCameraResponsive)html+='<p class="hint gh">El mapa muestra el recorrido con el ancho de referencia.</p>';
  html+='<p class="hint gh" data-camera-position-label>'+mapLabel(current,progress(s))+'</p>';
- html+='<p class="hint gh">◆ encuadre seleccionado · ○ posición actual'+(tangentPoint?' · ◯ tangente de salida':'')+(cfg&&cfg.orientationMode==='lookAt'?' · ● objetivo seleccionado · línea punteada: recorrido de mirada':'')+'. Clic cerca de un punto: seleccionar · Arrastrá ◆ o ● · Shift + arrastre: bloquear al eje dominante. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Flechas: 25 px; Shift + flecha: 100 px. Escape cancela. Escala: ±'+Math.round(spec.range)+' px.</p></details>';
+ html+='<p class="hint gh">◆ encuadre seleccionado · ○ posición actual'+(tangentPoint?' · ◯ tensión del tramo':'')+(cfg&&cfg.orientationMode==='lookAt'?' · ● objetivo seleccionado · línea punteada: recorrido de mirada':'')+'. Clic cerca de un punto: seleccionar · Arrastrá ◆ o ● · Arrastrá ◯: ajustar curva · Shift + arrastre: bloquear al eje dominante. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Flechas: 25 px; Shift + flecha: 100 px. Escape cancela. Escala: ±'+Math.round(spec.range)+' px.</p></details>';
  return html;
 }
 C.panel=function(s){
@@ -371,6 +384,46 @@ function pickSpatial(s,map,clientX,clientY){
  if(best.kind==='look')jumpLook(s,best.at);else jump(s,best.at);
  return true;
 }
+function tensionCommit(s,at,value){
+ if(sec()!==s||!C.config(s))return false;
+ var list=keys(s),k=list.find(function(k){return k.at===at;}),next=C.curveTension(value);if(!k)return false;
+ var current=k.tension===undefined?0:C.curveTension(k.tension);if(current===next)return false;
+ snapshot();k.tension=next;persist(s,list,at);return true;
+}
+function tensionDrag(ev,button){
+ var s=sec(),cfg=C.config(s);if(!cfg||cfg.pathMode!=='smooth')return;
+ var map=button.closest('[data-camera-map]'),r=map&&map.getBoundingClientRect(),list=keys(s),at=+button.dataset.cameraTensionHandle,k=list.find(function(k){return k.at===at;});
+ if(!map||!r.width||!r.height||!k||!C.tangentHandle(list,at))return;
+ var spec={range:+map.dataset.range||500,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1},original=k.tension===undefined?0:C.curveTension(k.tension),next=original,moved=false,done=false;
+ ev.preventDefault();ev.stopPropagation();button.focus();button.setPointerCapture(ev.pointerId);
+ function move(e){
+  if(e.pointerId!==ev.pointerId)return;
+  if(Math.hypot(e.clientX-ev.clientX,e.clientY-ev.clientY)>=3)moved=true;
+  var nx=(e.clientX-r.left)/r.width,ny=(e.clientY-r.top)/r.height,probe={x:(nx*2-1)*spec.range,y:k.y,z:k.z};
+  probe[spec.axis]=((ny*2-1)*spec.range)/spec.sign;
+  var value=C.tensionFromHandle(list,at,spec,probe);if(value===null)return;next=value;
+  var temp=list.map(function(f){return f.at===at?Object.assign({},f,{tension:next}):f;}),th=C.tangentHandle(temp,at);
+  if(th){var hp=C.mapPoint(th,spec);button.style.left=hp.x+'%';button.style.top=hp.y+'%';}
+  var input=document.querySelector('[data-camera-field="tension"][data-camera-at="'+at+'"]');if(input)input.value=next;
+  mapDraw(map,temp,spec,s);
+ }
+ function finish(e,cancel){
+  if(done||e.pointerId!=null&&e.pointerId!==ev.pointerId)return;done=true;
+  if(!cancel&&e.clientX!=null)move(e);
+  button.removeEventListener('pointermove',move);button.removeEventListener('pointerup',up);button.removeEventListener('pointercancel',abort);button.removeEventListener('lostpointercapture',abort);button.removeEventListener('keydown',key);
+  if(button.hasPointerCapture(ev.pointerId))button.releasePointerCapture(ev.pointerId);
+  if(cancel||!moved||!tensionCommit(s,at,next))renderPane();
+ }
+ function up(e){finish(e,false);}function abort(e){finish(e,true);}function key(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();finish(e,true);}}
+ button.addEventListener('pointermove',move);button.addEventListener('pointerup',up);button.addEventListener('pointercancel',abort);button.addEventListener('lostpointercapture',abort);button.addEventListener('keydown',key);
+}
+function tensionKey(ev,button){
+ var keysAllowed=['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home'];if(keysAllowed.indexOf(ev.key)<0)return;
+ var s=sec(),list=keys(s),at=+button.dataset.cameraTensionHandle,k=list.find(function(k){return k.at===at;});if(!k)return;
+ ev.preventDefault();ev.stopPropagation();var current=k.tension===undefined?0:C.curveTension(k.tension),next;
+ if(ev.key==='Home')next=0;else next=current+((ev.key==='ArrowRight'||ev.key==='ArrowUp')?1:-1)*(ev.shiftKey?20:5);
+ if(tensionCommit(s,at,next)){var n=document.getElementById('pane').querySelector('[data-camera-tension-handle]');if(n)n.focus();}
+}
 function lookSpatialCommit(s,original,next){
  if(sec()!==s||!C.config(s))return false;
  var list=lookKeys(s),i=list.findIndex(function(k){return k.at===original.at;});
@@ -436,6 +489,7 @@ if(pane){
  });
  pane.addEventListener('pointerdown',function(ev){
   if(ev.button!==0)return;
+  var tensionHandle=ev.target.closest('[data-camera-tension-handle]');if(tensionHandle){tensionDrag(ev,tensionHandle);return;}
   var lookSpatial=ev.target.closest('[data-camera-look-map-point]');if(lookSpatial){lookSpatialDrag(ev,lookSpatial);return;}
   var spatial=ev.target.closest('[data-camera-map-point]');if(spatial){spatialDrag(ev,spatial);return;}
   var mapDot=ev.target.closest('[data-camera-look-map-dot],[data-camera-map-dot]'),spatialMapNode=ev.target.closest('[data-camera-map]');
@@ -461,6 +515,7 @@ if(pane){
   button.setPointerCapture(ev.pointerId);button.addEventListener('pointermove',move);button.addEventListener('pointerup',up);button.addEventListener('pointercancel',abort);button.addEventListener('lostpointercapture',abort);button.addEventListener('keydown',key);
  });
  pane.addEventListener('keydown',function(ev){
+  var tensionHandle=ev.target.closest('[data-camera-tension-handle]');if(tensionHandle){tensionKey(ev,tensionHandle);return;}
   var lookSpatial=ev.target.closest('[data-camera-look-map-point]');if(lookSpatial){lookSpatialKey(ev,lookSpatial);return;}
   var spatial=ev.target.closest('[data-camera-map-point]');if(spatial){spatialKey(ev,spatial);return;}
   var button=ev.target.closest('[data-camera-jump]');if(!button||['ArrowLeft','ArrowRight'].indexOf(ev.key)<0)return;

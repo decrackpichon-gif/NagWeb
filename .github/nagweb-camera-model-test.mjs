@@ -384,6 +384,11 @@ assert.equal(tangentTight.x,100);assert.equal(tangentTight.y,100);assert.equal(t
 assert.ok(tangentLoose.x>tangentDefault.x&&tangentLoose.z>tangentDefault.z,'Negative tension lengthens the outgoing tangent');
 assert.equal(C.tangentHandle(curvedConfig.frames,100),null);
 assert.equal(C.tangentHandle(C.normalize([{at:0,x:50,y:25,z:-10},{at:20,x:50,y:25,z:-10},{at:100,x:300,y:0,z:0}]),0),null,'A real hold has no outgoing tangent preview');
+const tangentSpec={axis:'z',sign:-1,range:500};
+assert.equal(C.tensionFromHandle(curvedConfig.frames,33,tangentSpec,tangentDefault),0);
+assert.equal(C.tensionFromHandle(curvedConfig.frames,33,tangentSpec,tangentTight),100);
+assert.equal(C.tensionFromHandle(curvedConfig.frames,33,tangentSpec,tangentLoose),-100);
+assert.equal(C.tensionFromHandle(curvedConfig.frames,100,tangentSpec,tangentDefault),null);
 const holdCurve={...curvedConfig,frames:C.normalize([{at:0,x:50,y:25,z:-10,ease:'linear'},{at:20,x:50,y:25,z:-10,ease:'linear'},{at:100,x:300,y:0,z:0}])};
 const smoothHold=C.pose(holdCurve,.1,M,'linear',false);
 assert.equal(smoothHold.x,50);assert.equal(smoothHold.y,25);assert.equal(smoothHold.z,-10);
