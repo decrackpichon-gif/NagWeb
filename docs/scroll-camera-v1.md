@@ -372,3 +372,28 @@ Deshacer, selecciona el nuevo objetivo y respeta el límite de 128 puntos.
 
 Las pruebas cubren inserción manual, captura XYZ, prevención de duplicados, historial,
 zona de hit ampliada y doble clic físico sobre la línea punteada en Chromium.
+
+
+## Handles de entrada y salida
+En `Curva suave`, un encuadre intermedio seleccionado expone dos controles de forma:
+`◁` para la entrada desde el tramo anterior y `▷` para la salida hacia el tramo
+siguiente.
+
+No se agregó un segundo formato de curva. Ambos handles representan exactamente los
+controles Hermite/Bezier equivalentes del Catmull-Rom ya usado por NagWeb. La salida
+`▷` conserva la semántica histórica de `tension` del keyframe seleccionado. La
+entrada `◁` edita esa misma propiedad en el keyframe anterior, porque la tensión se
+guarda por tramo.
+
+Esto permite que un mismo `◆` tenga longitudes de entrada y salida distintas sin
+romper proyectos previos ni migrar datos. El primer encuadre no tiene entrada; el
+último no tiene salida. Las permanencias reales siguen sin dibujar un handle para un
+tramo sin movimiento.
+
+Arrastrar cada handle actualiza únicamente su tramo. La operación es transaccional:
+un gesto confirmado crea una sola entrada de Deshacer y Escape cancela sin guardar.
+Cada handle mantiene los atajos existentes: flechas cambian la tensión 5 puntos,
+Shift + flecha 20 y Home restaura 0.
+
+Las pruebas verifican paridad exacta del handle de salida anterior, fórmula entrante,
+independencia entre entrada/salida, historial y arrastre físico en Chromium.

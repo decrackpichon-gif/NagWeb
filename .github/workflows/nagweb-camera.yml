@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - feat/scroll-camera-v1
-      - feat/scroll-camera-dual-tangent-v1
   workflow_dispatch:
 
 jobs:
