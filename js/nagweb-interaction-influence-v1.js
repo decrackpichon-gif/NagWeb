@@ -8,7 +8,7 @@
   if(root) root.NAGWEB_INTERACTION_INFLUENCE=api;
 })(typeof window!=='undefined'?window:globalThis,function(engine){
   'use strict';
-  var VERSION='1.6.0';
+  var VERSION='1.7.0';
   function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
   function num(v,d){v=Number(v);return Number.isFinite(v)?v:d;}
   function normalizeOptions(input){
@@ -105,6 +105,10 @@
       strength:cleanZero(goal.strength*presence)
     };
   }
+  function targetFieldOptions(o,radiusScale){
+    var scale=clamp(num(radiusScale,1),.25,3);
+    return Object.assign({},o,{radius:Math.max(1,o.radius*scale)});
+  }
   function targetDynamics(o,returnSpeed){
     var speed=clamp(num(returnSpeed,1),.25,2);
     return Object.assign({},o,{spring:clamp(o.spring*speed,.001,1)});
@@ -139,12 +143,13 @@
       var weight=rawWeight==null?1:clamp(num(rawWeight,1),0,2);
       var id=el.getAttribute&&el.getAttribute('data-nw-target-id')||null;
       var returnSpeed=clamp(num(el.getAttribute&&el.getAttribute('data-nw-influence-return'),1),.25,2);
+      var radiusScale=clamp(num(el.getAttribute&&el.getAttribute('data-nw-influence-radius'),1),.25,3);
       var response=normalizeResponse({
         move:el.getAttribute&&el.getAttribute('data-nw-influence-move'),
         rotate:el.getAttribute&&el.getAttribute('data-nw-influence-rotate'),
         scale:el.getAttribute&&el.getAttribute('data-nw-influence-scale')
       });
-      return {el:el,id:id,state:newState(),rest:{x:0,y:0,radius:0},weight:weight,response:response,returnSpeed:returnSpeed,original:original};
+      return {el:el,id:id,state:newState(),rest:{x:0,y:0,radius:0},weight:weight,response:response,returnSpeed:returnSpeed,radiusScale:radiusScale,original:original};
     }
     function setTargets(list){
       targets.forEach(function(t){restore(t);});
@@ -182,10 +187,11 @@
       var point=source&&Number.isFinite(source.x)&&Number.isFinite(source.y)?source:null;
       if(!path&&!point)return;
       targets.forEach(function(t){
-        var goal=reduce?{x:0,y:0,rotation:0,scale:1,strength:0}:(path?computeSweptPathRepulsion(path,previousPath,t.rest,o):computeRepulsion(point,t.rest,o));
+        var fieldOptions=targetFieldOptions(o,t.radiusScale);
+        var goal=reduce?{x:0,y:0,rotation:0,scale:1,strength:0}:(path?computeSweptPathRepulsion(path,previousPath,t.rest,fieldOptions):computeRepulsion(point,t.rest,fieldOptions));
         if(!reduce&&t.weight!==1)goal=weightGoal(goal,t.weight);
         if(!reduce)goal=responseGoal(goal,t.response);
-        springStep(t.state,goal,targetDynamics(o,t.returnSpeed),dt);apply(t);
+        springStep(t.state,goal,targetDynamics(fieldOptions,t.returnSpeed),dt);apply(t);
       });
       previousPath=path?clonePath(path):null;
     }
@@ -204,6 +210,7 @@
       get targetIds(){return targets.map(function(t){return t.id;});},
       get targetResponses(){return targets.map(function(t){return Object.assign({},t.response);});},
       get targetReturnSpeeds(){return targets.map(function(t){return t.returnSpeed;});},
+      get targetRadiusScales(){return targets.map(function(t){return t.radiusScale;});},
       setTargetWeight:function(ref,weight){
         weight=clamp(num(weight,1),0,2);
         var hit=targets.find(function(t){return t.el===ref||t.id===ref;});
@@ -242,6 +249,17 @@
         var hit=targets.find(function(t){return t.el===ref||t.id===ref;});
         return hit?hit.returnSpeed:null;
       },
+      setTargetRadiusScale:function(ref,scale){
+        var hit=targets.find(function(t){return t.el===ref||t.id===ref;});
+        if(!hit)return null;
+        hit.radiusScale=clamp(num(scale,1),.25,3);
+        if(hit.el&&hit.el.setAttribute)hit.el.setAttribute('data-nw-influence-radius',String(hit.radiusScale));
+        return hit.radiusScale;
+      },
+      getTargetRadiusScale:function(ref){
+        var hit=targets.find(function(t){return t.el===ref||t.id===ref;});
+        return hit?hit.radiusScale:null;
+      },
       setOptions:function(next){o=normalizeOptions(Object.assign({},o,next||{}));previousPath=null;return Object.assign({},o);},
       setTargets:function(list){if(input.__ro)input.__ro.disconnect();setTargets(list);if(typeof ResizeObserver==='function'){input.__ro=new ResizeObserver(onResize);targets.forEach(function(t){input.__ro.observe(t.el);});}},
       measure:measure,
@@ -254,5 +272,5 @@
       }
     };
   }
-  return {version:VERSION,normalizeOptions:normalizeOptions,computeRepulsion:computeRepulsion,closestPointOnSegment:closestPointOnSegment,computePathRepulsion:computePathRepulsion,pathDistance:pathDistance,computeSweptPathRepulsion:computeSweptPathRepulsion,weightGoal:weightGoal,normalizeResponse:normalizeResponse,responseGoal:responseGoal,targetDynamics:targetDynamics,springStep:springStep,createField:createField};
+  return {version:VERSION,normalizeOptions:normalizeOptions,computeRepulsion:computeRepulsion,closestPointOnSegment:closestPointOnSegment,computePathRepulsion:computePathRepulsion,pathDistance:pathDistance,computeSweptPathRepulsion:computeSweptPathRepulsion,weightGoal:weightGoal,normalizeResponse:normalizeResponse,responseGoal:responseGoal,targetFieldOptions:targetFieldOptions,targetDynamics:targetDynamics,springStep:springStep,createField:createField};
 });
