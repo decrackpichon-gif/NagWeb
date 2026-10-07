@@ -625,7 +625,7 @@ function wheelSpinBottomComposition(){
 function coverRingComposition(vertical){
  var template=vertical?'cover-ring-vertical':'cover-ring',name=vertical?'Cover Ring Vertical':'Cover Ring',assets=[],s=mkSection({name:name+' · Motion Lab',layout:'free',bg:'#101014',height:100,sdEnabled:false,nwMotionSource:'time',nwMotionDuration:14,nwMotionLoop:true,sdLength:320,sdMotionTemplate:template});
  for(var i=0;i<8;i++){var a={id:nid(),name:name+' · Lámina '+(i+1),data:'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(orbitArtwork(i))};assets.push(a);var e=streamSlot(s.id,i,a.id);e.alt='Lámina '+(i+1)+' del anillo';s.elements.push(e);}
- var config={template:template,source:'time',duration:14,loop:true,perspective:1000,stream:streamModel.config({kind:template,backgroundType:'none',shadow:true})};s.nwStream=config.stream;return{scene:s,assets:assets,config:config};
+ var config={template:template,source:'time',duration:14,loop:true,perspective:1000,stream:streamModel.config({kind:template,frameRatio:vertical?'9:16':'16:9',backgroundType:'none',shadow:true})};s.nwStream=config.stream;return{scene:s,assets:assets,config:config};
 }
 function coverComposition(vertical){
  var template=vertical?'cover-flow-vertical':'cover-flow',name=vertical?'Cover Flow Vertical':'Cover Flow',assets=[],s=mkSection({name:name+' · Motion Lab',layout:'free',bg:'#101014',height:100,sdEnabled:false,nwMotionSource:'time',nwMotionDuration:12,nwMotionLoop:true,sdLength:320,sdMotionTemplate:template});
