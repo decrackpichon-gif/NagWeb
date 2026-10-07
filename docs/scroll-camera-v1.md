@@ -75,16 +75,17 @@ No incluye profundidad fija independiente para hijos de contenedores, elementos
 fijos, composiciones MotionLab ni objetos Three.js. Los hijos conservan, sin embargo,
 sus animaciones Z/rotateX/rotateY del Story Model dentro del mismo mundo de cámara:
 el contenedor raíz usa preserve-3d y esos hijos reutilizan la perspectiva compartida,
-evitando sumar una segunda perspective(). La verificación visual sigue pendiente.
+evitando sumar una segunda perspective(). La combinación ya se verifica en Chromium
+con preview/export y matrices 3D reales.
 
 Implementación aislada en js/nagweb-scroll-camera.js; hooks mínimos en el
 Director y una etiqueta script en index.html. No se modifica story-editor,
 Motion Lab ni los motores de personajes. Resolver estos hooks al integrar.
 
 Alcance: cámara CSS 2.5D sobre .inner, hasta 128 encuadres, sin reloj adicional.
-Pendiente: verificación visual del mapa espacial y compatibilidad visual con los
-efectos 2.5D existentes. No constituye una cámara Three.js: los objetos WebGL y sus
-anclas requieren una integración posterior. Los contenedores raíz admitidos
+El mapa espacial y la compatibilidad con efectos 2.5D ya se verifican en Chromium,
+incluida la exportación real. No constituye una cámara Three.js: los objetos WebGL y
+sus anclas se validan por separado antes de ampliar este alcance. Los contenedores raíz admitidos
 se incorporan a .inner; el resto de nodos externos permanece fuera de la cámara. La cámara puede acercarse hasta atravesar el plano.
 
 Verificación: node .github/nagweb-camera-model-test.mjs y
@@ -95,7 +96,9 @@ La orientación usa el orden inverso Rz(-Z) Ry(-Y) Rx(-X) T(-x,-y,z);
 las pruebas cubren además arrastre, cancelación, Escape, colisiones, pérdida
 de captura, clic y barra de progreso; giro sin traslación, vueltas completas y orientación neutra
 con movimiento reducido.
-Falta prueba visual en navegador de layout, interacción y exportación completa.
+La prueba de navegador en Chromium cubre layout, interacción del mapa, edición por
+teclado, exportación y matrices 3D reales. La suite completa de NagWeb también pasó
+con esta cámara activa.
 vercel.json desactiva despliegues Git para feat/scroll-camera-v1.
 No desplegar manualmente hasta que el usuario lo solicite.
 
@@ -140,4 +143,10 @@ El runtime recalcula esta escala al cambiar el ancho, conservando un momento
 pausado. Volver al primer encuadre navega al primer punto sin cambiar el proyecto.
 Pruebas: exportación con ancho angosto, resize en pausa, perspectiva neutral,
 opción desactivada, serialización, ángulos estables y navegación sin historial.
-La verificación visual en celular sigue pendiente.
+El workflow `.github/workflows/nagweb-camera.yml` ejecuta un smoke específico de
+cámara (modelo + runtime + Chromium) sin disparar Vercel y conserva capturas como
+artefactos temporales.
+La adaptación a ancho angosto ya se verifica en Chromium redimensionando la misma
+exportación pausada de 1000 px a 390 px: X/Y/Z de cámara, perspectiva y profundidad
+de capas se escalan en vivo, los ángulos permanecen estables y los datos guardados no
+se modifican. El smoke guarda además una captura mobile.
