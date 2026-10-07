@@ -335,11 +335,14 @@ function spatialCommit(s,original,next){
 }
 function pickSpatial(s,map,clientX,clientY){
  var cfg=C.config(s),r=map&&map.getBoundingClientRect();if(!cfg||!r||!r.width||!r.height)return false;
- var spec={range:+map.dataset.range||500,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1},size=previewReferenceSize(s),best=null;
- function add(kind,k,point){var p=C.mapPoint(point,spec),x=r.left+p.x/100*r.width,y=r.top+p.y/100*r.height,d=Math.hypot(clientX-x,clientY-y);if(!best||d<best.d)best={kind:kind,at:k.at,d:d};}
+ var spec={range:+map.dataset.range||500,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1},size=previewReferenceSize(s),hits=[];
+ function add(kind,k,point){var p=C.mapPoint(point,spec),x=r.left+p.x/100*r.width,y=r.top+p.y/100*r.height,d=Math.hypot(clientX-x,clientY-y);if(d<=18)hits.push({kind:kind,at:k.at,d:d});}
  keys(s).forEach(function(k){add('camera',k,k);});
  if(cfg.orientationMode==='lookAt'){var list=lookKeys(s),resolved=resolvedLookKeys(s,cfg,list,size);list.forEach(function(k,i){add('look',k,resolved[i]||k);});}
- if(!best||best.d>18)return false;
+ if(!hits.length)return false;
+ hits.sort(function(a,b){return a.d-b.d;});
+ var near=hits.filter(function(h){return h.d<=hits[0].d+2;}),cameraAt=selected[s.id],lookAt=lookSelected[s.id];
+ var best=near.find(function(h){return h.kind==='camera'?h.at!==cameraAt:h.at!==lookAt;})||near[0];
  if(best.kind==='look')jumpLook(s,best.at);else jump(s,best.at);
  return true;
 }
