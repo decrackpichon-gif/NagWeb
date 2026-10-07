@@ -194,7 +194,8 @@ export async function runCameraBrowserSmoke(page){
   await page.waitForFunction(()=>document.querySelector('[data-camera-look-field="x"][data-camera-look-at="50"]'));
   assert.equal(await page.$eval('[data-camera-look-field="x"][data-camera-look-at="50"]',n=>+n.value),1225);
   async function clickSpatialDot(selector){
-   const p=await page.$eval(selector,n=>{const map=n.closest('[data-camera-map]'),mr=map.getBoundingClientRect(),cx=+n.getAttribute('cx'),cy=+n.getAttribute('cy');return{x:mr.left+cx/100*mr.width,y:mr.top+cy/100*mr.height};});
+   const p=await page.$eval(selector,(n,selector)=>{const map=n.closest('[data-camera-map]'),mr=map.getBoundingClientRect(),cx=+n.getAttribute('cx'),cy=+n.getAttribute('cy'),x=mr.left+cx/100*mr.width,y=mr.top+cy/100*mr.height,top=document.elementFromPoint(x,y);return{x,y,hit:!!top?.matches?.(selector),top:top?.outerHTML?.slice(0,500)||String(top)};},selector);
+   assert.equal(p.hit,true,'Spatial dot is covered at click point: '+JSON.stringify(p));
    await page.mouse.click(p.x,p.y);
   }
   await clickSpatialDot('[data-camera-map-dot="100"]');
