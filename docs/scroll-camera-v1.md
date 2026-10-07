@@ -448,3 +448,24 @@ confirmado crea una sola entrada de Deshacer.
 Preview y exportación usan los mismos controles Bézier. Las pruebas verifican:
 compatibilidad exacta al activar Libre, dirección libre real, JSON round-trip,
 independencia entre entrada/salida, exportación Chromium y retorno a Automática.
+
+
+## Vectores numéricos de handles libres
+Cuando una entrada o salida está en modo `Libre`, el panel muestra sus tres
+componentes relativas al encuadre: X, Y y Z en píxeles.
+
+Los valores son exactamente los mismos offsets que usa el motor Bézier
+(`curveInDX/DY/DZ` y `curveOutDX/DY/DZ`). No existe una copia paralela de
+estado: escribir un valor mueve el handle y recalcula la curva; arrastrar el handle
+actualiza los campos numéricos después de confirmar el gesto.
+
+En vista superior X/Z, cambiar Y modifica la curva 3D aunque no altere esa proyección
+del mapa. En vista frontal X/Y ocurre lo equivalente con Z. Los tres valores siguen
+disponibles siempre para edición precisa independientemente de la vista activa.
+
+Cada edición numérica crea una sola entrada de Deshacer, conserva seleccionado el
+mismo `◆` y aplica límites de -4000..4000 px por componente. Volver el handle a
+`Automática` oculta estos campos y recupera la tangente derivada de Catmull-Rom.
+
+Las pruebas cubren edición numérica, sincronización mouse/campos, proyección X/Z,
+historial y conservación del keyframe seleccionado.
