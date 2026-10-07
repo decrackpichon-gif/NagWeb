@@ -162,6 +162,67 @@ export async function runCameraBrowserSmoke(page){
   await page.waitForFunction(()=>document.querySelector('[data-camera-field="tension"][data-camera-at="50"]')&&document.querySelector('[data-camera-tangent-handle="out"]'));
   assert.equal(await page.$eval('[data-camera-field="tension"][data-camera-at="50"]',n=>+n.value),100,'Tension survives temporary linear mode');
 
+  await page.evaluate(()=>{
+   const s=sec();s.sdCameraOrientationMode='lookAt';s.sdCameraLookPathMode='smooth';s.sdCameraLookFrames=[
+    {at:0,x:-200,y:0,z:900,ease:'linear'},
+    {at:50,x:0,y:200,z:1200,ease:'linear'},
+    {at:100,x:300,y:-100,z:800,ease:'linear'}
+   ];saveProject();renderPane();schedulePreview();
+  });
+  await page.waitForFunction(()=>document.querySelector('[data-camera-look-jump="50"]'));
+  await page.click('[data-camera-look-jump="50"]');
+  await page.waitForFunction(()=>document.querySelector('[data-camera-look-map-point="50"]')&&document.querySelectorAll('[data-camera-look-tension-handle]').length===2);
+  const lookCurveUi=await page.evaluate(()=>({
+   handles:document.querySelectorAll('[data-camera-look-tension-handle]').length,
+   path:(document.querySelector('[data-camera-look-map-path]')?.getAttribute('points')||''),
+   target:NAGWEB_SCROLL_CAMERA.lookTarget(NAGWEB_SCROLL_CAMERA.config(sec()),.75,NAGWEB_STORY_MODEL,sec().sdEase),
+   history:history.length
+  }));
+  assert.equal(lookCurveUi.handles,2);assert.ok(lookCurveUi.path.length>20);
+  await page.select('[data-camera-look-handle-mode][data-camera-look-handle-side="out"]','free');
+  await page.waitForFunction(()=>sec().sdCameraLookFrames.find(k=>k.at===50)?.curveOutFree===true&&document.querySelector('[data-camera-look-tension-handle][data-camera-look-tension-side="out"]')?.dataset.cameraLookHandleFree==='true');
+  const lookFreeEnabled=await page.evaluate(()=>({
+   target:NAGWEB_SCROLL_CAMERA.lookTarget(NAGWEB_SCROLL_CAMERA.config(sec()),.75,NAGWEB_STORY_MODEL,sec().sdEase),
+   vectors:document.querySelectorAll('[data-camera-look-handle-vector][data-camera-look-handle-side="out"]').length
+  }));
+  assert.equal(lookFreeEnabled.vectors,3);
+  assert.ok(Math.hypot(lookFreeEnabled.target.x-lookCurveUi.target.x,lookFreeEnabled.target.y-lookCurveUi.target.y,lookFreeEnabled.target.z-lookCurveUi.target.z)<.001,'Enabling free look handle must preserve target path');
+  const lookVectorStart=await page.evaluate(()=>({
+   x:+document.querySelector('[data-camera-look-handle-vector][data-camera-look-handle-side="out"][data-camera-look-handle-axis="x"]').value,
+   path:document.querySelector('[data-camera-look-map-path]').getAttribute('points')
+  }));
+  await page.$eval('[data-camera-look-handle-vector][data-camera-look-handle-side="out"][data-camera-look-handle-axis="x"]',(n,v)=>{n.value=String(v);n.dispatchEvent(new Event('change',{bubbles:true}));},lookVectorStart.x+40);
+  await page.waitForFunction(v=>sec().sdCameraLookFrames.find(k=>k.at===50)?.curveOutDX===v,{},lookVectorStart.x+40);
+  assert.notEqual(await page.$eval('[data-camera-look-map-path]',n=>n.getAttribute('points')),lookVectorStart.path,'Numeric look-handle vector must redraw target path');
+  await page.$eval('[data-camera-look-handle-vector][data-camera-look-handle-side="out"][data-camera-look-handle-axis="x"]',(n,v)=>{n.value=String(v);n.dispatchEvent(new Event('change',{bubbles:true}));},lookVectorStart.x);
+  await page.waitForFunction(v=>sec().sdCameraLookFrames.find(k=>k.at===50)?.curveOutDX===v,{},lookVectorStart.x);
+  await page.$eval('[data-camera-look-tension-handle][data-camera-look-tension-side="out"]',n=>n.scrollIntoView({block:'center'}));
+  const lookDragStart=await page.evaluate(()=>{const h=document.querySelector('[data-camera-look-tension-handle][data-camera-look-tension-side="out"]').getBoundingClientRect();return{x:h.left+h.width/2,y:h.top+h.height/2,history:history.length,path:document.querySelector('[data-camera-look-map-path]').getAttribute('points')};});
+  await page.mouse.move(lookDragStart.x,lookDragStart.y);await page.mouse.down();await page.mouse.move(lookDragStart.x,lookDragStart.y+32,{steps:5});await page.mouse.up();
+  const lookDragEnd=await page.evaluate(()=>({
+   frame:sec().sdCameraLookFrames.find(k=>k.at===50),history:history.length,path:document.querySelector('[data-camera-look-map-path]').getAttribute('points'),
+   target:NAGWEB_SCROLL_CAMERA.lookTarget(NAGWEB_SCROLL_CAMERA.config(sec()),.75,NAGWEB_STORY_MODEL,sec().sdEase),
+   vectorZ:+document.querySelector('[data-camera-look-handle-vector][data-camera-look-handle-side="out"][data-camera-look-handle-axis="z"]').value
+  }));
+  assert.equal(lookDragEnd.frame.curveOutFree,true);assert.ok(Math.abs(lookDragEnd.frame.curveOutDZ)>10);assert.equal(lookDragEnd.vectorZ,lookDragEnd.frame.curveOutDZ);
+  assert.notEqual(lookDragEnd.path,lookDragStart.path);assert.equal(lookDragEnd.history,lookDragStart.history+1);
+  assert.ok(Math.hypot(lookDragEnd.target.x-lookCurveUi.target.x,lookDragEnd.target.y-lookCurveUi.target.y,lookDragEnd.target.z-lookCurveUi.target.z)>1);
+  const expectedLookPose=await page.evaluate(()=>NAGWEB_SCROLL_CAMERA.pose(NAGWEB_SCROLL_CAMERA.config(sec()),.75,NAGWEB_STORY_MODEL,sec().sdEase,false));
+  await page.evaluate(()=>{const html=generateSite(flattenPage(page()),false,false,false),f=document.createElement('iframe');f.id='camera-look-export';f.style.cssText='width:1000px;height:600px;border:0';f.srcdoc=html;document.body.append(f);});
+  await page.waitForFunction(()=>document.querySelector('#camera-look-export')?.contentWindow?.__NAG_SCROLL_DIRECTOR?.['camera-browser-scene']);
+  const lookExportError=await page.evaluate(expected=>{
+   const f=document.querySelector('#camera-look-export'),w=f.contentWindow,d=f.contentDocument;w.__NAG_SCROLL_DIRECTOR['camera-browser-scene'].set(.75);
+   const world=d.querySelector('.sc[data-id="camera-browser-scene"] .inner'),a=world.getAnimations().find(a=>a.playState==='paused'),raw=a?.effect?.getKeyframes?.()[0]?.transform||'none',actual=new w.DOMMatrix(raw);
+   const probe=d.createElement('i');probe.style.transform=(expected.rotate?'rotateZ('+(-expected.rotate)+'deg) ':'')+(expected.rotateY?'rotateY('+(-expected.rotateY)+'deg) ':'')+(expected.rotateX?'rotateX('+(-expected.rotateX)+'deg) ':'')+'translate3d('+(-expected.x)+'px,'+(-expected.y)+'px,'+expected.z+'px)';d.body.append(probe);const target=new w.DOMMatrix(w.getComputedStyle(probe).transform);probe.remove();
+   const keys=['m11','m12','m13','m14','m21','m22','m23','m24','m31','m32','m33','m34','m41','m42','m43','m44'];return Math.max(...keys.map(k=>Math.abs(actual[k]-target[k])));
+  },expectedLookPose);
+  assert.ok(lookExportError<.001,'Free look-target Bezier must serialize into exported camera orientation');
+  await page.$eval('#camera-look-export',n=>n.remove());
+  await page.select('[data-camera-look-handle-mode][data-camera-look-handle-side="out"]','auto');
+  await page.waitForFunction(()=>!sec().sdCameraLookFrames.find(k=>k.at===50)?.curveOutFree);
+  await page.select('[data-camera-orientation-mode]','manual');
+  await page.waitForFunction(()=>sec().sdCameraOrientationMode==='manual');
+
   await page.focus('[data-camera-map-point="50"]');await page.keyboard.press('ArrowRight');
   assert.equal(await page.evaluate(()=>sec().sdCameraFrames.find(k=>k.at===50).x),225);
   await page.select('[data-camera-map-plane]','front');

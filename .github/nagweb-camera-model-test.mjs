@@ -536,7 +536,23 @@ assert.equal(editable.sdCameraLookFrames[0].x,250);
 listeners.change({target:{dataset:{cameraOrientationMode:''},value:'manual'}});
 assert.equal(editable.sdCameraOrientationMode,'manual');assert.equal(JSON.stringify(editable.sdCameraLookFrames).includes('250'),true,'Manual mode preserves look targets');
 assert.notEqual(JSON.stringify(editable.sdCameraLookFrames),retainedLook);
-console.log('Camera look-at: independent target timing/path, angle solving, roll preservation, manual-to-look conversion, reduced motion and editor retention OK');
+editable={...lookScene,id:'look-bezier-ui',sdEase:'linear',sdCameraLookPathMode:'smooth',sdCameraLookFrames:C.normalizeLook([
+ {at:0,x:-200,y:0,z:900,ease:'linear'},{at:50,x:0,y:200,z:1200,ease:'linear'},{at:100,x:300,y:-100,z:800}
+])};
+const lookBezierHistory=history.length;
+listeners.change({target:{dataset:{cameraLookHandleMode:'',cameraLookHandleSide:'out',cameraLookAt:'50'},value:'free'}});
+assert.equal(editable.sdCameraLookFrames.find(k=>k.at===50).curveOutFree,true);assert.equal(history.length,lookBezierHistory+1);assert.equal(pct,50);
+const lookVectorHistory=history.length;
+listeners.change({target:{dataset:{cameraLookHandleVector:'',cameraLookHandleSide:'out',cameraLookHandleAxis:'z',cameraLookAt:'50'},value:'175'}});
+assert.equal(editable.sdCameraLookFrames.find(k=>k.at===50).curveOutDZ,175);assert.equal(history.length,lookVectorHistory+1);
+listeners.change({target:{dataset:{cameraLookHandleMode:'',cameraLookHandleSide:'out',cameraLookAt:'50'},value:'auto'}});
+assert.equal(C.handleFree(editable.sdCameraLookFrames.find(k=>k.at===50),'out'),false);
+const lookIncomingHistory=history.length;
+listeners.change({target:{dataset:{cameraLookIncomingTension:'',cameraLookAt:'50'},value:'35'}});
+assert.equal(editable.sdCameraLookFrames.find(k=>k.at===0).tension,35);assert.equal(history.length,lookIncomingHistory+1);
+listeners.change({target:{dataset:{cameraLookField:'tension',cameraLookAt:'50'},value:'500'}});
+assert.equal(editable.sdCameraLookFrames.find(k=>k.at===50).tension,100,'Look outgoing tension clamps through shared curve bounds');
+console.log('Camera look-at: independent target timing/path, free Bezier handles, vector editing, angle solving, roll preservation, manual-to-look conversion, reduced motion and editor retention OK');
 
 const targetScene={...scene,layout:'free',sdEase:'linear',elements:[
  {id:'focus',type:'heading',x:75,y:25,sdCameraDepth:100,sdKeyframes:[{at:0,x:0,y:0,z:0,ease:'linear'},{at:100,x:100,y:50,z:50}]},
