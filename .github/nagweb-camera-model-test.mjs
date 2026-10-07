@@ -216,7 +216,7 @@ assert.equal(C.moveSpatial(sourcePose,specFront,0,.1).z,300);
 assert.equal(C.moveSpatial(sourcePose,specTop,100,-100).x,4000);
 assert.equal(exported.mapSpec([sourcePose],'top').axis,'z');
 editable={...scene,id:'map-edit',sdCameraFrames:[{at:0,x:0,y:0,z:0},sourcePose,{at:100,x:300,y:400,z:500}]};
-const mapBox={dataset:{plane:'top',range:'500'},getBoundingClientRect(){return{width:200,height:200};}};
+const mapBox={dataset:{plane:'top',range:'500'},getBoundingClientRect(){return{left:0,top:0,width:200,height:200};}};
 function mapMarker(){const point=marker(50);point.dataset={cameraMapPoint:'50'};point.closest=function(selector){return selector==='[data-camera-map]'?mapBox:selector==='[data-camera-map-point]'?this:null;};return point;}
 let spatialPoint=mapMarker(),beforeMap=JSON.stringify(editable),mapHistory=history.length;
 listeners.pointerdown({button:0,pointerId:7,clientX:100,clientY:100,target:spatialPoint,preventDefault(){}});
