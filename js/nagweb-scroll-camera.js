@@ -272,9 +272,9 @@ function mapDraw(map,list,spec,s,lookList){
   else{tangentLine.style.display='none';tangentDot.style.display='none';if(tangentButton)tangentButton.style.display='none';}
  }
  if(cfg&&cfg.orientationMode==='lookAt'){
-  var looks=lookList||lookKeys(s),size=previewReferenceSize(s),lookPath=map.querySelector('[data-camera-look-map-path]'),lookCfg=Object.assign({},cfg,{lookFrames:looks});
-  var lookDraw=C.lookSamples(lookCfg,window.NAGWEB_STORY_MODEL,s.sdEase,undefined,size),resolved=resolvedLookKeys(s,lookCfg,looks,size);
-  if(lookPath)lookPath.setAttribute('points',lookDraw.map(function(k){var p=C.mapPoint(k,spec);return p.x+','+p.y;}).join(' '));
+  var looks=lookList||lookKeys(s),size=previewReferenceSize(s),lookPath=map.querySelector('[data-camera-look-map-path]'),lookHit=map.querySelector('[data-camera-look-map-path-hit]'),lookCfg=Object.assign({},cfg,{lookFrames:looks});
+  var lookDraw=C.lookSamples(lookCfg,window.NAGWEB_STORY_MODEL,s.sdEase,undefined,size),resolved=resolvedLookKeys(s,lookCfg,looks,size),lookPoints=lookDraw.map(function(k){var p=C.mapPoint(k,spec);return p.x+','+p.y;}).join(' ');
+  if(lookPath)lookPath.setAttribute('points',lookPoints);if(lookHit)lookHit.setAttribute('points',lookPoints);
   resolved.forEach(function(k){var dot=map.querySelector('[data-camera-look-map-dot="'+k.at+'"]'),p=C.mapPoint(k,spec);if(dot){dot.setAttribute('cx',p.x);dot.setAttribute('cy',p.y);}});
  }
 }
@@ -285,7 +285,7 @@ function spatialMap(s,list,k){
  var html='<details data-camera-map-box'+(mapOpen[s.id]?' open':'')+'><summary style="cursor:pointer;margin:8px 0">Mapa del recorrido</summary><label>Vista <select class="csel" data-camera-map-plane><option value="top"'+(plane==='top'?' selected':'')+'>Desde arriba · X/Z</option><option value="front"'+(plane==='front'?' selected':'')+'>De frente · X/Y</option></select></label>';
  html+='<div data-camera-map data-plane="'+plane+'" data-range="'+spec.range+'" style="position:relative;width:100%;aspect-ratio:1.5;border:1px solid var(--line);margin-top:8px;touch-action:none">';
  html+='<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:auto"><path d="M50 0V100M0 50H100" stroke="currentColor" opacity=".2" stroke-width=".5"/><polyline data-camera-map-path points="'+path+'" fill="none" stroke="currentColor" opacity=".65" stroke-width=".7"/>';
- if(lookPath)html+='<polyline data-camera-look-map-path points="'+lookPath+'" fill="none" stroke="var(--accent)" opacity=".65" stroke-width=".7" stroke-dasharray="2 2"/>';
+ if(lookPath)html+='<polyline data-camera-look-map-path-hit points="'+lookPath+'" fill="none" stroke="var(--accent)" opacity=".001" stroke-width="6" pointer-events="stroke" style="cursor:crosshair"/><polyline data-camera-look-map-path points="'+lookPath+'" fill="none" stroke="var(--accent)" opacity=".65" stroke-width=".7" stroke-dasharray="2 2" pointer-events="stroke" style="cursor:crosshair"/>';
  if(tangentPoint)html+='<line data-camera-tangent-line x1="'+point.x+'" y1="'+point.y+'" x2="'+tangentPoint.x+'" y2="'+tangentPoint.y+'" stroke="var(--accent)" opacity=".65" stroke-width=".6" stroke-dasharray="1.5 1.5" pointer-events="none"/><circle data-camera-tangent-handle cx="'+tangentPoint.x+'" cy="'+tangentPoint.y+'" r="1.6" fill="none" stroke="var(--accent)" stroke-width=".8" pointer-events="none"/>';
  list.forEach(function(f){var p=C.mapPoint(f,spec);html+='<circle data-camera-map-dot="'+f.at+'" cx="'+p.x+'" cy="'+p.y+'" r="1.8" fill="currentColor" stroke="transparent" stroke-width="5" style="cursor:pointer;pointer-events:all"/>';});
  resolvedLooks.forEach(function(f){var p=C.mapPoint(f,spec);html+='<circle data-camera-look-map-dot="'+f.at+'" cx="'+p.x+'" cy="'+p.y+'" r="1.55" fill="var(--accent)" opacity=".65" stroke="transparent" stroke-width="5" style="cursor:pointer;pointer-events:all"/>';});
@@ -298,7 +298,7 @@ function spatialMap(s,list,k){
  html+='</div>';
  if(s.sdCameraResponsive)html+='<p class="hint gh">El mapa muestra el recorrido con el ancho de referencia.</p>';
  html+='<p class="hint gh" data-camera-position-label>'+mapLabel(current,progress(s))+'</p>';
- html+='<p class="hint gh">◆ encuadre seleccionado · ○ posición actual'+(tangentPoint?' · ◯ tensión del tramo':'')+(cfg&&cfg.orientationMode==='lookAt'?' · ● objetivo seleccionado · línea punteada: recorrido de mirada':'')+'. Clic cerca de un punto: seleccionar · Doble clic sobre la trayectoria: agregar ◆ · Arrastrá ◆ o ● · Arrastrá ◯: ajustar curva · Shift + arrastre: bloquear al eje dominante. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Flechas: 25 px; Shift + flecha: 100 px. Escape cancela. Escala: ±'+Math.round(spec.range)+' px.</p></details>';
+ html+='<p class="hint gh">◆ encuadre seleccionado · ○ posición actual'+(tangentPoint?' · ◯ tensión del tramo':'')+(cfg&&cfg.orientationMode==='lookAt'?' · ● objetivo seleccionado · línea punteada: recorrido de mirada':'')+'. Clic cerca de un punto: seleccionar · Doble clic línea normal: agregar ◆ · línea punteada: agregar ● · Arrastrá ◆ o ● · Arrastrá ◯: ajustar curva · Shift + arrastre: bloquear al eje dominante. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Flechas: 25 px; Shift + flecha: 100 px. Escape cancela. Escala: ±'+Math.round(spec.range)+' px.</p></details>';
  return html;
 }
 C.panel=function(s){
@@ -411,6 +411,20 @@ function insertOnPath(s,map,clientX,clientY){
  if(cfg.pathMode==='smooth'&&source.tension!==undefined)frame.tension=source.tension;
  snapshot();list.push(frame);persist(s,list,at);toast('Encuadre agregado sobre la trayectoria.');return true;
 }
+function insertLookOnPath(s,map,clientX,clientY){
+ var cfg=C.config(s),r=map&&map.getBoundingClientRect(),list=lookKeys(s);if(!cfg||cfg.orientationMode!=='lookAt'||!r||!r.width||!r.height||!list.length||list.length>=128)return false;
+ var spec={range:+map.dataset.range||500,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1},size=previewReferenceSize(s);
+ var point={x:(clientX-r.left)/r.width*100,y:(clientY-r.top)/r.height*100},sx=r.width/100,sy=r.height/100,lookCfg=Object.assign({},cfg,{lookFrames:list}),resolved=resolvedLookKeys(s,lookCfg,list,size),nearKey=null;
+ resolved.forEach(function(k,i){var p=C.mapPoint(k,spec),d=Math.hypot((point.x-p.x)*sx,(point.y-p.y)*sy);if(d<=8&&(!nearKey||d<nearKey.distance))nearKey={at:list[i].at,distance:d};});
+ if(nearKey){jumpLook(s,nearKey.at);return true;}
+ var draw=C.lookSamples(lookCfg,window.NAGWEB_STORY_MODEL,s.sdEase,128,size),hit=C.nearestPathAt(draw,spec,point,{x:sx,y:sy});
+ if(!hit||hit.distance>14)return false;
+ var at=Math.round(Math.max(0,Math.min(100,hit.at))*10)/10,existing=list.find(function(k){return k.at===at;});
+ if(existing){jumpLook(s,at);return true;}
+ var target=C.lookTarget(lookCfg,at/100,window.NAGWEB_STORY_MODEL,s.sdEase,size);if(!target)return false;
+ var source=list[0];for(var i=0;i<list.length;i++){if(list[i].at<=at)source=list[i];else break;}
+ snapshot();list.push({at:at,x:target.x,y:target.y,z:target.z,ease:source.ease||s.sdEase||'cinematic'});persistLook(s,list,at);toast('Objetivo agregado sobre la trayectoria de mirada.');return true;
+}
 function tensionCommit(s,at,value){
  if(sec()!==s||!C.config(s))return false;
  var list=keys(s),k=list.find(function(k){return k.at===at;}),next=C.curveTension(value);if(!k)return false;
@@ -517,6 +531,8 @@ if(pane){
  pane.addEventListener('dblclick',function(ev){
   if(ev.button!==undefined&&ev.button!==0)return;
   var map=ev.target.closest('[data-camera-map]');if(!map)return;
+  var lookPath=ev.target.closest('[data-camera-look-map-path-hit],[data-camera-look-map-path]');
+  if(lookPath&&insertLookOnPath(sec(),map,ev.clientX,ev.clientY)){ev.preventDefault();ev.stopPropagation();return;}
   if(ev.target.closest('[data-camera-map-point],[data-camera-look-map-point],[data-camera-tension-handle],[data-camera-map-dot],[data-camera-look-map-dot],[data-camera-position],[data-camera-look-position]'))return;
   if(insertOnPath(sec(),map,ev.clientX,ev.clientY)){ev.preventDefault();ev.stopPropagation();}
  });

@@ -251,6 +251,24 @@ export async function runCameraBrowserSmoke(page){
    mode:document.querySelector('[data-camera-look-path-mode]')?.value
   }));
   assert.equal(lookUi.targets,3);assert.equal(lookUi.hasPath,true);assert.equal(lookUi.hasCurrent,true);assert.equal(lookUi.mode,'linear');
+  const lookPathBefore=await page.$eval('[data-camera-look-map-path]',n=>n.getAttribute('points'));
+  await page.$eval('[data-camera-look-map-path-hit]',n=>n.closest('[data-camera-map]')?.scrollIntoView({block:'center',inline:'nearest'}));
+  const lookInsertHit=await page.evaluate(()=>{
+   const s=sec(),cfg=NAGWEB_SCROLL_CAMERA.config(s),map=document.querySelector('[data-camera-map]'),r=map.getBoundingClientRect(),spec={range:+map.dataset.range,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1},size={width:1000,height:1000},target=NAGWEB_SCROLL_CAMERA.lookTarget(cfg,.25,NAGWEB_STORY_MODEL,s.sdEase,size),p=NAGWEB_SCROLL_CAMERA.mapPoint(target,spec),top=document.elementFromPoint(r.left+p.x/100*r.width,r.top+p.y/100*r.height);
+   return{x:r.left+p.x/100*r.width,y:r.top+p.y/100*r.height,target,history:history.length,top:top?.getAttribute?.('data-camera-look-map-path')!==null||top?.getAttribute?.('data-camera-look-map-path-hit')!==null};
+  });
+  assert.equal(lookInsertHit.top,true,'Look path should expose a wide double-click hit area');
+  await page.mouse.click(lookInsertHit.x,lookInsertHit.y,{count:2,delay:45});
+  await page.waitForFunction(()=>sec().sdCameraLookFrames.length===4);
+  const insertedLookBrowser=await page.evaluate(()=>({frame:sec().sdCameraLookFrames.find(k=>![0,50,100].includes(k.at)),history:history.length}));
+  assert.ok(insertedLookBrowser.frame&&!insertedLookBrowser.frame.targetId,'Dotted-path double click should create a manual look target');
+  assert.ok(Math.abs(insertedLookBrowser.frame.at-25)<1);
+  assert.ok(Math.hypot(insertedLookBrowser.frame.x-lookInsertHit.target.x,insertedLookBrowser.frame.y-lookInsertHit.target.y,insertedLookBrowser.frame.z-lookInsertHit.target.z)<5);
+  assert.equal(insertedLookBrowser.history,lookInsertHit.history+1);
+  const insertedLookAt=insertedLookBrowser.frame.at;
+  await page.click('[data-camera-look-delete="'+insertedLookAt+'"]');
+  await page.waitForFunction(()=>sec().sdCameraLookFrames.length===3);
+  assert.equal(await page.$eval('[data-camera-look-map-path]',n=>n.getAttribute('points')),lookPathBefore,'Deleting inserted look target restores original dotted path');
   await page.click('[data-camera-look-jump="50"]');
   await page.waitForFunction(()=>document.querySelector('[data-camera-look-field="x"][data-camera-look-at="50"]'));
   assert.equal(await page.$eval('[data-camera-look-field="x"][data-camera-look-at="50"]',n=>+n.value),1225);

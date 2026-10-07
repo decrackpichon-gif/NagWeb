@@ -449,6 +449,21 @@ const smoothLook={...lookConfig,lookPathMode:'smooth',lookFrames:C.normalizeLook
  {at:0,x:-200,y:0,z:900,ease:'linear'},{at:50,x:0,y:200,z:1200,ease:'linear'},{at:100,x:300,y:-100,z:800}
 ])};
 assert.ok(C.lookSamples(smoothLook,M,'linear').length>smoothLook.lookFrames.length);
+editable={...lookScene,id:'look-insert-ui',sdEase:'linear'};
+const lookInsertCfg=ui.window.NAGWEB_SCROLL_CAMERA.config(editable),lookInsertList=ui.window.NAGWEB_SCROLL_CAMERA.lookFrames(lookInsertCfg),lookInsertSize={width:1000,height:1000},lookInsertResolved=lookInsertList,lookInsertSpec=ui.window.NAGWEB_SCROLL_CAMERA.mapSpec(ui.window.NAGWEB_SCROLL_CAMERA.frames(lookInsertCfg,'linear').concat(lookInsertResolved),'top'),lookInsertTarget=ui.window.NAGWEB_SCROLL_CAMERA.lookTarget(lookInsertCfg,.25,M,'linear',lookInsertSize),lookInsertPoint=ui.window.NAGWEB_SCROLL_CAMERA.mapPoint(lookInsertTarget,lookInsertSpec);
+const lookInsertMap={dataset:{plane:'top',range:String(lookInsertSpec.range)},getBoundingClientRect(){return{left:0,top:0,width:300,height:200};}},lookPathTarget={closest(selector){if(selector==='[data-camera-map]')return lookInsertMap;if(selector==='[data-camera-look-map-path-hit],[data-camera-look-map-path]')return this;return null;}};
+const lookInsertHistory=history.length;
+listeners.dblclick({button:0,clientX:lookInsertPoint.x/100*300,clientY:lookInsertPoint.y/100*200,target:lookPathTarget,preventDefault(){},stopPropagation(){}});
+assert.equal(editable.sdCameraLookFrames.length,4,'Double click on dotted look path inserts a look target');
+const insertedLook=editable.sdCameraLookFrames.find(k=>![0,50,100].includes(k.at));assert.ok(insertedLook&&!insertedLook.targetId,'Inserted look-path point is a manual XYZ target');
+const expectedLook=ui.window.NAGWEB_SCROLL_CAMERA.lookTarget(lookInsertCfg,insertedLook.at/100,M,'linear',lookInsertSize);
+assert.ok(Math.hypot(insertedLook.x-expectedLook.x,insertedLook.y-expectedLook.y,insertedLook.z-expectedLook.z)<.01);
+assert.equal(history.length,lookInsertHistory+1,'Look-path insertion creates one undo snapshot');
+const repeatLookHistory=history.length,repeatLookPoint=ui.window.NAGWEB_SCROLL_CAMERA.mapPoint(insertedLook,lookInsertSpec);
+listeners.dblclick({button:0,clientX:repeatLookPoint.x/100*300,clientY:repeatLookPoint.y/100*200,target:lookPathTarget,preventDefault(){},stopPropagation(){}});
+assert.equal(editable.sdCameraLookFrames.length,4,'Repeated double click on the same look target does not duplicate it');
+assert.equal(history.length,repeatLookHistory,'Selecting an existing look target creates no history');
+editable=lookScene;
 const authoredPose={x:120,y:-40,z:80,rotateX:25,rotateY:-40,rotate:15},forward=C.forwardTarget(authoredPose,750),roundTrip=C.lookAngles(authoredPose,forward);
 assert.ok(Math.abs(roundTrip.rotateX-authoredPose.rotateX)<1e-9);
 assert.ok(Math.abs(roundTrip.rotateY-authoredPose.rotateY)<1e-9);
