@@ -57,6 +57,8 @@ export async function runCameraBrowserSmoke(page){
   await page.click('[data-camera-delete="'+insertedAt+'"]');
   await page.waitForFunction(()=>sec().sdCameraFrames.length===3);
   assert.equal(await page.$eval('[data-camera-map-path]',n=>n.getAttribute('points')),curveBefore,'Deleting the inserted key should restore the original sampled path');
+  await page.click('[data-camera-jump="50"]');
+  await page.waitForFunction(()=>document.querySelector('[data-camera-field="tension"][data-camera-at="50"]'));
   const tangentBefore=await page.evaluate(()=>{
    const h=document.querySelector('[data-camera-tangent-handle]'),k=document.querySelector('[data-camera-map-dot="50"]');
    return{exists:!!h,hx:+h?.getAttribute('cx'),hy:+h?.getAttribute('cy'),kx:+k?.getAttribute('cx'),ky:+k?.getAttribute('cy')};
