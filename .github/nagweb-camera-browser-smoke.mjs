@@ -196,7 +196,7 @@ export async function runCameraBrowserSmoke(page){
   async function clickSpatialDot(selector){
    await page.$eval(selector,n=>n.closest('[data-camera-map]')?.scrollIntoView({block:'center',inline:'nearest'}));
    await new Promise(r=>setTimeout(r,40));
-   const p=await page.$eval(selector,n=>{const map=n.closest('[data-camera-map]'),mr=map.getBoundingClientRect(),cx=+n.getAttribute('cx'),cy=+n.getAttribute('cy'),x=mr.left+cx/100*mr.width,y=mr.top+cy/100*mr.height,top=document.elementFromPoint(x,y);return{x,y,hit:!!top?.matches?.('[data-camera-map-dot],[data-camera-look-map-dot],[data-camera-map-point],[data-camera-look-map-point]'),top:top?.outerHTML?.slice(0,500)||String(top)};});
+   const p=await page.$eval(selector,n=>{const map=n.closest('[data-camera-map]'),mr=map.getBoundingClientRect(),cx=+n.getAttribute('cx'),cy=+n.getAttribute('cy'),x=mr.left+cx/100*mr.width,y=mr.top+cy/100*mr.height,top=document.elementFromPoint(x,y);return{x,y,hit:!!top?.matches?.('[data-camera-map-dot],[data-camera-look-map-dot],[data-camera-map-point],[data-camera-look-map-point],[data-camera-position],[data-camera-look-position]'),top:top?.outerHTML?.slice(0,500)||String(top)};});
    assert.equal(p.hit,true,'Spatial key has no clickable hit target: '+JSON.stringify(p));
    await page.mouse.click(p.x,p.y);
   }
