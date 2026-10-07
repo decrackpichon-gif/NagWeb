@@ -25,6 +25,7 @@ import {
 import { buildInsertDescriptor } from "./runtime/insert-adapters.mjs";
 import { buildStaticPreview } from "./preview/build-preview.mjs";
 import { buildVaultGallery } from "./gallery/build-gallery.mjs";
+import { buildReactPreviewRecipe } from "./preview/recipes.mjs";
 import {
   auditReactResourceStatic,
   collectModuleSpecifiers,
@@ -415,5 +416,40 @@ export { Accordion, AccordionItem }
 const exportListAudit = auditReactResourceStatic(exportListResource);
 assert.equal(exportListAudit.exportedComponent?.name, "Accordion");
 assert.equal(exportListAudit.eligibleForBundle, true);
+
+const shadcnAccordionRecipe = buildReactPreviewRecipe(
+  {
+    id: "shadcn:accordion",
+    name: "accordion",
+    title: "Accordion",
+    source: { provider: "shadcn" }
+  },
+  {
+    primaryExport: "Accordion",
+    defaultProps: {}
+  }
+);
+assert.equal(shadcnAccordionRecipe.name, "Accordion");
+assert.equal(shadcnAccordionRecipe.children[0].name, "AccordionItem");
+assert.equal(
+  shadcnAccordionRecipe.children[0].children[0].name,
+  "AccordionTrigger"
+);
+
+const genericPreviewRecipe = buildReactPreviewRecipe(
+  {
+    id: "demo:card",
+    name: "card",
+    title: "Demo Card",
+    description: "Demo",
+    source: { provider: "demo" }
+  },
+  {
+    primaryExport: "Card",
+    defaultProps: { children: "Contenido" }
+  }
+);
+assert.equal(genericPreviewRecipe.name, "Card");
+assert.deepEqual(genericPreviewRecipe.children, ["Contenido"]);
 
 console.log("NagWeb Resource ETL self-test: OK");

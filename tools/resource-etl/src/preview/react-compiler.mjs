@@ -1,3 +1,4 @@
+import { buildReactPreviewRecipe } from "./recipes.mjs";
 import path from "node:path";
 import { createRequire } from "node:module";
 import {
@@ -426,26 +427,65 @@ export async function compileReactResource(
   const exported = licenseAudit.exportedComponent;
   const props = defaultPreviewProps(resource, entryCode);
 
-  const importLine = exported?.isDefault
-    ? 'import Component from "nagweb-entry-component";'
-    : `import { ${exported.name} as Component } from "nagweb-entry-component";`;
+  const recipe = buildReactPreviewRecipe(resource, {
+    primaryExport: exported?.name,
+    defaultProps: props
+  });
 
   const harness = `
 import React from "react";
 import { createRoot } from "react-dom/client";
-${importLine}
+import * as ResourceModule from "nagweb-entry-component";
 
-const props = ${JSON.stringify(props)};
-const children = Object.prototype.hasOwnProperty.call(props, "children")
-  ? props.children
-  : undefined;
-if (Object.prototype.hasOwnProperty.call(props, "children")) delete props.children;
+const recipe = ${JSON.stringify(recipe).replaceAll("<", "\\u003c")};
+
+function renderRecipe(node, key) {
+  if (node === null || node === undefined || node === false) return null;
+  if (typeof node === "string" || typeof node === "number") return node;
+
+  const children = (node.children || []).map((child, index) =>
+    renderRecipe(child, index)
+  );
+
+  if (node.kind === "element") {
+    return React.createElement(
+      node.tag || "div",
+      { ...(node.props || {}), key },
+      ...children
+    );
+  }
+
+  const Component = ResourceModule[node.name];
+  if (!Component) {
+    return React.createElement(
+      "div",
+      {
+        key,
+        style: {
+          padding: "12px",
+          border: "1px solid #ef4444",
+          borderRadius: "10px",
+          color: "#991b1b",
+          background: "#fef2f2",
+          fontFamily: "system-ui"
+        }
+      },
+      "Preview recipe references missing export: " + node.name
+    );
+  }
+
+  return React.createElement(
+    Component,
+    { ...(node.props || {}), key },
+    ...children
+  );
+}
 
 function App() {
   return React.createElement(
     "div",
     { id: "nagweb-preview-stage" },
-    React.createElement(Component, props, children)
+    renderRecipe(recipe, "preview-root")
   );
 }
 

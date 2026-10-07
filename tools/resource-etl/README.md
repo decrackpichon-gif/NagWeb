@@ -474,3 +474,24 @@ Es una estantería visual completamente local con:
 - copia rápida del ID universal del recurso.
 
 La galería no usa CDN, APIs ni backend. Lee un snapshot embebido del catálogo generado en esa misma corrida, por lo que también funciona abierta como archivo local.
+
+
+## Recetas de preview React
+
+El sandbox ya distingue entre "el componente compila" y "la preview explica qué hace".
+
+Se generan mini escenas locales para componentes compuestos como:
+
+- Magic Card;
+- Android;
+- Motion Primitives Accordion;
+- Motion Primitives Animated Background;
+- Shadcn Accordion;
+- Shadcn Alert;
+- Shadcn Alert Dialog;
+- Shadcn Aspect Ratio;
+- Shadcn Button.
+
+Las recetas usan sólo exports del recurso y dependencias ya resueltas en el Vault. Un árbol declarativo describe componentes, elementos HTML, props y children, y el sandbox lo renderiza sin ejecutar código de configuración remoto.
+
+Los recursos sin receta específica siguen teniendo una preview genérica automática.
