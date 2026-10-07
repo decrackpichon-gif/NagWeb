@@ -86,12 +86,26 @@ export async function runCameraBrowserSmoke(page){
   const freeEnabled=await page.evaluate(()=>({pose:NAGWEB_SCROLL_CAMERA.pose(NAGWEB_SCROLL_CAMERA.config(sec()),.75,NAGWEB_STORY_MODEL,sec().sdEase,false),frame:sec().sdCameraFrames.find(k=>k.at===50),disabled:document.querySelector('[data-camera-field="tension"][data-camera-at="50"]')?.disabled}));
   assert.ok(Math.hypot(freeEnabled.pose.x-freeBefore.x,freeEnabled.pose.y-freeBefore.y,freeEnabled.pose.z-freeBefore.z)<.001,'Switching to free handle must preserve current curve');
   assert.equal(freeEnabled.frame.curveOutFree,true);assert.equal(freeEnabled.disabled,true);
+  const vectorUi=await page.evaluate(()=>({
+   count:document.querySelectorAll('[data-camera-handle-vector][data-camera-handle-side="out"]').length,
+   x:+document.querySelector('[data-camera-handle-vector][data-camera-handle-side="out"][data-camera-handle-axis="x"]')?.value,
+   y:+document.querySelector('[data-camera-handle-vector][data-camera-handle-side="out"][data-camera-handle-axis="y"]')?.value,
+   z:+document.querySelector('[data-camera-handle-vector][data-camera-handle-side="out"][data-camera-handle-axis="z"]')?.value
+  }));
+  assert.equal(vectorUi.count,3);
+  const vectorPathBefore=await page.$eval('[data-camera-map-path]',n=>n.getAttribute('points'));
+  await page.$eval('[data-camera-handle-vector][data-camera-handle-side="out"][data-camera-handle-axis="y"]',(n,v)=>{n.value=String(v);n.dispatchEvent(new Event('change',{bubbles:true}));},vectorUi.y+40);
+  await page.waitForFunction(v=>sec().sdCameraFrames.find(k=>k.at===50)?.curveOutDY===v,vectorUi.y+40);
+  assert.notEqual(await page.$eval('[data-camera-map-path]',n=>n.getAttribute('points')),vectorPathBefore,'Numeric free-handle vector must redraw the curve');
+  await page.$eval('[data-camera-handle-vector][data-camera-handle-side="out"][data-camera-handle-axis="y"]',(n,v)=>{n.value=String(v);n.dispatchEvent(new Event('change',{bubbles:true}));},vectorUi.y);
+  await page.waitForFunction(v=>sec().sdCameraFrames.find(k=>k.at===50)?.curveOutDY===v,vectorUi.y);
   await page.$eval('[data-camera-tension-handle][data-camera-tension-side="out"]',n=>n.scrollIntoView({block:'center'}));
   const freeDragStart=await page.evaluate(()=>{const h=document.querySelector('[data-camera-tension-handle][data-camera-tension-side="out"]').getBoundingClientRect();return{x:h.left+h.width/2,y:h.top+h.height/2,history:history.length,path:document.querySelector('[data-camera-map-path]').getAttribute('points')};});
   await page.mouse.move(freeDragStart.x,freeDragStart.y);await page.mouse.down();await page.mouse.move(freeDragStart.x,freeDragStart.y+35,{steps:5});await page.mouse.up();
   const freeDragEnd=await page.evaluate(()=>({frame:sec().sdCameraFrames.find(k=>k.at===50),history:history.length,path:document.querySelector('[data-camera-map-path]').getAttribute('points'),pose:NAGWEB_SCROLL_CAMERA.pose(NAGWEB_SCROLL_CAMERA.config(sec()),.75,NAGWEB_STORY_MODEL,sec().sdEase,false)}));
   assert.equal(freeDragEnd.frame.curveOutFree,true);assert.ok(Math.abs(freeDragEnd.frame.curveOutDZ)>10,'Top-view free drag should bend the handle in Z');
   assert.notEqual(freeDragEnd.path,freeDragStart.path);assert.equal(freeDragEnd.history,freeDragStart.history+1);
+  assert.equal(+await page.$eval('[data-camera-handle-vector][data-camera-handle-side="out"][data-camera-handle-axis="z"]',n=>n.value),freeDragEnd.frame.curveOutDZ,'Mouse drag and numeric free-handle vector must stay synchronized');
   assert.ok(Math.hypot(freeDragEnd.pose.x-freeBefore.x,freeDragEnd.pose.y-freeBefore.y,freeDragEnd.pose.z-freeBefore.z)>1,'Free direction must change spatial path');
   await page.evaluate(()=>{const html=generateSite(flattenPage(page()),false,false,false),f=document.createElement('iframe');f.id='camera-free-export';f.style.cssText='width:1000px;height:600px;border:0';f.srcdoc=html;document.body.append(f);});
   await page.waitForFunction(()=>document.querySelector('#camera-free-export')?.contentWindow?.__NAG_SCROLL_DIRECTOR?.['camera-browser-scene']);

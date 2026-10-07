@@ -379,14 +379,17 @@ C.panel=function(s){
  ['x','y','z'].forEach(function(axis){html+=field('Cámara '+axis.toUpperCase(),axis,k[axis],-4000,4000,25);});
  var keyIndex=list.findIndex(function(f){return f.at===k.at;}),inFree=C.handleFree(k,'in'),outFree=C.handleFree(k,'out');
  function handleModeRow(label,side,free){return cRow(label,'<select class="csel" data-camera-handle-mode data-camera-handle-side="'+side+'" data-camera-at="'+k.at+'"><option value="auto"'+(free?'':' selected')+'>Automática</option><option value="free"'+(free?' selected':'')+'>Libre</option></select>');}
+ function freeVectorRows(side){var p=side==='in'?'curveIn':'curveOut',name=side==='in'?'Entrada':'Salida',out='';['x','y','z'].forEach(function(axis){var keyName=p+'D'+axis.toUpperCase();out+=cRow(name+' libre '+axis.toUpperCase()+' (px)','<input class="cnum" type="number" data-camera-handle-vector data-camera-handle-side="'+side+'" data-camera-handle-axis="'+axis+'" data-camera-at="'+k.at+'" value="'+(+k[keyName]||0)+'" min="-4000" max="4000" step="25">');});return out;}
  if(s.sdCameraPathMode==='smooth'&&keyIndex>0){
   var prevKey=list[keyIndex-1];
   html+=handleModeRow('Dirección de entrada','in',inFree);
   html+=cRow('Entrada desde el anterior (%)','<input class="cnum" type="number" aria-label="Tensión de entrada desde el encuadre anterior" data-camera-incoming-tension data-camera-at="'+k.at+'" value="'+(prevKey.tension===undefined?0:prevKey.tension)+'" min="-100" max="100" step="5"'+(inFree?' disabled':'')+'>');
+  if(inFree)html+=freeVectorRows('in');
  }
  if(s.sdCameraPathMode==='smooth'&&keyIndex>=0&&keyIndex<list.length-1){
   html+=handleModeRow('Dirección de salida','out',outFree);
   html+=cRow('Salida hacia el siguiente (%)','<input class="cnum" type="number" aria-label="Salida hacia el siguiente (%)" data-camera-field="tension" data-camera-at="'+k.at+'" value="'+(k.tension===undefined?0:k.tension)+'" min="-100" max="100" step="5"'+(outFree?' disabled':'')+'>');
+  if(outFree)html+=freeVectorRows('out');
  }
  if(s.sdCameraPathMode==='smooth'&&(keyIndex>0||keyIndex<list.length-1)){
   html+='<p class="hint gh">Automática usa la tensión Catmull-Rom. Libre conserva la forma actual y permite inclinar el handle en X/Z o X/Y desde el mapa. Entrada y salida pueden liberarse por separado.</p>';
@@ -733,6 +736,15 @@ if(pane){
    var changed=C.setHandleMode(modeList,modeAt,modeSide,wantFree),changedKey=changed.find(function(f){return f.at===modeAt;});
    if(!changedKey||C.handleFree(changedKey,modeSide)!==wantFree){renderPane();return;}
    snapshot();persist(modeScene,changed,modeAt);return;
+  }
+  if(input.dataset.cameraHandleVector!==undefined){
+   var vectorScene=sec();if(!C.config(vectorScene))return;
+   var vectorList=keys(vectorScene),vectorAt=+input.dataset.cameraAt,vectorSide=input.dataset.cameraHandleSide==='in'?'in':'out',vectorAxis=['x','y','z'].indexOf(input.dataset.cameraHandleAxis)>=0?input.dataset.cameraHandleAxis:null,vectorKey=vectorList.find(function(f){return f.at===vectorAt;});
+   if(!vectorKey||!vectorAxis||!C.handleFree(vectorKey,vectorSide)){renderPane();return;}
+   var delta=+input.value;if(!Number.isFinite(delta)||input.value===''){renderPane();return;}delta=Math.max(-4000,Math.min(4000,delta));
+   var prefix=vectorSide==='in'?'curveIn':'curveOut',prop=prefix+'D'+vectorAxis.toUpperCase(),current=+vectorKey[prop]||0;if(current===delta){input.value=delta;return;}
+   var handle=C.tangentHandle(vectorList,vectorAt,vectorSide);if(!handle){renderPane();return;}var point={x:handle.x,y:handle.y,z:handle.z};point[vectorAxis]=vectorKey[vectorAxis]+delta;
+   var vectorNext=C.setFreeHandle(vectorList,vectorAt,vectorSide,point);snapshot();persist(vectorScene,vectorNext,vectorAt);return;
   }
   if(input.dataset.cameraIncomingTension!==undefined){
    var incomingScene=sec();if(!C.config(incomingScene))return;

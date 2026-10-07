@@ -411,6 +411,11 @@ const freeInFrames=C.setHandleMode(curvedConfig.frames,66,'in',true),freeInKey=f
 assert.equal(C.handleFree(freeInKey,'in'),true);assert.equal(C.handleFree(freeInKey,'out'),false);
 const autoAgain=C.setHandleMode(movedFreeFrames,33,'out',false),autoAgainPose=C.pose({...curvedConfig,frames:autoAgain},.4,M,'linear',false);
 assert.equal(C.handleFree(autoAgain.find(k=>k.at===33),'out'),false);assert.ok(Math.hypot(autoAgainPose.x-autoPose40.x,autoAgainPose.y-autoPose40.y,autoAgainPose.z-autoPose40.z)<1e-9);
+editable={...curvedScene,id:'free-vector-ui',sdCameraFrames:C.setHandleMode(curvedConfig.frames,33,'out',true)};
+const vectorFieldHistory=history.length;
+listeners.change({target:{dataset:{cameraHandleVector:'',cameraHandleSide:'out',cameraHandleAxis:'z',cameraAt:'33'},matches(){return false;},value:'125'}});
+assert.equal(editable.sdCameraFrames.find(k=>k.at===33).curveOutDZ,125,'Free-handle numeric Z field edits the stored relative vector');
+assert.equal(history.length,vectorFieldHistory+1);assert.equal(pct,33,'Free-handle numeric edit preserves selected key moment');
 const nearestSpec=C.mapSpec(curvedConfig.frames,'top'),nearestSample=curveSamples[Math.floor(curveSamples.length*.25)],nearestPoint=C.mapPoint(nearestSample,nearestSpec);
 const nearestHit=C.nearestPathAt(curveSamples,nearestSpec,nearestPoint,{x:3,y:2});
 assert.ok(nearestHit&&nearestHit.distance<1e-9&&Math.abs(nearestHit.at-nearestSample.at)<1e-9,'Projected path lookup recovers the sampled narrative moment');
