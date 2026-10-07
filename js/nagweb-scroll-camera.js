@@ -323,8 +323,8 @@ function spatialMap(s,list,k){
  html+='<circle data-camera-position cx="'+now.x+'" cy="'+now.y+'" r="3" fill="none" stroke="var(--accent)" stroke-width="1"/>';
  if(lookPoint)html+='<circle data-camera-look-position cx="'+lookPoint.x+'" cy="'+lookPoint.y+'" r="2.2" fill="var(--accent)" opacity=".8"/>';
  html+='</svg>';
- if(tangentInPoint)html+='<button type="button" class="btn tiny" data-camera-tension-handle="'+k.at+'" data-camera-tension-side="in" aria-label="Editar entrada de curva" title="Arrastrá para ajustar cómo entra la cámara" style="position:absolute;left:'+tangentInPoint.x+'%;top:'+tangentInPoint.y+'%;transform:translate(-50%,-50%);touch-action:none;padding:1px 4px;border-radius:50%;z-index:19">◁</button>';
- if(tangentOutPoint)html+='<button type="button" class="btn tiny" data-camera-tension-handle="'+k.at+'" data-camera-tension-side="out" aria-label="Editar salida de curva" title="Arrastrá para ajustar cómo sale la cámara" style="position:absolute;left:'+tangentOutPoint.x+'%;top:'+tangentOutPoint.y+'%;transform:translate(-50%,-50%);touch-action:none;padding:1px 4px;border-radius:50%;z-index:19">▷</button>';
+ if(tangentInPoint)html+='<button type="button" class="btn tiny" data-camera-tension-handle="'+k.at+'" data-camera-tension-side="in" data-camera-handle-free="'+(tangentIn&&tangentIn.free?'true':'false')+'" aria-label="Editar entrada de curva" title="'+(tangentIn&&tangentIn.free?'Dirección libre · arrastrá en el mapa':'Automática · arrastrá para ajustar tensión')+'" style="position:absolute;left:'+tangentInPoint.x+'%;top:'+tangentInPoint.y+'%;transform:translate(-50%,-50%);touch-action:none;padding:1px 4px;border-radius:50%;z-index:19">◁</button>';
+ if(tangentOutPoint)html+='<button type="button" class="btn tiny" data-camera-tension-handle="'+k.at+'" data-camera-tension-side="out" data-camera-handle-free="'+(tangentOut&&tangentOut.free?'true':'false')+'" aria-label="Editar salida de curva" title="'+(tangentOut&&tangentOut.free?'Dirección libre · arrastrá en el mapa':'Automática · arrastrá para ajustar tensión')+'" style="position:absolute;left:'+tangentOutPoint.x+'%;top:'+tangentOutPoint.y+'%;transform:translate(-50%,-50%);touch-action:none;padding:1px 4px;border-radius:50%;z-index:19">▷</button>';
  html+='<button type="button" class="btn tiny" data-camera-map-point="'+k.at+'" aria-label="Mover encuadre '+k.at+'% en el mapa" style="position:absolute;left:'+point.x+'%;top:'+point.y+'%;transform:translate(-50%,-50%);touch-action:none;padding:3px;outline:2px solid var(--accent);z-index:20">◆</button>';
  if(lk&&lookKeyPoint)html+='<button type="button" class="btn tiny" data-camera-look-map-point="'+lk.at+'" aria-label="'+(lk.targetId?'Objetivo vinculado a un elemento':'Mover objetivo de mirada '+lk.at+'% en el mapa')+'"'+(lk.targetId?' disabled title="Desvinculá el elemento para mover este punto manualmente."':'')+' style="position:absolute;left:'+lookKeyPoint.x+'%;top:'+lookKeyPoint.y+'%;transform:translate(-50%,-50%);touch-action:none;padding:2px 5px;outline:2px dashed var(--accent);z-index:21">●</button>';
  html+='</div>';
@@ -377,16 +377,19 @@ C.panel=function(s){
  html+=spatialMap(s,list,k);
  html+=field('Momento (%)','at',k.at,0,100,.1);
  ['x','y','z'].forEach(function(axis){html+=field('Cámara '+axis.toUpperCase(),axis,k[axis],-4000,4000,25);});
- var keyIndex=list.findIndex(function(f){return f.at===k.at;});
+ var keyIndex=list.findIndex(function(f){return f.at===k.at;}),inFree=C.handleFree(k,'in'),outFree=C.handleFree(k,'out');
+ function handleModeRow(label,side,free){return cRow(label,'<select class="csel" data-camera-handle-mode data-camera-handle-side="'+side+'" data-camera-at="'+k.at+'"><option value="auto"'+(free?'':' selected')+'>Automática</option><option value="free"'+(free?' selected':'')+'>Libre</option></select>');}
  if(s.sdCameraPathMode==='smooth'&&keyIndex>0){
   var prevKey=list[keyIndex-1];
-  html+=cRow('Entrada desde el anterior (%)','<input class="cnum" type="number" aria-label="Tensión de entrada desde el encuadre anterior" data-camera-incoming-tension data-camera-at="'+k.at+'" value="'+(prevKey.tension===undefined?0:prevKey.tension)+'" min="-100" max="100" step="5">');
+  html+=handleModeRow('Dirección de entrada','in',inFree);
+  html+=cRow('Entrada desde el anterior (%)','<input class="cnum" type="number" aria-label="Tensión de entrada desde el encuadre anterior" data-camera-incoming-tension data-camera-at="'+k.at+'" value="'+(prevKey.tension===undefined?0:prevKey.tension)+'" min="-100" max="100" step="5"'+(inFree?' disabled':'')+'>');
  }
  if(s.sdCameraPathMode==='smooth'&&keyIndex>=0&&keyIndex<list.length-1){
-  html+=field('Salida hacia el siguiente (%)','tension',k.tension===undefined?0:k.tension,-100,100,5);
+  html+=handleModeRow('Dirección de salida','out',outFree);
+  html+=cRow('Salida hacia el siguiente (%)','<input class="cnum" type="number" aria-label="Salida hacia el siguiente (%)" data-camera-field="tension" data-camera-at="'+k.at+'" value="'+(k.tension===undefined?0:k.tension)+'" min="-100" max="100" step="5"'+(outFree?' disabled':'')+'>');
  }
  if(s.sdCameraPathMode==='smooth'&&(keyIndex>0||keyIndex<list.length-1)){
-  html+='<p class="hint gh">Entrada controla ◁ y modifica el tramo anterior. Salida controla ▷ y modifica el siguiente. 0% conserva Catmull-Rom; positivo ajusta la curva y negativo la suelta.</p>';
+  html+='<p class="hint gh">Automática usa la tensión Catmull-Rom. Libre conserva la forma actual y permite inclinar el handle en X/Z o X/Y desde el mapa. Entrada y salida pueden liberarse por separado.</p>';
  }
  [['rotateX','Inclinar arriba / abajo (°)'],['rotateY','Mirar izquierda / derecha (°)'],['rotate','Girar el horizonte (°)']].forEach(function(axis){html+=field(axis[1],axis[0],k[axis[0]],-3600,3600,5);});
  html+='<p class="hint gh">'+(s.sdCameraOrientationMode==='lookAt'?'Con “Mirar hacia”, estos ángulos de inclinación quedan guardados pero X/Y se calculan desde el objetivo. El giro del horizonte sí permanece activo.':'Los ángulos se recorren tal como los escribís: 0° → 360° da una vuelta completa.')+'</p>';
@@ -468,6 +471,43 @@ function tensionCommit(s,at,value,side){
  side=side==='in'?'in':'out';var list=keys(s),i=list.findIndex(function(k){return k.at===at;}),owner=side==='in'?i-1:i,next=C.curveTension(value);if(i<0||owner<0||owner>=list.length-1)return false;
  var k=list[owner],current=k.tension===undefined?0:C.curveTension(k.tension);if(current===next)return false;
  snapshot();k.tension=next;persist(s,list,at);return true;
+}
+function freeHandleCommit(s,at,side,point){
+ if(sec()!==s||!C.config(s))return false;
+ var list=keys(s),before=C.tangentHandle(list,at,side),next=C.setFreeHandle(list,at,side,point),after=C.tangentHandle(next,at,side);
+ if(!before||!after||Math.hypot(before.x-after.x,before.y-after.y,before.z-after.z)<.0001)return false;
+ snapshot();persist(s,next,at);return true;
+}
+function freeHandleDrag(ev,button){
+ var s=sec(),cfg=C.config(s);if(!cfg||cfg.pathMode!=='smooth')return;
+ var map=button.closest('[data-camera-map]'),r=map&&map.getBoundingClientRect(),list=keys(s),at=+button.dataset.cameraTensionHandle,side=button.dataset.cameraTensionSide==='in'?'in':'out',key=list.find(function(k){return k.at===at;}),original=C.tangentHandle(list,at,side);
+ if(!map||!r.width||!r.height||!key||!original||!original.free)return;
+ var spec={range:+map.dataset.range||500,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1},next=original,moved=false,done=false;
+ ev.preventDefault();ev.stopPropagation();button.focus();button.setPointerCapture(ev.pointerId);
+ function move(e){
+  if(e.pointerId!==ev.pointerId)return;
+  var rawX=e.clientX-ev.clientX,rawY=e.clientY-ev.clientY;if(Math.hypot(rawX,rawY)>=3)moved=true;
+  if(e.shiftKey){if(Math.abs(rawX)>=Math.abs(rawY))rawY=0;else rawX=0;}
+  var cx=ev.clientX+rawX,cy=ev.clientY+rawY,nx=(cx-r.left)/r.width,ny=(cy-r.top)/r.height,probe={x:(nx*2-1)*spec.range,y:original.y,z:original.z};
+  probe[spec.axis]=((ny*2-1)*spec.range)/spec.sign;next=probe;
+  var temp=C.setFreeHandle(list,at,side,next);mapDraw(map,temp,spec,s);
+ }
+ function finish(e,cancel){
+  if(done||e.pointerId!=null&&e.pointerId!==ev.pointerId)return;done=true;
+  if(!cancel&&e.clientX!=null)move(e);
+  button.removeEventListener('pointermove',move);button.removeEventListener('pointerup',up);button.removeEventListener('pointercancel',abort);button.removeEventListener('lostpointercapture',abort);button.removeEventListener('keydown',keyDown);
+  if(button.hasPointerCapture(ev.pointerId))button.releasePointerCapture(ev.pointerId);
+  if(cancel||!moved||!freeHandleCommit(s,at,side,next))renderPane();
+ }
+ function up(e){finish(e,false);}function abort(e){finish(e,true);}function keyDown(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();finish(e,true);}}
+ button.addEventListener('pointermove',move);button.addEventListener('pointerup',up);button.addEventListener('pointercancel',abort);button.addEventListener('lostpointercapture',abort);button.addEventListener('keydown',keyDown);
+}
+function freeHandleKey(ev,button){
+ if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].indexOf(ev.key)<0)return;
+ var s=sec(),list=keys(s),at=+button.dataset.cameraTensionHandle,side=button.dataset.cameraTensionSide==='in'?'in':'out',map=button.closest('[data-camera-map]'),h=C.tangentHandle(list,at,side);if(!map||!h||!h.free)return;
+ ev.preventDefault();ev.stopPropagation();
+ var spec={axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1,range:+map.dataset.range||500},amount=ev.shiftKey?100:25,unit=amount/(spec.range*2),dx=ev.key==='ArrowRight'?unit:ev.key==='ArrowLeft'?-unit:0,dy=ev.key==='ArrowDown'?unit:ev.key==='ArrowUp'?-unit:0,next=C.moveSpatial(h,spec,dx,dy);
+ if(freeHandleCommit(s,at,side,next)){var n=document.getElementById('pane').querySelector('[data-camera-tension-handle][data-camera-tension-side="'+side+'"]');if(n)n.focus();}
 }
 function tensionDrag(ev,button){
  var s=sec(),cfg=C.config(s);if(!cfg||cfg.pathMode!=='smooth')return;
@@ -576,7 +616,7 @@ if(pane){
  });
  pane.addEventListener('pointerdown',function(ev){
   if(ev.button!==0)return;
-  var tensionHandle=ev.target.closest('[data-camera-tension-handle]');if(tensionHandle){tensionDrag(ev,tensionHandle);return;}
+  var tensionHandle=ev.target.closest('[data-camera-tension-handle]');if(tensionHandle){if(tensionHandle.dataset.cameraHandleFree==='true')freeHandleDrag(ev,tensionHandle);else tensionDrag(ev,tensionHandle);return;}
   var lookSpatial=ev.target.closest('[data-camera-look-map-point]');if(lookSpatial){lookSpatialDrag(ev,lookSpatial);return;}
   var spatial=ev.target.closest('[data-camera-map-point]');if(spatial){spatialDrag(ev,spatial);return;}
   var mapDot=ev.target.closest('[data-camera-look-map-dot],[data-camera-map-dot]'),spatialMapNode=ev.target.closest('[data-camera-map]');
@@ -602,7 +642,7 @@ if(pane){
   button.setPointerCapture(ev.pointerId);button.addEventListener('pointermove',move);button.addEventListener('pointerup',up);button.addEventListener('pointercancel',abort);button.addEventListener('lostpointercapture',abort);button.addEventListener('keydown',key);
  });
  pane.addEventListener('keydown',function(ev){
-  var tensionHandle=ev.target.closest('[data-camera-tension-handle]');if(tensionHandle){tensionKey(ev,tensionHandle);return;}
+  var tensionHandle=ev.target.closest('[data-camera-tension-handle]');if(tensionHandle){if(tensionHandle.dataset.cameraHandleFree==='true')freeHandleKey(ev,tensionHandle);else tensionKey(ev,tensionHandle);return;}
   var lookSpatial=ev.target.closest('[data-camera-look-map-point]');if(lookSpatial){lookSpatialKey(ev,lookSpatial);return;}
   var spatial=ev.target.closest('[data-camera-map-point]');if(spatial){spatialKey(ev,spatial);return;}
   var button=ev.target.closest('[data-camera-jump]');if(!button||['ArrowLeft','ArrowRight'].indexOf(ev.key)<0)return;
@@ -686,6 +726,14 @@ if(pane){
   }
   if(input.dataset.cameraHoldDuration!==undefined){if(Number.isFinite(+input.value)&&+input.value>0)holdDurations[sec().id]=Math.min(100,+input.value);else{input.value=holdDurations[sec().id]||10;toast('Ingresá una duración mayor que cero.');}return;}
   if(input.dataset.cameraMapPlane!==undefined){mapPlanes[sec().id]=input.value==='front'?'front':'top';renderPane();return;}
+  if(input.dataset.cameraHandleMode!==undefined){
+   var modeScene=sec();if(!C.config(modeScene))return;
+   var modeList=keys(modeScene),modeAt=+input.dataset.cameraAt,modeSide=input.dataset.cameraHandleSide==='in'?'in':'out',wantFree=input.value==='free',modeKey=modeList.find(function(f){return f.at===modeAt;});
+   if(!modeKey||C.handleFree(modeKey,modeSide)===wantFree)return;
+   var changed=C.setHandleMode(modeList,modeAt,modeSide,wantFree),changedKey=changed.find(function(f){return f.at===modeAt;});
+   if(!changedKey||C.handleFree(changedKey,modeSide)!==wantFree){renderPane();return;}
+   snapshot();persist(modeScene,changed,modeAt);return;
+  }
   if(input.dataset.cameraIncomingTension!==undefined){
    var incomingScene=sec();if(!C.config(incomingScene))return;
    var incomingList=keys(incomingScene),selectedAt=+input.dataset.cameraAt,index=incomingList.findIndex(function(f){return f.at===selectedAt;});
