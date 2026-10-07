@@ -263,7 +263,7 @@ listeners.pointerdown({button:0,pointerId:9,clientX:100,clientY:100,target:lookP
 lookPoint.handlers.pointermove({pointerId:9,clientX:120,clientY:150,shiftKey:true});
 lookPoint.handlers.pointerup({pointerId:9,clientX:120,clientY:150,shiftKey:true});
 assert.equal(editable.sdCameraLookFrames[1].x,500,'Shift-drag locks look target horizontal coordinate when vertical movement dominates');
-assert.equal(editable.sdCameraLookFrames[1].z,500);assert.equal(history.length,lookHistory+1);
+assert.equal(editable.sdCameraLookFrames[1].z,500,'Vertical-dominant Shift drag changes only Z in top view');assert.equal(history.length,lookHistory+1);
 pct=0;listeners.click({target:{closest(){return{dataset:{cameraLookMapSelect:'100'}};}}});assert.equal(pct,100,'Map target selection scrubs to look key directly');
 mapBox.dataset.plane='front';
 listeners.keydown({target:lookMapMarker(),key:'ArrowLeft',shiftKey:false,preventDefault(){},stopPropagation(){}});
