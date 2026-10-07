@@ -1,0 +1,61 @@
+name: Resource ETL CI
+
+on:
+  push:
+    branches:
+      - feat/resource-etl-v1
+    paths:
+      - "tools/resource-etl/**"
+      - ".github/workflows/resource-etl-ci.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: resource-etl-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  self-test:
+    name: Self test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run offline self-test
+        working-directory: tools/resource-etl
+        run: npm test
+
+      - name: Build small Code Vault over the network
+        working-directory: tools/resource-etl
+        run: >
+          node src/vault-cli.mjs
+          --sources=lucide,magicui,motion-primitives,animxyz,threejs
+          --limit=2
+          --out=ci-vault
+
+      - name: Verify portable bundle exists
+        working-directory: tools/resource-etl
+        run: |
+          test -f ci-vault/catalog.json
+          test -f ci-vault/nagweb-code-library.json
+          test -f ci-vault/THIRD_PARTY_NOTICES.txt
+          node -e "const fs=require('fs'); const c=JSON.parse(fs.readFileSync('ci-vault/catalog.json','utf8')); if (!c.count || c.count < 5) process.exit(1); console.log('Vault resources:', c.count)"
+
+      - name: Smoke test external ETL sources
+        working-directory: tools/resource-etl
+        run: |
+          node src/cli.mjs --source=polyhaven --limit=1 --dry-run
+          node src/cli.mjs --source=shadcn --limit=1 --dry-run
+          node src/cli.mjs --source=ambientcg --limit=1 --dry-run
+          node src/cli.mjs --source=pmndrs --limit=1 --dry-run
+          node src/cli.mjs --source=kenney --limit=1 --dry-run
