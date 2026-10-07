@@ -38,6 +38,7 @@ echo 10. DESCARGAR Kenney ^(5 packs ZIP oficiales^)
 echo 11. CREAR catalogo local ^(25 por fuente^)
 echo 12. CREAR Code Vault PILOTO ^(recursos livianos^)
 echo 13. CREAR Code Vault COMPLETO ^(todas las fuentes aprobadas^)
+echo 14. CREAR Vault + previews React ^(instala compilador si hace falta^)
 echo.
 echo  0. Salir
 echo.
@@ -56,6 +57,7 @@ if "%choice%"=="10" goto kenney_download
 if "%choice%"=="11" goto catalog
 if "%choice%"=="12" goto code_vault_pilot
 if "%choice%"=="13" goto code_vault_all
+if "%choice%"=="14" goto code_vault_react
 if "%choice%"=="0" exit /b 0
 
 echo.
@@ -161,6 +163,17 @@ echo Creando biblioteca liviana COMPLETA de NagWeb...
 echo Esto puede descargar miles de archivos de codigo muy livianos.
 echo.
 node src\vault-cli.mjs --sources=lucide,magicui,motion-primitives,animxyz,threejs,hyperui,csshake,glsl-noise --all
+goto done
+
+:code_vault_react
+cls
+echo Preparando compilador de previews React...
+echo.
+call npm install --no-package-lock --no-audit --no-fund
+if errorlevel 1 goto failed
+echo.
+echo Construyendo Vault con previews React seguras...
+node src\vault-cli.mjs --sources=lucide,magicui,motion-primitives,animxyz,threejs,hyperui,csshake,glsl-noise --limit=25 --react-previews
 goto done
 
 :done

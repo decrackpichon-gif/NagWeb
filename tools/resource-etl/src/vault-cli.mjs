@@ -32,6 +32,7 @@ import {
 } from "./vault/source-policies.mjs";
 import { importLocalLottieDirectory } from "./importers/lottie-local.mjs";
 import { buildVaultPreviews } from "./preview/build-preview.mjs";
+import { buildReactVaultPreviews } from "./preview/react-compiler.mjs";
 
 function parseArgs(argv) {
   const out = {};
@@ -211,14 +212,26 @@ async function main() {
 
   const catalog = await mergeVaultCatalog(rootDir, entries);
   const previewResult = await buildVaultPreviews(rootDir, catalog);
+  const reactPreviewResult = args["react-previews"]
+    ? await buildReactVaultPreviews(rootDir, catalog, {
+        max: args["react-preview-limit"]
+          ? intArg(args["react-preview-limit"], 10)
+          : Infinity
+      })
+    : { ready: 0, deferred: 0 };
   const bundlePath = await writePortableBundle(rootDir, catalog);
   const noticesPath = await writeThirdPartyNotices(rootDir, catalog);
 
   console.log("");
   console.log(`Vault resources: ${catalog.count}`);
   console.log(
-    `Previews: ${previewResult.built} ready, ${previewResult.deferred} deferred.`
+    `Previews: ${previewResult.built} static ready, ${previewResult.deferred} initially deferred.`
   );
+  if (args["react-previews"]) {
+    console.log(
+      `React previews: ${reactPreviewResult.ready} ready, ${reactPreviewResult.deferred} deferred.`
+    );
+  }
   console.log(`Portable bundle: ${bundlePath}`);
   console.log(`Notices: ${noticesPath}`);
 }

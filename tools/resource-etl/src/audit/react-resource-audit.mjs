@@ -258,14 +258,19 @@ export function isPermissiveLicenseExpression(value) {
   return tokens.length > 0 && tokens.every((token) => PERMISSIVE_LICENSE_TOKENS.has(token));
 }
 
+const npmLicenseCache = new Map();
+
 export async function fetchNpmLicense(packageName) {
+  if (npmLicenseCache.has(packageName)) {
+    return npmLicenseCache.get(packageName);
+  }
   const encoded = encodeURIComponent(packageName);
   const metadata = await fetchJson(
     `https://registry.npmjs.org/${encoded}/latest`,
     { retries: 2, timeoutMs: 15000 }
   );
 
-  return {
+  const result = {
     package: packageName,
     version: metadata.version || null,
     license:
@@ -277,6 +282,9 @@ export async function fetchNpmLicense(packageName) {
         ? metadata.repository
         : metadata.repository?.url || null
   };
+
+  npmLicenseCache.set(packageName, result);
+  return result;
 }
 
 export async function auditNpmPackages(packageNames) {

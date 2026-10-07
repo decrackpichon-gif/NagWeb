@@ -356,3 +356,45 @@ El Code Vault también incorpora `hughsk/glsl-noise` (MIT):
 Cada archivo GLSL queda como recurso `shader` independiente y autosuficiente. Se conserva el símbolo exportado para poder integrarlo posteriormente en materiales, Shader Lab o escenas Three.js de NagWeb.
 
 La CI ahora tiene además un job `windows-latest`. Ejecuta el self-test y construye un Vault pequeño usando rutas reales de Windows, de modo que la compatibilidad básica con tu entorno no dependa de que ejecutes pruebas manuales en tu PC.
+
+
+## React Preview Sandbox v0.1
+
+Las previews React no se ejecutan directamente desde código remoto.
+
+Antes de compilar un recurso se verifica:
+
+1. imports estáticos y aliases;
+2. imports relativos resolubles dentro del propio recurso;
+3. ausencia de imports remotos y módulos Node;
+4. scanner de llamadas de red, storage, `eval`, iframes e inyección de scripts;
+5. props obligatorias que impidan fabricar una demo segura;
+6. dependencias de registry aún no resueltas;
+7. licencia npm de cada paquete utilizado.
+
+El runtime inicial admite sólo:
+
+- React;
+- React DOM;
+- Motion / Framer Motion;
+- react-use-measure.
+
+`@/lib/utils` se reemplaza por un helper `cn()` local para no depender del proyecto fuente.
+
+Las previews resultantes:
+
+- se compilan con esbuild;
+- incluyen React/Motion dentro del bundle de preview;
+- usan una copia local de `@tailwindcss/browser`;
+- no necesitan CDN;
+- llevan Content Security Policy con `connect-src 'none'`, sin frames ni media remota;
+- generan `react-preview-audit.json` con el motivo de cada aprobación o rechazo.
+
+Para activarlas:
+
+```bash
+npm install
+npm run vault -- --sources=magicui,motion-primitives --limit=10 --react-previews
+```
+
+En Windows también existe la opción 14 del lanzador, que instala las dependencias del compilador y construye el Vault con previews React.
