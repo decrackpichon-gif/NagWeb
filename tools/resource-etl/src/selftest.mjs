@@ -24,6 +24,12 @@ import {
 } from "./runtime/instance.mjs";
 import { buildInsertDescriptor } from "./runtime/insert-adapters.mjs";
 import { buildStaticPreview } from "./preview/build-preview.mjs";
+import {
+  auditReactResourceStatic,
+  collectModuleSpecifiers,
+  isPermissiveLicenseExpression,
+  scanBrowserSource
+} from "./audit/react-resource-audit.mjs";
 
 const fakeAsset = {
   assetId: "Wood999",
@@ -326,5 +332,62 @@ assert.equal(buildStaticPreview(motionResource).supported, true);
 
 assert.equal(CSSSHAKE_EFFECTS.length, 10);
 assert.ok(CSSSHAKE_EFFECTS.some((effect) => effect.name === "shake-crazy"));
+
+const safeReactResource = {
+  ...magicResource,
+  id: "test:safe-react",
+  artifacts: [{
+    id: "component-1",
+    role: "component",
+    targetPath: "components/demo.tsx",
+    content: `
+import React from "react"
+import { motion } from "motion/react"
+import { cn } from "@/lib/utils"
+
+export function Demo({ children = "Preview", speed = 1 }: {
+  children?: React.ReactNode
+  speed?: number
+}) {
+  return <motion.div className={cn("p-4")} animate={{ opacity: 1 }}>{children}</motion.div>
+}
+`
+  }],
+  runtime: {
+    type: "react",
+    renderer: "nagweb-react",
+    dependencies: [{ name: "motion" }],
+    registryDependencies: []
+  }
+};
+
+const safeReactAudit = auditReactResourceStatic(safeReactResource);
+assert.equal(safeReactAudit.eligibleForBundle, true);
+assert.ok(safeReactAudit.npmPackages.includes("react"));
+assert.ok(safeReactAudit.npmPackages.includes("motion"));
+assert.ok(safeReactAudit.virtualImports.includes("@/lib/utils"));
+
+const unsafeReactResource = {
+  ...safeReactResource,
+  id: "test:unsafe-react",
+  artifacts: [{
+    ...safeReactResource.artifacts[0],
+    content: `
+import React from "react"
+export function Demo(){ fetch("https://example.test"); return <div /> }
+`
+  }]
+};
+const unsafeReactAudit = auditReactResourceStatic(unsafeReactResource);
+assert.equal(unsafeReactAudit.eligibleForBundle, false);
+assert.ok(unsafeReactAudit.securityFindings.includes("network-fetch"));
+
+assert.deepEqual(
+  collectModuleSpecifiers('import React from "react"; import { motion } from "motion/react"'),
+  ["react", "motion/react"]
+);
+assert.ok(scanBrowserSource('window.open("https://example.test")').includes("browser-window-open"));
+assert.equal(isPermissiveLicenseExpression("MIT OR Apache-2.0"), true);
+assert.equal(isPermissiveLicenseExpression("GPL-3.0"), false);
 
 console.log("NagWeb Resource ETL self-test: OK");
