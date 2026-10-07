@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/scroll-camera-v1
+      - feat/scroll-camera-map-select-v1
   workflow_dispatch:
 
 jobs:

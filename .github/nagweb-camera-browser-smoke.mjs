@@ -193,6 +193,15 @@ export async function runCameraBrowserSmoke(page){
   await page.click('[data-camera-look-jump="50"]');
   await page.waitForFunction(()=>document.querySelector('[data-camera-look-field="x"][data-camera-look-at="50"]'));
   assert.equal(await page.$eval('[data-camera-look-field="x"][data-camera-look-at="50"]',n=>+n.value),1225);
+  await page.click('[data-camera-map-select="100"]');
+  await page.waitForFunction(()=>document.querySelector('[data-camera-map-point="100"]'));
+  assert.equal(await page.$eval('[data-camera-head]',n=>n.style.left),'100%');
+  await page.click('[data-camera-map-select="50"]');
+  await page.waitForFunction(()=>document.querySelector('[data-camera-map-point="50"]'));
+  await page.click('[data-camera-look-map-select="100"]');
+  await page.waitForFunction(()=>document.querySelector('[data-camera-look-map-point="100"]'));
+  await page.click('[data-camera-look-map-select="50"]');
+  await page.waitForFunction(()=>document.querySelector('[data-camera-look-map-point="50"]'));
 
   await page.evaluate(()=>{
    const html=generateSite(flattenPage(page()),false,false,false),f=document.createElement('iframe');
@@ -220,6 +229,11 @@ export async function runCameraBrowserSmoke(page){
   await page.focus('[data-camera-look-map-point="50"]');await page.keyboard.press('ArrowDown');
   lookEdited=await page.evaluate(()=>sec().sdCameraLookFrames.find(k=>k.at===50));
   assert.equal(lookEdited.y,150,'Look-map ArrowDown must move exactly 25px');
+  const axisStart=await page.evaluate(()=>({frame:{...sec().sdCameraLookFrames.find(k=>k.at===50)},history:history.length,box:(()=>{const r=document.querySelector('[data-camera-look-map-point="50"]').getBoundingClientRect();return{cx:r.left+r.width/2,cy:r.top+r.height/2};})()}));
+  await page.mouse.move(axisStart.box.cx,axisStart.box.cy);await page.keyboard.down('Shift');await page.mouse.down();await page.mouse.move(axisStart.box.cx+34,axisStart.box.cy+12,{steps:3});await page.mouse.up();await page.keyboard.up('Shift');
+  const axisEnd=await page.evaluate(()=>({frame:{...sec().sdCameraLookFrames.find(k=>k.at===50)},history:history.length}));
+  assert.equal(axisEnd.frame.y,axisStart.frame.y,'Shift drag should lock look target to horizontal axis');
+  assert.notEqual(axisEnd.frame.x,axisStart.frame.x);assert.equal(axisEnd.history,axisStart.history+1);
   const dragStart=await page.evaluate(()=>{
    const map=document.querySelector('[data-camera-map]'),point=document.querySelector('[data-camera-look-map-point="50"]'),mr=map.getBoundingClientRect(),pr=point.getBoundingClientRect(),k=sec().sdCameraLookFrames.find(k=>k.at===50);
    return{cx:pr.left+pr.width/2,cy:pr.top+pr.height/2,width:mr.width,height:mr.height,range:+map.dataset.range,frame:{...k},history:history.length};

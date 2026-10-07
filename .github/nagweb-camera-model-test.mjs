@@ -231,6 +231,13 @@ listeners.pointerdown({button:0,pointerId:7,clientX:100,clientY:100,target:spati
 spatialPoint.handlers.pointermove({pointerId:7,clientX:20,clientY:30});
 spatialPoint.handlers.keydown({key:'Escape',preventDefault(){},stopPropagation(){}});
 assert.equal(JSON.stringify(editable),beforeMap);assert.equal(history.length,mapHistory);
+spatialPoint=mapMarker();mapHistory=history.length;
+listeners.pointerdown({button:0,pointerId:7,clientX:100,clientY:100,target:spatialPoint,preventDefault(){}});
+spatialPoint.handlers.pointermove({pointerId:7,clientX:150,clientY:130,shiftKey:true});
+spatialPoint.handlers.pointerup({pointerId:7,clientX:150,clientY:130,shiftKey:true});
+assert.equal(editable.sdCameraFrames[1].x,600);assert.equal(editable.sdCameraFrames[1].z,400,'Shift-drag locks camera movement to dominant horizontal axis');
+assert.equal(history.length,mapHistory+1);
+pct=0;listeners.click({target:{closest(){return{dataset:{cameraMapSelect:'100'}};}}});assert.equal(pct,100,'Map point selection scrubs to camera key directly');
 mapBox.dataset.plane='front';mapBox.dataset.range='800';
 listeners.keydown({target:mapMarker(),key:'ArrowDown',shiftKey:true,preventDefault(){},stopPropagation(){}});
 assert.equal(editable.sdCameraFrames[1].y,300);assert.equal(editable.sdCameraFrames[1].z,400,'Keyboard step stays 100px when the map auto-range changes');
@@ -251,6 +258,13 @@ listeners.pointerdown({button:0,pointerId:9,clientX:100,clientY:100,target:lookP
 lookPoint.handlers.pointermove({pointerId:9,clientX:50,clientY:150});
 lookPoint.handlers.keydown({key:'Escape',preventDefault(){},stopPropagation(){}});
 assert.equal(JSON.stringify(editable.sdCameraLookFrames),beforeLookMap);assert.equal(history.length,lookHistory);
+lookPoint=lookMapMarker();lookHistory=history.length;
+listeners.pointerdown({button:0,pointerId:9,clientX:100,clientY:100,target:lookPoint,preventDefault(){}});
+lookPoint.handlers.pointermove({pointerId:9,clientX:120,clientY:150,shiftKey:true});
+lookPoint.handlers.pointerup({pointerId:9,clientX:120,clientY:150,shiftKey:true});
+assert.equal(editable.sdCameraLookFrames[1].x,500,'Shift-drag locks look target horizontal coordinate when vertical movement dominates');
+assert.equal(editable.sdCameraLookFrames[1].z,500);assert.equal(history.length,lookHistory+1);
+pct=0;listeners.click({target:{closest(){return{dataset:{cameraLookMapSelect:'100'}};}}});assert.equal(pct,100,'Map target selection scrubs to look key directly');
 mapBox.dataset.plane='front';
 listeners.keydown({target:lookMapMarker(),key:'ArrowLeft',shiftKey:false,preventDefault(){},stopPropagation(){}});
 assert.equal(editable.sdCameraLookFrames[1].x,475,'Look keyboard move stays exactly 25px at an 800px map range');
