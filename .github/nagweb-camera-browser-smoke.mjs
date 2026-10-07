@@ -236,6 +236,102 @@ export async function runCameraBrowserSmoke(page){
   const cancelEnd=await page.evaluate(()=>({frame:JSON.stringify(sec().sdCameraLookFrames),history:history.length}));
   assert.equal(cancelEnd.frame,cancelStart.frame,'Escape must cancel look target drag');assert.equal(cancelEnd.history,cancelStart.history);
 
+  // "Mirar elemento": bind both look keys to a free-layout element and prove
+  // exported camera orientation follows that element's Director X/Y/Z motion.
+  await page.evaluate(()=>{
+   const s=sec();
+   s.layout='free';s.sdCameraPathMode='linear';s.sdCameraOrientationMode='lookAt';s.sdCameraLookPathMode='linear';
+   s.sdCameraResponsive=true;s.sdCameraReferenceWidth=1000;s.sdPerspective=1000;s.sdEase='linear';
+   s.sdCameraFrames=[
+    {at:0,x:0,y:0,z:0,rotateX:0,rotateY:0,rotate:0,ease:'linear'},
+    {at:100,x:0,y:0,z:0,rotateX:0,rotateY:0,rotate:0,ease:'linear'}
+   ];
+   s.sdCameraLookFrames=[
+    {at:0,x:0,y:0,z:1000,ease:'linear'},
+    {at:100,x:0,y:0,z:1000,ease:'linear'}
+   ];
+   s.elements=[
+    mkEl('heading',{id:'camera-target-el',text:'Objetivo móvil',x:75,y:50,w:20,anim:'none',sdCameraDepth:500,
+      sdKeyframes:[{at:0,x:0,y:0,z:0,ease:'linear'},{at:100,x:100,y:0,z:100,ease:'linear'}]})
+   ];
+   curEl=0;selection=[];secFocus=true;saveProject();renderScenes();renderPane();renderPreview();
+  });
+  await page.waitForFunction(()=>document.querySelector('[data-camera-look-jump="0"]')&&document.querySelector('[data-camera-look-target]'));
+  await page.click('[data-camera-look-jump="0"]');
+  await page.waitForFunction(()=>document.querySelector('[data-camera-look-target]')?.dataset.cameraLookAt==='0');
+  await page.select('[data-camera-look-target]','camera-target-el');
+  await page.waitForFunction(()=>sec().sdCameraLookFrames.find(k=>k.at===0)?.targetId==='camera-target-el');
+  await page.click('[data-camera-look-jump="100"]');
+  await page.waitForFunction(()=>document.querySelector('[data-camera-look-target]')?.dataset.cameraLookAt==='100');
+  await page.select('[data-camera-look-target]','camera-target-el');
+  await page.waitForFunction(()=>sec().sdCameraLookFrames.every(k=>k.targetId==='camera-target-el'));
+
+  const targetUi=await page.evaluate(()=>({
+   bound:sec().sdCameraLookFrames.map(k=>k.targetId),
+   xyzFields:document.querySelectorAll('[data-camera-look-field="x"],[data-camera-look-field="y"],[data-camera-look-field="z"]').length,
+   linkedMapDisabled:!!document.querySelector('[data-camera-look-map-point][disabled]'),
+   optionText:Array.from(document.querySelectorAll('[data-camera-look-target] option')).map(o=>o.textContent)
+  }));
+  assert.deepEqual(targetUi.bound,['camera-target-el','camera-target-el']);
+  assert.equal(targetUi.xyzFields,0,'Linked look target should hide manual XYZ fields');
+  assert.equal(targetUi.linkedMapDisabled,true,'Linked map target should not be manually draggable');
+  assert.ok(targetUi.optionText.some(t=>t.includes('Objetivo móvil')),'Target selector should expose the element by a readable label');
+
+  await page.evaluate(()=>{
+   const html=generateSite(flattenPage(page()),false,false,false),f=document.createElement('iframe');
+   f.id='camera-target-export';f.style.cssText='width:1000px;height:650px;border:0';f.srcdoc=html;document.body.append(f);
+  });
+  await page.waitForFunction(()=>document.querySelector('#camera-target-export')?.contentWindow?.__NAG_SCROLL_DIRECTOR?.['camera-browser-scene']);
+
+  const targetRuntime=await page.evaluate(()=>{
+   const f=document.querySelector('#camera-target-export'),w=f.contentWindow,d=f.contentDocument,api=w.__NAG_SCROLL_DIRECTOR['camera-browser-scene'];
+   const scene=d.querySelector('.sc[data-id="camera-browser-scene"]'),stage=scene.querySelector('.nw-sd-stage'),world=scene.querySelector('.inner');
+   const entries=['m11','m12','m13','m14','m21','m22','m23','m24','m31','m32','m33','m34','m41','m42','m43','m44'];
+   function actual(){
+    const a=world.getAnimations().find(a=>a.playState==='paused'),raw=a?.effect?.getKeyframes?.()[0]?.transform||'none';
+    return {raw,m:new w.DOMMatrix(raw)};
+   }
+   function expected(progress){
+    const scale=Math.min(1,stage.clientWidth/1000),rw=stage.clientWidth/Math.max(.0001,scale);
+    const targetX=.25*rw+100*progress,targetZ=500+100*progress;
+    const yaw=Math.atan2(-targetX,targetZ)*180/Math.PI;
+    const probe=d.createElement('i');probe.style.transform='rotateY('+(-yaw)+'deg) translate3d(0px,0px,0px)';d.body.append(probe);
+    const m=new w.DOMMatrix(w.getComputedStyle(probe).transform);probe.remove();
+    return {m,yaw,targetX,targetZ,scale,rw};
+   }
+   function err(a,b){return Math.max(...entries.map(k=>Math.abs(a[k]-b[k])));}
+   api.set(0);const a0=actual(),e0=expected(0);
+   api.set(.5);const a50=actual(),e50=expected(.5);
+   return{
+    width:stage.clientWidth,
+    startError:err(a0.m,e0.m),midError:err(a50.m,e50.m),
+    startYaw:e0.yaw,midYaw:e50.yaw,
+    startRaw:a0.raw,midRaw:a50.raw,
+    refWidth:e50.rw,targetX:e50.targetX,targetZ:e50.targetZ
+   };
+  });
+  assert.ok(targetRuntime.startError<.001,'Element target start matrix mismatch: '+JSON.stringify(targetRuntime));
+  assert.ok(targetRuntime.midError<.001,'Element target mid matrix mismatch: '+JSON.stringify(targetRuntime));
+  assert.ok(Math.abs(targetRuntime.midYaw-targetRuntime.startYaw)>.25,'Camera yaw should react to target Director motion: '+JSON.stringify(targetRuntime));
+
+  await page.$eval('#camera-target-export',n=>{n.style.width='500px';});
+  await page.evaluate(()=>document.querySelector('#camera-target-export').contentWindow.dispatchEvent(new Event('resize')));
+  await new Promise(r=>setTimeout(r,120));
+  const targetMobile=await page.evaluate(()=>{
+   const f=document.querySelector('#camera-target-export'),w=f.contentWindow,d=f.contentDocument,api=w.__NAG_SCROLL_DIRECTOR['camera-browser-scene'];
+   const scene=d.querySelector('.sc[data-id="camera-browser-scene"]'),stage=scene.querySelector('.nw-sd-stage'),world=scene.querySelector('.inner');
+   api.set(.5);
+   const a=world.getAnimations().find(a=>a.playState==='paused'),raw=a?.effect?.getKeyframes?.()[0]?.transform||'none',actual=new w.DOMMatrix(raw);
+   const scale=Math.min(1,stage.clientWidth/1000),rw=stage.clientWidth/Math.max(.0001,scale),targetX=.25*rw+50,targetZ=550,yaw=Math.atan2(-targetX,targetZ)*180/Math.PI;
+   const probe=d.createElement('i');probe.style.transform='rotateY('+(-yaw)+'deg) translate3d(0px,0px,0px)';d.body.append(probe);
+   const expected=new w.DOMMatrix(w.getComputedStyle(probe).transform);probe.remove();
+   const keys=['m11','m12','m13','m14','m21','m22','m23','m24','m31','m32','m33','m34','m41','m42','m43','m44'];
+   return{width:stage.clientWidth,scale,rw,yaw,raw,error:Math.max(...keys.map(k=>Math.abs(actual[k]-expected[k])))};
+  });
+  assert.ok(targetMobile.scale<.55&&targetMobile.scale>.45,'Element target mobile scale mismatch: '+JSON.stringify(targetMobile));
+  assert.ok(targetMobile.error<.001,'Element target responsive matrix mismatch: '+JSON.stringify(targetMobile));
+  assert.ok(Math.abs(targetMobile.yaw-targetRuntime.midYaw)<.001,'Responsive camera should preserve look direction in reference coordinates');
+
   fs.mkdirSync('/tmp/nagweb-camera-visuals',{recursive:true});
   await page.screenshot({path:'/tmp/nagweb-camera-visuals/camera-editor.png',fullPage:true});
   const exportElement=await page.$('#camera-browser-export');
@@ -245,10 +341,11 @@ export async function runCameraBrowserSmoke(page){
   await new Promise(r=>setTimeout(r,80));
   await exportElement.screenshot({path:'/tmp/nagweb-camera-visuals/camera-export.png'});
   const lookExport=await page.$('#camera-look-export');await lookExport.screenshot({path:'/tmp/nagweb-camera-visuals/camera-lookat.png'});
-  console.log('Camera browser: mapa real, teclado, runtime exportado, resize mobile, look-at independiente, stack absoluto, perspectiva 2.5D y puente de anclas 3D OK');
+  const targetExport=await page.$('#camera-target-export');await targetExport.screenshot({path:'/tmp/nagweb-camera-visuals/camera-target-element.png'});
+  console.log('Camera browser: mapa real, teclado, runtime exportado, resize mobile, look-at independiente, objetivo por elemento, stack absoluto, perspectiva 2.5D y puente de anclas 3D OK');
  }finally{
   await page.evaluate(previous=>{
-   document.getElementById('camera-browser-export')?.remove();document.getElementById('camera-look-export')?.remove();clearTimeout(previewTimer);project=JSON.parse(previous.project);
+   document.getElementById('camera-browser-export')?.remove();document.getElementById('camera-look-export')?.remove();document.getElementById('camera-target-export')?.remove();clearTimeout(previewTimer);project=JSON.parse(previous.project);
    curPage=previous.curPage;curSec=previous.curSec;curEl=previous.curEl;curPane=previous.curPane;selection=previous.selection;secFocus=previous.secFocus;
    history=[];future=[];saveProject();renderScenes();renderPane();renderPreview();
   },previous);

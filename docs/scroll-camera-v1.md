@@ -213,3 +213,30 @@ La trayectoria punteada se recalcula en vivo mientras se arrastra el objetivo.
 
 La prueba de Chromium cubre teclado, arrastre real con Pointer Events, un único undo y
 cancelación con Escape.
+
+
+## Mirar un elemento
+Cada objetivo `●` puede seguir siendo un `Punto XYZ` manual o vincularse a un
+elemento raíz compatible del **Lienzo libre**. El vínculo se guarda por `targetId`;
+no se hornean coordenadas de pantalla.
+
+En la primera versión son elegibles los elementos raíz que ya pertenecen al mundo de
+cámara. Se excluyen elementos anidados, fijos, modales, instancias MotionLab,
+`shape3d`, `light3d` y otros nodos fuera del plano de cámara. Esta limitación hace
+que la conversión espacial sea determinista antes de ampliar el sistema a jerarquías.
+
+La posición objetivo parte del centro authored del elemento (X/Y porcentual respecto
+del centro de la escena), suma su profundidad fija y, en cada progreso, suma también
+sus keyframes X/Y/Z del Director. Por eso la cámara puede seguir un elemento que se
+mueve durante la narración. Preview y exportación resuelven esas coordenadas usando el
+tamaño de referencia de la escena, de modo que el LookAt conserva su dirección al
+adaptarse a pantallas angostas.
+
+Mientras un `●` está vinculado, sus campos XYZ manuales se ocultan y el control del
+mapa queda bloqueado. Al volver a `Punto XYZ`, se conserva el último XYZ como punto
+editable. Si el elemento vinculado deja de existir o deja de ser elegible, el runtime
+usa ese XYZ guardado como respaldo en vez de romper la cámara.
+
+La prueba de Chromium vincula un título desde la UI, verifica que sus keyframes X/Z
+cambien el yaw de cámara, compara la matriz exportada y repite el cálculo a ancho
+responsive.
