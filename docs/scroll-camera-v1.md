@@ -257,3 +257,28 @@ Las flechas siguen moviendo 25 px y Shift + flecha 100 px. Escape cancela el ges
 cada arrastre confirmado crea una sola operación de Deshacer. La prueba Chromium cubre
 selección física de círculos SVG, puntos coincidentes, Shift-arrastre y el cursor de
 posición actual cuando se superpone a un keyframe.
+
+
+## Tensión por tramo de la curva
+En `Curva suave`, cada encuadre salvo el último puede controlar la forma XYZ del
+tramo que sale de él mediante `Tensión hacia el siguiente (%)`.
+
+El valor `0%` reproduce exactamente la curva Catmull-Rom que ya usaba NagWeb, por
+lo que los proyectos existentes conservan su recorrido sin cambios. Los valores
+positivos reducen las tangentes del tramo y hacen que la curva se ajuste más entre
+los dos encuadres; `+100%` deja las tangentes del tramo en cero. Los valores
+negativos aumentan esas tangentes y producen una trayectoria más suelta. El rango se
+limita a -100..100.
+
+La tensión solo modifica la posición espacial X/Y/Z del tramo que parte del
+encuadre seleccionado. No cambia el momento del keyframe, sus ángulos, su easing ni
+los demás tramos. Los encuadres siguen siendo puntos exactos de paso y las
+permanencias con posiciones idénticas siguen siendo pausas reales.
+
+El mapa espacial vuelve a muestrear la curva al modificar la tensión. Preview y
+exportación usan la misma interpolación. Cambiar temporalmente a `Por tramos` no
+elimina la tensión guardada; al volver a `Curva suave` reaparece el mismo valor.
+
+Las pruebas cubren compatibilidad exacta de 0%, límites, tensión positiva/negativa,
+historial del editor, actualización del mapa y matriz 3D real en la exportación de
+Chromium.
