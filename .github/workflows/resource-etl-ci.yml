@@ -114,6 +114,15 @@ jobs:
             }
           }
 
+          const carousel = audit.items.find(
+            (entry) => entry.resourceId === "shadcn:carousel"
+          );
+          if (!carousel || !carousel.ok) {
+            console.error("shadcn:carousel did not compile with embla-carousel-react");
+            console.error(JSON.stringify(carousel, null, 2));
+            process.exit(1);
+          }
+
           const command = audit.items.find(
             (entry) => entry.resourceId === "shadcn:command"
           );

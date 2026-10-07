@@ -25,7 +25,8 @@ export const REACT_PREVIEW_RUNTIME_PACKAGES = new Set([
   "radix-ui",
   "lucide-react",
   "class-variance-authority",
-  "cmdk"
+  "cmdk",
+  "embla-carousel-react"
 ]);
 
 export const REACT_PREVIEW_VIRTUAL_PACKAGES = new Set([
