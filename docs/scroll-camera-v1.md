@@ -350,3 +350,25 @@ momento de inserción. Al convertirse en un nuevo control de la spline, su prese
 puede recalcular las tangentes vecinas, igual que al agregar un nodo nuevo a una curva.
 Las pruebas verifican la búsqueda proyectada, captura XYZ, prevención de duplicados,
 historial, interacción física por doble clic en Chromium y restauración tras borrar.
+
+
+## Inserción directa en la trayectoria de mirada
+Con `Mirar hacia` activo, la línea punteada del objetivo tiene una zona de captura
+invisible más ancha. Un doble clic sobre esa trayectoria crea un nuevo objetivo
+`●` en el momento narrativo correspondiente, sin confundirlo con la línea de cámara.
+
+La regla del mapa queda diferenciada visualmente:
+- doble clic sobre la trayectoria normal: nuevo `◆` de cámara;
+- doble clic sobre la trayectoria punteada: nuevo `●` de mirada.
+
+NagWeb proyecta el clic sobre la trayectoria de mirada, recupera su `at`, resuelve
+la posición XYZ real del objetivo en ese instante y crea un punto manual. Si el
+recorrido provenía de elementos vinculados, el nuevo punto no hereda automáticamente
+el `targetId`: captura la posición resuelta como XYZ para evitar vínculos implícitos.
+
+La misma protección anti-duplicados usa 8 px alrededor de los objetivos existentes
+y 14 px de tolerancia para la trayectoria. La operación crea una sola entrada de
+Deshacer, selecciona el nuevo objetivo y respeta el límite de 128 puntos.
+
+Las pruebas cubren inserción manual, captura XYZ, prevención de duplicados, historial,
+zona de hit ampliada y doble clic físico sobre la línea punteada en Chromium.
