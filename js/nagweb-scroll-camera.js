@@ -356,14 +356,15 @@ function lookSpatialDrag(ev,button){
  var s=sec(),cfg=C.config(s);if(!cfg||cfg.orientationMode!=='lookAt')return;
  var map=button.closest('[data-camera-map]'),r=map.getBoundingClientRect(),looks=lookKeys(s),original=looks.find(function(k){return k.at===+button.dataset.cameraLookMapPoint;});
  if(!original||!r.width||!r.height)return;
- var spec={range:+map.dataset.range,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1},next=original,done=false;
+ var spec={range:+map.dataset.range,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1},next=original,done=false,moved=false;
  ev.preventDefault();button.focus();button.setPointerCapture(ev.pointerId);
- function move(e){if(e.pointerId!==ev.pointerId)return;var px=e.clientX-ev.clientX,py=e.clientY-ev.clientY;if(e.shiftKey){if(Math.abs(px)>=Math.abs(py))py=0;else px=0;}next=C.moveSpatial(original,spec,px/r.width,py/r.height);var p=C.mapPoint(next,spec);button.style.left=p.x+'%';button.style.top=p.y+'%';mapDraw(map,keys(s),spec,s,looks.map(function(k){return k.at===original.at?next:k;}));}
+ function move(e){if(e.pointerId!==ev.pointerId)return;var rawX=e.clientX-ev.clientX,rawY=e.clientY-ev.clientY;if(Math.hypot(rawX,rawY)>=3)moved=true;var px=rawX,py=rawY;if(e.shiftKey){if(Math.abs(px)>=Math.abs(py))py=0;else px=0;}next=C.moveSpatial(original,spec,px/r.width,py/r.height);var p=C.mapPoint(next,spec);button.style.left=p.x+'%';button.style.top=p.y+'%';mapDraw(map,keys(s),spec,s,looks.map(function(k){return k.at===original.at?next:k;}));}
  function finish(e,cancel){
   if(done||e.pointerId!=null&&e.pointerId!==ev.pointerId)return;done=true;
   if(!cancel&&e.clientX!=null)move(e);
   button.removeEventListener('pointermove',move);button.removeEventListener('pointerup',up);button.removeEventListener('pointercancel',abort);button.removeEventListener('lostpointercapture',abort);button.removeEventListener('keydown',key);
   if(button.hasPointerCapture(ev.pointerId))button.releasePointerCapture(ev.pointerId);
+  if(!cancel&&!moved&&e.clientX!=null){pickSpatial(s,map,e.clientX,e.clientY);return;}
   if(cancel||!lookSpatialCommit(s,original,next)){var p=C.mapPoint(original,spec);button.style.left=p.x+'%';button.style.top=p.y+'%';mapDraw(map,keys(s),spec,s,looks);}
  }
  function up(e){finish(e,false);}function abort(e){finish(e,true);}function key(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();finish(e,true);}}
@@ -373,14 +374,15 @@ function spatialDrag(ev,button){
  var s=sec();if(!C.config(s))return;
  var map=button.closest('[data-camera-map]'),r=map.getBoundingClientRect(),list=keys(s),original=list.find(function(k){return k.at===+button.dataset.cameraMapPoint;});
  if(!original||!r.width||!r.height)return;
- var spec={range:+map.dataset.range,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1},next=original,done=false;
+ var spec={range:+map.dataset.range,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1},next=original,done=false,moved=false;
  ev.preventDefault();button.focus();button.setPointerCapture(ev.pointerId);
- function move(e){if(e.pointerId!==ev.pointerId)return;var px=e.clientX-ev.clientX,py=e.clientY-ev.clientY;if(e.shiftKey){if(Math.abs(px)>=Math.abs(py))py=0;else px=0;}next=C.moveSpatial(original,spec,px/r.width,py/r.height);var p=C.mapPoint(next,spec);button.style.left=p.x+'%';button.style.top=p.y+'%';mapDraw(map,list.map(function(k){return k.at===original.at?next:k;}),spec,s);}
+ function move(e){if(e.pointerId!==ev.pointerId)return;var rawX=e.clientX-ev.clientX,rawY=e.clientY-ev.clientY;if(Math.hypot(rawX,rawY)>=3)moved=true;var px=rawX,py=rawY;if(e.shiftKey){if(Math.abs(px)>=Math.abs(py))py=0;else px=0;}next=C.moveSpatial(original,spec,px/r.width,py/r.height);var p=C.mapPoint(next,spec);button.style.left=p.x+'%';button.style.top=p.y+'%';mapDraw(map,list.map(function(k){return k.at===original.at?next:k;}),spec,s);}
  function finish(e,cancel){
   if(done||e.pointerId!=null&&e.pointerId!==ev.pointerId)return;done=true;
   if(!cancel&&e.clientX!=null)move(e);
   button.removeEventListener('pointermove',move);button.removeEventListener('pointerup',up);button.removeEventListener('pointercancel',abort);button.removeEventListener('lostpointercapture',abort);button.removeEventListener('keydown',key);
   if(button.hasPointerCapture(ev.pointerId))button.releasePointerCapture(ev.pointerId);
+  if(!cancel&&!moved&&e.clientX!=null){pickSpatial(s,map,e.clientX,e.clientY);return;}
   if(cancel||!spatialCommit(s,original,next)){var p=C.mapPoint(original,spec);button.style.left=p.x+'%';button.style.top=p.y+'%';mapDraw(map,list,spec,s);}
  }
  function up(e){finish(e,false);}function abort(e){finish(e,true);}function key(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();finish(e,true);}}
