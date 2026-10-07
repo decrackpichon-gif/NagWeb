@@ -389,3 +389,116 @@ Se agregaron tests que verifican:
 Run verde: **#391**.
 
 Próximo criterio de decisión: repetir con `ponjita.png` las mismas curvas cerradas que rompían V4-C y verificar si desaparecen las inversiones de textura sin volver el movimiento excesivamente rígido.
+
+
+## Roadmap de producto · Scene Composer
+
+La validación de Organic Adaptive Curve V4-C.1 abre una segunda línea de trabajo que no debe resolverse dentro del renderer del personaje: la composición de escenas interactivas.
+
+El contenido fijo actual del Interaction Studio (título, párrafo y botón) se considera solamente un fixture de laboratorio. No debe convertirse en la UX final.
+
+### Objetivo
+
+Construir un compositor de escena donde el usuario pueda agregar y editar libremente:
+
+- personaje interactivo;
+- texto editable;
+- imágenes;
+- botones;
+- fondos;
+- formas y bloques;
+- contenedores/grupos;
+- otros elementos interactivos compatibles con NagWeb.
+
+Cada elemento debe tener posición, tamaño, rotación, escala, orden de capas y propiedades visuales editables.
+
+### Contrato de interacción por elemento
+
+La reacción al personaje no debe estar implícita ni depender de clases CSS prefijadas.
+
+Cada objeto de escena debe poder declarar una configuración de interacción propia, con un contrato serializable similar a:
+
+```js
+{
+  id: "scene-element-123",
+  reactsToCharacter: true,
+  influence: {
+    mode: "push",
+    strength: 0.7,
+    radius: 140,
+    move: true,
+    rotate: 0.25,
+    scale: 0.05,
+    returnSpeed: 0.8
+  }
+}
+```
+
+El nombre y shape final del schema quedan abiertos, pero debe cubrir como mínimo:
+
+- activar/desactivar reacción;
+- fuerza;
+- radio;
+- desplazamiento;
+- rotación;
+- escala;
+- velocidad de retorno;
+- prioridad o peso;
+- posibilidad futura de modos alternativos como push / attract / orbit / avoid.
+
+### Separación de responsabilidades
+
+El renderer del personaje no debe conocer la UI del compositor.
+
+Responsabilidades:
+
+**Character Engine**
+- deformación;
+- follower;
+- spine;
+- silueta;
+- anti-fold;
+- thickness guard;
+- exposición de geometría corporal útil para interacción.
+
+**Influence Engine**
+- calcula proximidad/cuerpo completo;
+- swept influence;
+- respuesta por target;
+- spring return;
+- canales move/rotate/scale.
+
+**Scene Composer**
+- crea/borra/duplica elementos;
+- edita contenido;
+- transforma objetos visualmente;
+- ordena capas;
+- selecciona qué objetos reaccionan;
+- configura reacción por elemento;
+- serializa/restaura la escena.
+
+### Integración futura
+
+No integrar este compositor directamente sobre la rama principal hasta que:
+
+1. V4-C.1 quede consolidada con varios assets;
+2. exista un contrato estable entre Character Engine e Influence Engine;
+3. la escena pueda serializarse sin depender de DOM generado manualmente;
+4. el compositor funcione primero como laboratorio aislado.
+
+La primera versión del Scene Composer debe ser un experimento separado, no una reescritura del editor principal.
+
+### Criterio UX
+
+La configuración técnica avanzada debe poder existir, pero la interfaz principal debería hablar en términos comprensibles:
+
+- Reacciona al personaje
+- Intensidad
+- Distancia
+- Movimiento
+- Giro
+- Escala
+- Retorno
+- Preset de reacción
+
+El usuario no debería necesitar entender springs, segment distances o pesos de vértice para componer una escena.
