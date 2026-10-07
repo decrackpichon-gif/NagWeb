@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 const require=createRequire(import.meta.url);
 const I=require('../js/nagweb-interaction-influence-v1.js');
 
-assert.equal(I.version,'1.6.0');
+assert.equal(I.version,'1.7.0');
 const defaults=I.normalizeOptions({});
 assert.ok(Object.values(defaults).filter(v=>typeof v==='number').every(Number.isFinite));
 assert.equal(defaults.sourceMode,'body');
@@ -48,6 +48,11 @@ const channels=I.responseGoal(fullGoal,{move:1,rotate:0,scale:.5});
 assert.equal(channels.x,40);assert.equal(channels.y,-20);assert.equal(channels.rotation,0);assert.ok(Math.abs(channels.scale-1.05)<1e-9);assert.equal(channels.strength,.8);
 const rotationOnly=I.responseGoal(fullGoal,{move:0,rotate:1,scale:0});
 assert.deepEqual(rotationOnly,{x:0,y:0,rotation:8,scale:1,strength:.8});
+assert.equal(I.targetFieldOptions(o,2).radius,200);
+assert.equal(I.targetFieldOptions(o,.1).radius,25);
+assert.equal(I.targetFieldOptions(o,99).radius,300);
+const expanded=I.computeRepulsion({x:0,y:0},{x:170,y:0,radius:0},I.targetFieldOptions(o,2));
+assert.ok(expanded.strength>0,'per-target radius scale should expand the influence distance');
 assert.ok(I.targetDynamics(o,2).spring>I.targetDynamics(o,.5).spring);
 assert.equal(I.targetDynamics(o,10).spring,I.targetDynamics(o,2).spring);
 assert.equal(I.targetDynamics(o,0).spring,I.targetDynamics(o,.25).spring);
@@ -62,4 +67,4 @@ assert.ok(Math.abs(state.x-40)<1);assert.ok(Math.abs(state.y+20)<1);assert.ok(Ma
 for(let i=0;i<180;i++)I.springStep(state,{x:0,y:0,rotation:0,scale:1,strength:0},o,16.6667);
 assert.ok(Math.abs(state.x)<1);assert.ok(Math.abs(state.y)<1);assert.ok(Math.abs(state.rotation)<1);assert.ok(Math.abs(state.scale-1)<.02);
 
-console.log('NagWeb Interaction Influence V1.6 per-target return dynamics model tests: PASS');
+console.log('NagWeb Interaction Influence V1.7 per-target radius + return dynamics model tests: PASS');
