@@ -33,7 +33,9 @@ echo  5. PROBAR ambientCG ^(5 recursos, NO descarga archivos^)
 echo  6. DESCARGAR ambientCG ^(5 recursos, 1K JPG^)
 echo  7. PROBAR PMNDRS ^(6 recursos, NO descarga archivos^)
 echo  8. DESCARGAR PMNDRS ^(6 recursos completos^)
-echo  9. CREAR catalogo local ^(25 por fuente^)
+echo  9. PROBAR Kenney ^(5 packs oficiales, NO descarga archivos^)
+echo 10. DESCARGAR Kenney ^(5 packs ZIP oficiales^)
+echo 11. CREAR catalogo local ^(25 por fuente^)
 echo.
 echo  0. Salir
 echo.
@@ -47,7 +49,9 @@ if "%choice%"=="5" goto ambient_test
 if "%choice%"=="6" goto ambient_download
 if "%choice%"=="7" goto pmndrs_test
 if "%choice%"=="8" goto pmndrs_download
-if "%choice%"=="9" goto catalog
+if "%choice%"=="9" goto kenney_test
+if "%choice%"=="10" goto kenney_download
+if "%choice%"=="11" goto catalog
 if "%choice%"=="0" exit /b 0
 
 echo.
@@ -111,6 +115,20 @@ echo.
 node src\cli.mjs --source=pmndrs --limit=6 --download
 goto done
 
+:kenney_test
+cls
+echo Probando Kenney sin descargar archivos...
+echo.
+node src\cli.mjs --source=kenney --limit=5 --dry-run
+goto done
+
+:kenney_download
+cls
+echo Descargando 5 packs oficiales de Kenney...
+echo.
+node src\cli.mjs --source=kenney --limit=5 --download
+goto done
+
 :catalog
 cls
 echo Creando catalogo local sin bajar binarios pesados...
@@ -120,6 +138,8 @@ if errorlevel 1 goto done
 node src\cli.mjs --source=ambientcg --limit=25 --write
 if errorlevel 1 goto done
 node src\cli.mjs --source=pmndrs --limit=25 --write
+if errorlevel 1 goto done
+node src\cli.mjs --source=kenney --limit=25 --write
 if errorlevel 1 goto done
 node src\cli.mjs --source=shadcn --limit=25 --write
 goto done

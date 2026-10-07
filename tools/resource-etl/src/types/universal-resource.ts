@@ -21,6 +21,7 @@ export type ResourceKind =
   | "icon"
   | "lottie"
   | "motion-preset"
+  | "asset-pack"
   | "unknown";
 
 export type EditableValue =
@@ -130,7 +131,8 @@ export interface ResourceArtifact {
     | "icon-data"
     | "animation-data"
     | "registry"
-    | "metadata";
+    | "metadata"
+    | "archive";
   format?: string;
   mimeType?: string;
   sourceUrl?: string;

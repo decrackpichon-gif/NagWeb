@@ -12,11 +12,13 @@ import {
 import {
   extractPmndrsAssets
 } from "./extractors/pmndrs.mjs";
+import { extractKenneyPacks } from "./extractors/kenney.mjs";
 import {
   transformPolyHavenModel,
   transformShadcnItem,
   transformAmbientCgAsset,
-  transformPmndrsAsset
+  transformPmndrsAsset,
+  transformKenneyPack
 } from "./transformers.mjs";
 import { downloadFile, safeRelativePath } from "./lib/http.mjs";
 
@@ -253,6 +255,53 @@ async function ingestPmndrs(args, rootDir, dryRun, download) {
   }
 }
 
+
+async function ingestKenney(args, rootDir, dryRun, download) {
+  const limit = intArg(args.limit, 10);
+  const raw = await extractKenneyPacks({ limit });
+  const resources = raw.items.map(transformKenneyPack);
+
+  printSummary(resources, dryRun ? "DRY RUN" : download ? "DOWNLOAD" : "WRITE");
+
+  if (dryRun) {
+    console.log(JSON.stringify(resources.slice(0, 3), null, 2));
+    return;
+  }
+
+  await writeJson(path.join(rootDir, "kenney", "catalog.json"), resources);
+
+  for (let index = 0; index < resources.length; index += 1) {
+    const resource = resources[index];
+    const pack = raw.items[index];
+    const resourceDir = path.join(rootDir, "kenney", resource.slug);
+
+    await writeJson(path.join(resourceDir, "resource.json"), resource);
+
+    if (!download) continue;
+
+    if (!pack.verifiedCc0) {
+      console.warn(`[kenney] Skip ${resource.id}: CC0 not verified.`);
+      continue;
+    }
+
+    if (!pack.downloadUrl) {
+      console.warn(`[kenney] Skip ${resource.id}: official ZIP not found.`);
+      continue;
+    }
+
+    const filename =
+      new URL(pack.downloadUrl).pathname.split("/").pop() ||
+      `${resource.slug}.zip`;
+    const relative = safeRelativePath(filename);
+    const destination = path.join(resourceDir, "files", relative);
+
+    console.log(`[kenney] ↓ ${resource.id} / ${relative}`);
+    await downloadFile(pack.downloadUrl, destination, {
+      maxBytes: 1024 * 1024 * 1024
+    });
+  }
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const source = String(args.source || "polyhaven").toLowerCase();
@@ -264,9 +313,9 @@ async function main() {
     String(args.out || "output")
   );
 
-  if (!["polyhaven", "shadcn", "ambientcg", "pmndrs"].includes(source)) {
+  if (!["polyhaven", "shadcn", "ambientcg", "pmndrs", "kenney"].includes(source)) {
     throw new Error(
-      `Unknown source "${source}". Sources: polyhaven, shadcn, ambientcg, pmndrs.`
+      `Unknown source "${source}". Sources: polyhaven, shadcn, ambientcg, pmndrs, kenney.`
     );
   }
 
@@ -281,6 +330,8 @@ async function main() {
     await ingestAmbientCg(args, rootDir, dryRun, download);
   } else if (source === "pmndrs") {
     await ingestPmndrs(args, rootDir, dryRun, download);
+  } else if (source === "kenney") {
+    await ingestKenney(args, rootDir, dryRun, download);
   } else {
     await ingestShadcn(args, rootDir, dryRun, download);
   }

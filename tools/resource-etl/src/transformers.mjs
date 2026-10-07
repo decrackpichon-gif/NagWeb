@@ -807,3 +807,137 @@ export function transformPmndrsAsset(asset) {
     }
   };
 }
+
+
+function kenneyFamily(categoryRoot) {
+  if (categoryRoot === "3D") return "3d";
+  if (categoryRoot === "Textures") return "texture";
+  if (categoryRoot === "UI") return "ui";
+  return "other";
+}
+
+export function transformKenneyPack(pack) {
+  const fetchedAt = now();
+  const filename = pack.downloadUrl
+    ? new URL(pack.downloadUrl).pathname.split("/").pop()
+    : undefined;
+
+  const artifacts = [
+    ...(pack.previewUrl
+      ? [{
+          id: "preview",
+          role: "thumbnail",
+          format: extensionFromUrl(pack.previewUrl),
+          sourceUrl: pack.previewUrl
+        }]
+      : []),
+    ...(pack.downloadUrl
+      ? [{
+          id: "archive",
+          role: "archive",
+          format: "zip",
+          sourceUrl: pack.downloadUrl,
+          targetPath: filename || `${pack.slug}.zip`
+        }]
+      : [])
+  ];
+
+  const warnings = [];
+  if (!pack.verifiedCc0) {
+    warnings.push("Kenney page did not explicitly confirm Creative Commons CC0.");
+  }
+  if (!pack.downloadUrl) {
+    warnings.push("Official ZIP link was not found on the Kenney asset page.");
+  }
+
+  return {
+    schemaVersion: "1.0",
+    id: `kenney:${pack.slug}`,
+    slug: slugify(pack.slug),
+    name: pack.slug,
+    title: pack.title,
+    description: "",
+    family: kenneyFamily(pack.categoryRoot),
+    kind: "asset-pack",
+    source: {
+      provider: "kenney",
+      externalId: pack.slug,
+      sourceUrl: pack.sourceUrl,
+      author: "Kenney",
+      fetchedAt
+    },
+    license: {
+      id: pack.verifiedCc0 ? "CC0" : "unknown",
+      name: pack.verifiedCc0 ? "CC0 1.0" : "Unknown",
+      url: pack.verifiedCc0
+        ? "https://creativecommons.org/publicdomain/zero/1.0/"
+        : undefined,
+      commercialUse: pack.verifiedCc0,
+      modificationAllowed: pack.verifiedCc0,
+      redistributionAllowed: pack.verifiedCc0,
+      attributionRequired: false,
+      verified: pack.verifiedCc0
+    },
+    taxonomy: {
+      categories: [pack.categoryRoot, pack.category].filter(Boolean),
+      tags: pack.tags || [],
+      sourceCategories: [pack.category].filter(Boolean)
+    },
+    previews: pack.previewUrl
+      ? [{ type: "thumbnail", url: pack.previewUrl }]
+      : [],
+    artifacts,
+    runtime: {
+      type: "asset",
+      entryArtifactId: pack.downloadUrl ? "archive" : undefined,
+      setup: {
+        ingestionStage: "pack",
+        unpackRequired: true
+      }
+    },
+    editableProps: [],
+    compatibility: {
+      nagweb: {
+        supported: true,
+        renderer: "asset-pack",
+        tested: false
+      }
+    },
+    capabilities: [],
+    technical: {
+      type: "asset-pack",
+      categoryRoot: pack.categoryRoot,
+      fileCount: pack.fileCount,
+      archiveFormat: "zip",
+      unpackRequired: true
+    },
+    search: {
+      text: [pack.title, pack.category, ...(pack.tags || [])]
+        .filter(Boolean)
+        .join(" "),
+      keywords: [
+        pack.slug,
+        pack.categoryRoot,
+        pack.category,
+        ...(pack.tags || [])
+      ].filter(Boolean)
+    },
+    ingestion: {
+      extractor: "kenney",
+      extractorVersion: EXTRACTOR_VERSION,
+      fetchedAt,
+      transformedAt: now(),
+      status:
+        pack.verifiedCc0 && pack.downloadUrl
+          ? "validated"
+          : "pending",
+      warnings
+    },
+    sourceData: {
+      sourceCategory: pack.category,
+      categoryRoot: pack.categoryRoot,
+      fileCount: pack.fileCount,
+      ingestionStage: "pack"
+    }
+  };
+}

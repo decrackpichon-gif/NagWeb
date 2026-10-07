@@ -5,8 +5,10 @@ import {
 } from "./extractors/ambientcg.mjs";
 import {
   transformAmbientCgAsset,
-  transformPmndrsAsset
+  transformPmndrsAsset,
+  transformKenneyPack
 } from "./transformers.mjs";
+import { parseKenneyAssetPage } from "./extractors/kenney.mjs";
 
 const fakeAsset = {
   assetId: "Wood999",
@@ -58,9 +60,6 @@ assert.equal(resource.license.id, "CC0");
 assert.equal(resource.runtime.entryArtifactId, "download-2");
 assert.ok(resource.editableProps.some((prop) => prop.id === "roughness"));
 
-console.log("NagWeb Resource ETL self-test: OK");
-
-
 const fakePmndrs = {
   type: "models",
   slug: "test-car",
@@ -108,3 +107,37 @@ assert.equal(pmndrsResource.kind, "model-3d");
 assert.equal(pmndrsResource.license.id, "CC0");
 assert.equal(pmndrsResource.artifacts.length, 3);
 assert.ok(pmndrsResource.runtime.entryArtifactId);
+
+
+const fakeKenneyHtml = `
+<html>
+<head>
+<meta property="og:image" content="/media/pages/assets/test-pack/preview.png">
+</head>
+<body>
+<h1>Test Pack</h1>
+<div>Category</div>
+<div><a>3D</a> • <a>Modular</a></div>
+<div>Files</div><div>40×</div>
+<div>License</div><div>Creative Commons CC0</div>
+<a href="/assets?t=space">space</a>
+<a href="/assets?t=modular">modular</a>
+<a href="/media/pages/assets/test-pack/hash/kenney_test-pack_1.0.zip">Download</a>
+</body>
+</html>
+`;
+
+const kenneyPack = parseKenneyAssetPage("test-pack", fakeKenneyHtml);
+assert.equal(kenneyPack.title, "Test Pack");
+assert.equal(kenneyPack.verifiedCc0, true);
+assert.equal(kenneyPack.categoryRoot, "3D");
+assert.equal(kenneyPack.fileCount, 40);
+assert.ok(kenneyPack.downloadUrl.endsWith(".zip"));
+
+const kenneyResource = transformKenneyPack(kenneyPack);
+assert.equal(kenneyResource.id, "kenney:test-pack");
+assert.equal(kenneyResource.kind, "asset-pack");
+assert.equal(kenneyResource.license.id, "CC0");
+assert.equal(kenneyResource.ingestion.status, "validated");
+
+console.log("NagWeb Resource ETL self-test: OK");

@@ -53,6 +53,12 @@ PMNDRS:
 npm run ingest -- --source=pmndrs --limit=6 --dry-run
 ```
 
+Kenney:
+
+```bash
+npm run ingest -- --source=kenney --limit=5 --dry-run
+```
+
 Si no se especifica `--write` ni `--download`, el CLI también entra en dry-run por seguridad.
 
 ## 2. Crear el catálogo local sin binarios
@@ -61,6 +67,7 @@ Si no se especifica `--write` ni `--download`, el CLI también entra en dry-run 
 npm run ingest -- --source=polyhaven --limit=25 --write
 npm run ingest -- --source=ambientcg --limit=25 --write
 npm run ingest -- --source=pmndrs --limit=25 --write
+npm run ingest -- --source=kenney --limit=25 --write
 npm run ingest -- --source=shadcn --limit=25 --write
 ```
 
@@ -99,6 +106,14 @@ npm run ingest -- --source=pmndrs --limit=6 --download
 ```
 
 PMNDRS se obtiene desde el repositorio oficial `pmndrs/market-assets`: modelos, materiales e HDRI. Para cada recurso conserva `info.json` como metadata y descarga todos los archivos necesarios de su carpeta cuando se usa `--download`.
+
+Kenney:
+
+```bash
+npm run ingest -- --source=kenney --limit=5 --download
+```
+
+Kenney se consulta desde el catálogo oficial. El extractor sólo marca un pack como validado cuando la página confirma CC0 y encuentra el ZIP oficial. En esta etapa el ZIP se conserva como pack; el desempaquetado e indexación de modelos/UI individuales queda separado para no mezclar un pack entero con un único recurso editable.
 
 ## Salida
 
@@ -140,7 +155,7 @@ Después de validar Poly Haven + Shadcn:
 3. sincronización incremental;
 4. ambientCG; ✅ extractor v0.1
 5. PMNDRS; ✅ extractor v0.1
-6. Kenney;
+6. Kenney; ✅ extractor de packs v0.1
 7. Aceternity;
 8. Magic UI;
 9. Uiverse;
@@ -166,3 +181,13 @@ No depende del HTML del Market. Lee el árbol Git oficial de `pmndrs/market-asse
 - `materials`: conserva imágenes/materiales asociados.
 - `hdris`: prioriza HDR/EXR.
 - licencia 1 se normaliza a CC0; cualquier licencia distinta queda pendiente de revisión en vez de publicarse silenciosamente.
+
+
+## Kenney v0.1
+
+El extractor recorre el catálogo oficial de Kenney, abre cada página de asset y valida dos condiciones antes de permitir descarga:
+
+1. la página declara `Creative Commons CC0`;
+2. existe un enlace ZIP oficial bajo `kenney.nl/media/pages/assets/`.
+
+Los packs se guardan inicialmente como `asset-pack`. Esto es deliberado: un ZIP de Kenney puede contener decenas o cientos de modelos, sprites o elementos UI. La etapa siguiente desempaquetará esos ZIP e indexará sus recursos internos de forma individual.
