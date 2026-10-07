@@ -250,15 +250,12 @@ function spatialMap(s,list,k){
  resolvedLooks.forEach(function(f){var p=C.mapPoint(f,spec);html+='<circle data-camera-look-map-dot="'+f.at+'" cx="'+p.x+'" cy="'+p.y+'" r="1.25" fill="var(--accent)" opacity=".65"/>';});
  html+='<circle data-camera-position cx="'+now.x+'" cy="'+now.y+'" r="3" fill="none" stroke="var(--accent)" stroke-width="1"/>';
  if(lookPoint)html+='<circle data-camera-look-position cx="'+lookPoint.x+'" cy="'+lookPoint.y+'" r="2.2" fill="var(--accent)" opacity=".8"/>';
- html+='</svg>';
- list.forEach(function(f){if(f.at===k.at)return;var p=C.mapPoint(f,spec);html+='<button type="button" data-camera-map-select="'+f.at+'" aria-label="Seleccionar encuadre '+f.at+'% en el mapa" title="'+f.at+'%" style="position:absolute;left:'+p.x+'%;top:'+p.y+'%;transform:translate(-50%,-50%);width:18px;height:18px;padding:0;border:0;background:transparent;color:currentColor;opacity:.7;cursor:pointer;z-index:10">◇</button>';});
- looks.forEach(function(f,i){if(lk&&f.at===lk.at)return;var rp=resolvedLooks[i]||f,p=C.mapPoint(rp,spec);html+='<button type="button" data-camera-look-map-select="'+f.at+'" aria-label="Seleccionar objetivo '+f.at+'% en el mapa" title="Objetivo '+f.at+'%" style="position:absolute;left:'+p.x+'%;top:'+p.y+'%;transform:translate(-50%,-50%);width:18px;height:18px;padding:0;border:0;background:transparent;color:var(--accent);opacity:.72;cursor:pointer;z-index:11">·</button>';});
- html+='<button type="button" class="btn tiny" data-camera-map-point="'+k.at+'" aria-label="Mover encuadre '+k.at+'% en el mapa" style="position:absolute;left:'+point.x+'%;top:'+point.y+'%;transform:translate(-50%,-50%);touch-action:none;padding:3px;outline:2px solid var(--accent);z-index:20">◆</button>';
+ html+='</svg><button type="button" class="btn tiny" data-camera-map-point="'+k.at+'" aria-label="Mover encuadre '+k.at+'% en el mapa" style="position:absolute;left:'+point.x+'%;top:'+point.y+'%;transform:translate(-50%,-50%);touch-action:none;padding:3px;outline:2px solid var(--accent);z-index:20">◆</button>';
  if(lk&&lookKeyPoint)html+='<button type="button" class="btn tiny" data-camera-look-map-point="'+lk.at+'" aria-label="'+(lk.targetId?'Objetivo vinculado a un elemento':'Mover objetivo de mirada '+lk.at+'% en el mapa')+'"'+(lk.targetId?' disabled title="Desvinculá el elemento para mover este punto manualmente."':'')+' style="position:absolute;left:'+lookKeyPoint.x+'%;top:'+lookKeyPoint.y+'%;transform:translate(-50%,-50%);touch-action:none;padding:2px 5px;outline:2px dashed var(--accent);z-index:21">●</button>';
  html+='</div>';
  if(s.sdCameraResponsive)html+='<p class="hint gh">El mapa muestra el recorrido con el ancho de referencia.</p>';
  html+='<p class="hint gh" data-camera-position-label>'+mapLabel(current,progress(s))+'</p>';
- html+='<p class="hint gh">◆ encuadre seleccionado · ○ posición actual'+(cfg&&cfg.orientationMode==='lookAt'?' · ● objetivo seleccionado · línea punteada: recorrido de mirada':'')+'. Clic en ◇/·: seleccionar · Arrastrá ◆ o ● · Shift + arrastre: bloquear al eje dominante. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Flechas: 25 px; Shift + flecha: 100 px. Escape cancela. Escala: ±'+Math.round(spec.range)+' px.</p></details>';
+ html+='<p class="hint gh">◆ encuadre seleccionado · ○ posición actual'+(cfg&&cfg.orientationMode==='lookAt'?' · ● objetivo seleccionado · línea punteada: recorrido de mirada':'')+'. Clic cerca de un punto: seleccionar · Arrastrá ◆ o ● · Shift + arrastre: bloquear al eje dominante. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Flechas: 25 px; Shift + flecha: 100 px. Escape cancela. Escala: ±'+Math.round(spec.range)+' px.</p></details>';
  return html;
 }
 C.panel=function(s){
@@ -336,6 +333,16 @@ function spatialCommit(s,original,next){
  if(i<0||list[i].x===next.x&&list[i].y===next.y&&list[i].z===next.z)return false;
  snapshot();list[i]=next;persist(s,list,next.at);return true;
 }
+function pickSpatial(s,map,clientX,clientY){
+ var cfg=C.config(s),r=map&&map.getBoundingClientRect();if(!cfg||!r||!r.width||!r.height)return false;
+ var spec={range:+map.dataset.range||500,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1},size=previewReferenceSize(s),best=null;
+ function add(kind,k,point){var p=C.mapPoint(point,spec),x=r.left+p.x/100*r.width,y=r.top+p.y/100*r.height,d=Math.hypot(clientX-x,clientY-y);if(!best||d<best.d)best={kind:kind,at:k.at,d:d};}
+ keys(s).forEach(function(k){add('camera',k,k);});
+ if(cfg.orientationMode==='lookAt'){var list=lookKeys(s),resolved=resolvedLookKeys(s,cfg,list,size);list.forEach(function(k,i){add('look',k,resolved[i]||k);});}
+ if(!best||best.d>18)return false;
+ if(best.kind==='look')jumpLook(s,best.at);else jump(s,best.at);
+ return true;
+}
 function lookSpatialCommit(s,original,next){
  if(sec()!==s||!C.config(s))return false;
  var list=lookKeys(s),i=list.findIndex(function(k){return k.at===original.at;});
@@ -399,10 +406,9 @@ if(pane){
  });
  pane.addEventListener('pointerdown',function(ev){
   if(ev.button!==0)return;
-  var mapPick=ev.target.closest('[data-camera-map-select]');if(mapPick){ev.preventDefault();ev.stopPropagation();jump(sec(),+mapPick.dataset.cameraMapSelect);return;}
-  var lookPick=ev.target.closest('[data-camera-look-map-select]');if(lookPick){ev.preventDefault();ev.stopPropagation();jumpLook(sec(),+lookPick.dataset.cameraLookMapSelect);return;}
   var lookSpatial=ev.target.closest('[data-camera-look-map-point]');if(lookSpatial){lookSpatialDrag(ev,lookSpatial);return;}
   var spatial=ev.target.closest('[data-camera-map-point]');if(spatial){spatialDrag(ev,spatial);return;}
+  var spatialMapNode=ev.target.closest('[data-camera-map]');if(spatialMapNode&&pickSpatial(sec(),spatialMapNode,ev.clientX,ev.clientY)){ev.preventDefault();ev.stopPropagation();return;}
   var track=ev.target.closest('[data-camera-track]');if(!track)return;
   var s=sec();if(!C.config(s))return;
   var button=ev.target.closest('[data-camera-jump]'),rect=track.getBoundingClientRect();
@@ -431,11 +437,9 @@ if(pane){
   if(retime(s,from,to)){var next=pane.querySelector('[data-camera-jump="'+to+'"]');if(next)next.focus();}
  });
  pane.addEventListener('click',function(ev){
-  var button=ev.target.closest('[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init],[data-camera-map-select],[data-camera-look-map-select]');if(!button)return;
+  var button=ev.target.closest('[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
   if(button===suppressedClick){suppressedClick=null;return;}
   var s=sec(),cfg=C.config(s);if(!cfg)return;var list=keys(s);
-  if(button.dataset.cameraMapSelect!==undefined){jump(s,+button.dataset.cameraMapSelect);return;}
-  if(button.dataset.cameraLookMapSelect!==undefined){jumpLook(s,+button.dataset.cameraLookMapSelect);return;}
   if(button.dataset.cameraLookInit!==undefined){
    var generated=C.defaultLookFrames(cfg,window.NAGWEB_STORY_MODEL,s.sdEase,1000);if(!generated.length)return;
    snapshot();s.sdCameraLookFrames=generated;s.sdCameraLookPathMode=s.sdCameraPathMode==='smooth'?'smooth':'linear';lookSelected[s.id]=generated[0].at;saveProject();renderPane();schedulePreview();return;

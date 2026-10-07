@@ -193,14 +193,18 @@ export async function runCameraBrowserSmoke(page){
   await page.click('[data-camera-look-jump="50"]');
   await page.waitForFunction(()=>document.querySelector('[data-camera-look-field="x"][data-camera-look-at="50"]'));
   assert.equal(await page.$eval('[data-camera-look-field="x"][data-camera-look-at="50"]',n=>+n.value),1225);
-  await page.click('[data-camera-map-select="100"]');
+  async function clickSpatialDot(selector){
+   const p=await page.$eval(selector,n=>{const map=n.closest('[data-camera-map]'),mr=map.getBoundingClientRect(),cx=+n.getAttribute('cx'),cy=+n.getAttribute('cy');return{x:mr.left+cx/100*mr.width,y:mr.top+cy/100*mr.height};});
+   await page.mouse.click(p.x,p.y);
+  }
+  await clickSpatialDot('[data-camera-map-dot="100"]');
   await page.waitForFunction(()=>document.querySelector('[data-camera-map-point="100"]'));
   assert.equal(await page.$eval('[data-camera-head]',n=>n.style.left),'100%');
-  await page.click('[data-camera-map-select="50"]');
+  await clickSpatialDot('[data-camera-map-dot="50"]');
   await page.waitForFunction(()=>document.querySelector('[data-camera-map-point="50"]'));
-  await page.click('[data-camera-look-map-select="100"]');
+  await clickSpatialDot('[data-camera-look-map-dot="100"]');
   await page.waitForFunction(()=>document.querySelector('[data-camera-look-map-point="100"]'));
-  await page.click('[data-camera-look-map-select="50"]');
+  await clickSpatialDot('[data-camera-look-map-dot="50"]');
   await page.waitForFunction(()=>document.querySelector('[data-camera-look-map-point="50"]'));
 
   await page.evaluate(()=>{
