@@ -176,3 +176,25 @@ la trayectoria espacial de la orientación. La parametrización uniforme por lon
 de arco, la orientación por punto de interés y el damping dependiente de deltaTime
 quedan como evoluciones separadas para no mezclar tres cambios de comportamiento en
 una sola etapa.
+
+
+## Orientación por punto de mirada
+La orientación conserva `Ángulos manuales` como modo compatible por defecto. El
+modo opcional `Mirar hacia` separa la posición de cámara del objetivo visual:
+`sdCameraFrames` sigue describiendo dónde está la cámara y
+`sdCameraLookFrames` describe qué punto XYZ mira en cada momento.
+
+La trayectoria del objetivo tiene timing y modo de interpolación propios
+(`sdCameraLookPathMode`: por tramos o curva suave), por lo que puede cambiar de
+dirección en momentos distintos a los encuadres de posición. Pitch y yaw se calculan
+desde cámara → objetivo; el giro del horizonte (roll) continúa usando el ángulo manual
+del encuadre. Volver a Ángulos manuales conserva los objetivos guardados.
+
+Al activar Mirar hacia por primera vez, NagWeb genera objetivos delante de cada
+encuadre a partir de la orientación manual existente para evitar empezar desde datos
+vacíos. El mapa espacial muestra la trayectoria del objetivo con línea punteada y su
+posición actual con un punto sólido. Preview y exportación usan el mismo cálculo.
+
+Reduced motion sigue neutralizando toda la cámara, y la adaptación responsive no
+cambia los ángulos porque cámara y objetivo comparten la misma escala espacial.
+La prueba Chromium cubre UI, trayectoria independiente y matriz exportada.
