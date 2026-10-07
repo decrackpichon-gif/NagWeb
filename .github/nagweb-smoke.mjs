@@ -38,6 +38,8 @@ import {runMotionExpandSmoke} from './nagweb-motion-expand-smoke.mjs';
 import {runMotionDropSmoke} from './nagweb-motion-drop-smoke.mjs';
 import {runMotionStreamSmoke} from './nagweb-motion-stream-smoke.mjs';
 import {runMotionStreamPlacementSmoke} from './nagweb-motion-stream-placement-smoke.mjs';
+import './nagweb-photo-model-test.mjs';
+import {runMotionPhotoSmoke} from './nagweb-motion-photo-smoke.mjs';
 import './nagweb-burst-model-test.mjs';
 import {runMotionBurstSmoke} from './nagweb-motion-burst-smoke.mjs';
 import './nagweb-peel-model-test.mjs';
@@ -81,7 +83,7 @@ import {runMotionIsoOrbitSmoke} from './nagweb-motion-iso-orbit-smoke.mjs';
 import {runMotionBatchImagesSmoke} from './nagweb-motion-batch-images-smoke.mjs';
 
 const suite=process.env.NAGWEB_SMOKE_SUITE||'all';
-if(!['all','procedural','editor','diagonal','grid','zoom','drop','shift','spiral','film','totem','peel','burst'].includes(suite))throw new Error('Unknown NagWeb smoke suite: '+suite);
+if(!['all','procedural','editor','diagonal','grid','zoom','drop','shift','spiral','film','totem','peel','burst','photo'].includes(suite))throw new Error('Unknown NagWeb smoke suite: '+suite);
 
 const feedbackSource=fs.readFileSync(new URL('../js/nagweb-feedback-v16.js',import.meta.url),'utf8');
 const directorSource=fs.readFileSync(new URL('../js/nagweb-scroll-director-v16.js',import.meta.url),'utf8');
@@ -330,6 +332,7 @@ await runTransparentSmoke(page);
 if(suite==='all'||suite==='diagonal'){
 for(const kind of ['diagonal-carousel','iso-cascade']){await runMotionDiagonalSmoke(page,kind);await runMotionStreamPlacementSmoke(page,kind);}
 }
+if(suite==='all'||suite==='photo'){await runMotionPhotoSmoke(page);await runMotionStreamPlacementSmoke(page,'photo-orbit');await runMotionBatchImagesSmoke(page,['photo-orbit']);}
 if(suite==='all'||suite==='burst'){await runMotionBurstSmoke(page);await runMotionStreamPlacementSmoke(page,'poster-burst');await runMotionBatchImagesSmoke(page,['poster-burst']);}
 if(suite==='all'||suite==='peel'){await runMotionPeelSmoke(page);await runMotionStreamPlacementSmoke(page,'deck-peel');await runMotionBatchImagesSmoke(page,['deck-peel']);}
 for(const [bandSuite,bandTemplate] of [['film','film-strip'],['totem','card-totem']])if(suite==='all'||suite===bandSuite){await runMotionBandSmoke(page,bandTemplate);await runMotionStreamPlacementSmoke(page,bandTemplate);await runMotionBatchImagesSmoke(page,[bandTemplate]);}
