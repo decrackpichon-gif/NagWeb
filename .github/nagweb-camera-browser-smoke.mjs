@@ -33,7 +33,7 @@ export async function runCameraBrowserSmoke(page){
    label:document.querySelector('[data-camera-position-label]')?.textContent,
    head:document.querySelector('[data-camera-head]')?.style.left,
    seek:document.querySelector('[data-camera-seek]')?.value,
-   pathPoints:(document.querySelector('[data-camera-map-path]')?.getAttribute('points')||'').trim().split(/\\s+/).filter(Boolean).length
+   pathPoints:(document.querySelector('[data-camera-map-path]')?.getAttribute('points')||'').trim().split(/\s+/).filter(Boolean).length
   }));
   assert.equal(ui.markers,3);assert.equal(ui.dots,3);assert.equal(ui.plane,'top');assert.equal(ui.head,'50%');assert.equal(+ui.seek,50);
   assert.ok(ui.pathPoints>ui.dots,'Smooth camera path should render sampled curve points');
