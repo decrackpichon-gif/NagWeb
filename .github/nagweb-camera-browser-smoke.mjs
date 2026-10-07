@@ -39,6 +39,17 @@ export async function runCameraBrowserSmoke(page){
   assert.ok(ui.pathPoints>ui.dots,'Smooth camera path should render sampled curve points');
   assert.ok(ui.label.includes('50%')&&ui.label.includes('X 200')&&ui.label.includes('Y 100')&&ui.label.includes('Z 100'));
   assert.ok((await page.$eval('[data-camera-map-box]',n=>n.textContent)).includes('ancho de referencia'));
+  const curveBefore=await page.$eval('[data-camera-map-path]',n=>n.getAttribute('points'));
+  assert.equal(await page.$eval('[data-camera-field="tension"][data-camera-at="50"]',n=>+n.value),0);
+  await page.$eval('[data-camera-field="tension"][data-camera-at="50"]',n=>{n.value='100';n.dispatchEvent(new Event('change',{bubbles:true}));});
+  await page.waitForFunction(()=>sec().sdCameraFrames.find(k=>k.at===50)?.tension===100&&document.querySelector('[data-camera-field="tension"][data-camera-at="50"]'));
+  const curveAfter=await page.$eval('[data-camera-map-path]',n=>n.getAttribute('points'));
+  assert.notEqual(curveAfter,curveBefore,'Changing segment tension must redraw the sampled spatial path');
+  await page.select('[data-camera-path-mode]','linear');
+  await page.waitForFunction(()=>!document.querySelector('[data-camera-field="tension"]'));
+  await page.select('[data-camera-path-mode]','smooth');
+  await page.waitForFunction(()=>document.querySelector('[data-camera-field="tension"][data-camera-at="50"]'));
+  assert.equal(await page.$eval('[data-camera-field="tension"][data-camera-at="50"]',n=>+n.value),100,'Tension survives temporary linear mode');
 
   await page.focus('[data-camera-map-point="50"]');await page.keyboard.press('ArrowRight');
   assert.equal(await page.evaluate(()=>sec().sdCameraFrames.find(k=>k.at===50).x),225);
@@ -74,6 +85,8 @@ export async function runCameraBrowserSmoke(page){
    const worldE=matrixFromTransform('rotateZ(-5deg) rotateY(-20deg) rotateX(-10deg) translate3d(-225px,-125px,100px)');
    const groupE=matrixFromTransform('translateZ(-300px) rotateX(0deg) rotateY(0deg)');
    const childE=matrixFromTransform('translateZ(50px) rotateX(10deg) rotateY(-15deg)');
+   w.__NAG_SCROLL_DIRECTOR['camera-browser-scene'].set(.75);
+   const tensionA=matrixFromAnimation(world),tensionE=matrixFromTransform('rotateZ(-2.5deg) rotateY(-10deg) rotateX(-5deg) translate3d(-312.5px,-12.5px,50px)');
    return{
     groupInWorld:group.parentNode===world,
     childInGroup:child.parentNode===group,
@@ -81,6 +94,7 @@ export async function runCameraBrowserSmoke(page){
     authoredLeft:group.style.left,
     quarterError:error(quarterA.matrix,quarterE),
     worldError:error(worldA.matrix,worldE),
+    tensionError:error(tensionA.matrix,tensionE),
     groupError:error(groupA.matrix,groupE),
     childError:error(childA.matrix,childE),
     childRaw:childA.raw,
@@ -90,6 +104,7 @@ export async function runCameraBrowserSmoke(page){
   assert.equal(runtime.groupInWorld,true);assert.equal(runtime.childInGroup,true);assert.equal(runtime.groupStyle,'preserve-3d');
   assert.ok(runtime.quarterError<.001,'Smooth camera quarter-path mismatch: '+JSON.stringify(runtime));
   assert.ok(runtime.worldError<.001,'Camera matrix mismatch: '+JSON.stringify(runtime));
+  assert.ok(runtime.tensionError<.001,'Per-segment tension was not preserved in exported camera runtime: '+JSON.stringify(runtime));
   assert.ok(runtime.groupError<.001,'Container depth matrix mismatch: '+JSON.stringify(runtime));
   assert.ok(runtime.childError<.001,'Nested 2.5D matrix mismatch: '+JSON.stringify(runtime));
   assert.ok(!runtime.childRaw.includes('perspective('),'Nested child must reuse shared camera perspective');
@@ -141,7 +156,7 @@ export async function runCameraBrowserSmoke(page){
   }));
   assert.equal(savedResponsive.responsive,true);assert.equal(savedResponsive.referenceWidth,1000);
   assert.equal(savedResponsive.frame.x,225);assert.equal(savedResponsive.frame.y,125);assert.equal(savedResponsive.frame.z,100);
-  assert.equal(savedResponsive.frame.rotateX,10);assert.equal(savedResponsive.frame.rotateY,20);assert.equal(savedResponsive.frame.rotate,5);
+  assert.equal(savedResponsive.frame.rotateX,10);assert.equal(savedResponsive.frame.rotateY,20);assert.equal(savedResponsive.frame.rotate,5);assert.equal(savedResponsive.frame.tension,100);
 
   // Existing DOM -> Three.js anchors should inherit camera motion automatically
   // because they project the transformed anchor rect on every update.
