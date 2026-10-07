@@ -321,10 +321,19 @@ function mapDraw(map,list,spec,s,lookList){
   var lookDraw=C.lookSamples(lookCfg,window.NAGWEB_STORY_MODEL,s.sdEase,undefined,size),resolved=resolvedLookKeys(s,lookCfg,looks,size),lookPoints=lookDraw.map(function(k){var p=C.mapPoint(k,spec);return p.x+','+p.y;}).join(' ');
   if(lookPath)lookPath.setAttribute('points',lookPoints);if(lookHit)lookHit.setAttribute('points',lookPoints);
   resolved.forEach(function(k){var dot=map.querySelector('[data-camera-look-map-dot="'+k.at+'"]'),p=C.mapPoint(k,spec);if(dot){dot.setAttribute('cx',p.x);dot.setAttribute('cy',p.y);}});
+  var selectedLookButton=map.querySelector('[data-camera-look-map-point]');
+  if(selectedLookButton&&cfg.lookPathMode==='smooth'){
+   var selectedLookAt=+selectedLookButton.dataset.cameraLookMapPoint,selectedLook=resolved.find(function(k){return k.at===selectedLookAt;});
+   ['in','out'].forEach(function(side){
+    var line=map.querySelector('[data-camera-look-tangent-line="'+side+'"]'),dot=map.querySelector('[data-camera-look-tangent-handle="'+side+'"]'),button=map.querySelector('[data-camera-look-tension-handle][data-camera-look-tension-side="'+side+'"]'),th=C.lookTangentHandle(resolved,selectedLookAt,side);
+    if(line&&dot&&selectedLook&&th){var kp=C.mapPoint(selectedLook,spec),hp=C.mapPoint(th,spec);line.setAttribute('x1',kp.x);line.setAttribute('y1',kp.y);line.setAttribute('x2',hp.x);line.setAttribute('y2',hp.y);dot.setAttribute('cx',hp.x);dot.setAttribute('cy',hp.y);line.style.display='';dot.style.display='';if(button){button.style.left=hp.x+'%';button.style.top=hp.y+'%';button.style.display='';}}
+    else{if(line)line.style.display='none';if(dot)dot.style.display='none';if(button)button.style.display='none';}
+   });
+  }
  }
 }
 function spatialMap(s,list,k){
- var plane=mapPlanes[s.id]||'top',cfg=C.config(s),looks=cfg&&cfg.orientationMode==='lookAt'?lookKeys(s):[],lk=looks.length?chooseLook(s,looks):null,size=previewReferenceSize(s),resolvedLooks=resolvedLookKeys(s,cfg,looks,size),tangents=cfg&&cfg.pathMode==='smooth'?list.flatMap(function(f){return[C.tangentHandle(list,f.at,'in'),C.tangentHandle(list,f.at,'out')];}).filter(Boolean):[],spec=C.mapSpec(list.concat(resolvedLooks,tangents),plane),point=C.mapPoint(k,spec),tangentIn=cfg&&cfg.pathMode==='smooth'?C.tangentHandle(list,k.at,'in'):null,tangentOut=cfg&&cfg.pathMode==='smooth'?C.tangentHandle(list,k.at,'out'):null,tangentInPoint=tangentIn?C.mapPoint(tangentIn,spec):null,tangentOutPoint=tangentOut?C.mapPoint(tangentOut,spec):null,resolvedLk=lk&&lk.targetId?(C.elementTarget(cfg,lk.targetId,lk.at/100,window.NAGWEB_STORY_MODEL,s.sdEase,size)||lk):lk,lookKeyPoint=resolvedLk?C.mapPoint(resolvedLk,spec):null,current=mapCurrent(s,progress(s)),now=C.mapPoint(current,spec);
+ var plane=mapPlanes[s.id]||'top',cfg=C.config(s),looks=cfg&&cfg.orientationMode==='lookAt'?lookKeys(s):[],lk=looks.length?chooseLook(s,looks):null,size=previewReferenceSize(s),resolvedLooks=resolvedLookKeys(s,cfg,looks,size),tangents=cfg&&cfg.pathMode==='smooth'?list.flatMap(function(f){return[C.tangentHandle(list,f.at,'in'),C.tangentHandle(list,f.at,'out')];}).filter(Boolean):[],lookTangents=cfg&&cfg.lookPathMode==='smooth'?resolvedLooks.flatMap(function(f){return[C.lookTangentHandle(resolvedLooks,f.at,'in'),C.lookTangentHandle(resolvedLooks,f.at,'out')];}).filter(Boolean):[],spec=C.mapSpec(list.concat(resolvedLooks,tangents,lookTangents),plane),point=C.mapPoint(k,spec),tangentIn=cfg&&cfg.pathMode==='smooth'?C.tangentHandle(list,k.at,'in'):null,tangentOut=cfg&&cfg.pathMode==='smooth'?C.tangentHandle(list,k.at,'out'):null,tangentInPoint=tangentIn?C.mapPoint(tangentIn,spec):null,tangentOutPoint=tangentOut?C.mapPoint(tangentOut,spec):null,resolvedLk=lk&&lk.targetId?(C.elementTarget(cfg,lk.targetId,lk.at/100,window.NAGWEB_STORY_MODEL,s.sdEase,size)||lk):lk,lookKeyPoint=resolvedLk?C.mapPoint(resolvedLk,spec):null,lookTangentIn=cfg&&cfg.lookPathMode==='smooth'&&lk?C.lookTangentHandle(resolvedLooks,lk.at,'in'):null,lookTangentOut=cfg&&cfg.lookPathMode==='smooth'&&lk?C.lookTangentHandle(resolvedLooks,lk.at,'out'):null,lookTangentInPoint=lookTangentIn?C.mapPoint(lookTangentIn,spec):null,lookTangentOutPoint=lookTangentOut?C.mapPoint(lookTangentOut,spec):null,current=mapCurrent(s,progress(s)),now=C.mapPoint(current,spec);
  var draw=C.pathSamples(Object.assign({},cfg,{frames:list}),window.NAGWEB_STORY_MODEL,s.sdEase),path=draw.map(function(f){var p=C.mapPoint(f,spec);return p.x+','+p.y;}).join(' ');
  var lookDraw=cfg&&cfg.orientationMode==='lookAt'?C.lookSamples(cfg,window.NAGWEB_STORY_MODEL,s.sdEase,undefined,size):[],lookPath=lookDraw.map(function(f){var p=C.mapPoint(f,spec);return p.x+','+p.y;}).join(' '),lookNow=cfg&&cfg.orientationMode==='lookAt'?C.lookTarget(cfg,progress(s)/100,window.NAGWEB_STORY_MODEL,s.sdEase,size):null,lookPoint=lookNow?C.mapPoint(lookNow,spec):null;
  var html='<details data-camera-map-box'+(mapOpen[s.id]?' open':'')+'><summary style="cursor:pointer;margin:8px 0">Mapa del recorrido</summary><label>Vista <select class="csel" data-camera-map-plane><option value="top"'+(plane==='top'?' selected':'')+'>Desde arriba · X/Z</option><option value="front"'+(plane==='front'?' selected':'')+'>De frente · X/Y</option></select></label>';
@@ -333,6 +342,8 @@ function spatialMap(s,list,k){
  if(lookPath)html+='<polyline data-camera-look-map-path-hit points="'+lookPath+'" fill="none" stroke="var(--accent)" opacity=".001" stroke-width="6" pointer-events="stroke" style="cursor:crosshair"/><polyline data-camera-look-map-path points="'+lookPath+'" fill="none" stroke="var(--accent)" opacity=".65" stroke-width=".7" stroke-dasharray="2 2" pointer-events="stroke" style="cursor:crosshair"/>';
  if(tangentInPoint)html+='<line data-camera-tangent-line="in" x1="'+point.x+'" y1="'+point.y+'" x2="'+tangentInPoint.x+'" y2="'+tangentInPoint.y+'" stroke="var(--accent)" opacity=".48" stroke-width=".6" stroke-dasharray="1.5 1.5" pointer-events="none"/><circle data-camera-tangent-handle="in" cx="'+tangentInPoint.x+'" cy="'+tangentInPoint.y+'" r="1.55" fill="none" stroke="var(--accent)" opacity=".7" stroke-width=".8" pointer-events="none"/>';
  if(tangentOutPoint)html+='<line data-camera-tangent-line="out" x1="'+point.x+'" y1="'+point.y+'" x2="'+tangentOutPoint.x+'" y2="'+tangentOutPoint.y+'" stroke="var(--accent)" opacity=".72" stroke-width=".6" stroke-dasharray="1.5 1.5" pointer-events="none"/><circle data-camera-tangent-handle="out" cx="'+tangentOutPoint.x+'" cy="'+tangentOutPoint.y+'" r="1.6" fill="none" stroke="var(--accent)" stroke-width=".8" pointer-events="none"/>';
+ if(lookTangentInPoint&&lookKeyPoint)html+='<line data-camera-look-tangent-line="in" x1="'+lookKeyPoint.x+'" y1="'+lookKeyPoint.y+'" x2="'+lookTangentInPoint.x+'" y2="'+lookTangentInPoint.y+'" stroke="var(--accent)" opacity=".45" stroke-width=".7" stroke-dasharray="3 1" pointer-events="none"/><circle data-camera-look-tangent-handle="in" cx="'+lookTangentInPoint.x+'" cy="'+lookTangentInPoint.y+'" r="1.5" fill="var(--accent)" opacity=".65" pointer-events="none"/>';
+ if(lookTangentOutPoint&&lookKeyPoint)html+='<line data-camera-look-tangent-line="out" x1="'+lookKeyPoint.x+'" y1="'+lookKeyPoint.y+'" x2="'+lookTangentOutPoint.x+'" y2="'+lookTangentOutPoint.y+'" stroke="var(--accent)" opacity=".65" stroke-width=".7" stroke-dasharray="3 1" pointer-events="none"/><circle data-camera-look-tangent-handle="out" cx="'+lookTangentOutPoint.x+'" cy="'+lookTangentOutPoint.y+'" r="1.5" fill="var(--accent)" opacity=".85" pointer-events="none"/>';
  list.forEach(function(f){var p=C.mapPoint(f,spec);html+='<circle data-camera-map-dot="'+f.at+'" cx="'+p.x+'" cy="'+p.y+'" r="1.8" fill="currentColor" stroke="transparent" stroke-width="5" style="cursor:pointer;pointer-events:all"/>';});
  resolvedLooks.forEach(function(f){var p=C.mapPoint(f,spec);html+='<circle data-camera-look-map-dot="'+f.at+'" cx="'+p.x+'" cy="'+p.y+'" r="1.55" fill="var(--accent)" opacity=".65" stroke="transparent" stroke-width="5" style="cursor:pointer;pointer-events:all"/>';});
  html+='<circle data-camera-position cx="'+now.x+'" cy="'+now.y+'" r="3" fill="none" stroke="var(--accent)" stroke-width="1"/>';
@@ -340,12 +351,14 @@ function spatialMap(s,list,k){
  html+='</svg>';
  if(tangentInPoint)html+='<button type="button" class="btn tiny" data-camera-tension-handle="'+k.at+'" data-camera-tension-side="in" data-camera-handle-free="'+(tangentIn&&tangentIn.free?'true':'false')+'" aria-label="Editar entrada de curva" title="'+(tangentIn&&tangentIn.free?'Dirección libre · arrastrá en el mapa':'Automática · arrastrá para ajustar tensión')+'" style="position:absolute;left:'+tangentInPoint.x+'%;top:'+tangentInPoint.y+'%;transform:translate(-50%,-50%);touch-action:none;padding:1px 4px;border-radius:50%;z-index:19">◁</button>';
  if(tangentOutPoint)html+='<button type="button" class="btn tiny" data-camera-tension-handle="'+k.at+'" data-camera-tension-side="out" data-camera-handle-free="'+(tangentOut&&tangentOut.free?'true':'false')+'" aria-label="Editar salida de curva" title="'+(tangentOut&&tangentOut.free?'Dirección libre · arrastrá en el mapa':'Automática · arrastrá para ajustar tensión')+'" style="position:absolute;left:'+tangentOutPoint.x+'%;top:'+tangentOutPoint.y+'%;transform:translate(-50%,-50%);touch-action:none;padding:1px 4px;border-radius:50%;z-index:19">▷</button>';
+ if(lk&&!lk.targetId&&lookTangentInPoint)html+='<button type="button" class="btn tiny" data-camera-look-tension-handle="'+lk.at+'" data-camera-look-tension-side="in" data-camera-look-handle-free="'+(lookTangentIn&&lookTangentIn.free?'true':'false')+'" aria-label="Editar entrada del objetivo" title="'+(lookTangentIn&&lookTangentIn.free?'Dirección libre del objetivo':'Tensión automática del objetivo')+'" style="position:absolute;left:'+lookTangentInPoint.x+'%;top:'+lookTangentInPoint.y+'%;transform:translate(-50%,-50%);touch-action:none;padding:1px 4px;border-radius:50%;z-index:22">◁</button>';
+ if(lk&&!lk.targetId&&lookTangentOutPoint)html+='<button type="button" class="btn tiny" data-camera-look-tension-handle="'+lk.at+'" data-camera-look-tension-side="out" data-camera-look-handle-free="'+(lookTangentOut&&lookTangentOut.free?'true':'false')+'" aria-label="Editar salida del objetivo" title="'+(lookTangentOut&&lookTangentOut.free?'Dirección libre del objetivo':'Tensión automática del objetivo')+'" style="position:absolute;left:'+lookTangentOutPoint.x+'%;top:'+lookTangentOutPoint.y+'%;transform:translate(-50%,-50%);touch-action:none;padding:1px 4px;border-radius:50%;z-index:22">▷</button>';
  html+='<button type="button" class="btn tiny" data-camera-map-point="'+k.at+'" aria-label="Mover encuadre '+k.at+'% en el mapa" style="position:absolute;left:'+point.x+'%;top:'+point.y+'%;transform:translate(-50%,-50%);touch-action:none;padding:3px;outline:2px solid var(--accent);z-index:20">◆</button>';
  if(lk&&lookKeyPoint)html+='<button type="button" class="btn tiny" data-camera-look-map-point="'+lk.at+'" aria-label="'+(lk.targetId?'Objetivo vinculado a un elemento':'Mover objetivo de mirada '+lk.at+'% en el mapa')+'"'+(lk.targetId?' disabled title="Desvinculá el elemento para mover este punto manualmente."':'')+' style="position:absolute;left:'+lookKeyPoint.x+'%;top:'+lookKeyPoint.y+'%;transform:translate(-50%,-50%);touch-action:none;padding:2px 5px;outline:2px dashed var(--accent);z-index:21">●</button>';
  html+='</div>';
  if(s.sdCameraResponsive)html+='<p class="hint gh">El mapa muestra el recorrido con el ancho de referencia.</p>';
  html+='<p class="hint gh" data-camera-position-label>'+mapLabel(current,progress(s))+'</p>';
- html+='<p class="hint gh">◆ encuadre seleccionado · ○ posición actual'+(tangentInPoint||tangentOutPoint?' · ◁ entrada / ▷ salida':'')+(cfg&&cfg.orientationMode==='lookAt'?' · ● objetivo seleccionado · línea punteada: recorrido de mirada':'')+'. Clic cerca de un punto: seleccionar · Doble clic línea normal: agregar ◆ · línea punteada: agregar ● · Arrastrá ◆ o ● · Arrastrá ◯: ajustar curva · Shift + arrastre: bloquear al eje dominante. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Flechas: 25 px; Shift + flecha: 100 px. Escape cancela. Escala: ±'+Math.round(spec.range)+' px.</p></details>';
+ html+='<p class="hint gh">◆ encuadre seleccionado · ○ posición actual'+(tangentInPoint||tangentOutPoint?' · ◁ entrada / ▷ salida':'')+(cfg&&cfg.orientationMode==='lookAt'?' · ● objetivo seleccionado · línea punteada: recorrido de mirada'+(lookTangentInPoint||lookTangentOutPoint?' · ◁/▷ del ●: curva de mirada':''):'')+'. Clic cerca de un punto: seleccionar · Doble clic línea normal: agregar ◆ · línea punteada: agregar ● · Arrastrá ◆ o ● · Arrastrá ◯: ajustar curva · Shift + arrastre: bloquear al eje dominante. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Flechas: 25 px; Shift + flecha: 100 px. Escape cancela. Escala: ±'+Math.round(spec.range)+' px.</p></details>';
  return html;
 }
 C.panel=function(s){
@@ -372,6 +385,21 @@ C.panel=function(s){
    function lookField(label,key,value,min,max,step){return cRow(label,'<input class="cnum" type="number" aria-label="'+label+'" data-camera-look-field="'+key+'" data-camera-look-at="'+lk.at+'" value="'+value+'" min="'+min+'" max="'+max+'" step="'+step+'">');}
    html+=lookField('Momento objetivo (%)','at',lk.at,0,100,.1);
    if(!lk.targetId)['x','y','z'].forEach(function(axis){html+=lookField('Objetivo '+axis.toUpperCase(),axis,lk[axis],-4000,4000,25);});
+   var lookIndex=lookList.findIndex(function(f){return f.at===lk.at;}),lookInFree=C.handleFree(lk,'in'),lookOutFree=C.handleFree(lk,'out');
+   function lookModeRow(label,side,free){return cRow(label,'<select class="csel" data-camera-look-handle-mode data-camera-look-handle-side="'+side+'" data-camera-look-at="'+lk.at+'"><option value="auto"'+(free?'':' selected')+'>Automática</option><option value="free"'+(free?' selected':'')+'>Libre</option></select>');}
+   function lookVectorRows(side){var p=side==='in'?'curveIn':'curveOut',name=side==='in'?'Entrada':'Salida',out='';['x','y','z'].forEach(function(axis){var prop=p+'D'+axis.toUpperCase();out+=cRow(name+' libre '+axis.toUpperCase()+' (px)','<input class="cnum" type="number" data-camera-look-handle-vector data-camera-look-handle-side="'+side+'" data-camera-look-handle-axis="'+axis+'" data-camera-look-at="'+lk.at+'" value="'+(+lk[prop]||0)+'" min="-4000" max="4000" step="25">');});return out;}
+   if(s.sdCameraLookPathMode==='smooth'&&!lk.targetId&&lookIndex>0){
+    var lookPrev=lookList[lookIndex-1];html+=lookModeRow('Dirección de entrada del objetivo','in',lookInFree);
+    html+=cRow('Entrada del objetivo (%)','<input class="cnum" type="number" data-camera-look-incoming-tension data-camera-look-at="'+lk.at+'" value="'+(lookPrev.tension===undefined?0:lookPrev.tension)+'" min="-100" max="100" step="5"'+(lookInFree?' disabled':'')+'>');
+    if(lookInFree)html+=lookVectorRows('in');
+   }
+   if(s.sdCameraLookPathMode==='smooth'&&!lk.targetId&&lookIndex>=0&&lookIndex<lookList.length-1){
+    html+=lookModeRow('Dirección de salida del objetivo','out',lookOutFree);
+    html+=cRow('Salida del objetivo (%)','<input class="cnum" type="number" data-camera-look-field="tension" data-camera-look-at="'+lk.at+'" value="'+(lk.tension===undefined?0:lk.tension)+'" min="-100" max="100" step="5"'+(lookOutFree?' disabled':'')+'>');
+    if(lookOutFree)html+=lookVectorRows('out');
+   }
+   if(s.sdCameraLookPathMode==='smooth'&&lk.targetId)html+='<p class="hint gh">Los objetivos vinculados a elementos mantienen tangentes automáticas para seguir el movimiento del elemento sin offsets ambiguos. Elegí Punto XYZ para liberar sus handles.</p>';
+   else if(s.sdCameraLookPathMode==='smooth'&&(lookIndex>0||lookIndex<lookList.length-1))html+='<p class="hint gh">Los handles del ● son independientes de los del ◆. Automática usa Catmull-Rom; Libre permite diseñar la trayectoria del objetivo en X/Y/Z.</p>';
    html+=cRow('Movimiento del objetivo','<select class="csel" data-camera-look-field="ease" data-camera-look-at="'+lk.at+'">'+[['linear','Directo'],['smooth','Suave'],['cinematic','Cinemático'],['ease-in','Acelerar'],['ease-out','Frenar'],['ease-in-out','Acelerar y frenar']].map(function(e){return '<option value="'+e[0]+'"'+((lk.ease||s.sdEase||'cinematic')===e[0]?' selected':'')+'>'+e[1]+'</option>';}).join('')+'</select>');
    html+='<button type="button" class="btn tiny" data-camera-look-delete="'+lk.at+'"'+(lookList.length<=1?' disabled':'')+'>Eliminar objetivo</button>';
   }else html+='<button type="button" class="btn tiny" data-camera-look-init>Crear objetivos desde los ángulos actuales</button>';
@@ -561,6 +589,47 @@ function tensionKey(ev,button){
  if(ev.key==='Home')next=0;else next=current+((ev.key==='ArrowRight'||ev.key==='ArrowUp')?1:-1)*(ev.shiftKey?20:5);
  if(tensionCommit(s,at,next,side)){var n=document.getElementById('pane').querySelector('[data-camera-tension-handle][data-camera-tension-side="'+side+'"]');if(n)n.focus();}
 }
+function lookTensionCommit(s,at,value,side){
+ if(sec()!==s||!C.config(s))return false;side=side==='in'?'in':'out';
+ var list=lookKeys(s),i=list.findIndex(function(k){return k.at===at;}),owner=side==='in'?i-1:i,next=C.curveTension(value);if(i<0||owner<0||owner>=list.length-1)return false;
+ var k=list[owner],current=k.tension===undefined?0:C.curveTension(k.tension);if(current===next)return false;snapshot();k.tension=next;persistLook(s,list,at);return true;
+}
+function lookFreeHandleCommit(s,at,side,point){
+ if(sec()!==s||!C.config(s))return false;var list=lookKeys(s),key=list.find(function(k){return k.at===at;});if(!key||key.targetId)return false;
+ var before=C.lookTangentHandle(list,at,side),next=C.setLookFreeHandle(list,at,side,point),after=C.lookTangentHandle(next,at,side);
+ if(!before||!after||Math.hypot(before.x-after.x,before.y-after.y,before.z-after.z)<.0001)return false;snapshot();persistLook(s,next,at);return true;
+}
+function lookFreeHandleDrag(ev,button){
+ var s=sec(),cfg=C.config(s);if(!cfg||cfg.orientationMode!=='lookAt'||cfg.lookPathMode!=='smooth')return;
+ var map=button.closest('[data-camera-map]'),r=map&&map.getBoundingClientRect(),list=lookKeys(s),at=+button.dataset.cameraLookTensionHandle,side=button.dataset.cameraLookTensionSide==='in'?'in':'out',key=list.find(function(k){return k.at===at;}),original=C.lookTangentHandle(list,at,side);
+ if(!map||!r.width||!r.height||!key||key.targetId||!original||!original.free)return;
+ var spec={range:+map.dataset.range||500,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1},next=original,moved=false,done=false;
+ ev.preventDefault();ev.stopPropagation();button.focus();button.setPointerCapture(ev.pointerId);
+ function move(e){if(e.pointerId!==ev.pointerId)return;var rawX=e.clientX-ev.clientX,rawY=e.clientY-ev.clientY;if(Math.hypot(rawX,rawY)>=3)moved=true;if(e.shiftKey){if(Math.abs(rawX)>=Math.abs(rawY))rawY=0;else rawX=0;}var cx=ev.clientX+rawX,cy=ev.clientY+rawY,nx=(cx-r.left)/r.width,ny=(cy-r.top)/r.height,probe={x:(nx*2-1)*spec.range,y:original.y,z:original.z};probe[spec.axis]=((ny*2-1)*spec.range)/spec.sign;next=probe;mapDraw(map,keys(s),spec,s,C.setLookFreeHandle(list,at,side,next));}
+ function finish(e,cancel){if(done||e.pointerId!=null&&e.pointerId!==ev.pointerId)return;done=true;if(!cancel&&e.clientX!=null)move(e);button.removeEventListener('pointermove',move);button.removeEventListener('pointerup',up);button.removeEventListener('pointercancel',abort);button.removeEventListener('lostpointercapture',abort);button.removeEventListener('keydown',keyDown);if(button.hasPointerCapture(ev.pointerId))button.releasePointerCapture(ev.pointerId);if(cancel||!moved||!lookFreeHandleCommit(s,at,side,next))renderPane();}
+ function up(e){finish(e,false);}function abort(e){finish(e,true);}function keyDown(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();finish(e,true);}}
+ button.addEventListener('pointermove',move);button.addEventListener('pointerup',up);button.addEventListener('pointercancel',abort);button.addEventListener('lostpointercapture',abort);button.addEventListener('keydown',keyDown);
+}
+function lookFreeHandleKey(ev,button){
+ if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].indexOf(ev.key)<0)return;var s=sec(),list=lookKeys(s),at=+button.dataset.cameraLookTensionHandle,side=button.dataset.cameraLookTensionSide==='in'?'in':'out',map=button.closest('[data-camera-map]'),h=C.lookTangentHandle(list,at,side),key=list.find(function(k){return k.at===at;});if(!map||!h||!h.free||!key||key.targetId)return;
+ ev.preventDefault();ev.stopPropagation();var spec={axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1,range:+map.dataset.range||500},amount=ev.shiftKey?100:25,unit=amount/(spec.range*2),dx=ev.key==='ArrowRight'?unit:ev.key==='ArrowLeft'?-unit:0,dy=ev.key==='ArrowDown'?unit:ev.key==='ArrowUp'?-unit:0,next=C.moveSpatial(h,spec,dx,dy);
+ if(lookFreeHandleCommit(s,at,side,next)){var n=document.getElementById('pane').querySelector('[data-camera-look-tension-handle][data-camera-look-tension-side="'+side+'"]');if(n)n.focus();}
+}
+function lookTensionDrag(ev,button){
+ var s=sec(),cfg=C.config(s);if(!cfg||cfg.orientationMode!=='lookAt'||cfg.lookPathMode!=='smooth')return;
+ var map=button.closest('[data-camera-map]'),r=map&&map.getBoundingClientRect(),list=lookKeys(s),at=+button.dataset.cameraLookTensionHandle,side=button.dataset.cameraLookTensionSide==='in'?'in':'out',i=list.findIndex(function(k){return k.at===at;}),owner=side==='in'?i-1:i,key=list[i],ownerKey=list[owner];
+ if(!map||!r.width||!r.height||!key||key.targetId||!ownerKey||!C.lookTangentHandle(list,at,side))return;
+ var spec={range:+map.dataset.range||500,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1},original=ownerKey.tension===undefined?0:C.curveTension(ownerKey.tension),next=original,moved=false,done=false;
+ ev.preventDefault();ev.stopPropagation();button.focus();button.setPointerCapture(ev.pointerId);
+ function move(e){if(e.pointerId!==ev.pointerId)return;if(Math.hypot(e.clientX-ev.clientX,e.clientY-ev.clientY)>=3)moved=true;var nx=(e.clientX-r.left)/r.width,ny=(e.clientY-r.top)/r.height,probe={x:(nx*2-1)*spec.range,y:key.y,z:key.z};probe[spec.axis]=((ny*2-1)*spec.range)/spec.sign;var value=C.lookTensionFromHandle(list,at,spec,probe,side);if(value===null)return;next=value;var temp=list.map(function(f,idx){return idx===owner?Object.assign({},f,{tension:next}):f;});mapDraw(map,keys(s),spec,s,temp);}
+ function finish(e,cancel){if(done||e.pointerId!=null&&e.pointerId!==ev.pointerId)return;done=true;if(!cancel&&e.clientX!=null)move(e);button.removeEventListener('pointermove',move);button.removeEventListener('pointerup',up);button.removeEventListener('pointercancel',abort);button.removeEventListener('lostpointercapture',abort);button.removeEventListener('keydown',keyDown);if(button.hasPointerCapture(ev.pointerId))button.releasePointerCapture(ev.pointerId);if(cancel||!moved||!lookTensionCommit(s,at,next,side))renderPane();}
+ function up(e){finish(e,false);}function abort(e){finish(e,true);}function keyDown(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();finish(e,true);}}
+ button.addEventListener('pointermove',move);button.addEventListener('pointerup',up);button.addEventListener('pointercancel',abort);button.addEventListener('lostpointercapture',abort);button.addEventListener('keydown',keyDown);
+}
+function lookTensionKey(ev,button){
+ if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home'].indexOf(ev.key)<0)return;var s=sec(),list=lookKeys(s),at=+button.dataset.cameraLookTensionHandle,side=button.dataset.cameraLookTensionSide==='in'?'in':'out',i=list.findIndex(function(k){return k.at===at;}),owner=side==='in'?i-1:i,k=list[owner];if(!k)return;
+ ev.preventDefault();ev.stopPropagation();var current=k.tension===undefined?0:C.curveTension(k.tension),next=ev.key==='Home'?0:current+((ev.key==='ArrowRight'||ev.key==='ArrowUp')?1:-1)*(ev.shiftKey?20:5);if(lookTensionCommit(s,at,next,side)){var n=document.getElementById('pane').querySelector('[data-camera-look-tension-handle][data-camera-look-tension-side="'+side+'"]');if(n)n.focus();}
+}
 function lookSpatialCommit(s,original,next){
  if(sec()!==s||!C.config(s))return false;
  var list=lookKeys(s),i=list.findIndex(function(k){return k.at===original.at;});
@@ -629,12 +698,13 @@ if(pane){
   var map=ev.target.closest('[data-camera-map]');if(!map)return;
   var lookPath=ev.target.closest('[data-camera-look-map-path-hit],[data-camera-look-map-path]');
   if(lookPath&&insertLookOnPath(sec(),map,ev.clientX,ev.clientY)){ev.preventDefault();ev.stopPropagation();return;}
-  if(ev.target.closest('[data-camera-map-point],[data-camera-look-map-point],[data-camera-tension-handle],[data-camera-map-dot],[data-camera-look-map-dot],[data-camera-position],[data-camera-look-position]'))return;
+  if(ev.target.closest('[data-camera-map-point],[data-camera-look-map-point],[data-camera-tension-handle],[data-camera-look-tension-handle],[data-camera-map-dot],[data-camera-look-map-dot],[data-camera-position],[data-camera-look-position]'))return;
   if(insertOnPath(sec(),map,ev.clientX,ev.clientY)){ev.preventDefault();ev.stopPropagation();}
  });
  pane.addEventListener('pointerdown',function(ev){
   if(ev.button!==0)return;
   var tensionHandle=ev.target.closest('[data-camera-tension-handle]');if(tensionHandle){if(tensionHandle.dataset.cameraHandleFree==='true')freeHandleDrag(ev,tensionHandle);else tensionDrag(ev,tensionHandle);return;}
+  var lookCurveHandle=ev.target.closest('[data-camera-look-tension-handle]');if(lookCurveHandle){if(lookCurveHandle.dataset.cameraLookHandleFree==='true')lookFreeHandleDrag(ev,lookCurveHandle);else lookTensionDrag(ev,lookCurveHandle);return;}
   var lookSpatial=ev.target.closest('[data-camera-look-map-point]');if(lookSpatial){lookSpatialDrag(ev,lookSpatial);return;}
   var spatial=ev.target.closest('[data-camera-map-point]');if(spatial){spatialDrag(ev,spatial);return;}
   var mapDot=ev.target.closest('[data-camera-look-map-dot],[data-camera-map-dot]'),spatialMapNode=ev.target.closest('[data-camera-map]');
@@ -661,6 +731,7 @@ if(pane){
  });
  pane.addEventListener('keydown',function(ev){
   var tensionHandle=ev.target.closest('[data-camera-tension-handle]');if(tensionHandle){if(tensionHandle.dataset.cameraHandleFree==='true')freeHandleKey(ev,tensionHandle);else tensionKey(ev,tensionHandle);return;}
+  var lookCurveHandle=ev.target.closest('[data-camera-look-tension-handle]');if(lookCurveHandle){if(lookCurveHandle.dataset.cameraLookHandleFree==='true')lookFreeHandleKey(ev,lookCurveHandle);else lookTensionKey(ev,lookCurveHandle);return;}
   var lookSpatial=ev.target.closest('[data-camera-look-map-point]');if(lookSpatial){lookSpatialKey(ev,lookSpatial);return;}
   var spatial=ev.target.closest('[data-camera-map-point]');if(spatial){spatialKey(ev,spatial);return;}
   var button=ev.target.closest('[data-camera-jump]');if(!button||['ArrowLeft','ArrowRight'].indexOf(ev.key)<0)return;
@@ -736,10 +807,22 @@ if(pane){
    else delete tk.targetId;
    persistLook(ts,tl,tk.at);return;
   }
+  if(input.dataset.cameraLookHandleMode!==undefined){
+   var lhs=sec(),lhList=lookKeys(lhs),lhAt=+input.dataset.cameraLookAt,lhSide=input.dataset.cameraLookHandleSide==='in'?'in':'out',lhKey=lhList.find(function(k){return k.at===lhAt;}),lhFree=input.value==='free';
+   if(!lhKey||lhKey.targetId){renderPane();return;}if(C.handleFree(lhKey,lhSide)===lhFree)return;var lhNext=C.setLookHandleMode(lhList,lhAt,lhSide,lhFree),lhChanged=lhNext.find(function(k){return k.at===lhAt;});if(!lhChanged||C.handleFree(lhChanged,lhSide)!==lhFree){renderPane();return;}snapshot();persistLook(lhs,lhNext,lhAt);return;
+  }
+  if(input.dataset.cameraLookHandleVector!==undefined){
+   var lvs=sec(),lvList=lookKeys(lvs),lvAt=+input.dataset.cameraLookAt,lvSide=input.dataset.cameraLookHandleSide==='in'?'in':'out',lvAxis=['x','y','z'].indexOf(input.dataset.cameraLookHandleAxis)>=0?input.dataset.cameraLookHandleAxis:null,lvKey=lvList.find(function(k){return k.at===lvAt;});
+   if(!lvKey||lvKey.targetId||!lvAxis||!C.handleFree(lvKey,lvSide)){renderPane();return;}var lv=+input.value;if(!Number.isFinite(lv)||input.value===''){renderPane();return;}lv=Math.max(-4000,Math.min(4000,lv));var lp=lvSide==='in'?'curveIn':'curveOut',lprop=lp+'D'+lvAxis.toUpperCase(),lcurrent=+lvKey[lprop]||0;if(lcurrent===lv){input.value=lv;return;}var lh=C.lookTangentHandle(lvList,lvAt,lvSide);if(!lh){renderPane();return;}var lpoint={x:lh.x,y:lh.y,z:lh.z};lpoint[lvAxis]=lvKey[lvAxis]+lv;var lvNext=C.setLookFreeHandle(lvList,lvAt,lvSide,lpoint);snapshot();persistLook(lvs,lvNext,lvAt);return;
+  }
+  if(input.dataset.cameraLookIncomingTension!==undefined){
+   var lis=sec(),liList=lookKeys(lis),liAt=+input.dataset.cameraLookAt,liIndex=liList.findIndex(function(k){return k.at===liAt;});if(liIndex<=0){renderPane();return;}var liValue=+input.value;if(!Number.isFinite(liValue)||input.value===''){renderPane();return;}liValue=C.curveTension(liValue);var liOwner=liList[liIndex-1],liCurrent=liOwner.tension===undefined?0:C.curveTension(liOwner.tension);if(liCurrent===liValue){renderPane();return;}snapshot();liOwner.tension=liValue;persistLook(lis,liList,liAt);return;
+  }
   if(input.dataset.cameraLookField!==undefined){
    var lookScene=sec(),lookList=lookKeys(lookScene),lk=lookList.find(function(k){return k.at===+input.dataset.cameraLookAt;}),lf=input.dataset.cameraLookField;if(!lk)return;
    var lv=lf==='ease'?input.value:+input.value;if(lf!=='ease'&&(!Number.isFinite(lv)||input.value==='')){renderPane();return;}
    if(lf==='at'){lv=Math.round(Math.max(0,Math.min(100,lv))*10)/10;if(lookList.some(function(f){return f!==lk&&f.at===lv;})){toast('Ya existe un objetivo en ese momento.');renderPane();return;}}
+   if(lf==='tension')lv=C.curveTension(lv);
    if(lk[lf]===lv)return;snapshot();lk[lf]=lv;persistLook(lookScene,lookList,lk.at);return;
   }
   if(input.dataset.cameraHoldDuration!==undefined){if(Number.isFinite(+input.value)&&+input.value>0)holdDurations[sec().id]=Math.min(100,+input.value);else{input.value=holdDurations[sec().id]||10;toast('Ingresá una duración mayor que cero.');}return;}
