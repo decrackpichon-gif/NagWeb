@@ -367,11 +367,27 @@ assert.ok(Math.hypot(curvedMid.x-linearMid.x,curvedMid.y-linearMid.y,curvedMid.z
 assert.ok(curvedMid.rotateY>10&&curvedMid.rotateY<20,'Angles keep the existing keyframe interpolation');
 const curveSamples=C.pathSamples(curvedConfig,M,'linear');
 assert.ok(curveSamples.length>curvedConfig.frames.length);assert.equal(curveSamples[0].x,0);assert.equal(curveSamples.at(-1).x,300);
+const explicitZero=C.config({...curvedScene,sdCameraFrames:curvedScene.sdCameraFrames.map((k,i)=>i===1?{...k,tension:0}:k)});
+assert.deepEqual(JSON.parse(JSON.stringify(C.pose(explicitZero,.4,M,'linear',false))),JSON.parse(JSON.stringify(C.pose(curvedConfig,.4,M,'linear',false))),'0% tension preserves the existing Catmull-Rom curve exactly');
+const tightConfig=C.config({...curvedScene,sdCameraFrames:curvedScene.sdCameraFrames.map((k,i)=>i===1?{...k,tension:100}:k)});
+const looseConfig=C.config({...curvedScene,sdCameraFrames:curvedScene.sdCameraFrames.map((k,i)=>i===1?{...k,tension:-100}:k)});
+const defaultAt40=C.pose(curvedConfig,.4,M,'linear',false),tightAt40=C.pose(tightConfig,.4,M,'linear',false),looseAt40=C.pose(looseConfig,.4,M,'linear',false);
+assert.ok(tightAt40.x<defaultAt40.x&&defaultAt40.x<looseAt40.x,'Per-segment tension must tighten/loosen the spatial tangent without changing key positions');
+assert.ok(Math.abs(C.pose(tightConfig,.33,M,'linear',false).x-100)<1e-9&&Math.abs(C.pose(looseConfig,.66,M,'linear',false).x-200)<1e-9);
+assert.equal(C.normalize([{at:0,x:0,tension:250},{at:100,x:100,tension:-250}])[0].tension,100);
+assert.equal(C.normalize([{at:0,x:0,tension:250},{at:100,x:100,tension:-250}])[1].tension,-100);
+assert.equal(C.curveTension('bad'),0);
 const holdCurve={...curvedConfig,frames:C.normalize([{at:0,x:50,y:25,z:-10,ease:'linear'},{at:20,x:50,y:25,z:-10,ease:'linear'},{at:100,x:300,y:0,z:0}])};
 const smoothHold=C.pose(holdCurve,.1,M,'linear',false);
 assert.equal(smoothHold.x,50);assert.equal(smoothHold.y,25);assert.equal(smoothHold.z,-10);
 assert.equal(C.pose(curvedConfig,.495,M,'linear',true).x,0,'Reduced motion still neutralizes the camera');
-console.log('Camera smooth path: exact keys, curved XYZ, preserved angle timing, real holds, samples and reduced motion OK');
+editable={...curvedScene,id:'curve-tension-ui'};selected[editable.id]=33;
+const tensionHistory=history.length;
+listeners.change({target:{dataset:{cameraField:'tension',cameraAt:'33'},matches(){return true;},value:'80'}});
+assert.equal(editable.sdCameraFrames.find(k=>k.at===33).tension,80);assert.equal(history.length,tensionHistory+1);
+listeners.change({target:{dataset:{cameraField:'tension',cameraAt:'33'},matches(){return true;},value:'500'}});
+assert.equal(editable.sdCameraFrames.find(k=>k.at===33).tension,100,'Editor persistence clamps tension through camera normalization');
+console.log('Camera smooth path: exact keys, per-segment tension, compatibility, editor history, holds, samples and reduced motion OK');
 
 
 const lookScene={...scene,sdCameraOrientationMode:'lookAt',sdCameraLookPathMode:'linear',sdCameraFrames:[

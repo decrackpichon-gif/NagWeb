@@ -4,6 +4,7 @@
 function createCamera(){
  function number(v){return Number.isFinite(+v)?Math.max(-4000,Math.min(4000,+v)):0;}
  function angle(v){return Number.isFinite(+v)?Math.max(-3600,Math.min(3600,+v)):0;}
+ function curveTension(v){return Number.isFinite(+v)?Math.max(-100,Math.min(100,+v)):0;}
  function targetEligible(e,s){return !!e&&!!s&&s.layout==='free'&&layerEligible(e,s)&&Number.isFinite(+e.x)&&Number.isFinite(+e.y);}
  function targetMotion(e){return {id:e.id,sdKeyframesEnabled:e.sdKeyframesEnabled,sdKeyframes:Array.isArray(e.sdKeyframes)?e.sdKeyframes:[],sdStart:e.sdStart,sdEnd:e.sdEnd,sdSpan:e.sdSpan,sdEnter:e.sdEnter,sdExit:e.sdExit,sdMoveX:e.sdMoveX,sdMoveY:e.sdMoveY,sdRotate:e.sdRotate,sdScale:e.sdScale};}
  function targetConfig(e){return {id:String(e.id),x:+e.x,y:+e.y,z:number(e.sdCameraDepth),motion:targetMotion(e)};}
@@ -21,6 +22,7 @@ function createCamera(){
   var out=[];
   (Array.isArray(input)?input:[]).filter(function(k){return k&&Number.isFinite(+k.at);}).slice(0,128).sort(function(a,b){return +a.at-+b.at;}).forEach(function(k){
    var frame={at:Math.round(Math.max(0,Math.min(100,+k.at))*10)/10,x:number(k.x),y:number(k.y),z:number(k.z),rotateX:angle(k.rotateX),rotateY:angle(k.rotateY),rotate:angle(k.rotate)};
+   if(k.tension!==undefined&&k.tension!==null&&k.tension!=='')frame.tension=curveTension(k.tension);
    if(['linear','smooth','cinematic','ease-in','ease-out','ease-in-out'].indexOf(k.ease)>=0)frame.ease=k.ease;
    if(out.length&&out[out.length-1].at===frame.at)out.pop();out.push(frame);
   });return out;
@@ -43,9 +45,11 @@ function createCamera(){
   (c.targets||[]).forEach(function(t){if(t&&t.id)targetTracks[t.id]=model.compile(t.motion||{id:t.id});});
   return {keyframes:model.normalize(list.map(function(k){return Object.assign({},k,{ease:k.ease||ease||'cinematic'});} )),targetTracks:targetTracks};
  }
- function catmull(a,b,c,d,t){
-  var t2=t*t,t3=t2*t;
-  return .5*((2*b)+(-a+c)*t+(2*a-5*b+4*c-d)*t2+(-a+3*b-3*c+d)*t3);
+ function catmull(a,b,c,d,t,tension){
+  var t2=t*t,t3=t2*t,scale=1-curveTension(tension)/100;
+  var m1=(c-a)*.5*scale,m2=(d-b)*.5*scale;
+  var h00=2*t3-3*t2+1,h10=t3-2*t2+t,h01=-2*t3+3*t2,h11=t3-t2;
+  return h00*b+h10*m1+h01*c+h11*m2;
  }
  function pointAt(list,p,model,ease,mode){
   if(!list||!list.length)return null;
@@ -57,8 +61,8 @@ function createCamera(){
   if(b.x===cc.x&&b.y===cc.y&&b.z===cc.z)return {x:b.x,y:b.y,z:b.z};
   t=model&&typeof model.ease==='function'?model.ease(t,b.ease||ease||'cinematic'):Math.max(0,Math.min(1,t));
   if(mode==='smooth'&&list.length>=3){
-   var a=list[Math.max(0,i-1)],d=list[Math.min(list.length-1,i+2)];
-   return {x:number(catmull(a.x,b.x,cc.x,d.x,t)),y:number(catmull(a.y,b.y,cc.y,d.y,t)),z:number(catmull(a.z,b.z,cc.z,d.z,t))};
+   var a=list[Math.max(0,i-1)],d=list[Math.min(list.length-1,i+2)],segmentTension=b.tension===undefined?0:b.tension;
+   return {x:number(catmull(a.x,b.x,cc.x,d.x,t,segmentTension)),y:number(catmull(a.y,b.y,cc.y,d.y,t,segmentTension)),z:number(catmull(a.z,b.z,cc.z,d.z,t,segmentTension))};
   }
   return {x:number(b.x+(cc.x-b.x)*t),y:number(b.y+(cc.y-b.y)*t),z:number(b.z+(cc.z-b.z)*t)};
  }
@@ -188,7 +192,7 @@ function createCamera(){
   paint.contains=function(n){return inside(world,n);};
   return paint;
  }
- return {config:config,compile:compile,pose:pose,pathSamples:pathSamples,lookSamples:lookSamples,lookTarget:lookTarget,lookAngles:lookAngles,forwardTarget:forwardTarget,defaultLookFrames:defaultLookFrames,normalizeLook:normalizeLook,lookFrames:lookFrames,targetEligible:targetEligible,elementTarget:elementTarget,viewportScale:viewportScale,scalePose:scalePose,attach:attach,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial,copyFrame:copyFrame,holdFrame:holdFrame,preset:preset};
+ return {config:config,compile:compile,pose:pose,pathSamples:pathSamples,lookSamples:lookSamples,lookTarget:lookTarget,lookAngles:lookAngles,forwardTarget:forwardTarget,defaultLookFrames:defaultLookFrames,normalizeLook:normalizeLook,lookFrames:lookFrames,targetEligible:targetEligible,elementTarget:elementTarget,curveTension:curveTension,viewportScale:viewportScale,scalePose:scalePose,attach:attach,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial,copyFrame:copyFrame,holdFrame:holdFrame,preset:preset};
 }
 window.NAGWEB_CREATE_SCROLL_CAMERA=createCamera;
 window.NAGWEB_SCROLL_CAMERA=createCamera();
@@ -302,6 +306,11 @@ C.panel=function(s){
  html+=spatialMap(s,list,k);
  html+=field('Momento (%)','at',k.at,0,100,.1);
  ['x','y','z'].forEach(function(axis){html+=field('Cámara '+axis.toUpperCase(),axis,k[axis],-4000,4000,25);});
+ var keyIndex=list.findIndex(function(f){return f.at===k.at;});
+ if(s.sdCameraPathMode==='smooth'&&keyIndex>=0&&keyIndex<list.length-1){
+  html+=field('Tensión hacia el siguiente (%)','tension',k.tension===undefined?0:k.tension,-100,100,5);
+  html+='<p class="hint gh">0% conserva la curva actual · positivo la ajusta al tramo · negativo la vuelve más suelta. Solo cambia la forma XYZ hacia el siguiente ◆.</p>';
+ }
  [['rotateX','Inclinar arriba / abajo (°)'],['rotateY','Mirar izquierda / derecha (°)'],['rotate','Girar el horizonte (°)']].forEach(function(axis){html+=field(axis[1],axis[0],k[axis[0]],-3600,3600,5);});
  html+='<p class="hint gh">'+(s.sdCameraOrientationMode==='lookAt'?'Con “Mirar hacia”, estos ángulos de inclinación quedan guardados pero X/Y se calculan desde el objetivo. El giro del horizonte sí permanece activo.':'Los ángulos se recorren tal como los escribís: 0° → 360° da una vuelta completa.')+'</p>';
  html+=cRow('Movimiento hacia el siguiente','<select class="csel" aria-label="Movimiento de cámara" data-camera-field="ease" data-camera-at="'+k.at+'">'+[['linear','Directo'],['smooth','Suave'],['cinematic','Cinemático'],['ease-in','Acelerar'],['ease-out','Frenar'],['ease-in-out','Acelerar y frenar']].map(function(e){return '<option value="'+e[0]+'"'+((k.ease||s.sdEase||'cinematic')===e[0]?' selected':'')+'>'+e[1]+'</option>';}).join('')+'</select>');
