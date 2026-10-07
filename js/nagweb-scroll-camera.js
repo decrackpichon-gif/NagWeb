@@ -158,7 +158,8 @@ function createCamera(){
   var key=list[i],owner=tangentOwner(list,i,side),segmentStart=list[owner],segmentEnd=list[owner+1];
   if(segmentStart.x===segmentEnd.x&&segmentStart.y===segmentEnd.y&&segmentStart.z===segmentEnd.z)return null;
   var a=list[Math.max(0,owner-1)],d=list[Math.min(list.length-1,owner+2)],scale=1-curveTension(segmentStart.tension)/100;
-  var dx=(d.x-a.x)/6,dy=(d.y-a.y)/6,dz=(d.z-a.z)/6,sign=side==='in'?-1:1;
+  var vx=side==='in'?d.x-segmentStart.x:segmentEnd.x-a.x,vy=side==='in'?d.y-segmentStart.y:segmentEnd.y-a.y,vz=side==='in'?d.z-segmentStart.z:segmentEnd.z-a.z;
+  var dx=vx/6,dy=vy/6,dz=vz/6,sign=side==='in'?-1:1;
   if(Math.hypot(dx,dy,dz)<.000001)return null;
   return {at:key.at,ownerAt:segmentStart.at,side:side,x:number(key.x+dx*scale*sign),y:number(key.y+dy*scale*sign),z:number(key.z+dz*scale*sign),keyX:key.x,keyY:key.y,keyZ:key.z,scale:scale,tension:curveTension(segmentStart.tension)};
  }
@@ -169,7 +170,8 @@ function createCamera(){
   var owner=tangentOwner(list,i,side),key=list[i],start=list[owner],end=list[owner+1],axis=spec.axis==='y'?'y':'z';
   if(start.x===end.x&&start.y===end.y&&start.z===end.z)return null;
   var a=list[Math.max(0,owner-1)],d=list[Math.min(list.length-1,owner+2)],sign=side==='in'?-1:1;
-  var bx=(d.x-a.x)/6*sign,by=(d[axis]-a[axis])/6*sign,den=bx*bx+by*by;
+  var vx=side==='in'?d.x-start.x:end.x-a.x,vy=side==='in'?d[axis]-start[axis]:end[axis]-a[axis];
+  var bx=vx/6*sign,by=vy/6*sign,den=bx*bx+by*by;
   if(den<.000001)return null;
   var px=(+point.x||0)-key.x,py=(+point[axis]||0)-key[axis],scale=(px*bx+py*by)/den;
   scale=Math.max(0,Math.min(2,scale));
