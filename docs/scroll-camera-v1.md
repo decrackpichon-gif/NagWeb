@@ -302,3 +302,27 @@ mantiene unida al encuadre. En modo `Por tramos` no se muestra.
 Esta primera etapa es solo visual. La edición continúa mediante el campo de tensión;
 la siguiente etapa puede convertir el `◯` en handle arrastrable sin cambiar el
 modelo matemático.
+
+
+## Edición directa de la tangente
+La tangente `◯` del encuadre seleccionado ya es interactiva. Arrastrarla no crea
+otro punto XYZ: el movimiento del mouse se proyecta sobre la dirección matemática de
+la tangente y se convierte en un único valor de tensión del tramo entre -100 y +100.
+
+Acercar el handle al `◆` aumenta la tensión; alejarlo reduce la tensión y alarga la
+curva. El círculo continúa representando el control Hermite real, por lo que su
+posición coincide con la forma que usa preview y exportación.
+
+El gesto es transaccional. Mientras se arrastra se actualizan en vivo el handle, la
+línea de tangente, el valor numérico y la curva del mapa, pero el proyecto se guarda
+una sola vez al soltar. Cada gesto confirmado crea una sola entrada de Deshacer.
+Escape, pointer cancel y pérdida de captura restauran el valor original sin modificar
+el historial.
+
+El handle también acepta teclado: flechas ajustan 5 puntos de tensión, Shift + flecha
+20 puntos y Home restaura 0. En +100% la tangente coincide con el `◆`; el encuadre
+queda por encima en el orden visual, por lo que la posición de cámara sigue siendo
+arrastrable y la tensión puede liberarse desde el campo numérico o teclado.
+
+Las pruebas cubren la conversión handle → tensión, clamps, arrastre físico en Chromium,
+un único undo y cancelación con Escape.
