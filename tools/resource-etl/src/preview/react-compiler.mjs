@@ -651,6 +651,31 @@ async function readJson(filePath) {
   return JSON.parse(await readFile(filePath, "utf8"));
 }
 
+function inferRegistryAliasDependencies(resource) {
+  const dependencies = new Set();
+
+  for (const artifact of resource.artifacts || []) {
+    if (artifact.role !== "component" || typeof artifact.content !== "string") continue;
+
+    for (const match of artifact.content.matchAll(
+      /from\s+["']@\/(?:registry\/[^/]+\/ui|components\/ui)\/([^/"']+)["']/g
+    )) {
+      if (match[1]) dependencies.add(match[1]);
+    }
+  }
+
+  return [...dependencies];
+}
+
+function allLocalRegistryDependencies(resource) {
+  return [
+    ...new Set([
+      ...(resource.runtime?.registryDependencies || []),
+      ...inferRegistryAliasDependencies(resource)
+    ])
+  ];
+}
+
 function catalogDependencyCandidates(catalog, ownerResource, dependency) {
   const name = registryDependencyName(dependency);
   const ownerProvider = ownerResource.source?.provider;
@@ -714,12 +739,12 @@ async function resolveRegistryResources(rootDir, catalog, resource, cache) {
     visited.add(dependencyResource.id);
     resolved.push(dependencyResource);
 
-    for (const nested of dependencyResource.runtime?.registryDependencies || []) {
+    for (const nested of allLocalRegistryDependencies(dependencyResource)) {
       await visit(dependencyResource, nested);
     }
   }
 
-  for (const dependency of resource.runtime?.registryDependencies || []) {
+  for (const dependency of allLocalRegistryDependencies(resource)) {
     await visit(resource, dependency);
   }
 

@@ -114,6 +114,19 @@ jobs:
             }
           }
 
+          const dialog = audit.items.find(
+            (entry) => entry.resourceId === "shadcn:dialog"
+          );
+          if (!dialog || !dialog.ok) {
+            console.error("shadcn:dialog did not resolve its code-import dependency");
+            console.error(JSON.stringify(dialog, null, 2));
+            process.exit(1);
+          }
+          if (!dialog.registryResources.includes("shadcn:button")) {
+            console.error("Expected shadcn:button inferred from dialog.tsx import");
+            process.exit(1);
+          }
+
           console.log("Registry dependency resolution: OK");
           NODE
 
