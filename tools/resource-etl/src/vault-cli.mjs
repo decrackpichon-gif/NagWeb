@@ -1,9 +1,11 @@
 import path from "node:path";
 import { extractLucideIcons } from "./extractors/lucide.mjs";
 import { extractMagicUiComponents } from "./extractors/magicui.mjs";
+import { extractMotionPrimitives } from "./extractors/motion-primitives.mjs";
 import {
   transformLucideIcon,
-  transformMagicUiComponent
+  transformMagicUiComponent,
+  transformMotionPrimitive
 } from "./light-transformers.mjs";
 import {
   writeResourceToVault,
@@ -27,7 +29,7 @@ function parseArgs(argv) {
 }
 
 function parseSources(value) {
-  return String(value || "lucide,magicui")
+  return String(value || "lucide,magicui,motion-primitives")
     .split(",")
     .map((source) => source.trim().toLowerCase())
     .filter(Boolean);
@@ -55,6 +57,18 @@ async function collectSource(source, args) {
     const raw = await extractMagicUiComponents({ limit, all });
     return raw.items.map((item) =>
       transformMagicUiComponent({ registry: raw.registry, item })
+    );
+  }
+
+  if (source === "motion-primitives" || source === "motionprimitives") {
+    assertFullMirrorAllowed("motion-primitives");
+    const raw = await extractMotionPrimitives({ limit, all });
+    return raw.items.map((item) =>
+      transformMotionPrimitive({
+        repository: raw.repository,
+        commit: raw.commit,
+        item
+      })
     );
   }
 

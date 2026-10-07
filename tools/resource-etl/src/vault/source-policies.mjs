@@ -15,6 +15,14 @@ export const SOURCE_POLICIES = {
     noticeRequired: true,
     notes: "Registry component source may be mirrored. Preserve the MIT copyright and permission notice."
   },
+  "motion-primitives": {
+    mirrorMode: "full",
+    licenseId: "MIT",
+    licenseName: "MIT License",
+    licenseUrl: "https://github.com/ibelick/motion-primitives/blob/main/LICENCE.md",
+    noticeRequired: true,
+    notes: "Registry component source may be mirrored. Preserve the MIT copyright and permission notice."
+  },
   shadcn: {
     mirrorMode: "full",
     licenseId: "MIT",

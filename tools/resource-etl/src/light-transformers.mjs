@@ -391,3 +391,164 @@ export function transformLocalLottie({
     }
   };
 }
+
+
+export function transformMotionPrimitive({ repository, commit, item }) {
+  const fetchedAt = now();
+  const policy = getSourcePolicy("motion-primitives");
+  const raw = item.raw || {};
+  const files = raw.files || [];
+  const code = files.map((file) => file.content || "").join("\n");
+  const editableProps = inferEditablePropsFromTsx(code);
+  const deps = [
+    ...(raw.dependencies || []),
+    ...(raw.devDependencies || [])
+  ];
+
+  const artifacts = files.map((file, index) => ({
+    id: `component-${index + 1}`,
+    role: "component",
+    format: file.path?.split(".").pop()?.toLowerCase() || "tsx",
+    mimeType: "text/plain",
+    content: file.content || "",
+    sourcePath: item.path,
+    targetPath: file.path || `${raw.name || "component"}.tsx`
+  }));
+
+  if (raw.css || raw.cssVars || raw.tailwind) {
+    artifacts.push({
+      id: "style-metadata",
+      role: "metadata",
+      format: "json",
+      mimeType: "application/json",
+      content: JSON.stringify(
+        {
+          css: raw.css || {},
+          cssVars: raw.cssVars || {},
+          tailwind: raw.tailwind || {}
+        },
+        null,
+        2
+      ),
+      targetPath: "style-metadata.json"
+    });
+  }
+
+  const animated =
+    deps.includes("motion") ||
+    deps.includes("framer-motion") ||
+    /animat|motion|cursor|carousel|transition|trail|glow/i.test(
+      `${raw.name || ""} ${raw.description || ""}`
+    );
+
+  return {
+    schemaVersion: "1.0",
+    id: `motion-primitives:${raw.name}`,
+    slug: `motion-primitives-${raw.name}`,
+    name: raw.name,
+    title: titleFromSlug(raw.name),
+    description: raw.description || "",
+    family: "ui",
+    kind: "react-component",
+    source: {
+      provider: "motion-primitives",
+      externalId: raw.name,
+      sourceUrl: `https://motion-primitives.com/docs/${raw.name}`,
+      repositoryUrl: repository,
+      fetchedAt,
+      commit
+    },
+    license: {
+      id: policy.licenseId,
+      name: policy.licenseName,
+      url: policy.licenseUrl,
+      commercialUse: true,
+      modificationAllowed: true,
+      redistributionAllowed: true,
+      attributionRequired: true,
+      attributionText: "Motion Primitives · MIT License",
+      verified: true
+    },
+    taxonomy: {
+      categories: ["ui", "motion", "motion-primitives"],
+      tags: [
+        raw.name,
+        "react",
+        "motion",
+        "animation",
+        ...deps
+      ],
+      sourceCategories: [raw.type].filter(Boolean)
+    },
+    previews: [],
+    artifacts,
+    runtime: {
+      type: "react",
+      renderer: "nagweb-react",
+      entryArtifactId: artifacts[0]?.id,
+      dependencies: deps.map((name) => ({ name })),
+      registryDependencies: raw.registryDependencies || [],
+      cssVariables: raw.cssVars || {},
+      setup: {
+        tailwind: raw.tailwind || {},
+        css: raw.css || {}
+      }
+    },
+    editableProps,
+    compatibility: {
+      nagweb: {
+        supported: true,
+        renderer: "react",
+        tested: false
+      },
+      react: true,
+      tailwind: true
+    },
+    capabilities: [
+      "responsive",
+      "supports-children",
+      "interactive",
+      ...(animated ? ["animatable"] : [])
+    ],
+    technical: {
+      type: "ui",
+      framework: "react",
+      language: "tsx",
+      styling: ["tailwind"],
+      inferredEditableProps: editableProps.length,
+      registryPath: item.path
+    },
+    search: {
+      text: [
+        raw.name,
+        raw.description,
+        "motion primitives",
+        ...deps
+      ].filter(Boolean).join(" "),
+      keywords: [
+        raw.name,
+        "motion",
+        "animation",
+        "react",
+        ...deps
+      ]
+    },
+    ingestion: {
+      extractor: "motion-primitives",
+      extractorVersion: EXTRACTOR_VERSION,
+      fetchedAt,
+      transformedAt: now(),
+      sourceHash: hash(`${item.sha}:${code}`),
+      status: "validated",
+      warnings:
+        editableProps.length === 0
+          ? [
+              "No simple editable props were inferred automatically; manual enrichment may be needed."
+            ]
+          : []
+    },
+    sourceData: {
+      rawRegistryItem: raw
+    }
+  };
+}
