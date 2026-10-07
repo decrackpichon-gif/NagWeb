@@ -249,12 +249,16 @@ await rightButton.click();
 
 const inspectorGrip=await page.$('.nw-inspector-resize');
 if(!inspectorGrip) throw new Error('Inspector resize grip missing');
+// Dock transitions must settle before locating and measuring the resize grip.
+await page.waitForFunction(()=>Math.abs(document.querySelector('.col.inspector').getBoundingClientRect().width-window.NAGWEB_WORKSPACE16_API.rightWidth())<1,{timeout:3000});
 const inspectorBefore=await page.$eval('.col.inspector',n=>n.getBoundingClientRect().width);
 const gripBox=await inspectorGrip.boundingBox();
 await page.mouse.move(gripBox.x+gripBox.width/2,gripBox.y+80);
 await page.mouse.down();
 await page.mouse.move(gripBox.x-80,gripBox.y+80,{steps:5});
 await page.mouse.up();
+// State is saved on pointer-up; layout can still be inside its 220 ms transition.
+await page.waitForFunction(()=>{const w=window.NAGWEB_WORKSPACE16_API.state().rightWidth;return w&&Math.abs(document.querySelector('.col.inspector').getBoundingClientRect().width-w)<1;},{timeout:3000});
 const inspectorAfter=await page.$eval('.col.inspector',n=>n.getBoundingClientRect().width);
 if(inspectorAfter<inspectorBefore+50) throw new Error('Inspector did not resize wider: '+JSON.stringify({inspectorBefore,inspectorAfter}));
 const savedInspectorWidth=await page.evaluate(()=>window.NAGWEB_WORKSPACE16_API&&window.NAGWEB_WORKSPACE16_API.state().rightWidth);
