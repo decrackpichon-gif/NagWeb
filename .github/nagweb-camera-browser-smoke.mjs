@@ -149,7 +149,8 @@ export async function runCameraBrowserSmoke(page){
    });
    api.set(0);handle.update();
    const first={x:object.position.x,y:object.position.y,z:object.position.z,rect:handle.snapshot().anchorRect};
-   api.set(.5);handle.update();
+   api.set(.5);
+   // The Director now refreshes 3D anchors inside the same camera paint.
    const second={x:object.position.x,y:object.position.y,z:object.position.z,rect:handle.snapshot().anchorRect};
    handle.destroy();
    return{
