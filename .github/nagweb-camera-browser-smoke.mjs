@@ -95,10 +95,10 @@ export async function runCameraBrowserSmoke(page){
   assert.equal(vectorUi.count,3);
   const vectorPathBefore=await page.$eval('[data-camera-map-path]',n=>n.getAttribute('points'));
   await page.$eval('[data-camera-handle-vector][data-camera-handle-side="out"][data-camera-handle-axis="y"]',(n,v)=>{n.value=String(v);n.dispatchEvent(new Event('change',{bubbles:true}));},vectorUi.y+40);
-  await page.waitForFunction(v=>sec().sdCameraFrames.find(k=>k.at===50)?.curveOutDY===v,vectorUi.y+40);
+  await page.waitForFunction(v=>sec().sdCameraFrames.find(k=>k.at===50)?.curveOutDY===v,{},vectorUi.y+40);
   assert.notEqual(await page.$eval('[data-camera-map-path]',n=>n.getAttribute('points')),vectorPathBefore,'Numeric free-handle vector must redraw the curve');
   await page.$eval('[data-camera-handle-vector][data-camera-handle-side="out"][data-camera-handle-axis="y"]',(n,v)=>{n.value=String(v);n.dispatchEvent(new Event('change',{bubbles:true}));},vectorUi.y);
-  await page.waitForFunction(v=>sec().sdCameraFrames.find(k=>k.at===50)?.curveOutDY===v,vectorUi.y);
+  await page.waitForFunction(v=>sec().sdCameraFrames.find(k=>k.at===50)?.curveOutDY===v,{},vectorUi.y);
   await page.$eval('[data-camera-tension-handle][data-camera-tension-side="out"]',n=>n.scrollIntoView({block:'center'}));
   const freeDragStart=await page.evaluate(()=>{const h=document.querySelector('[data-camera-tension-handle][data-camera-tension-side="out"]').getBoundingClientRect();return{x:h.left+h.width/2,y:h.top+h.height/2,history:history.length,path:document.querySelector('[data-camera-map-path]').getAttribute('points')};});
   await page.mouse.move(freeDragStart.x,freeDragStart.y);await page.mouse.down();await page.mouse.move(freeDragStart.x,freeDragStart.y+35,{steps:5});await page.mouse.up();
