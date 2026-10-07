@@ -2,6 +2,7 @@ import path from "node:path";
 import { extractLucideIcons } from "./extractors/lucide.mjs";
 import { extractMagicUiComponents } from "./extractors/magicui.mjs";
 import { extractHyperUiBlocks } from "./extractors/hyperui.mjs";
+import { extractGlslNoise } from "./extractors/glsl-noise.mjs";
 import { extractMotionPrimitives } from "./extractors/motion-primitives.mjs";
 import { extractAnimXyzCore } from "./extractors/animxyz.mjs";
 import { extractCssShake } from "./extractors/csshake.mjs";
@@ -11,6 +12,7 @@ import {
   transformMagicUiComponent,
   transformHyperUiRuntime,
   transformHyperUiBlock,
+  transformGlslNoise,
   transformMotionPrimitive,
   transformAnimXyzCore,
   transformAnimXyzPreset,
@@ -44,7 +46,7 @@ function parseArgs(argv) {
 }
 
 function parseSources(value) {
-  return String(value || "lucide,magicui,motion-primitives,animxyz,threejs,hyperui,csshake")
+  return String(value || "lucide,magicui,motion-primitives,animxyz,threejs,hyperui,csshake,glsl-noise")
     .split(",")
     .map((source) => source.trim().toLowerCase())
     .filter(Boolean);
@@ -64,6 +66,18 @@ async function collectSource(source, args) {
     const raw = await extractLucideIcons({ limit, all });
     return raw.items.map((item) =>
       transformLucideIcon({ item, commit: raw.commit })
+    );
+  }
+
+  if (source === "glsl-noise" || source === "glslnoise") {
+    assertFullMirrorAllowed("glsl-noise");
+    const raw = await extractGlslNoise();
+    return raw.items.map((item) =>
+      transformGlslNoise({
+        repository: raw.repository,
+        commit: raw.commit,
+        item
+      })
     );
   }
 

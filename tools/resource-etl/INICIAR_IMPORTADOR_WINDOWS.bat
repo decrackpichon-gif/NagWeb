@@ -152,7 +152,7 @@ goto done
 cls
 echo Creando biblioteca liviana piloto de NagWeb...
 echo.
-node src\vault-cli.mjs --sources=lucide,magicui,motion-primitives,animxyz,threejs,hyperui,csshake --limit=10
+node src\vault-cli.mjs --sources=lucide,magicui,motion-primitives,animxyz,threejs,hyperui,csshake,glsl-noise --limit=10
 goto done
 
 :code_vault_all
@@ -160,7 +160,7 @@ cls
 echo Creando biblioteca liviana COMPLETA de NagWeb...
 echo Esto puede descargar miles de archivos de codigo muy livianos.
 echo.
-node src\vault-cli.mjs --sources=lucide,magicui,motion-primitives,animxyz,threejs,hyperui,csshake --all
+node src\vault-cli.mjs --sources=lucide,magicui,motion-primitives,animxyz,threejs,hyperui,csshake,glsl-noise --all
 goto done
 
 :done

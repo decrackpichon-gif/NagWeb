@@ -343,3 +343,16 @@ vault/
 SVG, HyperUI y los presets de movimiento pueden previsualizarse offline inmediatamente.
 
 Los componentes React como Magic UI y Motion Primitives quedan marcados como `react-compile-sandbox-required`. El código está completamente conservado, pero la preview viva necesita una etapa de compilación/sandbox que se implementará por separado.
+
+
+## GLSL + validación Windows
+
+El Code Vault también incorpora `hughsk/glsl-noise` (MIT):
+
+- Classic noise 2D/3D/4D;
+- Periodic noise 2D/3D/4D;
+- Simplex noise 2D/3D/4D.
+
+Cada archivo GLSL queda como recurso `shader` independiente y autosuficiente. Se conserva el símbolo exportado para poder integrarlo posteriormente en materiales, Shader Lab o escenas Three.js de NagWeb.
+
+La CI ahora tiene además un job `windows-latest`. Ejecuta el self-test y construye un Vault pequeño usando rutas reales de Windows, de modo que la compatibilidad básica con tu entorno no dependa de que ejecutes pruebas manuales en tu PC.

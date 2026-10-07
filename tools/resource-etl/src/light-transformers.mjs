@@ -1313,3 +1313,114 @@ export function transformCssShakeEffect({ raw, effect }) {
     }
   };
 }
+
+
+export function transformGlslNoise({ repository, commit, item }) {
+  const fetchedAt = now();
+  const policy = getSourcePolicy("glsl-noise");
+  const [familyName, dimensionFile] = item.path.split("/");
+  const dimension = dimensionFile.replace(".glsl", "");
+  const symbol = item.exportedSymbol || "noise";
+  const title = `${titleFromSlug(familyName)} Noise ${dimension.toUpperCase()}`;
+
+  return {
+    schemaVersion: "1.0",
+    id: `glsl-noise:${familyName}:${dimension}`,
+    slug: `glsl-noise-${familyName}-${dimension}`,
+    name: `${familyName}-${dimension}`,
+    title,
+    description: `${familyName} ${dimension.toUpperCase()} noise GLSL function for procedural shader composition.`,
+    family: "animation",
+    kind: "shader",
+    source: {
+      provider: "glsl-noise",
+      externalId: item.path,
+      sourceUrl: `https://github.com/hughsk/glsl-noise/blob/${commit}/${item.path}`,
+      repositoryUrl: repository,
+      fetchedAt,
+      commit
+    },
+    license: {
+      id: policy.licenseId,
+      name: policy.licenseName,
+      url: policy.licenseUrl,
+      commercialUse: true,
+      modificationAllowed: true,
+      redistributionAllowed: true,
+      attributionRequired: true,
+      attributionText: "Ashima Arts / Stefan Gustavson / contributors · MIT License",
+      verified: true
+    },
+    taxonomy: {
+      categories: ["shader", "glsl", "noise", familyName],
+      tags: [
+        "glsl",
+        "shader",
+        "noise",
+        familyName,
+        dimension,
+        symbol
+      ]
+    },
+    previews: [],
+    artifacts: [{
+      id: "shader",
+      role: "source",
+      format: "glsl",
+      mimeType: "text/plain",
+      content: item.code,
+      sourcePath: item.path,
+      targetPath: "shader.glsl",
+      checksum: `git-sha1:${item.sha}`
+    }],
+    runtime: {
+      type: "three",
+      renderer: "nagweb-glsl-snippet",
+      entryArtifactId: "shader",
+      setup: {
+        exportedSymbol: symbol,
+        family: familyName,
+        dimension
+      }
+    },
+    editableProps: [],
+    compatibility: {
+      nagweb: {
+        supported: true,
+        renderer: "glsl-snippet",
+        tested: false
+      },
+      three: true
+    },
+    capabilities: ["animatable"],
+    technical: {
+      type: "shader",
+      language: "glsl",
+      exportedSymbol: symbol,
+      noiseFamily: familyName,
+      dimension
+    },
+    search: {
+      text: `${title} GLSL shader procedural noise ${symbol}`,
+      keywords: [
+        "glsl",
+        "shader",
+        "noise",
+        familyName,
+        dimension,
+        symbol
+      ]
+    },
+    ingestion: {
+      extractor: "glsl-noise",
+      extractorVersion: EXTRACTOR_VERSION,
+      fetchedAt,
+      transformedAt: now(),
+      sourceHash: hash(item.code),
+      status: "validated",
+      warnings: [
+        "This is a reusable GLSL function, not a complete fragment/vertex shader. It must be composed into a material or shader graph."
+      ]
+    }
+  };
+}

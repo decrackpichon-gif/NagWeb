@@ -113,6 +113,22 @@ export function buildInsertDescriptor(resource, options = {}) {
     };
   }
 
+  if (renderer === "nagweb-glsl-snippet") {
+    const artifact = selectArtifact(resource, instance, "source");
+    return {
+      version: "1.0",
+      kind: "glsl-snippet",
+      resourceId: resource.id,
+      instance,
+      payload: {
+        code: artifact?.content || "",
+        exportedSymbol: resource.runtime?.setup?.exportedSymbol || null,
+        family: resource.runtime?.setup?.family || null,
+        dimension: resource.runtime?.setup?.dimension || null
+      }
+    };
+  }
+
   if (resource.runtime?.type === "three") {
     const artifact = selectArtifact(resource, instance);
     return {

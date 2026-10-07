@@ -31,6 +31,14 @@ export const SOURCE_POLICIES = {
     noticeRequired: true,
     notes: "SVG and icon metadata may be mirrored. Preserve the Lucide copyright and permission notice."
   },
+  "glsl-noise": {
+    mirrorMode: "full",
+    licenseId: "MIT",
+    licenseName: "MIT License",
+    licenseUrl: "https://github.com/hughsk/glsl-noise/blob/master/LICENSE",
+    noticeRequired: true,
+    notes: "Textureless GLSL noise functions may be mirrored and reused. Preserve the MIT notice and original author notices."
+  },
   hyperui: {
     mirrorMode: "full",
     licenseId: "MIT",
