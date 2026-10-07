@@ -623,7 +623,7 @@ function wheelSpinBottomComposition(){
 function coverComposition(vertical){
  var template=vertical?'cover-flow-vertical':'cover-flow',name=vertical?'Cover Flow Vertical':'Cover Flow',assets=[],s=mkSection({name:name+' · Motion Lab',layout:'free',bg:'#101014',height:100,sdEnabled:false,nwMotionSource:'time',nwMotionDuration:12,nwMotionLoop:true,sdLength:320,sdMotionTemplate:template});
  for(var i=0;i<5;i++){var a={id:nid(),name:name+' · Lámina '+(i+1),data:'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(orbitArtwork(i))};assets.push(a);var e=streamSlot(s.id,i,a.id);e.alt='Lámina '+(i+1)+' del carrusel';s.elements.push(e);}
- var config={template:template,source:'time',duration:12,loop:true,perspective:1000,stream:streamModel.config({kind:template,backgroundType:'none',shadow:true})};s.nwStream=config.stream;return{scene:s,assets:assets,config:config};
+ var config={template:template,source:'time',duration:12,loop:true,perspective:1000,stream:streamModel.config({kind:template,frameRatio:vertical?'9:16':'16:9',backgroundType:'none',shadow:true})};s.nwStream=config.stream;return{scene:s,assets:assets,config:config};
 }
 var motionTemplates={
  'iso-focus':{name:'Foco de láminas',description:'Enfoque e inclinación',create:focusComposition},
