@@ -5,6 +5,49 @@ const REGISTRY_URL =
 const RAW_BASE =
   "https://raw.githubusercontent.com/shadcn-ui/ui/main/apps/v4/";
 
+function registryDependencyName(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+
+  try {
+    const url = new URL(raw);
+    return url.pathname.split("/").filter(Boolean).pop()?.replace(/\.json$/i, "") || raw;
+  } catch {
+    return raw.split("/").filter(Boolean).pop()?.replace(/\.json$/i, "") || raw;
+  }
+}
+
+function expandRegistryDependencyClosure(primaryItems, availableItems) {
+  const byName = new Map(
+    availableItems.map((item) => [item.name, item])
+  );
+  const selected = new Map();
+  const queue = [];
+
+  for (const item of primaryItems) {
+    if (!selected.has(item.name)) {
+      selected.set(item.name, item);
+      queue.push(item);
+    }
+  }
+
+  while (queue.length) {
+    const current = queue.shift();
+
+    for (const rawDependency of current.registryDependencies || []) {
+      const dependencyName = registryDependencyName(rawDependency);
+      const dependency = byName.get(dependencyName);
+
+      if (!dependency || selected.has(dependency.name)) continue;
+
+      selected.set(dependency.name, dependency);
+      queue.push(dependency);
+    }
+  }
+
+  return [...selected.values()];
+}
+
 export async function extractShadcnComponents({
   limit = 10,
   includeCode = true,
@@ -14,10 +57,11 @@ export async function extractShadcnComponents({
 
   const available = (registry.items || [])
     .filter((item) => item.type === "registry:ui");
-  const selected = all
+  const primary = all
     ? available
     : available.slice(0, Math.max(1, Number(limit) || 10));
 
+  const selected = expandRegistryDependencyClosure(primary, available);
   const items = [];
 
   for (const item of selected) {
@@ -44,6 +88,8 @@ export async function extractShadcnComponents({
       sourceUrl: REGISTRY_URL
     },
     totalAvailable: available.length,
+    primaryCount: primary.length,
+    dependencyCount: Math.max(0, selected.length - primary.length),
     items
   };
 }
