@@ -240,3 +240,20 @@ usa ese XYZ guardado como respaldo en vez de romper la cámara.
 La prueba de Chromium vincula un título desde la UI, verifica que sus keyframes X/Z
 cambien el yaw de cámara, compara la matriz exportada y repite el cálculo a ancho
 responsive.
+
+
+## Selección directa y bloqueo por eje
+El mapa espacial ya no obliga a volver a la pista temporal para cambiar de punto.
+Los círculos SVG de los encuadres y objetivos son seleccionables directamente; además,
+un clic cerca de un punto busca el keyframe espacial más próximo dentro de una zona de
+captura. Si varios puntos coinciden, clics sucesivos ciclan entre los puntos superpuestos.
+
+Los controles seleccionados `◆` y `●` conservan el arrastre libre. Mantener Shift
+durante el arrastre bloquea el gesto al eje dominante, siguiendo una convención de
+editores 2D/3D: X o Z en vista superior, X o Y en vista frontal. Un clic sin movimiento
+sobre un control seleccionado también permite ciclar a otro punto que esté debajo.
+
+Las flechas siguen moviendo 25 px y Shift + flecha 100 px. Escape cancela el gesto y
+cada arrastre confirmado crea una sola operación de Deshacer. La prueba Chromium cubre
+selección física de círculos SVG, puntos coincidentes, Shift-arrastre y el cursor de
+posición actual cuando se superpone a un keyframe.
