@@ -11,6 +11,6 @@
     "dry-run": "node src/cli.mjs --dry-run",
     "test": "node src/selftest.mjs",
     "vault": "node src/vault-cli.mjs",
-    "vault:all": "node src/vault-cli.mjs --sources=lucide,magicui --all"
+    "vault:all": "node src/vault-cli.mjs --sources=lucide,magicui,motion-primitives,animxyz,threejs --all"
   }
 }

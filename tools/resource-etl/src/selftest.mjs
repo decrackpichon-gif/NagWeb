@@ -15,6 +15,8 @@ import {
   transformMagicUiComponent
 } from "./light-transformers.mjs";
 import { looksLikeLottie } from "./importers/lottie-local.mjs";
+import { ANIMXYZ_NATIVE_PRESETS } from "./extractors/animxyz.mjs";
+import { analyzeThreeExample } from "./extractors/threejs.mjs";
 
 const fakeAsset = {
   assetId: "Wood999",
@@ -222,5 +224,30 @@ assert.equal(
   true
 );
 assert.equal(looksLikeLottie({ hello: "world" }), false);
+
+assert.ok(ANIMXYZ_NATIVE_PRESETS.length >= 25);
+assert.ok(ANIMXYZ_NATIVE_PRESETS.some((preset) => preset.name === "fade"));
+assert.ok(ANIMXYZ_NATIVE_PRESETS.some((preset) => preset.name === "flip-left"));
+
+const codeOnlyScene = analyzeThreeExample(`
+<html><body><script type="module">
+import * as THREE from "three";
+const scene = new THREE.Scene();
+const mesh = new THREE.Mesh(
+  new THREE.BoxGeometry(),
+  new THREE.MeshBasicMaterial({ color: 0xff0000 })
+);
+scene.add(mesh);
+</script></body></html>
+`);
+assert.equal(codeOnlyScene.codeOnly, true);
+
+const textureScene = analyzeThreeExample(`
+<html><body><script type="module">
+import * as THREE from "three";
+new THREE.TextureLoader().load("textures/grid.jpg");
+</script></body></html>
+`);
+assert.equal(textureScene.codeOnly, false);
 
 console.log("NagWeb Resource ETL self-test: OK");

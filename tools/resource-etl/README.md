@@ -273,3 +273,46 @@ NagWeb ya puede reconocer archivos Lottie JSON que tengamos derecho a conservar 
 - `blocked-pending-review`: no automatizar hasta revisar licencia.
 
 El objetivo es que el sistema falle de forma segura antes de copiar una fuente con derechos poco claros.
+
+
+## Code Vault v0.2 · fuentes autosuficientes
+
+El modo completo actual incluye:
+
+- **Lucide**: SVG + metadata por icono, espejo completo permitido por ISC.
+- **Magic UI**: TSX + dependencias + CSS/keyframes, espejo completo MIT.
+- **Motion Primitives**: componentes animados React desde sus registry JSON, espejo completo MIT.
+- **AnimXYZ**: fuente SCSS completa + 25 presets nativos NagWeb derivados de sus utilidades, MIT.
+- **Three.js**: sólo ejemplos que pasan un filtro `code-only`; cualquier ejemplo con modelos, texturas, HDR, audio, video o datos externos queda excluido automáticamente.
+- **Lottie local**: importación de JSON que ya tengamos derecho a conservar. La colección comunitaria de LottieFiles no se scrapea ni se redistribuye.
+
+Comando de biblioteca completa:
+
+```bash
+npm run vault:all
+```
+
+Salida conceptual:
+
+```text
+vault/
+├─ catalog.json
+├─ nagweb-code-library.json
+├─ THIRD_PARTY_NOTICES.txt
+└─ providers/
+   ├─ lucide/
+   ├─ magicui/
+   ├─ motion-primitives/
+   ├─ animxyz/
+   └─ threejs/
+```
+
+`nagweb-code-library.json` es el equivalente técnico al gran archivo portable que permitiría reconstruir la biblioteca liviana sin consultar los hosts originales.
+
+### Presets nativos
+
+AnimXYZ ya inaugura el segundo nivel de la estrategia: no sólo conservar código externo, sino traducir conceptos compatibles a un formato propio:
+
+`nagweb-motion-preset/0.1`
+
+Actualmente se generan presets como `fade`, `up`, `down`, `front`, `back`, `flip-left`, `flip-right`, `rotate-left`, `big`, `small`, `skew-up`, etc. El adaptador final a MotionLab se hará sin convertir a AnimXYZ en dueño del runtime.
