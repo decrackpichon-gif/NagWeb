@@ -3,6 +3,7 @@ import {
   flattenAmbientCgDownloads,
   selectAmbientCgDownload
 } from "./extractors/ambientcg.mjs";
+import { selectPmndrsEntryFile } from "./extractors/pmndrs.mjs";
 
 const EXTRACTOR_VERSION = "0.1.0";
 
@@ -574,6 +575,235 @@ export function transformAmbientCgAsset(asset) {
       creationMethod: asset.creationMethod,
       previewType: asset.previewType,
       variations: asset.variations || []
+    }
+  };
+}
+
+
+function pmndrsHdriEditableProps() {
+  return [
+    {
+      id: "rotation",
+      label: "Rotación",
+      group: "Entorno",
+      valueType: "number",
+      control: "slider",
+      defaultValue: 0,
+      binding: { type: "runtime", path: "environment.rotation" },
+      constraints: { min: -180, max: 180, step: 1, unit: "deg" },
+      animatable: true
+    },
+    {
+      id: "intensity",
+      label: "Intensidad",
+      group: "Entorno",
+      valueType: "number",
+      control: "slider",
+      defaultValue: 1,
+      binding: { type: "runtime", path: "environment.intensity" },
+      constraints: { min: 0, max: 5, step: 0.01 },
+      animatable: true
+    }
+  ];
+}
+
+function pmndrsLicense(licenseId) {
+  if (Number(licenseId) === 1) {
+    return {
+      id: "CC0",
+      name: "CC0 1.0",
+      url: "https://creativecommons.org/publicdomain/zero/1.0/",
+      commercialUse: true,
+      modificationAllowed: true,
+      redistributionAllowed: true,
+      attributionRequired: false,
+      verified: true
+    };
+  }
+
+  if (Number(licenseId) === 2) {
+    return {
+      id: "CC-BY-2.0",
+      name: "Creative Commons Attribution 2.0",
+      url: "https://creativecommons.org/licenses/by/2.0/",
+      commercialUse: true,
+      modificationAllowed: true,
+      redistributionAllowed: true,
+      attributionRequired: true,
+      verified: true
+    };
+  }
+
+  return {
+    id: "unknown",
+    commercialUse: false,
+    modificationAllowed: false,
+    attributionRequired: true,
+    verified: false
+  };
+}
+
+export function transformPmndrsAsset(asset) {
+  const fetchedAt = now();
+  const info = asset.info || {};
+  const entryFile = selectPmndrsEntryFile(asset);
+  const thumbnail = asset.files.find((file) =>
+    /thumbnail\.(png|jpe?g|webp)$/i.test(file.relativePath)
+  );
+
+  const kind =
+    asset.type === "models"
+      ? "model-3d"
+      : asset.type === "hdris"
+        ? "hdri"
+        : "pbr-material";
+
+  const family =
+    asset.type === "models"
+      ? "3d"
+      : asset.type === "hdris"
+        ? "hdri"
+        : "material";
+
+  const artifacts = asset.files
+    .filter((file) => file.relativePath !== "info.json")
+    .map((file, index) => {
+      const isThumbnail =
+        /thumbnail\.(png|jpe?g|webp)$/i.test(file.relativePath);
+
+      return {
+        id: `file-${index + 1}`,
+        role: isThumbnail
+          ? "thumbnail"
+          : asset.type === "models"
+            ? "model"
+            : asset.type === "hdris"
+              ? "source"
+              : "material",
+        format: file.relativePath.split(".").pop()?.toLowerCase(),
+        sourceUrl: file.url,
+        sourcePath: file.path,
+        targetPath: file.relativePath,
+        size: file.size,
+        checksum: file.sha ? `git-sha1:${file.sha}` : undefined
+      };
+    });
+
+  const entryArtifact = entryFile
+    ? artifacts.find((artifact) => artifact.sourceUrl === entryFile.url)
+    : undefined;
+
+  const creator =
+    typeof info.creator === "string"
+      ? info.creator
+      : info.creator?.name || info.team || "pmndrs";
+
+  return {
+    schemaVersion: "1.0",
+    id: `pmndrs:${asset.type}:${asset.slug}`,
+    slug: slugify(`${asset.type}-${asset.slug}`),
+    name: asset.slug,
+    title: info.name || asset.slug,
+    description: info.description || "",
+    family,
+    kind,
+    source: {
+      provider: "pmndrs",
+      externalId: `${asset.type}/${asset.slug}`,
+      sourceUrl: `https://market.pmnd.rs/${asset.type.slice(0, -1)}/${asset.slug}`,
+      repositoryUrl: "https://github.com/pmndrs/market-assets",
+      author: creator,
+      fetchedAt
+    },
+    license: pmndrsLicense(info.license),
+    taxonomy: {
+      categories: [asset.type, info.category].filter(Boolean),
+      tags: [
+        asset.type,
+        info.category,
+        asset.slug,
+        creator
+      ].filter(Boolean),
+      sourceCategories: [info.category].filter(Boolean)
+    },
+    previews: thumbnail
+      ? [{ type: "thumbnail", url: thumbnail.url }]
+      : [],
+    artifacts,
+    runtime: {
+      type: "three",
+      renderer: "react-three-fiber",
+      entryArtifactId: entryArtifact?.id
+    },
+    editableProps:
+      asset.type === "models"
+        ? ambientCgModelEditableProps()
+        : asset.type === "hdris"
+          ? pmndrsHdriEditableProps()
+          : ambientCgMaterialEditableProps(),
+    compatibility: {
+      nagweb: {
+        supported: true,
+        renderer: "three",
+        tested: false
+      },
+      three: true,
+      r3f: true
+    },
+    capabilities:
+      asset.type === "models"
+        ? [
+            "three-dimensional",
+            "transformable",
+            "editable-materials",
+            "editable-textures",
+            "animatable"
+          ]
+        : asset.type === "hdris"
+          ? ["animatable"]
+          : ["editable-materials", "editable-textures", "animatable"],
+    technical: {
+      type: kind,
+      sourceCollection: asset.type,
+      sourceTreeFiles: asset.files.length,
+      entryFile: entryFile?.relativePath || null,
+      creatorLink:
+        typeof info.creator === "object"
+          ? info.creator?.link || null
+          : null,
+      team: info.team || null
+    },
+    search: {
+      text: [
+        info.name,
+        info.description,
+        info.category,
+        asset.slug,
+        creator
+      ].filter(Boolean).join(" "),
+      keywords: [
+        asset.slug,
+        asset.type,
+        info.category,
+        creator
+      ].filter(Boolean)
+    },
+    ingestion: {
+      extractor: "pmndrs",
+      extractorVersion: EXTRACTOR_VERSION,
+      fetchedAt,
+      transformedAt: now(),
+      status: Number(info.license) === 1 ? "validated" : "pending",
+      warnings: [
+        ...(info._warning ? [info._warning] : []),
+        ...(Number(info.license) === 1
+          ? []
+          : ["Asset is not CC0; review license before publishing."])
+      ]
+    },
+    sourceData: {
+      info,
+      repositoryPath: `files/${asset.type}/${asset.slug}`
     }
   };
 }

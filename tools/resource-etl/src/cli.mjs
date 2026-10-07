@@ -10,9 +10,13 @@ import {
   selectAmbientCgDownload
 } from "./extractors/ambientcg.mjs";
 import {
+  extractPmndrsAssets
+} from "./extractors/pmndrs.mjs";
+import {
   transformPolyHavenModel,
   transformShadcnItem,
-  transformAmbientCgAsset
+  transformAmbientCgAsset,
+  transformPmndrsAsset
 } from "./transformers.mjs";
 import { downloadFile, safeRelativePath } from "./lib/http.mjs";
 
@@ -203,6 +207,52 @@ async function ingestAmbientCg(args, rootDir, dryRun, download) {
   }
 }
 
+
+async function ingestPmndrs(args, rootDir, dryRun, download) {
+  const limit = intArg(args.limit, 10);
+  const requestedType = String(args.type || "all").toLowerCase();
+  const types =
+    requestedType === "model"
+      ? ["models"]
+      : requestedType === "material"
+        ? ["materials"]
+        : requestedType === "hdri"
+          ? ["hdris"]
+          : ["models", "materials", "hdris"];
+
+  const raw = await extractPmndrsAssets({ limit, types });
+  const resources = raw.items.map(transformPmndrsAsset);
+
+  printSummary(resources, dryRun ? "DRY RUN" : download ? "DOWNLOAD" : "WRITE");
+
+  if (dryRun) {
+    console.log(JSON.stringify(resources.slice(0, 3), null, 2));
+    return;
+  }
+
+  await writeJson(path.join(rootDir, "pmndrs", "catalog.json"), resources);
+
+  for (let index = 0; index < resources.length; index += 1) {
+    const resource = resources[index];
+    const asset = raw.items[index];
+    const resourceDir = path.join(rootDir, "pmndrs", resource.slug);
+
+    await writeJson(path.join(resourceDir, "resource.json"), resource);
+
+    if (!download) continue;
+
+    for (const file of asset.files) {
+      if (file.relativePath === "info.json") continue;
+
+      const relative = safeRelativePath(file.relativePath);
+      const destination = path.join(resourceDir, "files", relative);
+
+      console.log(`[pmndrs] ↓ ${resource.id} / ${relative}`);
+      await downloadFile(file.url, destination);
+    }
+  }
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const source = String(args.source || "polyhaven").toLowerCase();
@@ -214,9 +264,9 @@ async function main() {
     String(args.out || "output")
   );
 
-  if (!["polyhaven", "shadcn", "ambientcg"].includes(source)) {
+  if (!["polyhaven", "shadcn", "ambientcg", "pmndrs"].includes(source)) {
     throw new Error(
-      `Unknown source "${source}". Sources: polyhaven, shadcn, ambientcg.`
+      `Unknown source "${source}". Sources: polyhaven, shadcn, ambientcg, pmndrs.`
     );
   }
 
@@ -229,6 +279,8 @@ async function main() {
     await ingestPolyHaven(args, rootDir, dryRun, download);
   } else if (source === "ambientcg") {
     await ingestAmbientCg(args, rootDir, dryRun, download);
+  } else if (source === "pmndrs") {
+    await ingestPmndrs(args, rootDir, dryRun, download);
   } else {
     await ingestShadcn(args, rootDir, dryRun, download);
   }
