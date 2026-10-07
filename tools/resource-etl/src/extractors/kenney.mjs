@@ -62,7 +62,7 @@ function absoluteKenneyUrl(value) {
 
 export function extractKenneySlugsFromCatalog(html) {
   const slugs = new Set();
-  const regex = /href=["']\/assets\/([a-z0-9][a-z0-9-]*)(?:["'?#])/gi;
+  const regex = /href=["'](?:https?:\/\/kenney\.nl)?\/assets\/([a-z0-9][a-z0-9-]*)(?:["'?#])/gi;
   let match;
 
   while ((match = regex.exec(html))) {

@@ -53,9 +53,20 @@ jobs:
 
       - name: Smoke test external ETL sources
         working-directory: tools/resource-etl
+        shell: bash
         run: |
-          node src/cli.mjs --source=polyhaven --limit=1 --dry-run
-          node src/cli.mjs --source=shadcn --limit=1 --dry-run
-          node src/cli.mjs --source=ambientcg --limit=1 --dry-run
-          node src/cli.mjs --source=pmndrs --limit=1 --dry-run
-          node src/cli.mjs --source=kenney --limit=1 --dry-run
+          set -euo pipefail
+
+          check_source() {
+            local source="$1"
+            local output
+            output="$(node src/cli.mjs --source="$source" --limit=1 --dry-run)"
+            echo "$output"
+            echo "$output" | grep -Eq 'Recursos: [1-9][0-9]*'
+          }
+
+          check_source polyhaven
+          check_source shadcn
+          check_source ambientcg
+          check_source pmndrs
+          check_source kenney

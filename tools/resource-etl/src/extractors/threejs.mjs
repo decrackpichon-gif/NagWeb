@@ -75,7 +75,7 @@ export async function extractThreeCodeScenes({
     )
     .sort((a, b) => a.path.localeCompare(b.path));
 
-  const scanned = await mapLimit(candidates, concurrency, async (entry) => {
+  const scanEntry = async (entry) => {
     const html = await fetchText(rawUrl(commit, entry.path));
     return {
       path: entry.path,
@@ -83,18 +83,46 @@ export async function extractThreeCodeScenes({
       html,
       analysis: analyzeThreeExample(html)
     };
-  });
+  };
 
-  let items = scanned.filter((item) => item.analysis.codeOnly);
-  const totalCodeOnly = items.length;
-  if (!all) items = items.slice(0, Math.max(1, Number(limit) || 20));
+  if (all) {
+    const scanned = await mapLimit(candidates, concurrency, scanEntry);
+    const items = scanned.filter((item) => item.analysis.codeOnly);
+    return {
+      repository: `https://github.com/${REPO}`,
+      commit,
+      totalScanned: scanned.length,
+      totalCodeOnly: items.length,
+      rejected: scanned.length - items.length,
+      completeScan: true,
+      items
+    };
+  }
+
+  const target = Math.max(1, Number(limit) || 20);
+  const accepted = [];
+  let scannedCount = 0;
+  const batchSize = Math.max(16, target * 4);
+
+  for (let start = 0; start < candidates.length && accepted.length < target; start += batchSize) {
+    const batch = candidates.slice(start, start + batchSize);
+    const scanned = await mapLimit(batch, concurrency, scanEntry);
+    scannedCount += scanned.length;
+
+    for (const item of scanned) {
+      if (!item.analysis.codeOnly) continue;
+      accepted.push(item);
+      if (accepted.length >= target) break;
+    }
+  }
 
   return {
     repository: `https://github.com/${REPO}`,
     commit,
-    totalScanned: scanned.length,
-    totalCodeOnly,
-    rejected: scanned.length - totalCodeOnly,
-    items
+    totalScanned: scannedCount,
+    totalCodeOnly: accepted.length,
+    rejected: scannedCount - accepted.length,
+    completeScan: scannedCount >= candidates.length,
+    items: accepted
   };
 }
