@@ -84,8 +84,11 @@ Motion Lab ni los motores de personajes. Resolver estos hooks al integrar.
 
 Alcance: cámara CSS 2.5D sobre .inner, hasta 128 encuadres, sin reloj adicional.
 El mapa espacial y la compatibilidad con efectos 2.5D ya se verifican en Chromium,
-incluida la exportación real. No constituye una cámara Three.js: los objetos WebGL y
-sus anclas se validan por separado antes de ampliar este alcance. Los contenedores raíz admitidos
+incluida la exportación real. No constituye una cámara Three.js: no rota ni traslada la
+cámara WebGL. Sin embargo, los objetos Three.js vinculados con NAGWEB_3D_ANCHOR sí
+siguen la cámara de escena porque su posición se recalcula desde el rectángulo DOM
+transformado. El Director fuerza además un refresh de esas anclas dentro del mismo
+paint de cámara para que el scrub manual no tenga un frame de retraso. Los contenedores raíz admitidos
 se incorporan a .inner; el resto de nodos externos permanece fuera de la cámara. La cámara puede acercarse hasta atravesar el plano.
 
 Verificación: node .github/nagweb-camera-model-test.mjs y
@@ -146,6 +149,14 @@ opción desactivada, serialización, ángulos estables y navegación sin histori
 El workflow `.github/workflows/nagweb-camera.yml` ejecuta un smoke específico de
 cámara (modelo + runtime + Chromium) sin disparar Vercel y conserva capturas como
 artefactos temporales.
+
+## Puente con objetos Three.js anclados
+La cámara CSS y la cámara de Three.js siguen siendo sistemas distintos. Un objeto 3D
+con anclaje activo usa NAGWEB_3D_ANCHOR para proyectar la posición de su ancla DOM al
+mundo WebGL. Como esa ancla vive dentro del mundo de cámara, getBoundingClientRect()
+ya contiene el movimiento visual de la cámara y el objeto 3D acompaña ese recorrido.
+La prueba de navegador comprueba el cambio de rectángulo, la nueva posición proyectada,
+la limpieza del binding y el refresh sin esperar al siguiente requestAnimationFrame.
 La adaptación a ancho angosto ya se verifica en Chromium redimensionando la misma
 exportación pausada de 1000 px a 390 px: X/Y/Z de cámara, perspectiva y profundidad
 de capas se escalan en vivo, los ángulos permanecen estables y los datos guardados no
