@@ -39,7 +39,7 @@ jobs:
         working-directory: tools/resource-etl
         run: >
           node src/vault-cli.mjs
-          --sources=lucide,magicui,motion-primitives,animxyz,threejs
+          --sources=lucide,magicui,motion-primitives,animxyz,threejs,hyperui
           --limit=2
           --out=ci-vault
 
@@ -61,8 +61,8 @@ jobs:
             local source="$1"
             local output
             output="$(node src/cli.mjs --source="$source" --limit=1 --dry-run)"
-            echo "$output"
-            echo "$output" | grep -Eq 'Recursos: [1-9][0-9]*'
+            printf '%s\n' "$output"
+            grep -Eq 'Recursos: [1-9][0-9]*' <<< "$output"
           }
 
           check_source polyhaven

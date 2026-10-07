@@ -1,12 +1,15 @@
 import path from "node:path";
 import { extractLucideIcons } from "./extractors/lucide.mjs";
 import { extractMagicUiComponents } from "./extractors/magicui.mjs";
+import { extractHyperUiBlocks } from "./extractors/hyperui.mjs";
 import { extractMotionPrimitives } from "./extractors/motion-primitives.mjs";
 import { extractAnimXyzCore } from "./extractors/animxyz.mjs";
 import { extractThreeCodeScenes } from "./extractors/threejs.mjs";
 import {
   transformLucideIcon,
   transformMagicUiComponent,
+  transformHyperUiRuntime,
+  transformHyperUiBlock,
   transformMotionPrimitive,
   transformAnimXyzCore,
   transformAnimXyzPreset,
@@ -37,7 +40,7 @@ function parseArgs(argv) {
 }
 
 function parseSources(value) {
-  return String(value || "lucide,magicui,motion-primitives,animxyz,threejs")
+  return String(value || "lucide,magicui,motion-primitives,animxyz,threejs,hyperui")
     .split(",")
     .map((source) => source.trim().toLowerCase())
     .filter(Boolean);
@@ -58,6 +61,24 @@ async function collectSource(source, args) {
     return raw.items.map((item) =>
       transformLucideIcon({ item, commit: raw.commit })
     );
+  }
+
+  if (source === "hyperui") {
+    assertFullMirrorAllowed("hyperui");
+    const raw = await extractHyperUiBlocks({ limit, all });
+    console.log(
+      `[hyperui] ${raw.items.length} autonomous blocks selected from ${raw.scanned} scanned pairs.`
+    );
+    return [
+      transformHyperUiRuntime(raw),
+      ...raw.items.map((item) =>
+        transformHyperUiBlock({
+          repository: raw.repository,
+          commit: raw.commit,
+          item
+        })
+      )
+    ];
   }
 
   if (source === "magicui") {

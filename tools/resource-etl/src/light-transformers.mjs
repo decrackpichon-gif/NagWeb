@@ -898,3 +898,232 @@ export function transformThreeCodeScene({ repository, commit, item }) {
     }
   };
 }
+
+
+export function transformHyperUiRuntime(raw) {
+  const fetchedAt = now();
+  const policy = getSourcePolicy("hyperui");
+
+  return {
+    schemaVersion: "1.0",
+    id: "hyperui:runtime",
+    slug: "hyperui-runtime",
+    name: "hyperui-runtime",
+    title: "HyperUI Runtime",
+    description: "Shared CSS and tiny JavaScript helper mirrored for offline HyperUI blocks.",
+    family: "ui",
+    kind: "html-component",
+    source: {
+      provider: "hyperui",
+      externalId: "runtime",
+      sourceUrl: "https://www.hyperui.dev",
+      repositoryUrl: raw.repository,
+      fetchedAt,
+      commit: raw.commit
+    },
+    license: {
+      id: policy.licenseId,
+      name: policy.licenseName,
+      url: policy.licenseUrl,
+      commercialUse: true,
+      modificationAllowed: true,
+      redistributionAllowed: true,
+      attributionRequired: true,
+      attributionText: "HyperUI · MIT License",
+      verified: true
+    },
+    taxonomy: {
+      categories: ["ui", "runtime", "tailwind"],
+      tags: ["hyperui", "tailwind", "html", "css"]
+    },
+    previews: [],
+    artifacts: [
+      {
+        id: "component-css",
+        role: "stylesheet",
+        format: "css",
+        mimeType: "text/css",
+        content: raw.componentCss,
+        targetPath: "component.css"
+      },
+      {
+        id: "component-js",
+        role: "script",
+        format: "js",
+        mimeType: "text/javascript",
+        content: raw.componentJs,
+        targetPath: "component.js"
+      }
+    ],
+    runtime: {
+      type: "html",
+      renderer: "nagweb-html-tailwind"
+    },
+    editableProps: [],
+    compatibility: {
+      nagweb: { supported: true, renderer: "html", tested: false },
+      tailwind: true
+    },
+    capabilities: ["responsive"],
+    technical: {
+      type: "hyperui-runtime"
+    },
+    search: {
+      text: "HyperUI Tailwind HTML shared runtime",
+      keywords: ["hyperui", "tailwind", "html", "css"]
+    },
+    ingestion: {
+      extractor: "hyperui",
+      extractorVersion: EXTRACTOR_VERSION,
+      fetchedAt,
+      transformedAt: now(),
+      sourceHash: hash(raw.componentCss + raw.componentJs),
+      status: "validated",
+      warnings: []
+    }
+  };
+}
+
+export function transformHyperUiBlock({ repository, commit, item }) {
+  const fetchedAt = now();
+  const policy = getSourcePolicy("hyperui");
+  const groupTitle = titleFromSlug(item.group);
+  const blockTitle = `${groupTitle} ${item.index}`;
+  const lightBody = item.lightAnalysis.body;
+  const darkBody = item.darkAnalysis?.body || null;
+
+  return {
+    schemaVersion: "1.0",
+    id: `hyperui:${item.collection}:${item.group}:${item.index}`,
+    slug: `hyperui-${item.collection}-${item.group}-${item.index}`,
+    name: `${item.group}-${item.index}`,
+    title: blockTitle,
+    description: `HyperUI ${item.collection} block, stored as autonomous HTML/Tailwind code.`,
+    family: "ui",
+    kind: "html-component",
+    source: {
+      provider: "hyperui",
+      externalId: item.key,
+      sourceUrl: `https://www.hyperui.dev/components/${item.collection}/${item.group}`,
+      repositoryUrl: repository,
+      fetchedAt,
+      commit
+    },
+    license: {
+      id: policy.licenseId,
+      name: policy.licenseName,
+      url: policy.licenseUrl,
+      commercialUse: true,
+      modificationAllowed: true,
+      redistributionAllowed: true,
+      attributionRequired: true,
+      attributionText: "HyperUI · MIT License",
+      verified: true
+    },
+    taxonomy: {
+      categories: ["ui", item.collection, item.group],
+      tags: [
+        "hyperui",
+        "html",
+        "tailwind",
+        item.collection,
+        item.group
+      ],
+      sourceCategories: [item.collection, item.group]
+    },
+    previews: [],
+    artifacts: [
+      {
+        id: "html-light",
+        role: "component",
+        format: "html",
+        mimeType: "text/html",
+        content: lightBody,
+        sourcePath: item.light.path,
+        targetPath: "light.html",
+        checksum: `git-sha1:${item.light.sha}`,
+        variant: { theme: "light" }
+      },
+      ...(darkBody
+        ? [{
+            id: "html-dark",
+            role: "component",
+            format: "html",
+            mimeType: "text/html",
+            content: darkBody,
+            sourcePath: item.dark.path,
+            targetPath: "dark.html",
+            checksum: `git-sha1:${item.dark.sha}`,
+            variant: { theme: "dark" }
+          }]
+        : [])
+    ],
+    runtime: {
+      type: "html",
+      renderer: "nagweb-html-tailwind",
+      entryArtifactId: "html-light",
+      registryDependencies: ["hyperui:runtime"],
+      setup: {
+        themes: darkBody ? ["light", "dark"] : ["light"]
+      }
+    },
+    editableProps: [
+      {
+        id: "theme",
+        label: "Tema",
+        group: "Apariencia",
+        valueType: "enum",
+        control: "segmented",
+        defaultValue: "light",
+        binding: { type: "runtime", path: "html.variant" },
+        constraints: {
+          options: darkBody
+            ? [
+                { label: "Claro", value: "light" },
+                { label: "Oscuro", value: "dark" }
+              ]
+            : [{ label: "Claro", value: "light" }]
+        }
+      }
+    ],
+    compatibility: {
+      nagweb: { supported: true, renderer: "html", tested: false },
+      tailwind: true
+    },
+    capabilities: ["responsive", "supports-children"],
+    technical: {
+      type: "html-ui",
+      collection: item.collection,
+      group: item.group,
+      index: item.index,
+      codeOnly: true,
+      hasDarkVariant: Boolean(darkBody)
+    },
+    search: {
+      text: `${blockTitle} HyperUI ${item.collection} ${item.group} Tailwind HTML`,
+      keywords: [
+        "hyperui",
+        item.collection,
+        item.group,
+        "tailwind",
+        "html"
+      ]
+    },
+    ingestion: {
+      extractor: "hyperui",
+      extractorVersion: EXTRACTOR_VERSION,
+      fetchedAt,
+      transformedAt: now(),
+      sourceHash: hash(lightBody + (darkBody || "")),
+      status: "validated",
+      warnings: [
+        "Text/color slot inference for raw HTML blocks is pending; code is mirrored and theme variants are available now."
+      ]
+    },
+    sourceData: {
+      codeOnly: true,
+      lightAnalysis: item.lightAnalysis,
+      darkAnalysis: item.darkAnalysis
+    }
+  };
+}

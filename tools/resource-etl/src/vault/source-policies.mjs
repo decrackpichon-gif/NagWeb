@@ -7,6 +7,14 @@ export const SOURCE_POLICIES = {
     noticeRequired: true,
     notes: "SVG and icon metadata may be mirrored. Preserve the Lucide copyright and permission notice."
   },
+  hyperui: {
+    mirrorMode: "full",
+    licenseId: "MIT",
+    licenseName: "MIT License",
+    licenseUrl: "https://github.com/markmead/hyperui/blob/main/LICENSE",
+    noticeRequired: true,
+    notes: "Code-only HTML/Tailwind examples may be mirrored. Blocks with external media are excluded from the autonomous vault."
+  },
   magicui: {
     mirrorMode: "full",
     licenseId: "MIT",
