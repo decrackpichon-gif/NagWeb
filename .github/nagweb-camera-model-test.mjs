@@ -391,7 +391,7 @@ assert.equal(C.tensionFromHandle(curvedConfig.frames,33,tangentSpec,tangentLoose
 assert.equal(C.tensionFromHandle(curvedConfig.frames,100,tangentSpec,tangentDefault),null);
 const incomingDefault=C.tangentHandle(curvedConfig.frames,66,'in');
 assert.ok(incomingDefault&&incomingDefault.side==='in'&&incomingDefault.ownerAt===33);
-assert.ok(Math.abs(incomingDefault.x-166.66666666666666)<1e-9&&Math.abs(incomingDefault.z-83.33333333333333)<1e-9,'Incoming handle is the Bezier/Hermite control of the previous segment');
+assert.ok(Math.abs(incomingDefault.x-166.66666666666666)<1e-9&&Math.abs(incomingDefault.y)<1e-9&&Math.abs(incomingDefault.z-100)<1e-9,'Incoming handle is the Bezier/Hermite control of the previous segment');
 const incomingTightFrames=curvedConfig.frames.map(k=>k.at===33?{...k,tension:100}:k),incomingTight=C.tangentHandle(incomingTightFrames,66,'in');
 assert.equal(incomingTight.x,200);assert.equal(incomingTight.y,0);assert.equal(incomingTight.z,100,'Previous segment +100 retracts incoming handle onto selected key');
 assert.equal(C.tensionFromHandle(curvedConfig.frames,66,tangentSpec,incomingDefault,'in'),0);
