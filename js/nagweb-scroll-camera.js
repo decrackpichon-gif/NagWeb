@@ -4,7 +4,7 @@
 function createCamera(){
  function number(v){return Number.isFinite(+v)?Math.max(-4000,Math.min(4000,+v)):0;}
  function angle(v){return Number.isFinite(+v)?Math.max(-3600,Math.min(3600,+v)):0;}
- function curveTension(v){return Number.isFinite(+v)?Math.max(-100,Math.min(100,+v)):0;}
+ function curveTension(v){var n=Number.isFinite(+v)?Math.max(-100,Math.min(100,+v)):0;return Object.is(n,-0)?0:n;}
  function targetEligible(e,s){return !!e&&!!s&&s.layout==='free'&&layerEligible(e,s)&&Number.isFinite(+e.x)&&Number.isFinite(+e.y);}
  function targetMotion(e){return {id:e.id,sdKeyframesEnabled:e.sdKeyframesEnabled,sdKeyframes:Array.isArray(e.sdKeyframes)?e.sdKeyframes:[],sdStart:e.sdStart,sdEnd:e.sdEnd,sdSpan:e.sdSpan,sdEnter:e.sdEnter,sdExit:e.sdExit,sdMoveX:e.sdMoveX,sdMoveY:e.sdMoveY,sdRotate:e.sdRotate,sdScale:e.sdScale};}
  function targetConfig(e){return {id:String(e.id),x:+e.x,y:+e.y,z:number(e.sdCameraDepth),motion:targetMotion(e)};}
