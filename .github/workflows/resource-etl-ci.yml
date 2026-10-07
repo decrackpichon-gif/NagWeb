@@ -74,10 +74,10 @@ jobs:
         run: |
           node src/vault-cli.mjs \
             --sources=shadcn \
-            --limit=10 \
+            --limit=12 \
             --out=ci-vault-shadcn \
             --react-previews \
-            --react-preview-limit=4
+            --react-preview-limit=12
 
           node - <<'NODE'
           const fs = require("fs");
@@ -96,6 +96,24 @@ jobs:
             console.error("Expected shadcn:button as a local registry dependency");
             process.exit(1);
           }
+
+          const buttonGroup = audit.items.find(
+            (entry) => entry.resourceId === "shadcn:button-group"
+          );
+          if (!buttonGroup || !buttonGroup.ok) {
+            console.error("shadcn:button-group did not resolve from the local Vault");
+            console.error(JSON.stringify(buttonGroup, null, 2));
+            process.exit(1);
+          }
+
+          for (const dependency of ["shadcn:button", "shadcn:separator"]) {
+            if (!buttonGroup.registryResources.includes(dependency)) {
+              console.error("Expected local registry dependency:", dependency);
+              console.error(JSON.stringify(buttonGroup, null, 2));
+              process.exit(1);
+            }
+          }
+
           console.log("Registry dependency resolution: OK");
           NODE
 
