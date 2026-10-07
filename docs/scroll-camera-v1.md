@@ -282,3 +282,23 @@ elimina la tensión guardada; al volver a `Curva suave` reaparece el mismo valor
 Las pruebas cubren compatibilidad exacta de 0%, límites, tensión positiva/negativa,
 historial del editor, actualización del mapa y matriz 3D real en la exportación de
 Chromium.
+
+
+## Vista de tangente de salida
+En `Curva suave`, el mapa muestra para el encuadre seleccionado una tangente de
+salida `◯` unida al `◆` por una línea punteada. No es una aproximación visual:
+la posición del círculo corresponde al control Hermite/Bezier equivalente de la
+misma tangente que usa el interpolador espacial.
+
+Con tensión `0%`, la tangente representa exactamente el Catmull-Rom histórico.
+Al aumentar la tensión se retrae hacia el encuadre y en `+100%` coincide con él.
+Con tensión negativa se alarga. Una permanencia real no muestra tangente de salida,
+porque ese tramo mantiene la misma posición.
+
+El mapa incluye las tangentes en su cálculo de escala para evitar recortarlas cuando
+la curva es más suelta. Durante el arrastre del `◆`, la tangente se recalcula y se
+mantiene unida al encuadre. En modo `Por tramos` no se muestra.
+
+Esta primera etapa es solo visual. La edición continúa mediante el campo de tensión;
+la siguiente etapa puede convertir el `◯` en handle arrastrable sin cambiar el
+modelo matemático.
