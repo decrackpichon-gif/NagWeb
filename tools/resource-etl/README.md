@@ -316,3 +316,7 @@ AnimXYZ ya inaugura el segundo nivel de la estrategia: no sólo conservar códig
 `nagweb-motion-preset/0.1`
 
 Actualmente se generan presets como `fade`, `up`, `down`, `front`, `back`, `flip-left`, `flip-right`, `rotate-left`, `big`, `small`, `skew-up`, etc. El adaptador final a MotionLab se hará sin convertir a AnimXYZ en dueño del runtime.
+
+## CI con red
+
+La rama `feat/resource-etl-v1` incluye un workflow de GitHub Actions que ejecuta `npm test`, construye un Code Vault pequeño y hace smoke tests reales contra las fuentes externas. Esto permite validar el ETL con acceso a Internet sin usar Vercel.
