@@ -397,8 +397,11 @@ function pickSpatial(s,map,clientX,clientY){
 function insertOnPath(s,map,clientX,clientY){
  var cfg=C.config(s),r=map&&map.getBoundingClientRect(),list=keys(s);if(!cfg||!r||!r.width||!r.height||list.length>=128)return false;
  var spec={range:+map.dataset.range||500,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1};
+ var point={x:(clientX-r.left)/r.width*100,y:(clientY-r.top)/r.height*100},sx=r.width/100,sy=r.height/100,nearKey=null;
+ list.forEach(function(k){var p=C.mapPoint(k,spec),d=Math.hypot((point.x-p.x)*sx,(point.y-p.y)*sy);if(d<=14&&(!nearKey||d<nearKey.distance))nearKey={at:k.at,distance:d};});
+ if(nearKey){jump(s,nearKey.at);return true;}
  var draw=C.pathSamples(Object.assign({},cfg,{frames:list}),window.NAGWEB_STORY_MODEL,s.sdEase,128);
- var point={x:(clientX-r.left)/r.width*100,y:(clientY-r.top)/r.height*100},hit=C.nearestPathAt(draw,spec,point,{x:r.width/100,y:r.height/100});
+ var hit=C.nearestPathAt(draw,spec,point,{x:sx,y:sy});
  if(!hit||hit.distance>14)return false;
  var at=Math.round(Math.max(0,Math.min(100,hit.at))*10)/10,existing=list.find(function(k){return k.at===at;});
  if(existing){jump(s,at);return true;}
