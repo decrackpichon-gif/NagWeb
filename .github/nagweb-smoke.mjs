@@ -38,6 +38,8 @@ import {runMotionExpandSmoke} from './nagweb-motion-expand-smoke.mjs';
 import {runMotionDropSmoke} from './nagweb-motion-drop-smoke.mjs';
 import {runMotionStreamSmoke} from './nagweb-motion-stream-smoke.mjs';
 import {runMotionStreamPlacementSmoke} from './nagweb-motion-stream-placement-smoke.mjs';
+import './nagweb-peel-model-test.mjs';
+import {runMotionPeelSmoke} from './nagweb-motion-peel-smoke.mjs';
 import './nagweb-band-model-test.mjs';
 import {runMotionBandSmoke} from './nagweb-motion-band-smoke.mjs';
 import './nagweb-spiral-model-test.mjs';
@@ -326,6 +328,7 @@ await runTransparentSmoke(page);
 if(suite==='all'||suite==='diagonal'){
 for(const kind of ['diagonal-carousel','iso-cascade']){await runMotionDiagonalSmoke(page,kind);await runMotionStreamPlacementSmoke(page,kind);}
 }
+if(suite==='all'||suite==='peel'){await runMotionPeelSmoke(page);await runMotionStreamPlacementSmoke(page,'deck-peel');await runMotionBatchImagesSmoke(page,['deck-peel']);}
 for(const [bandSuite,bandTemplate] of [['film','film-strip'],['totem','card-totem']])if(suite==='all'||suite===bandSuite){await runMotionBandSmoke(page,bandTemplate);await runMotionStreamPlacementSmoke(page,bandTemplate);await runMotionBatchImagesSmoke(page,[bandTemplate]);}
 if(suite==='all'||suite==='spiral'){await runMotionSpiralSmoke(page);await runMotionStreamPlacementSmoke(page,'spiral-stream');await runMotionBatchImagesSmoke(page,['spiral-stream']);}
 if(suite==='all'||suite==='shift'){await runMotionFocusShiftSmoke(page);await runMotionFocusShiftDepthSmoke(page);await runMotionStreamPlacementSmoke(page,'focus-shift');await runMotionImageCropSmoke(page,['focus-shift']);await runMotionBatchImagesSmoke(page,['focus-shift']);}
