@@ -397,3 +397,23 @@ Shift + flecha 20 y Home restaura 0.
 
 Las pruebas verifican paridad exacta del handle de salida anterior, fórmula entrante,
 independencia entre entrada/salida, historial y arrastre físico en Chromium.
+
+
+## Controles numéricos de entrada y salida
+Cuando un `◆` está en Curva suave, el panel expone la misma separación que el mapa:
+
+- `Entrada desde el anterior (%)` controla el handle `◁` y modifica la tensión
+  guardada en el keyframe anterior.
+- `Salida hacia el siguiente (%)` controla el handle `▷` y modifica la tensión
+  guardada en el keyframe seleccionado.
+
+Editar la entrada mantiene seleccionado el `◆` actual. Esto evita el salto de foco
+al keyframe anterior y permite trabajar entrada/salida como propiedades visuales del
+mismo encuadre aunque internamente la tensión siga almacenándose por tramo.
+
+Los límites siguen siendo -100..100, con pasos de 5. El primer keyframe solo muestra
+salida y el último solo entrada. Los valores permanecen sincronizados con el arrastre
+de handles, el historial y la curva renderizada.
+
+Las pruebas verifican que el campo de entrada modifica exclusivamente el tramo
+anterior, conserva el keyframe seleccionado y no altera la salida.
