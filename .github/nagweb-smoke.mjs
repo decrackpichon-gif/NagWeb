@@ -39,6 +39,7 @@ import {runMotionDropSmoke} from './nagweb-motion-drop-smoke.mjs';
 import {runMotionStreamSmoke} from './nagweb-motion-stream-smoke.mjs';
 import {runMotionStreamPlacementSmoke} from './nagweb-motion-stream-placement-smoke.mjs';
 import './nagweb-ring-model-test.mjs';
+import './nagweb-ring-vertical-model-test.mjs';
 import {runMotionRingSmoke} from './nagweb-motion-ring-smoke.mjs';
 import './nagweb-cover-model-test.mjs';
 import {runMotionCoverSmoke} from './nagweb-motion-cover-smoke.mjs';
@@ -342,6 +343,7 @@ await runTransparentSmoke(page);
 if(suite==='all'||suite==='diagonal'){
 for(const kind of ['diagonal-carousel','iso-cascade']){await runMotionDiagonalSmoke(page,kind);await runMotionStreamPlacementSmoke(page,kind);}
 }
+if(suite==='all'||suite==='ring-vertical'){await runMotionRingSmoke(page,'cover-ring-vertical');await runMotionStreamPlacementSmoke(page,'cover-ring-vertical');await runMotionBatchImagesSmoke(page,['cover-ring-vertical']);}
 if(suite==='all'||suite==='ring'){await runMotionRingSmoke(page);await runMotionStreamPlacementSmoke(page,'cover-ring');await runMotionBatchImagesSmoke(page,['cover-ring']);}
 for(const [coverSuite,coverTemplate] of [['cover','cover-flow'],['cover-vertical','cover-flow-vertical']])if(suite==='all'||suite===coverSuite){await runMotionCoverSmoke(page,coverTemplate);await runMotionStreamPlacementSmoke(page,coverTemplate);await runMotionBatchImagesSmoke(page,[coverTemplate]);}
 if(suite==='all'||suite==='bottom'){await runMotionBottomSmoke(page);await runMotionStreamPlacementSmoke(page,'wheel-spin-bottom');await runMotionBatchImagesSmoke(page,['wheel-spin-bottom']);}

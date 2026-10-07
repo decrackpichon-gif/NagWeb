@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+const scope={window:{}};vm.runInNewContext(fs.readFileSync('js/nagweb-story-model.js','utf8'),scope);
+const model=scope.window.NAGWEB_STREAM_MODEL,plain=x=>JSON.parse(JSON.stringify(x)),defaults=model.config({kind:'cover-ring-vertical'}),near=(a,b)=>assert.ok(Math.abs(a-b)<1e-4,`${a} != ${b}`),pose=(p,c={},n=8,w=1280,h=720,ratio=1)=>plain(model.layout(w,h,{...defaults,...c},p,n,ratio));
+for(const [k,s] of Object.entries({...model.ringSpecs,...model.ringVerticalSpecs})){assert.equal(defaults[k],s[0]);assert.equal(model.config({kind:'cover-ring-vertical',[k]:999})[k],s[2]);assert.equal(model.config({kind:'cover-ring-vertical',[k]:-999})[k],s[1]);}
+assert.equal(defaults.kind,'cover-ring-vertical');assert.equal(defaults.cardRatio,'1:1');assert.equal(defaults.motion,'steps');assert.equal(defaults.direction,'up');assert.equal(model.config({kind:'cover-ring-vertical',direction:'down',motion:'flow'}).direction,'down');assert.equal(model.config({kind:'cover-ring-vertical',motion:'flow'}).motion,'flow');assert.equal(pose(0,{},1).length,4);assert.equal(pose(0,{},999).length,16);
+for(const direction of ['up','down'])for(let i=0;i<8;i++){const p=(i+.75)/8,cards=pose(p,{direction}),front=cards.reduce((a,b)=>a.depth>b.depth?a:b),slot=direction==='up'?(8-(i+1)%8)%8:(i+1)%8;assert.equal(front.slot,slot);assert.deepEqual(cards,pose((i+.9)/8,{direction}));}assert.notDeepEqual(pose(.1/8),pose(.4/8));assert.notDeepEqual(pose(.1/8,{motion:'flow'}),pose(.4/8,{motion:'flow'}));
+for(const n of [4,8,16])for(const rotate of [-60,0,60])for(const tilt of [-60,0,60])for(const perspective of [0,55,100])for(const ringSize of [50,131,400])for(const cardRatio of ['1:1','16:9','9:16','auto'])for(const [w,h,ratio] of [[1280,720,.25],[390,844,4]]){
+ const cfg={rotate,tilt,perspective,ringSize,cardRatio,cardSize:100,motion:'flow',frameRatio:'auto',cornerRadius:12},start=pose(0,cfg,n,w,h,ratio);assert.deepEqual(start,pose(1,cfg,n,w,h,ratio));
+ for(let sample=0;sample<8;sample++)for(const card of pose(sample/8,cfg,n,w,h,ratio)){
+  assert.ok(card.width>0&&card.width<=w+1e-6&&card.height>0&&card.height<=h+1e-6);assert.deepEqual([card.textureWidth,card.textureHeight,card.corner],[start[card.slot].textureWidth,start[card.slot].textureHeight,start[card.slot].corner]);assert.ok(card.alpha>=0&&card.alpha<=1);
+  for(const t of card.instances){const r=t.homography;assert.ok(r.columns>=1&&r.columns<=32&&r.rows>=1&&r.rows<=32);assert.ok(t.polygon.concat(t.shadowPolygon).every(p=>Number.isFinite(p.x)&&Number.isFinite(p.y)));for(const [u,v] of [[0,0],[r.width,r.height],[r.width*.31,r.height*.63]]){assert.ok(r.matrix[6]*u+r.matrix[7]*v+r.matrix[8]>0);const p=model.projectPlane(r.matrix,u,v),uv=model.projectPlane(r.inverse,p.x,p.y);near(uv.x,u);near(uv.y,v);}}
+ }
+}
+// Independent world-space projection: tangent plane, yaw, lens, then screen rotation.
+const rad=720*.88/2*1.31,half=720*.37/2,angle=.1*2*Math.PI/8;
+for(const rotate of [-60,0,60])for(const tilt of [-60,0,60])for(const perspective of [0,55,100]){
+ const r=pose(0,{rotate,tilt,perspective})[0].instances[0].homography,focal=rad*(8-5.6*perspective/100),yaw=rotate*Math.PI/180,roll=tilt*Math.PI/180;
+ for(const [u,v] of [[0,0],[half,half],[half*2,half*2],[half*.3,half*1.6]]){
+  const J=u-half,A=half-v,Y=rad*Math.sin(angle)+A*Math.cos(angle),Z=rad*Math.cos(angle)-A*Math.sin(angle),X=J*Math.cos(yaw)-Z*Math.sin(yaw),D=J*Math.sin(yaw)+Z*Math.cos(yaw),scale=focal/(focal-D),p=model.projectPlane(r.matrix,u,v);
+  near(p.x,640+(X*Math.cos(roll)+Y*Math.sin(roll))*scale);near(p.y,360+(X*Math.sin(roll)-Y*Math.cos(roll))*scale);
+ }
+}
+const center=r=>model.projectPlane(r.matrix,r.width/2,r.height/2),a=center(pose(0,{rotate:35})[0].instances[0].homography),b=center(pose(0,{rotate:-35})[0].instances[0].homography);near(a.x-640,640-b.x);near(a.y,b.y);
+const basePose=pose(.07,{motion:'flow',rotate:35}),rolled=pose(.07,{motion:'flow',rotate:35,tilt:60}),roll=Math.PI/3;
+for(let i=0;i<8;i++){near(basePose[i].depth,rolled[i].depth);if(!basePose[i].visible||!rolled[i].visible)continue;near(basePose[i].alpha,rolled[i].alpha);for(let k=0;k<4;k++){const p=basePose[i].instances[0].polygon[k],q=rolled[i].instances[0].polygon[k];near(q.x,640+(p.x-640)*Math.cos(roll)-(p.y-360)*Math.sin(roll));near(q.y,360+(p.x-640)*Math.sin(roll)+(p.y-360)*Math.cos(roll));}}
+const back=pose(0)[4];near(back.alpha,.45);assert.ok(model.projectPlane(back.instances[0].homography.matrix,half,0).y>model.projectPlane(back.instances[0].homography.matrix,half,half*2).y,'Rear faces mirror vertically');assert.ok(pose(0,{backFade:0}).filter(c=>c.visible).every(c=>c.alpha===1));assert.ok(pose(0,{backFade:90}).some(c=>c.visible&&Math.abs(c.alpha-.1)<1e-6));
+const unit=7.2,base=pose(.317,{motion:'flow'}),scaled=pose(.317,{motion:'flow'},8,2560,1440),shifted=pose(.317,{motion:'flow',offsetX:8,offsetY:-4});for(let i=0;i<8;i++)for(let j=0;j<base[i].instances.length;j++)for(let k=0;k<4;k++){const p=base[i].instances[j].polygon[k],q=scaled[i].instances[j].polygon[k];near(q.x,p.x*2);near(q.y,p.y*2);if(shifted[i].instances[j]){near(shifted[i].instances[j].polygon[k].x-p.x,unit*8);near(shifted[i].instances[j].polygon[k].y-p.y,-unit*4);}}
+for(const n of [4,8,16]){const seen=new Set();for(let i=0;i<n*2;i++)pose(i/(n*2),{},n).filter(c=>c.visible).forEach(c=>seen.add(c.slot));assert.equal(seen.size,n);}
+const scroll={...defaults,turns:3,start:20,end:80};assert.deepEqual(plain(model.layout(1280,720,scroll,.1,8,1,true)),plain(model.layout(1280,720,scroll,.9,8,1,true)));const exported=vm.runInNewContext('('+scope.window.NAGWEB_CREATE_STREAM_MODEL.toString()+')()');assert.deepEqual(plain(exported.layout(390,844,scroll,.317,16,1,true)),plain(model.layout(390,844,scroll,.317,16,1,true)));
+console.log('Cover Ring Vertical: defaults/bounds, 4–16 sources, upright tangent planes/yaw/lens/screen tilt, both directions/center holds, mirrored rear faces/fade, homogeneous inverse/corners, extreme ratios/safe lens, bounded meshes/geometry, stable textures, loop/scale/offsets, scroll and exported factory OK');
