@@ -35,6 +35,7 @@ import {
 import { importLocalLottieDirectory } from "./importers/lottie-local.mjs";
 import { buildVaultPreviews } from "./preview/build-preview.mjs";
 import { buildReactVaultPreviews } from "./preview/react-compiler.mjs";
+import { buildVaultGallery } from "./gallery/build-gallery.mjs";
 
 function parseArgs(argv) {
   const out = {};
@@ -236,6 +237,7 @@ async function main() {
           : Infinity
       })
     : { ready: 0, deferred: 0 };
+  const galleryResult = await buildVaultGallery(rootDir, catalog);
   const bundlePath = await writePortableBundle(rootDir, catalog);
   const noticesPath = await writeThirdPartyNotices(rootDir, catalog);
 
@@ -249,6 +251,9 @@ async function main() {
       `React previews: ${reactPreviewResult.ready} ready, ${reactPreviewResult.deferred} deferred.`
     );
   }
+  console.log(
+    `Gallery: ${galleryResult.outputPath} · ${galleryResult.ready}/${galleryResult.resources} previewable.`
+  );
   console.log(`Portable bundle: ${bundlePath}`);
   console.log(`Notices: ${noticesPath}`);
 }

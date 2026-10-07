@@ -453,3 +453,24 @@ Se reconocen aliases de origen como:
 La resolución es recursiva y sólo acepta dependencias con licencia verificada. Si una pieza no está presente en el Vault, la preview queda diferida en lugar de descargarla silenciosamente desde Internet.
 
 CI prueba explícitamente que `shadcn:alert-dialog` compila utilizando `shadcn:button` local.
+
+
+## Galería offline
+
+Cada construcción del Vault genera también:
+
+```text
+vault/index.html
+```
+
+Es una estantería visual completamente local con:
+
+- búsqueda por texto;
+- filtro por proveedor;
+- filtro por familia;
+- filtro por estado de preview;
+- previews embebidas cuando están listas;
+- acceso al `resource.json`;
+- copia rápida del ID universal del recurso.
+
+La galería no usa CDN, APIs ni backend. Lee un snapshot embebido del catálogo generado en esa misma corrida, por lo que también funciona abierta como archivo local.

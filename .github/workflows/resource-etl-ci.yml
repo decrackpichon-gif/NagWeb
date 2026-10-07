@@ -62,6 +62,7 @@ jobs:
           test -f ci-vault/nagweb-code-library.json
           test -f ci-vault/THIRD_PARTY_NOTICES.txt
           test -f ci-vault/react-preview-audit.json
+          test -f ci-vault/index.html
           node -e "const fs=require('fs'); const c=JSON.parse(fs.readFileSync('ci-vault/catalog.json','utf8')); if (!c.count || c.count < 5) process.exit(1); console.log('Vault resources:', c.count)"
 
       - name: Verify Vault registry dependency resolution
@@ -149,6 +150,7 @@ jobs:
           if (-not (Test-Path "ci-vault-windows\catalog.json")) { exit 1 }
           if (-not (Test-Path "ci-vault-windows\nagweb-code-library.json")) { exit 1 }
           if (-not (Test-Path "ci-vault-windows\react-preview-audit.json")) { exit 1 }
+          if (-not (Test-Path "ci-vault-windows\index.html")) { exit 1 }
           $catalog = Get-Content "ci-vault-windows\catalog.json" -Raw | ConvertFrom-Json
           if ($catalog.count -lt 5) { exit 1 }
           Write-Host "Windows Vault resources:" $catalog.count
