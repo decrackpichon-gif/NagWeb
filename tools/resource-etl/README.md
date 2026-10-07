@@ -414,3 +414,15 @@ El detector reconoce tanto `export function Component` como el patrón habitual 
 Los props obligatorios de subcomponentes se registran como información pero ya no bloquean automáticamente el bundle principal.
 
 `next-themes` se virtualiza en preview con un tema local fijo. Esto permite previsualizar componentes como Magic Card sin añadir una dependencia de runtime ni leer preferencias del sistema.
+
+
+### Shadcn v4 en previews React
+
+El sandbox reconoce el formato actual de Shadcn v4:
+
+- `cn` se reemplaza por el helper local del sandbox;
+- `radix-ui@1.4.3` forma parte del runtime permitido;
+- `lucide-react@0.474.0` forma parte del runtime permitido;
+- `class-variance-authority@0.7.1` forma parte del runtime permitido.
+
+Esto amplía el coverage de preview sin instalar todo el ecosistema Shadcn.

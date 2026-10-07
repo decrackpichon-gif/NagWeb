@@ -20,11 +20,15 @@ export const REACT_PREVIEW_RUNTIME_PACKAGES = new Set([
   "react-dom",
   "motion",
   "framer-motion",
-  "react-use-measure"
+  "react-use-measure",
+  "radix-ui",
+  "lucide-react",
+  "class-variance-authority"
 ]);
 
 export const REACT_PREVIEW_VIRTUAL_PACKAGES = new Set([
-  "next-themes"
+  "next-themes",
+  "cn"
 ]);
 
 function normalizePath(value) {
@@ -373,6 +377,11 @@ root.render(React.createElement(App));
       }));
 
       build.onResolve({ filter: /^@\/lib\/utils$/ }, () => ({
+        path: "nagweb-utils",
+        namespace: "nagweb-virtual"
+      }));
+
+      build.onResolve({ filter: /^cn$/ }, () => ({
         path: "nagweb-utils",
         namespace: "nagweb-virtual"
       }));
