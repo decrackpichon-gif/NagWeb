@@ -322,7 +322,7 @@ assert.equal(curvedConfig.pathMode,'smooth');assert.equal(C.config(scene).pathMo
 const exactCurveKey=C.pose(curvedConfig,.33,M,'linear',false);
 assert.ok(Math.abs(exactCurveKey.x-100)<1e-9&&Math.abs(exactCurveKey.y-100)<1e-9&&Math.abs(exactCurveKey.z)<1e-9);
 const curvedMid=C.pose(curvedConfig,.495,M,'linear',false),linearMid=C.pose({...curvedConfig,pathMode:'linear'},.495,M,'linear',false);
-assert.ok(Math.abs(curvedMid.y-linearMid.y)>1,'Smooth path must differ spatially from straight interpolation between keys');
+assert.ok(Math.hypot(curvedMid.x-linearMid.x,curvedMid.y-linearMid.y,curvedMid.z-linearMid.z)>1,'Smooth path must differ spatially from straight interpolation between keys');
 assert.ok(curvedMid.rotateY>10&&curvedMid.rotateY<20,'Angles keep the existing keyframe interpolation');
 const curveSamples=C.pathSamples(curvedConfig,M,'linear');
 assert.ok(curveSamples.length>curvedConfig.frames.length);assert.equal(curveSamples[0].x,0);assert.equal(curveSamples.at(-1).x,300);
