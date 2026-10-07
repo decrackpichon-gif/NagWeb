@@ -196,17 +196,18 @@ export async function runCameraBrowserSmoke(page){
   async function clickSpatialDot(selector){
    await page.$eval(selector,n=>n.closest('[data-camera-map]')?.scrollIntoView({block:'center',inline:'nearest'}));
    await new Promise(r=>setTimeout(r,40));
-   const p=await page.$eval(selector,(n,selector)=>{const map=n.closest('[data-camera-map]'),mr=map.getBoundingClientRect(),cx=+n.getAttribute('cx'),cy=+n.getAttribute('cy'),x=mr.left+cx/100*mr.width,y=mr.top+cy/100*mr.height,top=document.elementFromPoint(x,y);return{x,y,hit:!!top?.matches?.(selector),top:top?.outerHTML?.slice(0,500)||String(top)};},selector);
-   assert.equal(p.hit,true,'Spatial dot is covered at click point: '+JSON.stringify(p));
+   const p=await page.$eval(selector,n=>{const map=n.closest('[data-camera-map]'),mr=map.getBoundingClientRect(),cx=+n.getAttribute('cx'),cy=+n.getAttribute('cy'),x=mr.left+cx/100*mr.width,y=mr.top+cy/100*mr.height,top=document.elementFromPoint(x,y);return{x,y,hit:!!top?.matches?.('[data-camera-map-dot],[data-camera-look-map-dot],[data-camera-map-point],[data-camera-look-map-point]'),top:top?.outerHTML?.slice(0,500)||String(top)};});
+   assert.equal(p.hit,true,'Spatial key has no clickable hit target: '+JSON.stringify(p));
    await page.mouse.click(p.x,p.y);
   }
   await clickSpatialDot('[data-camera-map-dot="100"]');
   await page.waitForFunction(()=>document.querySelector('[data-camera-map-point="100"]'));
   assert.equal(await page.$eval('[data-camera-head]',n=>n.style.left),'100%');
-  await clickSpatialDot('[data-camera-map-dot="50"]');
-  await page.waitForFunction(()=>document.querySelector('[data-camera-map-point="50"]'));
+  // Camera 100 and look 100 may overlap. A second click cycles to the other key.
   await clickSpatialDot('[data-camera-look-map-dot="100"]');
   await page.waitForFunction(()=>document.querySelector('[data-camera-look-map-point="100"]'));
+  await clickSpatialDot('[data-camera-map-dot="50"]');
+  await page.waitForFunction(()=>document.querySelector('[data-camera-map-point="50"]'));
   await clickSpatialDot('[data-camera-look-map-dot="50"]');
   await page.waitForFunction(()=>document.querySelector('[data-camera-look-map-point="50"]'));
 

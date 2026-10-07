@@ -411,9 +411,9 @@ if(pane){
   if(ev.button!==0)return;
   var lookSpatial=ev.target.closest('[data-camera-look-map-point]');if(lookSpatial){lookSpatialDrag(ev,lookSpatial);return;}
   var spatial=ev.target.closest('[data-camera-map-point]');if(spatial){spatialDrag(ev,spatial);return;}
-  var lookDot=ev.target.closest('[data-camera-look-map-dot]');if(lookDot){ev.preventDefault();ev.stopPropagation();jumpLook(sec(),+lookDot.dataset.cameraLookMapDot);return;}
-  var cameraDot=ev.target.closest('[data-camera-map-dot]');if(cameraDot){ev.preventDefault();ev.stopPropagation();jump(sec(),+cameraDot.dataset.cameraMapDot);return;}
-  var spatialMapNode=ev.target.closest('[data-camera-map]');if(spatialMapNode&&pickSpatial(sec(),spatialMapNode,ev.clientX,ev.clientY)){ev.preventDefault();ev.stopPropagation();return;}
+  var mapDot=ev.target.closest('[data-camera-look-map-dot],[data-camera-map-dot]'),spatialMapNode=ev.target.closest('[data-camera-map]');
+  if(mapDot&&spatialMapNode&&pickSpatial(sec(),spatialMapNode,ev.clientX,ev.clientY)){ev.preventDefault();ev.stopPropagation();return;}
+  if(spatialMapNode&&pickSpatial(sec(),spatialMapNode,ev.clientX,ev.clientY)){ev.preventDefault();ev.stopPropagation();return;}
   var track=ev.target.closest('[data-camera-track]');if(!track)return;
   var s=sec();if(!C.config(s))return;
   var button=ev.target.closest('[data-camera-jump]'),rect=track.getBoundingClientRect();
