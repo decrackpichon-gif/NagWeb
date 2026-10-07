@@ -161,3 +161,18 @@ La adaptación a ancho angosto ya se verifica en Chromium redimensionando la mis
 exportación pausada de 1000 px a 390 px: X/Y/Z de cámara, perspectiva y profundidad
 de capas se escalan en vivo, los ángulos permanecen estables y los datos guardados no
 se modifican. El smoke guarda además una captura mobile.
+
+
+## Trayectoria curva opcional
+La cámara conserva `Por tramos` como comportamiento compatible por defecto. El modo
+`Curva suave` convierte las posiciones XYZ de los mismos encuadres en una trayectoria
+Catmull-Rom continua, sin cambiar el timing existente de los ángulos ni los easings.
+Los encuadres siguen siendo puntos exactos de paso y dos posiciones consecutivas
+idénticas conservan una permanencia real. El mapa espacial muestra muestras de la
+curva efectiva en vez de unir únicamente los puntos con segmentos rectos.
+
+Esta primera versión toma de las referencias de edición de cámara la idea de separar
+la trayectoria espacial de la orientación. La parametrización uniforme por longitud
+de arco, la orientación por punto de interés y el damping dependiente de deltaTime
+quedan como evoluciones separadas para no mezclar tres cambios de comportamiento en
+una sola etapa.

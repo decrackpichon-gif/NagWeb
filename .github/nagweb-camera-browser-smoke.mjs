@@ -6,7 +6,7 @@ export async function runCameraBrowserSmoke(page){
  try{
   await page.evaluate(()=>{
    const s=JSON.parse(JSON.stringify(sec()));
-   s.id='camera-browser-scene';s.layout='stack';s.sdEnabled=true;s.sdCameraEnabled=true;s.sdCameraResponsive=true;s.sdCameraReferenceWidth=1000;s.sdEase='linear';s.sdLength=320;s.sdPerspective=1000;s.stType='cut';
+   s.id='camera-browser-scene';s.layout='stack';s.sdEnabled=true;s.sdCameraEnabled=true;s.sdCameraPathMode='smooth';s.sdCameraResponsive=true;s.sdCameraReferenceWidth=1000;s.sdEase='linear';s.sdLength=320;s.sdPerspective=1000;s.stType='cut';
    s.sdCameraFrames=[
     {at:0,x:0,y:0,z:0,rotateX:0,rotateY:0,rotate:0,ease:'linear'},
     {at:50,x:200,y:100,z:100,rotateX:10,rotateY:20,rotate:5,ease:'linear'},
@@ -32,9 +32,11 @@ export async function runCameraBrowserSmoke(page){
    plane:document.querySelector('[data-camera-map]')?.dataset.plane,
    label:document.querySelector('[data-camera-position-label]')?.textContent,
    head:document.querySelector('[data-camera-head]')?.style.left,
-   seek:document.querySelector('[data-camera-seek]')?.value
+   seek:document.querySelector('[data-camera-seek]')?.value,
+   pathPoints:(document.querySelector('[data-camera-map-path]')?.getAttribute('points')||'').trim().split(/\\s+/).filter(Boolean).length
   }));
   assert.equal(ui.markers,3);assert.equal(ui.dots,3);assert.equal(ui.plane,'top');assert.equal(ui.head,'50%');assert.equal(+ui.seek,50);
+  assert.ok(ui.pathPoints>ui.dots,'Smooth camera path should render sampled curve points');
   assert.ok(ui.label.includes('50%')&&ui.label.includes('X 200')&&ui.label.includes('Y 100')&&ui.label.includes('Z 100'));
   assert.ok((await page.$eval('[data-camera-map-box]',n=>n.textContent)).includes('ancho de referencia'));
 
@@ -65,6 +67,9 @@ export async function runCameraBrowserSmoke(page){
     const m=new w.DOMMatrix(w.getComputedStyle(probe).transform);probe.remove();return m;
    }
    function error(a,b){return Math.max(...entries.map(k=>Math.abs(a[k]-b[k])));}
+   w.__NAG_SCROLL_DIRECTOR['camera-browser-scene'].set(.25);
+   const quarterA=matrixFromAnimation(world),quarterE=matrixFromTransform('rotateZ(-2.5deg) rotateY(-10deg) rotateX(-5deg) translate3d(-101.5625px,-76.5625px,56.25px)');
+   w.__NAG_SCROLL_DIRECTOR['camera-browser-scene'].set(.5);
    const worldA=matrixFromAnimation(world),groupA=matrixFromAnimation(group),childA=matrixFromAnimation(child);
    const worldE=matrixFromTransform('rotateZ(-5deg) rotateY(-20deg) rotateX(-10deg) translate3d(-225px,-125px,100px)');
    const groupE=matrixFromTransform('translateZ(-300px) rotateX(0deg) rotateY(0deg)');
@@ -74,6 +79,7 @@ export async function runCameraBrowserSmoke(page){
     childInGroup:child.parentNode===group,
     groupStyle:w.getComputedStyle(group).transformStyle,
     authoredLeft:group.style.left,
+    quarterError:error(quarterA.matrix,quarterE),
     worldError:error(worldA.matrix,worldE),
     groupError:error(groupA.matrix,groupE),
     childError:error(childA.matrix,childE),
@@ -82,6 +88,7 @@ export async function runCameraBrowserSmoke(page){
    };
   });
   assert.equal(runtime.groupInWorld,true);assert.equal(runtime.childInGroup,true);assert.equal(runtime.groupStyle,'preserve-3d');
+  assert.ok(runtime.quarterError<.001,'Smooth camera quarter-path mismatch: '+JSON.stringify(runtime));
   assert.ok(runtime.worldError<.001,'Camera matrix mismatch: '+JSON.stringify(runtime));
   assert.ok(runtime.groupError<.001,'Container depth matrix mismatch: '+JSON.stringify(runtime));
   assert.ok(runtime.childError<.001,'Nested 2.5D matrix mismatch: '+JSON.stringify(runtime));
