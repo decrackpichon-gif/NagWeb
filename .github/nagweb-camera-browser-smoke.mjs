@@ -136,6 +136,33 @@ export async function runCameraBrowserSmoke(page){
   assert.equal(savedResponsive.frame.x,225);assert.equal(savedResponsive.frame.y,125);assert.equal(savedResponsive.frame.z,100);
   assert.equal(savedResponsive.frame.rotateX,10);assert.equal(savedResponsive.frame.rotateY,20);assert.equal(savedResponsive.frame.rotate,5);
 
+  // Existing DOM -> Three.js anchors should inherit camera motion automatically
+  // because they project the transformed anchor rect on every update.
+  const anchorBridge=await page.evaluate(()=>{
+   const f=document.querySelector('#camera-browser-export'),w=f.contentWindow,d=f.contentDocument,api=w.__NAG_SCROLL_DIRECTOR['camera-browser-scene'];
+   const el=d.querySelector('[data-id="camera-child"]');
+   function vec(x=0,y=0,z=0){return{x,y,z,set(a,b,c){this.x=a;this.y=b;this.z=c;}}}
+   const object={position:vec(),scale:vec(1,1,1),rotation:vec()};
+   const handle=w.NAGWEB_3D_ANCHOR.bind(el,object,{},{
+    project:({ndcX,ndcY})=>({x:ndcX,y:ndcY,z:3}),
+    followSize:false,followCssScale:false,followCssRotation:false
+   });
+   api.set(0);handle.update();
+   const first={x:object.position.x,y:object.position.y,z:object.position.z,rect:handle.snapshot().anchorRect};
+   api.set(.5);handle.update();
+   const second={x:object.position.x,y:object.position.y,z:object.position.z,rect:handle.snapshot().anchorRect};
+   handle.destroy();
+   return{
+    moved:Math.abs(second.x-first.x)>.01||Math.abs(second.y-first.y)>.01,
+    projected:first.z===3&&second.z===3,
+    rectMoved:Math.abs(second.rect.left-first.rect.left)>.5||Math.abs(second.rect.top-first.rect.top)>.5,
+    cleaned:w.NAGWEB_3D_ANCHOR.count()===0,
+    first,second
+   };
+  });
+  assert.equal(anchorBridge.moved,true,'3D anchor did not follow camera motion: '+JSON.stringify(anchorBridge));
+  assert.equal(anchorBridge.projected,true);assert.equal(anchorBridge.rectMoved,true);assert.equal(anchorBridge.cleaned,true);
+
   fs.mkdirSync('/tmp/nagweb-camera-visuals',{recursive:true});
   await page.screenshot({path:'/tmp/nagweb-camera-visuals/camera-editor.png',fullPage:true});
   const exportElement=await page.$('#camera-browser-export');
@@ -144,7 +171,7 @@ export async function runCameraBrowserSmoke(page){
   await page.evaluate(()=>document.querySelector('#camera-browser-export').contentWindow.dispatchEvent(new Event('resize')));
   await new Promise(r=>setTimeout(r,80));
   await exportElement.screenshot({path:'/tmp/nagweb-camera-visuals/camera-export.png'});
-  console.log('Camera browser: mapa real, teclado, runtime exportado, resize mobile, stack absoluto y perspectiva 2.5D compartida OK');
+  console.log('Camera browser: mapa real, teclado, runtime exportado, resize mobile, stack absoluto, perspectiva 2.5D y puente de anclas 3D OK');
  }finally{
   await page.evaluate(previous=>{
    document.getElementById('camera-browser-export')?.remove();clearTimeout(previewTimer);project=JSON.parse(previous.project);
