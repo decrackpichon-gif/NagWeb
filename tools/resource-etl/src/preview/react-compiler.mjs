@@ -24,7 +24,8 @@ export const REACT_PREVIEW_RUNTIME_PACKAGES = new Set([
   "react-use-measure",
   "radix-ui",
   "lucide-react",
-  "class-variance-authority"
+  "class-variance-authority",
+  "cmdk"
 ]);
 
 export const REACT_PREVIEW_VIRTUAL_PACKAGES = new Set([

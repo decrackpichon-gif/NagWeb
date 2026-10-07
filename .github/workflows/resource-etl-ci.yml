@@ -114,6 +114,15 @@ jobs:
             }
           }
 
+          const command = audit.items.find(
+            (entry) => entry.resourceId === "shadcn:command"
+          );
+          if (!command || !command.ok) {
+            console.error("shadcn:command did not compile with local dialog + cmdk");
+            console.error(JSON.stringify(command, null, 2));
+            process.exit(1);
+          }
+
           const dialog = audit.items.find(
             (entry) => entry.resourceId === "shadcn:dialog"
           );
