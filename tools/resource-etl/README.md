@@ -5,6 +5,16 @@ Importador aislado para construir el catálogo universal de recursos de NagWeb.
 Esta carpeta no toca el editor principal, MotionLab, Director de Scroll ni la cámara 3D.
 No hace deploy de Vercel. Todo se ejecuta localmente.
 
+## Windows: forma recomendada
+
+Si no querés usar consola, abrí con doble clic:
+
+`INICIAR_IMPORTADOR_WINDOWS.bat`
+
+El archivo muestra un menú en español y ejecuta por vos las pruebas, la creación del catálogo o las descargas. No hace falta usar Linux.
+
+> Durante el desarrollo no hace falta que ejecutes nada hasta que se indique explícitamente que hay una prueba para hacer.
+
 ## Requisitos
 
 - Node.js 20 o superior.
