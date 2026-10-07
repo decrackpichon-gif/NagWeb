@@ -377,6 +377,12 @@ assert.ok(Math.abs(C.pose(tightConfig,.33,M,'linear',false).x-100)<1e-9&&Math.ab
 assert.equal(C.normalize([{at:0,x:0,tension:250},{at:100,x:100,tension:-250}])[0].tension,100);
 assert.equal(C.normalize([{at:0,x:0,tension:250},{at:100,x:100,tension:-250}])[1].tension,-100);
 assert.equal(C.curveTension('bad'),0);
+const tangentDefault=C.tangentHandle(curvedConfig.frames,33),tangentTight=C.tangentHandle(tightConfig.frames,33),tangentLoose=C.tangentHandle(looseConfig.frames,33);
+assert.ok(tangentDefault&&tangentTight&&tangentLoose);
+assert.ok(Math.abs(tangentDefault.x-133.33333333333334)<1e-9&&Math.abs(tangentDefault.z-16.666666666666668)<1e-9);
+assert.equal(tangentTight.x,100);assert.equal(tangentTight.y,100);assert.equal(tangentTight.z,0,'+100% tension retracts the outgoing tangent to the key');
+assert.ok(tangentLoose.x>tangentDefault.x&&tangentLoose.z>tangentDefault.z,'Negative tension lengthens the outgoing tangent');
+assert.equal(C.tangentHandle(curvedConfig.frames,100),null);assert.equal(C.tangentHandle(holdCurve?.frames||[],0),null);
 const holdCurve={...curvedConfig,frames:C.normalize([{at:0,x:50,y:25,z:-10,ease:'linear'},{at:20,x:50,y:25,z:-10,ease:'linear'},{at:100,x:300,y:0,z:0}])};
 const smoothHold=C.pose(holdCurve,.1,M,'linear',false);
 assert.equal(smoothHold.x,50);assert.equal(smoothHold.y,25);assert.equal(smoothHold.z,-10);

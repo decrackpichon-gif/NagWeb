@@ -40,15 +40,25 @@ export async function runCameraBrowserSmoke(page){
   assert.ok(ui.label.includes('50%')&&ui.label.includes('X 200')&&ui.label.includes('Y 100')&&ui.label.includes('Z 100'));
   assert.ok((await page.$eval('[data-camera-map-box]',n=>n.textContent)).includes('ancho de referencia'));
   const curveBefore=await page.$eval('[data-camera-map-path]',n=>n.getAttribute('points'));
+  const tangentBefore=await page.evaluate(()=>{
+   const h=document.querySelector('[data-camera-tangent-handle]'),k=document.querySelector('[data-camera-map-dot="50"]');
+   return{exists:!!h,hx:+h?.getAttribute('cx'),hy:+h?.getAttribute('cy'),kx:+k?.getAttribute('cx'),ky:+k?.getAttribute('cy')};
+  });
+  assert.equal(tangentBefore.exists,true);assert.ok(Math.hypot(tangentBefore.hx-tangentBefore.kx,tangentBefore.hy-tangentBefore.ky)>.1,'0% tension should show a visible outgoing tangent');
   assert.equal(await page.$eval('[data-camera-field="tension"][data-camera-at="50"]',n=>+n.value),0);
   await page.$eval('[data-camera-field="tension"][data-camera-at="50"]',n=>{n.value='100';n.dispatchEvent(new Event('change',{bubbles:true}));});
   await page.waitForFunction(()=>sec().sdCameraFrames.find(k=>k.at===50)?.tension===100&&document.querySelector('[data-camera-field="tension"][data-camera-at="50"]'));
   const curveAfter=await page.$eval('[data-camera-map-path]',n=>n.getAttribute('points'));
   assert.notEqual(curveAfter,curveBefore,'Changing segment tension must redraw the sampled spatial path');
+  const tangentAfter=await page.evaluate(()=>{
+   const h=document.querySelector('[data-camera-tangent-handle]'),k=document.querySelector('[data-camera-map-dot="50"]');
+   return{hx:+h?.getAttribute('cx'),hy:+h?.getAttribute('cy'),kx:+k?.getAttribute('cx'),ky:+k?.getAttribute('cy')};
+  });
+  assert.ok(Math.hypot(tangentAfter.hx-tangentAfter.kx,tangentAfter.hy-tangentAfter.ky)<.001,'+100% tension should retract the tangent preview onto the selected key');
   await page.select('[data-camera-path-mode]','linear');
-  await page.waitForFunction(()=>!document.querySelector('[data-camera-field="tension"]'));
+  await page.waitForFunction(()=>!document.querySelector('[data-camera-field="tension"]')&&!document.querySelector('[data-camera-tangent-handle]'));
   await page.select('[data-camera-path-mode]','smooth');
-  await page.waitForFunction(()=>document.querySelector('[data-camera-field="tension"][data-camera-at="50"]'));
+  await page.waitForFunction(()=>document.querySelector('[data-camera-field="tension"][data-camera-at="50"]')&&document.querySelector('[data-camera-tangent-handle]'));
   assert.equal(await page.$eval('[data-camera-field="tension"][data-camera-at="50"]',n=>+n.value),100,'Tension survives temporary linear mode');
 
   await page.focus('[data-camera-map-point="50"]');await page.keyboard.press('ArrowRight');
