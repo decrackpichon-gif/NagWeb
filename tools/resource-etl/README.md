@@ -191,3 +191,85 @@ El extractor recorre el catálogo oficial de Kenney, abre cada página de asset 
 2. existe un enlace ZIP oficial bajo `kenney.nl/media/pages/assets/`.
 
 Los packs se guardan inicialmente como `asset-pack`. Esto es deliberado: un ZIP de Kenney puede contener decenas o cientos de modelos, sprites o elementos UI. La etapa siguiente desempaquetará esos ZIP e indexará sus recursos internos de forma individual.
+
+
+# NagWeb Code Vault
+
+La biblioteca liviana autosuficiente vive en `vault/` y está separada de los assets pesados.
+
+Conserva localmente, cuando la licencia lo permite:
+
+- SVG;
+- JSON;
+- Lottie JSON que tengamos derecho a conservar;
+- TypeScript / TSX / JavaScript;
+- CSS y keyframes;
+- presets de movimiento;
+- shaders GLSL;
+- escenas de código;
+- metadata necesaria para reconstruir cada recurso.
+
+## Primera implementación real
+
+### Lucide
+
+El extractor lee el snapshot actual de `lucide-icons/lucide` y guarda por cada icono:
+
+- `icon.svg`;
+- `metadata.json`;
+- `resource.json`;
+- tags/categorías;
+- controles editables de tamaño, color y grosor.
+
+### Magic UI
+
+El extractor usa el `registry.json` oficial de `magicuidesign/magicui` y conserva:
+
+- TSX completo;
+- dependencias;
+- registry dependencies;
+- CSS variables;
+- keyframes;
+- metadata;
+- `editableProps` inferidos automáticamente desde las interfaces TypeScript.
+
+## Bundle portable
+
+Cada ejecución genera:
+
+`vault/nagweb-code-library.json`
+
+Ese archivo contiene una copia portable de todos los recursos livianos ya presentes en el Vault.
+
+También se genera:
+
+`vault/THIRD_PARTY_NOTICES.txt`
+
+para conservar las obligaciones de licencia.
+
+## Construcción piloto
+
+```bash
+npm run vault -- --sources=lucide,magicui --limit=25
+```
+
+## Construcción completa
+
+```bash
+npm run vault:all
+```
+
+## Lottie local
+
+NagWeb ya puede reconocer archivos Lottie JSON que tengamos derecho a conservar y convertirlos a recursos nativos del Vault. No se hace scraping masivo de la biblioteca comunitaria de LottieFiles.
+
+## Política legal automatizada
+
+`src/vault/source-policies.mjs` define por proveedor:
+
+- `full`: mirror completo;
+- `code-only`: sólo código;
+- `metadata-only`: indexar sin copiar archivos;
+- `blocked-pending-review`: no automatizar hasta revisar licencia.
+
+El objetivo es que el sistema falle de forma segura antes de copiar una fuente con derechos poco claros.

@@ -9,6 +9,12 @@ import {
   transformKenneyPack
 } from "./transformers.mjs";
 import { parseKenneyAssetPage } from "./extractors/kenney.mjs";
+import { inferEditablePropsFromTsx } from "./analyzers/tsx-editable-props.mjs";
+import {
+  transformLucideIcon,
+  transformMagicUiComponent
+} from "./light-transformers.mjs";
+import { looksLikeLottie } from "./importers/lottie-local.mjs";
 
 const fakeAsset = {
   assetId: "Wood999",
@@ -139,5 +145,82 @@ assert.equal(kenneyResource.id, "kenney:test-pack");
 assert.equal(kenneyResource.kind, "asset-pack");
 assert.equal(kenneyResource.license.id, "CC0");
 assert.equal(kenneyResource.ingestion.status, "validated");
+
+const inferred = inferEditablePropsFromTsx(`
+interface DemoProps {
+  color?: string;
+  speed?: number;
+  enabled?: boolean;
+  mode?: "soft" | "hard";
+  children?: React.ReactNode;
+}
+export function Demo({
+  color = "#ff0000",
+  speed = 1,
+  enabled = true,
+  mode = "soft",
+  children
+}: DemoProps) {
+  return null;
+}
+`);
+
+assert.ok(inferred.some((prop) => prop.id === "color" && prop.control === "color"));
+assert.ok(inferred.some((prop) => prop.id === "speed" && prop.control === "slider"));
+assert.ok(inferred.some((prop) => prop.id === "enabled" && prop.control === "toggle"));
+assert.ok(inferred.some((prop) => prop.id === "mode" && prop.control === "select"));
+
+const lucideResource = transformLucideIcon({
+  commit: "abc123",
+  item: {
+    name: "test-icon",
+    meta: { tags: ["test"], categories: ["demo"], contributors: ["nagweb"] },
+    svg: "<svg viewBox=\"0 0 24 24\"><path d=\"M0 0\" /></svg>",
+    svgSha: "svgsha",
+    metaSha: "metasha"
+  }
+});
+assert.equal(lucideResource.kind, "icon");
+assert.equal(lucideResource.license.id, "ISC");
+assert.equal(lucideResource.artifacts[0].content.includes("<svg"), true);
+
+const magicResource = transformMagicUiComponent({
+  registry: {
+    repository: "https://github.com/magicuidesign/magicui",
+    commit: "abc123"
+  },
+  item: {
+    raw: {
+      name: "demo-card",
+      title: "Demo Card",
+      description: "Demo",
+      type: "registry:ui",
+      dependencies: ["motion"],
+      files: [{ path: "registry/magicui/demo-card.tsx" }]
+    },
+    files: [{
+      path: "registry/magicui/demo-card.tsx",
+      sourcePath: "apps/www/registry/magicui/demo-card.tsx",
+      sourceUrl: "https://example.test/demo-card.tsx",
+      content: `
+interface DemoCardProps {
+  color?: string;
+  speed?: number;
+}
+export function DemoCard({ color = "#ffffff", speed = 1 }: DemoCardProps) {
+  return null;
+}
+`
+    }]
+  }
+});
+assert.equal(magicResource.license.id, "MIT");
+assert.ok(magicResource.editableProps.some((prop) => prop.id === "color"));
+
+assert.equal(
+  looksLikeLottie({ v: "5.12.0", fr: 60, ip: 0, op: 120, layers: [] }),
+  true
+);
+assert.equal(looksLikeLottie({ hello: "world" }), false);
 
 console.log("NagWeb Resource ETL self-test: OK");

@@ -36,6 +36,8 @@ echo  8. DESCARGAR PMNDRS ^(6 recursos completos^)
 echo  9. PROBAR Kenney ^(5 packs oficiales, NO descarga archivos^)
 echo 10. DESCARGAR Kenney ^(5 packs ZIP oficiales^)
 echo 11. CREAR catalogo local ^(25 por fuente^)
+echo 12. CREAR biblioteca liviana PILOTO ^(Lucide + Magic UI^)
+echo 13. CREAR biblioteca liviana COMPLETA ^(Lucide + Magic UI^)
 echo.
 echo  0. Salir
 echo.
@@ -52,6 +54,8 @@ if "%choice%"=="8" goto pmndrs_download
 if "%choice%"=="9" goto kenney_test
 if "%choice%"=="10" goto kenney_download
 if "%choice%"=="11" goto catalog
+if "%choice%"=="12" goto code_vault_pilot
+if "%choice%"=="13" goto code_vault_all
 if "%choice%"=="0" exit /b 0
 
 echo.
@@ -142,6 +146,21 @@ if errorlevel 1 goto done
 node src\cli.mjs --source=kenney --limit=25 --write
 if errorlevel 1 goto done
 node src\cli.mjs --source=shadcn --limit=25 --write
+goto done
+
+:code_vault_pilot
+cls
+echo Creando biblioteca liviana piloto de NagWeb...
+echo.
+node src\vault-cli.mjs --sources=lucide,magicui --limit=25
+goto done
+
+:code_vault_all
+cls
+echo Creando biblioteca liviana COMPLETA de NagWeb...
+echo Esto puede descargar miles de archivos de codigo muy livianos.
+echo.
+node src\vault-cli.mjs --sources=lucide,magicui --all
 goto done
 
 :done

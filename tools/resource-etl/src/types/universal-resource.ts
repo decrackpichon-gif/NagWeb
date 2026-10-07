@@ -22,6 +22,8 @@ export type ResourceKind =
   | "lottie"
   | "motion-preset"
   | "asset-pack"
+  | "code-scene"
+  | "shader"
   | "unknown";
 
 export type EditableValue =
