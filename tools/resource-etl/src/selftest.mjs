@@ -9,7 +9,10 @@ import {
   transformKenneyPack
 } from "./transformers.mjs";
 import { parseKenneyAssetPage } from "./extractors/kenney.mjs";
-import { inferEditablePropsFromTsx } from "./analyzers/tsx-editable-props.mjs";
+import {
+  inferEditablePropsFromTsx,
+  inferCvaEditableProps
+} from "./analyzers/tsx-editable-props.mjs";
 import {
   transformLucideIcon,
   transformMagicUiComponent
@@ -186,6 +189,36 @@ assert.ok(inferred.some((prop) => prop.id === "color" && prop.control === "color
 assert.ok(inferred.some((prop) => prop.id === "speed" && prop.control === "slider"));
 assert.ok(inferred.some((prop) => prop.id === "enabled" && prop.control === "toggle"));
 assert.ok(inferred.some((prop) => prop.id === "mode" && prop.control === "select"));
+
+const cvaProps = inferCvaEditableProps(`
+const buttonVariants = cva("base", {
+  variants: {
+    variant: {
+      default: "bg-black",
+      outline: "border",
+      ghost: "bg-transparent",
+    },
+    size: {
+      default: "h-9",
+      sm: "h-8",
+      lg: "h-10",
+    },
+    disabled: {
+      true: "opacity-50",
+      false: "",
+    },
+  },
+  defaultVariants: {
+    variant: "default",
+    size: "sm",
+    disabled: false,
+  },
+})
+`);
+assert.equal(cvaProps.find((prop) => prop.id === "variant")?.control, "select");
+assert.equal(cvaProps.find((prop) => prop.id === "variant")?.defaultValue, "default");
+assert.equal(cvaProps.find((prop) => prop.id === "size")?.defaultValue, "sm");
+assert.equal(cvaProps.find((prop) => prop.id === "disabled")?.control, "toggle");
 
 const lucideResource = transformLucideIcon({
   commit: "abc123",

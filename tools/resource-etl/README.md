@@ -495,3 +495,28 @@ Se generan mini escenas locales para componentes compuestos como:
 Las recetas usan sólo exports del recurso y dependencias ya resueltas en el Vault. Un árbol declarativo describe componentes, elementos HTML, props y children, y el sandbox lo renderiza sin ejecutar código de configuración remoto.
 
 Los recursos sin receta específica siguen teniendo una preview genérica automática.
+
+
+## Variantes CVA → controles NagWeb
+
+El analizador TSX reconoce configuraciones de `class-variance-authority` (`cva`).
+
+Por ejemplo:
+
+```ts
+variants: {
+  variant: { default: "...", outline: "...", ghost: "..." },
+  size: { default: "...", sm: "...", lg: "..." }
+}
+```
+
+se convierte en:
+
+- selector visual `variant`;
+- selector visual `size`;
+- opciones reales tomadas del código;
+- `defaultVariants` como valores iniciales.
+
+Las variantes booleanas `true/false` se convierten en toggle.
+
+Shadcn usa ahora el mismo analizador que Magic UI/Motion Primitives, manteniendo además controles base de NagWeb como opacidad y el texto de Button.

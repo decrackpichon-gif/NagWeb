@@ -1,3 +1,4 @@
+import { inferEditablePropsFromTsx } from "./analyzers/tsx-editable-props.mjs";
 import { flattenPolyHavenFiles } from "./extractors/polyhaven.mjs";
 import {
   flattenAmbientCgDownloads,
@@ -86,23 +87,28 @@ function polyHavenEditableProps() {
   ];
 }
 
-function shadcnEditableProps(item) {
-  const props = [
-    {
-      id: "opacity",
-      label: "Opacidad",
-      group: "Apariencia",
-      valueType: "number",
-      control: "slider",
-      defaultValue: 1,
-      binding: { type: "css-property", property: "opacity" },
-      constraints: { min: 0, max: 1, step: 0.01 },
-      responsive: true,
-      animatable: true
-    }
-  ];
+function shadcnEditableProps(item, code) {
+  const inferred = inferEditablePropsFromTsx(code);
+  const props = [...inferred];
 
-  if (item.name === "button") {
+  if (!props.some((prop) => prop.id === "opacity")) {
+    props.push(
+      {
+        id: "opacity",
+        label: "Opacidad",
+        group: "Apariencia",
+        valueType: "number",
+        control: "slider",
+        defaultValue: 1,
+        binding: { type: "css-property", property: "opacity" },
+        constraints: { min: 0, max: 1, step: 0.01 },
+        responsive: true,
+        animatable: true
+      }
+    );
+  }
+
+  if (item.name === "button" && !props.some((prop) => prop.id === "label")) {
     props.unshift({
       id: "label",
       label: "Texto",
@@ -244,6 +250,7 @@ export function transformShadcnItem({ registry, item }) {
   const fetchedAt = now();
   const raw = item.raw;
 
+  const code = item.files.map((file) => file.content || "").join("\n");
   const artifacts = item.files.map((file, index) => ({
     id: `component-${index + 1}`,
     role: "component",
@@ -297,7 +304,7 @@ export function transformShadcnItem({ registry, item }) {
       registryDependencies: raw.registryDependencies || [],
       cssVariables: raw.cssVars || {}
     },
-    editableProps: shadcnEditableProps(raw),
+    editableProps: shadcnEditableProps(raw, code),
     compatibility: {
       nagweb: { supported: true, renderer: "react", tested: false },
       react: true,
@@ -309,7 +316,8 @@ export function transformShadcnItem({ registry, item }) {
       framework: "react",
       language: "tsx",
       styling: ["tailwind"],
-      registryType: raw.type
+      registryType: raw.type,
+      inferredEditableProps: inferEditablePropsFromTsx(code).length
     },
     search: {
       text: [raw.title, raw.name, raw.description].filter(Boolean).join(" "),
