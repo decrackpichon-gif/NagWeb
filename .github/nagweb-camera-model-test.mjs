@@ -381,7 +381,7 @@ const holdCurve={...curvedConfig,frames:C.normalize([{at:0,x:50,y:25,z:-10,ease:
 const smoothHold=C.pose(holdCurve,.1,M,'linear',false);
 assert.equal(smoothHold.x,50);assert.equal(smoothHold.y,25);assert.equal(smoothHold.z,-10);
 assert.equal(C.pose(curvedConfig,.495,M,'linear',true).x,0,'Reduced motion still neutralizes the camera');
-editable={...curvedScene,id:'curve-tension-ui'};selected[editable.id]=33;
+editable={...curvedScene,id:'curve-tension-ui'};
 const tensionHistory=history.length;
 listeners.change({target:{dataset:{cameraField:'tension',cameraAt:'33'},matches(){return true;},value:'80'}});
 assert.equal(editable.sdCameraFrames.find(k=>k.at===33).tension,80);assert.equal(history.length,tensionHistory+1);
