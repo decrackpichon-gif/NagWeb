@@ -231,10 +231,31 @@ listeners.pointerdown({button:0,pointerId:7,clientX:100,clientY:100,target:spati
 spatialPoint.handlers.pointermove({pointerId:7,clientX:20,clientY:30});
 spatialPoint.handlers.keydown({key:'Escape',preventDefault(){},stopPropagation(){}});
 assert.equal(JSON.stringify(editable),beforeMap);assert.equal(history.length,mapHistory);
-mapBox.dataset.plane='front';
+mapBox.dataset.plane='front';mapBox.dataset.range='800';
 listeners.keydown({target:mapMarker(),key:'ArrowDown',shiftKey:true,preventDefault(){},stopPropagation(){}});
-assert.equal(editable.sdCameraFrames[1].y,300);assert.equal(editable.sdCameraFrames[1].z,400);
-console.log('Camera spatial map: projections, independent axes, drag transaction, cancellation, keyboard and bounds OK');
+assert.equal(editable.sdCameraFrames[1].y,300);assert.equal(editable.sdCameraFrames[1].z,400,'Keyboard step stays 100px when the map auto-range changes');
+editable={...editable,sdCameraOrientationMode:'lookAt',sdCameraLookFrames:[
+ {at:0,x:0,y:0,z:800},{at:50,x:300,y:100,z:700,ease:'linear'},{at:100,x:500,y:0,z:500}
+]};
+mapBox.dataset.plane='top';mapBox.dataset.range='800';
+function lookMapMarker(){const point=marker(50);point.dataset={cameraLookMapPoint:'50'};point.closest=function(selector){return selector==='[data-camera-map]'?mapBox:selector==='[data-camera-look-map-point]'?this:null;};return point;}
+let lookPoint=lookMapMarker(),beforeLookMap=JSON.stringify(editable.sdCameraLookFrames),lookHistory=history.length;
+listeners.pointerdown({button:0,pointerId:9,clientX:100,clientY:100,target:lookPoint,preventDefault(){}});
+lookPoint.handlers.pointermove({pointerId:9,clientX:125,clientY:75});
+assert.equal(JSON.stringify(editable.sdCameraLookFrames),beforeLookMap,'Look drag must stay visual until release');
+lookPoint.handlers.pointerup({pointerId:9,clientX:125,clientY:75});
+assert.equal(editable.sdCameraLookFrames[1].x,500);assert.equal(editable.sdCameraLookFrames[1].z,900);
+assert.equal(editable.sdCameraLookFrames[1].y,100);assert.equal(history.length,lookHistory+1);
+lookPoint=lookMapMarker();beforeLookMap=JSON.stringify(editable.sdCameraLookFrames);lookHistory=history.length;
+listeners.pointerdown({button:0,pointerId:9,clientX:100,clientY:100,target:lookPoint,preventDefault(){}});
+lookPoint.handlers.pointermove({pointerId:9,clientX:50,clientY:150});
+lookPoint.handlers.keydown({key:'Escape',preventDefault(){},stopPropagation(){}});
+assert.equal(JSON.stringify(editable.sdCameraLookFrames),beforeLookMap);assert.equal(history.length,lookHistory);
+mapBox.dataset.plane='front';
+listeners.keydown({target:lookMapMarker(),key:'ArrowLeft',shiftKey:false,preventDefault(){},stopPropagation(){}});
+assert.equal(editable.sdCameraLookFrames[1].x,475,'Look keyboard move stays exactly 25px at an 800px map range');
+assert.equal(editable.sdCameraLookFrames[1].y,100);assert.equal(editable.sdCameraLookFrames[1].z,900);
+console.log('Camera spatial map: camera + look target drag transactions, cancellation, dynamic-range keyboard steps and bounds OK');
 const initialPath=C.normalize([{at:0,x:100,y:50,z:20,rotateY:30,ease:'linear'},{at:50,x:200,z:100},{at:100,x:0}]);
 const unchangedPath=JSON.stringify(initialPath),hold=C.holdFrame(initialPath,0,15);
 assert.equal(hold.error,undefined);assert.equal(hold.frames.length,4);assert.equal(hold.at,15);
