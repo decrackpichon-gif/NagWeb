@@ -150,34 +150,34 @@ function card(resource){
   node.className="card";
 
   const preview=isReady(resource)&&resource.previewPath
-    ? `<iframe loading="lazy" sandbox="allow-scripts allow-same-origin" src="${esc(resource.previewPath)}" title="${esc(resource.title)}"></iframe>`
-    : `<div class="placeholder">Preview no disponible todavía.<br>${esc(resource.previewReason||"Requiere adaptación adicional.")}</div>`;
+    ? '<iframe loading="lazy" sandbox="allow-scripts allow-same-origin" src="'+esc(resource.previewPath)+'" title="'+esc(resource.title)+'"></iframe>'
+    : '<div class="placeholder">Preview no disponible todavía.<br>'+esc(resource.previewReason||"Requiere adaptación adicional.")+'</div>';
 
   const previewAction=isReady(resource)&&resource.previewPath
-    ? `<a href="${esc(resource.previewPath)}" target="_blank" rel="noreferrer">Abrir preview</a>`
+    ? '<a href="'+esc(resource.previewPath)+'" target="_blank" rel="noreferrer">Abrir preview</a>'
     : "";
 
   const jsonAction=resource.vaultPath
-    ? `<a href="${esc(resource.vaultPath)}" target="_blank" rel="noreferrer">resource.json</a>`
+    ? '<a href="'+esc(resource.vaultPath)+'" target="_blank" rel="noreferrer">resource.json</a>'
     : "";
 
-  node.innerHTML=`
-    <div class="preview">${preview}</div>
-    <div class="body">
-      <div class="meta">
-        <span class="pill">${esc(resource.provider)}</span>
-        <span class="pill">${esc(resource.kind)}</span>
-        <span class="pill status-${esc(resource.previewStatus)}">${esc(resource.previewStatus)}</span>
-      </div>
-      <h2 class="title">${esc(resource.title)}</h2>
-      <div class="desc">${esc(resource.description)}</div>
-      <div class="tags">${esc(resource.tags.slice(0,8).join(" · "))}</div>
-      <div class="actions">
-        ${previewAction}
-        ${jsonAction}
-        <button type="button" data-copy="${esc(resource.id)}">Copiar ID</button>
-      </div>
-    </div>`;
+  node.innerHTML=
+    '<div class="preview">'+preview+'</div>'+
+    '<div class="body">'+
+      '<div class="meta">'+
+        '<span class="pill">'+esc(resource.provider)+'</span>'+
+        '<span class="pill">'+esc(resource.kind)+'</span>'+
+        '<span class="pill status-'+esc(resource.previewStatus)+'">'+esc(resource.previewStatus)+'</span>'+
+      '</div>'+
+      '<h2 class="title">'+esc(resource.title)+'</h2>'+
+      '<div class="desc">'+esc(resource.description)+'</div>'+
+      '<div class="tags">'+esc(resource.tags.slice(0,8).join(" · "))+'</div>'+
+      '<div class="actions">'+
+        previewAction+
+        jsonAction+
+        '<button type="button" data-copy="'+esc(resource.id)+'">Copiar ID</button>'+
+      '</div>'+
+    '</div>';
 
   node.querySelector("[data-copy]")?.addEventListener("click",async(event)=>{
     const value=event.currentTarget.dataset.copy;

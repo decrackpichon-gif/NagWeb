@@ -24,6 +24,7 @@ import {
 } from "./runtime/instance.mjs";
 import { buildInsertDescriptor } from "./runtime/insert-adapters.mjs";
 import { buildStaticPreview } from "./preview/build-preview.mjs";
+import { buildVaultGallery } from "./gallery/build-gallery.mjs";
 import {
   auditReactResourceStatic,
   collectModuleSpecifiers,
