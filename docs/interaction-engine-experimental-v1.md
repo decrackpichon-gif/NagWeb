@@ -502,3 +502,131 @@ La configuración técnica avanzada debe poder existir, pero la interfaz princip
 - Preset de reacción
 
 El usuario no debería necesitar entender springs, segment distances o pesos de vértice para componer una escena.
+
+
+## Consolidación V4-C.1 · multi-silueta
+
+Además de la validación humana positiva con `ponjita.png`, V4-C.1 ahora se prueba contra perfiles alpha sintéticos de formas distintas:
+
+- humanoide con cabeza fina, torso medio y ropa ancha;
+- figura alta y delgada;
+- criatura con masa central flexible;
+- blob ancho / forma blanda.
+
+El test valida:
+
+- perfiles alpha finitos;
+- controles flex/bend finitos;
+- activación del thickness guard;
+- respeto de `safeBend`;
+- campos de curvatura diferentes para siluetas diferentes;
+- límite geométrico más estricto en regiones anchas que en regiones finas.
+
+Archivo:
+
+`.github/nagweb-interaction-v4c-assets-model-test.mjs`
+
+Esto no reemplaza la prueba humana con assets reales, pero reduce el riesgo de sobreajustar V4-C.1 únicamente a `ponjita.png`.
+
+## Scene Composer V1 · implementación inicial
+
+El roadmap de Scene Composer ya tiene una primera implementación funcional aislada.
+
+Archivos:
+
+- `js/nagweb-scene-composer-v1.js`
+- `js/nagweb-scene-composer-view-v1.js`
+- `js/nagweb-scene-composer-app-v1.js`
+- `experiments/scene-composer-v1.html`
+
+### Modelo serializable
+
+Schema:
+
+`nagweb-scene-composer` · version 1
+
+La escena conserva:
+
+- tamaño y fondo del stage;
+- configuración del personaje;
+- colección de elementos;
+- posición;
+- tamaño;
+- rotación;
+- escala;
+- orden Z;
+- opacidad;
+- contenido;
+- estilo;
+- configuración individual de influencia.
+
+Tipos iniciales:
+
+- texto;
+- botón;
+- imagen;
+- forma;
+- fondo.
+
+### Interacción por elemento
+
+Influence Engine experimental sube a `1.7.0`.
+
+Cada target puede configurar:
+
+- enabled;
+- weight;
+- radiusScale;
+- move;
+- rotate;
+- scale;
+- returnSpeed.
+
+`radiusScale` permite que dos objetos dentro de la misma escena tengan distancias de reacción distintas sin crear un Influence Field separado para cada uno.
+
+### UI inicial del compositor
+
+El laboratorio permite:
+
+- cargar personaje;
+- cambiar tamaño y preset del personaje;
+- agregar texto / botón / imagen / forma / fondo;
+- seleccionar desde canvas o lista de capas;
+- arrastrar elementos;
+- editar texto;
+- cargar imágenes;
+- cambiar tamaño;
+- rotar y escalar;
+- editar color y fondo;
+- editar orden Z y opacidad;
+- activar/desactivar reacción;
+- configurar intensidad, distancia, movimiento, giro, escala y retorno;
+- duplicar;
+- eliminar;
+- exportar escena a JSON;
+- restaurar escena desde JSON.
+
+El personaje usa Organic Adaptive Curve V4-C.1 y los elementos reactivos usan el cuerpo completo como fuente del Influence Field.
+
+### QA Scene Composer
+
+Cobertura actual:
+
+- modelo y roundtrip JSON;
+- IDs estables;
+- add/update/remove/duplicate;
+- atributos DOM de interacción;
+- carga real en Chromium;
+- V4-C.1 + Influence 1.7;
+- agregar y editar texto;
+- radio individual;
+- activar/desactivar reacción;
+- drag;
+- duplicado;
+- orden Z;
+- opacidad;
+- export/import JSON;
+- reacción física a la cercanía del personaje;
+- screenshot automático.
+
+El Composer sigue siendo un laboratorio experimental y no se integra todavía al editor principal.
