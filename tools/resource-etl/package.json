@@ -1,0 +1,13 @@
+{
+  "name": "nagweb-resource-etl",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "ingest": "node src/cli.mjs",
+    "dry-run": "node src/cli.mjs --dry-run"
+  }
+}
