@@ -9,6 +9,22 @@ const DEFAULT_HEADERS = {
   Accept: "*/*"
 };
 
+function githubAuthHeaders(url) {
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname !== "api.github.com") return {};
+
+    const token =
+      process.env.NAGWEB_GITHUB_TOKEN ||
+      process.env.GITHUB_TOKEN ||
+      process.env.GH_TOKEN;
+
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch {
+    return {};
+  }
+}
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -22,7 +38,11 @@ export async function fetchWithRetry(
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     try {
       const response = await fetch(url, {
-        headers: { ...DEFAULT_HEADERS, ...headers },
+        headers: {
+          ...DEFAULT_HEADERS,
+          ...githubAuthHeaders(url),
+          ...headers
+        },
         signal: AbortSignal.timeout(timeoutMs)
       });
 

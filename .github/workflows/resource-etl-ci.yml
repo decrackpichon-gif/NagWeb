@@ -16,6 +16,9 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  NAGWEB_GITHUB_TOKEN: ${{ github.token }}
+
 jobs:
   self-test:
     name: Self test
