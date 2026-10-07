@@ -381,11 +381,18 @@ root.render(React.createElement(App));
             };
           }
 
-          const resolved = await build.resolve(args.path, {
-            kind: args.kind,
-            resolveDir: process.cwd()
-          });
-          return resolved;
+          try {
+            return {
+              path: require.resolve(args.path),
+              namespace: "file"
+            };
+          } catch (error) {
+            return {
+              errors: [{
+                text: `Unable to resolve installed package import ${args.path}: ${error?.message || error}`
+              }]
+            };
+          }
         }
       );
 
@@ -482,6 +489,7 @@ export async function buildReactVaultPreviews(rootDir, catalog, { max = Infinity
     if (!result.ok) {
       entry.previewStatus = "deferred";
       entry.previewReason = result.reason;
+      console.log(`[react-preview] deferred ${resource.id}: ${result.reason}`);
       deferred += 1;
       continue;
     }
@@ -502,6 +510,7 @@ export async function buildReactVaultPreviews(rootDir, catalog, { max = Infinity
       "utf8"
     );
 
+    console.log(`[react-preview] ready ${resource.id}`);
     entry.previewStatus = "ready-react";
     entry.previewPath = `previews/react/${htmlName}`;
     entry.previewAudit = {

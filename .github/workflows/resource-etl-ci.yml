@@ -43,11 +43,17 @@ jobs:
         working-directory: tools/resource-etl
         run: >
           node src/vault-cli.mjs
-          --sources=lucide,magicui,motion-primitives,animxyz,threejs,hyperui,csshake,glsl-noise
+          --sources=lucide,shadcn,magicui,motion-primitives,animxyz,threejs,hyperui,csshake,glsl-noise
           --limit=2
           --out=ci-vault
           --react-previews
           --react-preview-limit=8
+
+      - name: Show React preview audit
+        working-directory: tools/resource-etl
+        shell: bash
+        run: |
+          cat ci-vault/react-preview-audit.json
 
       - name: Verify portable bundle exists
         working-directory: tools/resource-etl

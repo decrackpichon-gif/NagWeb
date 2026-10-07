@@ -7,13 +7,16 @@ const RAW_BASE =
 
 export async function extractShadcnComponents({
   limit = 10,
-  includeCode = true
+  includeCode = true,
+  all = false
 } = {}) {
   const registry = await fetchJson(REGISTRY_URL);
 
-  const selected = (registry.items || [])
-    .filter((item) => item.type === "registry:ui")
-    .slice(0, limit);
+  const available = (registry.items || [])
+    .filter((item) => item.type === "registry:ui");
+  const selected = all
+    ? available
+    : available.slice(0, Math.max(1, Number(limit) || 10));
 
   const items = [];
 
@@ -40,6 +43,7 @@ export async function extractShadcnComponents({
       homepage: registry.homepage,
       sourceUrl: REGISTRY_URL
     },
+    totalAvailable: available.length,
     items
   };
 }

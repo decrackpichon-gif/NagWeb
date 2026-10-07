@@ -1,6 +1,7 @@
 import path from "node:path";
 import { extractLucideIcons } from "./extractors/lucide.mjs";
 import { extractMagicUiComponents } from "./extractors/magicui.mjs";
+import { extractShadcnComponents } from "./extractors/shadcn.mjs";
 import { extractHyperUiBlocks } from "./extractors/hyperui.mjs";
 import { extractGlslNoise } from "./extractors/glsl-noise.mjs";
 import { extractMotionPrimitives } from "./extractors/motion-primitives.mjs";
@@ -20,6 +21,7 @@ import {
   transformCssShakeEffect,
   transformThreeCodeScene
 } from "./light-transformers.mjs";
+import { transformShadcnItem } from "./transformers.mjs";
 import {
   writeResourceToVault,
   mergeVaultCatalog,
@@ -47,7 +49,7 @@ function parseArgs(argv) {
 }
 
 function parseSources(value) {
-  return String(value || "lucide,magicui,motion-primitives,animxyz,threejs,hyperui,csshake,glsl-noise")
+  return String(value || "lucide,shadcn,magicui,motion-primitives,animxyz,threejs,hyperui,csshake,glsl-noise")
     .split(",")
     .map((source) => source.trim().toLowerCase())
     .filter(Boolean);
@@ -98,6 +100,21 @@ async function collectSource(source, args) {
         })
       )
     ];
+  }
+
+  if (source === "shadcn") {
+    assertFullMirrorAllowed("shadcn");
+    const raw = await extractShadcnComponents({
+      limit,
+      includeCode: true,
+      all
+    });
+    return raw.items.map((item) =>
+      transformShadcnItem({
+        registry: raw.registry,
+        item
+      })
+    );
   }
 
   if (source === "magicui") {

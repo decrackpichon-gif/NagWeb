@@ -154,7 +154,7 @@ goto done
 cls
 echo Creando biblioteca liviana piloto de NagWeb...
 echo.
-node src\vault-cli.mjs --sources=lucide,magicui,motion-primitives,animxyz,threejs,hyperui,csshake,glsl-noise --limit=10
+node src\vault-cli.mjs --sources=lucide,shadcn,magicui,motion-primitives,animxyz,threejs,hyperui,csshake,glsl-noise --limit=10
 goto done
 
 :code_vault_all
@@ -162,7 +162,7 @@ cls
 echo Creando biblioteca liviana COMPLETA de NagWeb...
 echo Esto puede descargar miles de archivos de codigo muy livianos.
 echo.
-node src\vault-cli.mjs --sources=lucide,magicui,motion-primitives,animxyz,threejs,hyperui,csshake,glsl-noise --all
+node src\vault-cli.mjs --sources=lucide,shadcn,magicui,motion-primitives,animxyz,threejs,hyperui,csshake,glsl-noise --all
 goto done
 
 :code_vault_react
@@ -173,7 +173,7 @@ call npm install --no-package-lock --no-audit --no-fund
 if errorlevel 1 goto failed
 echo.
 echo Construyendo Vault con previews React seguras...
-node src\vault-cli.mjs --sources=lucide,magicui,motion-primitives,animxyz,threejs,hyperui,csshake,glsl-noise --limit=25 --react-previews
+node src\vault-cli.mjs --sources=lucide,shadcn,magicui,motion-primitives,animxyz,threejs,hyperui,csshake,glsl-noise --limit=25 --react-previews
 goto done
 
 :done

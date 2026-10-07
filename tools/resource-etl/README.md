@@ -398,3 +398,10 @@ npm run vault -- --sources=magicui,motion-primitives --limit=10 --react-previews
 ```
 
 En Windows también existe la opción 14 del lanzador, que instala las dependencias del compilador y construye el Vault con previews React.
+
+
+## Shadcn en el Code Vault
+
+El extractor Shadcn existente ahora también alimenta el Code Vault. Los archivos TSX del registry oficial se conservan localmente bajo el mismo esquema universal que Magic UI y Motion Primitives.
+
+Las dependencias internas de registry se mantienen explícitas. Un componente puede estar completamente guardado aunque su preview React quede diferida hasta que el resolver de registry tenga todas sus piezas.
