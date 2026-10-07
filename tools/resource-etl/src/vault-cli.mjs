@@ -26,6 +26,7 @@ import {
   assertCodeMirrorAllowed
 } from "./vault/source-policies.mjs";
 import { importLocalLottieDirectory } from "./importers/lottie-local.mjs";
+import { buildVaultPreviews } from "./preview/build-preview.mjs";
 
 function parseArgs(argv) {
   const out = {};
@@ -181,11 +182,15 @@ async function main() {
   }
 
   const catalog = await mergeVaultCatalog(rootDir, entries);
+  const previewResult = await buildVaultPreviews(rootDir, catalog);
   const bundlePath = await writePortableBundle(rootDir, catalog);
   const noticesPath = await writeThirdPartyNotices(rootDir, catalog);
 
   console.log("");
   console.log(`Vault resources: ${catalog.count}`);
+  console.log(
+    `Previews: ${previewResult.built} ready, ${previewResult.deferred} deferred.`
+  );
   console.log(`Portable bundle: ${bundlePath}`);
   console.log(`Notices: ${noticesPath}`);
 }

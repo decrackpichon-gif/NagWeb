@@ -320,3 +320,26 @@ Actualmente se generan presets como `fade`, `up`, `down`, `front`, `back`, `flip
 ## CI con red
 
 La rama `feat/resource-etl-v1` incluye un workflow de GitHub Actions que ejecuta `npm test`, construye un Code Vault pequeño y hace smoke tests reales contra las fuentes externas. Esto permite validar el ETL con acceso a Internet sin usar Vercel.
+
+
+## Preview + Insert adapters
+
+El Vault ya no sólo guarda recursos. También genera una capa de consumo común:
+
+- `src/runtime/instance.mjs`: crea instancias con los valores editables por defecto y overrides del usuario.
+- `src/runtime/insert-adapters.mjs`: convierte un `UniversalResource` en un descriptor de inserción para SVG, HTML/Tailwind, Motion nativo, Lottie, React o Three.js.
+- `src/preview/build-preview.mjs`: genera previews HTML estáticas cuando el recurso puede ejecutarse sin compilación.
+
+Cada construcción del Vault crea:
+
+```text
+vault/
+└─ previews/
+   ├─ lucide__accessibility.html
+   ├─ hyperui__application__loaders__1.html
+   └─ animxyz__preset__flip-left.html
+```
+
+SVG, HyperUI y los presets de movimiento pueden previsualizarse offline inmediatamente.
+
+Los componentes React como Magic UI y Motion Primitives quedan marcados como `react-compile-sandbox-required`. El código está completamente conservado, pero la preview viva necesita una etapa de compilación/sandbox que se implementará por separado.

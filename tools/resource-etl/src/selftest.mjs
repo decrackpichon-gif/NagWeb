@@ -17,6 +17,12 @@ import {
 import { looksLikeLottie } from "./importers/lottie-local.mjs";
 import { ANIMXYZ_NATIVE_PRESETS } from "./extractors/animxyz.mjs";
 import { analyzeThreeExample } from "./extractors/threejs.mjs";
+import {
+  createResourceInstance,
+  updateInstanceValue
+} from "./runtime/instance.mjs";
+import { buildInsertDescriptor } from "./runtime/insert-adapters.mjs";
+import { buildStaticPreview } from "./preview/build-preview.mjs";
 
 const fakeAsset = {
   assetId: "Wood999",
@@ -249,5 +255,72 @@ new THREE.TextureLoader().load("textures/grid.jpg");
 </script></body></html>
 `);
 assert.equal(textureScene.codeOnly, false);
+
+const iconInstance = createResourceInstance(lucideResource, {
+  instanceId: "test-instance"
+});
+assert.equal(iconInstance.values.size, 24);
+const largerIcon = updateInstanceValue(
+  lucideResource,
+  iconInstance,
+  "size",
+  64
+);
+assert.equal(largerIcon.values.size, 64);
+
+const iconDescriptor = buildInsertDescriptor(lucideResource, {
+  instanceId: "test-icon"
+});
+assert.equal(iconDescriptor.kind, "svg");
+assert.ok(iconDescriptor.payload.svg.includes("<svg"));
+
+const iconPreview = buildStaticPreview(lucideResource);
+assert.equal(iconPreview.supported, true);
+assert.ok(iconPreview.html.includes("<!doctype html>"));
+
+const motionResource = {
+  schemaVersion: "1.0",
+  id: "test:motion",
+  slug: "test-motion",
+  name: "test-motion",
+  title: "Test Motion",
+  family: "animation",
+  kind: "motion-preset",
+  source: { provider: "test", externalId: "motion", fetchedAt: new Date().toISOString() },
+  license: {
+    id: "MIT",
+    commercialUse: true,
+    modificationAllowed: true,
+    attributionRequired: true,
+    verified: true
+  },
+  taxonomy: { categories: [], tags: [] },
+  previews: [],
+  artifacts: [{
+    id: "preset",
+    role: "animation-data",
+    format: "json",
+    content: JSON.stringify({
+      duration: 0.5,
+      ease: "ease",
+      tracks: [{ property: "rotateY", from: -30, to: 0 }]
+    })
+  }],
+  runtime: {
+    type: "none",
+    renderer: "nagweb-motion-native",
+    entryArtifactId: "preset"
+  },
+  editableProps: [],
+  ingestion: {
+    extractor: "test",
+    extractorVersion: "1",
+    fetchedAt: new Date().toISOString(),
+    transformedAt: new Date().toISOString(),
+    status: "validated"
+  }
+};
+assert.equal(buildInsertDescriptor(motionResource).kind, "motion-preset");
+assert.equal(buildStaticPreview(motionResource).supported, true);
 
 console.log("NagWeb Resource ETL self-test: OK");
