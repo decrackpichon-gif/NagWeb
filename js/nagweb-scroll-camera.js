@@ -358,9 +358,15 @@ C.panel=function(s){
  html+=field('Momento (%)','at',k.at,0,100,.1);
  ['x','y','z'].forEach(function(axis){html+=field('Cámara '+axis.toUpperCase(),axis,k[axis],-4000,4000,25);});
  var keyIndex=list.findIndex(function(f){return f.at===k.at;});
+ if(s.sdCameraPathMode==='smooth'&&keyIndex>0){
+  var prevKey=list[keyIndex-1];
+  html+=cRow('Entrada desde el anterior (%)','<input class="cnum" type="number" aria-label="Tensión de entrada desde el encuadre anterior" data-camera-incoming-tension data-camera-at="'+k.at+'" value="'+(prevKey.tension===undefined?0:prevKey.tension)+'" min="-100" max="100" step="5">');
+ }
  if(s.sdCameraPathMode==='smooth'&&keyIndex>=0&&keyIndex<list.length-1){
-  html+=field('Tensión hacia el siguiente (%)','tension',k.tension===undefined?0:k.tension,-100,100,5);
-  html+='<p class="hint gh">0% conserva la curva actual · positivo la ajusta al tramo · negativo la vuelve más suelta. Solo cambia la forma XYZ hacia el siguiente ◆.</p>';
+  html+=field('Salida hacia el siguiente (%)','tension',k.tension===undefined?0:k.tension,-100,100,5);
+ }
+ if(s.sdCameraPathMode==='smooth'&&(keyIndex>0||keyIndex<list.length-1)){
+  html+='<p class="hint gh">Entrada controla ◁ y modifica el tramo anterior. Salida controla ▷ y modifica el siguiente. 0% conserva Catmull-Rom; positivo ajusta la curva y negativo la suelta.</p>';
  }
  [['rotateX','Inclinar arriba / abajo (°)'],['rotateY','Mirar izquierda / derecha (°)'],['rotate','Girar el horizonte (°)']].forEach(function(axis){html+=field(axis[1],axis[0],k[axis[0]],-3600,3600,5);});
  html+='<p class="hint gh">'+(s.sdCameraOrientationMode==='lookAt'?'Con “Mirar hacia”, estos ángulos de inclinación quedan guardados pero X/Y se calculan desde el objetivo. El giro del horizonte sí permanece activo.':'Los ángulos se recorren tal como los escribís: 0° → 360° da una vuelta completa.')+'</p>';
@@ -660,6 +666,15 @@ if(pane){
   }
   if(input.dataset.cameraHoldDuration!==undefined){if(Number.isFinite(+input.value)&&+input.value>0)holdDurations[sec().id]=Math.min(100,+input.value);else{input.value=holdDurations[sec().id]||10;toast('Ingresá una duración mayor que cero.');}return;}
   if(input.dataset.cameraMapPlane!==undefined){mapPlanes[sec().id]=input.value==='front'?'front':'top';renderPane();return;}
+  if(input.dataset.cameraIncomingTension!==undefined){
+   var incomingScene=sec();if(!C.config(incomingScene))return;
+   var incomingList=keys(incomingScene),selectedAt=+input.dataset.cameraAt,index=incomingList.findIndex(function(f){return f.at===selectedAt;});
+   if(index<=0){renderPane();return;}
+   var incomingValue=+input.value;if(!Number.isFinite(incomingValue)||input.value===''){renderPane();return;}
+   incomingValue=C.curveTension(incomingValue);var owner=incomingList[index-1],currentIncoming=owner.tension===undefined?0:C.curveTension(owner.tension);
+   if(currentIncoming===incomingValue){renderPane();return;}
+   snapshot();owner.tension=incomingValue;persist(incomingScene,incomingList,selectedAt);return;
+  }
   if(input.dataset.cameraDepth!==undefined){
    var scene=sec(),element=scene.elements[curEl];
    if(!C.config(scene)||!C.layerEligible(element,scene)||selection.length!==1)return;

@@ -414,6 +414,11 @@ listeners.change({target:{dataset:{cameraField:'tension',cameraAt:'33'},matches(
 assert.equal(editable.sdCameraFrames.find(k=>k.at===33).tension,80);assert.equal(history.length,tensionHistory+1);
 listeners.change({target:{dataset:{cameraField:'tension',cameraAt:'33'},matches(){return true;},value:'500'}});
 assert.equal(editable.sdCameraFrames.find(k=>k.at===33).tension,100,'Editor persistence clamps tension through camera normalization');
+const incomingPanelHistory=history.length;
+listeners.change({target:{dataset:{cameraIncomingTension:'',cameraAt:'66'},matches(){return false;},value:'-35'}});
+assert.equal(editable.sdCameraFrames.find(k=>k.at===33).tension,-35,'Incoming numeric field edits previous segment tension');
+assert.equal(history.length,incomingPanelHistory+1);
+assert.equal(pct,66,'Incoming numeric edit preserves the selected key moment');
 editable={...curvedScene,id:'curve-insert-ui'};
 const insertCfg=ui.window.NAGWEB_SCROLL_CAMERA.config(editable),insertList=ui.window.NAGWEB_SCROLL_CAMERA.frames(insertCfg,editable.sdEase),insertSpec=ui.window.NAGWEB_SCROLL_CAMERA.mapSpec(insertList,'top'),insertPose=ui.window.NAGWEB_SCROLL_CAMERA.pose(insertCfg,.2,M,'linear',false),insertPoint=ui.window.NAGWEB_SCROLL_CAMERA.mapPoint(insertPose,insertSpec);
 const insertMap={dataset:{plane:'top',range:String(insertSpec.range)},getBoundingClientRect(){return{left:0,top:0,width:300,height:200};}};

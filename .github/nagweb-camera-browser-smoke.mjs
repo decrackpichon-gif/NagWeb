@@ -72,6 +72,14 @@ export async function runCameraBrowserSmoke(page){
    outSvg:!!document.querySelector('[data-camera-tangent-handle="out"]')
   }));
   assert.deepEqual(dualHandles,{incoming:true,outgoing:true,inSvg:true,outSvg:true},'Middle camera key should expose incoming and outgoing curve handles');
+  assert.equal(await page.$eval('[data-camera-incoming-tension][data-camera-at="50"]',n=>+n.value),0);
+  assert.equal(await page.$eval('[data-camera-field="tension"][data-camera-at="50"]',n=>+n.value),0);
+  await page.$eval('[data-camera-incoming-tension][data-camera-at="50"]',n=>{n.value='30';n.dispatchEvent(new Event('change',{bubbles:true}));});
+  await page.waitForFunction(()=>sec().sdCameraFrames.find(k=>k.at===0)?.tension===30&&document.querySelector('[data-camera-map-point="50"]'));
+  const numericDual=await page.evaluate(()=>({prev:sec().sdCameraFrames.find(k=>k.at===0).tension,current:sec().sdCameraFrames.find(k=>k.at===50).tension??0,selected:document.querySelector('[data-camera-map-point]')?.dataset.cameraMapPoint}));
+  assert.deepEqual(numericDual,{prev:30,current:0,selected:'50'},'Incoming numeric control must edit only the previous segment and preserve selection');
+  await page.$eval('[data-camera-incoming-tension][data-camera-at="50"]',n=>{n.value='0';n.dispatchEvent(new Event('change',{bubbles:true}));});
+  await page.waitForFunction(()=>sec().sdCameraFrames.find(k=>k.at===0)?.tension===0);
   const incomingStart=await page.evaluate(()=>{
    const h=document.querySelector('[data-camera-tension-handle][data-camera-tension-side="in"]').getBoundingClientRect(),k=document.querySelector('[data-camera-map-point="50"]').getBoundingClientRect();
    return{hx:h.left+h.width/2,hy:h.top+h.height/2,kx:k.left+k.width/2,ky:k.top+k.height/2,prev:sec().sdCameraFrames.find(k=>k.at===0).tension??0,current:sec().sdCameraFrames.find(k=>k.at===50).tension??0,history:history.length};
