@@ -309,6 +309,9 @@ function rt(DATA,createModel,createStreamModel,createCamera){
     n.style.pointerEvents=op<.025?'none':q.basePointer;
    });
    if(streamPaint)streamPaint(p);
+   // Anchored Three.js objects derive their position from the transformed DOM rect.
+   // Refresh in the same camera paint so manual scrubbing has no one-frame lag.
+   if(cameraPaint&&window.NAGWEB_3D_ANCHOR&&typeof window.NAGWEB_3D_ANCHOR.refresh==='function')window.NAGWEB_3D_ANCHOR.refresh();
    sec.style.setProperty('--nw-sd-progress',p.toFixed(4));
    sec.dispatchEvent(new CustomEvent('nw-sd-progress',{bubbles:true,detail:{progress:p,reduced:motion.matches}}));
   }
