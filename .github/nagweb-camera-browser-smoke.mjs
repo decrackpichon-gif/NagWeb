@@ -237,7 +237,7 @@ export async function runCameraBrowserSmoke(page){
   assert.equal(motionEvents.summary,'◆ ‖1 ↶1 ↗1 · ● ‖1 ↶1 ↗1','Minimap summarizes events by track');
   assert.equal(motionEvents.tooltips,6,'Each motion event has an accessible explanation');
   await page.select('[data-camera-map-plane]','front');
-  assert.equal(await page.$eval('[data-camera-overview-event-kind]',nodes=>nodes.length),6,'Motion analysis uses XYZ, not the current 2D projection');
+  assert.equal(await page.$$eval('[data-camera-overview-event-kind]',nodes=>nodes.length),6,'Motion analysis uses XYZ, not the current 2D projection');
   await page.select('[data-camera-map-plane]','top');
   await page.evaluate(saved=>{
    const sc=sec();
