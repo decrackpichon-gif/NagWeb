@@ -142,9 +142,22 @@ export async function extractUiverseComponents({
   all = false,
   concurrency = 8,
   offset = 0,
-  category
+  category,
+  expectedCommit
 } = {}) {
   const inventory = await getUiverseInventory({ category });
+
+  if (expectedCommit && inventory.commit !== expectedCommit) {
+    const error = new Error(
+      `Uiverse source changed from ${expectedCommit} to ${inventory.commit}. ` +
+      "Refusing to resume with an offset from a different inventory snapshot."
+    );
+    error.code = "UIVERSE_SOURCE_CHANGED";
+    error.expectedCommit = expectedCommit;
+    error.actualCommit = inventory.commit;
+    throw error;
+  }
+
   const commit = inventory.commit;
   const htmlEntries = inventory.entries.map((entry) => ({
     path: entry.path,

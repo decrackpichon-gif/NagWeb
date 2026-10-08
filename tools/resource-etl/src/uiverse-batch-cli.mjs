@@ -85,7 +85,11 @@ console.log(`Target autonomous resources: ${limit}`);
 const raw = await extractUiverseComponents({
   limit,
   offset: startOffset,
-  category: category || undefined
+  category: category || undefined,
+  expectedCommit:
+    args.resume && checkpoint?.sourceCommit
+      ? checkpoint.sourceCommit
+      : undefined
 });
 
 const resources = raw.items.map((item) =>

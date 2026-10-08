@@ -468,6 +468,42 @@ jobs:
           );
           NODE
 
+          cp ci-vault-uiverse-resume/uiverse-checkpoint.json \
+            ci-vault-uiverse-resume/uiverse-checkpoint.before-guard-test.json
+
+          node - <<'NODE'
+          const fs = require("fs");
+          const file = "ci-vault-uiverse-resume/uiverse-checkpoint.json";
+          const checkpoint = JSON.parse(fs.readFileSync(file, "utf8"));
+          checkpoint.sourceCommit = "0000000000000000000000000000000000000000";
+          fs.writeFileSync(file, JSON.stringify(checkpoint, null, 2) + "\n");
+          NODE
+
+          if node src/uiverse-batch-cli.mjs \
+            --limit=10 \
+            --resume \
+            --out=ci-vault-uiverse-resume; then
+            echo "Expected Uiverse resume to fail after source commit mismatch"
+            exit 1
+          fi
+
+          node - <<'NODE'
+          const fs = require("fs");
+          const catalog = JSON.parse(
+            fs.readFileSync("ci-vault-uiverse-resume/catalog.json", "utf8")
+          );
+          const uiverse = (catalog.resources || []).filter(
+            (entry) => entry.source?.provider === "uiverse"
+          );
+          if (uiverse.length !== 20) {
+            throw new Error(`Source-change guard modified the catalog: ${uiverse.length}`);
+          }
+          console.log("Uiverse source-change guard: OK", uiverse.length);
+          NODE
+
+          mv ci-vault-uiverse-resume/uiverse-checkpoint.before-guard-test.json \
+            ci-vault-uiverse-resume/uiverse-checkpoint.json
+
 
   windows-smoke:
     name: Windows smoke

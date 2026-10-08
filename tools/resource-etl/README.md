@@ -604,3 +604,12 @@ El checkpoint registra:
 La próxima ejecución con `--resume` lee ese archivo y continúa sola. El checkpoint se actualiza al final, después de escribir recursos, catálogo, previews, galería, bundle portable y avisos de licencia.
 
 En Windows, la opción **16 · CONTINUAR Uiverse** hace exactamente esto sin pedir ningún número.
+
+
+### Protección contra cambios del upstream
+
+Un offset sólo es válido para el inventario exacto del que salió.
+
+Cuando se usa `--resume`, NagWeb compara el `sourceCommit` guardado en `uiverse-checkpoint.json` con el commit actual de Uiverse. Si son distintos, el lote se cancela antes de escribir recursos, no modifica el catálogo y no mueve el checkpoint.
+
+Esto evita huecos o duplicados si Uiverse agrega, elimina o reordena archivos entre dos sesiones de importación.
