@@ -269,6 +269,49 @@ export async function runCameraBrowserSmoke(page){
   },'Motion event navigation cannot change authored keyframes or project history');
   console.log('Camera minimap event navigation: select, previous/next, clickable glyph and nondestructive seek OK');
 
+  // Event filters: scoped glyphs, selector options, scrub-only navigation and selected-state ring.
+  await page.select('[data-camera-overview-filter-kind]','camera');
+  const cameraOnly=await page.evaluate(()=>({
+   marks:Array.from(document.querySelectorAll('[data-camera-overview-event-kind]')).map(n=>n.dataset.cameraOverviewEventKind),
+   count:document.querySelector('[data-camera-overview-filter-count]')?.textContent,
+   options:document.querySelectorAll('[data-camera-overview-event-select] option').length
+  }));
+  assert.equal(cameraOnly.count,'3/6','Camera filter reports number of visible events');
+  assert.equal(cameraOnly.options,4,'Camera filter removes look events from selector');
+  assert.deepEqual(cameraOnly.marks,['camera','camera','camera'],'Camera filter removes only look glyphs, not routes');
+  await page.select('[data-camera-overview-filter-type]','pause');
+  const cameraPauses=await page.evaluate(()=>({
+   labels:Array.from(document.querySelectorAll('[data-camera-overview-event-kind]')).map(n=>n.dataset.cameraOverviewEventType),
+   count:document.querySelector('[data-camera-overview-filter-count]')?.textContent,
+   options:document.querySelectorAll('[data-camera-overview-event-select] option').length,
+   stepNext:document.querySelector('[data-camera-overview-event-step="1"]').disabled
+  }));
+  assert.deepEqual(cameraPauses.labels,['pause'],'Combined filters show only camera pauses');
+  assert.equal(cameraPauses.count,'1/6');
+  assert.equal(cameraPauses.options,2);
+  await page.select('[data-camera-overview-event-select]','0');
+  await page.waitForFunction(()=>Math.abs(+document.querySelector('[data-camera-seek]').value-30)<.01);
+  assert.equal(await page.$eval('[data-camera-overview-event-kind="camera"][data-camera-overview-event-type="pause"]',n=>n.dataset.cameraOverviewEventSelected),'true','Selected event is visibly emphasized');
+  assert.equal(await page.$eval('[data-camera-overview-event-step="1"]',n=>n.disabled),true,'Next disabled when filtered event has no successor');
+  await page.select('[data-camera-overview-filter-kind]','look');
+  assert.equal(await page.$eval('[data-camera-overview-filter-count]',n=>n.textContent),'1/6','Changing kind preserves selected type filter');
+  await page.select('[data-camera-overview-event-select]','0');
+  await page.waitForFunction(()=>Math.abs(+document.querySelector('[data-camera-seek]').value-30)<.01);
+  assert.equal(await page.$eval('[data-camera-overview-event-kind="look"][data-camera-overview-event-type="pause"]',n=>n.dataset.cameraOverviewEventSelected),'true','Look event can be highlighted independently at same progress');
+  await page.select('[data-camera-overview-filter-type]','all');
+  assert.equal(await page.$eval('[data-camera-overview-filter-count]',n=>n.textContent),'3/6');
+  await page.click('[data-camera-overview-event-step="1"]');
+  await page.waitForFunction(()=>Math.abs(+document.querySelector('[data-camera-seek]').value-60)<.01);
+  assert.equal(await page.$eval('[data-camera-overview-event-kind="look"][data-camera-overview-event-type="turn"]',n=>n.dataset.cameraOverviewEventSelected),'true','Next chooses only a visible look event');
+  await page.select('[data-camera-overview-filter-kind]','all');
+  assert.equal(await page.$eval('[data-camera-overview-filter-count]',n=>n.textContent),'6/6','Reset restores all motion events');
+  assert.equal(await page.$$eval('[data-camera-overview-event-kind]',els=>els.length),6,'Reset restores every minimap event marker');
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),motionNavigationInitial.frames,'Filtering must not modify authored camera frames');
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraLookFrames)),motionNavigationInitial.looks,'Filtering must not modify authored look frames');
+  assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'Filtering and event selection must not create history entries');
+  console.log('Camera minimap filters: camera/look, event types, selected highlight, filtered navigation and no edits OK');
+
+
   await page.select('[data-camera-map-plane]','front');
   assert.equal(await page.$$eval('[data-camera-overview-event-kind]',nodes=>nodes.length),6,'Motion analysis uses XYZ, not the current 2D projection');
   await page.select('[data-camera-map-plane]','top');
