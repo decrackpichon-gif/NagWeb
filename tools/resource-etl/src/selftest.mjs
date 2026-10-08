@@ -39,6 +39,7 @@ import {
   installResourceApplyHost
 } from "./runtime/resource-apply-bridge.mjs";
 import { buildStaticPreview } from "./preview/build-preview.mjs";
+import { buildLottieBrowserPreview } from "./preview/lottie-browser-preview.mjs";
 import { buildVaultGallery } from "./gallery/build-gallery.mjs";
 import { buildReactPreviewRecipe } from "./preview/recipes.mjs";
 import {
@@ -829,3 +830,36 @@ assert.deepEqual(describeEditableControls({
   editableProps: [{ ...shakeEditableResource.editableProps[0],
     defaultValue: "<svg>" }]
 }), []);
+
+const playerUrl = "https://nagweb.example/resource-browser/vendor/lottie_light.min.js";
+const lottiePreviewDocument = buildLottieBrowserPreview(lottieEditableResource, {
+  speed: 2.5, loop: false, autoplay: false
+}, { playerUrl });
+assert.match(lottiePreviewDocument, /lottie\.loadAnimation/);
+assert.match(lottiePreviewDocument, /setSpeed\(2\.5\)/);
+assert.match(lottiePreviewDocument, /loop: false/);
+assert.match(lottiePreviewDocument, /autoplay: false/);
+assert.match(lottiePreviewDocument, /Content-Security-Policy/);
+assert.match(lottiePreviewDocument, /connect-src 'none'/);
+assert.match(lottiePreviewDocument, /lottie_light\.min\.js/);
+assert.equal(buildLottieBrowserPreview(lottieEditableResource, {}, {
+  playerUrl: "javascript:alert(1)"
+}), null);
+assert.equal(buildLottieBrowserPreview({
+  ...lottieEditableResource,
+  artifacts: [{ role: "animation-data", content: "not json" }]
+}, {}, { playerUrl }), null);
+const hostileLottie = {
+  ...lottieEditableResource,
+  artifacts: [{
+    role: "animation-data",
+    content: JSON.stringify({
+      v: "5.0", fr: 30, ip: 0, op: 10,
+      layers: [{ nm: "</script><script>alert(1)</script>" }]
+    })
+  }]
+};
+const sanitizedPreview = buildLottieBrowserPreview(hostileLottie, {}, { playerUrl });
+assert.ok(sanitizedPreview);
+assert.equal(sanitizedPreview.includes("</script><script>alert(1)</script>"), false);
+assert.match(sanitizedPreview, /\\u003c\/script>/);

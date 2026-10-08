@@ -3,6 +3,7 @@ import {
 } from "../src/runtime/persistent-vault-client.mjs";
 import { defaultEditableValues } from "../src/runtime/instance.mjs";
 import { describeEditableControls } from "../src/runtime/editable-controls.mjs";
+import { buildLottieBrowserPreview } from "../src/preview/lottie-browser-preview.mjs";
 import {
   buildResourceApplyEnvelope,
   resolveResourceApplyTarget,
@@ -162,6 +163,12 @@ function cssVarStyle(resource, values = {}) {
 async function previewDoc(resource, values = {}) {
   const renderer = resource.runtime?.renderer;
   const provider = resource.source?.provider;
+
+  if (renderer === "lottie" || renderer === "dotlottie-web") {
+    return buildLottieBrowserPreview(resource, values, {
+      playerUrl: new URL("./vendor/lottie_light.min.js", import.meta.url).href
+    });
+  }
 
   if (renderer === "nagweb-svg") {
     const artifact = (resource.artifacts || []).find(
@@ -395,11 +402,15 @@ async function openDetail(id) {
   el.copyCode.disabled = !artifact?.content;
 
   const doc = await previewDoc(resource, selectedValues);
+  const isLottie = ["lottie", "dotlottie-web"].includes(resource.runtime?.renderer);
+  el.preview.setAttribute("sandbox", doc && isLottie ? "allow-scripts" : "");
   if (doc) {
     el.previewFallback.hidden = true;
     el.preview.hidden = false;
     el.preview.srcdoc = doc;
-    el.previewNote.textContent = "Preview segura generada desde nuestra copia persistente.";
+    el.previewNote.textContent = isLottie
+      ? "Vista previa Lottie animada con reproductor local y aislamiento de seguridad."
+      : "Preview segura generada desde nuestra copia persistente.";
   } else {
     el.preview.hidden = true;
     el.previewFallback.hidden = false;
