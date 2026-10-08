@@ -301,11 +301,29 @@ function mapCurrent(s,pct){
  return C.pose(C.config(s),pct/100,window.NAGWEB_STORY_MODEL,s.sdEase,reduced,undefined,previewReferenceSize(s));
 }
 function mapLabel(v,pct){return 'Ahora: '+Math.round(pct*10)/10+'% · X '+Math.round(v.x)+' · Y '+Math.round(v.y)+' · Z '+Math.round(v.z);}
+function freeSegmentPaths(keys,samples,spec,kind,sampleAt){
+ if(!keys||keys.length<3)return '';
+ var html='',stroke=kind==='look'?'var(--accent)':'currentColor';
+ for(var i=0;i<keys.length-1;i++){
+  var a=keys[i],b=keys[i+1];
+  if(!(a.curveOutFree||b.curveInFree)||b.at<=a.at)continue;
+  var inner=samples.filter(function(p){return p.at>a.at&&p.at<b.at;});
+  if(inner.length<3&&typeof sampleAt==='function'){
+   inner=[];
+   for(var j=1;j<4;j++){var p=sampleAt((a.at+(b.at-a.at)*j/4)/100);if(p)inner.push(p);}
+  }
+  var points=[a].concat(inner,[b]).map(function(p){var m=C.mapPoint(p,spec);return m.x+','+m.y;}).join(' ');
+  html+='<polyline data-camera-bezier-segment="'+kind+'" points="'+points+'" fill="none" stroke="'+stroke+'" opacity=".95" stroke-width="1.4" pointer-events="none"/>';
+ }
+ return html;
+}
 function mapDraw(map,list,spec,s,lookList){
  if(!map.querySelector)return;
  var path=map.querySelector('[data-camera-map-path]'),cfg=s&&C.config(s);
  var draw=cfg?C.pathSamples(Object.assign({},cfg,{frames:list}),window.NAGWEB_STORY_MODEL,s.sdEase):list;
  if(path)path.setAttribute('points',draw.map(function(k){var p=C.mapPoint(k,spec);return p.x+','+p.y;}).join(' '));
+ var cameraSegments=map.querySelector('[data-camera-free-segments]');
+ if(cameraSegments)cameraSegments.innerHTML=cfg&&cfg.pathMode==='smooth'?freeSegmentPaths(list,draw,spec,'camera',function(p){return C.pose(Object.assign({},cfg,{frames:list}),p,window.NAGWEB_STORY_MODEL,s.sdEase,false);}):'';
  list.forEach(function(k){var dot=map.querySelector('[data-camera-map-dot="'+k.at+'"]'),p=C.mapPoint(k,spec);if(dot){dot.setAttribute('cx',p.x);dot.setAttribute('cy',p.y);}});
  var selectedButton=map.querySelector('[data-camera-map-point]');
  if(selectedButton&&cfg&&cfg.pathMode==='smooth'){
@@ -320,6 +338,8 @@ function mapDraw(map,list,spec,s,lookList){
   var looks=lookList||lookKeys(s),size=previewReferenceSize(s),lookPath=map.querySelector('[data-camera-look-map-path]'),lookHit=map.querySelector('[data-camera-look-map-path-hit]'),lookCfg=Object.assign({},cfg,{lookFrames:looks});
   var lookDraw=C.lookSamples(lookCfg,window.NAGWEB_STORY_MODEL,s.sdEase,undefined,size),resolved=resolvedLookKeys(s,lookCfg,looks,size),lookPoints=lookDraw.map(function(k){var p=C.mapPoint(k,spec);return p.x+','+p.y;}).join(' ');
   if(lookPath)lookPath.setAttribute('points',lookPoints);if(lookHit)lookHit.setAttribute('points',lookPoints);
+  var lookSegments=map.querySelector('[data-camera-look-free-segments]');
+  if(lookSegments)lookSegments.innerHTML=cfg.lookPathMode==='smooth'?freeSegmentPaths(resolved,lookDraw,spec,'look',function(p){return C.lookTarget(lookCfg,p,window.NAGWEB_STORY_MODEL,s.sdEase,size);}):'';
   resolved.forEach(function(k){var dot=map.querySelector('[data-camera-look-map-dot="'+k.at+'"]'),p=C.mapPoint(k,spec);if(dot){dot.setAttribute('cx',p.x);dot.setAttribute('cy',p.y);}});
   var selectedLookButton=map.querySelector('[data-camera-look-map-point]');
   if(selectedLookButton&&cfg.lookPathMode==='smooth'){
@@ -340,6 +360,8 @@ function spatialMap(s,list,k){
  html+='<div data-camera-map data-plane="'+plane+'" data-range="'+spec.range+'" style="position:relative;width:100%;aspect-ratio:1.5;border:1px solid var(--line);margin-top:8px;touch-action:none">';
  html+='<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:auto"><path d="M50 0V100M0 50H100" stroke="currentColor" opacity=".2" stroke-width=".5"/><polyline data-camera-map-path points="'+path+'" fill="none" stroke="currentColor" opacity=".65" stroke-width=".7"/>';
  if(lookPath)html+='<polyline data-camera-look-map-path-hit points="'+lookPath+'" fill="none" stroke="var(--accent)" opacity=".001" stroke-width="6" pointer-events="stroke" style="cursor:crosshair"/><polyline data-camera-look-map-path points="'+lookPath+'" fill="none" stroke="var(--accent)" opacity=".65" stroke-width=".7" stroke-dasharray="2 2" pointer-events="stroke" style="cursor:crosshair"/>';
+ html+='<g data-camera-free-segments pointer-events="none">'+(cfg.pathMode==='smooth'?freeSegmentPaths(list,draw,spec,'camera',function(p){return C.pose(Object.assign({},cfg,{frames:list}),p,window.NAGWEB_STORY_MODEL,s.sdEase,false);}):'')+'</g>';
+ html+='<g data-camera-look-free-segments pointer-events="none">'+(cfg.lookPathMode==='smooth'?freeSegmentPaths(resolvedLooks,lookDraw,spec,'look',function(p){return C.lookTarget(cfg,p,window.NAGWEB_STORY_MODEL,s.sdEase,size);}):'')+'</g>';
  if(tangentInPoint)html+='<line data-camera-tangent-line="in" x1="'+point.x+'" y1="'+point.y+'" x2="'+tangentInPoint.x+'" y2="'+tangentInPoint.y+'" stroke="var(--accent)" opacity=".48" stroke-width=".6" stroke-dasharray="1.5 1.5" pointer-events="none"/><circle data-camera-tangent-handle="in" cx="'+tangentInPoint.x+'" cy="'+tangentInPoint.y+'" r="1.55" fill="none" stroke="var(--accent)" opacity=".7" stroke-width=".8" pointer-events="none"/>';
  if(tangentOutPoint)html+='<line data-camera-tangent-line="out" x1="'+point.x+'" y1="'+point.y+'" x2="'+tangentOutPoint.x+'" y2="'+tangentOutPoint.y+'" stroke="var(--accent)" opacity=".72" stroke-width=".6" stroke-dasharray="1.5 1.5" pointer-events="none"/><circle data-camera-tangent-handle="out" cx="'+tangentOutPoint.x+'" cy="'+tangentOutPoint.y+'" r="1.6" fill="none" stroke="var(--accent)" stroke-width=".8" pointer-events="none"/>';
  if(lookTangentInPoint&&lookKeyPoint)html+='<line data-camera-look-tangent-line="in" x1="'+lookKeyPoint.x+'" y1="'+lookKeyPoint.y+'" x2="'+lookTangentInPoint.x+'" y2="'+lookTangentInPoint.y+'" stroke="var(--accent)" opacity=".45" stroke-width="'+(lookTangentIn&&lookTangentIn.free?'1.1':'.7')+'"' stroke-dasharray="'+(lookTangentIn&&lookTangentIn.free?'none':'3 1')+'"' pointer-events="none"/><circle data-camera-look-tangent-handle="in" cx="'+lookTangentInPoint.x+'" cy="'+lookTangentInPoint.y+'" r="1.5" fill="var(--accent)" opacity=".65" pointer-events="none"/>';
@@ -358,7 +380,7 @@ function spatialMap(s,list,k){
  html+='</div>';
  if(s.sdCameraResponsive)html+='<p class="hint gh">El mapa muestra el recorrido con el ancho de referencia.</p>';
  html+='<p class="hint gh" data-camera-position-label>'+mapLabel(current,progress(s))+'</p>';
- html+='<p class="hint gh">◆ encuadre seleccionado · ○ posición actual'+(tangentInPoint||tangentOutPoint?' · ◁ entrada / ▷ salida':'')+(cfg&&cfg.orientationMode==='lookAt'?' · ● objetivo seleccionado · línea punteada: recorrido de mirada'+(lookTangentInPoint||lookTangentOutPoint?' · ◁/▷ del ●: curva de mirada':''):'')+'. Clic cerca de un punto: seleccionar · Doble clic línea normal: agregar ◆ · línea punteada: agregar ● · Arrastrá ◆ o ● · Arrastrá ◯: ajustar curva · Shift + arrastre: bloquear al eje dominante. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Flechas: 25 px; Shift + flecha: 100 px. Escape cancela. Escala: ±'+Math.round(spec.range)+' px.</p></details>';
+ html+='<p class="hint gh">◆ encuadre seleccionado · ○ posición actual'+(tangentInPoint||tangentOutPoint?' · ◁ entrada / ▷ salida':'')+(cfg&&cfg.orientationMode==='lookAt'?' · ● objetivo seleccionado · línea punteada: recorrido de mirada'+(lookTangentInPoint||lookTangentOutPoint?' · ◁/▷ del ●: curva de mirada':''):'')+'+(cfg&&(cfg.pathMode==='smooth'||cfg.lookPathMode==='smooth')?' · Trazo destacado: tramo Bézier libre; trazo normal: Catmull-Rom':'')+'. Clic cerca de un punto: seleccionar · Doble clic línea normal: agregar ◆ · línea punteada: agregar ● · Arrastrá ◆ o ● · Arrastrá ◯: ajustar curva · Shift + arrastre: bloquear al eje dominante. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Flechas: 25 px; Shift + flecha: 100 px. Escape cancela. Escala: ±'+Math.round(spec.range)+' px.</p></details>';
  return html;
 }
 C.panel=function(s){
