@@ -114,6 +114,15 @@ jobs:
             }
           }
 
+          const calendar = audit.items.find(
+            (entry) => entry.resourceId === "shadcn:calendar"
+          );
+          if (!calendar || !calendar.ok) {
+            console.error("shadcn:calendar did not compile with react-day-picker");
+            console.error(JSON.stringify(calendar, null, 2));
+            process.exit(1);
+          }
+
           const carousel = audit.items.find(
             (entry) => entry.resourceId === "shadcn:carousel"
           );

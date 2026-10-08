@@ -26,7 +26,8 @@ export const REACT_PREVIEW_RUNTIME_PACKAGES = new Set([
   "lucide-react",
   "class-variance-authority",
   "cmdk",
-  "embla-carousel-react"
+  "embla-carousel-react",
+  "react-day-picker"
 ]);
 
 export const REACT_PREVIEW_VIRTUAL_PACKAGES = new Set([
