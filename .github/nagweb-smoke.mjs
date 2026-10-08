@@ -38,6 +38,8 @@ import {runMotionExpandSmoke} from './nagweb-motion-expand-smoke.mjs';
 import {runMotionDropSmoke} from './nagweb-motion-drop-smoke.mjs';
 import {runMotionStreamSmoke} from './nagweb-motion-stream-smoke.mjs';
 import {runMotionStreamPlacementSmoke} from './nagweb-motion-stream-placement-smoke.mjs';
+import './nagweb-flip-model-test.mjs';
+import {runMotionFlipSmoke} from './nagweb-motion-flip-smoke.mjs';
 import './nagweb-hero-model-test.mjs';
 import {runMotionHeroSmoke} from './nagweb-motion-hero-smoke.mjs';
 import './nagweb-mosaic-model-test.mjs';
@@ -112,7 +114,7 @@ import {runMotionIsoOrbitSmoke} from './nagweb-motion-iso-orbit-smoke.mjs';
 import {runMotionBatchImagesSmoke} from './nagweb-motion-batch-images-smoke.mjs';
 
 const suite=process.env.NAGWEB_SMOKE_SUITE||'all';
-if(!['all','procedural','editor','diagonal','grid','zoom','drop','shift','spiral','film','totem','peel','burst','photo','wheel','spin','bottom','cover','cover-vertical','ring','ring-vertical','trail','dance','deck','showcase','split','wipe','stripe','mosaic','hero'].includes(suite))throw new Error('Unknown NagWeb smoke suite: '+suite);
+if(!['all','procedural','editor','diagonal','grid','zoom','drop','shift','spiral','film','totem','peel','burst','photo','wheel','spin','bottom','cover','cover-vertical','ring','ring-vertical','trail','dance','deck','showcase','split','wipe','stripe','mosaic','hero','flip'].includes(suite))throw new Error('Unknown NagWeb smoke suite: '+suite);
 
 const feedbackSource=fs.readFileSync(new URL('../js/nagweb-feedback-v16.js',import.meta.url),'utf8');
 const directorSource=fs.readFileSync(new URL('../js/nagweb-scroll-director-v16.js',import.meta.url),'utf8');
@@ -365,6 +367,7 @@ await runTransparentSmoke(page);
 if(suite==='all'||suite==='diagonal'){
 for(const kind of ['diagonal-carousel','iso-cascade']){await runMotionDiagonalSmoke(page,kind);await runMotionStreamPlacementSmoke(page,kind);}
 }
+if(suite==='all'||suite==='flip'){await runMotionFlipSmoke(page);await runMotionStreamPlacementSmoke(page,'flip-grid');await runMotionBatchImagesSmoke(page,['flip-grid']);}
 if(suite==='all'||suite==='hero'){await runMotionHeroSmoke(page);await runMotionStreamPlacementSmoke(page,'hero-reel');await runMotionBatchImagesSmoke(page,['hero-reel']);}
 if(suite==='all'||suite==='mosaic'){await runMotionMosaicSmoke(page);await runMotionStreamPlacementSmoke(page,'mosaic-wipe');await runMotionBatchImagesSmoke(page,['mosaic-wipe']);}
 if(suite==='all'||suite==='stripe'){await runMotionStripeSmoke(page);await runMotionStreamPlacementSmoke(page,'stripe-reveal');await runMotionBatchImagesSmoke(page,['stripe-reveal']);}

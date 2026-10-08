@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+const scope={window:{}};vm.runInNewContext(fs.readFileSync('js/nagweb-story-model.js','utf8'),scope);
+const model=scope.window.NAGWEB_STREAM_MODEL,plain=x=>JSON.parse(JSON.stringify(x)),defaults=model.config({kind:'flip-grid'}),near=(a,b,t=1e-6)=>assert.ok(Math.abs(a-b)<t,`${a} != ${b}`),pose=(p,c={},n=8,w=1280,h=720)=>plain(model.layout(w,h,{...defaults,...c},p,n,1));
+assert.equal(defaults.kind,'flip-grid');assert.equal(defaults.axis,'horizontal');assert.equal(defaults.cardRatio,'frame');assert.equal(model.config({kind:'flip-grid',axis:'bad',cardRatio:'1:1'}).axis,'horizontal');
+for(const [key,s] of Object.entries(model.flipSpecs)){assert.equal(defaults[key],s[0]);assert.equal(model.config({kind:'flip-grid',[key]:999})[key],s[2]);assert.equal(model.config({kind:'flip-grid',[key]:-999})[key],s[1]);}
+for(const count of [0,1,5,6,7,8,10,12,99]){const n=count===0?8:Math.max(6,Math.min(12,Math.round(count/2)*2));assert.equal(pose(0,{},count).length,n);}
+for(const n of [6,8,10,12])for(const axis of ['horizontal','vertical'])for(const ratio of ['16:9','9:16','auto']){
+ const cfg={axis,frameRatio:ratio},a=pose(0,cfg,n);assert.deepEqual(a,pose(1,cfg,n));const half=n/2;
+ for(let sample=0;sample<100;sample++){const cards=pose(sample/100,cfg,n);assert.equal(cards.filter(c=>c.visible).length,half);for(let pair=0;pair<half;pair++){const face=cards.filter(c=>c.visible&&c.pair===pair);assert.equal(face.length,1);const c=face[0],t=c.instances[0];assert.ok(c.flipScale>=.001&&c.flipScale<=1);assert.equal(c.slot,pair+(c.back?half:0));near(t.rounded.scaleX,axis==='horizontal'?c.flipScale:1);near(t.rounded.scaleY,axis==='vertical'?c.flipScale:1);near(c.textureWidth,a[c.slot].textureWidth);near(c.textureHeight,a[c.slot].textureHeight);assert.ok(t.rounded.radius<=Math.min(c.textureWidth,c.textureHeight)/2);assert.ok(t.shadowStrength>=0&&t.shadowStrength<=3);for(const p of t.polygon)assert.ok(p.x>=c.clip.left-1e-6&&p.x<=c.clip.left+c.clip.width+1e-6&&p.y>=c.clip.top-1e-6&&p.y<=c.clip.top+c.clip.height+1e-6);}}
+ for(let pair=0;pair<half;pair++){for(const [local,back,scale] of [[0,false,1],[.03,false,Math.cos(Math.PI*.0625)],[.06,true,.001],[.09,true,Math.cos(Math.PI*.0625)],[.2,true,1],[.56,false,.001],[.75,false,1]]){const cards=pose((pair*.13+local)%1,cfg,n),c=cards.find(c=>c.visible&&c.pair===pair);assert.equal(c.back,back,`${pair}, ${local}`);near(c.flipScale,scale);}}
+}
+for(const axis of ['horizontal','vertical'])for(const n of [6,12])for(const p of [0,.05,.57,.99]){const a=pose(p,{axis,gap:10,cornerRadius:12},n),b=pose(p,{axis,gap:10,cornerRadius:12},n,2560,1440);for(let i=0;i<n;i++){near(b[i].textureWidth,a[i].textureWidth*2);near(b[i].textureHeight,a[i].textureHeight*2);if(a[i].visible){near(b[i].width,a[i].width*2);near(b[i].height,a[i].height*2);}}}
+const offset=pose(.25,{offsetX:4,offsetY:-3}),base=pose(.25);for(let i=0;i<8;i++)if(base[i].visible){near(offset[i].left-base[i].left,28.8);near(offset[i].top-base[i].top,-21.6);}
+const scroll={...defaults,start:20,end:80,turns:3};assert.deepEqual(plain(model.layout(1280,720,scroll,.1,8,1,true)),plain(model.layout(1280,720,scroll,.9,8,1,true)));
+const exported=vm.runInNewContext('('+scope.window.NAGWEB_CREATE_STREAM_MODEL.toString()+')()');assert.deepEqual(plain(exported.layout(390,844,scroll,.317,12,1,true)),plain(model.layout(390,844,scroll,.317,12,1,true)));
+console.log('Flip Grid: 6–12 even sources, paired faces, reference grid/ripple/cosine flip, both axes, midpoint switching, loop/holds, stable crops/textures, rounded picking geometry, bounded frames, scale/offsets, scroll/exported factory OK');
