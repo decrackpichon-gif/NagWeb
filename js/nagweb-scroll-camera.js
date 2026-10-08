@@ -431,6 +431,14 @@ function updateMapFov(map,s,list,looks,spec,at){
  group.style.display=fov?'':'none';
  if(fov&&shape)shape.setAttribute('points',fov.points);
 }
+function updateMapSelectionRing(map,selector,frame,spec){
+ var ring=map.querySelector(selector);
+ if(!ring)return;
+ if(!frame){ring.style.display='none';return;}
+ var p=C.mapPoint(frame,spec);
+ ring.setAttribute('cx',p.x);ring.setAttribute('cy',p.y);
+ ring.style.display='';
+}
 function mapDraw(map,list,spec,s,lookList){
  if(!map.querySelector)return;
  var path=map.querySelector('[data-camera-map-path]'),cfg=s&&C.config(s);
@@ -440,6 +448,7 @@ function mapDraw(map,list,spec,s,lookList){
  if(cameraSegments)cameraSegments.innerHTML=cfg&&cfg.pathMode==='smooth'?freeSegmentPaths(list,draw,spec,'camera',function(p){return C.pose(Object.assign({},cfg,{frames:list}),p,window.NAGWEB_STORY_MODEL,s.sdEase,false);}):'';
  list.forEach(function(k){var dot=map.querySelector('[data-camera-map-dot="'+k.at+'"]'),p=C.mapPoint(k,spec);if(dot){dot.setAttribute('cx',p.x);dot.setAttribute('cy',p.y);}});
  var selectedButton=map.querySelector('[data-camera-map-point]');
+ if(selectedButton)updateMapSelectionRing(map,'[data-camera-map-selected-camera-ring]',list.find(function(f){return f.at===+selectedButton.dataset.cameraMapPoint;}),spec);
  if(selectedButton&&cfg){
   var selectedAt=+selectedButton.dataset.cameraMapPoint,activeLooks=lookList||lookKeys(s);
   updateMapHeading(map,s,list,activeLooks,spec,selectedAt);
@@ -461,6 +470,7 @@ function mapDraw(map,list,spec,s,lookList){
   if(lookSegments)lookSegments.innerHTML=cfg.lookPathMode==='smooth'?freeSegmentPaths(resolved,lookDraw,spec,'look',function(p){return C.lookTarget(lookCfg,p,window.NAGWEB_STORY_MODEL,s.sdEase,size);}):'';
   resolved.forEach(function(k){var dot=map.querySelector('[data-camera-look-map-dot="'+k.at+'"]'),p=C.mapPoint(k,spec);if(dot){dot.setAttribute('cx',p.x);dot.setAttribute('cy',p.y);}});
   var selectedLookButton=map.querySelector('[data-camera-look-map-point]');
+  if(selectedLookButton)updateMapSelectionRing(map,'[data-camera-map-selected-look-ring]',resolved.find(function(f){return f.at===+selectedLookButton.dataset.cameraLookMapPoint;}),spec);
   updateMapSelectionGuide(map,selectedButton?list.find(function(k){return k.at===+selectedButton.dataset.cameraMapPoint;}):null,selectedLookButton?resolved.find(function(k){return k.at===+selectedLookButton.dataset.cameraLookMapPoint;}):null,spec);
   if(selectedLookButton&&cfg.lookPathMode==='smooth'){
    var selectedLookAt=+selectedLookButton.dataset.cameraLookMapPoint,selectedLook=resolved.find(function(k){return k.at===selectedLookAt;});
@@ -482,7 +492,8 @@ function spatialMap(s,list,k){
  html+='<label style="display:inline-flex;align-items:center;gap:6px;margin:6px 0;font-size:12px"><input type="checkbox" data-camera-map-fov-toggle aria-label="Mostrar campo de visión aproximado"'+(mapFovVisible[s.id]!==false?' checked':'')+'> Mostrar campo de visión</label>';
  html+='<div data-camera-map-pair style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0">'+mapKeyframeNavigation(list,k.at,'camera')+(lk?mapKeyframeNavigation(looks,lk.at,'look'):'')+'</div>';
  if(lk)html+='<p class="hint gh">◆ y ● se navegan por separado; la vista previa sigue el último punto elegido.</p>';
- html+='<div data-camera-map tabindex="0" role="group" aria-label="Mapa espacial: flechas izquierda y derecha para cambiar encuadre; Shift más flechas para cambiar objetivo de mirada" data-plane="'+plane+'" data-range="'+spec.range+'" style="position:relative;width:100%;aspect-ratio:1.5;border:1px solid var(--line);margin-top:8px;touch-action:none">';
+ html+='<style>[data-camera-map]:focus-visible{outline:3px solid var(--accent);outline-offset:3px}[data-camera-map] [data-camera-map-point]:focus-visible,[data-camera-map] [data-camera-look-map-point]:focus-visible{box-shadow:0 0 0 3px var(--accent)}</style>';
+ html+='<div data-camera-map tabindex="0" role="group" aria-label="Mapa espacial. Encuadre seleccionado '+k.at+'%. '+(lk?'Objetivo seleccionado '+lk.at+'%. ':'')+'Flechas izquierda y derecha: cambiar encuadre.'+(lk?' Shift más flechas: cambiar objetivo.':'')+'" data-plane="'+plane+'" data-range="'+spec.range+'" style="position:relative;width:100%;aspect-ratio:1.5;border:1px solid var(--line);margin-top:8px;touch-action:none">';
  html+='<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:auto"><path d="M50 0V100M0 50H100" stroke="currentColor" opacity=".2" stroke-width=".5"/><polyline data-camera-map-path points="'+path+'" fill="none" stroke="currentColor" opacity=".65" stroke-width=".7"/>';
  if(lookPath)html+='<polyline data-camera-look-map-path-hit points="'+lookPath+'" fill="none" stroke="var(--accent)" opacity=".001" stroke-width="6" pointer-events="stroke" style="cursor:crosshair"/><polyline data-camera-look-map-path points="'+lookPath+'" fill="none" stroke="var(--accent)" opacity=".65" stroke-width=".7" stroke-dasharray="2 2" pointer-events="stroke" style="cursor:crosshair"/>';
  html+='<g data-camera-free-segments pointer-events="none">'+(cfg.pathMode==='smooth'?freeSegmentPaths(list,draw,spec,'camera',function(p){return C.pose(Object.assign({},cfg,{frames:list}),p,window.NAGWEB_STORY_MODEL,s.sdEase,false);}):'')+'</g>';
@@ -490,6 +501,8 @@ function spatialMap(s,list,k){
  html+=mapFovSvg(mapFieldOfView(s,list,looks,k.at,spec,size),mapFovVisible[s.id]!==false);
  html+=mapHeadingSvg(mapHeading(s,list,looks,k.at,spec,size));
  if(lookKeyPoint)html+='<line data-camera-map-selection-link x1="'+point.x+'" y1="'+point.y+'" x2="'+lookKeyPoint.x+'" y2="'+lookKeyPoint.y+'" stroke="var(--accent)" stroke-width=".75" stroke-dasharray="1 4" opacity=".7" pointer-events="none"/>';
+ html+='<circle data-camera-map-selected-camera-ring cx="'+point.x+'" cy="'+point.y+'" r="4.6" fill="none" stroke="currentColor" stroke-width=".85" opacity=".9" pointer-events="none"/>';
+ if(lookKeyPoint)html+='<circle data-camera-map-selected-look-ring cx="'+lookKeyPoint.x+'" cy="'+lookKeyPoint.y+'" r="5.7" fill="none" stroke="var(--accent)" stroke-width=".9" stroke-dasharray="2 1.4" opacity=".9" pointer-events="none"/>';
  if(tangentInPoint)html+='<line data-camera-tangent-line="in" x1="'+point.x+'" y1="'+point.y+'" x2="'+tangentInPoint.x+'" y2="'+tangentInPoint.y+'" stroke="var(--accent)" opacity=".48" stroke-width=".6" stroke-dasharray="1.5 1.5" pointer-events="none"/><circle data-camera-tangent-handle="in" cx="'+tangentInPoint.x+'" cy="'+tangentInPoint.y+'" r="1.55" fill="none" stroke="var(--accent)" opacity=".7" stroke-width=".8" pointer-events="none"/>';
  if(tangentOutPoint)html+='<line data-camera-tangent-line="out" x1="'+point.x+'" y1="'+point.y+'" x2="'+tangentOutPoint.x+'" y2="'+tangentOutPoint.y+'" stroke="var(--accent)" opacity=".72" stroke-width=".6" stroke-dasharray="1.5 1.5" pointer-events="none"/><circle data-camera-tangent-handle="out" cx="'+tangentOutPoint.x+'" cy="'+tangentOutPoint.y+'" r="1.6" fill="none" stroke="var(--accent)" stroke-width=".8" pointer-events="none"/>';
  if(lookTangentInPoint&&lookKeyPoint)html+='<line data-camera-look-tangent-line="in" x1="'+lookKeyPoint.x+'" y1="'+lookKeyPoint.y+'" x2="'+lookTangentInPoint.x+'" y2="'+lookTangentInPoint.y+'" stroke="var(--accent)" opacity=".45" stroke-width="'+(lookTangentIn&&lookTangentIn.free?'1.1':'.7')+'" stroke-dasharray="'+(lookTangentIn&&lookTangentIn.free?'none':'3 1')+'" pointer-events="none"/><circle data-camera-look-tangent-handle="in" cx="'+lookTangentInPoint.x+'" cy="'+lookTangentInPoint.y+'" r="1.5" fill="var(--accent)" opacity=".65" pointer-events="none"/>';
