@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { runInNewContext } from "node:vm";
 import {
   flattenAmbientCgDownloads,
   selectAmbientCgDownload
@@ -948,8 +949,9 @@ assert.match(magicPreview, /animation-delay:0\.6s!important/);
 assert.match(magicPreview, /animation-timing-function:ease-out!important/);
 assert.match(magicPreview, /animation-iteration-count:3!important/);
 assert.match(magicPreview, /prefers-reduced-motion:reduce/);
-assert.match(magicPreview, /script-src 'none'/);
-assert.equal(magicPreview.includes("<script"), false);
+assert.match(magicPreview, /script-src 'nonce-nagweb-magic-preview-v1'/);
+assert.match(magicPreview, /connect-src 'none'/);
+assert.match(magicPreview, /<script nonce="nagweb-magic-preview-v1">/);
 const appliedMagicCss = buildResourceApplyEnvelope(magicCssResource, {
   values: magicValues
 }).descriptor;
@@ -980,7 +982,6 @@ assert.match(escapedMagic, /animation-timing-function:ease!important/);
 
 // The same script-free pause/resume control works for both CSS preview families.
 for (const [family, document] of [
-  ["Magic.css", magicPreview],
   ["CSSShake", hoverShakeDoc],
   ["CSSShake constant", constantShakeDoc]
 ]) {
@@ -1000,3 +1001,65 @@ assert.equal(buildResourceApplyEnvelope(magicCssResource, {
 assert.equal(buildResourceApplyEnvelope(shakePreviewResource, {
   values: { trigger: "constant" }
 }).descriptor.payload.trigger, "constant");
+
+const liveScriptMatch = magicPreview.match(
+  /<script nonce="nagweb-magic-preview-v1">([\s\S]*?)<\/script>/
+);
+assert.ok(liveScriptMatch);
+const bridgeCalls = [];
+let bridgeHandler;
+const bridgeParent = {};
+const fakeHint = { textContent: "" };
+runInNewContext(liveScriptMatch[1], {
+  window: {
+    parent: bridgeParent,
+    addEventListener(type, handler) {
+      assert.equal(type, "message");
+      bridgeHandler = handler;
+    }
+  },
+  document: {
+    querySelector(selector) {
+      if (selector === ".demo.magictime") {
+        return { style: { setProperty(...args) { bridgeCalls.push(args); } } };
+      }
+      if (selector === ".hint") return fakeHint;
+      return null;
+    }
+  }
+});
+assert.equal(typeof bridgeHandler, "function");
+bridgeHandler({
+  source: {},
+  data: {
+    type: "nagweb:magic-css-preview:update",
+    resourceId: magicCssResource.id,
+    values: magicValues
+  }
+});
+assert.equal(bridgeCalls.length, 0, "Ignore messages not sent by iframe parent");
+bridgeHandler({
+  source: bridgeParent,
+  data: {
+    type: "nagweb:magic-css-preview:update",
+    resourceId: "another-resource",
+    values: magicValues
+  }
+});
+assert.equal(bridgeCalls.length, 0, "Ignore updates for another resource");
+bridgeHandler({
+  source: bridgeParent,
+  data: {
+    type: "nagweb:magic-css-preview:update",
+    resourceId: magicCssResource.id,
+    values: magicValues
+  }
+});
+assert.deepEqual(bridgeCalls.map(([name, value]) => [name, value]), [
+  ["animation-duration", "2.5s"],
+  ["animation-delay", "0.6s"],
+  ["animation-timing-function", "ease-out"],
+  ["animation-iteration-count", "3"]
+]);
+assert.match(fakeHint.textContent, /Duración 2.5s/);
+assert.match(fakeHint.textContent, /Repeticiones 3/);

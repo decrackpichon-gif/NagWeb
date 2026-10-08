@@ -39,11 +39,12 @@ export function buildMagicCssBrowserPreview(resource, values = {}) {
   const easing = EASINGS.has(values.easing) ? values.easing : "ease";
   // Escape style-tag delimiters embedded in CSS.
   const css = stylesheet.replaceAll("<", "\\3C ");
+  const escapedResourceId = JSON.stringify(resource.id).replaceAll("<", "\\u003c");
 
   return `<!doctype html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'none'; connect-src 'none'; font-src 'none'; img-src data:; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-nagweb-magic-preview-v1'; connect-src 'none'; font-src 'none'; img-src data:; object-src 'none'; frame-src 'none'">
 <style>${css}</style>
 <style>
 html,body{height:100%;margin:0;background:#f4f5f7;color:#1b2630;font-family:system-ui}
@@ -59,5 +60,39 @@ ${CSS_PREVIEW_PLAYBACK_MARKUP}
   <div class="demo magictime ${className}">${escapeHtml(resource.title || resource.name || className)}</div>
   <p class="hint">Duración ${duration}s · Demora ${delay}s · Repeticiones ${iterations}</p>
 </main>
+<script nonce="nagweb-magic-preview-v1">
+const previewResourceId = ${escapedResourceId};
+window.addEventListener("message", (event) => {
+  // srcdoc has an opaque origin. Only its parent can send accepted updates.
+  if (event.source !== window.parent) return;
+  const request = event.data;
+  if (
+    request?.type !== "nagweb:magic-css-preview:update" ||
+    request.resourceId !== previewResourceId
+  ) return;
+  const values = request.values;
+  if (!values || typeof values !== "object") return;
+
+  const bounded = (value, fallback, min, max) =>
+    typeof value === "number" && Number.isFinite(value) &&
+    value >= min && value <= max ? value : fallback;
+  const allowedEasings = ["linear", "ease", "ease-in", "ease-out", "ease-in-out"];
+  const duration = bounded(values.duration, 1, 0.1, 8);
+  const delay = bounded(values.delay, 0, 0, 5);
+  const iterations = bounded(values.iterations, 1, 1, 10);
+  const easing = allowedEasings.includes(values.easing) ? values.easing : "ease";
+  const target = document.querySelector(".demo.magictime");
+  if (!target) return;
+  target.style.setProperty("animation-duration", duration + "s", "important");
+  target.style.setProperty("animation-delay", delay + "s", "important");
+  target.style.setProperty("animation-timing-function", easing, "important");
+  target.style.setProperty("animation-iteration-count", String(iterations), "important");
+  const hint = document.querySelector(".hint");
+  if (hint) {
+    hint.textContent = "Duración " + duration + "s · Demora " +
+      delay + "s · Repeticiones " + iterations;
+  }
+});
+</script>
 </body></html>`;
 }

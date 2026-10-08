@@ -213,6 +213,30 @@ async function previewDoc(resource, values = {}) {
   return null;
 }
 
+function isMagicCssLivePreview(resource) {
+  return resource?.source?.provider === "magic-css" &&
+    resource?.runtime?.renderer === "nagweb-css-inline-effect";
+}
+
+function updateMagicCssLivePreview(resource) {
+  if (
+    !isMagicCssLivePreview(resource) ||
+    resource !== selectedResource ||
+    !el.detail.open || el.preview.hidden
+  ) return;
+  // Opaque-origin srcdoc iframes require "*" as targetOrigin. The iframe
+  // validates the source and resourceId, with a nonce-restricted inline script.
+  el.preview.contentWindow?.postMessage({
+    type: "nagweb:magic-css-preview:update",
+    resourceId: resource.id,
+    values: { ...selectedValues }
+  }, "*");
+}
+
+el.preview.addEventListener("load", () => {
+  updateMagicCssLivePreview(selectedResource);
+});
+
 function updateApplyReadiness(resource) {
   el.apply.disabled = true;
 
@@ -407,7 +431,8 @@ async function openDetail(id) {
     resource.runtime?.renderer === "nagweb-css-class-effect";
   const isMagicCss = resource.source?.provider === "magic-css" &&
     resource.runtime?.renderer === "nagweb-css-inline-effect";
-  el.preview.setAttribute("sandbox", doc && isLottie ? "allow-scripts" : "");
+  el.preview.setAttribute("sandbox",
+    doc && (isLottie || isMagicCss) ? "allow-scripts" : "");
   el.previewReplay.hidden = !doc || !(isCssShake || isMagicCss);
   if (doc) {
     el.previewFallback.hidden = true;
@@ -418,7 +443,7 @@ async function openDetail(id) {
       : isCssShake
         ? "Compará Hover y Siempre. El modo destacado es el que se insertará."
         : isMagicCss
-          ? "Ajustá duración, demora, curva y repeticiones. Reiniciá para ver otra vez."
+          ? "Los ajustes se actualizan sin reiniciar la vista previa; podés pausar y reanudar."
           : "Preview segura generada desde nuestra copia persistente.";
   } else {
     el.preview.hidden = true;
@@ -521,6 +546,10 @@ window.addEventListener("message", (event) => {
 async function redrawEditablePreview() {
   const resource = selectedResource;
   if (!resource || el.customize.hidden) return;
+  if (isMagicCssLivePreview(resource)) {
+    updateMagicCssLivePreview(resource);
+    return;
+  }
   const values = { ...selectedValues };
   const doc = await previewDoc(resource, values);
   if (
