@@ -33,11 +33,14 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Clone Uiverse Galaxy
+      - name: Clone source repositories
         shell: bash
         run: |
           git clone --depth=1 https://github.com/uiverse-io/galaxy.git "$RUNNER_TEMP/uiverse-galaxy"
           git -C "$RUNNER_TEMP/uiverse-galaxy" rev-parse HEAD > "$RUNNER_TEMP/uiverse-commit.txt"
+
+          git clone --depth=1 https://github.com/lucide-icons/lucide.git "$RUNNER_TEMP/lucide"
+          git -C "$RUNNER_TEMP/lucide" rev-parse HEAD > "$RUNNER_TEMP/lucide-commit.txt"
 
       - name: Build compact provider snapshot
         working-directory: tools/resource-etl
@@ -49,6 +52,17 @@ jobs:
             --out-dir="$RUNNER_TEMP/nagweb-uiverse-snapshot" \
             --commit="$SOURCE_COMMIT"
           cp "$RUNNER_TEMP/uiverse-galaxy/LICENSE" "$RUNNER_TEMP/nagweb-uiverse-snapshot/LICENSE"
+
+      - name: Build Lucide snapshot
+        working-directory: tools/resource-etl
+        shell: bash
+        run: |
+          SOURCE_COMMIT="$(cat "$RUNNER_TEMP/lucide-commit.txt")"
+          node src/snapshot/build-lucide-snapshot.mjs \
+            --source-dir="$RUNNER_TEMP/lucide" \
+            --out-dir="$RUNNER_TEMP/nagweb-lucide-snapshot" \
+            --commit="$SOURCE_COMMIT"
+          cp "$RUNNER_TEMP/lucide/LICENSE" "$RUNNER_TEMP/nagweb-lucide-snapshot/LICENSE"
 
       - name: Build core lightweight Code Vault
         working-directory: tools/resource-etl
@@ -120,11 +134,29 @@ jobs:
           console.log("Persistent core snapshot verified", manifest);
           NODE
 
+          node - <<'NODE'
+          const fs = require("fs");
+          const path = process.env.RUNNER_TEMP + "/nagweb-lucide-snapshot";
+          const manifest = JSON.parse(
+            fs.readFileSync(path + "/manifest.json", "utf8")
+          );
+          if (manifest.resourceCount < 1800) {
+            throw new Error(
+              "Unexpectedly small Lucide snapshot: " + manifest.resourceCount
+            );
+          }
+          if (!manifest.compressedSha256 || manifest.compressedSha256.length !== 64) {
+            throw new Error("Missing Lucide snapshot SHA-256");
+          }
+          console.log("Persistent Lucide snapshot verified", manifest);
+          NODE
+
       - name: Publish resource-vault-data branch
         shell: bash
         run: |
           SNAPSHOT_DIR="$RUNNER_TEMP/nagweb-uiverse-snapshot"
           CORE_DIR="$RUNNER_TEMP/nagweb-core-snapshot"
+          LUCIDE_DIR="$RUNNER_TEMP/nagweb-lucide-snapshot"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
@@ -147,6 +179,13 @@ jobs:
           cp "$CORE_DIR/THIRD_PARTY_NOTICES.txt" core-code/THIRD_PARTY_NOTICES.txt
           cp "$CORE_DIR/README.md" core-code/README.md
 
+          mkdir -p lucide
+          cp "$LUCIDE_DIR/library.json.gz" lucide/library.json.gz
+          cp "$LUCIDE_DIR/catalog.json" lucide/catalog.json
+          cp "$LUCIDE_DIR/manifest.json" lucide/manifest.json
+          cp "$LUCIDE_DIR/LICENSE" lucide/LICENSE
+          cp "$LUCIDE_DIR/README.md" lucide/README.md
+
           cat > README.md <<'EOF'
           # NagWeb Resource Vault Data
 
@@ -156,9 +195,10 @@ jobs:
 
           Current snapshots:
           - Uiverse Galaxy
+          - Lucide Icons
           - Core Code Vault: Shadcn, Magic UI, Motion Primitives, AnimXYZ, HyperUI, CSSShake, Magic.css and GLSL Noise
           EOF
 
-          git add README.md uiverse core-code
+          git add README.md uiverse core-code lucide
           git commit -m "data: refresh lightweight resource snapshots"
           git push --force origin HEAD:resource-vault-data
