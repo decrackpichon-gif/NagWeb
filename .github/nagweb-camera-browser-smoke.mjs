@@ -673,6 +673,67 @@ export async function runCameraBrowserSmoke(page){
   assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'Cones and view toggles create no undo history');
   console.log('Camera minimap A/B field of view: shared perspective, top/front/edge-on, manual/target, visibility toggle, no edits OK');
 
+  // Micro-etapa 37: projected 2D overlap, identical and disjoint cones, edge-on unavailability, visibility separation.
+  const originalOverlapSelection=await page.evaluate(()=>({
+   a:document.querySelector('[data-camera-overview-compare-a]').value,
+   b:document.querySelector('[data-camera-overview-compare-b]').value,
+   orientation:sec().sdCameraOrientationMode,
+   camera:JSON.stringify(sec().sdCameraFrames)
+  }));
+  const overlapState=()=>page.evaluate(()=>{
+   const result=document.querySelector('[data-camera-overview-overlap-summary]'),poly=document.querySelector('[data-camera-overview-fov-overlap]');
+   const parse=poly?.getAttribute('points')?.split(' ').map(p=>p.split(',').map(Number))||[];
+   return {status:result?.dataset.cameraOverviewOverlapStatus||'',message:result?.textContent||'',
+    visibleCones:document.querySelectorAll('[data-camera-overview-fov]').length,polygon:!!poly,
+    a:poly?+poly.dataset.cameraOverviewOverlapA:null,b:poly?+poly.dataset.cameraOverviewOverlapB:null,
+    finite:parse.every(p=>p.length===2&&p.every(Number.isFinite)),nonInteractive:poly?.getAttribute('pointer-events')==='none'};
+  });
+  await page.select('[data-camera-overview-compare-a]','look:0:20');
+  await page.select('[data-camera-overview-compare-b]','look:0:20');
+  let cov=await overlapState();
+  assert.equal(cov.status,'shared','Identical view cones have a shared projected area');
+  assert.equal(cov.polygon,true,'Overlap region is displayed on minimap');
+  assert.ok(Math.abs(cov.a-100)<.01&&Math.abs(cov.b-100)<.01,'Identical A/B cones share 100% of each projected area');
+  assert.ok(cov.finite&&cov.nonInteractive,'Overlap polygon uses valid SVG coordinates and does not intercept editing');
+  assert.ok(cov.message.includes('proyectada X/Z o X/Y'),'Diagnostic specifies 2D projection rather than actual 3D coverage');
+  await page.click('[data-camera-overview-compare-fov-toggle]');
+  cov=await overlapState();
+  assert.equal(cov.polygon,false,'Hiding cones also hides purple overlap visualization');
+  assert.equal(cov.visibleCones,0);
+  assert.equal(cov.status,'shared','Hiding geometry retains computed coverage in the diagnostic');
+  assert.ok(cov.message.includes('conos ocultos'),'Hidden cones are labeled in diagnostic');
+  await page.click('[data-camera-overview-compare-fov-toggle]');
+  cov=await overlapState();
+  assert.equal(cov.polygon,true,'Shared region reappears when cones are shown');
+  await page.select('[data-camera-map-plane]','front');
+  cov=await overlapState();
+  assert.equal(cov.status,'unavailable','Edge-on projection reports unavailable instead of falsely reporting zero overlap');
+  assert.equal(cov.polygon,false,'Edge-on geometry has no misleading filled area');
+  await page.select('[data-camera-map-plane]','top');
+  // Spread manually oriented camera intervals far apart so the projected cones are disjoint.
+  await page.evaluate(()=>{
+   const sc=sec();sc.sdCameraOrientationMode='manual';
+   sc.sdCameraFrames=sc.sdCameraFrames.map((f,i)=>({...f,x:i*1000,rotateX:0,rotateY:0}));
+   renderPane();
+  });
+  await page.select('[data-camera-overview-compare-a]','camera:0:20');
+  await page.select('[data-camera-overview-compare-b]','camera:80:100');
+  cov=await overlapState();
+  assert.equal(cov.status,'none','Well-separated camera cones report no projected overlap');
+  assert.equal(cov.polygon,false,'Disjoint cones do not draw a shared purple region');
+  assert.ok(cov.message.includes('Sin superposición'),'No-overlap diagnostic explains the result');
+  await page.evaluate(saved=>{
+   const sc=sec();sc.sdCameraOrientationMode=saved.orientation;
+   sc.sdCameraFrames=JSON.parse(saved.camera);renderPane();
+  },originalOverlapSelection);
+  await page.select('[data-camera-overview-compare-a]',originalOverlapSelection.a);
+  await page.select('[data-camera-overview-compare-b]',originalOverlapSelection.b);
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),motionNavigationInitial.frames,'Overlap visualization does not change authored camera frames');
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraLookFrames)),motionNavigationInitial.looks,'Overlap visualization does not change authored look frames');
+  assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'Coverage calculations and UI do not add undo snapshots');
+  console.log('Camera minimap FOV overlap: 100% shared, separate cones, edge-on unavailable, toggle, restore and no scene edits OK');
+
+
 
 
 
