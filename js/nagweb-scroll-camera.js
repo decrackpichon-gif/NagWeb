@@ -217,7 +217,7 @@ function createCamera(){
   list.forEach(function(k){range=Math.max(range,Math.abs(number(k.x))*1.2,Math.abs(number(k[axis]))*1.2);});
   return {axis:axis,sign:axis==='z'?-1:1,range:range};
  }
- function mapPoint(k,spec){return {x:50+number(k.x)/spec.range*50,y:50+number(k[spec.axis])/spec.range*50*spec.sign};}
+ function mapPoint(k,spec){return {x:50+(number(k.x)-number(spec.originX))/spec.range*50,y:50+(number(k[spec.axis])-number(spec.originAxis))/spec.range*50*spec.sign};}
  function moveSpatial(k,spec,dx,dy){var copy=Object.assign({},k);copy.x=number(Math.round(k.x+dx*spec.range*2));copy[spec.axis]=number(Math.round(k[spec.axis]+dy*spec.range*2*spec.sign));return copy;}
  function nearestPathAt(samples,spec,point,scale){
   if(!Array.isArray(samples)||samples.length<2||!spec||!point)return null;
@@ -268,7 +268,7 @@ function createCamera(){
 }
 window.NAGWEB_CREATE_SCROLL_CAMERA=createCamera;
 window.NAGWEB_SCROLL_CAMERA=createCamera();
-var presetChoices=Object.create(null),holdDurations=Object.create(null),mapOpen=Object.create(null),mapPlanes=Object.create(null),mapFovVisible=Object.create(null),mapPickHistory=Object.create(null),suppressedClick=null,selected=Object.create(null),lookSelected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
+var presetChoices=Object.create(null),holdDurations=Object.create(null),mapOpen=Object.create(null),mapPlanes=Object.create(null),mapFovVisible=Object.create(null),mapZoom=Object.create(null),mapPickHistory=Object.create(null),suppressedClick=null,selected=Object.create(null),lookSelected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
 function safeLabel(v){return String(v==null?'':v).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,42).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];});}
 function targetLabel(e){var label=safeLabel(e&&((e.name||e.text||e.label)||e.type));return label||'Elemento';}
 function keys(s){return C.frames(C.config(s),s.sdEase);}
@@ -324,6 +324,16 @@ function nextSpatialHit(hits,previous,clientX,clientY){
   if(idx>=0)return near[(idx+1)%near.length];
  }
  return near[0];
+}
+function mapZoomStep(current,direction){
+ var levels=[.5,.75,1,1.25,1.5,2,3],index=levels.indexOf(current);
+ if(direction===0)return 1;
+ if(index<0)index=2;
+ return levels[Math.max(0,Math.min(levels.length-1,index+(direction<0?-1:1)))];
+}
+function mapSpecFromNode(map){
+ var front=map.dataset.plane==='front';
+ return {range:+map.dataset.range||500,axis:front?'y':'z',sign:front?1:-1,originX:+map.dataset.originX||0,originAxis:+map.dataset.originAxis||0};
 }
 function mapFrameOptions(list,at){
  return list.map(function(f){return '<option value="'+f.at+'"'+(f.at===at?' selected':'')+'>'+f.at+'%</option>';}).join('');
@@ -383,7 +393,7 @@ function mapHeading(s,list,looks,at,spec,size){
  var cfg=Object.assign({},base,{frames:list,lookFrames:looks});
  var pose=C.pose(cfg,at/100,window.NAGWEB_STORY_MODEL,s.sdEase,false,undefined,size);
  var forward=C.forwardTarget({x:0,y:0,z:0,rotateX:pose.rotateX,rotateY:pose.rotateY},1000);
- var a=C.mapPoint(pose,spec),q=C.mapPoint(forward,spec),dx=q.x-50,dy=q.y-50,len=Math.hypot(dx,dy);
+ var a=C.mapPoint(pose,spec),q=C.mapPoint({x:pose.x+forward.x,y:pose.y+forward.y,z:pose.z+forward.z},spec),dx=q.x-a.x,dy=q.y-a.y,len=Math.hypot(dx,dy);
  if(len<.0001)return null;
  var ux=dx/len,uy=dy/len,x2=Math.max(2,Math.min(98,a.x+ux*12)),y2=Math.max(2,Math.min(98,a.y+uy*12));
  if(Math.hypot(x2-a.x,y2-a.y)<2)return null;
@@ -485,15 +495,19 @@ function mapDraw(map,list,spec,s,lookList){
  if(overlapGroup)overlapGroup.innerHTML=mapOverlapBadges(list,cfg&&cfg.orientationMode==='lookAt'?resolved:[],spec);
 }
 function spatialMap(s,list,k){
- var plane=mapPlanes[s.id]||'top',cfg=C.config(s),looks=cfg&&cfg.orientationMode==='lookAt'?lookKeys(s):[],lk=looks.length?chooseLook(s,looks):null,size=previewReferenceSize(s),resolvedLooks=resolvedLookKeys(s,cfg,looks,size),tangents=cfg&&cfg.pathMode==='smooth'?list.flatMap(function(f){return[C.tangentHandle(list,f.at,'in'),C.tangentHandle(list,f.at,'out')];}).filter(Boolean):[],lookTangents=cfg&&cfg.lookPathMode==='smooth'?resolvedLooks.flatMap(function(f){return[C.lookTangentHandle(resolvedLooks,f.at,'in'),C.lookTangentHandle(resolvedLooks,f.at,'out')];}).filter(Boolean):[],spec=C.mapSpec(list.concat(resolvedLooks,tangents,lookTangents),plane),point=C.mapPoint(k,spec),tangentIn=cfg&&cfg.pathMode==='smooth'?C.tangentHandle(list,k.at,'in'):null,tangentOut=cfg&&cfg.pathMode==='smooth'?C.tangentHandle(list,k.at,'out'):null,tangentInPoint=tangentIn?C.mapPoint(tangentIn,spec):null,tangentOutPoint=tangentOut?C.mapPoint(tangentOut,spec):null,resolvedLk=lk&&lk.targetId?(C.elementTarget(cfg,lk.targetId,lk.at/100,window.NAGWEB_STORY_MODEL,s.sdEase,size)||lk):lk,lookKeyPoint=resolvedLk?C.mapPoint(resolvedLk,spec):null,lookTangentIn=cfg&&cfg.lookPathMode==='smooth'&&lk?C.lookTangentHandle(resolvedLooks,lk.at,'in'):null,lookTangentOut=cfg&&cfg.lookPathMode==='smooth'&&lk?C.lookTangentHandle(resolvedLooks,lk.at,'out'):null,lookTangentInPoint=lookTangentIn?C.mapPoint(lookTangentIn,spec):null,lookTangentOutPoint=lookTangentOut?C.mapPoint(lookTangentOut,spec):null,current=mapCurrent(s,progress(s)),now=C.mapPoint(current,spec);
+ var plane=mapPlanes[s.id]||'top',cfg=C.config(s),looks=cfg&&cfg.orientationMode==='lookAt'?lookKeys(s):[],lk=looks.length?chooseLook(s,looks):null,size=previewReferenceSize(s),resolvedLooks=resolvedLookKeys(s,cfg,looks,size),tangents=cfg&&cfg.pathMode==='smooth'?list.flatMap(function(f){return[C.tangentHandle(list,f.at,'in'),C.tangentHandle(list,f.at,'out')];}).filter(Boolean):[],lookTangents=cfg&&cfg.lookPathMode==='smooth'?resolvedLooks.flatMap(function(f){return[C.lookTangentHandle(resolvedLooks,f.at,'in'),C.lookTangentHandle(resolvedLooks,f.at,'out')];}).filter(Boolean):[],zoom=mapZoom[s.id]||1,spec=C.mapSpec(list.concat(resolvedLooks,tangents,lookTangents),plane);
+ spec.range/=zoom;
+ if(zoom>1){spec.originX=k.x;spec.originAxis=k[spec.axis];}
+ var point=C.mapPoint(k,spec),tangentIn=cfg&&cfg.pathMode==='smooth'?C.tangentHandle(list,k.at,'in'):null,tangentOut=cfg&&cfg.pathMode==='smooth'?C.tangentHandle(list,k.at,'out'):null,tangentInPoint=tangentIn?C.mapPoint(tangentIn,spec):null,tangentOutPoint=tangentOut?C.mapPoint(tangentOut,spec):null,resolvedLk=lk&&lk.targetId?(C.elementTarget(cfg,lk.targetId,lk.at/100,window.NAGWEB_STORY_MODEL,s.sdEase,size)||lk):lk,lookKeyPoint=resolvedLk?C.mapPoint(resolvedLk,spec):null,lookTangentIn=cfg&&cfg.lookPathMode==='smooth'&&lk?C.lookTangentHandle(resolvedLooks,lk.at,'in'):null,lookTangentOut=cfg&&cfg.lookPathMode==='smooth'&&lk?C.lookTangentHandle(resolvedLooks,lk.at,'out'):null,lookTangentInPoint=lookTangentIn?C.mapPoint(lookTangentIn,spec):null,lookTangentOutPoint=lookTangentOut?C.mapPoint(lookTangentOut,spec):null,current=mapCurrent(s,progress(s)),now=C.mapPoint(current,spec);
  var draw=C.pathSamples(Object.assign({},cfg,{frames:list}),window.NAGWEB_STORY_MODEL,s.sdEase),path=draw.map(function(f){var p=C.mapPoint(f,spec);return p.x+','+p.y;}).join(' ');
  var lookDraw=cfg&&cfg.orientationMode==='lookAt'?C.lookSamples(cfg,window.NAGWEB_STORY_MODEL,s.sdEase,undefined,size):[],lookPath=lookDraw.map(function(f){var p=C.mapPoint(f,spec);return p.x+','+p.y;}).join(' '),lookNow=cfg&&cfg.orientationMode==='lookAt'?C.lookTarget(cfg,progress(s)/100,window.NAGWEB_STORY_MODEL,s.sdEase,size):null,lookPoint=lookNow?C.mapPoint(lookNow,spec):null;
  var html='<details data-camera-map-box'+(mapOpen[s.id]?' open':'')+'><summary style="cursor:pointer;margin:8px 0">Mapa del recorrido</summary><label>Vista <select class="csel" data-camera-map-plane><option value="top"'+(plane==='top'?' selected':'')+'>Desde arriba · X/Z</option><option value="front"'+(plane==='front'?' selected':'')+'>De frente · X/Y</option></select></label>';
+ html+='<div style="display:flex;align-items:center;gap:5px;margin:6px 0"><span style="font-size:12px">Zoom</span><button class="btn tiny" type="button" data-camera-map-zoom="-1" aria-label="Alejar mapa"'+(zoom<=.5?' disabled':'')+'>−</button><span data-camera-map-zoom-label style="min-width:38px;text-align:center;font-size:12px">'+Math.round(zoom*100)+'%</span><button class="btn tiny" type="button" data-camera-map-zoom="1" aria-label="Acercar mapa"'+(zoom>=3?' disabled':'')+'>+</button><button class="btn tiny" type="button" data-camera-map-zoom="0" aria-label="Restablecer zoom del mapa"'+(zoom===1?' disabled':'')+'>Ajustar</button></div>';
  html+='<label style="display:inline-flex;align-items:center;gap:6px;margin:6px 0;font-size:12px"><input type="checkbox" data-camera-map-fov-toggle aria-label="Mostrar campo de visión aproximado"'+(mapFovVisible[s.id]!==false?' checked':'')+'> Mostrar campo de visión</label>';
  html+='<div data-camera-map-pair style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0">'+mapKeyframeNavigation(list,k.at,'camera')+(lk?mapKeyframeNavigation(looks,lk.at,'look'):'')+'</div>';
  if(lk)html+='<p class="hint gh">◆ y ● se navegan por separado; la vista previa sigue el último punto elegido.</p>';
  html+='<style>[data-camera-map]:focus-visible{outline:3px solid var(--accent);outline-offset:3px}[data-camera-map] [data-camera-map-point]:focus-visible,[data-camera-map] [data-camera-look-map-point]:focus-visible{box-shadow:0 0 0 3px var(--accent)}</style>';
- html+='<div data-camera-map tabindex="0" role="group" aria-label="Mapa espacial. Encuadre seleccionado '+k.at+'%. '+(lk?'Objetivo seleccionado '+lk.at+'%. ':'')+'Flechas izquierda y derecha: cambiar encuadre.'+(lk?' Shift más flechas: cambiar objetivo.':'')+'" data-plane="'+plane+'" data-range="'+spec.range+'" style="position:relative;width:100%;aspect-ratio:1.5;border:1px solid var(--line);margin-top:8px;touch-action:none">';
+ html+='<div data-camera-map tabindex="0" role="group" aria-label="Mapa espacial. Encuadre seleccionado '+k.at+'%. '+(lk?'Objetivo seleccionado '+lk.at+'%. ':'')+'Flechas izquierda y derecha: cambiar encuadre.'+(lk?' Shift más flechas: cambiar objetivo.':'')+'" data-plane="'+plane+'" data-range="'+spec.range+'" data-origin-x="'+(spec.originX||0)+'" data-origin-axis="'+(spec.originAxis||0)+'" style="position:relative;width:100%;aspect-ratio:1.5;border:1px solid var(--line);margin-top:8px;touch-action:none;overflow:hidden">';
  html+='<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:auto"><path d="M50 0V100M0 50H100" stroke="currentColor" opacity=".2" stroke-width=".5"/><polyline data-camera-map-path points="'+path+'" fill="none" stroke="currentColor" opacity=".65" stroke-width=".7"/>';
  if(lookPath)html+='<polyline data-camera-look-map-path-hit points="'+lookPath+'" fill="none" stroke="var(--accent)" opacity=".001" stroke-width="6" pointer-events="stroke" style="cursor:crosshair"/><polyline data-camera-look-map-path points="'+lookPath+'" fill="none" stroke="var(--accent)" opacity=".65" stroke-width=".7" stroke-dasharray="2 2" pointer-events="stroke" style="cursor:crosshair"/>';
  html+='<g data-camera-free-segments pointer-events="none">'+(cfg.pathMode==='smooth'?freeSegmentPaths(list,draw,spec,'camera',function(p){return C.pose(Object.assign({},cfg,{frames:list}),p,window.NAGWEB_STORY_MODEL,s.sdEase,false);}):'')+'</g>';
@@ -523,7 +537,7 @@ function spatialMap(s,list,k){
  if(lookKeyPoint)html+='<p class="hint gh" data-camera-map-selection-label>◆ '+k.at+'% ↔ ● '+lk.at+'% · Distancia XYZ: '+Math.round(Math.hypot(k.x-resolvedLk.x,k.y-resolvedLk.y,k.z-resolvedLk.z))+' px. Guía comparativa, no vincula los recorridos.</p>';
  if(s.sdCameraResponsive)html+='<p class="hint gh">El mapa muestra el recorrido con el ancho de referencia.</p>';
  html+='<p class="hint gh" data-camera-position-label>'+mapLabel(current,progress(s))+'</p>';
- html+='<p class="hint gh">◆ encuadre seleccionado · ○ posición actual'+(tangentInPoint||tangentOutPoint?' · ◁ entrada / ▷ salida':'')+(cfg&&cfg.orientationMode==='lookAt'?' · ● objetivo seleccionado · línea punteada: recorrido de mirada'+(lookTangentInPoint||lookTangentOutPoint?' · ◁/▷ del ●: curva de mirada':''):'')+(cfg&&(cfg.pathMode==='smooth'||cfg.lookPathMode==='smooth')?' · Trazo destacado: tramo Bézier libre; trazo normal: Catmull-Rom':'')+' · Flecha: orientación de ◆. Área translúcida: campo de visión aproximado (se oculta de perfil). Número junto a un punto: marcadores superpuestos; clic repetido para alternarlos. Clic cerca de un punto: seleccionar · Doble clic línea normal: agregar ◆ · línea punteada: agregar ● · Arrastrá ◆ o ● · Arrastrá ◯: ajustar curva · Shift + arrastre: bloquear al eje dominante. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Con foco en el mapa: ←/→ cambia ◆; Shift + ←/→ cambia ●. Al enfocar un punto, flechas mueven 25 px (Shift: 100 px). Escape cancela. Escala: ±'+Math.round(spec.range)+' px.</p></details>';
+ html+='<p class="hint gh">◆ encuadre seleccionado · ○ posición actual'+(tangentInPoint||tangentOutPoint?' · ◁ entrada / ▷ salida':'')+(cfg&&cfg.orientationMode==='lookAt'?' · ● objetivo seleccionado · línea punteada: recorrido de mirada'+(lookTangentInPoint||lookTangentOutPoint?' · ◁/▷ del ●: curva de mirada':''):'')+(cfg&&(cfg.pathMode==='smooth'||cfg.lookPathMode==='smooth')?' · Trazo destacado: tramo Bézier libre; trazo normal: Catmull-Rom':'')+' · Flecha: orientación de ◆. Área translúcida: campo de visión aproximado (se oculta de perfil). Número junto a un punto: marcadores superpuestos; clic repetido para alternarlos. Clic cerca de un punto: seleccionar · Doble clic línea normal: agregar ◆ · línea punteada: agregar ● · Arrastrá ◆ o ● · Arrastrá ◯: ajustar curva · Shift + arrastre: bloquear al eje dominante. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Zoom: − / +; Ajustar restablece 100%. Por encima de 100% se centra en ◆. Con foco en el mapa: ←/→ cambia ◆; Shift + ←/→ cambia ●. Al enfocar un punto, flechas mueven 25 px (Shift: 100 px). Escape cancela. Escala: ±'+Math.round(spec.range)+' px.</p></details>';
  return html;
 }
 C.panel=function(s){
@@ -614,7 +628,7 @@ C.paint=function(pct){
  if(head)head.style.left=pct+'%';if(seek)seek.value=pct;
  var map=pane.querySelector('[data-camera-map]'),s=sec();
  if(map&&C.config(s)){
-  var spec={range:+map.dataset.range,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1},v=mapCurrent(s,pct),p=C.mapPoint(v,spec),dot=map.querySelector('[data-camera-position]'),label=pane.querySelector('[data-camera-position-label]');
+  var spec=mapSpecFromNode(map),v=mapCurrent(s,pct),p=C.mapPoint(v,spec),dot=map.querySelector('[data-camera-position]'),label=pane.querySelector('[data-camera-position-label]');
   if(dot){dot.setAttribute('cx',p.x);dot.setAttribute('cy',p.y);}if(label)label.textContent=mapLabel(v,pct);
   var cfg=C.config(s),lookDot=map.querySelector('[data-camera-look-position]'),look=cfg&&cfg.orientationMode==='lookAt'?C.lookTarget(cfg,pct/100,window.NAGWEB_STORY_MODEL,s.sdEase,previewReferenceSize(s)):null;
   if(lookDot&&look){var lp=C.mapPoint(look,spec);lookDot.setAttribute('cx',lp.x);lookDot.setAttribute('cy',lp.y);}
@@ -635,7 +649,7 @@ function spatialCommit(s,original,next){
 }
 function pickSpatial(s,map,clientX,clientY){
  var cfg=C.config(s),r=map&&map.getBoundingClientRect();if(!cfg||!r||!r.width||!r.height)return false;
- var spec={range:+map.dataset.range||500,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1},size=previewReferenceSize(s),hits=[];
+ var spec=mapSpecFromNode(map),size=previewReferenceSize(s),hits=[];
  function add(kind,k,point){var p=C.mapPoint(point,spec),x=r.left+p.x/100*r.width,y=r.top+p.y/100*r.height,d=Math.hypot(clientX-x,clientY-y);if(d<=18)hits.push({kind:kind,at:k.at,d:d});}
  keys(s).forEach(function(k){add('camera',k,k);});
  if(cfg.orientationMode==='lookAt'){var list=lookKeys(s),resolved=resolvedLookKeys(s,cfg,list,size);list.forEach(function(k,i){add('look',k,resolved[i]||k);});}
@@ -647,7 +661,7 @@ function pickSpatial(s,map,clientX,clientY){
 }
 function insertOnPath(s,map,clientX,clientY){
  var cfg=C.config(s),r=map&&map.getBoundingClientRect(),list=keys(s);if(!cfg||!r||!r.width||!r.height||list.length>=128)return false;
- var spec={range:+map.dataset.range||500,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1};
+ var spec=mapSpecFromNode(map);
  var point={x:(clientX-r.left)/r.width*100,y:(clientY-r.top)/r.height*100},sx=r.width/100,sy=r.height/100,nearKey=null;
  list.forEach(function(k){var p=C.mapPoint(k,spec),d=Math.hypot((point.x-p.x)*sx,(point.y-p.y)*sy);if(d<=8&&(!nearKey||d<nearKey.distance))nearKey={at:k.at,distance:d};});
  if(nearKey){jump(s,nearKey.at);return true;}
@@ -664,7 +678,7 @@ function insertOnPath(s,map,clientX,clientY){
 }
 function insertLookOnPath(s,map,clientX,clientY){
  var cfg=C.config(s),r=map&&map.getBoundingClientRect(),list=lookKeys(s);if(!cfg||cfg.orientationMode!=='lookAt'||!r||!r.width||!r.height||!list.length||list.length>=128)return false;
- var spec={range:+map.dataset.range||500,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1},size=previewReferenceSize(s);
+ var spec=mapSpecFromNode(map),size=previewReferenceSize(s);
  var point={x:(clientX-r.left)/r.width*100,y:(clientY-r.top)/r.height*100},sx=r.width/100,sy=r.height/100,lookCfg=Object.assign({},cfg,{lookFrames:list}),resolved=resolvedLookKeys(s,lookCfg,list,size),nearKey=null;
  resolved.forEach(function(k,i){var p=C.mapPoint(k,spec),d=Math.hypot((point.x-p.x)*sx,(point.y-p.y)*sy);if(d<=8&&(!nearKey||d<nearKey.distance))nearKey={at:list[i].at,distance:d};});
  if(nearKey){jumpLook(s,nearKey.at);return true;}
@@ -692,14 +706,14 @@ function freeHandleDrag(ev,button){
  var s=sec(),cfg=C.config(s);if(!cfg||cfg.pathMode!=='smooth')return;
  var map=button.closest('[data-camera-map]'),r=map&&map.getBoundingClientRect(),list=keys(s),at=+button.dataset.cameraTensionHandle,side=button.dataset.cameraTensionSide==='in'?'in':'out',key=list.find(function(k){return k.at===at;}),original=C.tangentHandle(list,at,side);
  if(!map||!r.width||!r.height||!key||!original||!original.free)return;
- var spec={range:+map.dataset.range||500,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1},next=original,moved=false,done=false;
+ var spec=mapSpecFromNode(map),next=original,moved=false,done=false;
  ev.preventDefault();ev.stopPropagation();button.focus();button.setPointerCapture(ev.pointerId);
  function move(e){
   if(e.pointerId!==ev.pointerId)return;
   var rawX=e.clientX-ev.clientX,rawY=e.clientY-ev.clientY;if(Math.hypot(rawX,rawY)>=3)moved=true;
   if(e.shiftKey){if(Math.abs(rawX)>=Math.abs(rawY))rawY=0;else rawX=0;}
-  var cx=ev.clientX+rawX,cy=ev.clientY+rawY,nx=(cx-r.left)/r.width,ny=(cy-r.top)/r.height,probe={x:(nx*2-1)*spec.range,y:original.y,z:original.z};
-  probe[spec.axis]=((ny*2-1)*spec.range)/spec.sign;next=probe;
+  var cx=ev.clientX+rawX,cy=ev.clientY+rawY,nx=(cx-r.left)/r.width,ny=(cy-r.top)/r.height,probe={x:(nx*2-1)*spec.range+(spec.originX||0),y:original.y,z:original.z};
+  probe[spec.axis]=((ny*2-1)*spec.range)/spec.sign+(spec.originAxis||0);next=probe;
   var temp=C.setFreeHandle(list,at,side,next);mapDraw(map,temp,spec,s);
  }
  function finish(e,cancel){
@@ -716,20 +730,20 @@ function freeHandleKey(ev,button){
  if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].indexOf(ev.key)<0)return;
  var s=sec(),list=keys(s),at=+button.dataset.cameraTensionHandle,side=button.dataset.cameraTensionSide==='in'?'in':'out',map=button.closest('[data-camera-map]'),h=C.tangentHandle(list,at,side);if(!map||!h||!h.free)return;
  ev.preventDefault();ev.stopPropagation();
- var spec={axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1,range:+map.dataset.range||500},amount=ev.shiftKey?100:25,unit=amount/(spec.range*2),dx=ev.key==='ArrowRight'?unit:ev.key==='ArrowLeft'?-unit:0,dy=ev.key==='ArrowDown'?unit:ev.key==='ArrowUp'?-unit:0,next=C.moveSpatial(h,spec,dx,dy);
+ var spec=mapSpecFromNode(map),amount=ev.shiftKey?100:25,unit=amount/(spec.range*2),dx=ev.key==='ArrowRight'?unit:ev.key==='ArrowLeft'?-unit:0,dy=ev.key==='ArrowDown'?unit:ev.key==='ArrowUp'?-unit:0,next=C.moveSpatial(h,spec,dx,dy);
  if(freeHandleCommit(s,at,side,next)){var n=document.getElementById('pane').querySelector('[data-camera-tension-handle][data-camera-tension-side="'+side+'"]');if(n)n.focus();}
 }
 function tensionDrag(ev,button){
  var s=sec(),cfg=C.config(s);if(!cfg||cfg.pathMode!=='smooth')return;
  var map=button.closest('[data-camera-map]'),r=map&&map.getBoundingClientRect(),list=keys(s),at=+button.dataset.cameraTensionHandle,side=button.dataset.cameraTensionSide==='in'?'in':'out',i=list.findIndex(function(k){return k.at===at;}),owner=side==='in'?i-1:i,k=list[i],ownerKey=list[owner];
  if(!map||!r.width||!r.height||!k||!ownerKey||!C.tangentHandle(list,at,side))return;
- var spec={range:+map.dataset.range||500,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1},original=ownerKey.tension===undefined?0:C.curveTension(ownerKey.tension),next=original,moved=false,done=false;
+ var spec=mapSpecFromNode(map),original=ownerKey.tension===undefined?0:C.curveTension(ownerKey.tension),next=original,moved=false,done=false;
  ev.preventDefault();ev.stopPropagation();button.focus();button.setPointerCapture(ev.pointerId);
  function move(e){
   if(e.pointerId!==ev.pointerId)return;
   if(Math.hypot(e.clientX-ev.clientX,e.clientY-ev.clientY)>=3)moved=true;
-  var nx=(e.clientX-r.left)/r.width,ny=(e.clientY-r.top)/r.height,probe={x:(nx*2-1)*spec.range,y:k.y,z:k.z};
-  probe[spec.axis]=((ny*2-1)*spec.range)/spec.sign;
+  var nx=(e.clientX-r.left)/r.width,ny=(e.clientY-r.top)/r.height,probe={x:(nx*2-1)*spec.range+(spec.originX||0),y:k.y,z:k.z};
+  probe[spec.axis]=((ny*2-1)*spec.range)/spec.sign+(spec.originAxis||0);
   var value=C.tensionFromHandle(list,at,spec,probe,side);if(value===null)return;next=value;
   var temp=list.map(function(f,idx){return idx===owner?Object.assign({},f,{tension:next}):f;}),th=C.tangentHandle(temp,at,side);
   if(th){var hp=C.mapPoint(th,spec);button.style.left=hp.x+'%';button.style.top=hp.y+'%';}
@@ -767,25 +781,25 @@ function lookFreeHandleDrag(ev,button){
  var s=sec(),cfg=C.config(s);if(!cfg||cfg.orientationMode!=='lookAt'||cfg.lookPathMode!=='smooth')return;
  var map=button.closest('[data-camera-map]'),r=map&&map.getBoundingClientRect(),list=lookKeys(s),at=+button.dataset.cameraLookTensionHandle,side=button.dataset.cameraLookTensionSide==='in'?'in':'out',key=list.find(function(k){return k.at===at;}),original=C.lookTangentHandle(list,at,side);
  if(!map||!r.width||!r.height||!key||key.targetId||!original||!original.free)return;
- var spec={range:+map.dataset.range||500,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1},next=original,moved=false,done=false;
+ var spec=mapSpecFromNode(map),next=original,moved=false,done=false;
  ev.preventDefault();ev.stopPropagation();button.focus();button.setPointerCapture(ev.pointerId);
- function move(e){if(e.pointerId!==ev.pointerId)return;var rawX=e.clientX-ev.clientX,rawY=e.clientY-ev.clientY;if(Math.hypot(rawX,rawY)>=3)moved=true;if(e.shiftKey){if(Math.abs(rawX)>=Math.abs(rawY))rawY=0;else rawX=0;}var cx=ev.clientX+rawX,cy=ev.clientY+rawY,nx=(cx-r.left)/r.width,ny=(cy-r.top)/r.height,probe={x:(nx*2-1)*spec.range,y:original.y,z:original.z};probe[spec.axis]=((ny*2-1)*spec.range)/spec.sign;next=probe;mapDraw(map,keys(s),spec,s,C.setLookFreeHandle(list,at,side,next));}
+ function move(e){if(e.pointerId!==ev.pointerId)return;var rawX=e.clientX-ev.clientX,rawY=e.clientY-ev.clientY;if(Math.hypot(rawX,rawY)>=3)moved=true;if(e.shiftKey){if(Math.abs(rawX)>=Math.abs(rawY))rawY=0;else rawX=0;}var cx=ev.clientX+rawX,cy=ev.clientY+rawY,nx=(cx-r.left)/r.width,ny=(cy-r.top)/r.height,probe={x:(nx*2-1)*spec.range+(spec.originX||0),y:original.y,z:original.z};probe[spec.axis]=((ny*2-1)*spec.range)/spec.sign+(spec.originAxis||0);next=probe;mapDraw(map,keys(s),spec,s,C.setLookFreeHandle(list,at,side,next));}
  function finish(e,cancel){if(done||e.pointerId!=null&&e.pointerId!==ev.pointerId)return;done=true;if(!cancel&&e.clientX!=null)move(e);button.removeEventListener('pointermove',move);button.removeEventListener('pointerup',up);button.removeEventListener('pointercancel',abort);button.removeEventListener('lostpointercapture',abort);button.removeEventListener('keydown',keyDown);if(button.hasPointerCapture(ev.pointerId))button.releasePointerCapture(ev.pointerId);if(cancel||!moved||!lookFreeHandleCommit(s,at,side,next))renderPane();}
  function up(e){finish(e,false);}function abort(e){finish(e,true);}function keyDown(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();finish(e,true);}}
  button.addEventListener('pointermove',move);button.addEventListener('pointerup',up);button.addEventListener('pointercancel',abort);button.addEventListener('lostpointercapture',abort);button.addEventListener('keydown',keyDown);
 }
 function lookFreeHandleKey(ev,button){
  if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].indexOf(ev.key)<0)return;var s=sec(),list=lookKeys(s),at=+button.dataset.cameraLookTensionHandle,side=button.dataset.cameraLookTensionSide==='in'?'in':'out',map=button.closest('[data-camera-map]'),h=C.lookTangentHandle(list,at,side),key=list.find(function(k){return k.at===at;});if(!map||!h||!h.free||!key||key.targetId)return;
- ev.preventDefault();ev.stopPropagation();var spec={axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1,range:+map.dataset.range||500},amount=ev.shiftKey?100:25,unit=amount/(spec.range*2),dx=ev.key==='ArrowRight'?unit:ev.key==='ArrowLeft'?-unit:0,dy=ev.key==='ArrowDown'?unit:ev.key==='ArrowUp'?-unit:0,next=C.moveSpatial(h,spec,dx,dy);
+ ev.preventDefault();ev.stopPropagation();var spec=mapSpecFromNode(map),amount=ev.shiftKey?100:25,unit=amount/(spec.range*2),dx=ev.key==='ArrowRight'?unit:ev.key==='ArrowLeft'?-unit:0,dy=ev.key==='ArrowDown'?unit:ev.key==='ArrowUp'?-unit:0,next=C.moveSpatial(h,spec,dx,dy);
  if(lookFreeHandleCommit(s,at,side,next)){var n=document.getElementById('pane').querySelector('[data-camera-look-tension-handle][data-camera-look-tension-side="'+side+'"]');if(n)n.focus();}
 }
 function lookTensionDrag(ev,button){
  var s=sec(),cfg=C.config(s);if(!cfg||cfg.orientationMode!=='lookAt'||cfg.lookPathMode!=='smooth')return;
  var map=button.closest('[data-camera-map]'),r=map&&map.getBoundingClientRect(),list=lookKeys(s),at=+button.dataset.cameraLookTensionHandle,side=button.dataset.cameraLookTensionSide==='in'?'in':'out',i=list.findIndex(function(k){return k.at===at;}),owner=side==='in'?i-1:i,key=list[i],ownerKey=list[owner];
  if(!map||!r.width||!r.height||!key||key.targetId||!ownerKey||!C.lookTangentHandle(list,at,side))return;
- var spec={range:+map.dataset.range||500,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1},original=ownerKey.tension===undefined?0:C.curveTension(ownerKey.tension),next=original,moved=false,done=false;
+ var spec=mapSpecFromNode(map),original=ownerKey.tension===undefined?0:C.curveTension(ownerKey.tension),next=original,moved=false,done=false;
  ev.preventDefault();ev.stopPropagation();button.focus();button.setPointerCapture(ev.pointerId);
- function move(e){if(e.pointerId!==ev.pointerId)return;if(Math.hypot(e.clientX-ev.clientX,e.clientY-ev.clientY)>=3)moved=true;var nx=(e.clientX-r.left)/r.width,ny=(e.clientY-r.top)/r.height,probe={x:(nx*2-1)*spec.range,y:key.y,z:key.z};probe[spec.axis]=((ny*2-1)*spec.range)/spec.sign;var value=C.lookTensionFromHandle(list,at,spec,probe,side);if(value===null)return;next=value;var temp=list.map(function(f,idx){return idx===owner?Object.assign({},f,{tension:next}):f;});mapDraw(map,keys(s),spec,s,temp);}
+ function move(e){if(e.pointerId!==ev.pointerId)return;if(Math.hypot(e.clientX-ev.clientX,e.clientY-ev.clientY)>=3)moved=true;var nx=(e.clientX-r.left)/r.width,ny=(e.clientY-r.top)/r.height,probe={x:(nx*2-1)*spec.range+(spec.originX||0),y:key.y,z:key.z};probe[spec.axis]=((ny*2-1)*spec.range)/spec.sign+(spec.originAxis||0);var value=C.lookTensionFromHandle(list,at,spec,probe,side);if(value===null)return;next=value;var temp=list.map(function(f,idx){return idx===owner?Object.assign({},f,{tension:next}):f;});mapDraw(map,keys(s),spec,s,temp);}
  function finish(e,cancel){if(done||e.pointerId!=null&&e.pointerId!==ev.pointerId)return;done=true;if(!cancel&&e.clientX!=null)move(e);button.removeEventListener('pointermove',move);button.removeEventListener('pointerup',up);button.removeEventListener('pointercancel',abort);button.removeEventListener('lostpointercapture',abort);button.removeEventListener('keydown',keyDown);if(button.hasPointerCapture(ev.pointerId))button.releasePointerCapture(ev.pointerId);if(cancel||!moved||!lookTensionCommit(s,at,next,side))renderPane();}
  function up(e){finish(e,false);}function abort(e){finish(e,true);}function keyDown(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();finish(e,true);}}
  button.addEventListener('pointermove',move);button.addEventListener('pointerup',up);button.addEventListener('pointercancel',abort);button.addEventListener('lostpointercapture',abort);button.addEventListener('keydown',keyDown);
@@ -804,7 +818,7 @@ function lookSpatialDrag(ev,button){
  var s=sec(),cfg=C.config(s);if(!cfg||cfg.orientationMode!=='lookAt')return;
  var map=button.closest('[data-camera-map]'),r=map.getBoundingClientRect(),looks=lookKeys(s),original=looks.find(function(k){return k.at===+button.dataset.cameraLookMapPoint;});
  if(!original||!r.width||!r.height)return;
- var spec={range:+map.dataset.range,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1},next=original,done=false,moved=false;
+ var spec=mapSpecFromNode(map),next=original,done=false,moved=false;
  ev.preventDefault();button.focus();button.setPointerCapture(ev.pointerId);
  function move(e){if(e.pointerId!==ev.pointerId)return;var rawX=e.clientX-ev.clientX,rawY=e.clientY-ev.clientY;if(Math.hypot(rawX,rawY)>=3)moved=true;var px=rawX,py=rawY;if(e.shiftKey){if(Math.abs(px)>=Math.abs(py))py=0;else px=0;}next=C.moveSpatial(original,spec,px/r.width,py/r.height);var p=C.mapPoint(next,spec);button.style.left=p.x+'%';button.style.top=p.y+'%';mapDraw(map,keys(s),spec,s,looks.map(function(k){return k.at===original.at?next:k;}));}
  function finish(e,cancel){
@@ -822,7 +836,7 @@ function spatialDrag(ev,button){
  var s=sec();if(!C.config(s))return;
  var map=button.closest('[data-camera-map]'),r=map.getBoundingClientRect(),list=keys(s),original=list.find(function(k){return k.at===+button.dataset.cameraMapPoint;});
  if(!original||!r.width||!r.height)return;
- var spec={range:+map.dataset.range,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1},next=original,done=false,moved=false;
+ var spec=mapSpecFromNode(map),next=original,done=false,moved=false;
  ev.preventDefault();button.focus();button.setPointerCapture(ev.pointerId);
  function move(e){if(e.pointerId!==ev.pointerId)return;var rawX=e.clientX-ev.clientX,rawY=e.clientY-ev.clientY;if(Math.hypot(rawX,rawY)>=3)moved=true;var px=rawX,py=rawY;if(e.shiftKey){if(Math.abs(px)>=Math.abs(py))py=0;else px=0;}next=C.moveSpatial(original,spec,px/r.width,py/r.height);var p=C.mapPoint(next,spec);button.style.left=p.x+'%';button.style.top=p.y+'%';mapDraw(map,list.map(function(k){return k.at===original.at?next:k;}),spec,s);}
  function finish(e,cancel){
@@ -838,14 +852,14 @@ function spatialDrag(ev,button){
 }
 function spatialKey(ev,button){
  if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].indexOf(ev.key)<0)return;
- var s=sec();if(!C.config(s))return;var map=button.closest('[data-camera-map]'),spec={axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1,range:+map.dataset.range||500};
+ var s=sec();if(!C.config(s))return;var map=button.closest('[data-camera-map]'),spec=mapSpecFromNode(map);
  var k=keys(s).find(function(k){return k.at===+button.dataset.cameraMapPoint;});if(!k)return;
  ev.preventDefault();ev.stopPropagation();var amount=ev.shiftKey?100:25,unit=amount/(spec.range*2),dx=ev.key==='ArrowRight'?unit:ev.key==='ArrowLeft'?-unit:0,dy=ev.key==='ArrowDown'?unit:ev.key==='ArrowUp'?-unit:0;
  if(spatialCommit(s,k,C.moveSpatial(k,spec,dx,dy))){var n=document.getElementById('pane').querySelector('[data-camera-map-point]');if(n)n.focus();}
 }
 function lookSpatialKey(ev,button){
  if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].indexOf(ev.key)<0)return;
- var s=sec(),cfg=C.config(s);if(!cfg||cfg.orientationMode!=='lookAt')return;var map=button.closest('[data-camera-map]'),spec={axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1,range:+map.dataset.range||500};
+ var s=sec(),cfg=C.config(s);if(!cfg||cfg.orientationMode!=='lookAt')return;var map=button.closest('[data-camera-map]'),spec=mapSpecFromNode(map);
  var k=lookKeys(s).find(function(k){return k.at===+button.dataset.cameraLookMapPoint;});if(!k)return;
  ev.preventDefault();ev.stopPropagation();var amount=ev.shiftKey?100:25,unit=amount/(spec.range*2),dx=ev.key==='ArrowRight'?unit:ev.key==='ArrowLeft'?-unit:0,dy=ev.key==='ArrowDown'?unit:ev.key==='ArrowUp'?-unit:0;
  if(lookSpatialCommit(s,k,C.moveSpatial(k,spec,dx,dy))){var n=document.getElementById('pane').querySelector('[data-camera-look-map-point]');if(n)n.focus();}
@@ -919,9 +933,18 @@ if(pane){
   if(retime(s,from,to)){var next=pane.querySelector('[data-camera-jump="'+to+'"]');if(next)next.focus();}
  });
  pane.addEventListener('click',function(ev){
-  var button=ev.target.closest('[data-camera-map-step],[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
+  var button=ev.target.closest('[data-camera-map-zoom],[data-camera-map-step],[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
   if(button===suppressedClick){suppressedClick=null;return;}
   var s=sec(),cfg=C.config(s);if(!cfg)return;var list=keys(s);
+  if(button.dataset.cameraMapZoom!==undefined){
+   var direction=+button.dataset.cameraMapZoom,oldZoom=mapZoom[s.id]||1,nextZoom=mapZoomStep(oldZoom,direction);
+   if(nextZoom===oldZoom)return;
+   mapZoom[s.id]=nextZoom;
+   renderPane();
+   var zoomButton=pane.querySelector('[data-camera-map-zoom="'+direction+'"]');
+   if(zoomButton&&!zoomButton.disabled)zoomButton.focus({preventScroll:true});
+   return;
+  }
   if(button.dataset.cameraMapStep!==undefined){
    var navigatingLook=button.dataset.cameraMapStep==='look',points=navigatingLook&&cfg.orientationMode==='lookAt'?lookKeys(s):navigatingLook?[]:list;
    var current=points.length?(navigatingLook?chooseLook(s,points):choose(s,points)):null;
