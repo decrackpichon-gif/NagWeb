@@ -42,6 +42,9 @@ const el = {
   svgColor: document.querySelector("[data-svg-color]"),
   strokeInput: document.querySelector("[data-icon-stroke]"),
   strokeValue: document.querySelector("[data-icon-stroke-value]"),
+  svgSize: document.querySelector("[data-svg-size]"),
+  sizeInput: document.querySelector("[data-icon-size]"),
+  sizeValue: document.querySelector("[data-icon-size-value]"),
   apply: document.querySelector("[data-apply]"),
   applyStatus: document.querySelector("[data-apply-status]"),
   applyBox: document.querySelector(".apply-box"),
@@ -168,7 +171,10 @@ async function previewDoc(resource, values = {}) {
     const stroke = /^#[0-9a-f]{6}$/i.test(values.stroke || "")
       ? values.stroke
       : "#111111";
-    return `<!doctype html><style>html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#f4f5f7}svg{width:min(45vw,160px);height:min(45vw,160px);stroke:${stroke}}</style>${artifact.content}`;
+    const size = Number.isFinite(values.size)
+      ? Math.min(512, Math.max(4, values.size))
+      : 24;
+    return `<!doctype html><style>html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#f4f5f7}svg{width:${size}px;height:${size}px;max-width:calc(100vw - 24px);max-height:calc(100vh - 24px);stroke:${stroke}}</style>${artifact.content}`;
   }
 
   if (renderer === "nagweb-html-tailwind" && provider !== "hyperui") {
@@ -249,12 +255,34 @@ function configureSvgColor(resource) {
   el.strokeInput.value = color;
   el.strokeValue.textContent = color.toUpperCase();
   el.svgColor.hidden = false;
+
+  const sizeProp = (resource.editableProps || []).find(
+    (prop) => prop.id === "size" && prop.valueType === "number"
+  );
+  const size = sizeProp?.defaultValue;
+  const min = sizeProp?.constraints?.min ?? 4;
+  const max = sizeProp?.constraints?.max ?? 512;
+  const step = sizeProp?.constraints?.step ?? 1;
+  if (
+    Number.isFinite(size) && Number.isFinite(min) &&
+    Number.isFinite(max) && Number.isFinite(step) &&
+    min > 0 && max >= min && step > 0 && size >= min && size <= max
+  ) {
+    selectedValues.size = size;
+    el.sizeInput.min = String(min);
+    el.sizeInput.max = String(max);
+    el.sizeInput.step = String(step);
+    el.sizeInput.value = String(size);
+    el.sizeValue.textContent = `${size} px`;
+    el.svgSize.hidden = false;
+  }
 }
 
 async function openDetail(id) {
   selectedResource = null;
   selectedValues = {};
   el.svgColor.hidden = true;
+  el.svgSize.hidden = true;
   el.apply.disabled = true;
   el.applyStatus.textContent = "Comprobando si el recurso se puede insertar…";
   el.detail.showModal();
@@ -396,18 +424,36 @@ window.addEventListener("message", (event) => {
     event.data.message || "El editor informó un error al aplicar el recurso.";
 });
 
-el.strokeInput.addEventListener("input", async () => {
+async function redrawSvgPreview() {
   const resource = selectedResource;
-  if (!resource || el.svgColor.hidden) return;
-  const stroke = el.strokeInput.value;
-  if (!/^#[0-9a-f]{6}$/i.test(stroke)) return;
-
-  selectedValues.stroke = stroke;
-  el.strokeValue.textContent = stroke.toUpperCase();
-  const doc = await previewDoc(resource, { ...selectedValues });
-  if (doc && selectedResource === resource && selectedValues.stroke === stroke) {
+  if (!resource || resource.runtime?.renderer !== "nagweb-svg") return;
+  const values = { ...selectedValues };
+  const doc = await previewDoc(resource, values);
+  if (
+    doc && selectedResource === resource &&
+    selectedValues.stroke === values.stroke &&
+    selectedValues.size === values.size
+  ) {
     el.preview.srcdoc = doc;
   }
+}
+
+el.strokeInput.addEventListener("input", () => {
+  if (!selectedResource || el.svgColor.hidden) return;
+  const stroke = el.strokeInput.value;
+  if (!/^#[0-9a-f]{6}$/i.test(stroke)) return;
+  selectedValues.stroke = stroke;
+  el.strokeValue.textContent = stroke.toUpperCase();
+  redrawSvgPreview();
+});
+
+el.sizeInput.addEventListener("input", () => {
+  if (!selectedResource || el.svgSize.hidden) return;
+  const size = Number(el.sizeInput.value);
+  if (!Number.isFinite(size)) return;
+  selectedValues.size = size;
+  el.sizeValue.textContent = `${size} px`;
+  redrawSvgPreview();
 });
 
 el.apply.addEventListener("click", () => {

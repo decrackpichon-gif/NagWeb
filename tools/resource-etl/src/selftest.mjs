@@ -629,3 +629,13 @@ assert.equal(coloredSvgEnvelope.descriptor.kind, "svg");
 assert.equal(coloredSvgEnvelope.descriptor.payload.stroke, "#e34b76");
 assert.equal(coloredSvgEnvelope.descriptor.instance.values.stroke, "#e34b76");
 assert.equal(applyEnvelope.descriptor.payload.stroke, "#000000");
+
+const sizedSvgEnvelope = buildResourceApplyEnvelope(lucideResource, {
+  requestId: "test-custom-svg-size",
+  values: { size: 128, stroke: "#e34b76" }
+});
+assert.equal(sizedSvgEnvelope.descriptor.kind, "svg");
+assert.equal(sizedSvgEnvelope.descriptor.payload.size, 128);
+assert.equal(sizedSvgEnvelope.descriptor.instance.values.size, 128);
+assert.equal(sizedSvgEnvelope.descriptor.payload.stroke, "#e34b76");
+assert.equal(applyEnvelope.descriptor.payload.size, 24);
