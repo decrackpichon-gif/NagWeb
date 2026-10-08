@@ -23,7 +23,8 @@ import { ANIMXYZ_NATIVE_PRESETS } from "./extractors/animxyz.mjs";
 import { analyzeThreeExample } from "./extractors/threejs.mjs";
 import {
   createResourceInstance,
-  updateInstanceValue
+  updateInstanceValue,
+  defaultEditableValues
 } from "./runtime/instance.mjs";
 import { buildInsertDescriptor } from "./runtime/insert-adapters.mjs";
 import {
@@ -650,3 +651,14 @@ assert.equal(weightedSvgEnvelope.descriptor.payload.stroke, "#e34b76");
 assert.equal(weightedSvgEnvelope.descriptor.payload.strokeWidth, 3.5);
 assert.equal(weightedSvgEnvelope.descriptor.instance.values.strokeWidth, 3.5);
 assert.equal(applyEnvelope.descriptor.payload.strokeWidth, 2);
+
+const restoredSvgValues = defaultEditableValues(lucideResource);
+const restoredSvgEnvelope = buildResourceApplyEnvelope(lucideResource, {
+  requestId: "test-restore-svg-defaults",
+  values: restoredSvgValues
+});
+assert.equal(restoredSvgEnvelope.descriptor.payload.size, 24);
+assert.equal(restoredSvgEnvelope.descriptor.payload.stroke, "#000000");
+assert.equal(restoredSvgEnvelope.descriptor.payload.strokeWidth, 2);
+restoredSvgValues.size = 128;
+assert.equal(defaultEditableValues(lucideResource).size, 24);

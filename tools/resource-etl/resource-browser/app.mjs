@@ -1,6 +1,7 @@
 import {
   createNagWebPersistentVaultClient
 } from "../src/runtime/persistent-vault-client.mjs";
+import { defaultEditableValues } from "../src/runtime/instance.mjs";
 import {
   buildResourceApplyEnvelope,
   resolveResourceApplyTarget,
@@ -48,6 +49,7 @@ const el = {
   svgStrokeWidth: document.querySelector("[data-svg-stroke-width]"),
   strokeWidthInput: document.querySelector("[data-icon-stroke-width]"),
   strokeWidthValue: document.querySelector("[data-icon-stroke-width-value]"),
+  resetSvg: document.querySelector("[data-reset-svg]"),
   apply: document.querySelector("[data-apply]"),
   applyStatus: document.querySelector("[data-apply-status]"),
   applyBox: document.querySelector(".apply-box"),
@@ -492,6 +494,15 @@ el.strokeWidthInput.addEventListener("input", () => {
   if (!Number.isFinite(width)) return;
   selectedValues.strokeWidth = width;
   el.strokeWidthValue.textContent = String(width);
+  redrawSvgPreview();
+});
+
+el.resetSvg.addEventListener("click", () => {
+  if (!selectedResource || el.svgColor.hidden) return;
+
+  // Restore defaults from the UniversalResource, not hard-coded UI values.
+  selectedValues = defaultEditableValues(selectedResource);
+  configureSvgColor(selectedResource);
   redrawSvgPreview();
 });
 
