@@ -33,7 +33,13 @@ export const REACT_PREVIEW_RUNTIME_PACKAGES = new Set([
   "recharts",
   "input-otp",
   "sonner",
-  "react-resizable-panels"
+  "react-resizable-panels",
+  "@radix-ui/react-icons",
+  "canvas-confetti",
+  "@radix-ui/react-accordion",
+  "cobe",
+  "rough-notation",
+  "@radix-ui/react-slot"
 ]);
 
 export const REACT_PREVIEW_VIRTUAL_PACKAGES = new Set([
@@ -695,7 +701,7 @@ function inferRegistryAliasDependencies(resource) {
     if (artifact.role !== "component" || typeof artifact.content !== "string") continue;
 
     for (const match of artifact.content.matchAll(
-      /from\s+["']@\/(?:registry\/[^/]+\/ui|components\/ui)\/([^/"']+)["']/g
+      /from\s+["']@\/(?:registry\/[^/]+\/ui\/|registry\/[^/]+\/|components\/ui\/)([^/"']+)["']/g
     )) {
       if (match[1]) dependencies.add(match[1]);
     }
