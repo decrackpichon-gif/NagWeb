@@ -114,6 +114,15 @@ jobs:
             }
           }
 
+          const drawer = audit.items.find(
+            (entry) => entry.resourceId === "shadcn:drawer"
+          );
+          if (!drawer || !drawer.ok) {
+            console.error("shadcn:drawer did not compile with vaul");
+            console.error(JSON.stringify(drawer, null, 2));
+            process.exit(1);
+          }
+
           const calendar = audit.items.find(
             (entry) => entry.resourceId === "shadcn:calendar"
           );

@@ -27,7 +27,8 @@ export const REACT_PREVIEW_RUNTIME_PACKAGES = new Set([
   "class-variance-authority",
   "cmdk",
   "embla-carousel-react",
-  "react-day-picker"
+  "react-day-picker",
+  "vaul"
 ]);
 
 export const REACT_PREVIEW_VIRTUAL_PACKAGES = new Set([
