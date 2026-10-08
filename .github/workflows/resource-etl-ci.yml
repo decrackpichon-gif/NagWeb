@@ -262,6 +262,16 @@ jobs:
             process.exit(1);
           }
           console.log("Magic UI icon-cloud browser render: OK");
+
+          for (const id of ["magicui:tweet-card", "magicui:client-tweet-card"]) {
+            const item = audit.items.find((entry) => entry.resourceId === id);
+            if (!item || !item.ok) {
+              console.error(id + " did not compile with sandboxed dependency CSS");
+              console.error(JSON.stringify(item, null, 2));
+              process.exit(1);
+            }
+          }
+          console.log("Magic UI tweet previews: OK");
           NODE
 
       - name: Smoke test external ETL sources

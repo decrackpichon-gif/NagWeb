@@ -625,6 +625,14 @@ root.render(React.createElement(App));
       );
 
       build.onResolve(
+        { filter: /\.css$/, namespace: "file" },
+        (args) => ({
+          path: `${args.importer}::${args.path}`,
+          namespace: "nagweb-dependency-css"
+        })
+      );
+
+      build.onResolve(
         { filter: /^[^./]/, namespace: "nagweb-resource" },
         async (args) => {
           if (args.path === "react-dom/server") {
@@ -672,6 +680,15 @@ root.render(React.createElement(App));
           contents: files.get(args.path),
           loader: loaderFor(args.path),
           resolveDir: process.cwd()
+        })
+      );
+
+      build.onLoad(
+        { filter: /.*/, namespace: "nagweb-dependency-css" },
+        () => ({
+          contents:
+            "const styles = Object.freeze({}); export default styles;",
+          loader: "js"
         })
       );
 
