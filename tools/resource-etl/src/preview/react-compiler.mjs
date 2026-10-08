@@ -31,7 +31,8 @@ export const REACT_PREVIEW_RUNTIME_PACKAGES = new Set([
   "vaul",
   "react-hook-form",
   "recharts",
-  "input-otp"
+  "input-otp",
+  "sonner"
 ]);
 
 export const REACT_PREVIEW_VIRTUAL_PACKAGES = new Set([
