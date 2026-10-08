@@ -12,7 +12,8 @@
     "test": "node src/selftest.mjs",
     "vault": "node src/vault-cli.mjs",
     "vault:all": "node src/vault-cli.mjs --sources=lucide,shadcn,magicui,motion-primitives,animxyz,threejs,hyperui,uiverse,csshake,glsl-noise --all",
-    "uiverse:inventory": "node src/uiverse-inventory-cli.mjs"
+    "uiverse:inventory": "node src/uiverse-inventory-cli.mjs",
+    "uiverse:batch": "node src/uiverse-batch-cli.mjs"
   },
   "devDependencies": {
     "@tailwindcss/browser": "4.3.3",

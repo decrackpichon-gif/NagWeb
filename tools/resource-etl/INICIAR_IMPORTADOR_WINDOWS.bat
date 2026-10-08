@@ -40,7 +40,7 @@ echo 12. CREAR Code Vault PILOTO ^(recursos livianos^)
 echo 13. CREAR Code Vault COMPLETO ^(todas las fuentes aprobadas^)
 echo 14. CREAR Vault + previews React ^(instala compilador si hace falta^)
 echo 15. CREAR inventario Uiverse ^(liviano, sin bajar los 3.800 codigos^)
-echo 16. IMPORTAR lote Uiverse ^(100 recursos desde un offset^)
+echo 16. CONTINUAR Uiverse ^(100 recursos, recuerda solo donde quedo^)
 echo.
 echo  0. Salir
 echo.
@@ -189,13 +189,12 @@ goto done
 
 :uiverse_batch
 cls
-echo Importar 100 recursos Uiverse.
-echo El offset indica desde que posicion del inventario continuar.
-echo Ejemplo: 0 para el primer lote, luego usa el offset que informa el programa.
+echo Continuando la biblioteca Uiverse...
 echo.
-set /p uiverse_offset=Offset inicial ^(Enter = 0^): 
-if "%uiverse_offset%"=="" set uiverse_offset=0
-node src\vault-cli.mjs --sources=uiverse --limit=100 --uiverse-offset=%uiverse_offset%
+echo NagWeb recuerda automaticamente donde termino el lote anterior.
+echo No tenes que anotar offsets ni rutas.
+echo.
+node src\uiverse-batch-cli.mjs --limit=100 --resume --out=vault
 goto done
 
 :done
@@ -209,7 +208,7 @@ if errorlevel 1 (
 echo ============================================================
 echo.
 echo Los archivos, cuando corresponda, quedan dentro de:
-echo %CD%\output
+echo %CD%\output  o  %CD%\vault
 echo.
 pause
 goto menu

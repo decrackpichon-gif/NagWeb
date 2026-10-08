@@ -574,3 +574,33 @@ npm run vault -- --sources=uiverse --limit=100 --uiverse-category=Buttons
 ```
 
 En Windows, el lanzador incluye opciones para crear el inventario y ejecutar lotes de 100 sin escribir comandos.
+
+
+### Checkpoint automático de Uiverse
+
+Para importar lotes sin recordar offsets:
+
+```bash
+npm run uiverse:batch -- --limit=100 --resume --out=vault
+```
+
+Después de que todo el lote se guarda correctamente, NagWeb escribe:
+
+```text
+vault/uiverse-checkpoint.json
+```
+
+El checkpoint registra:
+
+- commit de Uiverse utilizado;
+- offset inicial;
+- próximo offset;
+- cuántos archivos se escanearon;
+- cuántos recursos autónomos se importaron;
+- cuántos fueron descartados;
+- cuántos recursos Uiverse existen ya en el Vault;
+- si el recorrido terminó.
+
+La próxima ejecución con `--resume` lee ese archivo y continúa sola. El checkpoint se actualiza al final, después de escribir recursos, catálogo, previews, galería, bundle portable y avisos de licencia.
+
+En Windows, la opción **16 · CONTINUAR Uiverse** hace exactamente esto sin pedir ningún número.

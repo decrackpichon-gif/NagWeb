@@ -409,6 +409,65 @@ jobs:
           );
           NODE
 
+      - name: Verify Uiverse automatic checkpoint
+        working-directory: tools/resource-etl
+        shell: bash
+        run: |
+          rm -rf ci-vault-uiverse-resume
+
+          node src/uiverse-batch-cli.mjs \
+            --limit=10 \
+            --resume \
+            --out=ci-vault-uiverse-resume
+
+          FIRST_OFFSET="$(node -e "const fs=require('fs');const c=JSON.parse(fs.readFileSync('ci-vault-uiverse-resume/uiverse-checkpoint.json','utf8'));process.stdout.write(String(c.nextOffset))")"
+
+          node src/uiverse-batch-cli.mjs \
+            --limit=10 \
+            --resume \
+            --out=ci-vault-uiverse-resume
+
+          node - "$FIRST_OFFSET" <<'NODE'
+          const fs = require("fs");
+          const firstOffset = Number(process.argv[2]);
+          const checkpoint = JSON.parse(
+            fs.readFileSync(
+              "ci-vault-uiverse-resume/uiverse-checkpoint.json",
+              "utf8"
+            )
+          );
+          const catalog = JSON.parse(
+            fs.readFileSync(
+              "ci-vault-uiverse-resume/catalog.json",
+              "utf8"
+            )
+          );
+          const uiverse = (catalog.resources || []).filter(
+            (entry) => entry.source?.provider === "uiverse"
+          );
+
+          if (!(checkpoint.nextOffset > firstOffset)) {
+            throw new Error("Uiverse checkpoint did not advance");
+          }
+          if (uiverse.length !== 20) {
+            throw new Error(
+              `Expected 20 accumulated Uiverse resources, got ${uiverse.length}`
+            );
+          }
+          if (checkpoint.importedInVault !== 20) {
+            throw new Error(
+              `Checkpoint expected importedInVault=20, got ${checkpoint.importedInVault}`
+            );
+          }
+
+          console.log(
+            "Uiverse automatic checkpoint: OK",
+            firstOffset,
+            checkpoint.nextOffset,
+            uiverse.length
+          );
+          NODE
+
 
   windows-smoke:
     name: Windows smoke
