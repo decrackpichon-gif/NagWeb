@@ -189,15 +189,18 @@ export function installResourceApplyHost({
 
     try {
       const outcome = await onApply(envelope, event);
-      const status =
-        outcome?.status && ["applied", "rejected", "error"].includes(outcome.status)
-          ? outcome.status
-          : "applied";
+      const hasExplicitResult = ["applied", "rejected", "error"].includes(
+        outcome?.status
+      );
+      const status = hasExplicitResult ? outcome.status : "error";
+      const message = hasExplicitResult
+        ? outcome.message || ""
+        : "El editor no devolvió una confirmación válida de la inserción.";
 
       event.source.postMessage(
         buildResourceApplyResult(envelope, {
           status,
-          message: outcome?.message || "",
+          message,
           resourceId: envelope.resource?.id
         }),
         event.origin

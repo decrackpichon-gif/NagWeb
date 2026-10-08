@@ -31,7 +31,8 @@ import {
   NAGWEB_RESOURCE_APPLY_RESULT_TYPE,
   buildResourceApplyEnvelope,
   buildResourceApplyResult,
-  isResourceApplyResult
+  isResourceApplyResult,
+  installResourceApplyHost
 } from "./runtime/resource-apply-bridge.mjs";
 import { buildStaticPreview } from "./preview/build-preview.mjs";
 import { buildVaultGallery } from "./gallery/build-gallery.mjs";
@@ -538,3 +539,48 @@ assert.equal(
   isResourceApplyResult({ ...applyResult, requestId: null }),
   false
 );
+
+let applyHostListener;
+const hostWindow = {
+  addEventListener(type, listener) {
+    assert.equal(type, "message");
+    applyHostListener = listener;
+  },
+  removeEventListener(type, listener) {
+    assert.equal(type, "message");
+    assert.equal(listener, applyHostListener);
+    applyHostListener = null;
+  }
+};
+const reply = { payload: null, origin: null };
+const event = {
+  origin: "https://nagweb.example",
+  data: applyEnvelope,
+  source: {
+    postMessage(payload, origin) {
+      reply.payload = payload;
+      reply.origin = origin;
+    }
+  }
+};
+const stopUnconfirmedHost = installResourceApplyHost({
+  windowRef: hostWindow,
+  allowedOrigins: ["https://nagweb.example"],
+  onApply: async () => undefined
+});
+await applyHostListener(event);
+assert.equal(reply.origin, "https://nagweb.example");
+assert.equal(reply.payload.status, "error");
+assert.match(reply.payload.message, /confirmación válida/);
+stopUnconfirmedHost();
+assert.equal(applyHostListener, null);
+
+const stopConfirmedHost = installResourceApplyHost({
+  windowRef: hostWindow,
+  allowedOrigins: ["https://nagweb.example"],
+  onApply: async () => ({ status: "applied", message: "Recurso insertado." })
+});
+await applyHostListener(event);
+assert.equal(reply.payload.status, "applied");
+assert.equal(reply.payload.message, "Recurso insertado.");
+stopConfirmedHost();
