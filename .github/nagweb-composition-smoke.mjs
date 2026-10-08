@@ -53,8 +53,9 @@ export async function runCompositionSmoke(page){
  await page.waitForFunction(()=>document.querySelector('#preview').contentDocument.querySelector('[data-id="compose-child"]').style.getPropertyValue('--nw-sd-x')==='50.00px');
  await page.waitForFunction(()=>{const v=document.querySelector('#preview').contentDocument.querySelector('[data-id="compose-video"]');return Number.isFinite(v.duration)&&Math.abs(v.currentTime/v.duration-.25)<.02;});
  await page.click('[data-sd-play="compose-scene"]');
- await page.waitForFunction(()=>NAGWEB_SCROLL_DIRECTOR.progress('compose-scene')>6);
- const play=await page.evaluate(()=>({p:NAGWEB_SCROLL_DIRECTOR.progress('compose-scene'),x:parseFloat(document.querySelector('#preview').contentDocument.querySelector('[data-id="compose-child"]').style.getPropertyValue('--nw-sd-x'))}));
+ // Playback restarts at zero; wait past the first frames and the asynchronous scrub message.
+ const playHandle=await page.waitForFunction(()=>{const p=NAGWEB_SCROLL_DIRECTOR.progress('compose-scene'),f=document.querySelector('#preview'),runtime=f.contentWindow.__NAG_SCROLL_DIRECTOR['compose-scene'].progress()*100,x=parseFloat(f.contentDocument.querySelector('[data-id="compose-child"]').style.getPropertyValue('--nw-sd-x'));return p>6&&p<20&&Math.abs(runtime-p)<.5&&Math.abs(x-p*2)<1?{p,x}:false;});
+ const play=await playHandle.jsonValue();await playHandle.dispose();
  near(play.x,play.p*2,1);
  await page.evaluate(()=>{NAGWEB_SCROLL_DIRECTOR.live('compose-scene');const w=document.querySelector('#composition-export').contentWindow;w.__NAG_SCROLL_DIRECTOR['compose-scene'].live();const n=w.document.querySelector('[data-id="compose-scene"]');w.scrollTo(0,n.getBoundingClientRect().top+w.scrollY+(n.offsetHeight-w.innerHeight)*.5);});
  await page.waitForFunction(()=>document.querySelector('#composition-export').contentDocument.querySelector('[data-id="compose-child"]').style.getPropertyValue('--nw-sd-x')==='100.00px');
