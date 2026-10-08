@@ -589,6 +589,13 @@ root.render(React.createElement(App));
       build.onResolve(
         { filter: /^[^./]/, namespace: "nagweb-resource" },
         async (args) => {
+          if (args.path === "react-dom/server") {
+            return {
+              path: require.resolve("react-dom/server.browser"),
+              namespace: "file"
+            };
+          }
+
           if (args.path.startsWith("@/")) {
             return {
               errors: [{
