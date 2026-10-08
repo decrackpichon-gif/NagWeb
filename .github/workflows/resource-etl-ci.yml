@@ -274,6 +274,21 @@ jobs:
           console.log("Magic UI tweet previews: OK");
           NODE
 
+      - name: Measure Motion Primitives React preview coverage
+        working-directory: tools/resource-etl
+        shell: bash
+        run: |
+          node src/vault-cli.mjs \
+            --sources=motion-primitives \
+            --all \
+            --out=ci-vault-motion-primitives-coverage \
+            --react-previews \
+            --react-preview-limit=100
+
+          node src/report/react-preview-coverage.mjs \
+            --file=ci-vault-motion-primitives-coverage/react-preview-audit.json \
+            --provider=motion-primitives
+
       - name: Smoke test external ETL sources
         working-directory: tools/resource-etl
         shell: bash
