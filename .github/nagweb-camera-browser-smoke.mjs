@@ -618,6 +618,62 @@ export async function runCameraBrowserSmoke(page){
   assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'A/B snapshots do not add undo snapshots');
   console.log('Camera minimap pose comparison: camera XYZ, orientations, lookAt/manual, top/front, no edits OK');
 
+  // Micro-etapa 36: project consistent A/B FOV cones using the existing main map's perspective.
+  const readComparisonFov=()=>page.evaluate(()=>{
+   const mini=document.querySelector('[data-camera-overview]');
+   const group=mini?.querySelector('[data-camera-overview-compare-fovs]');
+   const shapes=Array.from(group?.querySelectorAll('[data-camera-overview-fov]')||[]).map(poly=>{
+    const points=poly.getAttribute('points').split(' ').map(pair=>pair.split(',').map(Number));
+    return {which:poly.dataset.cameraOverviewFov,angle:+poly.dataset.cameraOverviewFovAngle,
+     fill:poly.getAttribute('fill'),dash:poly.getAttribute('stroke-dasharray'),
+     points,finite:points.every(p=>p.length===2&&p.every(Number.isFinite))};
+   });
+   return {checked:document.querySelector('[data-camera-overview-compare-fov-toggle]')?.checked,
+    count:shapes.length,shapes,nonInteractive:group?.getAttribute('pointer-events')==='none',
+    note:document.querySelector('[data-camera-overview-compare-fov-note]')?.textContent||'',
+    orientation:sec().sdCameraOrientationMode};
+  });
+  let fovView=await readComparisonFov();
+  assert.equal(fovView.checked,true,'A/B view cones start enabled');
+  assert.deepEqual(fovView.shapes.map(x=>x.which),['a','b'],'Both camera fields of view appear in top projection');
+  assert.equal(fovView.nonInteractive,true,'FOV overlays never capture map pointer gestures');
+  assert.ok(fovView.shapes.every(x=>x.finite&&x.angle>0&&x.angle<180),'Both projected FOV cones have finite positive opening angles');
+  assert.ok(fovView.shapes[0].fill==='#22d3ee'&&fovView.shapes[1].fill==='#f472b6'&&fovView.shapes[1].dash==='2 1','A has cyan and B dashed pink FOV');
+  assert.ok(fovView.note.includes('no representa oclusiones'),'View cones are explicitly labeled approximate and occlusion-free');
+  const originalPerspective=await page.evaluate(()=>sec().sdPerspective);
+  await page.evaluate(()=>{sec().sdPerspective=650;renderPane();});
+  const narrowerPerspective=await readComparisonFov();
+  assert.ok(Math.abs(narrowerPerspective.shapes[0].angle-fovView.shapes[0].angle)>.1,'Changing perspective recalculates A/B aperture');
+  await page.evaluate(value=>{sec().sdPerspective=value;renderPane();},originalPerspective);
+  await page.click('[data-camera-overview-compare-fov-toggle]');
+  await page.waitForFunction(()=>document.querySelectorAll('[data-camera-overview-fov]').length===0);
+  assert.equal((await readComparisonFov()).checked,false,'Cones are independently hideable without hiding A/B position markers');
+  assert.equal(await page.$$eval('[data-camera-overview-pose-camera]',nodes=>nodes.length),2,'Camera positions remain visible with cones disabled');
+  await page.select('[data-camera-map-plane]','front');
+  assert.equal((await readComparisonFov()).checked,false,'Cones visibility persists across projection changes');
+  await page.click('[data-camera-overview-compare-fov-toggle]');
+  assert.equal((await readComparisonFov()).count,0,'Edge-on frustums are not rendered as false polygons in front view');
+  const stored3d=await page.evaluate(()=>({mode:sec().sdCameraOrientationMode,frames:JSON.stringify(sec().sdCameraFrames)}));
+  await page.evaluate(()=>{
+   const sc=sec();sc.sdCameraOrientationMode='manual';
+   sc.sdCameraFrames=sc.sdCameraFrames.map(frame=>({...frame,rotateX:25,rotateY:35}));
+   renderPane();
+  });
+  fovView=await readComparisonFov();
+  assert.deepEqual(fovView.shapes.map(x=>x.which),['a','b'],'Tilted manual camera cones can be seen from front');
+  assert.ok(fovView.shapes.every(x=>x.finite),'Tilted front-view FOV points remain valid');
+  await page.evaluate(original=>{
+   const sc=sec();sc.sdCameraFrames=JSON.parse(original.frames);
+   sc.sdCameraOrientationMode=original.mode;renderPane();
+  },stored3d);
+  await page.select('[data-camera-map-plane]','top');
+  assert.equal((await readComparisonFov()).count,2,'Restored lookAt mode and top view show both cones again');
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),motionNavigationInitial.frames,'Cones do not persist any camera frame changes');
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraLookFrames)),motionNavigationInitial.looks,'Cones do not persist any look target changes');
+  assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'Cones and view toggles create no undo history');
+  console.log('Camera minimap A/B field of view: shared perspective, top/front/edge-on, manual/target, visibility toggle, no edits OK');
+
+
 
 
 
