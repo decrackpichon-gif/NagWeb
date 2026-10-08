@@ -42,6 +42,9 @@ jobs:
           git clone --depth=1 https://github.com/lucide-icons/lucide.git "$RUNNER_TEMP/lucide"
           git -C "$RUNNER_TEMP/lucide" rev-parse HEAD > "$RUNNER_TEMP/lucide-commit.txt"
 
+          git clone --depth=1 --branch dev https://github.com/mrdoob/three.js.git "$RUNNER_TEMP/threejs"
+          git -C "$RUNNER_TEMP/threejs" rev-parse HEAD > "$RUNNER_TEMP/threejs-commit.txt"
+
       - name: Build compact provider snapshot
         working-directory: tools/resource-etl
         shell: bash
@@ -63,6 +66,17 @@ jobs:
             --out-dir="$RUNNER_TEMP/nagweb-lucide-snapshot" \
             --commit="$SOURCE_COMMIT"
           cp "$RUNNER_TEMP/lucide/LICENSE" "$RUNNER_TEMP/nagweb-lucide-snapshot/LICENSE"
+
+      - name: Build Three.js code-only snapshot
+        working-directory: tools/resource-etl
+        shell: bash
+        run: |
+          SOURCE_COMMIT="$(cat "$RUNNER_TEMP/threejs-commit.txt")"
+          node src/snapshot/build-threejs-code-snapshot.mjs \
+            --source-dir="$RUNNER_TEMP/threejs" \
+            --out-dir="$RUNNER_TEMP/nagweb-threejs-snapshot" \
+            --commit="$SOURCE_COMMIT"
+          cp "$RUNNER_TEMP/threejs/LICENSE" "$RUNNER_TEMP/nagweb-threejs-snapshot/LICENSE"
 
       - name: Build core lightweight Code Vault
         working-directory: tools/resource-etl
@@ -151,12 +165,37 @@ jobs:
           console.log("Persistent Lucide snapshot verified", manifest);
           NODE
 
+          node - <<'NODE'
+          const fs = require("fs");
+          const path = process.env.RUNNER_TEMP + "/nagweb-threejs-snapshot";
+          const manifest = JSON.parse(
+            fs.readFileSync(path + "/manifest.json", "utf8")
+          );
+          if (manifest.codeOnlyResources < 50) {
+            throw new Error(
+              "Unexpectedly small Three.js code-only snapshot: " +
+              manifest.codeOnlyResources
+            );
+          }
+          if (
+            manifest.codeOnlyResources + manifest.rejectedResources !==
+            manifest.totalScanned
+          ) {
+            throw new Error("Three.js snapshot accounting mismatch");
+          }
+          if (!manifest.compressedSha256 || manifest.compressedSha256.length !== 64) {
+            throw new Error("Missing Three.js snapshot SHA-256");
+          }
+          console.log("Persistent Three.js snapshot verified", manifest);
+          NODE
+
       - name: Publish resource-vault-data branch
         shell: bash
         run: |
           SNAPSHOT_DIR="$RUNNER_TEMP/nagweb-uiverse-snapshot"
           CORE_DIR="$RUNNER_TEMP/nagweb-core-snapshot"
           LUCIDE_DIR="$RUNNER_TEMP/nagweb-lucide-snapshot"
+          THREEJS_DIR="$RUNNER_TEMP/nagweb-threejs-snapshot"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
@@ -186,6 +225,14 @@ jobs:
           cp "$LUCIDE_DIR/LICENSE" lucide/LICENSE
           cp "$LUCIDE_DIR/README.md" lucide/README.md
 
+          mkdir -p threejs-code
+          cp "$THREEJS_DIR/library.json.gz" threejs-code/library.json.gz
+          cp "$THREEJS_DIR/catalog.json" threejs-code/catalog.json
+          cp "$THREEJS_DIR/manifest.json" threejs-code/manifest.json
+          cp "$THREEJS_DIR/rejected.json" threejs-code/rejected.json
+          cp "$THREEJS_DIR/LICENSE" threejs-code/LICENSE
+          cp "$THREEJS_DIR/README.md" threejs-code/README.md
+
           cat > README.md <<'EOF'
           # NagWeb Resource Vault Data
 
@@ -196,9 +243,10 @@ jobs:
           Current snapshots:
           - Uiverse Galaxy
           - Lucide Icons
+          - Three.js code-only examples
           - Core Code Vault: Shadcn, Magic UI, Motion Primitives, AnimXYZ, HyperUI, CSSShake, Magic.css and GLSL Noise
           EOF
 
-          git add README.md uiverse core-code lucide
+          git add README.md uiverse core-code lucide threejs-code
           git commit -m "data: refresh lightweight resource snapshots"
           git push --force origin HEAD:resource-vault-data
