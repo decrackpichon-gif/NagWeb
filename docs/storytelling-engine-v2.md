@@ -975,3 +975,16 @@ Los planos tangentes se dibujan una sola vez con su transformación afín, inclu
 La prueba de modelo contrasta directamente latitud, longitud, perspectiva y distribución de fuentes con las ecuaciones verticales del HAR, además de sentido/paridad de columnas, cierre, paradas/zoom/foco, selección, extremos y móvil. La prueba de ejecución local ejercita el renderizador real con los tres movimientos y curvaturas; la suite de navegador cubre color/alfa y costuras, selección real, controles, transparencia, esquinas, texturas, Biblioteca, guardar/exportar, scroll, tiempo/historial y móvil. Incluye colocación/redimensionado y carga múltiple. El conjunto llega a 46 suites de modelo y 37 suites de navegador.
 
 Continúa exclusivamente en `internal-motion-lab`, sin integrar ramas paralelas ni realizar otro despliegue Vercel. Próximo preset del HAR: Totem Wall.
+
+
+## Totem Wall: columnas sobre un tambor
+
+Sphere Cascade completó las 37 suites de navegador en `66200203049410ee1bab53c722fb474b6a34693f`. Se agrega `totem-wall`, del HAR de Animos, y el catálogo llega a 52 composiciones. Ocho imágenes iniciales, 4–30 fuentes independientes y duración de 20 segundos. Tamaño 10–50% (33% inicial), inclinación ±45°, margen 0–20% (13% inicial), esquinas 0–12% (0,5% inicial), curvatura −150–150% (−100% inicial), separación 0,5–20% (4,5% inicial) y atenuación de bordes 0–100%. Proporción automática o fija, encuadre individual, fondos y sombra opcional.
+
+El cilindro conserva columnas lineales y gira las tarjetas sobre su latitud. La profundidad depende de la fila, sin estrechar columnas lateralmente como una esfera. Se reproduce la variante `fn(e,true,true)` del HAR: dimensiones basadas en ancho útil, perspectiva cóncava/convexa y curvatura vertical de cada superficie. El sentido permite arriba, abajo o columnas alternadas, incluida la paridad correcta de columnas con índice negativo. El movimiento es continuo; el panel presenta sólo los controles propios de Totem Wall, sin paradas de cámara. La atenuación oscurece el color y conserva la transparencia de la fuente.
+
+La malla usada para dibujar también define selección y esquinas. Se reutilizan texturas y el canvas auxiliar, acotados a 2048 px, sin nuevas asignaciones después del calentamiento. La distribución repite las fuentes según fila y columna y conserva el cierre del ciclo. Se mantienen carga múltiple, edición/recuperación de fuentes, Biblioteca, grupos/escenas, guardar/reabrir, historial, exportación y reloj Tiempo/Scroll. Movimiento reducido mantiene una pose estable.
+
+La prueba de modelo contrasta centros y todos los vértices con ecuaciones cilíndricas independientes extraídas del HAR, además de controles, sentido/paridad, distribución, cierre, selección, transparencia, extremos, móvil, scroll y fábrica exportada. La prueba de ejecución local ejercita el renderizador real; la prueba de navegador comprueba controles, píxeles, superficies cóncavas/convexas, selección nativa, transparencia y costuras, esquinas, texturas, edición, Biblioteca, guardado/exportación, tiempo/scroll, móvil y movimiento reducido. Incluye colocación/redimensionado y carga múltiple. El conjunto suma 47 suites de modelo y 38 suites de navegador.
+
+Continúa exclusivamente en `internal-motion-lab`, sin integrar ramas paralelas ni realizar otro despliegue Vercel. Próximo preset del HAR: Parallax Totem.
