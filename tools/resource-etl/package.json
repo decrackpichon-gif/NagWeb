@@ -11,7 +11,7 @@
     "dry-run": "node src/cli.mjs --dry-run",
     "test": "node src/selftest.mjs",
     "vault": "node src/vault-cli.mjs",
-    "vault:all": "node src/vault-cli.mjs --sources=lucide,shadcn,magicui,motion-primitives,animxyz,threejs,hyperui,csshake,glsl-noise --all"
+    "vault:all": "node src/vault-cli.mjs --sources=lucide,shadcn,magicui,motion-primitives,animxyz,threejs,hyperui,uiverse,csshake,glsl-noise --all"
   },
   "devDependencies": {
     "@tailwindcss/browser": "4.3.3",

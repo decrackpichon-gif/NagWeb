@@ -1424,3 +1424,131 @@ export function transformGlslNoise({ repository, commit, item }) {
     }
   };
 }
+
+
+export function transformUiverseComponent({ repository, commit, item }) {
+  const fetchedAt = now();
+  const policy = getSourcePolicy("uiverse");
+  const meta = item.metadata || {};
+  const category = meta.category || "Other";
+  const slug = String(meta.slug || meta.filename || "component")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  const content = String(item.content || "");
+  const title = titleFromSlug(meta.slug || meta.filename || "component");
+
+  return {
+    schemaVersion: "1.0",
+    id: `uiverse:${category.toLowerCase()}:${slug}`,
+    slug: `uiverse-${category.toLowerCase()}-${slug}`,
+    name: slug,
+    title,
+    description: `Autonomous ${category} component mirrored from Uiverse Galaxy.`,
+    family: "ui",
+    kind: "html-component",
+    source: {
+      provider: "uiverse",
+      externalId: item.entry.path,
+      sourceUrl: `${repository}/blob/${commit}/${item.entry.path}`,
+      repositoryUrl: repository,
+      author: meta.author,
+      fetchedAt,
+      commit
+    },
+    license: {
+      id: policy.licenseId,
+      name: policy.licenseName,
+      url: policy.licenseUrl,
+      commercialUse: true,
+      modificationAllowed: true,
+      redistributionAllowed: true,
+      attributionRequired: false,
+      attributionText: `Uiverse.io component by ${meta.author || "community creator"} · MIT License`,
+      verified: true
+    },
+    taxonomy: {
+      categories: ["ui", "uiverse", category.toLowerCase()],
+      tags: [
+        "uiverse",
+        "html",
+        "css",
+        category.toLowerCase(),
+        ...(meta.tags || [])
+      ],
+      sourceCategories: [category]
+    },
+    previews: [],
+    artifacts: [{
+      id: "component",
+      role: "component",
+      format: "html",
+      mimeType: "text/html",
+      content,
+      sourcePath: item.entry.path,
+      targetPath: "component.html",
+      checksum: item.entry.sha ? `git-sha1:${item.entry.sha}` : undefined
+    }],
+    runtime: {
+      type: "html",
+      renderer: "nagweb-html-tailwind",
+      entryArtifactId: "component"
+    },
+    editableProps: [
+      {
+        id: "opacity",
+        label: "Opacidad",
+        group: "Apariencia",
+        valueType: "number",
+        control: "slider",
+        defaultValue: 1,
+        binding: { type: "css-property", property: "opacity" },
+        constraints: { min: 0, max: 1, step: 0.01 },
+        responsive: true,
+        animatable: true
+      }
+    ],
+    compatibility: {
+      nagweb: { supported: true, renderer: "html", tested: false },
+      html: true,
+      css: true
+    },
+    capabilities: ["responsive", "interactive", "animatable"],
+    technical: {
+      type: "html-css-ui",
+      category,
+      codeOnly: true,
+      autonomous: true,
+      bytes: content.length
+    },
+    search: {
+      text: [
+        title,
+        category,
+        meta.author,
+        ...(meta.tags || []),
+        "Uiverse HTML CSS"
+      ].filter(Boolean).join(" "),
+      keywords: [
+        "uiverse",
+        category.toLowerCase(),
+        ...(meta.tags || [])
+      ]
+    },
+    ingestion: {
+      extractor: "uiverse",
+      extractorVersion: EXTRACTOR_VERSION,
+      fetchedAt,
+      transformedAt: now(),
+      sourceHash: hash(content),
+      status: "validated",
+      warnings: []
+    },
+    sourceData: {
+      author: meta.author,
+      originalPath: item.entry.path,
+      originalFilename: meta.filename,
+      tags: meta.tags || []
+    }
+  };
+}

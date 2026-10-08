@@ -39,6 +39,14 @@ export const SOURCE_POLICIES = {
     noticeRequired: true,
     notes: "Textureless GLSL noise functions may be mirrored and reused. Preserve the MIT notice and original author notices."
   },
+  uiverse: {
+    mirrorMode: "full",
+    licenseId: "MIT",
+    licenseName: "MIT License",
+    licenseUrl: "https://github.com/uiverse-io/galaxy/blob/main/LICENSE",
+    noticeRequired: true,
+    notes: "Galaxy is the official Uiverse archive. Mirror autonomous HTML/CSS components and preserve source author metadata."
+  },
   hyperui: {
     mirrorMode: "full",
     licenseId: "MIT",
