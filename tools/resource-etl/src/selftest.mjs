@@ -26,6 +26,13 @@ import {
   updateInstanceValue
 } from "./runtime/instance.mjs";
 import { buildInsertDescriptor } from "./runtime/insert-adapters.mjs";
+import {
+  NAGWEB_RESOURCE_APPLY_PROTOCOL,
+  NAGWEB_RESOURCE_APPLY_RESULT_TYPE,
+  buildResourceApplyEnvelope,
+  buildResourceApplyResult,
+  isResourceApplyResult
+} from "./runtime/resource-apply-bridge.mjs";
 import { buildStaticPreview } from "./preview/build-preview.mjs";
 import { buildVaultGallery } from "./gallery/build-gallery.mjs";
 import { buildReactPreviewRecipe } from "./preview/recipes.mjs";
@@ -510,3 +517,24 @@ assert.equal(genericPreviewRecipe.name, "Card");
 assert.deepEqual(genericPreviewRecipe.children, ["Contenido"]);
 
 console.log("NagWeb Resource ETL self-test: OK");
+
+
+const applyEnvelope = buildResourceApplyEnvelope(lucideResource, {
+  requestId: "test-apply-request"
+});
+assert.equal(applyEnvelope.requestId, "test-apply-request");
+assert.equal(applyEnvelope.resource.id, lucideResource.id);
+
+const applyResult = buildResourceApplyResult(applyEnvelope, {
+  status: "applied",
+  message: "Inserted"
+});
+assert.equal(applyResult.protocol, NAGWEB_RESOURCE_APPLY_PROTOCOL);
+assert.equal(applyResult.type, NAGWEB_RESOURCE_APPLY_RESULT_TYPE);
+assert.equal(applyResult.requestId, "test-apply-request");
+assert.equal(applyResult.status, "applied");
+assert.equal(isResourceApplyResult(applyResult), true);
+assert.equal(
+  isResourceApplyResult({ ...applyResult, requestId: null }),
+  false
+);

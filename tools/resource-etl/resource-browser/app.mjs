@@ -4,7 +4,8 @@ import {
 import {
   buildResourceApplyEnvelope,
   resolveResourceApplyTarget,
-  sendResourceApplyEnvelope
+  sendResourceApplyEnvelope,
+  isResourceApplyResult
 } from "../src/runtime/resource-apply-bridge.mjs";
 
 const vault = createNagWebPersistentVaultClient();
@@ -50,6 +51,8 @@ const el = {
 let offset = 0;
 let selectedResource = null;
 let searchTimer = null;
+let pendingApplyId = null;
+let pendingApplyTimer = null;
 const applyTarget = resolveResourceApplyTarget();
 
 if (applyTarget) {
@@ -291,14 +294,53 @@ el.grid.addEventListener("click", (event) => {
   if (card) openDetail(card.dataset.resourceId);
 });
 el.close.addEventListener("click", () => el.detail.close());
+window.addEventListener("message", (event) => {
+  if (!applyTarget) return;
+  if (event.source !== applyTarget.targetWindow) return;
+  if (event.origin !== applyTarget.targetOrigin) return;
+  if (!isResourceApplyResult(event.data)) return;
+  if (!pendingApplyId || event.data.requestId !== pendingApplyId) return;
+
+  clearTimeout(pendingApplyTimer);
+  pendingApplyTimer = null;
+  pendingApplyId = null;
+  el.apply.disabled = false;
+
+  if (event.data.status === "applied") {
+    el.applyStatus.textContent =
+      event.data.message || "Recurso aplicado en NagWeb.";
+    return;
+  }
+
+  if (event.data.status === "rejected") {
+    el.applyStatus.textContent =
+      event.data.message || "El editor rechazó este recurso.";
+    return;
+  }
+
+  el.applyStatus.textContent =
+    event.data.message || "El editor informó un error al aplicar el recurso.";
+});
+
 el.apply.addEventListener("click", () => {
   if (!selectedResource || !applyTarget) return;
 
   try {
     const envelope = buildResourceApplyEnvelope(selectedResource);
     const id = sendResourceApplyEnvelope(envelope, applyTarget);
-    el.applyStatus.textContent =
-      `Solicitud enviada al editor · ${id}`;
+
+    clearTimeout(pendingApplyTimer);
+    pendingApplyId = id;
+    el.apply.disabled = true;
+    el.applyStatus.textContent = "Esperando confirmación del editor…";
+
+    pendingApplyTimer = setTimeout(() => {
+      if (pendingApplyId !== id) return;
+      pendingApplyId = null;
+      el.apply.disabled = false;
+      el.applyStatus.textContent =
+        "El editor no confirmó la aplicación. No asumo que el recurso se haya insertado.";
+    }, 8000);
   } catch (error) {
     console.error(error);
     el.applyStatus.textContent =
