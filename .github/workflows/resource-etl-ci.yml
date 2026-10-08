@@ -328,10 +328,21 @@ jobs:
           done
 
           grep -q "Biblioteca de recursos" /tmp/nagweb-browser.html
-          curl -fsS http://127.0.0.1:4177/resource-browser/app.mjs | grep -q "createNagWebPersistentVaultClient"
-          curl -fsS http://127.0.0.1:4177/src/runtime/persistent-vault-client.mjs | grep -q "NagWebPersistentVaultClient"
 
-          echo "Standalone Resource Browser: OK"
+          curl -fsS http://127.0.0.1:4177/resource-browser/app.mjs \
+            > /tmp/nagweb-browser-app.mjs
+          grep -q "createNagWebPersistentVaultClient" /tmp/nagweb-browser-app.mjs
+          grep -q "buildResourceApplyEnvelope" /tmp/nagweb-browser-app.mjs
+
+          curl -fsS http://127.0.0.1:4177/src/runtime/persistent-vault-client.mjs \
+            > /tmp/nagweb-vault-client.mjs
+          grep -q "NagWebPersistentVaultClient" /tmp/nagweb-vault-client.mjs
+
+          curl -fsS http://127.0.0.1:4177/src/runtime/resource-apply-bridge.mjs \
+            > /tmp/nagweb-resource-apply-bridge.mjs
+          grep -q "NAGWEB_RESOURCE_APPLY_PROTOCOL" /tmp/nagweb-resource-apply-bridge.mjs
+
+          echo "Standalone Resource Browser + Apply Bridge: OK"
 
       - name: Verify persistent Vault client
         working-directory: tools/resource-etl
