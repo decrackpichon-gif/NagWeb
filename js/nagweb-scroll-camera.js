@@ -335,15 +335,16 @@ function mapSpecFromNode(map){
  var front=map.dataset.plane==='front';
  return {range:+map.dataset.range||500,axis:front?'y':'z',sign:front?1:-1,originX:+map.dataset.originX||0,originAxis:+map.dataset.originAxis||0};
 }
-function mapPanStep(previous,direction){
+function mapPanStep(previous,direction,increment,limit){
  var x=previous&&Number.isFinite(+previous.x)?+previous.x:0,y=previous&&Number.isFinite(+previous.y)?+previous.y:0;
+ var step=Number.isFinite(+increment)&&+increment>0?+increment:.2,cap=Number.isFinite(+limit)&&+limit>=1?+limit:1;
  if(direction==='center')return {x:0,y:0};
- if(direction==='left')x-=.2;
- else if(direction==='right')x+=.2;
- else if(direction==='up')y-=.2;
- else if(direction==='down')y+=.2;
+ if(direction==='left')x-=step;
+ else if(direction==='right')x+=step;
+ else if(direction==='up')y-=step;
+ else if(direction==='down')y+=step;
  else return {x:x,y:y};
- return {x:Math.max(-1,Math.min(1,Math.round(x*10)/10)),y:Math.max(-1,Math.min(1,Math.round(y*10)/10))};
+ return {x:Math.max(-cap,Math.min(cap,Math.round(x*1000)/1000)),y:Math.max(-cap,Math.min(cap,Math.round(y*1000)/1000))};
 }
 function mapPanOrigin(spec,frame,pan){
  var x=pan&&Number.isFinite(+pan.x)?+pan.x:0,y=pan&&Number.isFinite(+pan.y)?+pan.y:0;
@@ -351,10 +352,11 @@ function mapPanOrigin(spec,frame,pan){
  spec.originAxis=frame[spec.axis]+y*2*spec.range/spec.sign;
  return spec;
 }
-function mapPanFromDrag(start,dx,dy,width,height){
+function mapPanFromDrag(start,dx,dy,width,height,limit){
  var x=start&&Number.isFinite(+start.x)?+start.x:0,y=start&&Number.isFinite(+start.y)?+start.y:0;
  if(!width||!height)return {x:x,y:y};
- return {x:Math.max(-1,Math.min(1,x-dx/width)),y:Math.max(-1,Math.min(1,y-dy/height))};
+ var cap=Number.isFinite(+limit)&&+limit>=1?+limit:1;
+ return {x:Math.max(-cap,Math.min(cap,x-dx/width)),y:Math.max(-cap,Math.min(cap,y-dy/height))};
 }
 function canDragMapPan(ev,map,zoom){
  if(!map||zoom<=1||ev.altKey||ev.ctrlKey||ev.metaKey)return false;
@@ -370,7 +372,7 @@ function startMapPanDrag(ev,map,s){
  map.style.cursor='grabbing';
  function move(e){
   if(e.pointerId!==ev.pointerId)return;
-  next=mapPanFromDrag(start,e.clientX-ev.clientX,e.clientY-ev.clientY,area.width,area.height);
+  next=mapPanFromDrag(start,e.clientX-ev.clientX,e.clientY-ev.clientY,area.width,area.height,mapZoom[s.id]||1);
   content.style.transform='translate('+((start.x-next.x)*area.width)+'px,'+((start.y-next.y)*area.height)+'px)';
  }
  function finish(e,cancel){
@@ -419,7 +421,7 @@ function setMapZoom(s,direction){
  renderPane();
  return true;
 }
-function setMapPan(s,direction){
+function setMapPan(s,direction,increment){
  if((mapZoom[s.id]||1)<=1)return false;
  var prev=mapPan[s.id]||{x:0,y:0},next;
  if(direction==='look'){
@@ -430,7 +432,7 @@ function setMapPan(s,direction){
   var map=pane.querySelector('[data-camera-map]');
   if(!map||!found)return false;
   next=mapPanToTarget(camera,found,mapSpecFromNode(map));
- }else next=mapPanStep(prev,direction);
+ }else next=mapPanStep(prev,direction,increment,mapZoom[s.id]||1);
  if(next.x===prev.x&&next.y===prev.y)return false;
  mapPan[s.id]=next;
  renderPane();
@@ -497,10 +499,69 @@ function mapOverviewJump(s,overview,x,y){
  var zoom=mapZoom[s.id]||1,camera=choose(s,keys(s)),world=mapOverviewWorldAt(overview,x,y);
  if(!camera||!world)return false;
  if(zoom<=1){zoom=1.5;mapZoom[s.id]=zoom;}
- var range=overview.range/zoom,next=mapPanToTarget(camera,world,{range:range,axis:overview.axis,sign:overview.sign});
- mapPan[s.id]=next;
+ var range=overview.range/zoom;
+ if(!Number.isFinite(range)||range<=0)return false;
+ mapPan[s.id]={
+  x:Math.max(-zoom,Math.min(zoom,(world.x-camera.x)/(2*range))),
+  y:Math.max(-zoom,Math.min(zoom,(world[overview.axis]-camera[overview.axis])*overview.sign/(2*range)))
+ };
  renderPane();
  return true;
+}
+function mapOverviewPointerPoint(overview,ev,rect){
+ if(!rect||rect.width<=0||rect.height<=0)return null;
+ return {x:Math.max(0,Math.min(1,(ev.clientX-rect.left)/rect.width)),y:Math.max(0,Math.min(1,(ev.clientY-rect.top)/rect.height))};
+}
+function startMapOverviewDrag(ev,overview,s){
+ var rect=overview.getBoundingClientRect(),spec=mapSpecFromNode(overview),point=mapOverviewPointerPoint(overview,ev,rect);
+ if(!point||!C.config(s))return;
+ var startPan=mapPan[s.id]||{x:0,y:0},startZoom=mapZoom[s.id]||1,done=false;
+ var viewport=overview.querySelector('[data-camera-overview-viewport]'),world=mapOverviewWorldAt(spec,point.x,point.y);
+ if(!world)return;
+ var startCenter={x:world.x,y:world[spec.axis]};
+ ev.preventDefault();ev.stopPropagation();
+ overview.focus({preventScroll:true});
+ overview.setPointerCapture(ev.pointerId);
+ overview.style.cursor='grabbing';
+ function preview(e){
+  if(e.pointerId!==ev.pointerId)return;
+  var p=mapOverviewPointerPoint(overview,e,rect);
+  if(!p)return;
+  point=p;
+  if(viewport){
+   var width=+viewport.getAttribute('width'),height=+viewport.getAttribute('height');
+   viewport.setAttribute('x',Math.max(0,Math.min(100-width,p.x*100-width/2)));
+   viewport.setAttribute('y',Math.max(0,Math.min(100-height,p.y*100-height/2)));
+  }
+ }
+ function finish(e,cancel){
+  if(done||e.pointerId!=null&&e.pointerId!==ev.pointerId)return;
+  done=true;
+  overview.removeEventListener('pointermove',preview);overview.removeEventListener('pointerup',up);
+  overview.removeEventListener('pointercancel',abort);overview.removeEventListener('lostpointercapture',abort);
+  overview.removeEventListener('keydown',key);
+  if(overview.hasPointerCapture(ev.pointerId))overview.releasePointerCapture(ev.pointerId);
+  overview.style.cursor='';
+  if(cancel){
+   mapPan[s.id]=startPan;
+   mapZoom[s.id]=startZoom;
+   if(viewport){
+    var v=mapOverviewViewport(mapSpecFromNode(pane.querySelector('[data-camera-map]')),spec);
+    viewport.setAttribute('x',v.x);viewport.setAttribute('y',v.y);
+   }
+   return;
+  }
+  if(e.clientX!=null)preview(e);
+  if(sec()===s&&mapOverviewJump(s,spec,point.x,point.y)){
+   var updated=pane.querySelector('[data-camera-overview]');if(updated)updated.focus({preventScroll:true});
+  }
+ }
+ function up(e){finish(e,false);}
+ function abort(e){finish(e,true);}
+ function key(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();finish(e,true);}}
+ overview.addEventListener('pointermove',preview);overview.addEventListener('pointerup',up);
+ overview.addEventListener('pointercancel',abort);overview.addEventListener('lostpointercapture',abort);
+ overview.addEventListener('keydown',key);
 }
 function mapFrameOptions(list,at){
  return list.map(function(f){return '<option value="'+f.at+'"'+(f.at===at?' selected':'')+'>'+f.at+'%</option>';}).join('');
@@ -675,7 +736,7 @@ function spatialMap(s,list,k){
  html+='<label style="display:inline-flex;align-items:center;gap:6px;margin:6px 0;font-size:12px"><input type="checkbox" data-camera-map-fov-toggle aria-label="Mostrar campo de visión aproximado"'+(mapFovVisible[s.id]!==false?' checked':'')+'> Mostrar campo de visión</label>';
  html+='<div data-camera-map-pair style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0">'+mapKeyframeNavigation(list,k.at,'camera')+(lk?mapKeyframeNavigation(looks,lk.at,'look'):'')+'</div>';
  if(lk)html+='<p class="hint gh">◆ y ● se navegan por separado; la vista previa sigue el último punto elegido.</p>';
- html+='<style>[data-camera-map]:focus-visible{outline:3px solid var(--accent);outline-offset:3px}[data-camera-map] [data-camera-map-point]:focus-visible,[data-camera-map] [data-camera-look-map-point]:focus-visible{box-shadow:0 0 0 3px var(--accent)}</style>';
+ html+='<style>[data-camera-map]:focus-visible,[data-camera-overview]:focus-visible{outline:3px solid var(--accent);outline-offset:2px}[data-camera-map] [data-camera-map-point]:focus-visible,[data-camera-map] [data-camera-look-map-point]:focus-visible{box-shadow:0 0 0 3px var(--accent)}</style>';
  html+='<div data-camera-map tabindex="0" role="group" aria-label="Mapa espacial. Encuadre seleccionado '+k.at+'%. '+(lk?'Objetivo seleccionado '+lk.at+'%. ':'')+'Flechas izquierda y derecha: cambiar encuadre.'+(lk?' Shift más flechas: cambiar objetivo.':'')+' Ctrl o Cmd más rueda: zoom. Más y menos: zoom. Inicio: restablecer. Alt más flechas: desplazar cuando esté ampliado." data-plane="'+plane+'" data-range="'+spec.range+'" data-origin-x="'+(spec.originX||0)+'" data-origin-axis="'+(spec.originAxis||0)+'" style="position:relative;width:100%;aspect-ratio:1.5;border:1px solid var(--line);margin-top:8px;touch-action:none;overflow:hidden">';
  html+='<div data-camera-map-content style="position:absolute;inset:0;width:100%;height:100%">';
  html+='<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:auto">'+mapGridSvg(spec)+'<polyline data-camera-map-path points="'+path+'" fill="none" stroke="currentColor" opacity=".65" stroke-width=".7"/>';
@@ -706,13 +767,13 @@ function spatialMap(s,list,k){
  html+='</div>';
  if((mapOverviewVisible[s.id]===undefined?zoom>1:mapOverviewVisible[s.id])){
   var overview=C.mapSpec(list.concat(resolvedLooks,tangents,lookTangents,draw,lookDraw),plane);
-  html+='<div data-camera-overview tabindex="0" role="button" aria-label="Vista general. Clic para mover el área visible. Flechas para desplazar, Inicio para centrar." data-plane="'+plane+'" data-range="'+overview.range+'" data-origin-x="0" data-origin-axis="0" style="position:absolute;right:6px;bottom:6px;width:28%;max-width:168px;min-width:92px;aspect-ratio:1.5;border:1px solid var(--accent);border-radius:5px;background:var(--bg,#1c1e23);box-shadow:0 1px 8px #0005;z-index:25;cursor:crosshair;touch-action:none;overflow:hidden">'+mapOverviewSvg(list,resolvedLooks,draw,lookDraw,k,resolvedLk,now,spec,overview)+'</div>';
+  html+='<div data-camera-overview tabindex="0" role="button" aria-label="Vista general del recorrido. Clic o arrastre para centrar la vista. Flechas para desplazar; Shift más flechas para ajustes finos. Inicio o Enter para recentrar." data-plane="'+plane+'" data-range="'+overview.range+'" data-origin-x="0" data-origin-axis="0" style="position:absolute;right:6px;bottom:6px;width:28%;max-width:168px;min-width:92px;aspect-ratio:1.5;border:1px solid var(--accent);border-radius:5px;background:var(--bg,#1c1e23);box-shadow:0 1px 8px #0005;z-index:25;cursor:crosshair;touch-action:none;overflow:hidden">'+mapOverviewSvg(list,resolvedLooks,draw,lookDraw,k,resolvedLk,now,spec,overview)+'<span data-camera-overview-label style="position:absolute;left:3px;top:2px;pointer-events:none;font-size:9px;font-weight:600;color:var(--fg,currentColor);background:var(--bg,#1c1e23);padding:1px 3px;border-radius:3px">'+(plane==='front'?'X/Y':'X/Z')+' · '+Math.round(zoom*100)+'%</span></div>';
  }
  html+='</div>';
  if(lookKeyPoint)html+='<p class="hint gh" data-camera-map-selection-label>◆ '+k.at+'% ↔ ● '+lk.at+'% · Distancia XYZ: '+Math.round(Math.hypot(k.x-resolvedLk.x,k.y-resolvedLk.y,k.z-resolvedLk.z))+' px. Guía comparativa, no vincula los recorridos.</p>';
  if(s.sdCameraResponsive)html+='<p class="hint gh">El mapa muestra el recorrido con el ancho de referencia.</p>';
  html+='<p class="hint gh" data-camera-position-label>'+mapLabel(current,progress(s))+'</p>';
- html+='<p class="hint gh">◆ encuadre seleccionado · ○ posición actual'+(tangentInPoint||tangentOutPoint?' · ◁ entrada / ▷ salida':'')+(cfg&&cfg.orientationMode==='lookAt'?' · ● objetivo seleccionado · línea punteada: recorrido de mirada'+(lookTangentInPoint||lookTangentOutPoint?' · ◁/▷ del ●: curva de mirada':''):'')+(cfg&&(cfg.pathMode==='smooth'||cfg.lookPathMode==='smooth')?' · Trazo destacado: tramo Bézier libre; trazo normal: Catmull-Rom':'')+' · Flecha: orientación de ◆. Área translúcida: campo de visión aproximado (se oculta de perfil). Número junto a un punto: marcadores superpuestos; clic repetido para alternarlos. Clic cerca de un punto: seleccionar · Doble clic línea normal: agregar ◆ · línea punteada: agregar ● · Arrastrá ◆ o ● · Arrastrá ◯: ajustar curva · Shift + arrastre: bloquear al eje dominante. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Zoom: − / +, Ctrl/⌘ + rueda o teclas +/− con foco en el mapa. Inicio restablece 100%. Alt + flechas desplaza al ampliar. Con zoom superior al 100% usá Desplazar, Centrar ◆ / Centrar ●, Shift + arrastrar el fondo o el botón central del mouse. La cuadrícula indica coordenadas reales; al cambiar de encuadre, la vista se recentra automáticamente. Vista general: miniatura del recorrido con el área visible; clic para navegar y opción de ocultarla. Escape cancela el desplazamiento. Con foco en el mapa: ←/→ cambia ◆; Shift + ←/→ cambia ●. Al enfocar un punto, flechas mueven 25 px (Shift: 100 px). Escape cancela. Escala: ±'+Math.round(spec.range)+' px.</p></details>';
+ html+='<p class="hint gh">◆ encuadre seleccionado · ○ posición actual'+(tangentInPoint||tangentOutPoint?' · ◁ entrada / ▷ salida':'')+(cfg&&cfg.orientationMode==='lookAt'?' · ● objetivo seleccionado · línea punteada: recorrido de mirada'+(lookTangentInPoint||lookTangentOutPoint?' · ◁/▷ del ●: curva de mirada':''):'')+(cfg&&(cfg.pathMode==='smooth'||cfg.lookPathMode==='smooth')?' · Trazo destacado: tramo Bézier libre; trazo normal: Catmull-Rom':'')+' · Flecha: orientación de ◆. Área translúcida: campo de visión aproximado (se oculta de perfil). Número junto a un punto: marcadores superpuestos; clic repetido para alternarlos. Clic cerca de un punto: seleccionar · Doble clic línea normal: agregar ◆ · línea punteada: agregar ● · Arrastrá ◆ o ● · Arrastrá ◯: ajustar curva · Shift + arrastre: bloquear al eje dominante. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Zoom: − / +, Ctrl/⌘ + rueda o teclas +/− con foco en el mapa. Inicio restablece 100%. Alt + flechas desplaza al ampliar. Con zoom superior al 100% usá Desplazar, Centrar ◆ / Centrar ●, Shift + arrastrar el fondo o el botón central del mouse. La cuadrícula indica coordenadas reales; al cambiar de encuadre, la vista se recentra automáticamente. Vista general: miniatura del recorrido con el área visible; clic o arrastre para navegar, flechas para mover, Shift + flechas para precisión, Inicio para volver al ◆. Podés ocultarla. Escape cancela el desplazamiento. Con foco en el mapa: ←/→ cambia ◆; Shift + ←/→ cambia ●. Al enfocar un punto, flechas mueven 25 px (Shift: 100 px). Escape cancela. Escala: ±'+Math.round(spec.range)+' px.</p></details>';
  return html;
 }
 C.panel=function(s){
@@ -1071,15 +1132,8 @@ if(pane){
  },{passive:false});
  pane.addEventListener('pointerdown',function(ev){
   var overviewNode=ev.target.closest('[data-camera-overview]');
-  if(overviewNode&&ev.button===0&&!ev.altKey&&!ev.ctrlKey&&!ev.metaKey){
-   var os=sec(),rect=overviewNode.getBoundingClientRect();
-   if(C.config(os)&&rect.width&&rect.height){
-    ev.preventDefault();ev.stopPropagation();
-    var ospec=mapSpecFromNode(overviewNode);
-    if(mapOverviewJump(os,ospec,(ev.clientX-rect.left)/rect.width,(ev.clientY-rect.top)/rect.height)){
-     var restored=pane.querySelector('[data-camera-overview]');if(restored)restored.focus({preventScroll:true});
-    }
-   }
+  if(overviewNode&&ev.button===0&&!ev.altKey&&!ev.ctrlKey&&!ev.metaKey&&!ev.shiftKey){
+   startMapOverviewDrag(ev,overviewNode,sec());
    return;
   }
   var panMap=ev.target.closest('[data-camera-map]'),panScene=panMap?sec():null;
@@ -1115,11 +1169,12 @@ if(pane){
  });
  pane.addEventListener('keydown',function(ev){
   if(ev.target.matches('[data-camera-overview]')){
-   var os=sec();if(!C.config(os))return;
+   var os=sec();if(!C.config(os)||ev.altKey||ev.ctrlKey||ev.metaKey||ev.isComposing)return;
    var directions={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down'};
-   if(directions[ev.key]||ev.key==='Home'){
+   if(directions[ev.key]||ev.key==='Home'||ev.key==='Enter'||ev.key===' '){
     ev.preventDefault();ev.stopPropagation();
-    if(ev.key==='Home')setMapPan(os,'center');else setMapPan(os,directions[ev.key]);
+    if(ev.key==='Home'||ev.key==='Enter'||ev.key===' ')setMapPan(os,'center');
+    else setMapPan(os,directions[ev.key],ev.shiftKey?.05:.2);
     var currentOverview=pane.querySelector('[data-camera-overview]');
     if(currentOverview)currentOverview.focus({preventScroll:true});
    }
