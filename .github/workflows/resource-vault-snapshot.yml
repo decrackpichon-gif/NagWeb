@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   uiverse-snapshot:
-    name: Build persistent Uiverse snapshot
+    name: Build persistent lightweight snapshots
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -50,6 +50,20 @@ jobs:
             --commit="$SOURCE_COMMIT"
           cp "$RUNNER_TEMP/uiverse-galaxy/LICENSE" "$RUNNER_TEMP/nagweb-uiverse-snapshot/LICENSE"
 
+      - name: Build core lightweight Code Vault
+        working-directory: tools/resource-etl
+        shell: bash
+        run: |
+          node src/vault-cli.mjs \
+            --sources=shadcn,magicui,motion-primitives,animxyz,hyperui,csshake,magic-css,glsl-noise \
+            --all \
+            --out="$RUNNER_TEMP/nagweb-core-vault"
+
+          node src/snapshot/pack-vault-snapshot.mjs \
+            --vault-dir="$RUNNER_TEMP/nagweb-core-vault" \
+            --out-dir="$RUNNER_TEMP/nagweb-core-snapshot" \
+            --name=core-code
+
       - name: Verify snapshot
         shell: bash
         run: |
@@ -74,10 +88,43 @@ jobs:
           console.log("Persistent Uiverse snapshot verified", manifest);
           NODE
 
+          node - <<'NODE'
+          const fs = require("fs");
+          const path = process.env.RUNNER_TEMP + "/nagweb-core-snapshot";
+          const manifest = JSON.parse(
+            fs.readFileSync(path + "/manifest.json", "utf8")
+          );
+          const expected = [
+            "animxyz",
+            "csshake",
+            "glsl-noise",
+            "hyperui",
+            "magic-css",
+            "magicui",
+            "motion-primitives",
+            "shadcn"
+          ];
+          for (const provider of expected) {
+            if (!manifest.providers.includes(provider)) {
+              throw new Error("Missing core provider snapshot: " + provider);
+            }
+          }
+          if (manifest.resourceCount < 200) {
+            throw new Error(
+              "Unexpectedly small core snapshot: " + manifest.resourceCount
+            );
+          }
+          if (!manifest.compressedSha256 || manifest.compressedSha256.length !== 64) {
+            throw new Error("Missing core snapshot SHA-256");
+          }
+          console.log("Persistent core snapshot verified", manifest);
+          NODE
+
       - name: Publish resource-vault-data branch
         shell: bash
         run: |
           SNAPSHOT_DIR="$RUNNER_TEMP/nagweb-uiverse-snapshot"
+          CORE_DIR="$RUNNER_TEMP/nagweb-core-snapshot"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
@@ -93,6 +140,13 @@ jobs:
           cp "$SNAPSHOT_DIR/LICENSE" uiverse/LICENSE
           cp "$SNAPSHOT_DIR/README.md" uiverse/README.md
 
+          mkdir -p core-code
+          cp "$CORE_DIR/library.json.gz" core-code/library.json.gz
+          cp "$CORE_DIR/catalog.json" core-code/catalog.json
+          cp "$CORE_DIR/manifest.json" core-code/manifest.json
+          cp "$CORE_DIR/THIRD_PARTY_NOTICES.txt" core-code/THIRD_PARTY_NOTICES.txt
+          cp "$CORE_DIR/README.md" core-code/README.md
+
           cat > README.md <<'EOF'
           # NagWeb Resource Vault Data
 
@@ -100,10 +154,11 @@ jobs:
 
           This branch is generated data, not application source code. It is force-refreshed so snapshot history does not grow without bound.
 
-          Current providers:
+          Current snapshots:
           - Uiverse Galaxy
+          - Core Code Vault: Shadcn, Magic UI, Motion Primitives, AnimXYZ, HyperUI, CSSShake, Magic.css and GLSL Noise
           EOF
 
-          git add README.md uiverse
-          git commit -m "data: refresh Uiverse resource snapshot"
+          git add README.md uiverse core-code
+          git commit -m "data: refresh lightweight resource snapshots"
           git push --force origin HEAD:resource-vault-data
