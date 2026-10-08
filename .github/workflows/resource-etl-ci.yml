@@ -329,13 +329,13 @@ jobs:
           check_source pmndrs
           check_source kenney
 
-      - name: Verify Uiverse autonomous HTML pilot
+      - name: Verify Uiverse autonomous HTML scale
         working-directory: tools/resource-etl
         shell: bash
         run: |
           node src/vault-cli.mjs \
             --sources=uiverse \
-            --limit=12 \
+            --limit=100 \
             --out=ci-vault-uiverse
 
           node - <<'NODE'
@@ -346,19 +346,19 @@ jobs:
           const items = (catalog.resources || []).filter(
             (entry) => entry.id.startsWith("uiverse:")
           );
-          if (items.length !== 12) {
-            console.error("Expected 12 Uiverse pilot resources, got", items.length);
+          if (items.length !== 100) {
+            console.error("Expected 100 Uiverse autonomous resources, got", items.length);
             process.exit(1);
           }
           const notReady = items.filter(
             (entry) => entry.previewStatus !== "ready"
           );
           if (notReady.length) {
-            console.error("Uiverse pilot has deferred previews");
+            console.error("Uiverse scale test has deferred previews");
             console.error(JSON.stringify(notReady, null, 2));
             process.exit(1);
           }
-          console.log("Uiverse autonomous pilot: OK", items.length);
+          console.log("Uiverse autonomous scale: OK", items.length);
           NODE
 
 
