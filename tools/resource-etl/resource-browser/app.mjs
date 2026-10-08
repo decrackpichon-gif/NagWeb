@@ -1,6 +1,11 @@
 import {
   createNagWebPersistentVaultClient
 } from "../src/runtime/persistent-vault-client.mjs";
+import {
+  buildResourceApplyEnvelope,
+  resolveResourceApplyTarget,
+  sendResourceApplyEnvelope
+} from "../src/runtime/resource-apply-bridge.mjs";
 
 const vault = createNagWebPersistentVaultClient();
 const PAGE_SIZE = 48;
@@ -33,6 +38,9 @@ const el = {
   preview: document.querySelector("[data-preview]"),
   previewFallback: document.querySelector("[data-preview-fallback]"),
   previewNote: document.querySelector("[data-preview-note]"),
+  apply: document.querySelector("[data-apply]"),
+  applyStatus: document.querySelector("[data-apply-status]"),
+  applyBox: document.querySelector(".apply-box"),
   copyId: document.querySelector("[data-copy-id]"),
   copyCode: document.querySelector("[data-copy-code]"),
   code: document.querySelector("[data-code]"),
@@ -42,6 +50,14 @@ const el = {
 let offset = 0;
 let selectedResource = null;
 let searchTimer = null;
+const applyTarget = resolveResourceApplyTarget();
+
+if (applyTarget) {
+  el.apply.disabled = false;
+  el.applyBox.dataset.connected = "true";
+  el.applyStatus.textContent =
+    `Editor conectado de forma explícita: ${applyTarget.targetOrigin}`;
+}
 
 function esc(value) {
   return String(value ?? "")
@@ -181,6 +197,7 @@ async function openDetail(id) {
 
   const resource = await vault.getResource(id);
   selectedResource = resource;
+  el.apply.disabled = !applyTarget || !resource;
 
   if (!resource) {
     el.detailTitle.textContent = "No encontré el recurso";
@@ -274,6 +291,21 @@ el.grid.addEventListener("click", (event) => {
   if (card) openDetail(card.dataset.resourceId);
 });
 el.close.addEventListener("click", () => el.detail.close());
+el.apply.addEventListener("click", () => {
+  if (!selectedResource || !applyTarget) return;
+
+  try {
+    const envelope = buildResourceApplyEnvelope(selectedResource);
+    const id = sendResourceApplyEnvelope(envelope, applyTarget);
+    el.applyStatus.textContent =
+      `Solicitud enviada al editor · ${id}`;
+  } catch (error) {
+    console.error(error);
+    el.applyStatus.textContent =
+      `No pude preparar el recurso: ${error?.message || error}`;
+  }
+});
+
 el.copyId.addEventListener("click", async () => {
   if (!selectedResource) return;
   await navigator.clipboard.writeText(selectedResource.id);

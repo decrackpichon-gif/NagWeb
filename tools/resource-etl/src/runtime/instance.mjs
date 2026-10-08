@@ -1,4 +1,11 @@
-import { randomUUID } from "node:crypto";
+function newInstanceId() {
+  if (globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
+  }
+
+  const random = Math.random().toString(36).slice(2);
+  return `nagweb-${Date.now().toString(36)}-${random}`;
+}
 
 export function defaultEditableValues(resource) {
   return Object.fromEntries(
@@ -15,7 +22,7 @@ export function createResourceInstance(
 ) {
   return {
     schemaVersion: "1.0",
-    instanceId: instanceId || randomUUID(),
+    instanceId: instanceId || newInstanceId(),
     resourceId: resource.id,
     renderer: resource.runtime?.renderer || resource.runtime?.type || "none",
     variant,

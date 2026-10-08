@@ -777,3 +777,27 @@ npm run vault:browser
 En Windows, la opción **18 · ABRIR Biblioteca Visual del Vault** abre el navegador y levanta el pequeño servidor local automáticamente.
 
 Este navegador sigue separado del editor principal. Sirve para validar la experiencia de exploración antes de conectar el botón “Aplicar” a NagWeb.
+
+
+## Protocolo “Aplicar en NagWeb”
+
+`src/runtime/resource-apply-bridge.mjs` convierte un recurso seleccionado en un paquete de inserción independiente del transporte:
+
+```text
+nagweb-resource-apply/1.0
+```
+
+El paquete incluye:
+
+- ID universal y procedencia;
+- licencia verificada;
+- capacidades y controles editables;
+- valores elegidos para la instancia;
+- descriptor de inserción ya normalizado;
+- código/HTML/SVG necesario dentro del descriptor cuando corresponde.
+
+La Biblioteca Visual sólo habilita **Aplicar en NagWeb** cuando fue abierta desde un editor que declaró explícitamente su origen mediante `?hostOrigin=https://...`. El envío usa `postMessage` con ese origen exacto: nunca usa `*`.
+
+El editor principal todavía no escucha este protocolo. Esa conexión se hará en una rama de integración separada para no poner en riesgo MotionLab ni el resto de NagWeb.
+
+Además, `runtime/instance.mjs` dejó de depender de `node:crypto`, por lo que los insert adapters ya pueden ejecutarse tanto en Node como en navegador.

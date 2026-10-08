@@ -83,3 +83,8 @@ pre{white-space:pre-wrap;word-break:break-word;background:#090b0e;border:1px sol
   .resource-grid{grid-template-columns:1fr}
   .topbar-actions{width:100%;justify-content:space-between}
 }
+
+.apply-box{margin:18px 0;padding:12px;border:1px solid #35402d;background:#c8f36c0b;border-radius:12px}
+.apply-box button{width:100%}
+.apply-box p{margin:8px 2px 0;color:var(--muted);font-size:11px;line-height:1.4}
+.apply-box[data-connected="true"]{border-color:#667c3d;background:#c8f36c12}
