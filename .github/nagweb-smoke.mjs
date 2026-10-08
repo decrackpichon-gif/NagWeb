@@ -38,6 +38,8 @@ import {runMotionExpandSmoke} from './nagweb-motion-expand-smoke.mjs';
 import {runMotionDropSmoke} from './nagweb-motion-drop-smoke.mjs';
 import {runMotionStreamSmoke} from './nagweb-motion-stream-smoke.mjs';
 import {runMotionStreamPlacementSmoke} from './nagweb-motion-stream-placement-smoke.mjs';
+import './nagweb-dance-model-test.mjs';
+import {runMotionDanceSmoke} from './nagweb-motion-dance-smoke.mjs';
 import './nagweb-trail-model-test.mjs';
 import {runMotionTrailSmoke} from './nagweb-motion-trail-smoke.mjs';
 import './nagweb-ring-model-test.mjs';
@@ -96,7 +98,7 @@ import {runMotionIsoOrbitSmoke} from './nagweb-motion-iso-orbit-smoke.mjs';
 import {runMotionBatchImagesSmoke} from './nagweb-motion-batch-images-smoke.mjs';
 
 const suite=process.env.NAGWEB_SMOKE_SUITE||'all';
-if(!['all','procedural','editor','diagonal','grid','zoom','drop','shift','spiral','film','totem','peel','burst','photo','wheel','spin','bottom','cover','cover-vertical','ring','ring-vertical','trail'].includes(suite))throw new Error('Unknown NagWeb smoke suite: '+suite);
+if(!['all','procedural','editor','diagonal','grid','zoom','drop','shift','spiral','film','totem','peel','burst','photo','wheel','spin','bottom','cover','cover-vertical','ring','ring-vertical','trail','dance'].includes(suite))throw new Error('Unknown NagWeb smoke suite: '+suite);
 
 const feedbackSource=fs.readFileSync(new URL('../js/nagweb-feedback-v16.js',import.meta.url),'utf8');
 const directorSource=fs.readFileSync(new URL('../js/nagweb-scroll-director-v16.js',import.meta.url),'utf8');
@@ -349,6 +351,7 @@ await runTransparentSmoke(page);
 if(suite==='all'||suite==='diagonal'){
 for(const kind of ['diagonal-carousel','iso-cascade']){await runMotionDiagonalSmoke(page,kind);await runMotionStreamPlacementSmoke(page,kind);}
 }
+if(suite==='all'||suite==='dance'){await runMotionDanceSmoke(page);await runMotionStreamPlacementSmoke(page,'position-dance');await runMotionBatchImagesSmoke(page,['position-dance']);}
 if(suite==='all'||suite==='trail'){await runMotionTrailSmoke(page);await runMotionStreamPlacementSmoke(page,'image-trail');await runMotionBatchImagesSmoke(page,['image-trail']);}
 if(suite==='all'||suite==='ring-vertical'){await runMotionRingSmoke(page,'cover-ring-vertical');await runMotionStreamPlacementSmoke(page,'cover-ring-vertical');await runMotionBatchImagesSmoke(page,['cover-ring-vertical']);}
 if(suite==='all'||suite==='ring'){await runMotionRingSmoke(page);await runMotionStreamPlacementSmoke(page,'cover-ring');await runMotionBatchImagesSmoke(page,['cover-ring']);}
