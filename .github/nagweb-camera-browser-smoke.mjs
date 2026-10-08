@@ -683,7 +683,7 @@ export async function runCameraBrowserSmoke(page){
   const overlapState=()=>page.evaluate(()=>{
    const result=document.querySelector('[data-camera-overview-overlap-summary]'),poly=document.querySelector('[data-camera-overview-fov-overlap]');
    const parse=poly?.getAttribute('points')?.split(' ').map(p=>p.split(',').map(Number))||[];
-   return {status:result?.dataset.cameraOverviewOverlapStatus||'',message:result?.textContent||'',
+   return {status:result?.dataset.cameraOverviewOverlapStatus||'',message:result?.textContent||'',note:result?.nextElementSibling?.textContent||'',
     visibleCones:document.querySelectorAll('[data-camera-overview-fov]').length,polygon:!!poly,
     a:poly?+poly.dataset.cameraOverviewOverlapA:null,b:poly?+poly.dataset.cameraOverviewOverlapB:null,
     finite:parse.every(p=>p.length===2&&p.every(Number.isFinite)),nonInteractive:poly?.getAttribute('pointer-events')==='none'};
@@ -695,7 +695,7 @@ export async function runCameraBrowserSmoke(page){
   assert.equal(cov.polygon,true,'Overlap region is displayed on minimap');
   assert.ok(Math.abs(cov.a-100)<.01&&Math.abs(cov.b-100)<.01,'Identical A/B cones share 100% of each projected area');
   assert.ok(cov.finite&&cov.nonInteractive,'Overlap polygon uses valid SVG coordinates and does not intercept editing');
-  assert.ok(cov.message.includes('proyectada X/Z o X/Y'),'Diagnostic specifies 2D projection rather than actual 3D coverage');
+  assert.ok(cov.note.includes('proyectada X/Z o X/Y')&&cov.note.includes('no visibilidad real'),'Diagnostic clearly distinguishes 2D coverage from actual 3D visibility');
   await page.click('[data-camera-overview-compare-fov-toggle]');
   cov=await overlapState();
   assert.equal(cov.polygon,false,'Hiding cones also hides purple overlap visualization');
