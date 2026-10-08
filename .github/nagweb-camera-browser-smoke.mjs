@@ -116,6 +116,18 @@ export async function runCameraBrowserSmoke(page){
   // Minimap regression: click, drag, cancellation, precision keyboard and no camera edits.
   await page.click('[data-camera-overview-toggle]');
   assert.ok(await page.$('[data-camera-overview]'),'Overview toggle should show minimap at 100%');
+
+  const overviewInitial=await page.evaluate(()=>{
+   const map=document.querySelector('[data-camera-overview]'),dot=map.querySelector('[data-camera-overview-current]'),s=sec();
+   const key=s.sdCameraFrames.find(k=>k.at===50),spec={range:+map.dataset.range,axis:map.dataset.plane==='front'?'y':'z',sign:map.dataset.plane==='front'?1:-1};
+   const expected=NAGWEB_SCROLL_CAMERA.mapPoint(key,spec);
+   return {x:+dot.getAttribute('cx'),y:+dot.getAttribute('cy'),expected,arrows:map.querySelectorAll('[data-camera-overview-direction="camera"] polygon').length,look:map.querySelector('[data-camera-overview-direction="look"]'),label:map.querySelector('[data-camera-overview-progress]').textContent.trim()};
+  });
+  assert.ok(Math.abs(overviewInitial.x-overviewInitial.expected.x)<.01&&Math.abs(overviewInitial.y-overviewInitial.expected.y)<.01,'Initial minimap progress dot must use world coordinates, not already projected coordinates');
+  assert.equal(overviewInitial.arrows,3,'Camera trajectory has three direction indicators');
+  assert.equal(overviewInitial.look,null,'Manual camera does not show a look trajectory');
+  assert.equal(overviewInitial.label,'50%','Minimap initially displays selected scrub progress');
+
   assert.ok((await page.$eval('[data-camera-overview-label]',n=>n.textContent)).includes('X/Z'));
   await page.click('[data-camera-map-zoom="1"]');
   const miniOrigin=()=>page.$eval('[data-camera-map]',n=>({x:+n.dataset.originX,y:+n.dataset.originAxis}));
@@ -337,6 +349,29 @@ export async function runCameraBrowserSmoke(page){
   await page.waitForFunction(()=>document.querySelector('[data-camera-look-jump="50"]'));
   await page.click('[data-camera-look-jump="50"]');
   await page.waitForFunction(()=>document.querySelector('[data-camera-look-map-point="50"]')&&document.querySelectorAll('[data-camera-look-tension-handle]').length===2);
+  // Direction and live camera/target synchronization when orientation is lookAt.
+  await page.click('[data-camera-overview-toggle]');
+  await page.waitForFunction(()=>document.querySelector('[data-camera-overview-current-link]')&&document.querySelector('[data-camera-overview-look-current]'));
+  const lookMiniInitial=await page.evaluate(()=>{
+   const node=document.querySelector('[data-camera-overview]');
+   return {camera:node.querySelectorAll('[data-camera-overview-direction="camera"] polygon').length,look:node.querySelectorAll('[data-camera-overview-direction="look"] polygon').length,begin:+node.querySelector('[data-camera-overview-current]').getAttribute('cx')};
+  });
+  assert.equal(lookMiniInitial.camera,3,'Camera directions remain visible in lookAt mode');
+  assert.equal(lookMiniInitial.look,3,'Look trajectory has distinct arrows showing its direction');
+  await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',.75));
+  await page.waitForFunction(()=>document.querySelector('[data-camera-overview-progress]')?.textContent==='75%');
+  const lookMiniMoved=await page.evaluate(()=>{
+   const node=document.querySelector('[data-camera-overview]'),camera=node.querySelector('[data-camera-overview-current]'),look=node.querySelector('[data-camera-overview-look-current]'),link=node.querySelector('[data-camera-overview-current-link]');
+   const n=(el,name)=>+el.getAttribute(name);
+   const spec={range:+node.dataset.range,axis:node.dataset.plane==='front'?'y':'z',sign:node.dataset.plane==='front'?1:-1},s=sec(),cfg=NAGWEB_SCROLL_CAMERA.config(s);
+   const expectedLook=NAGWEB_SCROLL_CAMERA.mapPoint(NAGWEB_SCROLL_CAMERA.lookTarget(cfg,.75,NAGWEB_STORY_MODEL,s.sdEase,undefined,{width:1000,height:600}),spec);
+   return {camX:n(camera,'cx'),camY:n(camera,'cy'),lookX:n(look,'cx'),lookY:n(look,'cy'),link:[n(link,'x1'),n(link,'y1'),n(link,'x2'),n(link,'y2')],expectedLook,progress:node.querySelector('[data-camera-overview-progress]').textContent};
+  });
+  assert.ok(Math.abs(lookMiniMoved.camX-lookMiniInitial.begin)>.2,'Camera live minimap dot responds to scroll progress');
+  assert.deepEqual(lookMiniMoved.link,[lookMiniMoved.camX,lookMiniMoved.camY,lookMiniMoved.lookX,lookMiniMoved.lookY],'Camera and look live markers stay connected at the same scroll progress');
+  assert.equal(lookMiniMoved.progress,'75%','Minimap updates its progress label while scrubbing');
+  await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',.5));
+  await page.click('[data-camera-overview-toggle]');
   const lookCurveUi=await page.evaluate(()=>({
    handles:document.querySelectorAll('[data-camera-look-tension-handle]').length,
    path:(document.querySelector('[data-camera-look-map-path]')?.getAttribute('points')||''),
