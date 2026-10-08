@@ -91,7 +91,7 @@ console.log('Camera orientation: inverse transform order, full turns, isolated e
 const track={getBoundingClientRect(){return{left:0,width:1000};}};
 function marker(at){
  const handlers={};let captured=false;
- return {dataset:{cameraJump:String(at)},style:{left:at+'%'},title:'',handlers,
+ return {matches(){return false;},dataset:{cameraJump:String(at)},style:{left:at+'%'},title:'',handlers,
  closest(selector){return selector==='[data-camera-track]'?track:selector==='[data-camera-jump]'?this:null;},focus(){},
  setPointerCapture(){captured=true;},hasPointerCapture(){return captured;},releasePointerCapture(){captured=false;},
  addEventListener(type,fn){handlers[type]=fn;},removeEventListener(type){delete handlers[type];}};
@@ -269,6 +269,8 @@ assert.equal(editable.sdCameraLookFrames[1].x,500,'Shift-drag locks look target 
 assert.equal(editable.sdCameraLookFrames[1].z,500,'Vertical-dominant Shift drag changes only Z in top view');assert.equal(history.length,lookHistory+1);
 pct=0;mapBox.dataset.plane='top';mapBox.dataset.range='800';
 const look100=C.mapPoint(editable.sdCameraLookFrames.find(k=>k.at===100),{axis:'z',sign:-1,range:800});
+listeners.pointerdown({button:0,pointerId:16,clientX:look100.x/100*200,clientY:look100.y/100*200,target:{closest(selector){return selector==='[data-camera-map]'?mapBox:null;}},preventDefault(){},stopPropagation(){}});
+assert.equal(pct,50,'First click selects the earlier overlapping look key');
 listeners.pointerdown({button:0,pointerId:16,clientX:look100.x/100*200,clientY:look100.y/100*200,target:{closest(selector){return selector==='[data-camera-map]'?mapBox:null;}},preventDefault(){},stopPropagation(){}});
 assert.equal(pct,100,'Clicking near a look point selects and scrubs it directly');
 mapBox.dataset.plane='front';

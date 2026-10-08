@@ -5,7 +5,7 @@ import './nagweb-camera-runtime-test.mjs';
 import {runCameraBrowserSmoke} from './nagweb-camera-browser-smoke.mjs';
 
 const candidates=['/usr/bin/google-chrome-stable','/usr/bin/google-chrome','/usr/bin/chromium','/usr/bin/chromium-browser'];
-const executablePath=candidates.find(p=>fs.existsSync(p));
+const executablePath=[process.env.NAGWEB_CHROME_PATH,process.env.PROGRAMFILES&&process.env.PROGRAMFILES+'/Google/Chrome/Application/chrome.exe',process.env['PROGRAMFILES(X86)']&&process.env['PROGRAMFILES(X86)']+'/Microsoft/Edge/Application/msedge.exe',...candidates].find(p=>p&&fs.existsSync(p));
 if(!executablePath) throw new Error('No Chromium/Chrome executable found on runner');
 
 const browser=await puppeteer.launch({headless:true,executablePath,args:['--no-sandbox','--disable-dev-shm-usage']});

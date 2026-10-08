@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import path from 'node:path';
+
+const visuals=process.env.NAGWEB_CAMERA_VISUALS||'/tmp/nagweb-camera-visuals';
 
 export async function runCameraBrowserSmoke(page){
  const previous=await page.evaluate(()=>({project:JSON.stringify(project),curPage,curSec,curEl,curPane,selection,secFocus}));
@@ -39,6 +42,77 @@ export async function runCameraBrowserSmoke(page){
   assert.ok(ui.pathPoints>ui.dots,'Smooth camera path should render sampled curve points');
   assert.ok(ui.label.includes('50%')&&ui.label.includes('X 200')&&ui.label.includes('Y 100')&&ui.label.includes('Z 100'));
   assert.ok((await page.$eval('[data-camera-map-box]',n=>n.textContent)).includes('ancho de referencia'));
+  fs.mkdirSync(visuals,{recursive:true});
+  async function capture(name){
+   await page.$eval('[data-camera-map]',n=>n.scrollIntoView({block:'center'}));
+   await (await page.$('[data-camera-map]')).screenshot({path:path.join(visuals,name+'.png')});
+  }
+  await capture('map-top');
+  const originalFrames=await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames));
+  for(const plane of ['top','front']){
+   await page.select('[data-camera-map-plane]',plane);
+   await capture('map-'+plane);
+   for(const zoom of [.5,.75,1,1.25,1.5,2,3]){
+    await page.click('[data-camera-map-zoom="0"]');
+    for(let i=0;i<Math.abs([.5,.75,1,1.25,1.5,2,3].indexOf(zoom)-2);i++)await page.click('[data-camera-map-zoom="'+(zoom<1?-1:1)+'"]');
+    if(zoom>1)await page.click('[data-camera-map-pan="right"]');
+    await page.$eval('[data-camera-map]',n=>n.scrollIntoView({block:'center'}));
+    const start=await page.evaluate(()=>{
+     const map=document.querySelector('[data-camera-map]'),r=map.getBoundingClientRect(),b=document.querySelector('[data-camera-map-point="50"]').getBoundingClientRect();
+     return{x:b.left+b.width/2,y:b.top+b.height/2,width:r.width,height:r.height,range:+map.dataset.range,frame:{...sec().sdCameraFrames.find(k=>k.at===50)},history:history.length};
+    });
+    await page.mouse.move(start.x,start.y);await page.mouse.down();await page.mouse.move(start.x+12,start.y+8,{steps:4});await page.mouse.up();
+    const end=await page.evaluate(()=>({frame:sec().sdCameraFrames.find(k=>k.at===50),history:history.length}));
+    assert.ok(Math.abs(end.frame.x-start.frame.x-24*start.range/start.width)<=1,'Zoom/pan X coordinate mismatch at '+plane+' '+zoom);
+    const axis=plane==='front'?'y':'z',sign=plane==='front'?1:-1;
+    assert.ok(Math.abs(end.frame[axis]-start.frame[axis]-sign*16*start.range/start.height)<=1,'Zoom/pan vertical coordinate mismatch at '+plane+' '+zoom);
+    assert.equal(end.frame[plane==='front'?'z':'y'],start.frame[plane==='front'?'z':'y']);
+    assert.equal(end.history,start.history+1);
+    if(zoom===3)await capture('map-'+plane+'-zoom-pan');
+    await page.evaluate(()=>undo());
+    assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),originalFrames,'Undo restores zoomed/panned point edit');
+   }
+  }
+  await page.select('[data-camera-map-plane]','top');
+  await page.click('[data-camera-map-zoom="0"]');
+  await page.focus('[data-camera-map]');
+  await page.$eval('[data-camera-map]',n=>n.scrollIntoView({block:'center'}));
+  const wheelHit=await page.$eval('[data-camera-map]',n=>{const r=n.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2};});
+  await page.mouse.move(wheelHit.x,wheelHit.y);
+  await page.keyboard.down('Control');await page.mouse.wheel({deltaY:-100});await page.keyboard.up('Control');
+  await page.waitForFunction(()=>document.querySelector('[data-camera-map-zoom-label]')?.textContent==='125%');
+  assert.equal(await page.$eval('[data-camera-map-zoom-label]',n=>n.textContent),'125%');
+  await page.keyboard.down('Meta');await page.mouse.wheel({deltaY:-100});await page.keyboard.up('Meta');
+  await page.waitForFunction(()=>document.querySelector('[data-camera-map-zoom-label]')?.textContent==='150%');
+  assert.equal(await page.$eval('[data-camera-map-zoom-label]',n=>n.textContent),'150%');
+  const origin=()=>page.$eval('[data-camera-map]',n=>({x:+n.dataset.originX,y:+n.dataset.originAxis}));
+  const beforePan=await origin();
+  await page.focus('[data-camera-map]');await page.keyboard.down('Alt');await page.keyboard.press('ArrowRight');await page.keyboard.up('Alt');
+  assert.ok((await origin()).x>beforePan.x,'Alt+Right pans the enlarged map');
+  await page.click('[data-camera-map-pan="center"]');
+  assert.deepEqual(await origin(),beforePan,'Center returns to selected camera');
+  for(const cancel of [true,false]){
+   await page.$eval('[data-camera-map]',n=>n.scrollIntoView({block:'center'}));
+   const rect=await page.$eval('[data-camera-map]',n=>{const r=n.getBoundingClientRect();return{x:r.left+10,y:r.top+10};});
+   const before=await origin();
+   await page.keyboard.down('Shift');await page.mouse.move(rect.x,rect.y);await page.mouse.down();await page.mouse.move(rect.x+30,rect.y+20,{steps:3});
+   if(cancel)await page.keyboard.press('Escape');
+   await page.mouse.up();await page.keyboard.up('Shift');
+   if(cancel)assert.deepEqual(await origin(),before,'Escape cancels map pan');
+   else assert.ok((await origin()).x<before.x,'Shift+background drag pans map');
+  }
+  const middle=await page.$eval('[data-camera-map]',n=>{const r=n.getBoundingClientRect();return{x:r.left+10,y:r.top+10};});
+  const beforeMiddle=await origin();
+  await page.mouse.move(middle.x,middle.y);await page.mouse.down({button:'middle'});await page.mouse.move(middle.x+20,middle.y,{steps:3});await page.mouse.up({button:'middle'});
+  assert.ok((await origin()).x<beforeMiddle.x,'Middle-button drag pans map');
+  await page.focus('[data-camera-map]');await page.keyboard.press('Home');
+  assert.equal(await page.$eval('[data-camera-map-zoom-label]',n=>n.textContent),'100%');
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await page.$eval('[data-camera-map-point]',n=>+n.dataset.cameraMapPoint),100);
+  await page.keyboard.press('ArrowLeft');
+  assert.equal(await page.$eval('[data-camera-map-point]',n=>+n.dataset.cameraMapPoint),50);
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),originalFrames,'Map shortcuts leave authored coordinates untouched');
+  console.log('Camera browser: both planes, every zoom level, pan + drag coordinate parity and undo OK');
   const curveBefore=await page.$eval('[data-camera-map-path]',n=>n.getAttribute('points'));
   await page.$eval('[data-camera-map]',n=>n.scrollIntoView({block:'center',inline:'nearest'}));
   const insertHit=await page.evaluate(()=>{
@@ -99,14 +173,21 @@ export async function runCameraBrowserSmoke(page){
   assert.notEqual(await page.$eval('[data-camera-map-path]',n=>n.getAttribute('points')),vectorPathBefore,'Numeric free-handle X vector must redraw the X/Z map curve');
   await page.$eval('[data-camera-handle-vector][data-camera-handle-side="out"][data-camera-handle-axis="x"]',(n,v)=>{n.value=String(v);n.dispatchEvent(new Event('change',{bubbles:true}));},vectorUi.x);
   await page.waitForFunction(v=>sec().sdCameraFrames.find(k=>k.at===50)?.curveOutDX===v,{},vectorUi.x);
+  await page.click('[data-camera-map-zoom="1"]');
+  await page.click('[data-camera-map-pan="right"]');
   await page.$eval('[data-camera-tension-handle][data-camera-tension-side="out"]',n=>n.scrollIntoView({block:'center'}));
   const freeDragStart=await page.evaluate(()=>{const h=document.querySelector('[data-camera-tension-handle][data-camera-tension-side="out"]').getBoundingClientRect();return{x:h.left+h.width/2,y:h.top+h.height/2,history:history.length,path:document.querySelector('[data-camera-map-path]').getAttribute('points')};});
   await page.mouse.move(freeDragStart.x,freeDragStart.y);await page.mouse.down();await page.mouse.move(freeDragStart.x,freeDragStart.y+35,{steps:5});await page.mouse.up();
+  await capture('map-complex-free-curve');
   const freeDragEnd=await page.evaluate(()=>({frame:sec().sdCameraFrames.find(k=>k.at===50),history:history.length,path:document.querySelector('[data-camera-map-path]').getAttribute('points'),pose:NAGWEB_SCROLL_CAMERA.pose(NAGWEB_SCROLL_CAMERA.config(sec()),.75,NAGWEB_STORY_MODEL,sec().sdEase,false)}));
   assert.equal(freeDragEnd.frame.curveOutFree,true);assert.ok(Math.abs(freeDragEnd.frame.curveOutDZ)>10,'Top-view free drag should bend the handle in Z');
   assert.notEqual(freeDragEnd.path,freeDragStart.path);assert.equal(freeDragEnd.history,freeDragStart.history+1);
   assert.equal(+await page.$eval('[data-camera-handle-vector][data-camera-handle-side="out"][data-camera-handle-axis="z"]',n=>n.value),freeDragEnd.frame.curveOutDZ,'Mouse drag and numeric free-handle vector must stay synchronized');
   assert.ok(Math.hypot(freeDragEnd.pose.x-freeBefore.x,freeDragEnd.pose.y-freeBefore.y,freeDragEnd.pose.z-freeBefore.z)>1,'Free direction must change spatial path');
+  await page.evaluate(()=>undo());
+  assert.equal(await page.$eval('[data-camera-map-path]',n=>n.getAttribute('points')),freeDragStart.path,'Undo restores curve after zoomed/panned free-handle edit');
+  await page.evaluate(()=>redo());
+  assert.deepEqual(await page.evaluate(()=>sec().sdCameraFrames.find(k=>k.at===50)),freeDragEnd.frame,'Redo restores edited free handle');
   await page.evaluate(()=>{const html=generateSite(flattenPage(page()),false,false,false),f=document.createElement('iframe');f.id='camera-free-export';f.style.cssText='width:1000px;height:600px;border:0';f.srcdoc=html;document.body.append(f);});
   await page.waitForFunction(()=>document.querySelector('#camera-free-export')?.contentWindow?.__NAG_SCROLL_DIRECTOR?.['camera-browser-scene']);
   const freeExportError=await page.evaluate(expected=>{
@@ -117,6 +198,7 @@ export async function runCameraBrowserSmoke(page){
   },freeDragEnd.pose);
   assert.ok(freeExportError<.001,'Free Bezier handle must serialize into exported runtime');
   await page.$eval('#camera-free-export',n=>n.remove());
+  await page.click('[data-camera-map-zoom="0"]');
   await page.select('[data-camera-handle-mode][data-camera-handle-side="out"]','auto');
   await page.waitForFunction(()=>!sec().sdCameraFrames.find(k=>k.at===50)?.curveOutFree&&document.querySelector('[data-camera-tension-handle][data-camera-tension-side="out"]')?.dataset.cameraHandleFree==='false');
   const incomingStart=await page.evaluate(()=>{
@@ -497,6 +579,8 @@ export async function runCameraBrowserSmoke(page){
   await page.select('[data-camera-look-target]','camera-target-el');
   await page.waitForFunction(()=>sec().sdCameraLookFrames.every(k=>k.targetId==='camera-target-el'));
 
+  await page.select('[data-camera-map-plane]','top');
+  await capture('map-look-target-fov');
   const targetUi=await page.evaluate(()=>({
    bound:sec().sdCameraLookFrames.map(k=>k.targetId),
    xyzFields:document.querySelectorAll('[data-camera-look-field="x"],[data-camera-look-field="y"],[data-camera-look-field="z"]').length,
@@ -563,16 +647,16 @@ export async function runCameraBrowserSmoke(page){
   assert.ok(targetMobile.error<.001,'Element target responsive matrix mismatch: '+JSON.stringify(targetMobile));
   assert.ok(Math.abs(targetMobile.yaw-targetRuntime.midYaw)<.001,'Responsive camera should preserve look direction in reference coordinates');
 
-  fs.mkdirSync('/tmp/nagweb-camera-visuals',{recursive:true});
-  await page.screenshot({path:'/tmp/nagweb-camera-visuals/camera-editor.png',fullPage:true});
+  fs.mkdirSync(visuals,{recursive:true});
+  await page.screenshot({path:visuals+'/camera-editor.png',fullPage:true});
   const exportElement=await page.$('#camera-browser-export');
-  await exportElement.screenshot({path:'/tmp/nagweb-camera-visuals/camera-export-mobile.png'});
+  await exportElement.screenshot({path:visuals+'/camera-export-mobile.png'});
   await page.$eval('#camera-browser-export',n=>{n.style.width='1000px';});
   await page.evaluate(()=>document.querySelector('#camera-browser-export').contentWindow.dispatchEvent(new Event('resize')));
   await new Promise(r=>setTimeout(r,80));
-  await exportElement.screenshot({path:'/tmp/nagweb-camera-visuals/camera-export.png'});
-  const lookExport=await page.$('#camera-look-export');await lookExport.screenshot({path:'/tmp/nagweb-camera-visuals/camera-lookat.png'});
-  const targetExport=await page.$('#camera-target-export');await targetExport.screenshot({path:'/tmp/nagweb-camera-visuals/camera-target-element.png'});
+  await exportElement.screenshot({path:visuals+'/camera-export.png'});
+  const lookExport=await page.$('#camera-look-export');await lookExport.screenshot({path:visuals+'/camera-lookat.png'});
+  const targetExport=await page.$('#camera-target-export');await targetExport.screenshot({path:visuals+'/camera-target-element.png'});
   console.log('Camera browser: mapa real, teclado, runtime exportado, resize mobile, look-at independiente, objetivo por elemento, stack absoluto, perspectiva 2.5D y puente de anclas 3D OK');
  }finally{
   await page.evaluate(previous=>{
