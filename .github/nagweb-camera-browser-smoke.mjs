@@ -311,6 +311,41 @@ export async function runCameraBrowserSmoke(page){
   assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'Filtering and event selection must not create history entries');
   console.log('Camera minimap filters: camera/look, event types, selected highlight, filtered navigation and no edits OK');
 
+  // 3D path statistics: integrated route length, scroll-normalized average pace and interval changes.
+  assert.ok(await page.$('[data-camera-overview-metrics]'),'Spatial metrics disclosure is available with minimap');
+  await page.click('[data-camera-overview-metrics] summary');
+  assert.equal(await page.$eval('[data-camera-overview-metrics]',n=>n.open),true,'Diagnostics disclosure opens');
+  const metricAt=async(value)=>{
+   await page.evaluate(v=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',v/100),value);
+   await page.waitForFunction(v=>document.querySelector('[data-camera-overview-progress]')?.textContent===v+'%',{},value);
+   return page.evaluate(()=>{
+    const camera=document.querySelector('[data-camera-overview-metric-camera]')?.textContent||'';
+    const look=document.querySelector('[data-camera-overview-metric-look]')?.textContent||'';
+    const total=document.querySelector('[data-camera-overview-metric-total]')?.textContent||'';
+    return {camera,look,total};
+   });
+  };
+  const metric10=await metricAt(10);
+  assert.ok(metric10.camera.includes('◆ 0–20%')&&metric10.camera.includes('5,0 px/%'),'First camera interval reports 100 px across 20% progress');
+  assert.ok(metric10.look.includes('● 0–20%')&&metric10.look.includes('5,0 px/%'),'Look path is measured independently in 3D');
+  assert.ok(metric10.total.includes('◆ 350,0 px')&&metric10.total.includes('● 350,0 px'),'Total 3D route length uses all intervals');
+  const metric30=await metricAt(30);
+  assert.ok(metric30.camera.includes('◆ 20–40%')&&metric30.camera.includes('0,0 px · 0,0 px/%')&&metric30.camera.includes('↓ 5,0 px/%'),'A hold has zero pace and reports slowdown');
+  const metric50=await metricAt(50);
+  assert.ok(metric50.camera.includes('◆ 40–60%')&&metric50.camera.includes('↑ 5,0 px/%'),'Motion resumed after hold reports increase');
+  const metric90=await metricAt(90);
+  assert.ok(metric90.camera.includes('◆ 80–100%')&&metric90.camera.includes('2,5 px/%')&&metric90.camera.includes('↓ 2,5 px/%'),'Final interval shows slower pace than previous');
+  await page.select('[data-camera-map-plane]','front');
+  assert.equal(await page.$eval('[data-camera-overview-metrics]',n=>n.open),true,'Expanded 3D diagnostic is retained across plane switches');
+  assert.ok((await page.$eval('[data-camera-overview-metric-camera]',n=>n.textContent)).includes('◆ 80–100%'),'Metrics are preserved in front view');
+  await page.select('[data-camera-map-plane]','top');
+  assert.equal(await page.$eval('[data-camera-overview-metrics]',n=>n.open),true,'Disclosed diagnostics survive top/front toggles');
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),motionNavigationInitial.frames,'3D metrics must not mutate authored camera frames');
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraLookFrames)),motionNavigationInitial.looks,'3D metrics must not mutate authored look frames');
+  assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'3D diagnostics must not add undo history entries');
+  console.log('Camera minimap 3D path metrics: arc length, zero-speed hold, pace deltas, live scrub and view persistence OK');
+
+
 
   await page.select('[data-camera-map-plane]','front');
   assert.equal(await page.$$eval('[data-camera-overview-event-kind]',nodes=>nodes.length),6,'Motion analysis uses XYZ, not the current 2D projection');
