@@ -43,7 +43,9 @@ import './nagweb-orbit-carousel-model-test.mjs';
 import './nagweb-column-drift-model-test.mjs';
 import './nagweb-spotlight-model-test.mjs';
 import './nagweb-sphere-model-test.mjs';
-if(process.env.NAGWEB_SMOKE_SUITE==='sphere-wall')await import('./nagweb-sphere-renderer-test.mjs');
+import './nagweb-sphere-cascade-model-test.mjs';
+import {runMotionSphereCascadeSmoke} from './nagweb-motion-sphere-cascade-smoke.mjs';
+if(['sphere-wall','sphere-cascade'].includes(process.env.NAGWEB_SMOKE_SUITE))await import('./nagweb-sphere-renderer-test.mjs');
 import {runMotionSphereSmoke} from './nagweb-motion-sphere-smoke.mjs';
 import './nagweb-focus-slider-model-test.mjs';
 import {runMotionFocusSliderSmoke} from './nagweb-motion-focus-slider-smoke.mjs';
@@ -127,7 +129,7 @@ import {runMotionIsoOrbitSmoke} from './nagweb-motion-iso-orbit-smoke.mjs';
 import {runMotionBatchImagesSmoke} from './nagweb-motion-batch-images-smoke.mjs';
 
 const suite=process.env.NAGWEB_SMOKE_SUITE||'all';
-if(!['all','procedural','editor','diagonal','grid','zoom','drop','shift','spiral','film','totem','peel','burst','photo','wheel','spin','bottom','cover','cover-vertical','ring','ring-vertical','trail','dance','deck','showcase','split','wipe','stripe','mosaic','hero','flip','orbit-carousel','column-drift','spotlight','focus-orbit','focus-slider','sphere-wall'].includes(suite))throw new Error('Unknown NagWeb smoke suite: '+suite);
+if(!['all','procedural','editor','diagonal','grid','zoom','drop','shift','spiral','film','totem','peel','burst','photo','wheel','spin','bottom','cover','cover-vertical','ring','ring-vertical','trail','dance','deck','showcase','split','wipe','stripe','mosaic','hero','flip','orbit-carousel','column-drift','spotlight','focus-orbit','focus-slider','sphere-wall','sphere-cascade'].includes(suite))throw new Error('Unknown NagWeb smoke suite: '+suite);
 
 const feedbackSource=fs.readFileSync(new URL('../js/nagweb-feedback-v16.js',import.meta.url),'utf8');
 const directorSource=fs.readFileSync(new URL('../js/nagweb-scroll-director-v16.js',import.meta.url),'utf8');
@@ -385,6 +387,7 @@ if(suite==='all'||suite==='orbit-carousel'){await runMotionOrbitCarouselSmoke(pa
 if(suite==='all'||suite==='column-drift'){await runMotionColumnDriftSmoke(page);await runMotionStreamPlacementSmoke(page,'column-drift');await runMotionBatchImagesSmoke(page,['column-drift']);}
 if(suite==='all'||suite==='spotlight'){await runMotionSpotlightSmoke(page);await runMotionStreamPlacementSmoke(page,'spotlight-zoom');await runMotionBatchImagesSmoke(page,['spotlight-zoom']);}
 if(suite==='all'||suite==='sphere-wall'){await runMotionSphereSmoke(page);await runMotionStreamPlacementSmoke(page,'sphere-wall');await runMotionBatchImagesSmoke(page,['sphere-wall']);}
+if(suite==='all'||suite==='sphere-cascade'){await runMotionSphereCascadeSmoke(page);await runMotionStreamPlacementSmoke(page,'sphere-cascade');await runMotionBatchImagesSmoke(page,['sphere-cascade']);}
 if(suite==='all'||suite==='focus-slider'){await runMotionFocusSliderSmoke(page);await runMotionStreamPlacementSmoke(page,'focus-slider');await runMotionBatchImagesSmoke(page,['focus-slider']);}
 if(suite==='all'||suite==='focus-orbit'){await runMotionFocusOrbitSmoke(page);await runMotionStreamPlacementSmoke(page,'focus-orbit');await runMotionBatchImagesSmoke(page,['focus-orbit']);}
 
