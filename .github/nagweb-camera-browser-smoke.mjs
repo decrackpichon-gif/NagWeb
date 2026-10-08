@@ -152,6 +152,46 @@ export async function runCameraBrowserSmoke(page){
   await page.mouse.up();
   assert.deepEqual(await miniOrigin(),miniAbortStart,'Escape cancels minimap drag');
   assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),originalFrames,'Minimap interactions cannot mutate camera frames');
+
+  // Marker click selects a keyframe, while ordinary click/drag continues to navigate the minimap.
+  const miniMarkerCenter=(kind,at)=>page.$eval('[data-camera-overview-'+kind+'-marker="'+at+'"]',n=>{n.scrollIntoView({block:'center'});const r=n.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};});
+  const miniMarker100=await miniMarkerCenter('camera',100);
+  await page.mouse.click(miniMarker100.x,miniMarker100.y);
+  assert.equal(await page.$eval('[data-camera-map-point]',n=>+n.dataset.cameraMapPoint),100,'Clicking a camera diamond selects its keyframe');
+  const miniMarker0=await miniMarkerCenter('camera',0);
+  await page.mouse.click(miniMarker0.x,miniMarker0.y);
+  assert.equal(await page.$eval('[data-camera-map-point]',n=>+n.dataset.cameraMapPoint),0,'Camera marker selection works for another keyframe');
+  // Temporarily put two camera keys and one look key on the same X/Z coordinate.
+  const miniOriginalLook=await page.evaluate(()=>({orientation:sec().sdCameraOrientationMode,mode:sec().sdCameraLookPathMode,frames:JSON.stringify(sec().sdCameraLookFrames||[])}));
+  await page.evaluate(()=>{
+   const scene=sec(),zero=scene.sdCameraFrames.find(f=>f.at===0),middle=scene.sdCameraFrames.find(f=>f.at===50);
+   middle.x=zero.x;middle.z=zero.z;
+   scene.sdCameraOrientationMode='lookAt';
+   scene.sdCameraLookPathMode='linear';
+   scene.sdCameraLookFrames=[{at:20,x:zero.x,y:0,z:zero.z,ease:'linear'},{at:100,x:300,y:0,z:300,ease:'linear'}];
+   renderPane();
+  });
+  await page.waitForFunction(()=>document.querySelector('[data-camera-overview-look-marker="20"]')&&document.querySelector('[data-camera-overview-overlaps] [data-camera-overlap-count="3"]'));
+  const miniBlankRect=await miniBox();
+  await page.mouse.click(miniBlankRect.left+miniBlankRect.width*.97,miniBlankRect.top+miniBlankRect.height*.03);
+  const miniSamePoint=await miniMarkerCenter('camera',0);
+  const miniSequence=[];
+  for(let i=0;i<4;i++){
+   await page.mouse.click(miniSamePoint.x,miniSamePoint.y);
+   miniSequence.push(await page.evaluate(()=>({camera:+document.querySelector('[data-camera-map-point]').dataset.cameraMapPoint,look:+document.querySelector('[data-camera-look-map-point]').dataset.cameraLookMapPoint,seek:+document.querySelector('[data-camera-seek]').value})));
+  }
+  assert.deepEqual(miniSequence.map(v=>v.camera),[0,50,50,0],'Repeated minimap clicks cycle all overlapping camera and look markers');
+  assert.ok(Math.abs(miniSequence[2].seek-20)<.5,'Third overlapping click scrubs to the look target');
+  assert.equal(await page.$('[data-camera-overview-selected-look]')!==null,true,'Look target has a dedicated selection ring');
+  assert.equal(await page.$('[data-camera-overview-legend]')!==null,true,'Minimap shows an explicit camera/look legend');
+  await page.evaluate(saved=>{
+   const scene=sec();scene.sdCameraFrames=JSON.parse(saved.camera);
+   scene.sdCameraOrientationMode=saved.orientation;scene.sdCameraLookPathMode=saved.mode;scene.sdCameraLookFrames=JSON.parse(saved.frames);
+   renderPane();
+  },{camera:originalFrames,...miniOriginalLook});
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),originalFrames,'Overlapping test restores original camera frames');
+  console.log('Camera minimap markers: camera/target glyphs, direct keyframe selection, three-way overlap cycling and restore OK');
+
   await page.click('[data-camera-map-zoom="0"]');
   await page.click('[data-camera-overview-toggle]');
   assert.equal(await page.$('[data-camera-overview]'),null,'Hiding minimap restores working area');

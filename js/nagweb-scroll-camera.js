@@ -268,7 +268,7 @@ function createCamera(){
 }
 window.NAGWEB_CREATE_SCROLL_CAMERA=createCamera;
 window.NAGWEB_SCROLL_CAMERA=createCamera();
-var presetChoices=Object.create(null),holdDurations=Object.create(null),mapOpen=Object.create(null),mapPlanes=Object.create(null),mapFovVisible=Object.create(null),mapZoom=Object.create(null),mapPan=Object.create(null),mapWheelCarry=Object.create(null),mapOverviewVisible=Object.create(null),mapPickHistory=Object.create(null),suppressedClick=null,selected=Object.create(null),lookSelected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
+var presetChoices=Object.create(null),holdDurations=Object.create(null),mapOpen=Object.create(null),mapPlanes=Object.create(null),mapFovVisible=Object.create(null),mapZoom=Object.create(null),mapPan=Object.create(null),mapWheelCarry=Object.create(null),mapOverviewVisible=Object.create(null),mapOverviewPickHistory=Object.create(null),mapPickHistory=Object.create(null),suppressedClick=null,selected=Object.create(null),lookSelected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
 function safeLabel(v){return String(v==null?'':v).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,42).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];});}
 function targetLabel(e){var label=safeLabel(e&&((e.name||e.text||e.label)||e.type));return label||'Elemento';}
 function keys(s){return C.frames(C.config(s),s.sdEase);}
@@ -487,10 +487,14 @@ function mapOverviewSvg(cameraKeys,lookKeys,cameraPath,lookPath,selectedCamera,s
  out+='<path d="M50 0V100M0 50H100" stroke="currentColor" opacity=".14" stroke-width=".55"/>';
  out+='<polyline data-camera-overview-path points="'+points(cameraPath)+'" fill="none" stroke="currentColor" stroke-width="1.1" opacity=".75"/>';
  if(lookPath&&lookPath.length)out+='<polyline data-camera-overview-look-path points="'+points(lookPath)+'" fill="none" stroke="var(--accent)" stroke-width="1" stroke-dasharray="2 2" opacity=".75"/>';
- (cameraKeys||[]).forEach(function(f){var p=C.mapPoint(f,overview);out+='<circle cx="'+p.x+'" cy="'+p.y+'" r="1.8" fill="currentColor" opacity=".85"/>';});
- (lookKeys||[]).forEach(function(f){var p=C.mapPoint(f,overview);out+='<circle cx="'+p.x+'" cy="'+p.y+'" r="1.5" fill="var(--accent)"/>';});
- if(selectedCamera){var cp=C.mapPoint(selectedCamera,overview);out+='<circle cx="'+cp.x+'" cy="'+cp.y+'" r="3.1" fill="none" stroke="currentColor" stroke-width=".9"/>';}
- if(selectedLook){var lp=C.mapPoint(selectedLook,overview);out+='<circle cx="'+lp.x+'" cy="'+lp.y+'" r="3.2" fill="none" stroke="var(--accent)" stroke-dasharray="1.8 1" stroke-width=".85"/>';}
+ (cameraKeys||[]).forEach(function(f){
+  var p=C.mapPoint(f,overview),r=2.5;
+  out+='<g data-camera-overview-camera-marker="'+(+f.at||0)+'"><title>◆ Encuadre '+(+f.at||0)+'%</title><polygon points="'+p.x+','+(p.y-r)+' '+(p.x+r)+','+p.y+' '+p.x+','+(p.y+r)+' '+(p.x-r)+','+p.y+'" fill="currentColor" opacity=".9"/></g>';
+ });
+ (lookKeys||[]).forEach(function(f){var p=C.mapPoint(f,overview);out+='<g data-camera-overview-look-marker="'+(+f.at||0)+'"><title>● Objetivo '+(+f.at||0)+'%</title><circle cx="'+p.x+'" cy="'+p.y+'" r="2.2" fill="var(--accent)" stroke="currentColor" stroke-width=".3"/></g>';});
+ if(selectedCamera){var cp=C.mapPoint(selectedCamera,overview),r=4;out+='<polygon data-camera-overview-selected-camera points="'+cp.x+','+(cp.y-r)+' '+(cp.x+r)+','+cp.y+' '+cp.x+','+(cp.y+r)+' '+(cp.x-r)+','+cp.y+'" fill="none" stroke="currentColor" stroke-width=".9"/>';}
+ if(selectedLook){var lp=C.mapPoint(selectedLook,overview);out+='<circle data-camera-overview-selected-look cx="'+lp.x+'" cy="'+lp.y+'" r="3.6" fill="none" stroke="var(--accent)" stroke-dasharray="1.8 1" stroke-width=".85"/>';}
+ out+='<g data-camera-overview-overlaps>'+mapOverlapBadges(cameraKeys,lookKeys,overview)+'</g>';
  if(now){var np=C.mapPoint(now,overview);out+='<circle data-camera-overview-current cx="'+np.x+'" cy="'+np.y+'" r="1.9" fill="var(--accent)" stroke="currentColor" stroke-width=".5"/>';}
  out+='<rect data-camera-overview-viewport x="'+view.x+'" y="'+view.y+'" width="'+view.width+'" height="'+view.height+'" fill="var(--accent)" fill-opacity=".13" stroke="var(--accent)" stroke-width=".9" pointer-events="none"/>';
  return out+'</svg>';
@@ -512,10 +516,30 @@ function mapOverviewPointerPoint(overview,ev,rect){
  if(!rect||rect.width<=0||rect.height<=0)return null;
  return {x:Math.max(0,Math.min(1,(ev.clientX-rect.left)/rect.width)),y:Math.max(0,Math.min(1,(ev.clientY-rect.top)/rect.height))};
 }
+function mapOverviewHits(cameraFrames,lookFrames,overview,point,width,height){
+ if(!point||!Number.isFinite(+width)||!Number.isFinite(+height)||+width<=0||+height<=0)return [];
+ var hits=[];
+ [['camera',cameraFrames||[]],['look',lookFrames||[]]].forEach(function(entry){
+  entry[1].forEach(function(frame){
+   var p=C.mapPoint(frame,overview),distance=Math.hypot((p.x-point.x*100)*width/100,(p.y-point.y*100)*height/100);
+   if(Number.isFinite(distance)&&distance<=9)hits.push({kind:entry[0],at:frame.at,d:distance});
+  });
+ });
+ return hits;
+}
+function mapOverviewSelect(s,overview,point,rect,x,y){
+ var cfg=C.config(s),look=cfg&&cfg.orientationMode==='lookAt'?resolvedLookKeys(s,cfg,lookKeys(s),previewReferenceSize(s)):[];
+ var hits=mapOverviewHits(keys(s),look,overview,point,rect.width,rect.height);
+ if(!hits.length){mapOverviewPickHistory[s.id]=null;return false;}
+ var picked=nextSpatialHit(hits,mapOverviewPickHistory[s.id],x,y);
+ mapOverviewPickHistory[s.id]={kind:picked.kind,at:picked.at,x:x,y:y};
+ if(picked.kind==='look')jumpLook(s,picked.at);else jump(s,picked.at);
+ return true;
+}
 function startMapOverviewDrag(ev,overview,s){
  var rect=overview.getBoundingClientRect(),spec=mapSpecFromNode(overview),point=mapOverviewPointerPoint(overview,ev,rect);
  if(!point||!C.config(s))return;
- var startPan=mapPan[s.id]||{x:0,y:0},startZoom=mapZoom[s.id]||1,done=false;
+ var startPan=mapPan[s.id]||{x:0,y:0},startZoom=mapZoom[s.id]||1,done=false,travel=0;
  var viewport=overview.querySelector('[data-camera-overview-viewport]'),world=mapOverviewWorldAt(spec,point.x,point.y);
  if(!world)return;
  var startCenter={x:world.x,y:world[spec.axis]};
@@ -525,6 +549,7 @@ function startMapOverviewDrag(ev,overview,s){
  overview.style.cursor='grabbing';
  function preview(e){
   if(e.pointerId!==ev.pointerId)return;
+  travel=Math.max(travel,Math.hypot(e.clientX-ev.clientX,e.clientY-ev.clientY));
   var p=mapOverviewPointerPoint(overview,e,rect);
   if(!p)return;
   point=p;
@@ -552,9 +577,10 @@ function startMapOverviewDrag(ev,overview,s){
    return;
   }
   if(e.clientX!=null)preview(e);
-  if(sec()===s&&mapOverviewJump(s,spec,point.x,point.y)){
-   var updated=pane.querySelector('[data-camera-overview]');if(updated)updated.focus({preventScroll:true});
-  }
+  if(sec()!==s)return;
+  var selectedMarker=travel<=5&&mapOverviewSelect(s,spec,point,rect,e.clientX,e.clientY);
+  if(!selectedMarker){if(travel>5)mapOverviewPickHistory[s.id]=null;mapOverviewJump(s,spec,point.x,point.y);}
+  var updated=pane.querySelector('[data-camera-overview]');if(updated)updated.focus({preventScroll:true});
  }
  function up(e){finish(e,false);}
  function abort(e){finish(e,true);}
@@ -767,13 +793,13 @@ function spatialMap(s,list,k){
  html+='</div>';
  if((mapOverviewVisible[s.id]===undefined?zoom>1:mapOverviewVisible[s.id])){
   var overview=C.mapSpec(list.concat(resolvedLooks,tangents,lookTangents,draw,lookDraw),plane);
-  html+='<div data-camera-overview tabindex="0" role="button" aria-label="Vista general del recorrido. Clic o arrastre para centrar la vista. Flechas para desplazar; Shift más flechas para ajustes finos. Inicio o Enter para recentrar." data-plane="'+plane+'" data-range="'+overview.range+'" data-origin-x="0" data-origin-axis="0" style="position:absolute;right:6px;bottom:6px;width:28%;max-width:168px;min-width:92px;aspect-ratio:1.5;border:1px solid var(--accent);border-radius:5px;background:var(--bg,#1c1e23);box-shadow:0 1px 8px #0005;z-index:25;cursor:crosshair;touch-action:none;overflow:hidden">'+mapOverviewSvg(list,resolvedLooks,draw,lookDraw,k,resolvedLk,now,spec,overview)+'<span data-camera-overview-label style="position:absolute;left:3px;top:2px;pointer-events:none;font-size:9px;font-weight:600;color:var(--fg,currentColor);background:var(--bg,#1c1e23);padding:1px 3px;border-radius:3px">'+(plane==='front'?'X/Y':'X/Z')+' · '+Math.round(zoom*100)+'%</span></div>';
+  html+='<div data-camera-overview tabindex="0" role="button" aria-label="Vista general del recorrido. Clic en ◆ o ● para seleccionar un keyframe; repetí el clic para alternar puntos coincidentes. Arrastrá para desplazar la vista. Flechas para desplazar; Shift más flechas para ajustes finos. Inicio o Enter para recentrar." data-plane="'+plane+'" data-range="'+overview.range+'" data-origin-x="0" data-origin-axis="0" style="position:absolute;right:6px;bottom:6px;width:28%;max-width:168px;min-width:92px;aspect-ratio:1.5;border:1px solid var(--accent);border-radius:5px;background:var(--bg,#1c1e23);box-shadow:0 1px 8px #0005;z-index:25;cursor:crosshair;touch-action:none;overflow:hidden">'+mapOverviewSvg(list,resolvedLooks,draw,lookDraw,k,resolvedLk,now,spec,overview)+'<span data-camera-overview-label style="position:absolute;left:3px;top:2px;pointer-events:none;font-size:9px;font-weight:600;color:var(--fg,currentColor);background:var(--bg,#1c1e23);padding:1px 3px;border-radius:3px">'+(plane==='front'?'X/Y':'X/Z')+' · '+Math.round(zoom*100)+'%</span><span data-camera-overview-legend style="position:absolute;left:3px;bottom:2px;pointer-events:none;font-size:9px;color:var(--fg,currentColor);background:var(--bg,#1c1e23);padding:1px 3px;border-radius:3px">◆'+(resolvedLooks.length?' · ●':'')+'</span></div>';
  }
  html+='</div>';
  if(lookKeyPoint)html+='<p class="hint gh" data-camera-map-selection-label>◆ '+k.at+'% ↔ ● '+lk.at+'% · Distancia XYZ: '+Math.round(Math.hypot(k.x-resolvedLk.x,k.y-resolvedLk.y,k.z-resolvedLk.z))+' px. Guía comparativa, no vincula los recorridos.</p>';
  if(s.sdCameraResponsive)html+='<p class="hint gh">El mapa muestra el recorrido con el ancho de referencia.</p>';
  html+='<p class="hint gh" data-camera-position-label>'+mapLabel(current,progress(s))+'</p>';
- html+='<p class="hint gh">◆ encuadre seleccionado · ○ posición actual'+(tangentInPoint||tangentOutPoint?' · ◁ entrada / ▷ salida':'')+(cfg&&cfg.orientationMode==='lookAt'?' · ● objetivo seleccionado · línea punteada: recorrido de mirada'+(lookTangentInPoint||lookTangentOutPoint?' · ◁/▷ del ●: curva de mirada':''):'')+(cfg&&(cfg.pathMode==='smooth'||cfg.lookPathMode==='smooth')?' · Trazo destacado: tramo Bézier libre; trazo normal: Catmull-Rom':'')+' · Flecha: orientación de ◆. Área translúcida: campo de visión aproximado (se oculta de perfil). Número junto a un punto: marcadores superpuestos; clic repetido para alternarlos. Clic cerca de un punto: seleccionar · Doble clic línea normal: agregar ◆ · línea punteada: agregar ● · Arrastrá ◆ o ● · Arrastrá ◯: ajustar curva · Shift + arrastre: bloquear al eje dominante. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Zoom: − / +, Ctrl/⌘ + rueda o teclas +/− con foco en el mapa. Inicio restablece 100%. Alt + flechas desplaza al ampliar. Con zoom superior al 100% usá Desplazar, Centrar ◆ / Centrar ●, Shift + arrastrar el fondo o el botón central del mouse. La cuadrícula indica coordenadas reales; al cambiar de encuadre, la vista se recentra automáticamente. Vista general: miniatura del recorrido con el área visible; clic o arrastre para navegar, flechas para mover, Shift + flechas para precisión, Inicio para volver al ◆. Podés ocultarla. Escape cancela el desplazamiento. Con foco en el mapa: ←/→ cambia ◆; Shift + ←/→ cambia ●. Al enfocar un punto, flechas mueven 25 px (Shift: 100 px). Escape cancela. Escala: ±'+Math.round(spec.range)+' px.</p></details>';
+ html+='<p class="hint gh">◆ encuadre seleccionado · ○ posición actual'+(tangentInPoint||tangentOutPoint?' · ◁ entrada / ▷ salida':'')+(cfg&&cfg.orientationMode==='lookAt'?' · ● objetivo seleccionado · línea punteada: recorrido de mirada'+(lookTangentInPoint||lookTangentOutPoint?' · ◁/▷ del ●: curva de mirada':''):'')+(cfg&&(cfg.pathMode==='smooth'||cfg.lookPathMode==='smooth')?' · Trazo destacado: tramo Bézier libre; trazo normal: Catmull-Rom':'')+' · Flecha: orientación de ◆. Área translúcida: campo de visión aproximado (se oculta de perfil). Número junto a un punto: marcadores superpuestos; clic repetido para alternarlos. Clic cerca de un punto: seleccionar · Doble clic línea normal: agregar ◆ · línea punteada: agregar ● · Arrastrá ◆ o ● · Arrastrá ◯: ajustar curva · Shift + arrastre: bloquear al eje dominante. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Zoom: − / +, Ctrl/⌘ + rueda o teclas +/− con foco en el mapa. Inicio restablece 100%. Alt + flechas desplaza al ampliar. Con zoom superior al 100% usá Desplazar, Centrar ◆ / Centrar ●, Shift + arrastrar el fondo o el botón central del mouse. La cuadrícula indica coordenadas reales; al cambiar de encuadre, la vista se recentra automáticamente. Vista general: ◆ encuadres y ● objetivos, números en puntos superpuestos. Clic en un punto para seleccionarlo; repetí el clic para alternar coincidencias. Arrastrá el fondo para navegar, Shift + flechas para precisión, Inicio para volver al ◆. Podés ocultarla. Escape cancela el desplazamiento. Con foco en el mapa: ←/→ cambia ◆; Shift + ←/→ cambia ●. Al enfocar un punto, flechas mueven 25 px (Shift: 100 px). Escape cancela. Escala: ±'+Math.round(spec.range)+' px.</p></details>';
  return html;
 }
 C.panel=function(s){
