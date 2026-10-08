@@ -190,7 +190,48 @@ async function previewDoc(resource) {
   return null;
 }
 
+function updateApplyReadiness(resource) {
+  el.apply.disabled = true;
+
+  if (!resource?.id) {
+    el.applyStatus.textContent = "Recurso no disponible para insertar.";
+    return;
+  }
+
+  if (!resource.license?.verified) {
+    el.applyStatus.textContent = "No se puede insertar: la licencia todavía no está verificada.";
+    return;
+  }
+
+  try {
+    buildResourceApplyEnvelope(resource, { requestId: "nagweb-apply-readiness" });
+  } catch (error) {
+    el.applyStatus.textContent =
+      /no NagWeb insert adapter/.test(error?.message || "")
+        ? "Este recurso todavía no tiene un adaptador de inserción compatible con NagWeb."
+        : "No se puede preparar este recurso para insertarlo.";
+    return;
+  }
+
+  if (!applyTarget) {
+    el.applyStatus.textContent =
+      "Modo exploración: abrí la biblioteca desde NagWeb para insertar este recurso.";
+    return;
+  }
+
+  if (pendingApplyId) {
+    el.applyStatus.textContent = "Esperando confirmación del editor…";
+    return;
+  }
+
+  el.apply.disabled = false;
+  el.applyStatus.textContent = "Recurso listo para aplicar en el editor conectado.";
+}
+
 async function openDetail(id) {
+  selectedResource = null;
+  el.apply.disabled = true;
+  el.applyStatus.textContent = "Comprobando si el recurso se puede insertar…";
   el.detail.showModal();
   el.detailTitle.textContent = "Cargando recurso…";
   el.detailId.textContent = id;
@@ -200,7 +241,7 @@ async function openDetail(id) {
 
   const resource = await vault.getResource(id);
   selectedResource = resource;
-  el.apply.disabled = !applyTarget || !resource;
+  updateApplyReadiness(resource);
 
   if (!resource) {
     el.detailTitle.textContent = "No encontré el recurso";
@@ -304,7 +345,7 @@ window.addEventListener("message", (event) => {
   clearTimeout(pendingApplyTimer);
   pendingApplyTimer = null;
   pendingApplyId = null;
-  el.apply.disabled = false;
+  updateApplyReadiness(selectedResource);
 
   if (event.data.status === "applied") {
     el.applyStatus.textContent =
@@ -337,7 +378,7 @@ el.apply.addEventListener("click", () => {
     pendingApplyTimer = setTimeout(() => {
       if (pendingApplyId !== id) return;
       pendingApplyId = null;
-      el.apply.disabled = false;
+      updateApplyReadiness(selectedResource);
       el.applyStatus.textContent =
         "El editor no confirmó la aplicación. No asumo que el recurso se haya insertado.";
     }, 8000);

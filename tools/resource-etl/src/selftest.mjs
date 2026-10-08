@@ -584,3 +584,19 @@ await applyHostListener(event);
 assert.equal(reply.payload.status, "applied");
 assert.equal(reply.payload.message, "Recurso insertado.");
 stopConfirmedHost();
+assert.throws(
+  () =>
+    buildResourceApplyEnvelope({
+      ...lucideResource,
+      license: { ...lucideResource.license, verified: false }
+    }),
+  /license is not verified/
+);
+assert.throws(
+  () =>
+    buildResourceApplyEnvelope({
+      ...lucideResource,
+      runtime: { renderer: "nagweb-unhandled-renderer" }
+    }),
+  /no NagWeb insert adapter/
+);
