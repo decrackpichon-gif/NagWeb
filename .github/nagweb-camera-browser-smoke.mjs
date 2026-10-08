@@ -564,6 +564,61 @@ export async function runCameraBrowserSmoke(page){
   assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'Preview switching never modifies undo history');
   console.log('Camera minimap compare preview: A/B toggle, status, exclusive rings, free scrub and same-point identity OK');
 
+  // Micro-etapa 35: compare actual camera poses, orientation arrows and look target at A/B segment centers.
+  const poseSnapshots=()=>page.evaluate(()=>{
+   const mini=document.querySelector('[data-camera-overview]'),sc=sec(),cfg=NAGWEB_SCROLL_CAMERA.config(sc);
+   const spec={range:+mini.dataset.range,axis:mini.dataset.plane==='front'?'y':'z',sign:mini.dataset.plane==='front'?1:-1,originX:+mini.dataset.originX||0,originAxis:+mini.dataset.originAxis||0};
+   const read=which=>{
+    const node=mini.querySelector('[data-camera-overview-pose="'+which+'"]');
+    const circle=node?.querySelector('[data-camera-overview-pose-camera]');
+    const arrow=node?.querySelector('[data-camera-overview-pose-heading]');
+    const target=node?.querySelector('[data-camera-overview-pose-look]');
+    return {at:+node?.dataset.cameraOverviewPoseAt,x:+circle?.getAttribute('cx'),y:+circle?.getAttribute('cy'),
+     heading:arrow?['x1','y1','x2','y2'].map(k=>+arrow.getAttribute(k)):[],
+     target:target?{x:+target.getAttribute('cx'),y:+target.getAttribute('cy')}:null,
+     expected:(()=>{const at=+node.dataset.cameraOverviewPoseAt;
+      const v=NAGWEB_SCROLL_CAMERA.pose(cfg,at/100,NAGWEB_STORY_MODEL,sc.sdEase,false);
+      return NAGWEB_SCROLL_CAMERA.mapPoint(v,spec);
+     })()};
+   };
+   const data=mini.querySelector('[data-camera-overview-compare-poses]');
+   return {a:read('a'),b:read('b'),label:document.querySelector('[data-camera-overview-snapshot-delta]')?.textContent,
+    detailCount:document.querySelectorAll('[data-camera-overview-snapshot-info]').length,
+    connector:!!mini.querySelector('[data-camera-overview-pose-distance]'),
+    pointerEvents:data?.getAttribute('pointer-events'),mode:sc.sdCameraOrientationMode};
+  });
+  let poseView=await poseSnapshots();
+  assert.equal(poseView.a.at,10,'A snapshot uses its interval midpoint');
+  assert.equal(poseView.b.at,30,'B snapshot uses its interval midpoint');
+  assert.equal(poseView.detailCount,2,'Both camera poses have independent numeric descriptions');
+  assert.equal(poseView.connector,true,'Minimap connects actual camera positions at A and B');
+  assert.equal(poseView.pointerEvents,'none','Snapshot markers do not intercept camera editing');
+  for(const snap of [poseView.a,poseView.b]){
+   assert.ok(Math.hypot(snap.x-snap.expected.x,snap.y-snap.expected.y)<.001,'Snapshot uses the camera pose evaluated by Director progress');
+   assert.ok(snap.heading.length===4&&snap.heading.every(Number.isFinite),'Snapshot orientation heading is finite');
+   assert.ok(snap.target&&Number.isFinite(snap.target.x)&&Number.isFinite(snap.target.y),'Look-at snapshot includes target marker');
+  }
+  assert.ok(poseView.label.includes('Desplazamiento XYZ entre encuadres')&&poseView.label.includes('Δ giro X'),'Snapshot comparison provides position and orientation differences');
+  await page.select('[data-camera-map-plane]','front');
+  poseView=await poseSnapshots();
+  assert.ok(Math.hypot(poseView.a.x-poseView.a.expected.x,poseView.a.y-poseView.a.expected.y)<.001,'Front projection of A matches actual camera position');
+  assert.ok(Math.hypot(poseView.b.x-poseView.b.expected.x,poseView.b.y-poseView.b.expected.y)<.001,'Front projection of B matches actual camera position');
+  await page.select('[data-camera-map-plane]','top');
+  const previousMode=await page.evaluate(()=>sec().sdCameraOrientationMode);
+  await page.evaluate(()=>{sec().sdCameraOrientationMode='manual';renderPane();});
+  poseView=await poseSnapshots();
+  assert.equal(poseView.a.target,null,'Manual orientation omits look-at target for A');
+  assert.equal(poseView.b.target,null,'Manual orientation omits look-at target for B');
+  assert.ok(poseView.a.heading.every(Number.isFinite)&&poseView.b.heading.every(Number.isFinite),'Manual mode still draws orientation headings');
+  await page.evaluate(mode=>{sec().sdCameraOrientationMode=mode;renderPane();},previousMode);
+  poseView=await poseSnapshots();
+  assert.ok(poseView.a.target&&poseView.b.target,'Look-at target markers return after restoring orientation mode');
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),motionNavigationInitial.frames,'A/B camera snapshots never modify camera frames');
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraLookFrames)),motionNavigationInitial.looks,'A/B camera snapshots never modify look frames');
+  assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'A/B snapshots do not add undo snapshots');
+  console.log('Camera minimap pose comparison: camera XYZ, orientations, lookAt/manual, top/front, no edits OK');
+
+
 
 
 
