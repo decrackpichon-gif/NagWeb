@@ -28,6 +28,7 @@ import {
   defaultEditableValues
 } from "./runtime/instance.mjs";
 import { buildInsertDescriptor } from "./runtime/insert-adapters.mjs";
+import { describeCssEditableControls } from "./runtime/editable-controls.mjs";
 import {
   NAGWEB_RESOURCE_APPLY_PROTOCOL,
   NAGWEB_RESOURCE_APPLY_RESULT_TYPE,
@@ -711,3 +712,32 @@ assert.deepEqual(defaultEditableValues(editableSpinKit), {
   size: 40,
   color: "#333333"
 });
+
+const generatedSpinKitControls = describeCssEditableControls(editableSpinKit);
+assert.deepEqual(generatedSpinKitControls.map((item) => [item.id, item.kind]), [
+  ["size", "range"],
+  ["color", "color"]
+]);
+assert.equal(generatedSpinKitControls[0].min, 8);
+assert.equal(generatedSpinKitControls[0].max, 240);
+assert.equal(generatedSpinKitControls[0].unit, "px");
+assert.equal(generatedSpinKitControls[1].defaultValue, "#333333");
+
+const extendedCssControls = describeCssEditableControls({
+  ...editableSpinKit,
+  editableProps: [
+    ...editableSpinKit.editableProps,
+    { id: "opacity", label: "Opacidad", valueType: "number", defaultValue: 0.5,
+      binding: { type: "css-variable", variable: "--sk-opacity" },
+      constraints: { min: 0, max: 1, step: 0.1 } },
+    { id: "invalid-color", valueType: "color", defaultValue: "javascript:alert(1)",
+      binding: { type: "css-variable", variable: "--sk-unsafe" } },
+    { id: "runtime-value", valueType: "number", defaultValue: 1,
+      binding: { type: "runtime", path: "speed" },
+      constraints: { min: 0, max: 2, step: 0.1 } }
+  ]
+});
+assert.deepEqual(extendedCssControls.map((item) => item.id), [
+  "size", "color", "opacity"
+]);
+assert.deepEqual(describeCssEditableControls(lucideResource), []);

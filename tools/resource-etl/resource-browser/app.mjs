@@ -2,6 +2,7 @@ import {
   createNagWebPersistentVaultClient
 } from "../src/runtime/persistent-vault-client.mjs";
 import { defaultEditableValues } from "../src/runtime/instance.mjs";
+import { describeCssEditableControls } from "../src/runtime/editable-controls.mjs";
 import {
   buildResourceApplyEnvelope,
   resolveResourceApplyTarget,
@@ -50,14 +51,8 @@ const el = {
   strokeWidthInput: document.querySelector("[data-icon-stroke-width]"),
   strokeWidthValue: document.querySelector("[data-icon-stroke-width-value]"),
   resetSvg: document.querySelector("[data-reset-svg]"),
-  cssColor: document.querySelector("[data-css-color]"),
-  cssColorInput: document.querySelector("[data-css-color-input]"),
-  cssColorValue: document.querySelector("[data-css-color-value]"),
-  cssColorLabel: document.querySelector("[data-css-color-label]"),
-  cssSize: document.querySelector("[data-css-size]"),
-  cssSizeInput: document.querySelector("[data-css-size-input]"),
-  cssSizeValue: document.querySelector("[data-css-size-value]"),
-  cssSizeLabel: document.querySelector("[data-css-size-label]"),
+  cssCustomize: document.querySelector("[data-css-customize]"),
+  cssControls: document.querySelector("[data-css-controls]"),
   resetCss: document.querySelector("[data-reset-css]"),
   apply: document.querySelector("[data-apply]"),
   applyStatus: document.querySelector("[data-apply-status]"),
@@ -317,48 +312,60 @@ function configureSvgColor(resource) {
   }
 }
 
-function configureCssColor(resource) {
-  if (resource.runtime?.renderer !== "nagweb-html-tailwind") return;
-  const prop = (resource.editableProps || []).find(
-    (entry) => entry.id === "color" &&
-      entry.valueType === "color" &&
-      entry.binding?.type === "css-variable" &&
-      /^--[a-z0-9-]+$/i.test(entry.binding.variable || "") &&
-      /^#[0-9a-f]{6}$/i.test(entry.defaultValue || "")
-  );
-  if (!prop) return;
+function renderCssControls(resource) {
+  el.cssControls.replaceChildren();
+  const controls = describeCssEditableControls(resource);
 
-  selectedValues.color = prop.defaultValue;
-  el.cssColorInput.value = prop.defaultValue;
-  el.cssColorValue.textContent = prop.defaultValue.toUpperCase();
-  el.cssColorLabel.textContent = prop.label || "Color";
-  el.cssColor.hidden = false;
+  for (const [index, control] of controls.entries()) {
+    selectedValues[control.id] = control.defaultValue;
+    const field = document.createElement("div");
+    const label = document.createElement("label");
+    const row = document.createElement("div");
+    const input = document.createElement("input");
+    const output = document.createElement("output");
 
-  const sizeProp = (resource.editableProps || []).find(
-    (entry) => entry.id === "size" &&
-      entry.valueType === "number" &&
-      entry.binding?.type === "css-variable" &&
-      /^--[a-z0-9-]+$/i.test(entry.binding.variable || "")
-  );
-  const size = sizeProp?.defaultValue;
-  const min = sizeProp?.constraints?.min;
-  const max = sizeProp?.constraints?.max;
-  const step = sizeProp?.constraints?.step;
-  if (
-    Number.isFinite(size) && Number.isFinite(min) &&
-    Number.isFinite(max) && Number.isFinite(step) &&
-    min > 0 && max >= min && step > 0 &&
-    size >= min && size <= max
-  ) {
-    selectedValues.size = size;
-    el.cssSizeInput.min = String(min);
-    el.cssSizeInput.max = String(max);
-    el.cssSizeInput.step = String(step);
-    el.cssSizeInput.value = String(size);
-    el.cssSizeValue.textContent = `${size}${sizeProp.constraints?.unit || ""}`;
-    el.cssSizeLabel.textContent = sizeProp.label || "Tamaño";
-    el.cssSize.hidden = false;
+    input.id = `css-control-${index}`;
+    label.htmlFor = input.id;
+    label.textContent = control.label;
+    output.htmlFor = input.id;
+
+    if (control.kind === "color") {
+      row.className = "color-row";
+      input.type = "color";
+      input.value = control.defaultValue;
+    } else {
+      row.className = "size-row";
+      input.type = "range";
+      input.min = String(control.min);
+      input.max = String(control.max);
+      input.step = String(control.step);
+      input.value = String(control.defaultValue);
+    }
+
+    const format = (value) => control.kind === "color"
+      ? value.toUpperCase()
+      : `${value}${control.unit}`;
+    output.textContent = format(control.defaultValue);
+
+    input.addEventListener("input", () => {
+      if (selectedResource !== resource || el.cssCustomize.hidden) return;
+      const value = control.kind === "color" ? input.value : Number(input.value);
+      if (control.kind === "color") {
+        if (!/^#[0-9a-f]{6}$/i.test(value)) return;
+      } else if (
+        !Number.isFinite(value) || value < control.min || value > control.max
+      ) return;
+
+      selectedValues[control.id] = value;
+      output.textContent = format(value);
+      redrawCssPreview();
+    });
+
+    row.append(input, output);
+    field.append(label, row);
+    el.cssControls.appendChild(field);
   }
+  el.cssCustomize.hidden = controls.length === 0;
 }
 
 async function openDetail(id) {
@@ -367,8 +374,8 @@ async function openDetail(id) {
   el.svgColor.hidden = true;
   el.svgSize.hidden = true;
   el.svgStrokeWidth.hidden = true;
-  el.cssColor.hidden = true;
-  el.cssSize.hidden = true;
+  el.cssCustomize.hidden = true;
+  el.cssControls.replaceChildren();
   el.apply.disabled = true;
   el.applyStatus.textContent = "Comprobando si el recurso se puede insertar…";
   el.detail.showModal();
@@ -382,7 +389,7 @@ async function openDetail(id) {
   selectedResource = resource;
   if (resource) {
     configureSvgColor(resource);
-    configureCssColor(resource);
+    renderCssControls(resource);
   }
   updateApplyReadiness(resource);
 
@@ -530,47 +537,23 @@ async function redrawSvgPreview() {
 
 async function redrawCssPreview() {
   const resource = selectedResource;
-  if (!resource || el.cssColor.hidden) return;
+  if (!resource || el.cssCustomize.hidden) return;
   const values = { ...selectedValues };
   const doc = await previewDoc(resource, values);
   if (
     doc && selectedResource === resource &&
-    selectedValues.color === values.color &&
-    selectedValues.size === values.size
+    Object.entries(values).every(([id, value]) => selectedValues[id] === value)
   ) {
     el.preview.srcdoc = doc;
   }
 }
 
-el.cssColorInput.addEventListener("input", () => {
-  if (!selectedResource || el.cssColor.hidden) return;
-  const color = el.cssColorInput.value;
-  if (!/^#[0-9a-f]{6}$/i.test(color)) return;
-  selectedValues.color = color;
-  el.cssColorValue.textContent = color.toUpperCase();
-  redrawCssPreview();
-});
-
-el.cssSizeInput.addEventListener("input", () => {
-  if (!selectedResource || el.cssSize.hidden) return;
-  const size = Number(el.cssSizeInput.value);
-  const min = Number(el.cssSizeInput.min);
-  const max = Number(el.cssSizeInput.max);
-  if (!Number.isFinite(size) || size < min || size > max) return;
-  selectedValues.size = size;
-  const prop = (selectedResource.editableProps || []).find(
-    (entry) => entry.id === "size" && entry.binding?.type === "css-variable"
-  );
-  el.cssSizeValue.textContent = `${size}${prop?.constraints?.unit || ""}`;
-  redrawCssPreview();
-});
-
 el.resetCss.addEventListener("click", () => {
-  if (!selectedResource || el.cssColor.hidden) return;
+  if (!selectedResource || el.cssCustomize.hidden) return;
 
   // Use the resource metadata so the reset tracks future default changes.
   selectedValues = defaultEditableValues(selectedResource);
-  configureCssColor(selectedResource);
+  renderCssControls(selectedResource);
   redrawCssPreview();
 });
 

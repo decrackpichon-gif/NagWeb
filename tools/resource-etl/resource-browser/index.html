@@ -130,20 +130,9 @@
           <button type="button" class="secondary reset-control" data-reset-svg>Restaurar valores originales</button>
         </div>
 
-        <div class="customize" data-css-color hidden>
+        <div class="customize" data-css-customize hidden>
           <strong>Personalizar componente CSS</strong>
-          <label for="css-color-input" data-css-color-label>Color</label>
-          <div class="color-row">
-            <input type="color" id="css-color-input" data-css-color-input value="#333333">
-            <output for="css-color-input" data-css-color-value>#333333</output>
-          </div>
-          <div data-css-size hidden>
-            <label for="css-size-input" data-css-size-label>Tamaño</label>
-            <div class="size-row">
-              <input type="range" id="css-size-input" data-css-size-input min="8" max="240" step="1" value="40">
-              <output for="css-size-input" data-css-size-value>40px</output>
-            </div>
-          </div>
+          <div data-css-controls></div>
           <p>Los ajustes se previsualizan y se conservan al insertar.</p>
           <button type="button" class="secondary reset-control" data-reset-css>Restaurar valores originales</button>
         </div>
