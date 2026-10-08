@@ -47,6 +47,24 @@ export function buildInsertDescriptor(resource, options = {}) {
     };
   }
 
+  if (renderer === "nagweb-css-inline-effect") {
+    const styleArtifact = selectArtifact(resource, instance, "stylesheet");
+    return {
+      version: "1.0",
+      kind: "css-inline-effect",
+      resourceId: resource.id,
+      instance,
+      payload: {
+        css: styleArtifact?.content || "",
+        effect: resource.runtime?.setup || null,
+        duration: instance.values.duration ?? 1,
+        delay: instance.values.delay ?? 0,
+        easing: instance.values.easing || "ease",
+        iterations: instance.values.iterations ?? 1
+      }
+    };
+  }
+
   if (renderer === "nagweb-css-class-effect") {
     const artifact = selectArtifact(resource, instance, "animation-data");
     return {

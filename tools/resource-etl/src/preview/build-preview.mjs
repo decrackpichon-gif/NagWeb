@@ -54,6 +54,48 @@ function cssEffectPreview(descriptor, title) {
 </head><body><div class="demo ${classNames.join(" ")}">${escapeHtml(title)}</div></body></html>`;
 }
 
+function inlineCssEffectPreview(descriptor, title) {
+  const effect = descriptor.payload.effect || {};
+  const safeCss = String(descriptor.payload.css || "")
+    .replace(/<\/style/gi, "<\\/style");
+  const classes = [effect.baseClass, effect.className]
+    .filter(Boolean)
+    .join(" ");
+  const duration = Number(descriptor.payload.duration || 1);
+  const delay = Number(descriptor.payload.delay || 0);
+  const easing = descriptor.payload.easing || "ease";
+  const iterations = Math.max(1, Number(descriptor.payload.iterations || 1));
+
+  return `<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<title>${escapeHtml(title)}</title>
+<style>${safeCss}
+html,body{height:100%;margin:0}
+body{display:grid;place-items:center;background:#f3f4f6;font-family:system-ui;perspective:1200px;overflow:hidden}
+.demo{width:210px;height:130px;border-radius:24px;background:white;box-shadow:0 24px 70px #0002;display:grid;place-items:center;font-weight:800;text-align:center;padding:18px;box-sizing:border-box;animation-duration:${duration}s;animation-delay:${delay}s;animation-timing-function:${easing};animation-iteration-count:${iterations}}
+</style>
+</head><body><div id="demo" class="demo">${escapeHtml(title)}</div>
+<script>
+const el=document.getElementById("demo");
+const classes=${JSON.stringify(classes.split(" ").filter(Boolean))};
+const duration=${Math.max(0.1, duration)};
+const delay=${Math.max(0, delay)};
+const iterations=${iterations};
+function play(){
+  el.classList.remove(...classes);
+  void el.offsetWidth;
+  el.classList.add(...classes);
+}
+el.addEventListener("animationend",()=>{
+  setTimeout(play,650);
+});
+setTimeout(play,120);
+setInterval(()=>{
+  if(!el.getAnimations().length) play();
+},Math.max(1800,(duration*iterations+delay)*1000+900));
+</script></body></html>`;
+}
+
 function motionPreview(descriptor, title) {
   const preset = descriptor.payload.preset || {};
   const payload = JSON.stringify(preset).replaceAll("<", "\\u003c");
@@ -97,6 +139,13 @@ export function buildStaticPreview(resource, options = {}) {
 
   if (descriptor.kind === "css-effect") {
     return { supported: true, html: cssEffectPreview(descriptor, resource.title) };
+  }
+
+  if (descriptor.kind === "css-inline-effect") {
+    return {
+      supported: true,
+      html: inlineCssEffectPreview(descriptor, resource.title)
+    };
   }
 
   if (descriptor.kind === "motion-preset") {

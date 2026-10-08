@@ -8,6 +8,7 @@ import { extractGlslNoise } from "./extractors/glsl-noise.mjs";
 import { extractMotionPrimitives } from "./extractors/motion-primitives.mjs";
 import { extractAnimXyzCore } from "./extractors/animxyz.mjs";
 import { extractCssShake } from "./extractors/csshake.mjs";
+import { extractMagicCssEffects } from "./extractors/magic-css.mjs";
 import { extractThreeCodeScenes } from "./extractors/threejs.mjs";
 import {
   transformLucideIcon,
@@ -20,6 +21,7 @@ import {
   transformAnimXyzPreset,
   transformCssShakeRuntime,
   transformCssShakeEffect,
+  transformMagicCssEffect,
   transformThreeCodeScene,
   transformUiverseComponent
 } from "./light-transformers.mjs";
@@ -52,7 +54,7 @@ function parseArgs(argv) {
 }
 
 function parseSources(value) {
-  return String(value || "lucide,shadcn,magicui,motion-primitives,animxyz,threejs,hyperui,uiverse,csshake,glsl-noise")
+  return String(value || "lucide,shadcn,magicui,motion-primitives,animxyz,threejs,hyperui,uiverse,csshake,magic-css,glsl-noise")
     .split(",")
     .map((source) => source.trim().toLowerCase())
     .filter(Boolean);
@@ -169,6 +171,17 @@ async function collectSource(source, args) {
         commit: raw.commit,
         item
       })
+    );
+  }
+
+  if (source === "magic-css" || source === "magiccss") {
+    assertFullMirrorAllowed("magic-css");
+    const raw = await extractMagicCssEffects({ limit, all });
+    console.log(
+      `[magic-css] ${raw.items.length}/${raw.totalAvailable} autonomous effects selected.`
+    );
+    return raw.items.map((item) =>
+      transformMagicCssEffect({ raw, item })
     );
   }
 

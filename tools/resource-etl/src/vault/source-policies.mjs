@@ -15,6 +15,14 @@ export const SOURCE_POLICIES = {
     noticeRequired: true,
     notes: "Do not mirror for NagWeb without OEM commercial permission; the license explicitly calls out application builders/toolkits."
   },
+  "magic-css": {
+    mirrorMode: "full",
+    licenseId: "MIT",
+    licenseName: "MIT License",
+    licenseUrl: "https://github.com/miniMAC/magic/blob/master/LICENSE",
+    noticeRequired: true,
+    notes: "Magic.css effect source may be mirrored and reused. Preserve the MIT copyright and permission notice."
+  },
   csshake: {
     mirrorMode: "full",
     licenseId: "MIT",

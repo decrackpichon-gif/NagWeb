@@ -613,3 +613,27 @@ Un offset sólo es válido para el inventario exacto del que salió.
 Cuando se usa `--resume`, NagWeb compara el `sourceCommit` guardado en `uiverse-checkpoint.json` con el commit actual de Uiverse. Si son distintos, el lote se cancela antes de escribir recursos, no modifica el catálogo y no mueve el checkpoint.
 
 Esto evita huecos o duplicados si Uiverse agrega, elimina o reordena archivos entre dos sesiones de importación.
+
+
+## Magic.css · 65 efectos autónomos
+
+El Code Vault incorpora `miniMAC/magic` bajo licencia MIT.
+
+Se importan los 65 archivos de efectos SCSS como recursos independientes. Cada recurso conserva su CSS completo, incluyendo keyframes y la clase base `magictime`, por lo que no depende de CDN ni del repositorio original durante el uso.
+
+Familias disponibles:
+
+- bling;
+- boing;
+- bomb;
+- magic effects;
+- math;
+- on the space;
+- perspective;
+- rotate;
+- slide;
+- static effects;
+- static effects out;
+- tin.
+
+Los efectos exponen controles NagWeb de duración, demora, easing y cantidad de repeticiones. La galería offline reproduce automáticamente cada animación para que pueda evaluarse visualmente.

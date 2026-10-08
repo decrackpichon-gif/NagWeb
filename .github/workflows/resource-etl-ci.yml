@@ -505,6 +505,39 @@ jobs:
             ci-vault-uiverse-resume/uiverse-checkpoint.json
 
 
+      - name: Verify Magic.css autonomous effects
+        working-directory: tools/resource-etl
+        shell: bash
+        run: |
+          node src/vault-cli.mjs \
+            --sources=magic-css \
+            --all \
+            --out=ci-vault-magic-css
+
+          node - <<'NODE'
+          const fs = require("fs");
+          const catalog = JSON.parse(
+            fs.readFileSync("ci-vault-magic-css/catalog.json", "utf8")
+          );
+          const items = (catalog.resources || []).filter(
+            (entry) => entry.source?.provider === "magic-css"
+          );
+          if (items.length !== 65) {
+            throw new Error(
+              `Expected 65 Magic.css effects, got ${items.length}`
+            );
+          }
+          const deferred = items.filter(
+            (entry) => entry.previewStatus !== "ready"
+          );
+          if (deferred.length) {
+            throw new Error(
+              `Magic.css has deferred previews: ${deferred.length}`
+            );
+          }
+          console.log("Magic.css autonomous effects: OK", items.length);
+          NODE
+
   windows-smoke:
     name: Windows smoke
     runs-on: windows-latest

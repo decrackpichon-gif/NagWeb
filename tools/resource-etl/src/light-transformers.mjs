@@ -1552,3 +1552,179 @@ export function transformUiverseComponent({ repository, commit, item }) {
     }
   };
 }
+
+
+function magicCssEditableProps() {
+  return [
+    {
+      id: "duration",
+      label: "Duración",
+      group: "Animación",
+      valueType: "number",
+      control: "slider",
+      defaultValue: 1,
+      binding: { type: "runtime", path: "cssEffect.duration" },
+      constraints: { min: 0.1, max: 8, step: 0.1, unit: "s" }
+    },
+    {
+      id: "delay",
+      label: "Demora",
+      group: "Animación",
+      valueType: "number",
+      control: "slider",
+      defaultValue: 0,
+      binding: { type: "runtime", path: "cssEffect.delay" },
+      constraints: { min: 0, max: 5, step: 0.1, unit: "s" }
+    },
+    {
+      id: "easing",
+      label: "Curva",
+      group: "Animación",
+      valueType: "enum",
+      control: "select",
+      defaultValue: "ease",
+      binding: { type: "runtime", path: "cssEffect.easing" },
+      constraints: {
+        options: [
+          { label: "Ease", value: "ease" },
+          { label: "Linear", value: "linear" },
+          { label: "Ease in", value: "ease-in" },
+          { label: "Ease out", value: "ease-out" },
+          { label: "Ease in-out", value: "ease-in-out" }
+        ]
+      }
+    },
+    {
+      id: "iterations",
+      label: "Repeticiones",
+      group: "Animación",
+      valueType: "number",
+      control: "slider",
+      defaultValue: 1,
+      binding: { type: "runtime", path: "cssEffect.iterations" },
+      constraints: { min: 1, max: 10, step: 1 }
+    }
+  ];
+}
+
+export function transformMagicCssEffect({ raw, item }) {
+  const fetchedAt = now();
+  const policy = getSourcePolicy("magic-css");
+  const category = String(item.category || "effect").replaceAll("_", "-");
+  const css = `${raw.baseCss.trim()}\n\n${item.code.trim()}\n`;
+  const spec = {
+    schema: "nagweb-css-effect/0.2",
+    className: item.name,
+    baseClass: "magictime",
+    category,
+    replayable: true
+  };
+
+  return {
+    schemaVersion: "1.0",
+    id: `magic-css:${category}:${item.name}`,
+    slug: `magic-css-${category}-${item.name}`
+      .toLowerCase()
+      .replace(/[^a-z0-9-]+/g, "-"),
+    name: item.name,
+    title: titleFromSlug(
+      item.name.replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+    ),
+    description: `Magic.css ${item.name} animation stored as autonomous CSS.`,
+    family: "animation",
+    kind: "motion-preset",
+    source: {
+      provider: "magic-css",
+      externalId: item.path,
+      sourceUrl: `${raw.repository}/blob/${raw.commit}/${item.path}`,
+      repositoryUrl: raw.repository,
+      fetchedAt,
+      commit: raw.commit
+    },
+    license: {
+      id: policy.licenseId,
+      name: policy.licenseName,
+      url: policy.licenseUrl,
+      commercialUse: true,
+      modificationAllowed: true,
+      redistributionAllowed: true,
+      attributionRequired: true,
+      attributionText: "Magic.css · Christian Pucci · MIT License",
+      verified: true
+    },
+    taxonomy: {
+      categories: ["animation", "css-effect", category],
+      tags: [
+        "magic-css",
+        "css",
+        "animation",
+        category,
+        item.name
+      ],
+      sourceCategories: [item.category]
+    },
+    previews: [],
+    artifacts: [
+      {
+        id: "style",
+        role: "stylesheet",
+        format: "css",
+        mimeType: "text/css",
+        content: css,
+        sourcePath: item.path,
+        targetPath: "effect.css",
+        checksum: item.sha ? `git-sha1:${item.sha}` : undefined
+      },
+      {
+        id: "effect",
+        role: "animation-data",
+        format: "json",
+        mimeType: "application/json",
+        content: JSON.stringify(spec, null, 2),
+        targetPath: "effect.json"
+      }
+    ],
+    runtime: {
+      type: "css",
+      renderer: "nagweb-css-inline-effect",
+      entryArtifactId: "style",
+      setup: spec
+    },
+    editableProps: magicCssEditableProps(),
+    compatibility: {
+      nagweb: {
+        supported: true,
+        renderer: "css-inline-effect",
+        tested: false
+      },
+      css: true
+    },
+    capabilities: ["animatable", "transformable"],
+    technical: {
+      type: "css-keyframe-effect",
+      className: item.name,
+      category,
+      codeOnly: true,
+      packageVersion: raw.packageJson?.version
+    },
+    search: {
+      text: `${item.name} Magic.css ${category} CSS animation`,
+      keywords: [
+        item.name,
+        "magic-css",
+        "css",
+        "animation",
+        category
+      ]
+    },
+    ingestion: {
+      extractor: "magic-css",
+      extractorVersion: EXTRACTOR_VERSION,
+      fetchedAt,
+      transformedAt: now(),
+      sourceHash: hash(css),
+      status: "validated",
+      warnings: []
+    }
+  };
+}
