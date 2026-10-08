@@ -130,6 +130,16 @@
           <button type="button" class="secondary reset-control" data-reset-svg>Restaurar valores originales</button>
         </div>
 
+        <div class="customize" data-css-color hidden>
+          <strong>Personalizar componente CSS</strong>
+          <label for="css-color-input" data-css-color-label>Color</label>
+          <div class="color-row">
+            <input type="color" id="css-color-input" data-css-color-input value="#333333">
+            <output for="css-color-input" data-css-color-value>#333333</output>
+          </div>
+          <p>El color se previsualiza y se conserva al insertar.</p>
+        </div>
+
         <div class="apply-box">
           <button type="button" class="primary" data-apply disabled>Aplicar en NagWeb</button>
           <p data-apply-status>Modo exploración: todavía no hay un editor conectado.</p>

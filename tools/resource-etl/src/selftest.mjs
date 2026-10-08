@@ -15,7 +15,8 @@ import {
 } from "./analyzers/tsx-editable-props.mjs";
 import {
   transformLucideIcon,
-  transformMagicUiComponent
+  transformMagicUiComponent,
+  transformSpinKitLoader
 } from "./light-transformers.mjs";
 import { looksLikeLottie } from "./importers/lottie-local.mjs";
 import { CSSSHAKE_EFFECTS } from "./extractors/csshake.mjs";
@@ -662,3 +663,24 @@ assert.equal(restoredSvgEnvelope.descriptor.payload.stroke, "#000000");
 assert.equal(restoredSvgEnvelope.descriptor.payload.strokeWidth, 2);
 restoredSvgValues.size = 128;
 assert.equal(defaultEditableValues(lucideResource).size, 24);
+
+const editableSpinKit = transformSpinKitLoader({
+  raw: {
+    css: ":root{--sk-color:#333;} .sk-test{background:var(--sk-color)}",
+    repository: "https://github.com/tobiasahlin/SpinKit",
+    commit: "test-sha",
+    packageJson: { version: "1.0.0" }
+  },
+  item: { name: "test-loader", title: "Test Loader", html: '<div class="sk-test"></div>' }
+});
+const coloredSpinKitEnvelope = buildResourceApplyEnvelope(editableSpinKit, {
+  requestId: "test-custom-css-color",
+  values: { color: "#ee4488" }
+});
+assert.equal(coloredSpinKitEnvelope.descriptor.kind, "html");
+assert.equal(coloredSpinKitEnvelope.descriptor.instance.values.color, "#ee4488");
+assert.equal(coloredSpinKitEnvelope.descriptor.payload.cssVariables["--sk-color"], "#ee4488");
+assert.equal(
+  buildResourceApplyEnvelope(editableSpinKit).descriptor.payload.cssVariables["--sk-color"],
+  "#333333"
+);

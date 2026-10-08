@@ -50,6 +50,10 @@ const el = {
   strokeWidthInput: document.querySelector("[data-icon-stroke-width]"),
   strokeWidthValue: document.querySelector("[data-icon-stroke-width-value]"),
   resetSvg: document.querySelector("[data-reset-svg]"),
+  cssColor: document.querySelector("[data-css-color]"),
+  cssColorInput: document.querySelector("[data-css-color-input]"),
+  cssColorValue: document.querySelector("[data-css-color-value]"),
+  cssColorLabel: document.querySelector("[data-css-color-label]"),
   apply: document.querySelector("[data-apply]"),
   applyStatus: document.querySelector("[data-apply-status]"),
   applyBox: document.querySelector(".apply-box"),
@@ -145,11 +149,11 @@ function mainArtifact(resource) {
   return (resource.artifacts || []).find((item) => item.content) || null;
 }
 
-function defaultCssVariables(resource) {
+function defaultCssVariables(resource, values = {}) {
   const output = { ...(resource.runtime?.cssVariables || {}) };
   for (const prop of resource.editableProps || []) {
     if (prop.binding?.type !== "css-variable") continue;
-    let value = prop.defaultValue;
+    let value = Object.hasOwn(values, prop.id) ? values[prop.id] : prop.defaultValue;
     if (typeof value === "number" && prop.constraints?.unit) {
       value = `${value}${prop.constraints.unit}`;
     }
@@ -158,8 +162,8 @@ function defaultCssVariables(resource) {
   return output;
 }
 
-function cssVarStyle(resource) {
-  return Object.entries(defaultCssVariables(resource))
+function cssVarStyle(resource, values = {}) {
+  return Object.entries(defaultCssVariables(resource, values))
     .map(([name, value]) => `${name}:${String(value).replaceAll('"', "&quot;")}`)
     .join(";");
 }
@@ -188,7 +192,7 @@ async function previewDoc(resource, values = {}) {
   if (renderer === "nagweb-html-tailwind" && provider !== "hyperui") {
     const artifact = mainArtifact(resource);
     if (!artifact?.content) return null;
-    return `<!doctype html><meta name="viewport" content="width=device-width"><style>html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#f4f5f7}.root{display:grid;place-items:center;min-width:100%;min-height:100%;}</style><div class="root" style="${cssVarStyle(resource)}">${artifact.content}</div>`;
+    return `<!doctype html><meta name="viewport" content="width=device-width"><style>html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#f4f5f7}.root{display:grid;place-items:center;min-width:100%;min-height:100%;}</style><div class="root" style="${cssVarStyle(resource, values)}">${artifact.content}</div>`;
   }
 
   if (renderer === "nagweb-css-inline-effect") {
@@ -308,12 +312,31 @@ function configureSvgColor(resource) {
   }
 }
 
+function configureCssColor(resource) {
+  if (resource.runtime?.renderer !== "nagweb-html-tailwind") return;
+  const prop = (resource.editableProps || []).find(
+    (entry) => entry.id === "color" &&
+      entry.valueType === "color" &&
+      entry.binding?.type === "css-variable" &&
+      /^--[a-z0-9-]+$/i.test(entry.binding.variable || "") &&
+      /^#[0-9a-f]{6}$/i.test(entry.defaultValue || "")
+  );
+  if (!prop) return;
+
+  selectedValues.color = prop.defaultValue;
+  el.cssColorInput.value = prop.defaultValue;
+  el.cssColorValue.textContent = prop.defaultValue.toUpperCase();
+  el.cssColorLabel.textContent = prop.label || "Color";
+  el.cssColor.hidden = false;
+}
+
 async function openDetail(id) {
   selectedResource = null;
   selectedValues = {};
   el.svgColor.hidden = true;
   el.svgSize.hidden = true;
   el.svgStrokeWidth.hidden = true;
+  el.cssColor.hidden = true;
   el.apply.disabled = true;
   el.applyStatus.textContent = "Comprobando si el recurso se puede insertar…";
   el.detail.showModal();
@@ -325,7 +348,10 @@ async function openDetail(id) {
 
   const resource = await vault.getResource(id);
   selectedResource = resource;
-  if (resource) configureSvgColor(resource);
+  if (resource) {
+    configureSvgColor(resource);
+    configureCssColor(resource);
+  }
   updateApplyReadiness(resource);
 
   if (!resource) {
@@ -469,6 +495,20 @@ async function redrawSvgPreview() {
     el.preview.srcdoc = doc;
   }
 }
+
+el.cssColorInput.addEventListener("input", async () => {
+  const resource = selectedResource;
+  if (!resource || el.cssColor.hidden) return;
+  const color = el.cssColorInput.value;
+  if (!/^#[0-9a-f]{6}$/i.test(color)) return;
+
+  selectedValues.color = color;
+  el.cssColorValue.textContent = color.toUpperCase();
+  const doc = await previewDoc(resource, { ...selectedValues });
+  if (doc && selectedResource === resource && selectedValues.color === color) {
+    el.preview.srcdoc = doc;
+  }
+});
 
 el.strokeInput.addEventListener("input", () => {
   if (!selectedResource || el.svgColor.hidden) return;

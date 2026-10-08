@@ -104,3 +104,4 @@ pre{white-space:pre-wrap;word-break:break-word;background:#090b0e;border:1px sol
 .customize .size-row output{min-width:48px;text-align:right}
 .customize [data-svg-stroke-width][hidden]{display:none}
 .customize .reset-control{width:100%;margin-top:12px}
+.customize[data-css-color][hidden]{display:none}
