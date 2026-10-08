@@ -235,14 +235,15 @@ jobs:
         shell: bash
         run: |
           node src/vault-cli.mjs \
-            --sources=magicui \
+            --sources=magicui,shadcn \
             --all \
             --out=ci-vault-magicui-coverage \
             --react-previews \
-            --react-preview-limit=200
+            --react-preview-limit=100
 
           node src/report/react-preview-coverage.mjs \
-            --file=ci-vault-magicui-coverage/react-preview-audit.json
+            --file=ci-vault-magicui-coverage/react-preview-audit.json \
+            --provider=magicui
 
       - name: Smoke test external ETL sources
         working-directory: tools/resource-etl

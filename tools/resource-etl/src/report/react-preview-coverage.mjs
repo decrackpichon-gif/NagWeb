@@ -13,7 +13,13 @@ if (!file) {
 }
 
 const audit = JSON.parse(await readFile(file, "utf8"));
-const items = audit.items || [];
+const provider = argValue("provider");
+const allItems = audit.items || [];
+const items = provider
+  ? allItems.filter((item) =>
+      String(item.resourceId || "").startsWith(`${provider}:`)
+    )
+  : allItems;
 const ready = items.filter((item) => item.ok);
 const deferred = items.filter((item) => !item.ok);
 
@@ -40,7 +46,11 @@ const percent = items.length
   : 0;
 
 console.log("");
-console.log("=== React Preview Coverage ===");
+console.log(
+  provider
+    ? `=== React Preview Coverage · ${provider} ===`
+    : "=== React Preview Coverage ==="
+);
 console.log(`Total auditados: ${items.length}`);
 console.log(`Listos: ${ready.length}`);
 console.log(`Diferidos: ${deferred.length}`);
