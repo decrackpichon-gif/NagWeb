@@ -531,8 +531,8 @@ function mapOverviewSelect(s,overview,point,rect,x,y){
  var cfg=C.config(s),look=cfg&&cfg.orientationMode==='lookAt'?resolvedLookKeys(s,cfg,lookKeys(s),previewReferenceSize(s)):[];
  var hits=mapOverviewHits(keys(s),look,overview,point,rect.width,rect.height);
  if(!hits.length){mapOverviewPickHistory[s.id]=null;return false;}
- var picked=nextSpatialHit(hits,mapOverviewPickHistory[s.id],x,y);
- mapOverviewPickHistory[s.id]={kind:picked.kind,at:picked.at,x:x,y:y};
+ var picked=nextSpatialHit(hits,mapOverviewPickHistory[s.id],point.x*1000,point.y*1000);
+ mapOverviewPickHistory[s.id]={kind:picked.kind,at:picked.at,x:point.x*1000,y:point.y*1000};
  if(picked.kind==='look')jumpLook(s,picked.at);else jump(s,picked.at);
  return true;
 }

@@ -174,9 +174,9 @@ export async function runCameraBrowserSmoke(page){
   await page.waitForFunction(()=>document.querySelector('[data-camera-overview-look-marker="20"]')&&document.querySelector('[data-camera-overview-overlaps] [data-camera-overlap-count="3"]'));
   const miniBlankRect=await miniBox();
   await page.mouse.click(miniBlankRect.left+miniBlankRect.width*.97,miniBlankRect.top+miniBlankRect.height*.03);
-  const miniSamePoint=await miniMarkerCenter('camera',0);
   const miniSequence=[];
   for(let i=0;i<4;i++){
+   const miniSamePoint=await miniMarkerCenter('camera',0);
    await page.mouse.click(miniSamePoint.x,miniSamePoint.y);
    miniSequence.push(await page.evaluate(()=>({camera:+document.querySelector('[data-camera-map-point]').dataset.cameraMapPoint,look:+document.querySelector('[data-camera-look-map-point]').dataset.cameraLookMapPoint,seek:+document.querySelector('[data-camera-seek]').value})));
   }
