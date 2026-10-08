@@ -328,6 +328,19 @@ function nextSpatialHit(hits,previous,clientX,clientY){
 function mapFrameOptions(list,at){
  return list.map(function(f){return '<option value="'+f.at+'"'+(f.at===at?' selected':'')+'>'+f.at+'%</option>';}).join('');
 }
+function mapAdjacentAt(list,at,direction){
+ var index=list.findIndex(function(f){return f.at===at;}),next=index+(direction<0?-1:1);
+ return index>=0&&next>=0&&next<list.length?list[next].at:null;
+}
+function mapKeyframeNavigation(list,at,kind){
+ var isLook=kind==='look',label=isLook?'Objetivo':'Encuadre',symbol=isLook?'●':'◆',field=isLook?'data-camera-map-look-select':'data-camera-map-camera-select';
+ var before=mapAdjacentAt(list,at,-1),after=mapAdjacentAt(list,at,1);
+ return '<div style="display:flex;align-items:center;gap:4px;min-width:0;flex:1 1 180px">'+
+  '<span style="white-space:nowrap;font-size:12px">'+symbol+' '+label+'</span>'+
+  '<button type="button" class="btn tiny" data-camera-map-step="'+kind+'" data-camera-map-direction="-1" aria-label="'+label+' anterior" title="'+(before===null?'Primer punto':label+' anterior · '+before+'%')+'"'+(before===null?' disabled':'')+'>◂</button>'+
+  '<select class="csel" '+field+' aria-label="'+label+' seleccionado en el mapa" style="flex:1;min-width:58px">'+mapFrameOptions(list,at)+'</select>'+
+  '<button type="button" class="btn tiny" data-camera-map-step="'+kind+'" data-camera-map-direction="1" aria-label="'+label+' siguiente" title="'+(after===null?'Último punto':label+' siguiente · '+after+'%')+'"'+(after===null?' disabled':'')+'>▸</button></div>';
+}
 function freeSegmentPaths(keys,samples,spec,kind,sampleAt){
  if(!keys||keys.length<3)return '';
  var html='',stroke=kind==='look'?'var(--accent)':'currentColor';
@@ -461,10 +474,8 @@ function spatialMap(s,list,k){
  var lookDraw=cfg&&cfg.orientationMode==='lookAt'?C.lookSamples(cfg,window.NAGWEB_STORY_MODEL,s.sdEase,undefined,size):[],lookPath=lookDraw.map(function(f){var p=C.mapPoint(f,spec);return p.x+','+p.y;}).join(' '),lookNow=cfg&&cfg.orientationMode==='lookAt'?C.lookTarget(cfg,progress(s)/100,window.NAGWEB_STORY_MODEL,s.sdEase,size):null,lookPoint=lookNow?C.mapPoint(lookNow,spec):null;
  var html='<details data-camera-map-box'+(mapOpen[s.id]?' open':'')+'><summary style="cursor:pointer;margin:8px 0">Mapa del recorrido</summary><label>Vista <select class="csel" data-camera-map-plane><option value="top"'+(plane==='top'?' selected':'')+'>Desde arriba · X/Z</option><option value="front"'+(plane==='front'?' selected':'')+'>De frente · X/Y</option></select></label>';
  html+='<label style="display:inline-flex;align-items:center;gap:6px;margin:6px 0;font-size:12px"><input type="checkbox" data-camera-map-fov-toggle aria-label="Mostrar campo de visión aproximado"'+(mapFovVisible[s.id]!==false?' checked':'')+'> Mostrar campo de visión</label>';
- if(cfg&&cfg.orientationMode==='lookAt'&&looks.length){
-  html+='<div data-camera-map-pair style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0"><label style="flex:1;min-width:110px">◆ Encuadre <select class="csel" data-camera-map-camera-select aria-label="Encuadre seleccionado en el mapa">'+mapFrameOptions(list,k.at)+'</select></label><label style="flex:1;min-width:110px">● Objetivo <select class="csel" data-camera-map-look-select aria-label="Objetivo seleccionado en el mapa">'+mapFrameOptions(looks,lk.at)+'</select></label></div>';
-  html+='<p class="hint gh">Seleccioná cada recorrido por separado. La vista previa sigue el último punto elegido.</p>';
- }
+ html+='<div data-camera-map-pair style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0">'+mapKeyframeNavigation(list,k.at,'camera')+(lk?mapKeyframeNavigation(looks,lk.at,'look'):'')+'</div>';
+ if(lk)html+='<p class="hint gh">◆ y ● se navegan por separado; la vista previa sigue el último punto elegido.</p>';
  html+='<div data-camera-map data-plane="'+plane+'" data-range="'+spec.range+'" style="position:relative;width:100%;aspect-ratio:1.5;border:1px solid var(--line);margin-top:8px;touch-action:none">';
  html+='<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:auto"><path d="M50 0V100M0 50H100" stroke="currentColor" opacity=".2" stroke-width=".5"/><polyline data-camera-map-path points="'+path+'" fill="none" stroke="currentColor" opacity=".65" stroke-width=".7"/>';
  if(lookPath)html+='<polyline data-camera-look-map-path-hit points="'+lookPath+'" fill="none" stroke="var(--accent)" opacity=".001" stroke-width="6" pointer-events="stroke" style="cursor:crosshair"/><polyline data-camera-look-map-path points="'+lookPath+'" fill="none" stroke="var(--accent)" opacity=".65" stroke-width=".7" stroke-dasharray="2 2" pointer-events="stroke" style="cursor:crosshair"/>';
@@ -874,9 +885,16 @@ if(pane){
   if(retime(s,from,to)){var next=pane.querySelector('[data-camera-jump="'+to+'"]');if(next)next.focus();}
  });
  pane.addEventListener('click',function(ev){
-  var button=ev.target.closest('[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
+  var button=ev.target.closest('[data-camera-map-step],[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
   if(button===suppressedClick){suppressedClick=null;return;}
   var s=sec(),cfg=C.config(s);if(!cfg)return;var list=keys(s);
+  if(button.dataset.cameraMapStep!==undefined){
+   var navigatingLook=button.dataset.cameraMapStep==='look',points=navigatingLook&&cfg.orientationMode==='lookAt'?lookKeys(s):navigatingLook?[]:list;
+   var current=points.length?(navigatingLook?chooseLook(s,points):choose(s,points)):null;
+   var target=current?mapAdjacentAt(points,current.at,+button.dataset.cameraMapDirection):null;
+   if(target!==null&&target!==undefined){if(navigatingLook)jumpLook(s,target);else jump(s,target);}
+   return;
+  }
   if(button.dataset.cameraLookInit!==undefined){
    var generated=C.defaultLookFrames(cfg,window.NAGWEB_STORY_MODEL,s.sdEase,1000);if(!generated.length)return;
    snapshot();s.sdCameraLookFrames=generated;s.sdCameraLookPathMode=s.sdCameraPathMode==='smooth'?'smooth':'linear';lookSelected[s.id]=generated[0].at;saveProject();renderPane();schedulePreview();return;
