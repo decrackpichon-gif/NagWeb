@@ -5,7 +5,7 @@ import {
   buildResourceApplyEnvelope,
   resolveResourceApplyTarget,
   sendResourceApplyEnvelope,
-  isResourceApplyResult
+  isMatchingResourceApplyResult
 } from "../src/runtime/resource-apply-bridge.mjs";
 
 const vault = createNagWebPersistentVaultClient();
@@ -52,6 +52,7 @@ let offset = 0;
 let selectedResource = null;
 let searchTimer = null;
 let pendingApplyId = null;
+let pendingApplyResourceId = null;
 let pendingApplyTimer = null;
 const applyTarget = resolveResourceApplyTarget();
 
@@ -339,13 +340,20 @@ window.addEventListener("message", (event) => {
   if (!applyTarget) return;
   if (event.source !== applyTarget.targetWindow) return;
   if (event.origin !== applyTarget.targetOrigin) return;
-  if (!isResourceApplyResult(event.data)) return;
-  if (!pendingApplyId || event.data.requestId !== pendingApplyId) return;
+  if (!isMatchingResourceApplyResult(event.data, {
+    requestId: pendingApplyId,
+    resourceId: pendingApplyResourceId
+  })) return;
 
+  const completedResourceId = pendingApplyResourceId;
   clearTimeout(pendingApplyTimer);
   pendingApplyTimer = null;
   pendingApplyId = null;
+  pendingApplyResourceId = null;
   updateApplyReadiness(selectedResource);
+
+  // A reply for a previous selection must never appear on another resource.
+  if (!el.detail.open || selectedResource?.id !== completedResourceId) return;
 
   if (event.data.status === "applied") {
     el.applyStatus.textContent =
@@ -364,7 +372,7 @@ window.addEventListener("message", (event) => {
 });
 
 el.apply.addEventListener("click", () => {
-  if (!selectedResource || !applyTarget) return;
+  if (!selectedResource || !applyTarget || pendingApplyId) return;
 
   try {
     const envelope = buildResourceApplyEnvelope(selectedResource);
@@ -372,15 +380,21 @@ el.apply.addEventListener("click", () => {
 
     clearTimeout(pendingApplyTimer);
     pendingApplyId = id;
+    pendingApplyResourceId = selectedResource.id;
     el.apply.disabled = true;
     el.applyStatus.textContent = "Esperando confirmación del editor…";
 
     pendingApplyTimer = setTimeout(() => {
       if (pendingApplyId !== id) return;
+      const timedOutResourceId = pendingApplyResourceId;
       pendingApplyId = null;
+      pendingApplyResourceId = null;
+      pendingApplyTimer = null;
       updateApplyReadiness(selectedResource);
-      el.applyStatus.textContent =
-        "El editor no confirmó la aplicación. No asumo que el recurso se haya insertado.";
+      if (el.detail.open && selectedResource?.id === timedOutResourceId) {
+        el.applyStatus.textContent =
+          "El editor no confirmó la aplicación. No asumo que el recurso se haya insertado.";
+      }
     }, 8000);
   } catch (error) {
     console.error(error);

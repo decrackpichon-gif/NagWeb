@@ -150,6 +150,16 @@ export function isResourceApplyResult(value) {
   );
 }
 
+export function isMatchingResourceApplyResult(value, { requestId, resourceId } = {}) {
+  return Boolean(
+    isResourceApplyResult(value) &&
+    typeof requestId === "string" &&
+    typeof resourceId === "string" &&
+    value.requestId === requestId &&
+    value.resourceId === resourceId
+  );
+}
+
 export function installResourceApplyHost({
   windowRef = globalThis.window,
   allowedOrigins = [],

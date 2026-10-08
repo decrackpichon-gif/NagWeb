@@ -32,6 +32,7 @@ import {
   buildResourceApplyEnvelope,
   buildResourceApplyResult,
   isResourceApplyResult,
+  isMatchingResourceApplyResult,
   installResourceApplyHost
 } from "./runtime/resource-apply-bridge.mjs";
 import { buildStaticPreview } from "./preview/build-preview.mjs";
@@ -535,6 +536,25 @@ assert.equal(applyResult.type, NAGWEB_RESOURCE_APPLY_RESULT_TYPE);
 assert.equal(applyResult.requestId, "test-apply-request");
 assert.equal(applyResult.status, "applied");
 assert.equal(isResourceApplyResult(applyResult), true);
+assert.equal(isMatchingResourceApplyResult(applyResult, {
+  requestId: "test-apply-request",
+  resourceId: lucideResource.id
+}), true);
+assert.equal(isMatchingResourceApplyResult(applyResult, {
+  requestId: "another-request",
+  resourceId: lucideResource.id
+}), false);
+assert.equal(isMatchingResourceApplyResult(applyResult, {
+  requestId: "test-apply-request",
+  resourceId: "another-resource"
+}), false);
+assert.equal(isMatchingResourceApplyResult({
+  ...applyResult,
+  resourceId: null
+}, {
+  requestId: "test-apply-request",
+  resourceId: lucideResource.id
+}), false);
 assert.equal(
   isResourceApplyResult({ ...applyResult, requestId: null }),
   false
