@@ -1,4 +1,12 @@
 export const SOURCE_POLICIES = {
+  lygia: {
+    mirrorMode: "blocked-pending-review",
+    licenseId: "Prosperity-3.0.0",
+    licenseName: "Prosperity Public License 3.0.0 / Patron License",
+    licenseUrl: "https://github.com/patriciogonzalezvivo/lygia/blob/main/LICENSE.md",
+    noticeRequired: true,
+    notes: "Do not mirror into the persistent NagWeb Vault under the public license. Free commercial use is limited to a 30-day trial; a separate Patron/commercial license is required for ongoing commercial use."
+  },
   "animate-css": {
     mirrorMode: "blocked-pending-review",
     licenseId: "Hippocratic-2.1",
