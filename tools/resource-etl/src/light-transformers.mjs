@@ -1435,13 +1435,17 @@ export function transformUiverseComponent({ repository, commit, item }) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
+  const authorSlug = String(meta.author || "unknown")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "") || "unknown";
   const content = String(item.content || "");
   const title = titleFromSlug(meta.slug || meta.filename || "component");
 
   return {
     schemaVersion: "1.0",
-    id: `uiverse:${category.toLowerCase()}:${slug}`,
-    slug: `uiverse-${category.toLowerCase()}-${slug}`,
+    id: `uiverse:${category.toLowerCase()}:${authorSlug}:${slug}`,
+    slug: `uiverse-${category.toLowerCase()}-${authorSlug}-${slug}`,
     name: slug,
     title,
     description: `Autonomous ${category} component mirrored from Uiverse Galaxy.`,

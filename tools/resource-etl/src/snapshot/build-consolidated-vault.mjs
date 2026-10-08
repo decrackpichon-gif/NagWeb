@@ -30,6 +30,7 @@ if (!args.root) throw new Error("--root is required");
 const globalPath = path.join(root, "vault-manifest.json");
 const globalManifest = await readJson(globalPath);
 const resourcesById = new Map();
+const originById = new Map();
 const sourceSnapshots = [];
 
 for (const snapshot of globalManifest.snapshots || []) {
@@ -53,7 +54,11 @@ for (const snapshot of globalManifest.snapshots || []) {
 
   for (const resource of resources) {
     if (!resource?.id) continue;
+    if (resourcesById.has(resource.id)) {
+      throw new Error("Duplicate resource ID across persistent snapshots: " + resource.id + " (" + originById.get(resource.id) + " and " + snapshot.id + ")");
+    }
     resourcesById.set(resource.id, resource);
+    originById.set(resource.id, snapshot.id);
   }
 
   sourceSnapshots.push({

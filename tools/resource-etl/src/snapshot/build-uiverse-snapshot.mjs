@@ -110,6 +110,14 @@ for (const category of CATEGORIES) {
 
 resources.sort((a, b) => a.id.localeCompare(b.id));
 
+const duplicateIds = [];
+for (let i = 1; i < resources.length; i += 1) {
+  if (resources[i - 1].id === resources[i].id) duplicateIds.push(resources[i].id);
+}
+if (duplicateIds.length) {
+  throw new Error("Duplicate Uiverse resource IDs detected: " + [...new Set(duplicateIds)].join(", "));
+}
+
 const snapshot = {
   format: "nagweb-provider-snapshot",
   version: "1.0",

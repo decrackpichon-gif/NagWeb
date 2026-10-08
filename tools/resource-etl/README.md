@@ -693,3 +693,8 @@ all/manifest.json
 `browse-index.json.gz` contiene únicamente metadata liviana de navegación y búsqueda: ID, título, tipo, proveedor, categorías, tags, capacidades y texto de búsqueda. Está pensado para que la interfaz de NagWeb pueda mostrar la biblioteca completa sin cargar primero todo el código fuente.
 
 La restauración completa usa automáticamente el bundle consolidado cuando existe. Las restauraciones parciales con `--snapshots=...` siguen usando los snapshots individuales.
+
+
+### IDs de Uiverse sin colisiones
+
+Los IDs de Uiverse incluyen categoría, autor y slug, por ejemplo `uiverse:cards:praashoo7:thin-sloth-31`. El snapshot de Uiverse y el bundle consolidado rechazan IDs duplicados en vez de sobrescribirlos silenciosamente.
