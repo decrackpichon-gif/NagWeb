@@ -199,6 +199,40 @@ jobs:
           CORE_DIR="$RUNNER_TEMP/nagweb-core-snapshot"
           LUCIDE_DIR="$RUNNER_TEMP/nagweb-lucide-snapshot"
           THREEJS_DIR="$RUNNER_TEMP/nagweb-threejs-snapshot"
+          PUBLISH_DIR="$RUNNER_TEMP/nagweb-resource-vault-publish"
+
+          rm -rf "$PUBLISH_DIR"
+          mkdir -p "$PUBLISH_DIR/uiverse" "$PUBLISH_DIR/core-code" "$PUBLISH_DIR/lucide" "$PUBLISH_DIR/threejs-code"
+
+          cp "$SNAPSHOT_DIR/library.json.gz" "$PUBLISH_DIR/uiverse/library.json.gz"
+          cp "$SNAPSHOT_DIR/catalog.json" "$PUBLISH_DIR/uiverse/catalog.json"
+          cp "$SNAPSHOT_DIR/manifest.json" "$PUBLISH_DIR/uiverse/manifest.json"
+          cp "$SNAPSHOT_DIR/skipped.json" "$PUBLISH_DIR/uiverse/skipped.json"
+          cp "$SNAPSHOT_DIR/LICENSE" "$PUBLISH_DIR/uiverse/LICENSE"
+          cp "$SNAPSHOT_DIR/README.md" "$PUBLISH_DIR/uiverse/README.md"
+
+          cp "$CORE_DIR/library.json.gz" "$PUBLISH_DIR/core-code/library.json.gz"
+          cp "$CORE_DIR/catalog.json" "$PUBLISH_DIR/core-code/catalog.json"
+          cp "$CORE_DIR/manifest.json" "$PUBLISH_DIR/core-code/manifest.json"
+          cp "$CORE_DIR/THIRD_PARTY_NOTICES.txt" "$PUBLISH_DIR/core-code/THIRD_PARTY_NOTICES.txt"
+          cp "$CORE_DIR/README.md" "$PUBLISH_DIR/core-code/README.md"
+
+          cp "$LUCIDE_DIR/library.json.gz" "$PUBLISH_DIR/lucide/library.json.gz"
+          cp "$LUCIDE_DIR/catalog.json" "$PUBLISH_DIR/lucide/catalog.json"
+          cp "$LUCIDE_DIR/manifest.json" "$PUBLISH_DIR/lucide/manifest.json"
+          cp "$LUCIDE_DIR/LICENSE" "$PUBLISH_DIR/lucide/LICENSE"
+          cp "$LUCIDE_DIR/README.md" "$PUBLISH_DIR/lucide/README.md"
+
+          cp "$THREEJS_DIR/library.json.gz" "$PUBLISH_DIR/threejs-code/library.json.gz"
+          cp "$THREEJS_DIR/catalog.json" "$PUBLISH_DIR/threejs-code/catalog.json"
+          cp "$THREEJS_DIR/manifest.json" "$PUBLISH_DIR/threejs-code/manifest.json"
+          cp "$THREEJS_DIR/rejected.json" "$PUBLISH_DIR/threejs-code/rejected.json"
+          cp "$THREEJS_DIR/LICENSE" "$PUBLISH_DIR/threejs-code/LICENSE"
+          cp "$THREEJS_DIR/README.md" "$PUBLISH_DIR/threejs-code/README.md"
+
+          node tools/resource-etl/src/snapshot/build-global-vault-manifest.mjs \
+            --root="$PUBLISH_DIR"
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
@@ -206,38 +240,7 @@ jobs:
           git rm -rf . || true
           find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
 
-          mkdir -p uiverse
-          cp "$SNAPSHOT_DIR/library.json.gz" uiverse/library.json.gz
-          cp "$SNAPSHOT_DIR/catalog.json" uiverse/catalog.json
-          cp "$SNAPSHOT_DIR/manifest.json" uiverse/manifest.json
-          cp "$SNAPSHOT_DIR/skipped.json" uiverse/skipped.json
-          cp "$SNAPSHOT_DIR/LICENSE" uiverse/LICENSE
-          cp "$SNAPSHOT_DIR/README.md" uiverse/README.md
-
-          mkdir -p core-code
-          cp "$CORE_DIR/library.json.gz" core-code/library.json.gz
-          cp "$CORE_DIR/catalog.json" core-code/catalog.json
-          cp "$CORE_DIR/manifest.json" core-code/manifest.json
-          cp "$CORE_DIR/THIRD_PARTY_NOTICES.txt" core-code/THIRD_PARTY_NOTICES.txt
-          cp "$CORE_DIR/README.md" core-code/README.md
-
-          mkdir -p lucide
-          cp "$LUCIDE_DIR/library.json.gz" lucide/library.json.gz
-          cp "$LUCIDE_DIR/catalog.json" lucide/catalog.json
-          cp "$LUCIDE_DIR/manifest.json" lucide/manifest.json
-          cp "$LUCIDE_DIR/LICENSE" lucide/LICENSE
-          cp "$LUCIDE_DIR/README.md" lucide/README.md
-
-          mkdir -p threejs-code
-          cp "$THREEJS_DIR/library.json.gz" threejs-code/library.json.gz
-          cp "$THREEJS_DIR/catalog.json" threejs-code/catalog.json
-          cp "$THREEJS_DIR/manifest.json" threejs-code/manifest.json
-          cp "$THREEJS_DIR/rejected.json" threejs-code/rejected.json
-          cp "$THREEJS_DIR/LICENSE" threejs-code/LICENSE
-          cp "$THREEJS_DIR/README.md" threejs-code/README.md
-
-          node tools/resource-etl/src/snapshot/build-global-vault-manifest.mjs \
-            --root=.
+          cp -R "$PUBLISH_DIR"/. .
 
           git add README.md vault-manifest.json uiverse core-code lucide threejs-code
           git commit -m "data: refresh lightweight resource snapshots"
