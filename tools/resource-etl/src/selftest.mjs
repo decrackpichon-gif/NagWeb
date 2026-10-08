@@ -422,6 +422,14 @@ assert.deepEqual(
   ["react", "motion/react"]
 );
 assert.ok(scanBrowserSource('window.open("https://example.test")').includes("browser-window-open"));
+assert.deepEqual(
+  scanBrowserSource('<style dangerouslySetInnerHTML={{ __html: css }} />'),
+  []
+);
+assert.ok(
+  scanBrowserSource('<div dangerouslySetInnerHTML={{ __html: html }} />')
+    .includes("dangerous-html")
+);
 assert.equal(isPermissiveLicenseExpression("MIT OR Apache-2.0"), true);
 assert.equal(isPermissiveLicenseExpression("GPL-3.0"), false);
 
@@ -468,6 +476,22 @@ assert.equal(
   shadcnAccordionRecipe.children[0].children[0].name,
   "AccordionTrigger"
 );
+
+const shadcnChartRecipe = buildReactPreviewRecipe(
+  {
+    id: "shadcn:chart",
+    name: "chart",
+    title: "Chart",
+    source: { provider: "shadcn" }
+  },
+  {
+    primaryExport: "ChartContainer",
+    defaultProps: {}
+  }
+);
+assert.equal(shadcnChartRecipe.name, "ChartContainer");
+assert.equal(shadcnChartRecipe.children[0].tag, "svg");
+assert.equal(shadcnChartRecipe.props.config.visitors.color, "#2563eb");
 
 const genericPreviewRecipe = buildReactPreviewRecipe(
   {

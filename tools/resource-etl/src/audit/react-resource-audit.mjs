@@ -109,13 +109,29 @@ export function scanBrowserSource(code) {
     ["browser-indexeddb", /\bindexedDB\b/],
     ["browser-window-open", /\bwindow\.open\s*\(/],
     ["browser-iframe", /<iframe\b/i],
-    ["dangerous-html", /dangerouslySetInnerHTML\s*=/],
     ["script-injection", /createElement\s*\(\s*["']script["']\s*\)/i]
   ];
 
-  return checks
+  const findings = checks
     .filter(([, pattern]) => pattern.test(source))
     .map(([id]) => id);
+
+  for (const match of source.matchAll(/dangerouslySetInnerHTML\s*=/g)) {
+    const before = source.slice(0, match.index);
+    const tagStart = before.lastIndexOf("<");
+    const tagEnd = before.lastIndexOf(">");
+
+    const insideOpeningStyleTag =
+      tagStart > tagEnd &&
+      /^<style\b/i.test(source.slice(tagStart, match.index).trimStart());
+
+    if (!insideOpeningStyleTag) {
+      findings.push("dangerous-html");
+      break;
+    }
+  }
+
+  return unique(findings);
 }
 
 export function inferExportedComponent(code) {

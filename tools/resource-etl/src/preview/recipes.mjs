@@ -287,6 +287,49 @@ export function buildReactPreviewRecipe(
     );
   }
 
+  if (provider === "shadcn" && name === "chart") {
+    return component(
+      "ChartContainer",
+      {
+        ...baseProps,
+        config: {
+          visitors: {
+            label: "Visitas",
+            color: "#2563eb"
+          }
+        },
+        className: "w-[min(520px,78vw)]"
+      },
+      [
+        element(
+          "svg",
+          {
+            viewBox: "0 0 320 180",
+            className: "h-full w-full",
+            role: "img",
+            "aria-label": "Gráfico de ejemplo"
+          },
+          [
+            element("polyline", {
+              points: "20,140 80,100 140,120 200,55 300,80",
+              fill: "none",
+              stroke: "var(--color-visitors)",
+              strokeWidth: 8,
+              strokeLinecap: "round",
+              strokeLinejoin: "round"
+            }),
+            element("circle", {
+              cx: 200,
+              cy: 55,
+              r: 7,
+              fill: "var(--color-visitors)"
+            })
+          ]
+        )
+      ]
+    );
+  }
+
   return component(
     primaryExport || "default",
     baseProps,

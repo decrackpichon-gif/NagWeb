@@ -159,6 +159,15 @@ jobs:
             process.exit(1);
           }
 
+          const chart = audit.items.find(
+            (entry) => entry.resourceId === "shadcn:chart"
+          );
+          if (!chart || !chart.ok) {
+            console.error("shadcn:chart did not compile with safe style injection + Recharts");
+            console.error(JSON.stringify(chart, null, 2));
+            process.exit(1);
+          }
+
           const dialog = audit.items.find(
             (entry) => entry.resourceId === "shadcn:dialog"
           );
