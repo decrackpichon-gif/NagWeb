@@ -977,3 +977,26 @@ assert.ok(escapedMagic);
 assert.equal(escapedMagic.includes("</style><script>alert(1)</script>"), false);
 assert.match(escapedMagic, /animation-duration:1s!important/);
 assert.match(escapedMagic, /animation-timing-function:ease!important/);
+
+// The same script-free pause/resume control works for both CSS preview families.
+for (const [family, document] of [
+  ["Magic.css", magicPreview],
+  ["CSSShake", hoverShakeDoc],
+  ["CSSShake constant", constantShakeDoc]
+]) {
+  assert.match(document, /type="checkbox" aria-label="Pausar o reanudar la vista previa"/,
+    family + " pause checkbox");
+  assert.match(document, /for="pause-preview"/, family + " linked label");
+  assert.match(document, /class="playing">Pausar/, family + " initial action");
+  assert.match(document, /class="paused">Reanudar/, family + " resume action");
+  assert.match(document, /\.preview-pause:checked ~ main \.demo\{animation-play-state:paused!important\}/,
+    family + " stylesheet-driven pause");
+  assert.match(document, /script-src 'none'/, family + " script policy");
+  assert.equal(document.includes("<script"), false, family + " has no scripts");
+}
+assert.equal(buildResourceApplyEnvelope(magicCssResource, {
+  values: magicValues
+}).descriptor.payload.duration, 2.5);
+assert.equal(buildResourceApplyEnvelope(shakePreviewResource, {
+  values: { trigger: "constant" }
+}).descriptor.payload.trigger, "constant");

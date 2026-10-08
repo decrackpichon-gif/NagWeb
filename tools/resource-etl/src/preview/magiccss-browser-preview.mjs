@@ -1,4 +1,8 @@
 // Magic.css browser preview uses persisted CSS, no active scripts.
+import {
+  CSS_PREVIEW_PLAYBACK_STYLES,
+  CSS_PREVIEW_PLAYBACK_MARKUP
+} from "./css-playback-controls.mjs";
 const SAFE_CLASS = /^[a-zA-Z][a-zA-Z0-9_-]{0,79}$/;
 const EASINGS = new Set(["linear", "ease", "ease-in", "ease-out", "ease-in-out"]);
 
@@ -44,11 +48,13 @@ export function buildMagicCssBrowserPreview(resource, values = {}) {
 <style>
 html,body{height:100%;margin:0;background:#f4f5f7;color:#1b2630;font-family:system-ui}
 body{display:grid;place-items:center;overflow:hidden}
-.stage{display:grid;justify-items:center;gap:22px;padding:22px;text-align:center;perspective:1200px}
+.stage{display:grid;justify-items:center;gap:22px;padding:54px 22px 22px;text-align:center;perspective:1200px}
 .demo.magictime{box-sizing:border-box;max-width:min(95vw,340px);min-width:190px;padding:28px 30px;border:1px solid #dce1e8;border-radius:18px;background:#fff;box-shadow:0 22px 58px #0002;font-size:18px;font-weight:750;animation-duration:${duration}s!important;animation-delay:${delay}s!important;animation-timing-function:${easing}!important;animation-iteration-count:${iterations}!important}
 .hint{font-size:12px;color:#627083}
 @media(prefers-reduced-motion:reduce){.demo{animation:none!important}}
+${CSS_PREVIEW_PLAYBACK_STYLES}
 </style></head><body>
+${CSS_PREVIEW_PLAYBACK_MARKUP}
 <main class="stage">
   <div class="demo magictime ${className}">${escapeHtml(resource.title || resource.name || className)}</div>
   <p class="hint">Duración ${duration}s · Demora ${delay}s · Repeticiones ${iterations}</p>

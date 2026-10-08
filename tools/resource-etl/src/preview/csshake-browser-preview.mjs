@@ -1,4 +1,8 @@
 // Build a script-free, isolated preview for trusted CSSShake resources.
+import {
+  CSS_PREVIEW_PLAYBACK_STYLES,
+  CSS_PREVIEW_PLAYBACK_MARKUP
+} from "./css-playback-controls.mjs";
 // The resource metadata cannot inject HTML, CSS selectors or JavaScript.
 const SHAKE_CLASS = /^shake(?:-(?:little|slow|hard|horizontal|vertical|rotate|opacity|crazy|chunk))?$/;
 
@@ -53,7 +57,7 @@ export function buildCssShakeBrowserPreview(
 <style>
 html,body{height:100%;margin:0;background:#f4f5f7;color:#1b2630;font-family:system-ui}
 body{display:grid;place-items:center}
-.stage{box-sizing:border-box;min-height:100%;display:grid;align-content:center;gap:20px;padding:24px 16px}
+.stage{box-sizing:border-box;min-height:100%;display:grid;align-content:center;gap:20px;padding:54px 16px 20px}
 .comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;width:100%;max-width:650px;margin:auto}
 .mode{min-width:0;min-height:175px;padding:14px;border:2px solid #d9dfe7;border-radius:18px;background:#f9fafb;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:12px;text-align:center}
 .mode.selected{border-color:#5178b6;background:#eaf1ff}
@@ -65,7 +69,9 @@ body{display:grid;place-items:center}
 .hint{font-size:11px;color:#616e7b;margin:0}
 @media(max-width:430px){.comparison{grid-template-columns:1fr}.mode{min-height:145px}.stage{padding:14px}}
 @media(prefers-reduced-motion:reduce){.demo{animation:none!important}}
+${CSS_PREVIEW_PLAYBACK_STYLES}
 </style></head><body>
+${CSS_PREVIEW_PLAYBACK_MARKUP}
 <main class="stage">
   <div class="comparison" aria-label="Comparación de modos CSSShake">
     <section class="mode ${trigger === "hover" ? "selected" : ""}" aria-label="Modo Hover">
