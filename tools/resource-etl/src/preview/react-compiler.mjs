@@ -39,7 +39,10 @@ export const REACT_PREVIEW_RUNTIME_PACKAGES = new Set([
   "@radix-ui/react-accordion",
   "cobe",
   "rough-notation",
-  "@radix-ui/react-slot"
+  "@radix-ui/react-slot",
+  "shiki",
+  "@shikijs/transformers",
+  "react-tweet"
 ]);
 
 export const REACT_PREVIEW_VIRTUAL_PACKAGES = new Set([
@@ -122,14 +125,52 @@ export function cn(...inputs) {
 }
 `;
 
-function sanitizeResourceForPreview(resource) {
-  if (
-    resource.source?.provider !== "shadcn" ||
-    resource.name !== "sidebar"
-  ) {
-    return resource;
+function sanitizePreviewContent(resource, content) {
+  let next = String(content || "");
+  const provider = resource.source?.provider;
+  const name = resource.name;
+
+  if (provider === "shadcn" && name === "sidebar") {
+    next = next.replace(
+      /document\.cookie\s*=\s*[^\n]+/g,
+      "void 0 // NagWeb preview: cookie persistence disabled"
+    );
   }
 
+  if (provider === "magicui" && name === "animated-theme-toggler") {
+    next = next
+      .replace(
+        /localStorage\.setItem\([^\n;]+\)/g,
+        "void 0 /* NagWeb preview: theme persistence disabled */"
+      )
+      .replace(/\blocalStorage\b/g, "previewStorage");
+  }
+
+  if (provider === "magicui" && name === "hero-video-dialog") {
+    next = next.replace(
+      /<iframe[\s\S]*?<\/iframe>/g,
+      '<div data-nagweb-preview-video-placeholder className="flex size-full items-center justify-center bg-neutral-950 text-sm text-white">Video preview disabled in sandbox</div>'
+    );
+  }
+
+  if (provider === "magicui" && name === "code-comparison") {
+    next = next.replace(
+      /dangerouslySetInnerHTML=\{\{\s*__html:\s*highlighted\s*\}\}/g,
+      "children={highlighted}"
+    );
+  }
+
+  if (provider === "magicui" && name === "tweet-card") {
+    next = next.replace(
+      /dangerouslySetInnerHTML=\{\{\s*__html:\s*entity\.text\s*\}\}/g,
+      "children={entity.text}"
+    );
+  }
+
+  return next;
+}
+
+function sanitizeResourceForPreview(resource) {
   return {
     ...resource,
     artifacts: (resource.artifacts || []).map((artifact) => {
@@ -137,10 +178,7 @@ function sanitizeResourceForPreview(resource) {
 
       return {
         ...artifact,
-        content: artifact.content.replace(
-          /document\.cookie\s*=\s*[^\n]+/g,
-          "void 0 // NagWeb preview: cookie persistence disabled"
-        )
+        content: sanitizePreviewContent(resource, artifact.content)
       };
     })
   };

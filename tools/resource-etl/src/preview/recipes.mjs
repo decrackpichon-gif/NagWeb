@@ -80,6 +80,66 @@ export function buildReactPreviewRecipe(
     );
   }
 
+  if (provider === "magicui" && name === "animated-theme-toggler") {
+    return component(
+      "AnimatedThemeToggler",
+      {
+        ...baseProps,
+        theme: "light",
+        duration: 350,
+        className:
+          "rounded-full border border-zinc-200 bg-white p-3 text-zinc-900 shadow-sm"
+      }
+    );
+  }
+
+  if (provider === "magicui" && name === "hero-video-dialog") {
+    return component(
+      "HeroVideoDialog",
+      {
+        ...baseProps,
+        animationStyle: "from-center",
+        videoSrc: "about:blank",
+        thumbnailSrc:
+          "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='960' height='540'%3E%3Crect width='100%25' height='100%25' fill='%2318181b'/%3E%3Ccircle cx='480' cy='270' r='54' fill='%23ffffff' fill-opacity='.18'/%3E%3Cpolygon points='462,235 462,305 522,270' fill='white'/%3E%3C/svg%3E",
+        thumbnailAlt: "NagWeb video preview",
+        className: "w-[min(680px,80vw)]"
+      }
+    );
+  }
+
+  if (provider === "magicui" && name === "code-comparison") {
+    return component(
+      "CodeComparison",
+      {
+        ...baseProps,
+        beforeCode: "const color = 'red'\nconsole.log(color)",
+        afterCode: "const color = 'blue'\nconsole.log(color)",
+        language: "ts",
+        filename: "example.ts",
+        lightTheme: "github-light",
+        darkTheme: "github-dark",
+        highlightColor: "#dbeafe"
+      }
+    );
+  }
+
+  if (provider === "magicui" && name === "tweet-card") {
+    return component(
+      "TweetSkeleton",
+      {
+        className: "w-[min(440px,78vw)]"
+      }
+    );
+  }
+
+  if (provider === "magicui" && name === "client-tweet-card") {
+    return demoText(
+      "Client Tweet Card",
+      "Preview offline segura. La consulta remota del tweet se desactiva dentro del sandbox."
+    );
+  }
+
   if (provider === "motion-primitives" && name === "animated-background") {
     return component(
       "AnimatedBackground",
