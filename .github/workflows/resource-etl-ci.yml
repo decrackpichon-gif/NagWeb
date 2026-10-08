@@ -230,6 +230,20 @@ jobs:
           console.log("Sidebar helper resolution: OK");
           NODE
 
+      - name: Measure Magic UI React preview coverage
+        working-directory: tools/resource-etl
+        shell: bash
+        run: |
+          node src/vault-cli.mjs \
+            --sources=magicui \
+            --all \
+            --out=ci-vault-magicui-coverage \
+            --react-previews \
+            --react-preview-limit=200
+
+          node src/report/react-preview-coverage.mjs \
+            --file=ci-vault-magicui-coverage/react-preview-audit.json
+
       - name: Smoke test external ETL sources
         working-directory: tools/resource-etl
         shell: bash

@@ -29,7 +29,11 @@ export async function extractMotionPrimitives({
   }
 
   let files = (tree.tree || [])
-    .filter((entry) => /^public\/c\/[^/]+\.json$/.test(entry.path))
+    .filter(
+      (entry) =>
+        /^public\/c\/[^/]+\.json$/.test(entry.path) &&
+        entry.path !== "public/c/registry.json"
+    )
     .sort((a, b) => a.path.localeCompare(b.path));
 
   const totalAvailable = files.length;
