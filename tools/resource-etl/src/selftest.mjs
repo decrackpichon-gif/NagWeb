@@ -697,3 +697,17 @@ assert.equal(
   buildResourceApplyEnvelope(editableSpinKit).descriptor.payload.cssVariables["--sk-size"],
   "40px"
 );
+
+const restoredSpinKitValues = defaultEditableValues(editableSpinKit);
+const restoredSpinKitEnvelope = buildResourceApplyEnvelope(editableSpinKit, {
+  requestId: "test-reset-css-loader",
+  values: restoredSpinKitValues
+});
+assert.equal(restoredSpinKitEnvelope.descriptor.payload.cssVariables["--sk-size"], "40px");
+assert.equal(restoredSpinKitEnvelope.descriptor.payload.cssVariables["--sk-color"], "#333333");
+restoredSpinKitValues.size = 112;
+restoredSpinKitValues.color = "#ee4488";
+assert.deepEqual(defaultEditableValues(editableSpinKit), {
+  size: 40,
+  color: "#333333"
+});

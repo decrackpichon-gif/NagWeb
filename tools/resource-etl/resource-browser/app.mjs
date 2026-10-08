@@ -58,6 +58,7 @@ const el = {
   cssSizeInput: document.querySelector("[data-css-size-input]"),
   cssSizeValue: document.querySelector("[data-css-size-value]"),
   cssSizeLabel: document.querySelector("[data-css-size-label]"),
+  resetCss: document.querySelector("[data-reset-css]"),
   apply: document.querySelector("[data-apply]"),
   applyStatus: document.querySelector("[data-apply-status]"),
   applyBox: document.querySelector(".apply-box"),
@@ -561,6 +562,15 @@ el.cssSizeInput.addEventListener("input", () => {
     (entry) => entry.id === "size" && entry.binding?.type === "css-variable"
   );
   el.cssSizeValue.textContent = `${size}${prop?.constraints?.unit || ""}`;
+  redrawCssPreview();
+});
+
+el.resetCss.addEventListener("click", () => {
+  if (!selectedResource || el.cssColor.hidden) return;
+
+  // Use the resource metadata so the reset tracks future default changes.
+  selectedValues = defaultEditableValues(selectedResource);
+  configureCssColor(selectedResource);
   redrawCssPreview();
 });
 
