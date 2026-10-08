@@ -102,3 +102,4 @@ pre{white-space:pre-wrap;word-break:break-word;background:#090b0e;border:1px sol
 .customize .size-row{display:flex;align-items:center;gap:12px;margin-top:8px}
 .customize .size-row input[type="range"]{width:100%;min-width:0;flex:1;accent-color:var(--accent);padding:0;border:0;background:transparent;cursor:pointer}
 .customize .size-row output{min-width:48px;text-align:right}
+.customize [data-svg-stroke-width][hidden]{display:none}

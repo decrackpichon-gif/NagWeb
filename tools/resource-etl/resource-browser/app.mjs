@@ -45,6 +45,9 @@ const el = {
   svgSize: document.querySelector("[data-svg-size]"),
   sizeInput: document.querySelector("[data-icon-size]"),
   sizeValue: document.querySelector("[data-icon-size-value]"),
+  svgStrokeWidth: document.querySelector("[data-svg-stroke-width]"),
+  strokeWidthInput: document.querySelector("[data-icon-stroke-width]"),
+  strokeWidthValue: document.querySelector("[data-icon-stroke-width-value]"),
   apply: document.querySelector("[data-apply]"),
   applyStatus: document.querySelector("[data-apply-status]"),
   applyBox: document.querySelector(".apply-box"),
@@ -174,7 +177,10 @@ async function previewDoc(resource, values = {}) {
     const size = Number.isFinite(values.size)
       ? Math.min(512, Math.max(4, values.size))
       : 24;
-    return `<!doctype html><style>html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#f4f5f7}svg{width:${size}px;height:${size}px;max-width:calc(100vw - 24px);max-height:calc(100vh - 24px);stroke:${stroke}}</style>${artifact.content}`;
+    const strokeWidth = Number.isFinite(values.strokeWidth)
+      ? Math.min(8, Math.max(0.25, values.strokeWidth))
+      : 2;
+    return `<!doctype html><style>html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#f4f5f7}svg{width:${size}px;height:${size}px;max-width:calc(100vw - 24px);max-height:calc(100vh - 24px);stroke:${stroke};stroke-width:${strokeWidth}}</style>${artifact.content}`;
   }
 
   if (renderer === "nagweb-html-tailwind" && provider !== "hyperui") {
@@ -276,6 +282,28 @@ function configureSvgColor(resource) {
     el.sizeValue.textContent = `${size} px`;
     el.svgSize.hidden = false;
   }
+
+  const widthProp = (resource.editableProps || []).find(
+    (prop) => prop.id === "strokeWidth" && prop.valueType === "number"
+  );
+  const width = widthProp?.defaultValue;
+  const widthMin = widthProp?.constraints?.min ?? 0.25;
+  const widthMax = widthProp?.constraints?.max ?? 8;
+  const widthStep = widthProp?.constraints?.step ?? 0.25;
+  if (
+    Number.isFinite(width) && Number.isFinite(widthMin) &&
+    Number.isFinite(widthMax) && Number.isFinite(widthStep) &&
+    widthMin > 0 && widthMax >= widthMin &&
+    widthStep > 0 && width >= widthMin && width <= widthMax
+  ) {
+    selectedValues.strokeWidth = width;
+    el.strokeWidthInput.min = String(widthMin);
+    el.strokeWidthInput.max = String(widthMax);
+    el.strokeWidthInput.step = String(widthStep);
+    el.strokeWidthInput.value = String(width);
+    el.strokeWidthValue.textContent = String(width);
+    el.svgStrokeWidth.hidden = false;
+  }
 }
 
 async function openDetail(id) {
@@ -283,6 +311,7 @@ async function openDetail(id) {
   selectedValues = {};
   el.svgColor.hidden = true;
   el.svgSize.hidden = true;
+  el.svgStrokeWidth.hidden = true;
   el.apply.disabled = true;
   el.applyStatus.textContent = "Comprobando si el recurso se puede insertar…";
   el.detail.showModal();
@@ -432,7 +461,8 @@ async function redrawSvgPreview() {
   if (
     doc && selectedResource === resource &&
     selectedValues.stroke === values.stroke &&
-    selectedValues.size === values.size
+    selectedValues.size === values.size &&
+    selectedValues.strokeWidth === values.strokeWidth
   ) {
     el.preview.srcdoc = doc;
   }
@@ -453,6 +483,15 @@ el.sizeInput.addEventListener("input", () => {
   if (!Number.isFinite(size)) return;
   selectedValues.size = size;
   el.sizeValue.textContent = `${size} px`;
+  redrawSvgPreview();
+});
+
+el.strokeWidthInput.addEventListener("input", () => {
+  if (!selectedResource || el.svgStrokeWidth.hidden) return;
+  const width = Number(el.strokeWidthInput.value);
+  if (!Number.isFinite(width)) return;
+  selectedValues.strokeWidth = width;
+  el.strokeWidthValue.textContent = String(width);
   redrawSvgPreview();
 });
 
