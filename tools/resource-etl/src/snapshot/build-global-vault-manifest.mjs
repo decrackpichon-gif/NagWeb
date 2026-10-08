@@ -124,7 +124,7 @@ ${rows}
   1024
 ).toFixed(2)} MiB** |
 
-The canonical machine-readable index is `vault-manifest.json`. Each snapshot also carries its own manifest, source commit(s), SHA-256 checksum and license/notices.
+The canonical machine-readable index is vault-manifest.json. Each snapshot also carries its own manifest, source commit(s), SHA-256 checksum and license/notices.
 `;
 
 await writeFile(path.join(root, "README.md"), readme, "utf8");
