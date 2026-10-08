@@ -514,6 +514,57 @@ export async function runCameraBrowserSmoke(page){
   assert.equal(await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.progress('camera-browser-scene')),abProgressBefore,'A/B navigation tests restore prior Director progress for later editing cases');
   console.log('Camera minimap A/B deltas: map guide, signed distance/pace, A/B and pause midpoint navigation, view parity, no mutations OK');
 
+  // Micro-etapa 34: single-control A/B switching and truthful live preview indication.
+  const beforeSwitch=await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.progress('camera-browser-scene'));
+  const viewPreview=()=>page.evaluate(()=>{
+   const status=document.querySelector('[data-camera-overview-preview-status]')?.textContent||'';
+   const toggle=document.querySelector('[data-camera-overview-compare-alternate]')?.textContent||'';
+   const active=Array.from(document.querySelectorAll('[data-camera-overview-compare]')).filter(el=>el.dataset.cameraOverviewCompareSelected==='true').map(el=>el.dataset.cameraOverviewCompare);
+   const rings=Array.from(document.querySelectorAll('[data-camera-overview-compare-preview-ring]')).filter(el=>getComputedStyle(el).display!=='none').map(el=>el.dataset.cameraOverviewComparePreviewRing);
+   return {status,toggle,active,rings,progress:+document.querySelector('[data-camera-seek]').value};
+  });
+  const initialPreview=await viewPreview();
+  assert.ok(initialPreview.status.includes('Previsualización libre'),'Free scrub progress cannot falsely claim an A/B preview');
+  await page.click('[data-camera-overview-compare-alternate]');
+  await page.waitForFunction(()=>Math.abs(+document.querySelector('[data-camera-seek]').value-10)<.05);
+  let preview=await viewPreview();
+  assert.ok(preview.status.includes('Previsualizando A')&&preview.status.includes('● Mirada'),'Alternate first previews selected A interval');
+  assert.equal(preview.toggle,'Alternar → B','After A, toggle offers B');
+  assert.deepEqual(preview.rings,['a'],'Only A receives the preview selection ring');
+  await page.click('[data-camera-overview-compare-alternate]');
+  await page.waitForFunction(()=>Math.abs(+document.querySelector('[data-camera-seek]').value-30)<.05);
+  preview=await viewPreview();
+  assert.ok(preview.status.includes('Previsualizando B')&&preview.status.includes('◆ Cámara'),'Second click previews B');
+  assert.equal(preview.toggle,'Alternar → A','After B, toggle offers A');
+  assert.deepEqual(preview.active,['b'],'Only B is selected on minimap');
+  await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',.74));
+  await page.waitForFunction(()=>Math.abs(+document.querySelector('[data-camera-seek]').value-74)<.05);
+  preview=await viewPreview();
+  assert.ok(preview.status.includes('Previsualización libre'),'Manual scrub away clears displayed preview status');
+  assert.deepEqual(preview.rings,[],'Manual scrub away removes both preview rings');
+  await page.select('[data-camera-overview-compare-b]','look:0:20');
+  await page.click('[data-camera-overview-compare-jump="b"]');
+  await page.waitForFunction(()=>Math.abs(+document.querySelector('[data-camera-seek]').value-10)<.05);
+  preview=await viewPreview();
+  assert.ok(preview.status.includes('Previsualizando B'),'Same-midpoint A/B selection keeps explicitly chosen B');
+  assert.deepEqual(preview.rings,['b'],'Same-midpoint A/B ring matches explicit B');
+  await page.click('[data-camera-overview-compare-alternate]');
+  preview=await viewPreview();
+  assert.ok(preview.status.includes('Previsualizando A'),'Toggle switches preferred identity even at same progress');
+  assert.deepEqual(preview.rings,['a'],'Same-midpoint A/B ring can switch to A');
+  await page.select('[data-camera-map-plane]','front');
+  assert.ok((await viewPreview()).status.includes('Previsualizando A'),'Selected preview survives front projection');
+  await page.select('[data-camera-map-plane]','top');
+  assert.deepEqual((await viewPreview()).rings,['a'],'Selected preview survives return to top projection');
+  await page.select('[data-camera-overview-compare-b]','camera:20:40');
+  await page.evaluate(v=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',v/100),beforeSwitch);
+  await page.waitForFunction(v=>Math.abs(+document.querySelector('[data-camera-seek]').value-v)<.05,{},beforeSwitch);
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),motionNavigationInitial.frames,'Preview switching never mutates camera frames');
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraLookFrames)),motionNavigationInitial.looks,'Preview switching never mutates look frames');
+  assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'Preview switching never modifies undo history');
+  console.log('Camera minimap compare preview: A/B toggle, status, exclusive rings, free scrub and same-point identity OK');
+
+
 
 
 
