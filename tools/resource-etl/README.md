@@ -747,3 +747,33 @@ const resource = await vault.getResource(results.items[0].id);
 ```
 
 También expone `facets()` para construir filtros por proveedor, familia y tipo sin conocer de antemano qué fuentes forman parte del Vault.
+
+
+## Biblioteca Visual standalone
+
+Antes de conectarla al editor principal, el Vault tiene una interfaz aislada en:
+
+```text
+resource-browser/index.html
+```
+
+La interfaz usa el cliente persistente y ofrece:
+
+- búsqueda sobre todos los recursos;
+- filtros por proveedor, familia y tipo;
+- paginación;
+- detalle de licencia, autor, controles y artifacts;
+- preview segura para SVG, HTML/CSS autónomo y efectos CSS;
+- copia del ID universal;
+- copia del código principal;
+- carga perezosa: el bundle completo sólo se descarga al abrir un recurso.
+
+Para abrirla localmente:
+
+```bash
+npm run vault:browser
+```
+
+En Windows, la opción **18 · ABRIR Biblioteca Visual del Vault** abre el navegador y levanta el pequeño servidor local automáticamente.
+
+Este navegador sigue separado del editor principal. Sirve para validar la experiencia de exploración antes de conectar el botón “Aplicar” a NagWeb.

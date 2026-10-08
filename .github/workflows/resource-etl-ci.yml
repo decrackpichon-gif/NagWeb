@@ -309,6 +309,30 @@ jobs:
           console.log("Motion Primitives local hook aliases: OK", motion.length);
           NODE
 
+      - name: Verify standalone Resource Browser
+        working-directory: tools/resource-etl
+        shell: bash
+        run: |
+          node --check resource-browser/app.mjs
+          node --check src/resource-browser-server.mjs
+
+          node src/resource-browser-server.mjs --port=4177 > /tmp/nagweb-browser.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
+
+          for attempt in {1..20}; do
+            if curl -fsS http://127.0.0.1:4177/resource-browser/ > /tmp/nagweb-browser.html; then
+              break
+            fi
+            sleep 0.2
+          done
+
+          grep -q "Biblioteca de recursos" /tmp/nagweb-browser.html
+          curl -fsS http://127.0.0.1:4177/resource-browser/app.mjs | grep -q "createNagWebPersistentVaultClient"
+          curl -fsS http://127.0.0.1:4177/src/runtime/persistent-vault-client.mjs | grep -q "NagWebPersistentVaultClient"
+
+          echo "Standalone Resource Browser: OK"
+
       - name: Verify persistent Vault client
         working-directory: tools/resource-etl
         shell: bash

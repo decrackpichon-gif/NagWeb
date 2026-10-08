@@ -42,6 +42,7 @@ echo 14. CREAR Vault + previews React ^(instala compilador si hace falta^)
 echo 15. CREAR inventario Uiverse ^(liviano, sin bajar los 3.800 codigos^)
 echo 16. CONTINUAR Uiverse ^(100 recursos, recuerda solo donde quedo^)
 echo 17. RECONSTRUIR Vault desde NUESTRA copia persistente
+echo 18. ABRIR Biblioteca Visual del Vault
 echo.
 echo  0. Salir
 echo.
@@ -64,6 +65,7 @@ if "%choice%"=="14" goto code_vault_react
 if "%choice%"=="15" goto uiverse_inventory
 if "%choice%"=="16" goto uiverse_batch
 if "%choice%"=="17" goto restore_persistent_vault
+if "%choice%"=="18" goto resource_browser
 if "%choice%"=="0" exit /b 0
 
 echo.
@@ -210,6 +212,16 @@ echo.
 call npm install --no-package-lock --no-audit --no-fund
 if errorlevel 1 goto done
 node src\snapshot\restore-persistent-vault.mjs --out=vault-restored --react-previews
+goto done
+
+:resource_browser
+cls
+echo Abriendo la Biblioteca Visual de NagWeb...
+echo.
+echo La biblioteca usa primero el indice liviano de nuestra copia persistente.
+echo Cerrando esta ventana se detiene el servidor local.
+echo.
+node src\resource-browser-server.mjs --open
 goto done
 
 :done

@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>NagWeb · Biblioteca de Recursos</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">NagWeb Resource Vault</p>
+        <h1>Biblioteca de recursos</h1>
+        <p class="subtitle" data-status>Conectando con la copia persistente de NagWeb…</p>
+      </div>
+      <div class="topbar-actions">
+        <span class="counter" data-total>0 recursos</span>
+        <button type="button" class="secondary" data-refresh>Actualizar índice</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="filters" aria-label="Filtros">
+        <label class="search-field">
+          <span>Buscar</span>
+          <input type="search" data-search placeholder="loader, card, shader, icon…" autocomplete="off">
+        </label>
+
+        <label>
+          <span>Proveedor</span>
+          <select data-provider><option value="">Todos</option></select>
+        </label>
+
+        <label>
+          <span>Familia</span>
+          <select data-family><option value="">Todas</option></select>
+        </label>
+
+        <label>
+          <span>Tipo</span>
+          <select data-kind><option value="">Todos</option></select>
+        </label>
+
+        <button type="button" class="secondary full" data-clear>Limpiar filtros</button>
+
+        <div class="hint-card">
+          <strong>Carga progresiva</strong>
+          <p>La búsqueda usa sólo el índice liviano. El código completo se descarga recién cuando abrís un recurso.</p>
+        </div>
+      </aside>
+
+      <section class="results-panel" aria-live="polite">
+        <div class="results-head">
+          <div>
+            <strong data-result-count>0 resultados</strong>
+            <span data-page-label></span>
+          </div>
+          <div class="pager">
+            <button type="button" class="secondary" data-prev>←</button>
+            <button type="button" class="secondary" data-next>→</button>
+          </div>
+        </div>
+
+        <div class="resource-grid" data-grid></div>
+
+        <div class="empty" data-empty hidden>
+          <strong>No encontré recursos con esos filtros.</strong>
+          <span>Probá otra búsqueda o limpiá los filtros.</span>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog class="detail-dialog" data-detail>
+    <div class="detail-head">
+      <div>
+        <p class="eyebrow" data-detail-provider></p>
+        <h2 data-detail-title>Recurso</h2>
+        <p data-detail-id></p>
+      </div>
+      <button type="button" class="secondary" data-close>Cerrar</button>
+    </div>
+
+    <div class="detail-layout">
+      <section class="preview-panel">
+        <div class="preview-frame">
+          <iframe data-preview title="Vista previa del recurso" sandbox></iframe>
+          <div class="preview-fallback" data-preview-fallback hidden>
+            <strong>Preview visual no disponible en este modo</strong>
+            <span>El código igualmente está guardado en nuestro Vault.</span>
+          </div>
+        </div>
+        <p class="preview-note" data-preview-note></p>
+      </section>
+
+      <aside class="resource-detail">
+        <div class="badges" data-detail-badges></div>
+        <p data-detail-description></p>
+
+        <dl class="meta-list">
+          <div><dt>Licencia</dt><dd data-detail-license></dd></div>
+          <div><dt>Autor</dt><dd data-detail-author></dd></div>
+          <div><dt>Controles</dt><dd data-detail-controls></dd></div>
+          <div><dt>Archivos</dt><dd data-detail-artifacts></dd></div>
+        </dl>
+
+        <div class="detail-actions">
+          <button type="button" class="primary" data-copy-id>Copiar ID</button>
+          <button type="button" class="secondary" data-copy-code>Copiar código principal</button>
+        </div>
+
+        <details>
+          <summary>Ver código / datos</summary>
+          <pre data-code></pre>
+        </details>
+      </aside>
+    </div>
+  </dialog>
+
+  <script type="module" src="./app.mjs"></script>
+</body>
+</html>
