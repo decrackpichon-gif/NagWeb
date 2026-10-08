@@ -890,11 +890,11 @@ assert.match(hoverShakeDoc, /class="demo shake-hard shake-constant"/);
 assert.match(hoverShakeDoc, /class="mode selected" aria-label="Modo Hover"/);
 assert.match(hoverShakeDoc, /class="mode " aria-label="Modo Siempre"/);
 assert.equal((hoverShakeDoc.match(/Elegido para insertar/g) || []).length, 1);
-assert.equal(hoverShakeDoc.includes("<script"), false);
+assert.match(hoverShakeDoc, /<script nonce="nagweb-cssshake-preview-v1">/);
 assert.match(hoverShakeDoc, /prefers-reduced-motion:reduce/);
 assert.match(hoverShakeDoc, /Pasá el cursor/);
 assert.match(hoverShakeDoc, /Prueba &lt;Shake&gt;/);
-assert.match(hoverShakeDoc, /script-src 'none'/);
+assert.match(hoverShakeDoc, /script-src 'nonce-nagweb-cssshake-preview-v1'/);
 
 const constantShakeDoc = buildCssShakeBrowserPreview(shakePreviewResource,
   { trigger: "constant" }, { stylesheet: shakeCss });
@@ -992,8 +992,8 @@ for (const [family, document] of [
   assert.match(document, /class="paused">Reanudar/, family + " resume action");
   assert.match(document, /\.preview-pause:checked ~ main \.demo\{animation-play-state:paused!important\}/,
     family + " stylesheet-driven pause");
-  assert.match(document, /script-src 'none'/, family + " script policy");
-  assert.equal(document.includes("<script"), false, family + " has no scripts");
+  assert.match(document, /script-src 'nonce-nagweb-cssshake-preview-v1'/,
+    family + " nonce-restricted script policy");
 }
 assert.equal(buildResourceApplyEnvelope(magicCssResource, {
   values: magicValues
@@ -1063,3 +1063,67 @@ assert.deepEqual(bridgeCalls.map(([name, value]) => [name, value]), [
 ]);
 assert.match(fakeHint.textContent, /Duración 2.5s/);
 assert.match(fakeHint.textContent, /Repeticiones 3/);
+
+const shakeLiveScript = hoverShakeDoc.match(
+  /<script nonce="nagweb-cssshake-preview-v1">([\s\S]*?)<\/script>/
+);
+assert.ok(shakeLiveScript, "CSSShake includes its restricted live-selection handler");
+const shakeParent = {};
+let shakeMessageHandler;
+const makeFakeMode = () => {
+  const classes = new Set();
+  const tag = { textContent: "" };
+  const card = {
+    classList: {
+      toggle(name, active) {
+        if (active) classes.add(name);
+        else classes.delete(name);
+      }
+    },
+    querySelector(selector) { return selector === ".tag" ? tag : null; }
+  };
+  return { card, classes, tag };
+};
+const hoverLiveCard = makeFakeMode();
+const constantLiveCard = makeFakeMode();
+const pauseCheckbox = { checked: true };
+runInNewContext(shakeLiveScript[1], {
+  window: {
+    parent: shakeParent,
+    addEventListener(type, handler) {
+      assert.equal(type, "message");
+      shakeMessageHandler = handler;
+    }
+  },
+  document: {
+    querySelector(selector) {
+      if (selector === '.mode[aria-label="Modo Hover"]') return hoverLiveCard.card;
+      if (selector === '.mode[aria-label="Modo Siempre"]') return constantLiveCard.card;
+      if (selector === "#pause-preview") return pauseCheckbox;
+      return null;
+    }
+  }
+});
+assert.equal(typeof shakeMessageHandler, "function");
+const sendShakeUpdate = (source, resourceId, trigger) => shakeMessageHandler({
+  source,
+  data: {
+    type: "nagweb:cssshake-preview:update",
+    resourceId, trigger
+  }
+});
+sendShakeUpdate({}, shakePreviewResource.id, "constant");
+sendShakeUpdate(shakeParent, "different-resource", "constant");
+sendShakeUpdate(shakeParent, shakePreviewResource.id, "unexpected");
+assert.equal(hoverLiveCard.tag.textContent, "", "Ignore invalid preview messages");
+assert.equal(constantLiveCard.tag.textContent, "", "Ignore invalid preview messages");
+sendShakeUpdate(shakeParent, shakePreviewResource.id, "constant");
+assert.equal(hoverLiveCard.classes.has("selected"), false);
+assert.equal(constantLiveCard.classes.has("selected"), true);
+assert.equal(hoverLiveCard.tag.textContent, "Comparación");
+assert.equal(constantLiveCard.tag.textContent, "Elegido para insertar");
+assert.equal(pauseCheckbox.checked, true, "Changing trigger keeps paused state");
+sendShakeUpdate(shakeParent, shakePreviewResource.id, "hover");
+assert.equal(hoverLiveCard.classes.has("selected"), true);
+assert.equal(constantLiveCard.classes.has("selected"), false);
+assert.equal(pauseCheckbox.checked, true, "Switching back still keeps paused state");

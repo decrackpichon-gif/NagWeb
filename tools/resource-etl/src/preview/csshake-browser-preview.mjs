@@ -1,4 +1,4 @@
-// Build a script-free, isolated preview for trusted CSSShake resources.
+// Isolated CSSShake preview with a narrowly scoped live-selection message handler.
 import {
   CSS_PREVIEW_PLAYBACK_STYLES,
   CSS_PREVIEW_PLAYBACK_MARKUP
@@ -49,10 +49,11 @@ export function buildCssShakeBrowserPreview(
 
   // Never let CSS content break out of its style element.
   const safeStylesheet = stylesheet.replaceAll("<", "\\3C ");
+  const escapedResourceId = JSON.stringify(resource.id).replaceAll("<", "\\u003c");
   return `<!doctype html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; script-src 'none'; connect-src 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; script-src 'nonce-nagweb-cssshake-preview-v1'; connect-src 'none'; object-src 'none'; frame-src 'none'">
 <style>${safeStylesheet}</style>
 <style>
 html,body{height:100%;margin:0;background:#f4f5f7;color:#1b2630;font-family:system-ui}
@@ -86,5 +87,30 @@ ${CSS_PREVIEW_PLAYBACK_MARKUP}
     </section>
   </div>
 </main>
+<script nonce="nagweb-cssshake-preview-v1">
+const previewResourceId = ${escapedResourceId};
+window.addEventListener("message", (event) => {
+  if (event.source !== window.parent) return;
+  const request = event.data;
+  if (
+    request?.type !== "nagweb:cssshake-preview:update" ||
+    request.resourceId !== previewResourceId ||
+    (request.trigger !== "hover" && request.trigger !== "constant")
+  ) return;
+
+  for (const [selector, trigger] of [
+    ['.mode[aria-label="Modo Hover"]', "hover"],
+    ['.mode[aria-label="Modo Siempre"]', "constant"]
+  ]) {
+    const card = document.querySelector(selector);
+    if (!card) continue;
+    const selected = request.trigger === trigger;
+    card.classList.toggle("selected", selected);
+    const tag = card.querySelector(".tag");
+    if (tag) tag.textContent = selected ? "Elegido para insertar" : "Comparación";
+  }
+  // Update only selection metadata; don't replace the demo or pause checkbox.
+});
+</script>
 </body></html>`;
 }
