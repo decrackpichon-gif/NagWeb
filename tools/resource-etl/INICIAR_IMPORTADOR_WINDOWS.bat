@@ -39,6 +39,8 @@ echo 11. CREAR catalogo local ^(25 por fuente^)
 echo 12. CREAR Code Vault PILOTO ^(recursos livianos^)
 echo 13. CREAR Code Vault COMPLETO ^(todas las fuentes aprobadas^)
 echo 14. CREAR Vault + previews React ^(instala compilador si hace falta^)
+echo 15. CREAR inventario Uiverse ^(liviano, sin bajar los 3.800 codigos^)
+echo 16. IMPORTAR lote Uiverse ^(100 recursos desde un offset^)
 echo.
 echo  0. Salir
 echo.
@@ -58,6 +60,8 @@ if "%choice%"=="11" goto catalog
 if "%choice%"=="12" goto code_vault_pilot
 if "%choice%"=="13" goto code_vault_all
 if "%choice%"=="14" goto code_vault_react
+if "%choice%"=="15" goto uiverse_inventory
+if "%choice%"=="16" goto uiverse_batch
 if "%choice%"=="0" exit /b 0
 
 echo.
@@ -174,6 +178,24 @@ if errorlevel 1 goto failed
 echo.
 echo Construyendo Vault con previews React seguras...
 node src\vault-cli.mjs --sources=lucide,shadcn,magicui,motion-primitives,animxyz,threejs,hyperui,csshake,glsl-noise --limit=25 --react-previews
+goto done
+
+:uiverse_inventory
+cls
+echo Creando inventario liviano de Uiverse...
+echo.
+node src\uiverse-inventory-cli.mjs --out=vault
+goto done
+
+:uiverse_batch
+cls
+echo Importar 100 recursos Uiverse.
+echo El offset indica desde que posicion del inventario continuar.
+echo Ejemplo: 0 para el primer lote, luego usa el offset que informa el programa.
+echo.
+set /p uiverse_offset=Offset inicial ^(Enter = 0^): 
+if "%uiverse_offset%"=="" set uiverse_offset=0
+node src\vault-cli.mjs --sources=uiverse --limit=100 --uiverse-offset=%uiverse_offset%
 goto done
 
 :done

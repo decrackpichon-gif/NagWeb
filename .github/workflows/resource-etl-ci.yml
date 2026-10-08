@@ -361,6 +361,54 @@ jobs:
           console.log("Uiverse autonomous scale: OK", items.length);
           NODE
 
+      - name: Verify Uiverse resumable paging
+        working-directory: tools/resource-etl
+        shell: bash
+        run: |
+          node --input-type=module - <<'NODE'
+          import {
+            extractUiverseComponents,
+            getUiverseInventory
+          } from "./src/extractors/uiverse.mjs";
+
+          const inventory = await getUiverseInventory();
+          if (inventory.totalAvailable < 3000) {
+            throw new Error(
+              `Unexpectedly small Uiverse inventory: ${inventory.totalAvailable}`
+            );
+          }
+
+          const first = await extractUiverseComponents({ limit: 20, offset: 0 });
+          const second = await extractUiverseComponents({
+            limit: 20,
+            offset: first.nextOffset
+          });
+
+          const firstPaths = new Set(first.items.map((item) => item.entry.path));
+          const overlap = second.items.filter((item) =>
+            firstPaths.has(item.entry.path)
+          );
+
+          if (first.items.length !== 20 || second.items.length !== 20) {
+            throw new Error("Expected two complete 20-item Uiverse pages");
+          }
+          if (overlap.length) {
+            throw new Error(
+              `Uiverse paging overlap: ${overlap.map((item) => item.entry.path).join(", ")}`
+            );
+          }
+          if (second.startOffset !== first.nextOffset) {
+            throw new Error("Uiverse paging cursor did not resume correctly");
+          }
+
+          console.log(
+            "Uiverse resumable paging: OK",
+            first.startOffset,
+            first.nextOffset,
+            second.nextOffset
+          );
+          NODE
+
 
   windows-smoke:
     name: Windows smoke

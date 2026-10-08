@@ -520,3 +520,57 @@ se convierte en:
 Las variantes booleanas `true/false` se convierten en toggle.
 
 Shadcn usa ahora el mismo analizador que Magic UI/Motion Primitives, manteniendo además controles base de NagWeb como opacidad y el texto de Button.
+
+
+## Uiverse · importación escalable
+
+Uiverse Galaxy se integra como fuente MIT de componentes HTML/CSS autónomos.
+
+El importador conserva el archivo original completo y extrae:
+
+- autor;
+- categoría;
+- tags;
+- ruta y commit de origen;
+- checksum;
+- preview offline.
+
+Los recursos con scripts, iframes o URLs externas se omiten del Vault autónomo.
+
+### Inventario liviano
+
+Para conocer todos los candidatos sin descargar el contenido de miles de componentes:
+
+```bash
+npm run uiverse:inventory -- --out=vault
+```
+
+Esto crea `vault/uiverse-inventory.json` con la ruta, categoría, autor inferido, slug y SHA de cada candidato.
+
+### Lotes reanudables
+
+```bash
+npm run vault -- --sources=uiverse --limit=100 --uiverse-offset=0
+```
+
+Al terminar, el CLI informa:
+
+```text
+[uiverse] offset 0 -> 112
+```
+
+El siguiente lote puede continuar con:
+
+```bash
+npm run vault -- --sources=uiverse --limit=100 --uiverse-offset=112
+```
+
+El offset representa la posición escaneada dentro del inventario, por lo que los elementos descartados por depender de recursos externos no provocan duplicados al reanudar.
+
+También se puede limitar por categoría:
+
+```bash
+npm run vault -- --sources=uiverse --limit=100 --uiverse-category=Buttons
+```
+
+En Windows, el lanzador incluye opciones para crear el inventario y ejecutar lotes de 100 sin escribir comandos.

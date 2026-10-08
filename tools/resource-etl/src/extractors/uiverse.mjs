@@ -92,11 +92,7 @@ function interleaveByCategory(entries) {
   return output;
 }
 
-export async function extractUiverseComponents({
-  limit = 25,
-  all = false,
-  concurrency = 8
-} = {}) {
+export async function getUiverseInventory({ category } = {}) {
   const commitInfo = await fetchJson(
     `https://api.github.com/repos/${REPO}/commits/main`
   );
@@ -110,7 +106,7 @@ export async function extractUiverseComponents({
     throw new Error("Uiverse Galaxy Git tree was truncated; refusing incomplete mirror.");
   }
 
-  const htmlEntries = interleaveByCategory(
+  let entries = interleaveByCategory(
     (tree.tree || []).filter(
       (entry) =>
         entry.type === "blob" &&
@@ -119,13 +115,50 @@ export async function extractUiverseComponents({
     )
   );
 
+  if (category) {
+    const wanted = String(category).toLowerCase();
+    entries = entries.filter(
+      (entry) => entry.path.split("/")[0]?.toLowerCase() === wanted
+    );
+  }
+
+  return {
+    repository: `https://github.com/${REPO}`,
+    commit,
+    totalAvailable: entries.length,
+    categories: CATEGORY_ORDER,
+    entries: entries.map((entry, index) => ({
+      index,
+      path: entry.path,
+      sha: entry.sha,
+      category: entry.path.split("/")[0] || "Other",
+      ...parseFilename(entry.path)
+    }))
+  };
+}
+
+export async function extractUiverseComponents({
+  limit = 25,
+  all = false,
+  concurrency = 8,
+  offset = 0,
+  category
+} = {}) {
+  const inventory = await getUiverseInventory({ category });
+  const commit = inventory.commit;
+  const htmlEntries = inventory.entries.map((entry) => ({
+    path: entry.path,
+    sha: entry.sha
+  }));
+
+  const startOffset = Math.max(0, Number(offset) || 0);
   const targetCount = all
-    ? htmlEntries.length
+    ? Math.max(0, htmlEntries.length - startOffset)
     : Math.max(1, Number(limit) || 25);
 
   const selected = [];
   const skipped = [];
-  let cursor = 0;
+  let cursor = Math.min(startOffset, htmlEntries.length);
 
   while (selected.length < targetCount && cursor < htmlEntries.length) {
     const batch = htmlEntries.slice(cursor, cursor + Math.max(concurrency * 2, 16));
@@ -155,7 +188,10 @@ export async function extractUiverseComponents({
     repository: `https://github.com/${REPO}`,
     commit,
     totalAvailable: htmlEntries.length,
-    scanned: cursor,
+    category: category || null,
+    startOffset,
+    nextOffset: cursor,
+    scanned: Math.max(0, cursor - startOffset),
     items: selected,
     skipped
   };

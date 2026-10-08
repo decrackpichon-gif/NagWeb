@@ -89,9 +89,19 @@ async function collectSource(source, args) {
 
   if (source === "uiverse") {
     assertFullMirrorAllowed("uiverse");
-    const raw = await extractUiverseComponents({ limit, all });
+    const raw = await extractUiverseComponents({
+      limit,
+      all,
+      offset: args["uiverse-offset"] ? Number(args["uiverse-offset"]) : 0,
+      category: args["uiverse-category"]
+        ? String(args["uiverse-category"])
+        : undefined
+    });
     console.log(
       `[uiverse] ${raw.items.length} autonomous components selected from ${raw.scanned} scanned files (${raw.totalAvailable} available).`
+    );
+    console.log(
+      `[uiverse] offset ${raw.startOffset} -> ${raw.nextOffset}${raw.category ? ` · category ${raw.category}` : ""}`
     );
     return raw.items.map((item) =>
       transformUiverseComponent({
