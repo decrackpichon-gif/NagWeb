@@ -41,6 +41,8 @@ import {runMotionStreamPlacementSmoke} from './nagweb-motion-stream-placement-sm
 import './nagweb-flip-model-test.mjs';
 import './nagweb-orbit-carousel-model-test.mjs';
 import './nagweb-column-drift-model-test.mjs';
+import './nagweb-spotlight-model-test.mjs';
+import {runMotionSpotlightSmoke} from './nagweb-motion-spotlight-smoke.mjs';
 import {runMotionColumnDriftSmoke} from './nagweb-motion-column-drift-smoke.mjs';
 import {runMotionOrbitCarouselSmoke} from './nagweb-motion-orbit-carousel-smoke.mjs';
 import {runMotionFlipSmoke} from './nagweb-motion-flip-smoke.mjs';
@@ -118,7 +120,7 @@ import {runMotionIsoOrbitSmoke} from './nagweb-motion-iso-orbit-smoke.mjs';
 import {runMotionBatchImagesSmoke} from './nagweb-motion-batch-images-smoke.mjs';
 
 const suite=process.env.NAGWEB_SMOKE_SUITE||'all';
-if(!['all','procedural','editor','diagonal','grid','zoom','drop','shift','spiral','film','totem','peel','burst','photo','wheel','spin','bottom','cover','cover-vertical','ring','ring-vertical','trail','dance','deck','showcase','split','wipe','stripe','mosaic','hero','flip','orbit-carousel','column-drift'].includes(suite))throw new Error('Unknown NagWeb smoke suite: '+suite);
+if(!['all','procedural','editor','diagonal','grid','zoom','drop','shift','spiral','film','totem','peel','burst','photo','wheel','spin','bottom','cover','cover-vertical','ring','ring-vertical','trail','dance','deck','showcase','split','wipe','stripe','mosaic','hero','flip','orbit-carousel','column-drift','spotlight'].includes(suite))throw new Error('Unknown NagWeb smoke suite: '+suite);
 
 const feedbackSource=fs.readFileSync(new URL('../js/nagweb-feedback-v16.js',import.meta.url),'utf8');
 const directorSource=fs.readFileSync(new URL('../js/nagweb-scroll-director-v16.js',import.meta.url),'utf8');
@@ -374,6 +376,8 @@ for(const kind of ['diagonal-carousel','iso-cascade']){await runMotionDiagonalSm
 if(suite==='all'||suite==='flip'){await runMotionFlipSmoke(page);await runMotionStreamPlacementSmoke(page,'flip-grid');await runMotionBatchImagesSmoke(page,['flip-grid']);}
 if(suite==='all'||suite==='orbit-carousel'){await runMotionOrbitCarouselSmoke(page);await runMotionStreamPlacementSmoke(page,'orbit-carousel');await runMotionBatchImagesSmoke(page,['orbit-carousel']);}
 if(suite==='all'||suite==='column-drift'){await runMotionColumnDriftSmoke(page);await runMotionStreamPlacementSmoke(page,'column-drift');await runMotionBatchImagesSmoke(page,['column-drift']);}
+if(suite==='all'||suite==='spotlight'){await runMotionSpotlightSmoke(page);await runMotionStreamPlacementSmoke(page,'spotlight-zoom');await runMotionBatchImagesSmoke(page,['spotlight-zoom']);}
+
 
 
 if(suite==='all'||suite==='hero'){await runMotionHeroSmoke(page);await runMotionStreamPlacementSmoke(page,'hero-reel');await runMotionBatchImagesSmoke(page,['hero-reel']);}
