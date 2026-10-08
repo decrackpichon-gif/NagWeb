@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "1.0",
+  "name": "all",
+  "generatedAt": "2026-10-08T15:44:53.140Z",
+  "resourceCount": 6439,
+  "providers": [
+    "animxyz",
+    "csshake",
+    "glsl-noise",
+    "hyperui",
+    "lucide",
+    "magic-css",
+    "magicui",
+    "motion-primitives",
+    "shadcn",
+    "spinkit",
+    "threejs",
+    "uiverse"
+  ],
+  "sourceSnapshots": [
+    {
+      "id": "uiverse",
+      "count": 3761,
+      "sha256": "552812ccde459d59563490b3614e7f7b4cc8e6b84ea110ef4ff10c0c0a24f6bb"
+    },
+    {
+      "id": "lucide",
+      "count": 1870,
+      "sha256": "61d7d813623bfa092dcf6c1ddff8453f3f8e0d595c9788cc58f95fdb08d0177f"
+    },
+    {
+      "id": "threejs-code",
+      "count": 281,
+      "sha256": "a931b638f12377d162f3b55e9e5e62dcbe568d3eb62e78b34376ffc801c36f39"
+    },
+    {
+      "id": "core-code",
+      "count": 527,
+      "sha256": "966cd0883dbd801e1f89ad9aeb516a098af60a0cbf4b7a2c5e7b7703f15d0f7b"
+    }
+  ],
+  "uncompressedBytes": 36266341,
+  "compressedBytes": 4597392,
+  "compressedSha256": "508bfea8b8be73101cc1d4a41ddfafe6a0719bd66cdf407a17a059b071f7fb46",
+  "browseIndexBytes": 356431,
+  "browseIndexSha256": "62c7d2b4973bcc3714aa24f808b37683ac8baa344773307b116bf83287c4b44d",
+  "files": {
+    "library": "library.json.gz",
+    "browseIndex": "browse-index.json.gz"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1.0",
+  "provider": "threejs",
+  "policy": "code-only",
+  "sourceRepository": "https://github.com/mrdoob/three.js",
+  "sourceCommit": "e9a8a1264c58150907230122ac17f5760a1ebab1",
+  "generatedAt": "2026-10-08T15:44:35.366Z",
+  "totalScanned": 610,
+  "codeOnlyResources": 281,
+  "rejectedResources": 329,
+  "uncompressedBytes": 3064628,
+  "compressedBytes": 402785,
+  "compressedSha256": "a931b638f12377d162f3b55e9e5e62dcbe568d3eb62e78b34376ffc801c36f39",
+  "files": {
+    "library": "library.json.gz",
+    "catalog": "catalog.json",
+    "rejected": "rejected.json",
+    "license": "LICENSE"
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "1.0",
+  "name": "core-code",
+  "generatedAt": "2026-10-08T15:44:52.528Z",
+  "resourceCount": 527,
+  "providers": [
+    "animxyz",
+    "csshake",
+    "glsl-noise",
+    "hyperui",
+    "magic-css",
+    "magicui",
+    "motion-primitives",
+    "shadcn",
+    "spinkit"
+  ],
+  "providerCounts": {
+    "animxyz": 26,
+    "csshake": 11,
+    "glsl-noise": 9,
+    "hyperui": 248,
+    "magic-css": 65,
+    "magicui": 68,
+    "motion-primitives": 33,
+    "shadcn": 55,
+    "spinkit": 12
+  },
+  "sourceCommits": {
+    "animxyz": [
+      "4d8c784d9ff8c6d1bcd531da87cc8b8f43a5032e"
+    ],
+    "csshake": [
+      "4b9caede44bc93ac83de3ee795fe044832ceb484"
+    ],
+    "glsl-noise": [
+      "7870430c384bd53488ff6fe9a47f8a6f571524c4"
+    ],
+    "hyperui": [
+      "2b5aebbc50d2c9ac89650f51b554f53895b4803c"
+    ],
+    "magic-css": [
+      "f26d3c3beaf3017c90fb27ac6f67168fac26de06"
+    ],
+    "magicui": [
+      "cdb348cb4c72a9b54b554d8617801e479fbc8714"
+    ],
+    "motion-primitives": [
+      "120f64f6ca60348e251f929e9c81f11ccbe45eda"
+    ],
+    "spinkit": [
+      "742a71277c49b69053b5beb9fad80d720840a2ab"
+    ]
+  },
+  "uncompressedBytes": 6208011,
+  "compressedBytes": 652671,
+  "compressedSha256": "966cd0883dbd801e1f89ad9aeb516a098af60a0cbf4b7a2c5e7b7703f15d0f7b",
+  "files": {
+    "library": "library.json.gz",
+    "catalog": "catalog.json",
+    "notices": "THIRD_PARTY_NOTICES.txt"
+  }
+}

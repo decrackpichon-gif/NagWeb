@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1.0",
+  "provider": "lucide",
+  "sourceRepository": "https://github.com/lucide-icons/lucide",
+  "sourceCommit": "a04f228cd01185e09c188b7227b9600c08c565ec",
+  "generatedAt": "2026-10-08T15:44:34.904Z",
+  "resourceCount": 1870,
+  "uncompressedBytes": 6958490,
+  "compressedBytes": 602180,
+  "compressedSha256": "61d7d813623bfa092dcf6c1ddff8453f3f8e0d595c9788cc58f95fdb08d0177f",
+  "files": {
+    "library": "library.json.gz",
+    "catalog": "catalog.json",
+    "license": "LICENSE"
+  }
+}

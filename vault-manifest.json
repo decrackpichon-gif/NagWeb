@@ -1,0 +1,131 @@
+{
+  "schemaVersion": "1.0",
+  "format": "nagweb-resource-vault-index",
+  "generatedAt": "2026-10-08T15:44:52.775Z",
+  "totalResources": 6439,
+  "totalCompressedBytes": 4599764,
+  "totalUncompressedBytes": 36267167,
+  "snapshotCount": 4,
+  "snapshots": [
+    {
+      "id": "uiverse",
+      "title": "Uiverse Galaxy",
+      "count": 3761,
+      "compressedBytes": 2942128,
+      "uncompressedBytes": 20036038,
+      "sha256": "552812ccde459d59563490b3614e7f7b4cc8e6b84ea110ef4ff10c0c0a24f6bb",
+      "sourceCommit": "adbd2adde0a299a3956ea288fb444ec01891ca41",
+      "sourceCommits": null,
+      "providers": [
+        "uiverse"
+      ],
+      "manifestPath": "uiverse/manifest.json",
+      "libraryPath": "uiverse/library.json.gz"
+    },
+    {
+      "id": "lucide",
+      "title": "Lucide Icons",
+      "count": 1870,
+      "compressedBytes": 602180,
+      "uncompressedBytes": 6958490,
+      "sha256": "61d7d813623bfa092dcf6c1ddff8453f3f8e0d595c9788cc58f95fdb08d0177f",
+      "sourceCommit": "a04f228cd01185e09c188b7227b9600c08c565ec",
+      "sourceCommits": null,
+      "providers": [
+        "lucide"
+      ],
+      "manifestPath": "lucide/manifest.json",
+      "libraryPath": "lucide/library.json.gz"
+    },
+    {
+      "id": "threejs-code",
+      "title": "Three.js code-only",
+      "count": 281,
+      "compressedBytes": 402785,
+      "uncompressedBytes": 3064628,
+      "sha256": "a931b638f12377d162f3b55e9e5e62dcbe568d3eb62e78b34376ffc801c36f39",
+      "sourceCommit": "e9a8a1264c58150907230122ac17f5760a1ebab1",
+      "sourceCommits": null,
+      "providers": [
+        "threejs"
+      ],
+      "manifestPath": "threejs-code/manifest.json",
+      "libraryPath": "threejs-code/library.json.gz"
+    },
+    {
+      "id": "core-code",
+      "title": "Core Code Vault",
+      "count": 527,
+      "compressedBytes": 652671,
+      "uncompressedBytes": 6208011,
+      "sha256": "966cd0883dbd801e1f89ad9aeb516a098af60a0cbf4b7a2c5e7b7703f15d0f7b",
+      "sourceCommit": null,
+      "sourceCommits": {
+        "animxyz": [
+          "4d8c784d9ff8c6d1bcd531da87cc8b8f43a5032e"
+        ],
+        "csshake": [
+          "4b9caede44bc93ac83de3ee795fe044832ceb484"
+        ],
+        "glsl-noise": [
+          "7870430c384bd53488ff6fe9a47f8a6f571524c4"
+        ],
+        "hyperui": [
+          "2b5aebbc50d2c9ac89650f51b554f53895b4803c"
+        ],
+        "magic-css": [
+          "f26d3c3beaf3017c90fb27ac6f67168fac26de06"
+        ],
+        "magicui": [
+          "cdb348cb4c72a9b54b554d8617801e479fbc8714"
+        ],
+        "motion-primitives": [
+          "120f64f6ca60348e251f929e9c81f11ccbe45eda"
+        ],
+        "spinkit": [
+          "742a71277c49b69053b5beb9fad80d720840a2ab"
+        ]
+      },
+      "providers": [
+        "animxyz",
+        "csshake",
+        "glsl-noise",
+        "hyperui",
+        "magic-css",
+        "magicui",
+        "motion-primitives",
+        "shadcn",
+        "spinkit"
+      ],
+      "manifestPath": "core-code/manifest.json",
+      "libraryPath": "core-code/library.json.gz"
+    }
+  ],
+  "consolidated": {
+    "id": "all",
+    "title": "NagWeb Complete Lightweight Vault",
+    "count": 6439,
+    "providers": [
+      "animxyz",
+      "csshake",
+      "glsl-noise",
+      "hyperui",
+      "lucide",
+      "magic-css",
+      "magicui",
+      "motion-primitives",
+      "shadcn",
+      "spinkit",
+      "threejs",
+      "uiverse"
+    ],
+    "compressedBytes": 4597392,
+    "uncompressedBytes": 36266341,
+    "sha256": "508bfea8b8be73101cc1d4a41ddfafe6a0719bd66cdf407a17a059b071f7fb46",
+    "libraryPath": "all/library.json.gz",
+    "manifestPath": "all/manifest.json",
+    "browseIndexPath": "all/browse-index.json.gz",
+    "browseIndexBytes": 356431,
+    "browseIndexSha256": "62c7d2b4973bcc3714aa24f808b37683ac8baa344773307b116bf83287c4b44d"
+  }
+}

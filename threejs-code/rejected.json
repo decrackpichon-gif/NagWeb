@@ -1,0 +1,2002 @@
+[
+  {
+    "path": "examples/css2d_label.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/css3d_molecules.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/css3d_sprites.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/games_fps.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/misc_controls_arcball.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/misc_controls_fly.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/misc_controls_transform.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/misc_exporter_exr.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/misc_exporter_gltf_normals.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/misc_exporter_gltf.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/misc_exporter_ktx2.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/misc_exporter_obj.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/misc_exporter_ply.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/misc_exporter_stl.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/misc_exporter_usdz.html",
+    "reasons": [
+      "external-binary-or-media",
+      "media-tag"
+    ]
+  },
+  {
+    "path": "examples/physics_ammo_break.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/physics_ammo_cloth.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/physics_ammo_rope.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/physics_ammo_terrain.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/physics_ammo_volume.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/physics_rapier_basic.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/physics_rapier_character_controller.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/physics_rapier_terrain.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/physics_rapier_vehicle_controller.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/svg_sandbox.html",
+    "reasons": [
+      "external-binary-or-media",
+      "external-data"
+    ]
+  },
+  {
+    "path": "examples/webaudio_orientation.html",
+    "reasons": [
+      "external-binary-or-media",
+      "media-tag"
+    ]
+  },
+  {
+    "path": "examples/webaudio_sandbox.html",
+    "reasons": [
+      "external-binary-or-media",
+      "media-tag"
+    ]
+  },
+  {
+    "path": "examples/webaudio_timing.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webaudio_visualizer.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_animation_keyframes.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_animation_multiple.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_animation_skinning_additive_blending.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_animation_skinning_blending.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_animation_skinning_ik.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_animation_skinning_morph.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_animation_walk.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_buffergeometry_attributes_integer.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_buffergeometry_custom_attributes_particles.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_buffergeometry_instancing_billboards.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_buffergeometry_instancing_interleaved.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_camera_logarithmicdepthbuffer.html",
+    "reasons": [
+      "external-data"
+    ]
+  },
+  {
+    "path": "examples/webgl_custom_attributes_lines.html",
+    "reasons": [
+      "external-data"
+    ]
+  },
+  {
+    "path": "examples/webgl_custom_attributes_points.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_custom_attributes_points2.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_custom_attributes_points3.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_custom_attributes.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_decals.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_effects_stereo.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_geometries.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_geometry_colors_lookuptable.html",
+    "reasons": [
+      "external-data"
+    ]
+  },
+  {
+    "path": "examples/webgl_geometry_convex.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_geometry_cube.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_geometry_minecraft.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_geometry_nurbs.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_geometry_shapes.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_geometry_teapot.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_geometry_text_shapes.html",
+    "reasons": [
+      "external-data"
+    ]
+  },
+  {
+    "path": "examples/webgl_geometry_text_stroke.html",
+    "reasons": [
+      "external-data"
+    ]
+  },
+  {
+    "path": "examples/webgl_gpgpu_birds_gltf.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_gpgpu_water.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_helpers.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_instancing_dynamic.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_instancing_morph.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_instancing_performance.html",
+    "reasons": [
+      "external-data"
+    ]
+  },
+  {
+    "path": "examples/webgl_instancing_scatter.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_interactive_points.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_interactive_voxelpainter.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_lensflares.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_lights_hemisphere.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_lights_physical.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_lights_spotlight.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_3ds.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_3dtiles.html",
+    "reasons": [
+      "external-binary-or-media",
+      "media-tag"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_collada_kinematics.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_collada_skinning.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_collada.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_fbx_nurbs.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_gltf_anisotropy.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_gltf_avif.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_gltf_compressed.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_gltf_dispersion.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_gltf_instancing.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_gltf_iridescence.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_gltf_progressive_lod.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_gltf_sheen.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_gltf_transmission.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_gltf_variants.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_gltf.html",
+    "reasons": [
+      "external-binary-or-media",
+      "external-data",
+      "external-fetch"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_imagebitmap.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_ldraw.html",
+    "reasons": [
+      "external-binary-or-media",
+      "media-tag"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_md2_control.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_md2.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_obj.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_pcd.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_ply.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_stl.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_svg.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_texture_exr.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_texture_hdr.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_texture_lottie.html",
+    "reasons": [
+      "external-binary-or-media",
+      "external-data"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_texture_ultrahdr.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_ttf.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_loader_usdz.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_marchingcubes.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_blending_custom.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_blending.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_bumpmap.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_car.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_channels.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_cubemap_dynamic.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_cubemap_refraction.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_cubemap_render_to_mipmaps.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_cubemap.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_displacementmap.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_envmaps_exr.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_envmaps_groundprojected.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_envmaps_hdr.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_envmaps.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_matcap.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_modified.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_normalmap_object_space.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_normalmap.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_physical_clearcoat.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_physical_transmission_alpha.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_physical_transmission.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_subsurface_scattering.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_texture_anisotropy.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_texture_filters.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_texture_html.html",
+    "reasons": [
+      "external-binary-or-media",
+      "media-tag"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_texture_manualmipmap.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_texture_partialupdate.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_texture_rotation.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_toon.html",
+    "reasons": [
+      "external-data"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_video.html",
+    "reasons": [
+      "external-binary-or-media",
+      "media-tag"
+    ]
+  },
+  {
+    "path": "examples/webgl_materials_wireframe.html",
+    "reasons": [
+      "external-data"
+    ]
+  },
+  {
+    "path": "examples/webgl_modifier_curve_instanced.html",
+    "reasons": [
+      "external-data"
+    ]
+  },
+  {
+    "path": "examples/webgl_modifier_curve.html",
+    "reasons": [
+      "external-data"
+    ]
+  },
+  {
+    "path": "examples/webgl_modifier_edgesplit.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_modifier_simplifier.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_modifier_subdivision.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_modifier_tessellation.html",
+    "reasons": [
+      "external-data"
+    ]
+  },
+  {
+    "path": "examples/webgl_morphtargets_face.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_morphtargets_horse.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_morphtargets_sphere.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_morphtargets_webcam.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_multiple_rendertargets.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_panorama_cube.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_panorama_equirectangular.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_performance.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_pmrem_cubemap.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_pmrem_equirectangular.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_pmrem_test.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_points_billboards.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_points_dynamic.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_points_sprites.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_postprocessing_3dlut.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_postprocessing_advanced.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_postprocessing_backgrounds.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_postprocessing_dof2.html",
+    "reasons": [
+      "external-binary-or-media",
+      "external-data"
+    ]
+  },
+  {
+    "path": "examples/webgl_postprocessing_godrays.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_postprocessing_gtao.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_postprocessing_masking.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_postprocessing_outline.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_postprocessing_pixel.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_postprocessing_smaa.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_postprocessing_taa.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_postprocessing_unreal_bloom.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_random_uv.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_raycaster_bvh.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_raycaster_texture.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_refraction.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_sculpt.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_shader_lava.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_shaders_ocean.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_shadowmap_performance.html",
+    "reasons": [
+      "external-binary-or-media",
+      "external-data"
+    ]
+  },
+  {
+    "path": "examples/webgl_shadowmap_progressive.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_shadowmap.html",
+    "reasons": [
+      "external-binary-or-media",
+      "external-data"
+    ]
+  },
+  {
+    "path": "examples/webgl_sprites.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_test_wide_gamut.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_texture3d.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_tonemapping.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_tsl_clearcoat.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_tsl_instancing.html",
+    "reasons": [
+      "external-data"
+    ]
+  },
+  {
+    "path": "examples/webgl_tsl_skinning.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_ubo.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgl_video_kinect.html",
+    "reasons": [
+      "external-binary-or-media",
+      "media-tag"
+    ]
+  },
+  {
+    "path": "examples/webgl_video_panorama_equirectangular.html",
+    "reasons": [
+      "external-binary-or-media",
+      "media-tag"
+    ]
+  },
+  {
+    "path": "examples/webgl_watch.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_animation_retargeting_readyplayer.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_animation_retargeting.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_backdrop_area.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_backdrop_water.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_backdrop.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_camera_logarithmicdepthbuffer.html",
+    "reasons": [
+      "external-data"
+    ]
+  },
+  {
+    "path": "examples/webgpu_caustics.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_clearcoat.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_compute_audio.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_compute_cloth.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_compute_geometry.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_compute_particles_fluid.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_compute_particles_rain.html",
+    "reasons": [
+      "external-data"
+    ]
+  },
+  {
+    "path": "examples/webgpu_compute_rasterizer_ibl.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_compute_rasterizer.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_compute_water.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_cubemap_adjustments.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_cubemap_dynamic.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_cubemap_mix.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_custom_fog_background.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_deferred.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_display_stereo.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_equirectangular.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_instance_mesh.html",
+    "reasons": [
+      "external-data"
+    ]
+  },
+  {
+    "path": "examples/webgpu_instance_sprites.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_instancing_morph.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_layers.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_lensflares.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_lights_phong.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_lights_physical.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_lights_pointlights.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_lights_projector.html",
+    "reasons": [
+      "external-binary-or-media",
+      "media-tag"
+    ]
+  },
+  {
+    "path": "examples/webgpu_lights_selective.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_lights_spotlight.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_loader_gltf_anisotropy.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_loader_gltf_compressed.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_loader_gltf_diffuse_roughness.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_loader_gltf_dispersion.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_loader_gltf_iridescence.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_loader_gltf_sheen.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_loader_gltf_transmission.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_loader_gltf.html",
+    "reasons": [
+      "external-binary-or-media",
+      "external-data",
+      "external-fetch"
+    ]
+  },
+  {
+    "path": "examples/webgpu_loader_materialx.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_materials_displacementmap.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_materials_envmaps_bpcem.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_materials_envmaps_groundprojected.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_materials_envmaps.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_materials_lightmap.html",
+    "reasons": [
+      "external-data"
+    ]
+  },
+  {
+    "path": "examples/webgpu_materials_matcap.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_materials_sss.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_materials_texture_html.html",
+    "reasons": [
+      "external-binary-or-media",
+      "media-tag"
+    ]
+  },
+  {
+    "path": "examples/webgpu_materials_texture_manualmipmap.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_materials_toon.html",
+    "reasons": [
+      "external-data"
+    ]
+  },
+  {
+    "path": "examples/webgpu_materials_transmission.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_materials_video.html",
+    "reasons": [
+      "external-binary-or-media",
+      "media-tag"
+    ]
+  },
+  {
+    "path": "examples/webgpu_materials.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_materialx_noise.html",
+    "reasons": [
+      "external-binary-or-media",
+      "external-data"
+    ]
+  },
+  {
+    "path": "examples/webgpu_mirror.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_modifier_curve.html",
+    "reasons": [
+      "external-data"
+    ]
+  },
+  {
+    "path": "examples/webgpu_morphtargets_face.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_mrt_mask.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_mrt.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_multiple_rendertargets_readback.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_multiple_rendertargets.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_ocean.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_parallax_uv.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_particles_soft.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_particles.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_performance.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_pmrem_cubemap.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_pmrem_equirectangular.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_pmrem_scene.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_pmrem_test.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_portal.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_postprocessing_3dlut.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_postprocessing_afterimage.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_postprocessing_ao.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_postprocessing_bloom_emissive.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_postprocessing_bloom.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_postprocessing_difference.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_postprocessing_dof_basic.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_postprocessing_fog.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_postprocessing_godrays.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_postprocessing_lensflare.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_postprocessing_masking.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_postprocessing_motion_blur.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_postprocessing_outline.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_postprocessing_pixel.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_postprocessing_retro.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_postprocessing_smaa.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_postprocessing_sobel.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_postprocessing_ssr_denoise.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_postprocessing_ssr.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_postprocessing_sss.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_postprocessing_traa.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_reflection_blurred.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_reflection_roughness.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_reflection.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_refraction.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_renderer_pathtracer.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_rtt.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_sandbox.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_sculpt.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_shadowmap_opacity.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_shadowmap_progressive.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_skinning_instancing_individual.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_skinning_instancing.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_skinning_points.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_skinning.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_sprites.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_texturegrad.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_textures_anisotropy.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_textures_partialupdate.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_tonemapping.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_tsl_angular_slicing.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_tsl_earth.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_tsl_editor.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_tsl_graph.html",
+    "reasons": [
+      "external-binary-or-media",
+      "external-data"
+    ]
+  },
+  {
+    "path": "examples/webgpu_tsl_halftone.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_tsl_interoperability.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_tsl_occlusion_dither.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_tsl_procedural_terrain.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_tsl_vfx_flames.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_tsl_vfx_tornado.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_tsl_wood.html",
+    "reasons": [
+      "external-binary-or-media",
+      "external-data"
+    ]
+  },
+  {
+    "path": "examples/webgpu_upscaling_fsr1.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_upscaling_taau.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_video_frame.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_video_panorama.html",
+    "reasons": [
+      "external-binary-or-media",
+      "media-tag"
+    ]
+  },
+  {
+    "path": "examples/webgpu_volume_caustics.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_volume_lighting_traa.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_volume_lighting.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_water.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webgpu_xr_native_layers.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webxr_ar_lighting.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webxr_vr_handinput_pressbutton.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webxr_vr_layers.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webxr_vr_panorama_depth.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webxr_vr_panorama.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webxr_vr_sandbox.html",
+    "reasons": [
+      "external-binary-or-media"
+    ]
+  },
+  {
+    "path": "examples/webxr_vr_video.html",
+    "reasons": [
+      "external-binary-or-media",
+      "media-tag"
+    ]
+  }
+]

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0",
+  "provider": "uiverse",
+  "sourceRepository": "https://github.com/uiverse-io/galaxy",
+  "sourceCommit": "adbd2adde0a299a3956ea288fb444ec01891ca41",
+  "generatedAt": "2026-10-08T15:44:33.710Z",
+  "totalCandidates": 3802,
+  "autonomousResources": 3761,
+  "skippedResources": 41,
+  "uncompressedBytes": 20036038,
+  "compressedBytes": 2942128,
+  "compressedSha256": "552812ccde459d59563490b3614e7f7b4cc8e6b84ea110ef4ff10c0c0a24f6bb",
+  "files": {
+    "library": "library.json.gz",
+    "catalog": "catalog.json",
+    "license": "LICENSE"
+  }
+}
