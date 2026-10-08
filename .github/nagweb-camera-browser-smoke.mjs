@@ -127,6 +127,13 @@ export async function runCameraBrowserSmoke(page){
   assert.equal(overviewInitial.arrows,3,'Camera trajectory has three direction indicators');
   assert.equal(overviewInitial.look,null,'Manual camera does not show a look trajectory');
   assert.equal(overviewInitial.label,'50%','Minimap initially displays selected scrub progress');
+  const activeInitially=await page.evaluate(()=>{
+   const node=document.querySelector('[data-camera-overview]');
+   return {segment:node.querySelector('[data-camera-overview-active-label]')?.textContent,points:node.querySelector('[data-camera-overview-active-camera]')?.getAttribute('points'),ends:node.querySelectorAll('[data-camera-overview-ends="camera"] text').length};
+  });
+  assert.equal(activeInitially.segment,'◆ 50–100%','Minimap highlights the selected camera keyframe interval');
+  assert.equal(activeInitially.ends,2,'Start and end markers are visible for the camera trajectory');
+  assert.ok(activeInitially.points?.length>6,'Active camera interval is drawn in the minimap');
 
   assert.ok((await page.$eval('[data-camera-overview-label]',n=>n.textContent)).includes('X/Z'));
   await page.click('[data-camera-map-zoom="1"]');
@@ -370,6 +377,23 @@ export async function runCameraBrowserSmoke(page){
   assert.ok(Math.abs(lookMiniMoved.camX-lookMiniInitial.begin)>.2,'Camera live minimap dot responds to scroll progress');
   assert.deepEqual(lookMiniMoved.link,[lookMiniMoved.camX,lookMiniMoved.camY,lookMiniMoved.lookX,lookMiniMoved.lookY],'Camera and look live markers stay connected at the same scroll progress');
   assert.equal(lookMiniMoved.progress,'75%','Minimap updates its progress label while scrubbing');
+  const active75=await page.evaluate(()=>{
+   const node=document.querySelector('[data-camera-overview]');
+   return {label:node.querySelector('[data-camera-overview-active-label]')?.textContent,cam:node.querySelector('[data-camera-overview-active-camera]')?.getAttribute('points'),look:node.querySelector('[data-camera-overview-active-look]')?.getAttribute('points'),cameraEnds:node.querySelectorAll('[data-camera-overview-ends="camera"] text').length,lookEnds:node.querySelectorAll('[data-camera-overview-ends="look"] text').length};
+  });
+  assert.equal(active75.label,'◆ 50–100% · ● 50–100%','Both camera and look intervals are identified during scroll');
+  assert.equal(active75.cameraEnds,2,'Camera start and finish remain visible in lookAt mode');
+  assert.equal(active75.lookEnds,2,'Look target start and finish are distinguished');
+  assert.ok(active75.cam.length>6&&active75.look.length>6,'Camera and look active segments are visibly highlighted');
+  await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',.25));
+  await page.waitForFunction(()=>document.querySelector('[data-camera-overview-active-label]')?.textContent==='◆ 0–50% · ● 0–50%');
+  const active25=await page.evaluate(()=>{
+   const node=document.querySelector('[data-camera-overview]');
+   return {cam:node.querySelector('[data-camera-overview-active-camera]')?.getAttribute('points'),look:node.querySelector('[data-camera-overview-active-look]')?.getAttribute('points'),label:node.querySelector('[data-camera-overview-active-label]')?.textContent};
+  });
+  assert.ok(active25.cam!==active75.cam&&active25.look!==active75.look,'Highlighted camera and look intervals switch at the keyframe boundary');
+  assert.equal(active25.label,'◆ 0–50% · ● 0–50%');
+  console.log('Camera minimap: dynamic camera/look active intervals and initial/final markers OK');
   await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',.5));
   await page.click('[data-camera-overview-toggle]');
   const lookCurveUi=await page.evaluate(()=>({
