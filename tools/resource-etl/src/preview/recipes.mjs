@@ -287,6 +287,82 @@ export function buildReactPreviewRecipe(
     );
   }
 
+
+  if (provider === "shadcn" && name === "sidebar") {
+    return component(
+      "SidebarProvider",
+      {
+        defaultOpen: true,
+        className: "min-h-[360px] w-[min(760px,82vw)]"
+      },
+      [
+        component(
+          "Sidebar",
+          {
+            collapsible: "none",
+            className: "w-64 border-r border-zinc-200"
+          },
+          [
+            component("SidebarHeader", {}, [
+              element(
+                "div",
+                {
+                  className:
+                    "rounded-lg bg-zinc-900 px-3 py-2 text-sm font-semibold text-white"
+                },
+                ["NagWeb"]
+              )
+            ]),
+            component("SidebarContent", {}, [
+              component("SidebarGroup", {}, [
+                component("SidebarGroupLabel", {}, ["Biblioteca"]),
+                component("SidebarGroupContent", {}, [
+                  element(
+                    "div",
+                    {
+                      className:
+                        "grid gap-2 px-2 py-1 text-sm text-zinc-600"
+                    },
+                    [
+                      element("div", {}, ["Recursos"]),
+                      element("div", {}, ["Componentes"]),
+                      element("div", {}, ["Animaciones"])
+                    ]
+                  )
+                ])
+              ])
+            ]),
+            component("SidebarFooter", {}, [
+              element(
+                "div",
+                {
+                  className:
+                    "px-3 py-2 text-xs text-zinc-400"
+                },
+                ["Preview offline"]
+              )
+            ])
+          ]
+        ),
+        component("SidebarInset", {}, [
+          element(
+            "div",
+            {
+              className:
+                "flex h-full min-h-[360px] flex-1 items-center justify-center p-8"
+            },
+            [
+              demoText(
+                "Sidebar",
+                "El hook use-mobile y sus subcomponentes se resuelven desde el Vault local."
+              )
+            ]
+          )
+        ])
+      ]
+    );
+  }
+
   if (provider === "shadcn" && name === "chart") {
     return component(
       "ChartContainer",

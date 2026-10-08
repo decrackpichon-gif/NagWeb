@@ -116,6 +116,30 @@ export function cn(...inputs) {
 }
 `;
 
+function sanitizeResourceForPreview(resource) {
+  if (
+    resource.source?.provider !== "shadcn" ||
+    resource.name !== "sidebar"
+  ) {
+    return resource;
+  }
+
+  return {
+    ...resource,
+    artifacts: (resource.artifacts || []).map((artifact) => {
+      if (typeof artifact.content !== "string") return artifact;
+
+      return {
+        ...artifact,
+        content: artifact.content.replace(
+          /document\.cookie\s*=\s*[^\n]+/g,
+          "void 0 // NagWeb preview: cookie persistence disabled"
+        )
+      };
+    })
+  };
+}
+
 function artifactMap(resources) {
   const map = new Map();
 
@@ -344,10 +368,14 @@ export async function compileReactResource(
   resource,
   { registryResources = [], resolvedRegistryDependencies = [] } = {}
 ) {
-  const allResources = [resource, ...registryResources];
-  const registryAliasMap = buildRegistryAliasMap(registryResources);
+  const previewResource = sanitizeResourceForPreview(resource);
+  const previewRegistryResources = registryResources.map(
+    sanitizeResourceForPreview
+  );
+  const allResources = [previewResource, ...previewRegistryResources];
+  const registryAliasMap = buildRegistryAliasMap(previewRegistryResources);
   const auditResource = {
-    ...resource,
+    ...previewResource,
     artifacts: allResources.flatMap((item) => item.artifacts || [])
   };
   const auditOptions = {
@@ -422,7 +450,7 @@ export async function compileReactResource(
   }
 
   const files = artifactMap(allResources);
-  const entryArtifact = (resource.artifacts || []).find(
+  const entryArtifact = (previewResource.artifacts || []).find(
     (artifact) => artifact.role === "component" && typeof artifact.content === "string"
   );
   if (!entryArtifact) {
@@ -436,7 +464,7 @@ export async function compileReactResource(
   const exported = licenseAudit.exportedComponent;
   const props = defaultPreviewProps(resource, entryCode);
 
-  const recipe = buildReactPreviewRecipe(resource, {
+  const recipe = buildReactPreviewRecipe(previewResource, {
     primaryExport: exported?.name,
     defaultProps: props
   });
@@ -690,7 +718,11 @@ function catalogDependencyCandidates(catalog, ownerResource, dependency) {
   const ownerProvider = ownerResource.source?.provider;
 
   return (catalog.resources || [])
-    .filter((entry) => entry.vaultPath && entry.kind === "react-component")
+    .filter(
+      (entry) =>
+        entry.vaultPath &&
+        ["react-component", "code-helper"].includes(entry.kind)
+    )
     .sort((a, b) => {
       const score = (entry) => {
         if (entry.id === `${ownerProvider}:${name}`) return 0;

@@ -55,13 +55,14 @@ export async function extractShadcnComponents({
 } = {}) {
   const registry = await fetchJson(REGISTRY_URL);
 
-  const available = (registry.items || [])
+  const registryItems = registry.items || [];
+  const available = registryItems
     .filter((item) => item.type === "registry:ui");
   const primary = all
     ? available
     : available.slice(0, Math.max(1, Number(limit) || 10));
 
-  const selected = expandRegistryDependencyClosure(primary, available);
+  const selected = expandRegistryDependencyClosure(primary, registryItems);
   const items = [];
 
   for (const item of selected) {

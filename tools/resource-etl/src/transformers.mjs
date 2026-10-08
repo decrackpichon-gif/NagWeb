@@ -249,6 +249,7 @@ export function transformPolyHavenModel({ id, meta, files }) {
 export function transformShadcnItem({ registry, item }) {
   const fetchedAt = now();
   const raw = item.raw;
+  const isHelper = raw.type !== "registry:ui";
 
   const code = item.files.map((file) => file.content || "").join("\n");
   const artifacts = item.files.map((file, index) => ({
@@ -269,7 +270,7 @@ export function transformShadcnItem({ registry, item }) {
     title: raw.title || raw.name,
     description: raw.description || "",
     family: "ui",
-    kind: "react-component",
+    kind: isHelper ? "code-helper" : "react-component",
     source: {
       provider: "shadcn",
       externalId: raw.name,
@@ -295,7 +296,7 @@ export function transformShadcnItem({ registry, item }) {
     artifacts,
     runtime: {
       type: "react",
-      renderer: "nagweb-react",
+      renderer: isHelper ? "nagweb-react-helper" : "nagweb-react",
       entryArtifactId: artifacts[0]?.id,
       dependencies: [
         ...(raw.dependencies || []),
@@ -304,13 +305,15 @@ export function transformShadcnItem({ registry, item }) {
       registryDependencies: raw.registryDependencies || [],
       cssVariables: raw.cssVars || {}
     },
-    editableProps: shadcnEditableProps(raw, code),
+    editableProps: isHelper ? [] : shadcnEditableProps(raw, code),
     compatibility: {
       nagweb: { supported: true, renderer: "react", tested: false },
       react: true,
       tailwind: true
     },
-    capabilities: ["responsive", "interactive", "supports-children"],
+    capabilities: isHelper
+      ? []
+      : ["responsive", "interactive", "supports-children"],
     technical: {
       type: "ui",
       framework: "react",
@@ -330,7 +333,7 @@ export function transformShadcnItem({ registry, item }) {
       transformedAt: now(),
       status: "validated",
       warnings:
-        raw.name === "button"
+        isHelper || raw.name === "button"
           ? []
           : [
               "editableProps uses baseline NagWeb wrapper controls; semantic prop inference is pending."

@@ -24,6 +24,7 @@ export type ResourceKind =
   | "asset-pack"
   | "code-scene"
   | "shader"
+  | "code-helper"
   | "unknown";
 
 export type EditableValue =
