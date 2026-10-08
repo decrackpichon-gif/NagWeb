@@ -42,7 +42,10 @@ jobs:
           git clone --depth=1 https://github.com/lucide-icons/lucide.git "$RUNNER_TEMP/lucide"
           git -C "$RUNNER_TEMP/lucide" rev-parse HEAD > "$RUNNER_TEMP/lucide-commit.txt"
 
-          git clone --depth=1 --branch dev https://github.com/mrdoob/three.js.git "$RUNNER_TEMP/threejs"
+          git clone --depth=1 --filter=blob:none --no-checkout --branch dev https://github.com/mrdoob/three.js.git "$RUNNER_TEMP/threejs"
+          git -C "$RUNNER_TEMP/threejs" sparse-checkout init --no-cone
+          git -C "$RUNNER_TEMP/threejs" sparse-checkout set "/examples/*.html" "/LICENSE"
+          git -C "$RUNNER_TEMP/threejs" checkout
           git -C "$RUNNER_TEMP/threejs" rev-parse HEAD > "$RUNNER_TEMP/threejs-commit.txt"
 
       - name: Build compact provider snapshot
