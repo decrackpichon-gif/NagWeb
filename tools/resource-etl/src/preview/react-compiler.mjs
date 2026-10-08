@@ -32,7 +32,8 @@ export const REACT_PREVIEW_RUNTIME_PACKAGES = new Set([
   "react-hook-form",
   "recharts",
   "input-otp",
-  "sonner"
+  "sonner",
+  "react-resizable-panels"
 ]);
 
 export const REACT_PREVIEW_VIRTUAL_PACKAGES = new Set([
