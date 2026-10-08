@@ -28,7 +28,7 @@ import {
   defaultEditableValues
 } from "./runtime/instance.mjs";
 import { buildInsertDescriptor } from "./runtime/insert-adapters.mjs";
-import { describeCssEditableControls } from "./runtime/editable-controls.mjs";
+import { describeCssEditableControls, describeEditableControls } from "./runtime/editable-controls.mjs";
 import {
   NAGWEB_RESOURCE_APPLY_PROTOCOL,
   NAGWEB_RESOURCE_APPLY_RESULT_TYPE,
@@ -741,3 +741,30 @@ assert.deepEqual(extendedCssControls.map((item) => item.id), [
   "size", "color", "opacity"
 ]);
 assert.deepEqual(describeCssEditableControls(lucideResource), []);
+
+const generatedSvgControls = describeEditableControls(lucideResource);
+assert.deepEqual(generatedSvgControls.map((item) => [item.id, item.kind]), [
+  ["size", "range"],
+  ["stroke", "color"],
+  ["strokeWidth", "range"]
+]);
+assert.equal(generatedSvgControls[0].min, 4);
+assert.equal(generatedSvgControls[0].max, 512);
+assert.equal(generatedSvgControls[0].unit, "px");
+assert.equal(generatedSvgControls[1].defaultValue, "#000000");
+assert.equal(generatedSvgControls[2].step, 0.25);
+assert.deepEqual(
+  describeEditableControls(editableSpinKit).map((item) => item.id),
+  ["size", "color"]
+);
+assert.deepEqual(
+  describeEditableControls({
+    ...lucideResource,
+    editableProps: [
+      ...lucideResource.editableProps,
+      { id: "unsafe", valueType: "color", defaultValue: "#ffffff",
+        binding: { type: "runtime", path: "svg.unsafe" } }
+    ]
+  }).map((item) => item.id),
+  ["size", "stroke", "strokeWidth"]
+);

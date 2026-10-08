@@ -1,19 +1,22 @@
-// Pure metadata adapter for CSS-variable controls in the Resource Browser.
-export function describeCssEditableControls(resource) {
-  if (resource?.runtime?.renderer !== "nagweb-html-tailwind") return [];
-  const seen = new Set();
+// Build safe, metadata-driven color and range controls for browser previews.
+export function describeEditableControls(resource) {
+  const renderer = resource?.runtime?.renderer;
+  if (!["nagweb-html-tailwind", "nagweb-svg"].includes(renderer)) return [];
+
   const controls = [];
+  const seen = new Set();
 
   for (const prop of resource.editableProps || []) {
     const id = prop?.id;
-    const variable = prop?.binding?.variable;
-    if (
-      typeof id !== "string" || !id ||
-      seen.has(id) ||
-      prop.binding?.type !== "css-variable" ||
-      typeof variable !== "string" ||
-      !/^--[a-z][a-z0-9-]*$/i.test(variable)
-    ) continue;
+    if (typeof id !== "string" || !id || seen.has(id)) continue;
+
+    const validBinding = renderer === "nagweb-html-tailwind"
+      ? prop.binding?.type === "css-variable" &&
+        /^--[a-z][a-z0-9-]*$/i.test(prop.binding?.variable || "")
+      : ["size", "stroke", "strokeWidth"].includes(id) &&
+        prop.binding?.type === "runtime" &&
+        prop.binding?.path === `svg.${id}`;
+    if (!validBinding) continue;
 
     const base = {
       id,
@@ -44,4 +47,11 @@ export function describeCssEditableControls(resource) {
     }
   }
   return controls;
+}
+
+// Keep the existing CSS-specific API for consumers that only expect CSS controls.
+export function describeCssEditableControls(resource) {
+  return resource?.runtime?.renderer === "nagweb-html-tailwind"
+    ? describeEditableControls(resource)
+    : [];
 }

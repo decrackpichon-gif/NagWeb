@@ -105,36 +105,11 @@
           <div><dt>Archivos</dt><dd data-detail-artifacts></dd></div>
         </dl>
 
-        <div class="customize" data-svg-color hidden>
-          <strong>Personalizar ícono</strong>
-          <label for="icon-stroke-input">Color del trazo</label>
-          <div class="color-row">
-            <input type="color" id="icon-stroke-input" data-icon-stroke value="#000000">
-            <output for="icon-stroke-input" data-icon-stroke-value>#000000</output>
-          </div>
-          <div data-svg-size hidden>
-            <label for="icon-size-input">Tamaño</label>
-            <div class="size-row">
-              <input type="range" id="icon-size-input" data-icon-size min="4" max="512" step="1" value="24">
-              <output for="icon-size-input" data-icon-size-value>24 px</output>
-            </div>
-          </div>
-          <div data-svg-stroke-width hidden>
-            <label for="icon-stroke-width-input">Grosor del trazo</label>
-            <div class="size-row">
-              <input type="range" id="icon-stroke-width-input" data-icon-stroke-width min="0.25" max="8" step="0.25" value="2">
-              <output for="icon-stroke-width-input" data-icon-stroke-width-value>2</output>
-            </div>
-          </div>
+        <div class="customize" data-customize hidden>
+          <strong data-customize-title>Personalizar recurso</strong>
+          <div data-customize-controls></div>
           <p>Los ajustes aparecen en la vista previa y se conservan al insertar.</p>
-          <button type="button" class="secondary reset-control" data-reset-svg>Restaurar valores originales</button>
-        </div>
-
-        <div class="customize" data-css-customize hidden>
-          <strong>Personalizar componente CSS</strong>
-          <div data-css-controls></div>
-          <p>Los ajustes se previsualizan y se conservan al insertar.</p>
-          <button type="button" class="secondary reset-control" data-reset-css>Restaurar valores originales</button>
+          <button type="button" class="secondary reset-control" data-reset-customize>Restaurar valores originales</button>
         </div>
 
         <div class="apply-box">

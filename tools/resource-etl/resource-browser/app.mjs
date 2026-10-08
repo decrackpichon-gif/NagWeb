@@ -2,7 +2,7 @@ import {
   createNagWebPersistentVaultClient
 } from "../src/runtime/persistent-vault-client.mjs";
 import { defaultEditableValues } from "../src/runtime/instance.mjs";
-import { describeCssEditableControls } from "../src/runtime/editable-controls.mjs";
+import { describeEditableControls } from "../src/runtime/editable-controls.mjs";
 import {
   buildResourceApplyEnvelope,
   resolveResourceApplyTarget,
@@ -41,19 +41,10 @@ const el = {
   preview: document.querySelector("[data-preview]"),
   previewFallback: document.querySelector("[data-preview-fallback]"),
   previewNote: document.querySelector("[data-preview-note]"),
-  svgColor: document.querySelector("[data-svg-color]"),
-  strokeInput: document.querySelector("[data-icon-stroke]"),
-  strokeValue: document.querySelector("[data-icon-stroke-value]"),
-  svgSize: document.querySelector("[data-svg-size]"),
-  sizeInput: document.querySelector("[data-icon-size]"),
-  sizeValue: document.querySelector("[data-icon-size-value]"),
-  svgStrokeWidth: document.querySelector("[data-svg-stroke-width]"),
-  strokeWidthInput: document.querySelector("[data-icon-stroke-width]"),
-  strokeWidthValue: document.querySelector("[data-icon-stroke-width-value]"),
-  resetSvg: document.querySelector("[data-reset-svg]"),
-  cssCustomize: document.querySelector("[data-css-customize]"),
-  cssControls: document.querySelector("[data-css-controls]"),
-  resetCss: document.querySelector("[data-reset-css]"),
+  customize: document.querySelector("[data-customize]"),
+  customizeTitle: document.querySelector("[data-customize-title]"),
+  customizeControls: document.querySelector("[data-customize-controls]"),
+  resetCustomize: document.querySelector("[data-reset-customize]"),
   apply: document.querySelector("[data-apply]"),
   applyStatus: document.querySelector("[data-apply-status]"),
   applyBox: document.querySelector(".apply-box"),
@@ -254,67 +245,12 @@ function updateApplyReadiness(resource) {
   el.applyStatus.textContent = "Recurso listo para aplicar en el editor conectado.";
 }
 
-function configureSvgColor(resource) {
-  const colorProp = resource.runtime?.renderer === "nagweb-svg"
-    ? (resource.editableProps || []).find(
-      (prop) => prop.id === "stroke" && prop.valueType === "color"
-    )
-    : null;
-  const color = colorProp?.defaultValue;
-  if (!/^#[0-9a-f]{6}$/i.test(color || "")) return;
-
-  selectedValues.stroke = color;
-  el.strokeInput.value = color;
-  el.strokeValue.textContent = color.toUpperCase();
-  el.svgColor.hidden = false;
-
-  const sizeProp = (resource.editableProps || []).find(
-    (prop) => prop.id === "size" && prop.valueType === "number"
-  );
-  const size = sizeProp?.defaultValue;
-  const min = sizeProp?.constraints?.min ?? 4;
-  const max = sizeProp?.constraints?.max ?? 512;
-  const step = sizeProp?.constraints?.step ?? 1;
-  if (
-    Number.isFinite(size) && Number.isFinite(min) &&
-    Number.isFinite(max) && Number.isFinite(step) &&
-    min > 0 && max >= min && step > 0 && size >= min && size <= max
-  ) {
-    selectedValues.size = size;
-    el.sizeInput.min = String(min);
-    el.sizeInput.max = String(max);
-    el.sizeInput.step = String(step);
-    el.sizeInput.value = String(size);
-    el.sizeValue.textContent = `${size} px`;
-    el.svgSize.hidden = false;
-  }
-
-  const widthProp = (resource.editableProps || []).find(
-    (prop) => prop.id === "strokeWidth" && prop.valueType === "number"
-  );
-  const width = widthProp?.defaultValue;
-  const widthMin = widthProp?.constraints?.min ?? 0.25;
-  const widthMax = widthProp?.constraints?.max ?? 8;
-  const widthStep = widthProp?.constraints?.step ?? 0.25;
-  if (
-    Number.isFinite(width) && Number.isFinite(widthMin) &&
-    Number.isFinite(widthMax) && Number.isFinite(widthStep) &&
-    widthMin > 0 && widthMax >= widthMin &&
-    widthStep > 0 && width >= widthMin && width <= widthMax
-  ) {
-    selectedValues.strokeWidth = width;
-    el.strokeWidthInput.min = String(widthMin);
-    el.strokeWidthInput.max = String(widthMax);
-    el.strokeWidthInput.step = String(widthStep);
-    el.strokeWidthInput.value = String(width);
-    el.strokeWidthValue.textContent = String(width);
-    el.svgStrokeWidth.hidden = false;
-  }
-}
-
-function renderCssControls(resource) {
-  el.cssControls.replaceChildren();
-  const controls = describeCssEditableControls(resource);
+function renderEditableControls(resource) {
+  el.customizeControls.replaceChildren();
+  const controls = describeEditableControls(resource);
+  el.customizeTitle.textContent = resource.runtime?.renderer === "nagweb-svg"
+    ? "Personalizar ícono"
+    : "Personalizar componente CSS";
 
   for (const [index, control] of controls.entries()) {
     selectedValues[control.id] = control.defaultValue;
@@ -324,7 +260,7 @@ function renderCssControls(resource) {
     const input = document.createElement("input");
     const output = document.createElement("output");
 
-    input.id = `css-control-${index}`;
+    input.id = `editable-control-${index}`;
     label.htmlFor = input.id;
     label.textContent = control.label;
     output.htmlFor = input.id;
@@ -348,7 +284,7 @@ function renderCssControls(resource) {
     output.textContent = format(control.defaultValue);
 
     input.addEventListener("input", () => {
-      if (selectedResource !== resource || el.cssCustomize.hidden) return;
+      if (selectedResource !== resource || el.customize.hidden) return;
       const value = control.kind === "color" ? input.value : Number(input.value);
       if (control.kind === "color") {
         if (!/^#[0-9a-f]{6}$/i.test(value)) return;
@@ -358,24 +294,21 @@ function renderCssControls(resource) {
 
       selectedValues[control.id] = value;
       output.textContent = format(value);
-      redrawCssPreview();
+      redrawEditablePreview();
     });
 
     row.append(input, output);
     field.append(label, row);
-    el.cssControls.appendChild(field);
+    el.customizeControls.appendChild(field);
   }
-  el.cssCustomize.hidden = controls.length === 0;
+  el.customize.hidden = controls.length === 0;
 }
 
 async function openDetail(id) {
   selectedResource = null;
   selectedValues = {};
-  el.svgColor.hidden = true;
-  el.svgSize.hidden = true;
-  el.svgStrokeWidth.hidden = true;
-  el.cssCustomize.hidden = true;
-  el.cssControls.replaceChildren();
+  el.customize.hidden = true;
+  el.customizeControls.replaceChildren();
   el.apply.disabled = true;
   el.applyStatus.textContent = "Comprobando si el recurso se puede insertar…";
   el.detail.showModal();
@@ -388,8 +321,7 @@ async function openDetail(id) {
   const resource = await vault.getResource(id);
   selectedResource = resource;
   if (resource) {
-    configureSvgColor(resource);
-    renderCssControls(resource);
+    renderEditableControls(resource);
   }
   updateApplyReadiness(resource);
 
@@ -520,77 +452,26 @@ window.addEventListener("message", (event) => {
     event.data.message || "El editor informó un error al aplicar el recurso.";
 });
 
-async function redrawSvgPreview() {
+async function redrawEditablePreview() {
   const resource = selectedResource;
-  if (!resource || resource.runtime?.renderer !== "nagweb-svg") return;
+  if (!resource || el.customize.hidden) return;
   const values = { ...selectedValues };
   const doc = await previewDoc(resource, values);
   if (
     doc && selectedResource === resource &&
-    selectedValues.stroke === values.stroke &&
-    selectedValues.size === values.size &&
-    selectedValues.strokeWidth === values.strokeWidth
-  ) {
-    el.preview.srcdoc = doc;
-  }
-}
-
-async function redrawCssPreview() {
-  const resource = selectedResource;
-  if (!resource || el.cssCustomize.hidden) return;
-  const values = { ...selectedValues };
-  const doc = await previewDoc(resource, values);
-  if (
-    doc && selectedResource === resource &&
+    Object.keys(selectedValues).length === Object.keys(values).length &&
     Object.entries(values).every(([id, value]) => selectedValues[id] === value)
   ) {
     el.preview.srcdoc = doc;
   }
 }
 
-el.resetCss.addEventListener("click", () => {
-  if (!selectedResource || el.cssCustomize.hidden) return;
+el.resetCustomize.addEventListener("click", () => {
+  if (!selectedResource || el.customize.hidden) return;
 
-  // Use the resource metadata so the reset tracks future default changes.
   selectedValues = defaultEditableValues(selectedResource);
-  renderCssControls(selectedResource);
-  redrawCssPreview();
-});
-
-el.strokeInput.addEventListener("input", () => {
-  if (!selectedResource || el.svgColor.hidden) return;
-  const stroke = el.strokeInput.value;
-  if (!/^#[0-9a-f]{6}$/i.test(stroke)) return;
-  selectedValues.stroke = stroke;
-  el.strokeValue.textContent = stroke.toUpperCase();
-  redrawSvgPreview();
-});
-
-el.sizeInput.addEventListener("input", () => {
-  if (!selectedResource || el.svgSize.hidden) return;
-  const size = Number(el.sizeInput.value);
-  if (!Number.isFinite(size)) return;
-  selectedValues.size = size;
-  el.sizeValue.textContent = `${size} px`;
-  redrawSvgPreview();
-});
-
-el.strokeWidthInput.addEventListener("input", () => {
-  if (!selectedResource || el.svgStrokeWidth.hidden) return;
-  const width = Number(el.strokeWidthInput.value);
-  if (!Number.isFinite(width)) return;
-  selectedValues.strokeWidth = width;
-  el.strokeWidthValue.textContent = String(width);
-  redrawSvgPreview();
-});
-
-el.resetSvg.addEventListener("click", () => {
-  if (!selectedResource || el.svgColor.hidden) return;
-
-  // Restore defaults from the UniversalResource, not hard-coded UI values.
-  selectedValues = defaultEditableValues(selectedResource);
-  configureSvgColor(selectedResource);
-  redrawSvgPreview();
+  renderEditableControls(selectedResource);
+  redrawEditablePreview();
 });
 
 el.apply.addEventListener("click", () => {
