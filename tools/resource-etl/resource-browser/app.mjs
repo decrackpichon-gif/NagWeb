@@ -43,6 +43,7 @@ const el = {
   preview: document.querySelector("[data-preview]"),
   previewFallback: document.querySelector("[data-preview-fallback]"),
   previewNote: document.querySelector("[data-preview-note]"),
+  previewReplay: document.querySelector("[data-preview-replay]"),
   customize: document.querySelector("[data-customize]"),
   customizeTitle: document.querySelector("[data-customize-title]"),
   customizeControls: document.querySelector("[data-customize-controls]"),
@@ -59,6 +60,7 @@ const el = {
 let offset = 0;
 let selectedResource = null;
 let selectedValues = {};
+let previewReplayRevision = 0;
 let searchTimer = null;
 let pendingApplyId = null;
 let pendingApplyResourceId = null;
@@ -367,6 +369,7 @@ async function openDetail(id) {
   el.detailTitle.textContent = "Cargando recurso…";
   el.detailId.textContent = id;
   el.preview.srcdoc = "";
+  el.previewReplay.hidden = true;
   el.previewFallback.hidden = false;
   el.code.textContent = "";
 
@@ -402,15 +405,18 @@ async function openDetail(id) {
 
   const doc = await previewDoc(resource, selectedValues);
   const isLottie = ["lottie", "dotlottie-web"].includes(resource.runtime?.renderer);
+  const isCssShake = resource.source?.provider === "csshake" &&
+    resource.runtime?.renderer === "nagweb-css-class-effect";
   el.preview.setAttribute("sandbox", doc && isLottie ? "allow-scripts" : "");
+  el.previewReplay.hidden = !doc || !isCssShake;
   if (doc) {
     el.previewFallback.hidden = true;
     el.preview.hidden = false;
     el.preview.srcdoc = doc;
     el.previewNote.textContent = isLottie
       ? "Vista previa Lottie animada con reproductor local y aislamiento de seguridad."
-      : resource.source?.provider === "csshake"
-        ? "Probá el modo Hover o Siempre en el selector de activación."
+      : isCssShake
+        ? "Compará Hover y Siempre. El modo destacado es el que se insertará."
         : "Preview segura generada desde nuestra copia persistente.";
   } else {
     el.preview.hidden = true;
@@ -523,6 +529,24 @@ async function redrawEditablePreview() {
     el.preview.srcdoc = doc;
   }
 }
+
+el.previewReplay.addEventListener("click", async () => {
+  const resource = selectedResource;
+  if (!resource || el.previewReplay.hidden || !el.detail.open) return;
+  const values = { ...selectedValues };
+  const doc = await previewDoc(resource, values);
+  if (
+    !doc || selectedResource !== resource || !el.detail.open ||
+    el.previewReplay.hidden ||
+    Object.keys(selectedValues).length !== Object.keys(values).length ||
+    !Object.entries(values).every(([id, value]) => selectedValues[id] === value)
+  ) return;
+
+  // Force a new srcdoc navigation, restarting CSS animations without
+  // injecting scripts into the sandboxed content or changing Apply values.
+  previewReplayRevision += 1;
+  el.preview.srcdoc = `${doc}\n<!-- csshake-replay:${previewReplayRevision} -->`;
+});
 
 el.resetCustomize.addEventListener("click", () => {
   if (!selectedResource || el.customize.hidden) return;

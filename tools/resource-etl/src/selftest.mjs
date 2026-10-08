@@ -883,7 +883,12 @@ const hoverShakeDoc = buildCssShakeBrowserPreview(shakePreviewResource,
   { trigger: "hover" }, { stylesheet: shakeCss });
 assert.ok(hoverShakeDoc);
 assert.match(hoverShakeDoc, /class="demo shake-hard"/);
-assert.doesNotMatch(hoverShakeDoc, /class="demo shake-hard shake-constant"/);
+assert.match(hoverShakeDoc, /class="demo shake-hard shake-constant"/);
+assert.match(hoverShakeDoc, /class="mode selected" aria-label="Modo Hover"/);
+assert.match(hoverShakeDoc, /class="mode " aria-label="Modo Siempre"/);
+assert.equal((hoverShakeDoc.match(/Elegido para insertar/g) || []).length, 1);
+assert.equal(hoverShakeDoc.includes("<script"), false);
+assert.match(hoverShakeDoc, /prefers-reduced-motion:reduce/);
 assert.match(hoverShakeDoc, /Pasá el cursor/);
 assert.match(hoverShakeDoc, /Prueba &lt;Shake&gt;/);
 assert.match(hoverShakeDoc, /script-src 'none'/);
@@ -891,6 +896,10 @@ assert.match(hoverShakeDoc, /script-src 'none'/);
 const constantShakeDoc = buildCssShakeBrowserPreview(shakePreviewResource,
   { trigger: "constant" }, { stylesheet: shakeCss });
 assert.match(constantShakeDoc, /class="demo shake-hard shake-constant"/);
+assert.match(constantShakeDoc, /class="demo shake-hard"/);
+assert.match(constantShakeDoc, /class="mode selected" aria-label="Modo Siempre"/);
+assert.match(constantShakeDoc, /class="mode " aria-label="Modo Hover"/);
+assert.equal((constantShakeDoc.match(/Elegido para insertar/g) || []).length, 1);
 assert.match(constantShakeDoc, /Reproducción continua/);
 assert.equal(buildCssShakeBrowserPreview(shakePreviewResource,
   {}, { stylesheet: "" }), null);
