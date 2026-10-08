@@ -31,16 +31,27 @@ export async function extractMagicUiComponents({
   if (!all) items = items.slice(0, Math.max(1, Number(limit) || 25));
 
   const hydrated = await mapLimit(items, concurrency, async (item) => {
-    const files = await mapLimit(item.files || [], 4, async (file) => {
-      const sourcePath = repoPath(file.path);
+    try {
+      const files = await mapLimit(item.files || [], 4, async (file) => {
+        const sourcePath = repoPath(file.path);
+        return {
+          ...file,
+          sourcePath,
+          sourceUrl: rawUrl(commit, sourcePath),
+          content: await fetchText(rawUrl(commit, sourcePath))
+        };
+      });
+
+      return { ok: true, item: { raw: item, files } };
+    } catch (error) {
       return {
-        ...file,
-        sourcePath,
-        sourceUrl: rawUrl(commit, sourcePath),
-        content: await fetchText(rawUrl(commit, sourcePath))
+        ok: false,
+        skipped: {
+          name: item.name,
+          reason: error?.message || String(error)
+        }
       };
-    });
-    return { raw: item, files };
+    }
   });
 
   return {
@@ -51,6 +62,7 @@ export async function extractMagicUiComponents({
       commit
     },
     totalAvailable,
-    items: hydrated
+    items: hydrated.filter((entry) => entry.ok).map((entry) => entry.item),
+    skipped: hydrated.filter((entry) => !entry.ok).map((entry) => entry.skipped)
   };
 }

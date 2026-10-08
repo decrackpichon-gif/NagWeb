@@ -121,6 +121,13 @@ async function collectSource(source, args) {
   if (source === "magicui") {
     assertFullMirrorAllowed("magicui");
     const raw = await extractMagicUiComponents({ limit, all });
+    if (raw.skipped?.length) {
+      console.warn(
+        `[magicui] skipped ${raw.skipped.length} broken upstream registry item(s): ${raw.skipped
+          .map((item) => item.name)
+          .join(", ")}`
+      );
+    }
     return raw.items.map((item) =>
       transformMagicUiComponent({ registry: raw.registry, item })
     );
