@@ -268,7 +268,7 @@ function createCamera(){
 }
 window.NAGWEB_CREATE_SCROLL_CAMERA=createCamera;
 window.NAGWEB_SCROLL_CAMERA=createCamera();
-var presetChoices=Object.create(null),holdDurations=Object.create(null),mapOpen=Object.create(null),mapPlanes=Object.create(null),mapFovVisible=Object.create(null),mapZoom=Object.create(null),mapPan=Object.create(null),mapWheelCarry=Object.create(null),mapOverviewVisible=Object.create(null),mapOverviewPickHistory=Object.create(null),mapOverviewSamples=Object.create(null),mapOverviewDetected=Object.create(null),mapOverviewMetrics=Object.create(null),mapOverviewMetricsOpen=Object.create(null),mapOverviewPaceVisible=Object.create(null),mapOverviewEventFilter=Object.create(null),mapOverviewEventChosen=Object.create(null),mapPickHistory=Object.create(null),suppressedClick=null,selected=Object.create(null),lookSelected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
+var presetChoices=Object.create(null),holdDurations=Object.create(null),mapOpen=Object.create(null),mapPlanes=Object.create(null),mapFovVisible=Object.create(null),mapZoom=Object.create(null),mapPan=Object.create(null),mapWheelCarry=Object.create(null),mapOverviewVisible=Object.create(null),mapOverviewPickHistory=Object.create(null),mapOverviewSamples=Object.create(null),mapOverviewDetected=Object.create(null),mapOverviewMetrics=Object.create(null),mapOverviewMetricsOpen=Object.create(null),mapOverviewPaceVisible=Object.create(null),mapOverviewComparison=Object.create(null),mapOverviewEventFilter=Object.create(null),mapOverviewEventChosen=Object.create(null),mapPickHistory=Object.create(null),suppressedClick=null,selected=Object.create(null),lookSelected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
 function safeLabel(v){return String(v==null?'':v).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,42).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];});}
 function targetLabel(e){var label=safeLabel(e&&((e.name||e.text||e.label)||e.type));return label||'Elemento';}
 function keys(s){return C.frames(C.config(s),s.sdEase);}
@@ -607,7 +607,70 @@ function mapOverviewMetricText(stats,pct,kind){
  var change=segment.delta===null?'inicio':Math.abs(segment.delta)<.05?'≈ estable':(segment.delta>0?'↑ ':'↓ ')+mapOverviewMetricNumber(Math.abs(segment.delta))+' px/%';
  return symbol+' '+segment.from+'–'+segment.to+'% · '+mapOverviewMetricNumber(segment.distance)+' px · '+mapOverviewMetricNumber(segment.pace)+' px/% · '+change;
 }
-function mapOverviewMetricHtml(stats,pct,open,showPace){
+function mapOverviewCompareChoices(stats){
+ var out=[];
+ [['camera',stats&&stats.camera],['look',stats&&stats.look]].forEach(function(entry){
+  var kind=entry[0],stat=entry[1];if(!stat||!Array.isArray(stat.segments))return;
+  stat.segments.forEach(function(seg){
+   if(!Number.isFinite(+seg.from)||!Number.isFinite(+seg.to)||!Number.isFinite(+seg.distance)||!Number.isFinite(+seg.pace))return;
+   out.push({key:kind+':'+seg.from+':'+seg.to,kind:kind,segment:seg,label:(kind==='camera'?'◆ Cámara':'● Mirada')+' '+seg.from+'–'+seg.to+'%'});
+  });
+ });
+ return out;
+}
+function mapOverviewCompareSelection(items,selected){
+ var a=items.find(function(e){return e.key===(selected&&selected.a);})||items[0]||null;
+ var b=items.find(function(e){return e.key===(selected&&selected.b);})||items[1]||items[0]||null;
+ return {a:a,b:b};
+}
+function mapOverviewSignedMetric(n){
+ var number=Number.isFinite(n)?n:0;
+ if(Math.abs(number)<.05)number=0;
+ return (number>0?'+':number<0?'−':'')+mapOverviewMetricNumber(Math.abs(number));
+}
+function mapOverviewCompareText(a,b){
+ if(!a||!b)return 'Elegí dos tramos para comparar.';
+ var distance=b.segment.distance-a.segment.distance,pace=b.segment.pace-a.segment.pace;
+ return 'B − A: distancia '+mapOverviewSignedMetric(distance)+' px · ritmo '+mapOverviewSignedMetric(pace)+' px/%';
+}
+function mapOverviewCompareHtml(stats,selected){
+ var choices=mapOverviewCompareChoices(stats);if(choices.length<2)return '';
+ var chosen=mapOverviewCompareSelection(choices,selected);
+ function control(which,item){
+  return '<label style="display:flex;flex-direction:column;gap:2px;min-width:0;flex:1"><span>'+which+'</span><select class="csel" data-camera-overview-compare-'+which.toLowerCase()+' aria-label="Comparar tramo '+which+'" style="min-width:0;max-width:100%;font-size:11px">'+
+   choices.map(function(entry){return '<option value="'+entry.key+'"'+(entry.key===item.key?' selected':'')+'>'+entry.label+'</option>';}).join('')+
+   '</select></label>';
+ }
+ return '<div data-camera-overview-comparison style="margin-top:6px;padding-top:5px;border-top:1px solid var(--border,#5555)">'+
+  '<div style="font-weight:600">Comparar dos tramos</div><div style="display:flex;gap:6px;margin-top:3px">'+control('A',chosen.a)+control('B',chosen.b)+'</div>'+
+  '<div data-camera-overview-compare-result style="margin-top:4px" aria-live="polite">'+mapOverviewCompareText(chosen.a,chosen.b)+'</div>'+
+  '<div style="opacity:.75">Diferencia B respecto de A. Comparación en píxeles 3D y px por 1% de scroll.</div></div>';
+}
+function mapOverviewHoverHit(samples,stats,spec,point,width,height){
+ if(!stats||!samples||!spec||!point||!width||!height)return null;
+ var closest=null;
+ [['camera',stats.camera,samples.camera],['look',stats.look,samples.look]].forEach(function(track){
+  var stat=track[1],path=track[2];if(!stat||!Array.isArray(stat.segments)||!Array.isArray(path))return;
+  stat.segments.forEach(function(segment){
+   var route=mapOverviewSegment(path,[{at:segment.from},{at:segment.to}],segment.from,spec);
+   var pts=route.points.split(' ').map(function(pair){return pair.split(',').map(Number);}).filter(function(v){return v.length===2&&v.every(Number.isFinite);});
+   for(var i=0;i<pts.length;i++){
+    var a=pts[Math.max(0,i-1)],b=pts[i],ax=a[0]*width/100,ay=a[1]*height/100,bx=b[0]*width/100,by=b[1]*height/100;
+    var vx=bx-ax,vy=by-ay,div=vx*vx+vy*vy;
+    var t=div>0?Math.max(0,Math.min(1,((point.x*width-ax)*vx+(point.y*height-ay)*vy)/div)):0;
+    var d=Math.hypot(point.x*width-ax-t*vx,point.y*height-ay-t*vy);
+    if(!closest||d<closest.distance)closest={kind:track[0],segment:segment,distance:d};
+   }
+  });
+ });
+ return closest&&closest.distance<=9?closest:null;
+}
+function mapOverviewHoverText(hit){
+ if(!hit)return '';
+ var s=hit.segment;
+ return (hit.kind==='look'?'● Mirada':'◆ Cámara')+' '+s.from+'–'+s.to+'% · '+mapOverviewMetricNumber(s.distance)+' px · '+mapOverviewMetricNumber(s.pace)+' px/%';
+}
+function mapOverviewMetricHtml(stats,pct,open,showPace,comparison){
  if(!stats||!stats.camera||!stats.camera.segments.length)return '';
  return '<details data-camera-overview-metrics'+(open?' open':'')+' style="margin:5px 0;border:1px solid var(--border,#5555);border-radius:5px;padding:5px 7px">'+
  '<summary style="cursor:pointer;font-size:11px;font-weight:600">Diagnóstico 3D · distancia y ritmo</summary>'+
@@ -617,7 +680,7 @@ function mapOverviewMetricHtml(stats,pct,open,showPace){
  '<div data-camera-overview-metric-total style="opacity:.85">Total recorrido: ◆ '+mapOverviewMetricNumber(stats.camera.total)+' px'+(stats.look&&stats.look.segments.length?' · ● '+mapOverviewMetricNumber(stats.look.total)+' px':'')+'</div>'+
  '<label style="display:flex;align-items:center;gap:5px;margin:4px 0 2px;font-size:10px;cursor:pointer"><input type="checkbox" data-camera-overview-pace-toggle'+(showPace?' checked':'')+'>Ver ritmos en el minimapa</label>'+
  '<div data-camera-overview-pace-legend style="font-size:10px;line-height:1.5;opacity:.9"><span style="color:#60a5fa">┄ Lento</span> · <span>━ Medio</span> · <span style="color:#f59e0b">━ Rápido</span> · <span style="color:#a78bfa">‖ Pausa</span></div>'+
- '<div style="opacity:.75">Ritmo medio: píxeles recorridos por 1% de progreso (no por segundo). ↑ aumenta, ↓ disminuye frente al tramo anterior. Valores aproximados a partir de muestras 3D.</div></div></details>';
+ '<div style="opacity:.75">Ritmo medio: píxeles recorridos por 1% de progreso (no por segundo). ↑ aumenta, ↓ disminuye frente al tramo anterior. Valores aproximados a partir de muestras 3D.</div>'+mapOverviewCompareHtml(stats,comparison)+'</div></details>';
 }
 function mapOverviewMotionEvents(frames){
  if(!Array.isArray(frames)||frames.length<2)return [];
@@ -1047,15 +1110,15 @@ function spatialMap(s,list,k){
   var cameraEvents=mapOverviewMotionEvents(list),lookEvents=mapOverviewMotionEvents(resolvedLooks),events=mapOverviewEventList(cameraEvents,lookEvents);
   mapOverviewDetected[s.id]=events;
   var activeCamera=mapOverviewSegment(draw,list,progress(s),overview),activeLook=mapOverviewSegment(lookDraw,resolvedLooks,progress(s),overview),motionSummary=mapOverviewMotionSummary(cameraEvents,lookEvents);
-  html+='<div data-camera-overview tabindex="0" role="button" aria-label="Vista general del recorrido. Clic en ◆ o ● para seleccionar un keyframe; repetí el clic para alternar puntos coincidentes. Arrastrá para desplazar la vista. Flechas para desplazar; Shift más flechas para ajustes finos. Inicio o Enter para recentrar." data-plane="'+plane+'" data-range="'+overview.range+'" data-origin-x="0" data-origin-axis="0" style="position:absolute;right:6px;bottom:6px;width:28%;max-width:168px;min-width:92px;aspect-ratio:1.5;border:1px solid var(--accent);border-radius:5px;background:var(--bg,#1c1e23);box-shadow:0 1px 8px #0005;z-index:25;cursor:crosshair;touch-action:none;overflow:hidden">'+mapOverviewSvg(list,resolvedLooks,draw,lookDraw,k,resolvedLk,current,lookNow,spec,overview,progress(s),mapOverviewEventFilter[s.id]||{kind:'all',type:'all'},mapOverviewEventChosen[s.id],mapOverviewMetrics[s.id],mapOverviewPaceVisible[s.id]!==false)+'<span data-camera-overview-label style="position:absolute;left:3px;top:2px;pointer-events:none;font-size:9px;font-weight:600;color:var(--fg,currentColor);background:var(--bg,#1c1e23);padding:1px 3px;border-radius:3px">'+(plane==='front'?'X/Y':'X/Z')+' · '+Math.round(zoom*100)+'%</span><span data-camera-overview-progress style="position:absolute;right:3px;top:2px;pointer-events:none;font-size:9px;font-weight:600;color:var(--fg,currentColor);background:var(--bg,#1c1e23);padding:1px 3px;border-radius:3px">'+Math.round(progress(s)*10)/10+'%</span><span data-camera-overview-legend style="position:absolute;left:3px;bottom:2px;pointer-events:none;font-size:9px;color:var(--fg,currentColor);background:var(--bg,#1c1e23);padding:1px 3px;border-radius:3px">◆'+(resolvedLooks.length?' · ●':'')+' · I/F extremos</span><span data-camera-overview-active-label aria-live="off" style="position:absolute;right:3px;bottom:2px;pointer-events:none;font-size:8px;color:var(--fg,currentColor);background:var(--bg,#1c1e23);padding:1px 3px;border-radius:3px;max-width:70%;text-align:right">'+mapOverviewSegmentLabel(activeCamera,activeLook)+'</span>'+(motionSummary?'<span data-camera-overview-motion-summary title="‖ Pausa · ↶ Retroceso · ↗ Cambio de dirección detectado entre keyframes" style="position:absolute;right:3px;top:15px;pointer-events:none;font-size:8px;color:var(--fg,currentColor);background:var(--bg,#1c1e23);padding:1px 3px;border-radius:3px">'+motionSummary+'</span>':'')+'</div>';
+  html+='<div data-camera-overview tabindex="0" role="button" aria-label="Vista general del recorrido. Clic en ◆ o ● para seleccionar un keyframe; repetí el clic para alternar puntos coincidentes. Arrastrá para desplazar la vista. Flechas para desplazar; Shift más flechas para ajustes finos. Inicio o Enter para recentrar." data-plane="'+plane+'" data-range="'+overview.range+'" data-origin-x="0" data-origin-axis="0" style="position:absolute;right:6px;bottom:6px;width:28%;max-width:168px;min-width:92px;aspect-ratio:1.5;border:1px solid var(--accent);border-radius:5px;background:var(--bg,#1c1e23);box-shadow:0 1px 8px #0005;z-index:25;cursor:crosshair;touch-action:none;overflow:hidden">'+mapOverviewSvg(list,resolvedLooks,draw,lookDraw,k,resolvedLk,current,lookNow,spec,overview,progress(s),mapOverviewEventFilter[s.id]||{kind:'all',type:'all'},mapOverviewEventChosen[s.id],mapOverviewMetrics[s.id],mapOverviewPaceVisible[s.id]!==false)+'<div data-camera-overview-hover hidden aria-live="off" style="position:absolute;left:4px;top:19px;max-width:calc(100% - 8px);font-size:9px;line-height:1.25;background:var(--bg,#1c1e23);color:var(--fg,currentColor);border:1px solid var(--accent);border-radius:3px;padding:3px;z-index:35;pointer-events:none"></div><span data-camera-overview-label style="position:absolute;left:3px;top:2px;pointer-events:none;font-size:9px;font-weight:600;color:var(--fg,currentColor);background:var(--bg,#1c1e23);padding:1px 3px;border-radius:3px">'+(plane==='front'?'X/Y':'X/Z')+' · '+Math.round(zoom*100)+'%</span><span data-camera-overview-progress style="position:absolute;right:3px;top:2px;pointer-events:none;font-size:9px;font-weight:600;color:var(--fg,currentColor);background:var(--bg,#1c1e23);padding:1px 3px;border-radius:3px">'+Math.round(progress(s)*10)/10+'%</span><span data-camera-overview-legend style="position:absolute;left:3px;bottom:2px;pointer-events:none;font-size:9px;color:var(--fg,currentColor);background:var(--bg,#1c1e23);padding:1px 3px;border-radius:3px">◆'+(resolvedLooks.length?' · ●':'')+' · I/F extremos</span><span data-camera-overview-active-label aria-live="off" style="position:absolute;right:3px;bottom:2px;pointer-events:none;font-size:8px;color:var(--fg,currentColor);background:var(--bg,#1c1e23);padding:1px 3px;border-radius:3px;max-width:70%;text-align:right">'+mapOverviewSegmentLabel(activeCamera,activeLook)+'</span>'+(motionSummary?'<span data-camera-overview-motion-summary title="‖ Pausa · ↶ Retroceso · ↗ Cambio de dirección detectado entre keyframes" style="position:absolute;right:3px;top:15px;pointer-events:none;font-size:8px;color:var(--fg,currentColor);background:var(--bg,#1c1e23);padding:1px 3px;border-radius:3px">'+motionSummary+'</span>':'')+'</div>';
  }
  html+='</div>';
  if(mapOverviewVisible[s.id]===undefined?zoom>1:mapOverviewVisible[s.id])html+=mapOverviewEventControls(mapOverviewDetected[s.id]||[],progress(s),mapOverviewEventFilter[s.id],mapOverviewEventChosen[s.id]);
- if(mapOverviewVisible[s.id]===undefined?zoom>1:mapOverviewVisible[s.id])html+=mapOverviewMetricHtml(mapOverviewMetrics[s.id],progress(s),mapOverviewMetricsOpen[s.id],mapOverviewPaceVisible[s.id]!==false);
+ if(mapOverviewVisible[s.id]===undefined?zoom>1:mapOverviewVisible[s.id])html+=mapOverviewMetricHtml(mapOverviewMetrics[s.id],progress(s),mapOverviewMetricsOpen[s.id],mapOverviewPaceVisible[s.id]!==false,mapOverviewComparison[s.id]);
  if(lookKeyPoint)html+='<p class="hint gh" data-camera-map-selection-label>◆ '+k.at+'% ↔ ● '+lk.at+'% · Distancia XYZ: '+Math.round(Math.hypot(k.x-resolvedLk.x,k.y-resolvedLk.y,k.z-resolvedLk.z))+' px. Guía comparativa, no vincula los recorridos.</p>';
  if(s.sdCameraResponsive)html+='<p class="hint gh">El mapa muestra el recorrido con el ancho de referencia.</p>';
  html+='<p class="hint gh" data-camera-position-label>'+mapLabel(current,progress(s))+'</p>';
- html+='<p class="hint gh">◆ encuadre seleccionado · ○ posición actual'+(tangentInPoint||tangentOutPoint?' · ◁ entrada / ▷ salida':'')+(cfg&&cfg.orientationMode==='lookAt'?' · ● objetivo seleccionado · línea punteada: recorrido de mirada'+(lookTangentInPoint||lookTangentOutPoint?' · ◁/▷ del ●: curva de mirada':''):'')+(cfg&&(cfg.pathMode==='smooth'||cfg.lookPathMode==='smooth')?' · Trazo destacado: tramo Bézier libre; trazo normal: Catmull-Rom':'')+' · Flecha: orientación de ◆. Área translúcida: campo de visión aproximado (se oculta de perfil). Número junto a un punto: marcadores superpuestos; clic repetido para alternarlos. Clic cerca de un punto: seleccionar · Doble clic línea normal: agregar ◆ · línea punteada: agregar ● · Arrastrá ◆ o ● · Arrastrá ◯: ajustar curva · Shift + arrastre: bloquear al eje dominante. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Zoom: − / +, Ctrl/⌘ + rueda o teclas +/− con foco en el mapa. Inicio restablece 100%. Alt + flechas desplaza al ampliar. Con zoom superior al 100% usá Desplazar, Centrar ◆ / Centrar ●, Shift + arrastrar el fondo o el botón central del mouse. La cuadrícula indica coordenadas reales; al cambiar de encuadre, la vista se recentra automáticamente. Vista general: las líneas de ritmo del minimapa distinguen pausas, tramos lentos, medios y rápidos según el promedio de cada recorrido; se pueden ocultar en Diagnóstico 3D. El diagnóstico desplegable mide distancia 3D y ritmo medio por porcentaje del Director, usando las curvas muestreadas. Filtrá por ◆ cámara / ● mirada y por ‖ pausas / ↶ retrocesos / ↗ giros. Los símbolos y los botones ◂/▸ respetan esos filtros; un borde más grueso marca el evento seleccionado. Clic en ‖, ↶ o ↗ para ir a ese momento; también podés elegir un evento y recorrerlos con ◂/▸. ‖ marca pausas entre keyframes de igual posición 3D, ↶ señala un retroceso y ↗ un cambio pronunciado de dirección. Son indicadores visuales, no editan la animación. El tramo resaltado corresponde a los keyframes que rodean el progreso actual; I/F indican inicio y fin, el porcentaje muestra la posición exacta. ➤ indica el sentido del recorrido; el punto lleno marca la cámara actual, el círculo punteado la mirada actual y una línea los relaciona. ◆ encuadres y ● objetivos, números en puntos superpuestos. Clic en un punto para seleccionarlo; repetí el clic para alternar coincidencias. Arrastrá el fondo para navegar, Shift + flechas para precisión, Inicio para volver al ◆. Podés ocultarla. Escape cancela el desplazamiento. Con foco en el mapa: ←/→ cambia ◆; Shift + ←/→ cambia ●. Al enfocar un punto, flechas mueven 25 px (Shift: 100 px). Escape cancela. Escala: ±'+Math.round(spec.range)+' px.</p></details>';
+ html+='<p class="hint gh">◆ encuadre seleccionado · ○ posición actual'+(tangentInPoint||tangentOutPoint?' · ◁ entrada / ▷ salida':'')+(cfg&&cfg.orientationMode==='lookAt'?' · ● objetivo seleccionado · línea punteada: recorrido de mirada'+(lookTangentInPoint||lookTangentOutPoint?' · ◁/▷ del ●: curva de mirada':''):'')+(cfg&&(cfg.pathMode==='smooth'||cfg.lookPathMode==='smooth')?' · Trazo destacado: tramo Bézier libre; trazo normal: Catmull-Rom':'')+' · Flecha: orientación de ◆. Área translúcida: campo de visión aproximado (se oculta de perfil). Número junto a un punto: marcadores superpuestos; clic repetido para alternarlos. Clic cerca de un punto: seleccionar · Doble clic línea normal: agregar ◆ · línea punteada: agregar ● · Arrastrá ◆ o ● · Arrastrá ◯: ajustar curva · Shift + arrastre: bloquear al eje dominante. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Zoom: − / +, Ctrl/⌘ + rueda o teclas +/− con foco en el mapa. Inicio restablece 100%. Alt + flechas desplaza al ampliar. Con zoom superior al 100% usá Desplazar, Centrar ◆ / Centrar ●, Shift + arrastrar el fondo o el botón central del mouse. La cuadrícula indica coordenadas reales; al cambiar de encuadre, la vista se recentra automáticamente. Vista general: al pasar el cursor cerca de la trayectoria podés ver la distancia y el ritmo del tramo; en Diagnóstico 3D podés comparar dos intervalos A/B. Las líneas de ritmo del minimapa distinguen pausas, tramos lentos, medios y rápidos según el promedio de cada recorrido; se pueden ocultar en Diagnóstico 3D. El diagnóstico desplegable mide distancia 3D y ritmo medio por porcentaje del Director, usando las curvas muestreadas. Filtrá por ◆ cámara / ● mirada y por ‖ pausas / ↶ retrocesos / ↗ giros. Los símbolos y los botones ◂/▸ respetan esos filtros; un borde más grueso marca el evento seleccionado. Clic en ‖, ↶ o ↗ para ir a ese momento; también podés elegir un evento y recorrerlos con ◂/▸. ‖ marca pausas entre keyframes de igual posición 3D, ↶ señala un retroceso y ↗ un cambio pronunciado de dirección. Son indicadores visuales, no editan la animación. El tramo resaltado corresponde a los keyframes que rodean el progreso actual; I/F indican inicio y fin, el porcentaje muestra la posición exacta. ➤ indica el sentido del recorrido; el punto lleno marca la cámara actual, el círculo punteado la mirada actual y una línea los relaciona. ◆ encuadres y ● objetivos, números en puntos superpuestos. Clic en un punto para seleccionarlo; repetí el clic para alternar coincidencias. Arrastrá el fondo para navegar, Shift + flechas para precisión, Inicio para volver al ◆. Podés ocultarla. Escape cancela el desplazamiento. Con foco en el mapa: ←/→ cambia ◆; Shift + ←/→ cambia ●. Al enfocar un punto, flechas mueven 25 px (Shift: 100 px). Escape cancela. Escala: ±'+Math.round(spec.range)+' px.</p></details>';
  return html;
 }
 C.panel=function(s){
@@ -1460,6 +1523,19 @@ if(pane){
    if(newMap)newMap.focus({preventScroll:true});
   }
  },{passive:false});
+ pane.addEventListener('pointermove',function(ev){
+  var node=ev.target.closest('[data-camera-overview]');if(!node)return;
+  var tip=node.querySelector('[data-camera-overview-hover]'),scene=sec(),rect=node.getBoundingClientRect();
+  if(!tip||!C.config(scene)||rect.width<=0||rect.height<=0)return;
+  var p=mapOverviewPointerPoint(node,ev,rect),hit=mapOverviewHoverHit(mapOverviewSamples[scene.id],mapOverviewMetrics[scene.id],mapSpecFromNode(node),p,rect.width,rect.height);
+  tip.hidden=!hit;
+  if(hit)tip.textContent=mapOverviewHoverText(hit);
+ });
+ pane.addEventListener('pointerout',function(ev){
+  var node=ev.target.closest('[data-camera-overview]');
+  if(!node||(ev.relatedTarget&&node.contains(ev.relatedTarget)))return;
+  var tip=node.querySelector('[data-camera-overview-hover]');if(tip)tip.hidden=true;
+ });
  pane.addEventListener('pointerdown',function(ev){
   var overviewNode=ev.target.closest('[data-camera-overview]');
   if(overviewNode&&ev.button===0&&!ev.altKey&&!ev.ctrlKey&&!ev.metaKey&&!ev.shiftKey){
@@ -1630,6 +1706,16 @@ if(pane){
  });
  pane.addEventListener('change',function(ev){
   var input=ev.target;
+  if(input.dataset.cameraOverviewCompareA!==undefined||input.dataset.cameraOverviewCompareB!==undefined){
+   var cs=sec();if(!C.config(cs))return;
+   var existing=mapOverviewComparison[cs.id]||{},isA=input.dataset.cameraOverviewCompareA!==undefined;
+   mapOverviewComparison[cs.id]={a:isA?input.value:existing.a,b:isA?existing.b:input.value};
+   mapOverviewMetricsOpen[cs.id]=true;
+   renderPane();
+   var select=pane.querySelector(isA?'[data-camera-overview-compare-a]':'[data-camera-overview-compare-b]');
+   if(select)select.focus({preventScroll:true});
+   return;
+  }
   if(input.dataset.cameraOverviewPaceToggle!==undefined){
    var ps=sec();if(!C.config(ps))return;
    mapOverviewPaceVisible[ps.id]=!!input.checked;

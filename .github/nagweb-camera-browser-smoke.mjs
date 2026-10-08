@@ -345,6 +345,39 @@ export async function runCameraBrowserSmoke(page){
   assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'3D diagnostics must not add undo history entries');
   console.log('Camera minimap 3D path metrics: arc length, zero-speed hold, pace deltas, live scrub and view persistence OK');
 
+  // Read-only contextual hover plus A/B distance and pace comparison across both tracks.
+  const hoverSpot=await page.$eval('[data-camera-overview]',mini=>{
+   mini.scrollIntoView({block:'center'});
+   const r=mini.getBoundingClientRect(),poly=mini.querySelector('[data-camera-overview-pace="camera"] [data-camera-overview-pace-from="0"]');
+   const coords=poly.getAttribute('points').split(' ').map(p=>p.split(',').map(Number));
+   const a=coords[0],b=coords[coords.length-1];
+   return {x:r.left+(a[0]+b[0])/2*r.width/100,y:r.top+(a[1]+b[1])/2*r.height/100};
+  });
+  await page.mouse.move(hoverSpot.x,hoverSpot.y);
+  await page.waitForFunction(()=>{const tip=document.querySelector('[data-camera-overview-hover]');return tip&&!tip.hidden&&tip.textContent.includes('◆ Cámara 0–20%');});
+  const hoverLabel=await page.$eval('[data-camera-overview-hover]',n=>n.textContent);
+  assert.ok(hoverLabel.includes('100,0 px')&&hoverLabel.includes('5,0 px/%'),'Hover provides contextual 3D distance and pace');
+  await page.mouse.move(2,2);
+  await page.waitForFunction(()=>document.querySelector('[data-camera-overview-hover]')?.hidden);
+  assert.ok(await page.$('[data-camera-overview-comparison]'),'A/B comparison is available in expanded diagnostics');
+  await page.select('[data-camera-overview-compare-a]','camera:0:20');
+  await page.select('[data-camera-overview-compare-b]','camera:20:40');
+  const diffPause=await page.$eval('[data-camera-overview-compare-result]',n=>n.textContent);
+  assert.ok(diffPause.includes('−100,0 px')&&diffPause.includes('−5,0 px/%'),'Comparison reports a hold is 100 px shorter and 5 px/% slower');
+  await page.select('[data-camera-overview-compare-b]','look:80:100');
+  const diffCrossTrack=await page.$eval('[data-camera-overview-compare-result]',n=>n.textContent);
+  assert.ok(diffCrossTrack.includes('−50,0 px')&&diffCrossTrack.includes('−2,5 px/%'),'Camera and look can be compared across different intervals');
+  await page.select('[data-camera-map-plane]','front');
+  assert.equal(await page.$eval('[data-camera-overview-compare-b]',n=>n.value),'look:80:100','Selected comparison survives front view');
+  assert.ok((await page.$eval('[data-camera-overview-compare-result]',n=>n.textContent)).includes('−50,0 px'),'3D comparison is view-independent');
+  await page.select('[data-camera-map-plane]','top');
+  assert.equal(await page.$eval('[data-camera-overview-compare-a]',n=>n.value),'camera:0:20','Comparison survives returning to top view');
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),motionNavigationInitial.frames,'Hover and comparison never modify camera keyframes');
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraLookFrames)),motionNavigationInitial.looks,'Hover and comparison never modify look keyframes');
+  assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'Comparison does not modify undo history');
+  console.log('Camera minimap context: hovered segment info, A/B comparison across tracks and both projections, nondestructive behavior OK');
+
+
   // Pace overlay: classify sampled camera/look motion by distance per 1% of Director progress.
   const paceInitial=await page.evaluate(()=>{
    const mini=document.querySelector('[data-camera-overview]');
