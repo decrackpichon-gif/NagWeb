@@ -469,6 +469,7 @@ export async function runCameraBrowserSmoke(page){
   console.log('Camera minimap A/B overlays: distinct cyan/pink, hold rings, reverse overlap, live selections, disclosure and projections OK');
 
   // Micro-etapa 33: map-projected B minus A distances and jump to segment midpoints.
+  const abProgressBefore=await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.progress('camera-browser-scene'));
   const abDelta=()=>page.$eval('[data-camera-overview-compare-difference]',el=>({
    distance:el.getAttribute('data-delta-distance'),pace:el.getAttribute('data-delta-pace'),
    distanceText:el.querySelector('[data-camera-overview-delta-distance]')?.textContent,
@@ -508,6 +509,9 @@ export async function runCameraBrowserSmoke(page){
   assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),motionNavigationInitial.frames,'A/B jump buttons do not mutate camera keyframes');
   assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraLookFrames)),motionNavigationInitial.looks,'A/B jump buttons do not mutate look keyframes');
   assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'A/B jump buttons never write undo history');
+  await page.evaluate(v=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',v/100),abProgressBefore);
+  await page.waitForFunction(v=>Math.abs(+document.querySelector('[data-camera-seek]').value-v)<.05,{},abProgressBefore);
+  assert.equal(await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.progress('camera-browser-scene')),abProgressBefore,'A/B navigation tests restore prior Director progress for later editing cases');
   console.log('Camera minimap A/B deltas: map guide, signed distance/pace, A/B and pause midpoint navigation, view parity, no mutations OK');
 
 
