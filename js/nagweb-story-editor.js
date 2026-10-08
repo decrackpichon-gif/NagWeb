@@ -766,7 +766,7 @@ function labChoose(key){
  var definition=labDefinition(key);if(labEditing||!definition)return;if(labDraft&&(labDraft.choice||labDraft.config.template)===key)return;
  labFinishText(false);labStop();clearTimeout(labEditTimer);if(labDraft)labDrafts[labDraft.choice||labDraft.config.template]={draft:labDraft,source:labSource,assets:labAssets,selected:labSelected,moment:labRange.value};
  var cached=labDrafts[key];if(cached){labDraft=cached.draft;labSource=cached.source;labAssets=cached.assets;labSelected=cached.selected;labRange.value=cached.moment;}
- else{var recipe=definition.create();labSource=recipe.scene;labAssets=recipe.assets;labDraft={id:labSource.id,choice:key,bg:labSource.bg,config:recipe.config||{template:key,source:'time',duration:labSource.nwMotionDuration,loop:true,perspective:labSource.sdPerspective},elements:recipe.scene.elements};if(!recipe.config)labDraft.elements.forEach(function(e){e.parent=labDraft.id;});labSelected=null;labRange.value=key==='image-trail'?25:50;}
+ else{var recipe=definition.create();labSource=recipe.scene;labAssets=recipe.assets;labDraft={id:labSource.id,choice:key,bg:labSource.bg,config:recipe.config||{template:key,source:'time',duration:labSource.nwMotionDuration,loop:true,perspective:labSource.sdPerspective},elements:recipe.scene.elements};if(!recipe.config)labDraft.elements.forEach(function(e){e.parent=labDraft.id;});labSelected=null;labRange.value=labDraft.config.template==='image-trail'?25:50;}
  labTemplateState(key,false);labBuildForm();labPreviewDraft();
 }
 function labOpen(){
