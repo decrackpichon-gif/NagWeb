@@ -637,3 +637,42 @@ Familias disponibles:
 - tin.
 
 Los efectos exponen controles NagWeb de duración, demora, easing y cantidad de repeticiones. La galería offline reproduce automáticamente cada animación para que pueda evaluarse visualmente.
+
+
+## Restaurar desde la copia persistente de NagWeb
+
+La rama generada `resource-vault-data` es una fuente propia de reconstrucción. No hace falta volver a consultar los sitios originales para recuperar el código conservado.
+
+Restauración desde nuestra rama de datos:
+
+```bash
+npm run vault:restore -- --out=vault-restored
+```
+
+El restaurador:
+
+1. lee `vault-manifest.json` desde la rama persistente de NagWeb;
+2. descarga únicamente nuestros snapshots comprimidos;
+3. verifica SHA-256 de cada snapshot;
+4. descomprime los `UniversalResource`;
+5. reconstruye carpetas, `resource.json`, catálogo, galería, bundle portable y avisos de licencia.
+
+Para regenerar también previews React:
+
+```bash
+npm run vault:restore -- --out=vault-restored --react-previews
+```
+
+Para una restauración totalmente offline, primero se puede tener una copia local de `resource-vault-data` y usar:
+
+```bash
+npm run vault:restore -- --source-dir=RUTA_A_RESOURCE_VAULT_DATA --out=vault-restored
+```
+
+También se puede restaurar sólo una parte:
+
+```bash
+npm run vault:restore -- --snapshots=uiverse,lucide --out=vault-restored
+```
+
+En Windows, la opción **17 · RECONSTRUIR Vault desde NUESTRA copia persistente** hace la restauración completa con previews React y no consulta a los proveedores originales.

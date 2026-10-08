@@ -41,6 +41,7 @@ echo 13. CREAR Code Vault COMPLETO ^(todas las fuentes aprobadas^)
 echo 14. CREAR Vault + previews React ^(instala compilador si hace falta^)
 echo 15. CREAR inventario Uiverse ^(liviano, sin bajar los 3.800 codigos^)
 echo 16. CONTINUAR Uiverse ^(100 recursos, recuerda solo donde quedo^)
+echo 17. RECONSTRUIR Vault desde NUESTRA copia persistente
 echo.
 echo  0. Salir
 echo.
@@ -62,6 +63,7 @@ if "%choice%"=="13" goto code_vault_all
 if "%choice%"=="14" goto code_vault_react
 if "%choice%"=="15" goto uiverse_inventory
 if "%choice%"=="16" goto uiverse_batch
+if "%choice%"=="17" goto restore_persistent_vault
 if "%choice%"=="0" exit /b 0
 
 echo.
@@ -195,6 +197,18 @@ echo NagWeb recuerda automaticamente donde termino el lote anterior.
 echo No tenes que anotar offsets ni rutas.
 echo.
 node src\uiverse-batch-cli.mjs --limit=100 --resume --out=vault
+goto done
+
+:restore_persistent_vault
+cls
+echo Reconstruyendo NagWeb Vault desde resource-vault-data...
+echo.
+echo No se consultan Uiverse, Lucide, Three.js ni los otros proveedores.
+echo Se verifican los checksums SHA-256 antes de restaurar.
+echo.
+call npm install --no-package-lock --no-audit --no-fund
+if errorlevel 1 goto done
+node src\snapshot\restore-persistent-vault.mjs --out=vault-restored --react-previews
 goto done
 
 :done
