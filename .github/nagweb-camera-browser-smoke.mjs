@@ -209,6 +209,45 @@ export async function runCameraBrowserSmoke(page){
    renderPane();
   },{camera:originalFrames,...miniOriginalLook});
   assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),originalFrames,'Overlapping test restores original camera frames');
+
+  // Route analysis: pauses, true 3D reversals and sharp turns on camera and look tracks.
+  const motionBefore=await page.evaluate(()=>({orientation:sec().sdCameraOrientationMode,pathMode:sec().sdCameraPathMode,lookMode:sec().sdCameraLookPathMode,lookFrames:JSON.stringify(sec().sdCameraLookFrames||[])}));
+  await page.evaluate(()=>{
+   const sc=sec(),route=[
+    {at:0,x:0,y:0,z:0},{at:20,x:100,y:0,z:0},{at:40,x:100,y:0,z:0},
+    {at:60,x:0,y:0,z:0},{at:80,x:0,y:100,z:0},{at:100,x:0,y:150,z:0}
+   ];
+   sc.sdCameraPathMode='linear';sc.sdCameraOrientationMode='lookAt';sc.sdCameraLookPathMode='linear';
+   sc.sdCameraFrames=route.map(f=>({...f,rotateX:0,rotateY:0,rotate:0,ease:'linear'}));
+   sc.sdCameraLookFrames=route.map(f=>({...f,z:f.z+250,ease:'linear'}));
+   renderPane();
+  });
+  await page.waitForFunction(()=>document.querySelectorAll('[data-camera-overview-event-kind="camera"]').length===3&&document.querySelectorAll('[data-camera-overview-event-kind="look"]').length===3);
+  const motionEvents=await page.evaluate(()=>{
+   const mini=document.querySelector('[data-camera-overview]');
+   return {
+    camera:Array.from(mini.querySelectorAll('[data-camera-overview-event-kind="camera"]')).map(el=>el.dataset.cameraOverviewEventType),
+    look:Array.from(mini.querySelectorAll('[data-camera-overview-event-kind="look"]')).map(el=>el.dataset.cameraOverviewEventType),
+    summary:mini.querySelector('[data-camera-overview-motion-summary]')?.textContent,
+    tooltips:mini.querySelectorAll('[data-camera-overview-event-kind] title').length
+   };
+  });
+  assert.deepEqual(motionEvents.camera,['reverse','pause','turn'],'Camera motion analysis detects reverse, authored hold and turn');
+  assert.deepEqual(motionEvents.look,['reverse','pause','turn'],'Look motion analysis is independent');
+  assert.equal(motionEvents.summary,'◆ ‖1 ↶1 ↗1 · ● ‖1 ↶1 ↗1','Minimap summarizes events by track');
+  assert.equal(motionEvents.tooltips,6,'Each motion event has an accessible explanation');
+  await page.select('[data-camera-map-plane]','front');
+  assert.equal(await page.$eval('[data-camera-overview-event-kind]',nodes=>nodes.length),6,'Motion analysis uses XYZ, not the current 2D projection');
+  await page.select('[data-camera-map-plane]','top');
+  await page.evaluate(saved=>{
+   const sc=sec();
+   sc.sdCameraFrames=JSON.parse(saved.camera);sc.sdCameraOrientationMode=saved.orientation;
+   sc.sdCameraPathMode=saved.pathMode;sc.sdCameraLookPathMode=saved.lookMode;sc.sdCameraLookFrames=JSON.parse(saved.lookFrames);
+   renderPane();
+  },{camera:originalFrames,...motionBefore});
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),originalFrames,'Motion diagnostics must not change authored camera frames');
+  console.log('Camera minimap motion diagnostics: pauses, 3D reversals, turns, track separation and both projections OK');
+
   console.log('Camera minimap markers: camera/target glyphs, direct keyframe selection, three-way overlap cycling and restore OK');
 
   await page.click('[data-camera-map-zoom="0"]');
