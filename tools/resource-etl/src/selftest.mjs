@@ -768,3 +768,64 @@ assert.deepEqual(
   }).map((item) => item.id),
   ["size", "stroke", "strokeWidth"]
 );
+
+const lottieEditableResource = {
+  ...editableSpinKit,
+  id: "lottie:control-test",
+  runtime: { renderer: "dotlottie-web", entryArtifactId: "animation" },
+  artifacts: [{
+    id: "animation",
+    role: "animation-data",
+    content: '{"v":"5.0","fr":30,"ip":0,"op":12,"layers":[]}'
+  }],
+  editableProps: [
+    { id: "speed", label: "Velocidad", valueType: "number", defaultValue: 1,
+      binding: { type: "runtime", path: "lottie.speed" },
+      constraints: { min: 0.1, max: 4, step: 0.1 } },
+    { id: "loop", label: "Repetir", valueType: "boolean", defaultValue: true,
+      binding: { type: "runtime", path: "lottie.loop" } },
+    { id: "autoplay", label: "Inicio automático", valueType: "boolean", defaultValue: true,
+      binding: { type: "runtime", path: "lottie.autoplay" } },
+    { id: "unsafe", label: "No admitido", valueType: "boolean", defaultValue: true,
+      binding: { type: "runtime", path: "other.autoplay" } }
+  ]
+};
+assert.deepEqual(describeEditableControls(lottieEditableResource).map((item) => [item.id, item.kind]), [
+  ["speed", "range"], ["loop", "toggle"], ["autoplay", "toggle"]
+]);
+const editedLottieEnvelope = buildResourceApplyEnvelope(lottieEditableResource, {
+  values: { speed: 2, loop: false, autoplay: false }
+});
+assert.equal(editedLottieEnvelope.descriptor.kind, "lottie");
+assert.equal(editedLottieEnvelope.descriptor.payload.speed, 2);
+assert.equal(editedLottieEnvelope.descriptor.payload.loop, false);
+assert.equal(editedLottieEnvelope.descriptor.payload.autoplay, false);
+
+const shakeEditableResource = {
+  ...editableSpinKit,
+  id: "csshake:control-test",
+  runtime: { renderer: "nagweb-css-class-effect", entryArtifactId: "effect" },
+  artifacts: [{ id: "effect", role: "animation-data", content: '{"className":"shake"}' }],
+  editableProps: [
+    { id: "trigger", label: "Activación", valueType: "enum", defaultValue: "hover",
+      binding: { type: "runtime", path: "cssEffect.trigger" },
+      constraints: { options: [
+        { label: "Hover", value: "hover" },
+        { label: "Siempre", value: "constant" }
+      ] } },
+    { id: "wrong", valueType: "enum", defaultValue: "hover",
+      binding: { type: "runtime", path: "cssEffect.bad" },
+      constraints: { options: [{ value: "hover" }] } }
+  ]
+};
+const shakeControls = describeEditableControls(shakeEditableResource);
+assert.deepEqual(shakeControls.map((x) => [x.id, x.kind]), [["trigger", "select"]]);
+assert.deepEqual(shakeControls[0].options.map((x) => x.value), ["hover", "constant"]);
+assert.equal(buildResourceApplyEnvelope(shakeEditableResource, {
+  values: { trigger: "constant" }
+}).descriptor.payload.trigger, "constant");
+assert.deepEqual(describeEditableControls({
+  ...shakeEditableResource,
+  editableProps: [{ ...shakeEditableResource.editableProps[0],
+    defaultValue: "<svg>" }]
+}), []);

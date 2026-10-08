@@ -248,9 +248,12 @@ function updateApplyReadiness(resource) {
 function renderEditableControls(resource) {
   el.customizeControls.replaceChildren();
   const controls = describeEditableControls(resource);
-  el.customizeTitle.textContent = resource.runtime?.renderer === "nagweb-svg"
+  const renderer = resource.runtime?.renderer;
+  el.customizeTitle.textContent = renderer === "nagweb-svg"
     ? "Personalizar ícono"
-    : "Personalizar componente CSS";
+    : ["lottie", "dotlottie-web", "nagweb-css-class-effect"].includes(renderer)
+      ? "Personalizar animación"
+      : "Personalizar componente CSS";
 
   for (const [index, control] of controls.entries()) {
     selectedValues[control.id] = control.defaultValue;
@@ -269,35 +272,78 @@ function renderEditableControls(resource) {
       row.className = "color-row";
       input.type = "color";
       input.value = control.defaultValue;
-    } else {
+    } else if (control.kind === "range") {
       row.className = "size-row";
       input.type = "range";
       input.min = String(control.min);
       input.max = String(control.max);
       input.step = String(control.step);
       input.value = String(control.defaultValue);
+    } else if (control.kind === "toggle") {
+      row.className = "toggle-row";
+      input.type = "checkbox";
+      input.checked = control.defaultValue;
+    } else {
+      row.className = "select-row";
+      const select = document.createElement("select");
+      select.id = input.id;
+      input.removeAttribute("id");
+      for (const option of control.options) {
+        const choice = document.createElement("option");
+        choice.value = option.value;
+        choice.textContent = option.label;
+        select.appendChild(choice);
+      }
+      select.value = control.defaultValue;
+      row.appendChild(select);
     }
 
     const format = (value) => control.kind === "color"
       ? value.toUpperCase()
-      : `${value}${control.unit}`;
+      : control.kind === "range"
+        ? `${value}${control.unit}`
+        : control.kind === "toggle"
+          ? value ? "Activado" : "Desactivado"
+          : control.options.find((option) => option.value === value)?.label || value;
     output.textContent = format(control.defaultValue);
 
-    input.addEventListener("input", () => {
+    const controlElement = control.kind === "select" ? row.querySelector("select") : input;
+    controlElement.addEventListener("change", () => {
       if (selectedResource !== resource || el.customize.hidden) return;
-      const value = control.kind === "color" ? input.value : Number(input.value);
+      const value = control.kind === "color" || control.kind === "select"
+        ? controlElement.value
+        : control.kind === "toggle"
+          ? controlElement.checked
+          : Number(controlElement.value);
       if (control.kind === "color") {
         if (!/^#[0-9a-f]{6}$/i.test(value)) return;
-      } else if (
-        !Number.isFinite(value) || value < control.min || value > control.max
-      ) return;
+      } else if (control.kind === "range") {
+        if (!Number.isFinite(value) || value < control.min || value > control.max) return;
+      } else if (control.kind === "select") {
+        if (!control.options.some((option) => option.value === value)) return;
+      }
 
       selectedValues[control.id] = value;
       output.textContent = format(value);
       redrawEditablePreview();
     });
+    if (control.kind === "color" || control.kind === "range") {
+      controlElement.addEventListener("input", () => {
+        if (selectedResource !== resource || el.customize.hidden) return;
+        const value = control.kind === "color" ? controlElement.value
+          : Number(controlElement.value);
+        if (control.kind === "color") {
+          if (!/^#[0-9a-f]{6}$/i.test(value)) return;
+        } else if (!Number.isFinite(value) ||
+          value < control.min || value > control.max) return;
+        selectedValues[control.id] = value;
+        output.textContent = format(value);
+        redrawEditablePreview();
+      });
+    }
 
-    row.append(input, output);
+    if (control.kind !== "select") row.appendChild(input);
+    row.appendChild(output);
     field.append(label, row);
     el.customizeControls.appendChild(field);
   }

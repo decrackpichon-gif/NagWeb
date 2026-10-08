@@ -1,21 +1,38 @@
-// Build safe, metadata-driven color and range controls for browser previews.
+// Build safe metadata-driven controls for pre-insert customization.
 export function describeEditableControls(resource) {
   const renderer = resource?.runtime?.renderer;
-  if (!["nagweb-html-tailwind", "nagweb-svg"].includes(renderer)) return [];
+  if (![
+    "nagweb-html-tailwind",
+    "nagweb-svg",
+    "lottie",
+    "dotlottie-web",
+    "nagweb-css-class-effect"
+  ].includes(renderer)) return [];
 
   const controls = [];
   const seen = new Set();
 
   for (const prop of resource.editableProps || []) {
     const id = prop?.id;
-    if (typeof id !== "string" || !id || seen.has(id)) continue;
+    if (
+      typeof id !== "string" ||
+      !/^[a-zA-Z][a-zA-Z0-9_-]{0,63}$/.test(id) ||
+      id === "constructor" || seen.has(id)
+    ) continue;
 
     const validBinding = renderer === "nagweb-html-tailwind"
       ? prop.binding?.type === "css-variable" &&
         /^--[a-z][a-z0-9-]*$/i.test(prop.binding?.variable || "")
-      : ["size", "stroke", "strokeWidth"].includes(id) &&
-        prop.binding?.type === "runtime" &&
-        prop.binding?.path === `svg.${id}`;
+      : renderer === "nagweb-svg"
+        ? ["size", "stroke", "strokeWidth"].includes(id) &&
+          prop.binding?.type === "runtime" &&
+          prop.binding?.path === `svg.${id}`
+        : ["lottie", "dotlottie-web"].includes(renderer)
+          ? ["speed", "loop", "autoplay"].includes(id) &&
+            prop.binding?.type === "runtime" &&
+            prop.binding?.path === `lottie.${id}`
+          : id === "trigger" && prop.binding?.type === "runtime" &&
+            prop.binding?.path === "cssEffect.trigger";
     if (!validBinding) continue;
 
     const base = {
@@ -30,6 +47,42 @@ export function describeEditableControls(resource) {
       controls.push({ ...base, kind: "color" });
       seen.add(id);
       continue;
+    }
+
+    if (prop.valueType === "boolean" &&
+        typeof prop.defaultValue === "boolean") {
+      controls.push({ ...base, kind: "toggle" });
+      seen.add(id);
+      continue;
+    }
+
+    const choices = prop.constraints?.options;
+    if (
+      prop.valueType === "enum" &&
+      Array.isArray(choices) && choices.length > 0 && choices.length <= 32 &&
+      typeof prop.defaultValue === "string"
+    ) {
+      const options = [];
+      const optionValues = new Set();
+      for (const option of choices) {
+        if (
+          typeof option?.value !== "string" ||
+          option.value.length > 80 ||
+          !/^[a-zA-Z0-9 _.-]+$/.test(option.value) ||
+          optionValues.has(option.value)
+        ) continue;
+        optionValues.add(option.value);
+        options.push({
+          value: option.value,
+          label: typeof option.label === "string" && option.label.trim()
+            ? option.label.slice(0, 100) : option.value
+        });
+      }
+      if (options.length > 0 && optionValues.has(prop.defaultValue)) {
+        controls.push({ ...base, kind: "select", options });
+        seen.add(id);
+        continue;
+      }
     }
 
     const { min, max, step, unit = "" } = prop.constraints || {};
