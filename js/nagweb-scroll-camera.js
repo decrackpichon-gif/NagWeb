@@ -648,27 +648,34 @@ function mapOverviewCompareHtml(stats,selected){
 }
 function mapOverviewHoverHit(samples,stats,spec,point,width,height){
  if(!stats||!samples||!spec||!point||!width||!height)return null;
- var closest=null;
+ var candidates=[];
  [['camera',stats.camera,samples.camera],['look',stats.look,samples.look]].forEach(function(track){
   var stat=track[1],path=track[2];if(!stat||!Array.isArray(stat.segments)||!Array.isArray(path))return;
   stat.segments.forEach(function(segment){
    var route=mapOverviewSegment(path,[{at:segment.from},{at:segment.to}],segment.from,spec);
    var pts=route.points.split(' ').map(function(pair){return pair.split(',').map(Number);}).filter(function(v){return v.length===2&&v.every(Number.isFinite);});
+   var nearest=Infinity;
    for(var i=0;i<pts.length;i++){
     var a=pts[Math.max(0,i-1)],b=pts[i],ax=a[0]*width/100,ay=a[1]*height/100,bx=b[0]*width/100,by=b[1]*height/100;
     var vx=bx-ax,vy=by-ay,div=vx*vx+vy*vy;
     var t=div>0?Math.max(0,Math.min(1,((point.x*width-ax)*vx+(point.y*height-ay)*vy)/div)):0;
-    var d=Math.hypot(point.x*width-ax-t*vx,point.y*height-ay-t*vy);
-    if(!closest||d<closest.distance)closest={kind:track[0],segment:segment,distance:d};
+    nearest=Math.min(nearest,Math.hypot(point.x*width-ax-t*vx,point.y*height-ay-t*vy));
    }
+   if(nearest<=9)candidates.push({kind:track[0],segment:segment,distance:nearest});
   });
  });
- return closest&&closest.distance<=9?closest:null;
+ if(!candidates.length)return null;
+ candidates.sort(function(a,b){return a.distance-b.distance||a.segment.from-b.segment.from;});
+ var best=candidates[0];
+ best.overlaps=candidates.filter(function(c){return c.distance<=best.distance+1.5;}).sort(function(a,b){return (a.kind===b.kind?0:a.kind==='camera'?-1:1)||a.segment.from-b.segment.from;});
+ return best;
 }
 function mapOverviewHoverText(hit){
  if(!hit)return '';
- var s=hit.segment;
- return (hit.kind==='look'?'● Mirada':'◆ Cámara')+' '+s.from+'–'+s.to+'% · '+mapOverviewMetricNumber(s.distance)+' px · '+mapOverviewMetricNumber(s.pace)+' px/%';
+ return (hit.overlaps||[hit]).map(function(entry){
+  var s=entry.segment;
+  return (entry.kind==='look'?'● Mirada':'◆ Cámara')+' '+s.from+'–'+s.to+'% · '+mapOverviewMetricNumber(s.distance)+' px · '+mapOverviewMetricNumber(s.pace)+' px/%';
+ }).join(' | ');
 }
 function mapOverviewMetricHtml(stats,pct,open,showPace,comparison){
  if(!stats||!stats.camera||!stats.camera.segments.length)return '';

@@ -354,9 +354,14 @@ export async function runCameraBrowserSmoke(page){
    return {x:r.left+(a[0]+b[0])/2*r.width/100,y:r.top+(a[1]+b[1])/2*r.height/100};
   });
   await page.mouse.move(hoverSpot.x,hoverSpot.y);
-  await page.waitForFunction(()=>{const tip=document.querySelector('[data-camera-overview-hover]');return tip&&!tip.hidden&&tip.textContent.includes('◆ Cámara 0–20%');});
-  const hoverLabel=await page.$eval('[data-camera-overview-hover]',n=>n.textContent);
-  assert.ok(hoverLabel.includes('100,0 px')&&hoverLabel.includes('5,0 px/%'),'Hover provides contextual 3D distance and pace');
+  const hovered=await page.evaluate(pos=>{
+   const tip=document.querySelector('[data-camera-overview-hover]'),mini=document.querySelector('[data-camera-overview]');
+   const hit=document.elementFromPoint(pos.x,pos.y),rect=mini.getBoundingClientRect();
+   return {hidden:tip.hidden,label:tip.textContent,target:hit?.tagName,inMini:!!(hit&&mini.contains(hit)),range:{x:rect.left,y:rect.top,width:rect.width,height:rect.height}};
+  },hoverSpot);
+  assert.equal(hovered.hidden,false,'Pointer hover must show noninteractive contextual info: '+JSON.stringify(hovered));
+  assert.ok(hovered.label.includes('◆ Cámara 0–20%')&&hovered.label.includes('◆ Cámara 40–60%'),'Hover lists both coincident forward and reverse intervals: '+JSON.stringify(hovered));
+  assert.ok(hovered.label.includes('100,0 px')&&hovered.label.includes('5,0 px/%'),'Hover provides contextual 3D distance and pace');
   await page.mouse.move(2,2);
   await page.waitForFunction(()=>document.querySelector('[data-camera-overview-hover]')?.hidden);
   assert.ok(await page.$('[data-camera-overview-comparison]'),'A/B comparison is available in expanded diagnostics');
