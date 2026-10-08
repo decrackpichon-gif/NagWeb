@@ -43,6 +43,7 @@ import './nagweb-orbit-carousel-model-test.mjs';
 import './nagweb-column-drift-model-test.mjs';
 import './nagweb-spotlight-model-test.mjs';
 import './nagweb-sphere-model-test.mjs';
+if(process.env.NAGWEB_SMOKE_SUITE==='sphere-wall')await import('./nagweb-sphere-renderer-test.mjs');
 import {runMotionSphereSmoke} from './nagweb-motion-sphere-smoke.mjs';
 import './nagweb-focus-slider-model-test.mjs';
 import {runMotionFocusSliderSmoke} from './nagweb-motion-focus-slider-smoke.mjs';
