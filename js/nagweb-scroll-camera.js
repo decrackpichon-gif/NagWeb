@@ -633,6 +633,47 @@ function mapOverviewCompareText(a,b){
  var distance=b.segment.distance-a.segment.distance,pace=b.segment.pace-a.segment.pace;
  return 'B − A: distancia '+mapOverviewSignedMetric(distance)+' px · ritmo '+mapOverviewSignedMetric(pace)+' px/%';
 }
+function mapOverviewCompareMidpoint(path,segment,spec){
+ if(!path||!segment)return null;
+ var section=mapOverviewSegment(path,[{at:segment.from},{at:segment.to}],segment.from,spec);
+ var points=section.points.split(' ').map(function(p){return p.split(',').map(Number);}).filter(function(p){return p.length===2&&p.every(Number.isFinite);});
+ if(!points.length)return null;
+ var total=0,lengths=[];
+ for(var i=1;i<points.length;i++){var d=Math.hypot(points[i][0]-points[i-1][0],points[i][1]-points[i-1][1]);lengths.push(d);total+=d;}
+ if(total<.0001)return {x:points[0][0],y:points[0][1]};
+ var distance=total/2;
+ for(var j=0;j<lengths.length;j++){
+  if(distance>lengths[j]){distance-=lengths[j];continue;}
+  var t=lengths[j]>0?distance/lengths[j]:0;
+  return {x:points[j][0]+(points[j+1][0]-points[j][0])*t,y:points[j][1]+(points[j+1][1]-points[j][1])*t};
+ }
+ return {x:points[points.length-1][0],y:points[points.length-1][1]};
+}
+function mapOverviewCompareDeltaSvg(cameraPath,lookPath,stats,chosen,spec){
+ var choices=mapOverviewCompareChoices(stats);if(choices.length<2)return '';
+ var items=mapOverviewCompareSelection(choices,chosen);if(!items.a||!items.b)return '';
+ var a=mapOverviewCompareMidpoint(items.a.kind==='look'?lookPath:cameraPath,items.a.segment,spec);
+ var b=mapOverviewCompareMidpoint(items.b.kind==='look'?lookPath:cameraPath,items.b.segment,spec);
+ if(!a||!b)return '';
+ var d=items.b.segment.distance-items.a.segment.distance,p=items.b.segment.pace-items.a.segment.pace;
+ var distance=mapOverviewSignedMetric(d),pace=mapOverviewSignedMetric(p);
+ var centerX=Math.max(21,Math.min(79,(a.x+b.x)/2)),centerY=Math.max(16,Math.min(81,(a.y+b.y)/2-11));
+ var guide='<line data-camera-overview-compare-guide x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'" stroke="#e5e7eb" stroke-width=".6" stroke-dasharray="1.5 1.5" opacity=".7"/>';
+ return '<g data-camera-overview-compare-difference data-delta-distance="'+d+'" data-delta-pace="'+p+'" pointer-events="none">'+
+  guide+'<rect x="'+(centerX-20)+'" y="'+(centerY-5.8)+'" width="40" height="11.6" rx="2" fill="var(--bg,#1c1e23)" fill-opacity=".95" stroke="#e5e7eb" stroke-width=".55"/>'+
+  '<text data-camera-overview-delta-distance x="'+centerX+'" y="'+(centerY-.8)+'" fill="#e5e7eb" font-size="4.1" font-weight="bold" text-anchor="middle">Δd '+distance+' px</text>'+
+  '<text data-camera-overview-delta-pace x="'+centerX+'" y="'+(centerY+4)+'" fill="#e5e7eb" font-size="3.8" text-anchor="middle">Δr '+pace+' px/%</text>'+
+  '</g>';
+}
+function mapOverviewCompareGo(s,stats,selected,which){
+ var options=mapOverviewCompareChoices(stats),items=mapOverviewCompareSelection(options,selected);
+ var item=which==='a'?items.a:which==='b'?items.b:null;
+ if(!item||!C.config(s)||!window.NAGWEB_SCROLL_DIRECTOR)return false;
+ var at=(+item.segment.from+ +item.segment.to)/2;
+ if(!Number.isFinite(at)||at<0||at>100)return false;
+ window.NAGWEB_SCROLL_DIRECTOR.scrub(s.id,at/100);
+ return true;
+}
 function mapOverviewCompareOverlay(cameraPath,lookPath,stats,chosen,spec){
  var options=mapOverviewCompareChoices(stats);if(options.length<2)return '';
  var selection=mapOverviewCompareSelection(options,chosen),out='<g data-camera-overview-compare-overlay style="display:none" pointer-events="none">';
@@ -655,6 +696,7 @@ function mapOverviewCompareOverlay(cameraPath,lookPath,stats,chosen,spec){
   out+='<circle cx="'+labelX+'" cy="'+labelY+'" r="4.4" fill="var(--bg,#1c1e23)" stroke="'+color+'" stroke-width="1.25"/>'+
    '<text x="'+labelX+'" y="'+(labelY+.2)+'" text-anchor="middle" dominant-baseline="central" font-size="5.2" font-weight="bold" fill="'+color+'">'+which.toUpperCase()+'</text></g>';
  });
+ out+=mapOverviewCompareDeltaSvg(cameraPath,lookPath,stats,chosen,spec);
  return out+'</g>';
 }
 function mapOverviewCompareHtml(stats,selected){
@@ -668,6 +710,7 @@ function mapOverviewCompareHtml(stats,selected){
  return '<div data-camera-overview-comparison style="margin-top:6px;padding-top:5px;border-top:1px solid var(--border,#5555)">'+
   '<div style="font-weight:600">Comparar dos tramos</div><div style="display:flex;gap:6px;align-items:center;margin-top:2px;font-size:10px"><span style="color:#22d3ee;font-weight:700">━ A · cian</span><span style="color:#f472b6;font-weight:700">┄ B · rosa</span><span style="opacity:.7">En el minimapa al abrir este diagnóstico</span></div><div style="display:flex;gap:6px;margin-top:3px">'+control('A',chosen.a)+control('B',chosen.b)+'</div>'+
   '<div data-camera-overview-compare-result style="margin-top:4px" aria-live="polite">'+mapOverviewCompareText(chosen.a,chosen.b)+'</div>'+
+ '<div style="display:flex;align-items:center;gap:5px;margin-top:4px"><button class="btn tiny" type="button" data-camera-overview-compare-jump="a" aria-label="Ir al centro del tramo A" title="Previsualizar el punto medio de A">Ir a A</button><button class="btn tiny" type="button" data-camera-overview-compare-jump="b" aria-label="Ir al centro del tramo B" title="Previsualizar el punto medio de B">Ir a B</button><span style="font-size:10px;opacity:.8">Δd distancia · Δr ritmo en el minimapa</span></div>'+
   '<div style="opacity:.75">Diferencia B respecto de A. Comparación en píxeles 3D y px por 1% de scroll.</div></div>';
 }
 function mapOverviewHoverHit(samples,stats,spec,point,width,height){
@@ -1150,7 +1193,7 @@ function spatialMap(s,list,k){
  if(lookKeyPoint)html+='<p class="hint gh" data-camera-map-selection-label>◆ '+k.at+'% ↔ ● '+lk.at+'% · Distancia XYZ: '+Math.round(Math.hypot(k.x-resolvedLk.x,k.y-resolvedLk.y,k.z-resolvedLk.z))+' px. Guía comparativa, no vincula los recorridos.</p>';
  if(s.sdCameraResponsive)html+='<p class="hint gh">El mapa muestra el recorrido con el ancho de referencia.</p>';
  html+='<p class="hint gh" data-camera-position-label>'+mapLabel(current,progress(s))+'</p>';
- html+='<p class="hint gh">◆ encuadre seleccionado · ○ posición actual'+(tangentInPoint||tangentOutPoint?' · ◁ entrada / ▷ salida':'')+(cfg&&cfg.orientationMode==='lookAt'?' · ● objetivo seleccionado · línea punteada: recorrido de mirada'+(lookTangentInPoint||lookTangentOutPoint?' · ◁/▷ del ●: curva de mirada':''):'')+(cfg&&(cfg.pathMode==='smooth'||cfg.lookPathMode==='smooth')?' · Trazo destacado: tramo Bézier libre; trazo normal: Catmull-Rom':'')+' · Flecha: orientación de ◆. Área translúcida: campo de visión aproximado (se oculta de perfil). Número junto a un punto: marcadores superpuestos; clic repetido para alternarlos. Clic cerca de un punto: seleccionar · Doble clic línea normal: agregar ◆ · línea punteada: agregar ● · Arrastrá ◆ o ● · Arrastrá ◯: ajustar curva · Shift + arrastre: bloquear al eje dominante. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Zoom: − / +, Ctrl/⌘ + rueda o teclas +/− con foco en el mapa. Inicio restablece 100%. Alt + flechas desplaza al ampliar. Con zoom superior al 100% usá Desplazar, Centrar ◆ / Centrar ●, Shift + arrastrar el fondo o el botón central del mouse. La cuadrícula indica coordenadas reales; al cambiar de encuadre, la vista se recentra automáticamente. Vista general: al abrir Diagnóstico 3D, A aparece en cian continuo y B en rosa discontinuo sobre el minimapa; los tramos sin desplazamiento se marcan con anillos. Al pasar el cursor cerca de la trayectoria podés ver la distancia y el ritmo del tramo; en Diagnóstico 3D podés comparar dos intervalos A/B. Las líneas de ritmo del minimapa distinguen pausas, tramos lentos, medios y rápidos según el promedio de cada recorrido; se pueden ocultar en Diagnóstico 3D. El diagnóstico desplegable mide distancia 3D y ritmo medio por porcentaje del Director, usando las curvas muestreadas. Filtrá por ◆ cámara / ● mirada y por ‖ pausas / ↶ retrocesos / ↗ giros. Los símbolos y los botones ◂/▸ respetan esos filtros; un borde más grueso marca el evento seleccionado. Clic en ‖, ↶ o ↗ para ir a ese momento; también podés elegir un evento y recorrerlos con ◂/▸. ‖ marca pausas entre keyframes de igual posición 3D, ↶ señala un retroceso y ↗ un cambio pronunciado de dirección. Son indicadores visuales, no editan la animación. El tramo resaltado corresponde a los keyframes que rodean el progreso actual; I/F indican inicio y fin, el porcentaje muestra la posición exacta. ➤ indica el sentido del recorrido; el punto lleno marca la cámara actual, el círculo punteado la mirada actual y una línea los relaciona. ◆ encuadres y ● objetivos, números en puntos superpuestos. Clic en un punto para seleccionarlo; repetí el clic para alternar coincidencias. Arrastrá el fondo para navegar, Shift + flechas para precisión, Inicio para volver al ◆. Podés ocultarla. Escape cancela el desplazamiento. Con foco en el mapa: ←/→ cambia ◆; Shift + ←/→ cambia ●. Al enfocar un punto, flechas mueven 25 px (Shift: 100 px). Escape cancela. Escala: ±'+Math.round(spec.range)+' px.</p></details>';
+ html+='<p class="hint gh">◆ encuadre seleccionado · ○ posición actual'+(tangentInPoint||tangentOutPoint?' · ◁ entrada / ▷ salida':'')+(cfg&&cfg.orientationMode==='lookAt'?' · ● objetivo seleccionado · línea punteada: recorrido de mirada'+(lookTangentInPoint||lookTangentOutPoint?' · ◁/▷ del ●: curva de mirada':''):'')+(cfg&&(cfg.pathMode==='smooth'||cfg.lookPathMode==='smooth')?' · Trazo destacado: tramo Bézier libre; trazo normal: Catmull-Rom':'')+' · Flecha: orientación de ◆. Área translúcida: campo de visión aproximado (se oculta de perfil). Número junto a un punto: marcadores superpuestos; clic repetido para alternarlos. Clic cerca de un punto: seleccionar · Doble clic línea normal: agregar ◆ · línea punteada: agregar ● · Arrastrá ◆ o ● · Arrastrá ◯: ajustar curva · Shift + arrastre: bloquear al eje dominante. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Zoom: − / +, Ctrl/⌘ + rueda o teclas +/− con foco en el mapa. Inicio restablece 100%. Alt + flechas desplaza al ampliar. Con zoom superior al 100% usá Desplazar, Centrar ◆ / Centrar ●, Shift + arrastrar el fondo o el botón central del mouse. La cuadrícula indica coordenadas reales; al cambiar de encuadre, la vista se recentra automáticamente. Vista general: el globo Δd/Δr compara distancia y ritmo de B respecto de A en el minimapa, y los botones Ir a A / Ir a B previsualizan el centro de cada intervalo. Al abrir Diagnóstico 3D, A aparece en cian continuo y B en rosa discontinuo sobre el minimapa; los tramos sin desplazamiento se marcan con anillos. Al pasar el cursor cerca de la trayectoria podés ver la distancia y el ritmo del tramo; en Diagnóstico 3D podés comparar dos intervalos A/B. Las líneas de ritmo del minimapa distinguen pausas, tramos lentos, medios y rápidos según el promedio de cada recorrido; se pueden ocultar en Diagnóstico 3D. El diagnóstico desplegable mide distancia 3D y ritmo medio por porcentaje del Director, usando las curvas muestreadas. Filtrá por ◆ cámara / ● mirada y por ‖ pausas / ↶ retrocesos / ↗ giros. Los símbolos y los botones ◂/▸ respetan esos filtros; un borde más grueso marca el evento seleccionado. Clic en ‖, ↶ o ↗ para ir a ese momento; también podés elegir un evento y recorrerlos con ◂/▸. ‖ marca pausas entre keyframes de igual posición 3D, ↶ señala un retroceso y ↗ un cambio pronunciado de dirección. Son indicadores visuales, no editan la animación. El tramo resaltado corresponde a los keyframes que rodean el progreso actual; I/F indican inicio y fin, el porcentaje muestra la posición exacta. ➤ indica el sentido del recorrido; el punto lleno marca la cámara actual, el círculo punteado la mirada actual y una línea los relaciona. ◆ encuadres y ● objetivos, números en puntos superpuestos. Clic en un punto para seleccionarlo; repetí el clic para alternar coincidencias. Arrastrá el fondo para navegar, Shift + flechas para precisión, Inicio para volver al ◆. Podés ocultarla. Escape cancela el desplazamiento. Con foco en el mapa: ←/→ cambia ◆; Shift + ←/→ cambia ●. Al enfocar un punto, flechas mueven 25 px (Shift: 100 px). Escape cancela. Escala: ±'+Math.round(spec.range)+' px.</p></details>';
  return html;
 }
 C.panel=function(s){
@@ -1661,9 +1704,17 @@ if(pane){
   if(retime(s,from,to)){var next=pane.querySelector('[data-camera-jump="'+to+'"]');if(next)next.focus();}
  });
  pane.addEventListener('click',function(ev){
-  var button=ev.target.closest('[data-camera-overview-event-step],[data-camera-overview-toggle],[data-camera-map-pan],[data-camera-map-zoom],[data-camera-map-step],[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
+  var button=ev.target.closest('[data-camera-overview-compare-jump],[data-camera-overview-event-step],[data-camera-overview-toggle],[data-camera-map-pan],[data-camera-map-zoom],[data-camera-map-step],[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
   if(button===suppressedClick){suppressedClick=null;return;}
   var s=sec(),cfg=C.config(s);if(!cfg)return;var list=keys(s);
+  if(button.dataset.cameraOverviewCompareJump!==undefined){
+   var which=button.dataset.cameraOverviewCompareJump;
+   if(mapOverviewCompareGo(s,mapOverviewMetrics[s.id],mapOverviewComparison[s.id],which)){
+    var focus=pane.querySelector('[data-camera-overview-compare-jump="'+which+'"]');
+    if(focus)focus.focus({preventScroll:true});
+   }
+   return;
+  }
   if(button.dataset.cameraOverviewEventStep!==undefined){
    var events=mapOverviewFilteredEvents(mapOverviewDetected[s.id],mapOverviewEventFilter[s.id]),direction=+button.dataset.cameraOverviewEventStep;
    var next=mapOverviewAdjacentEvent(events,progress(s),direction);

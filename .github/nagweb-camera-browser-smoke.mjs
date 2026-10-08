@@ -468,6 +468,49 @@ export async function runCameraBrowserSmoke(page){
   assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'Comparison overlays do not add undo history');
   console.log('Camera minimap A/B overlays: distinct cyan/pink, hold rings, reverse overlap, live selections, disclosure and projections OK');
 
+  // Micro-etapa 33: map-projected B minus A distances and jump to segment midpoints.
+  const abDelta=()=>page.$eval('[data-camera-overview-compare-difference]',el=>({
+   distance:el.getAttribute('data-delta-distance'),pace:el.getAttribute('data-delta-pace'),
+   distanceText:el.querySelector('[data-camera-overview-delta-distance]')?.textContent,
+   paceText:el.querySelector('[data-camera-overview-delta-pace]')?.textContent,
+   noninteractive:el.getAttribute('pointer-events')==='none',
+   guide:Array.from(['x1','y1','x2','y2']).map(attr=>+el.querySelector('[data-camera-overview-compare-guide]').getAttribute(attr))
+  }));
+  const initialDelta=await abDelta();
+  assert.equal(initialDelta.distance,'0','Equal-distance camera/look A/B comparison shows zero delta');
+  assert.equal(initialDelta.pace,'0','Equal-pace A/B comparison shows zero pace delta');
+  assert.equal(initialDelta.noninteractive,true,'Delta annotations do not intercept minimap interaction');
+  assert.ok(initialDelta.guide.every(Number.isFinite),'Map comparison connector has valid coordinates');
+  await page.click('[data-camera-overview-compare-jump="a"]');
+  await page.waitForFunction(()=>Math.abs(+document.querySelector('[data-camera-seek]').value-10)<.01);
+  assert.equal(await page.$eval('[data-camera-seek]',el=>+el.value),10,'Jump A seeks the midpoint of the selected look interval');
+  await page.click('[data-camera-overview-compare-jump="b"]');
+  await page.waitForFunction(()=>Math.abs(+document.querySelector('[data-camera-seek]').value-50)<.01);
+  assert.equal(await page.$eval('[data-camera-seek]',el=>+el.value),50,'Jump B seeks the midpoint of selected reverse camera interval');
+  assert.equal(await page.$eval('[data-camera-overview-compare-a]',n=>n.value),'look:0:20','Jump preserves selected interval A');
+  assert.equal(await page.$eval('[data-camera-overview-compare-b]',n=>n.value),'camera:40:60','Jump preserves selected interval B');
+  await page.select('[data-camera-overview-compare-b]','camera:20:40');
+  const holdDelta=await abDelta();
+  assert.equal(holdDelta.distance,'-100','Pause B vs moving A has -100 px spatial distance delta');
+  assert.equal(holdDelta.pace,'-5','Pause B vs moving A has -5 px/% pace delta');
+  assert.ok(holdDelta.distanceText.includes('−100,0 px')&&holdDelta.paceText.includes('−5,0 px/%'),'Map shows the negative B-A delta text');
+  await page.click('[data-camera-overview-compare-jump="b"]');
+  await page.waitForFunction(()=>Math.abs(+document.querySelector('[data-camera-seek]').value-30)<.01);
+  assert.equal(await page.$eval('[data-camera-seek]',el=>+el.value),30,'Jump B can seek a zero-distance pause midpoint');
+  await page.select('[data-camera-map-plane]','front');
+  assert.ok((await abDelta()).guide.every(Number.isFinite),'Delta guide is valid in front projection');
+  await page.select('[data-camera-map-plane]','top');
+  assert.ok((await abDelta()).distanceText.includes('−100,0 px'),'Delta annotation survives top/front switching');
+  await page.click('[data-camera-overview-metrics] summary');
+  await page.waitForFunction(()=>getComputedStyle(document.querySelector('[data-camera-overview-compare-overlay]')).display==='none');
+  await page.click('[data-camera-overview-metrics] summary');
+  await page.waitForFunction(()=>getComputedStyle(document.querySelector('[data-camera-overview-compare-overlay]')).display!=='none');
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),motionNavigationInitial.frames,'A/B jump buttons do not mutate camera keyframes');
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraLookFrames)),motionNavigationInitial.looks,'A/B jump buttons do not mutate look keyframes');
+  assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'A/B jump buttons never write undo history');
+  console.log('Camera minimap A/B deltas: map guide, signed distance/pace, A/B and pause midpoint navigation, view parity, no mutations OK');
+
+
 
 
 
