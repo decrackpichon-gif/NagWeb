@@ -137,7 +137,14 @@
             <input type="color" id="css-color-input" data-css-color-input value="#333333">
             <output for="css-color-input" data-css-color-value>#333333</output>
           </div>
-          <p>El color se previsualiza y se conserva al insertar.</p>
+          <div data-css-size hidden>
+            <label for="css-size-input" data-css-size-label>Tamaño</label>
+            <div class="size-row">
+              <input type="range" id="css-size-input" data-css-size-input min="8" max="240" step="1" value="40">
+              <output for="css-size-input" data-css-size-value>40px</output>
+            </div>
+          </div>
+          <p>Los ajustes se previsualizan y se conservan al insertar.</p>
         </div>
 
         <div class="apply-box">

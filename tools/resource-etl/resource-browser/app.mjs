@@ -54,6 +54,10 @@ const el = {
   cssColorInput: document.querySelector("[data-css-color-input]"),
   cssColorValue: document.querySelector("[data-css-color-value]"),
   cssColorLabel: document.querySelector("[data-css-color-label]"),
+  cssSize: document.querySelector("[data-css-size]"),
+  cssSizeInput: document.querySelector("[data-css-size-input]"),
+  cssSizeValue: document.querySelector("[data-css-size-value]"),
+  cssSizeLabel: document.querySelector("[data-css-size-label]"),
   apply: document.querySelector("[data-apply]"),
   applyStatus: document.querySelector("[data-apply-status]"),
   applyBox: document.querySelector(".apply-box"),
@@ -328,6 +332,32 @@ function configureCssColor(resource) {
   el.cssColorValue.textContent = prop.defaultValue.toUpperCase();
   el.cssColorLabel.textContent = prop.label || "Color";
   el.cssColor.hidden = false;
+
+  const sizeProp = (resource.editableProps || []).find(
+    (entry) => entry.id === "size" &&
+      entry.valueType === "number" &&
+      entry.binding?.type === "css-variable" &&
+      /^--[a-z0-9-]+$/i.test(entry.binding.variable || "")
+  );
+  const size = sizeProp?.defaultValue;
+  const min = sizeProp?.constraints?.min;
+  const max = sizeProp?.constraints?.max;
+  const step = sizeProp?.constraints?.step;
+  if (
+    Number.isFinite(size) && Number.isFinite(min) &&
+    Number.isFinite(max) && Number.isFinite(step) &&
+    min > 0 && max >= min && step > 0 &&
+    size >= min && size <= max
+  ) {
+    selectedValues.size = size;
+    el.cssSizeInput.min = String(min);
+    el.cssSizeInput.max = String(max);
+    el.cssSizeInput.step = String(step);
+    el.cssSizeInput.value = String(size);
+    el.cssSizeValue.textContent = `${size}${sizeProp.constraints?.unit || ""}`;
+    el.cssSizeLabel.textContent = sizeProp.label || "Tamaño";
+    el.cssSize.hidden = false;
+  }
 }
 
 async function openDetail(id) {
@@ -337,6 +367,7 @@ async function openDetail(id) {
   el.svgSize.hidden = true;
   el.svgStrokeWidth.hidden = true;
   el.cssColor.hidden = true;
+  el.cssSize.hidden = true;
   el.apply.disabled = true;
   el.applyStatus.textContent = "Comprobando si el recurso se puede insertar…";
   el.detail.showModal();
@@ -496,18 +527,41 @@ async function redrawSvgPreview() {
   }
 }
 
-el.cssColorInput.addEventListener("input", async () => {
+async function redrawCssPreview() {
   const resource = selectedResource;
   if (!resource || el.cssColor.hidden) return;
-  const color = el.cssColorInput.value;
-  if (!/^#[0-9a-f]{6}$/i.test(color)) return;
-
-  selectedValues.color = color;
-  el.cssColorValue.textContent = color.toUpperCase();
-  const doc = await previewDoc(resource, { ...selectedValues });
-  if (doc && selectedResource === resource && selectedValues.color === color) {
+  const values = { ...selectedValues };
+  const doc = await previewDoc(resource, values);
+  if (
+    doc && selectedResource === resource &&
+    selectedValues.color === values.color &&
+    selectedValues.size === values.size
+  ) {
     el.preview.srcdoc = doc;
   }
+}
+
+el.cssColorInput.addEventListener("input", () => {
+  if (!selectedResource || el.cssColor.hidden) return;
+  const color = el.cssColorInput.value;
+  if (!/^#[0-9a-f]{6}$/i.test(color)) return;
+  selectedValues.color = color;
+  el.cssColorValue.textContent = color.toUpperCase();
+  redrawCssPreview();
+});
+
+el.cssSizeInput.addEventListener("input", () => {
+  if (!selectedResource || el.cssSize.hidden) return;
+  const size = Number(el.cssSizeInput.value);
+  const min = Number(el.cssSizeInput.min);
+  const max = Number(el.cssSizeInput.max);
+  if (!Number.isFinite(size) || size < min || size > max) return;
+  selectedValues.size = size;
+  const prop = (selectedResource.editableProps || []).find(
+    (entry) => entry.id === "size" && entry.binding?.type === "css-variable"
+  );
+  el.cssSizeValue.textContent = `${size}${prop?.constraints?.unit || ""}`;
+  redrawCssPreview();
 });
 
 el.strokeInput.addEventListener("input", () => {
