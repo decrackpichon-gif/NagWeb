@@ -805,7 +805,7 @@ C.paint=function(pct){
  if(map&&C.config(s)){
   var spec=mapSpecFromNode(map),v=mapCurrent(s,pct),p=C.mapPoint(v,spec),dot=map.querySelector('[data-camera-position]'),label=pane.querySelector('[data-camera-position-label]');
   if(dot){dot.setAttribute('cx',p.x);dot.setAttribute('cy',p.y);}if(label)label.textContent=mapLabel(v,pct);
-  var overviewNode=map.querySelector('[data-camera-overview]'),overviewCurrent=overviewNode&&overviewNode.querySelector('[data-camera-overview-current]');
+  var overviewNode=map.querySelector('[data-camera-overview]'),overviewCurrent=overviewNode&&typeof overviewNode.querySelector==='function'?overviewNode.querySelector('[data-camera-overview-current]'):null;
   if(overviewCurrent){var op=C.mapPoint(v,mapSpecFromNode(overviewNode));overviewCurrent.setAttribute('cx',op.x);overviewCurrent.setAttribute('cy',op.y);}
   var cfg=C.config(s),lookDot=map.querySelector('[data-camera-look-position]'),look=cfg&&cfg.orientationMode==='lookAt'?C.lookTarget(cfg,pct/100,window.NAGWEB_STORY_MODEL,s.sdEase,previewReferenceSize(s)):null;
   if(lookDot&&look){var lp=C.mapPoint(look,spec);lookDot.setAttribute('cx',lp.x);lookDot.setAttribute('cy',lp.y);}
