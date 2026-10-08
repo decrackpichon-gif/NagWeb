@@ -1,4 +1,5 @@
 name: Resource Vault Snapshot
+# snapshot schema: 1
 
 on:
   push:
