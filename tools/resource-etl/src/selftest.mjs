@@ -846,6 +846,9 @@ assert.match(lottiePreviewDocument, /autoplay: false/);
 assert.match(lottiePreviewDocument, /Content-Security-Policy/);
 assert.match(lottiePreviewDocument, /connect-src 'none'/);
 assert.match(lottiePreviewDocument, /lottie_light\.min\.js/);
+assert.match(lottiePreviewDocument, /id="seek" min="0" max="100"/);
+assert.match(lottiePreviewDocument, /id="restart">Reiniciar/);
+assert.match(lottiePreviewDocument, /id="progress" for="seek"/);
 assert.equal(buildLottieBrowserPreview(lottieEditableResource, {}, {
   playerUrl: "javascript:alert(1)"
 }), null);
@@ -1133,15 +1136,35 @@ assert.ok(lottieRuntimeScript, "Lottie browser preview includes live update hand
 const lottieCalls = [];
 let lottieMessageHandler;
 const lottieParent = {};
-const fakePlayButton = { textContent: "", hidden: false };
+const fakeUiActions = {};
+const fakePlayButton = {
+  textContent: "", hidden: false,
+  addEventListener(type, handler) { fakeUiActions["play:" + type] = handler; }
+};
+const fakeRestartButton = {
+  addEventListener(type, handler) { fakeUiActions["restart:" + type] = handler; }
+};
+const fakeSeekControl = {
+  value: "0",
+  addEventListener(type, handler) { fakeUiActions["seek:" + type] = handler; }
+};
+const fakeProgressOutput = { textContent: "0%" };
+const fakeLottieEvents = {};
 const fakeStatus = { textContent: "" };
 const fakeLottieInstance = {
   isPaused: true,
+  totalFrames: 12,
+  currentFrame: 0,
   setSpeed(value) { lottieCalls.push(["speed", value]); },
   setLoop(value) { lottieCalls.push(["loop", value]); },
   play() { this.isPaused = false; lottieCalls.push(["play"]); },
   pause() { this.isPaused = true; lottieCalls.push(["pause"]); },
-  addEventListener() {}
+  goToAndStop(frame, isFrame) {
+    this.currentFrame = frame;
+    this.isPaused = true;
+    lottieCalls.push(["seek", frame, isFrame]);
+  },
+  addEventListener(type, handler) { fakeLottieEvents[type] = handler; }
 };
 runInNewContext(lottieRuntimeScript, {
   window: {
@@ -1157,9 +1180,10 @@ runInNewContext(lottieRuntimeScript, {
   document: {
     getElementById(id) {
       if (id === "status") return fakeStatus;
-      if (id === "play") {
-        return { ...fakePlayButton, addEventListener() {} };
-      }
+      if (id === "play") return fakePlayButton;
+      if (id === "restart") return fakeRestartButton;
+      if (id === "seek") return fakeSeekControl;
+      if (id === "progress") return fakeProgressOutput;
       return {};
     }
   },
@@ -1200,3 +1224,33 @@ sendLottie(lottieParent, lottieEditableResource.id,
   { speed: 4, loop: false, autoplay: false });
 assert.equal(fakeLottieInstance.isPaused, true,
   "Disabling autoplay pauses playback");
+
+assert.equal(typeof fakeUiActions["seek:input"], "function");
+assert.equal(typeof fakeUiActions["restart:click"], "function");
+assert.equal(typeof fakeLottieEvents.enterFrame, "function");
+fakeLottieInstance.currentFrame = 3;
+fakeLottieEvents.enterFrame();
+assert.equal(Number(fakeSeekControl.value), 25);
+assert.equal(fakeProgressOutput.textContent, "25%");
+fakeSeekControl.value = "75";
+fakeUiActions["seek:input"]();
+assert.equal(fakeLottieInstance.isPaused, true, "Scrubbing paused animation keeps it paused");
+assert.equal(fakeLottieInstance.currentFrame, 9);
+assert.equal(fakeProgressOutput.textContent, "75%");
+assert.deepEqual(lottieCalls.at(-1), ["seek", 9, true]);
+fakeLottieInstance.play();
+fakeSeekControl.value = "50";
+fakeUiActions["seek:input"]();
+assert.equal(fakeLottieInstance.currentFrame, 6);
+assert.equal(fakeLottieInstance.isPaused, false, "Scrubbing playing animation resumes playback");
+fakeUiActions["restart:click"]();
+assert.equal(fakeLottieInstance.currentFrame, 0);
+assert.equal(fakeLottieInstance.isPaused, false, "Restart keeps playback mode");
+assert.equal(fakeProgressOutput.textContent, "0%");
+const scrubCallsBeforeInvalid = lottieCalls.length;
+fakeSeekControl.value = "not-a-number";
+fakeUiActions["seek:input"]();
+assert.equal(lottieCalls.length, scrubCallsBeforeInvalid, "Invalid scrub input ignored");
+fakeLottieInstance.currentFrame = 1000;
+fakeLottieEvents.enterFrame();
+assert.equal(fakeProgressOutput.textContent, "100%", "Progress clamps into range");

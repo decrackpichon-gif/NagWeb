@@ -62,17 +62,30 @@ export function buildLottieBrowserPreview(resource, values = {}, { playerUrl } =
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' ${origin}; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; worker-src 'none'">
 <style>
 html,body{width:100%;height:100%;margin:0;background:#f4f5f7;font-family:system-ui}
-main{width:100%;height:100%;display:grid;place-items:center}
+main{width:100%;height:calc(100% - 72px);display:grid;place-items:center}
 #animation{width:min(90%,340px);height:min(90%,340px);display:grid;place-items:center}
-#status{position:absolute;left:12px;bottom:12px;font-size:11px;color:#69717c}
-#play{position:absolute;right:12px;bottom:12px;border:1px solid #c3c8d0;background:#fff;color:#111;border-radius:8px;padding:7px 12px;cursor:pointer}
+#status{position:absolute;top:10px;left:12px;font-size:11px;color:#69717c}
+#transport{position:absolute;bottom:0;left:0;right:0;min-height:64px;box-sizing:border-box;padding:10px 12px;display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;align-items:center;gap:9px;background:#fff;border-top:1px solid #dce1e7}
+#transport button{border:1px solid #c3c8d0;background:#fff;color:#111;border-radius:8px;padding:7px 11px;cursor:pointer}
+#seek{width:100%;min-width:0;accent-color:#5178b6;cursor:pointer}
+#progress{min-width:32px;text-align:right;font:12px ui-monospace,monospace;color:#48576b}
+@media(max-width:430px){#transport{grid-template-columns:auto auto minmax(0,1fr) auto;gap:5px;padding:8px}#transport button{padding:7px;font-size:11px}}
 </style></head><body>
 <main><div id="animation" role="img" aria-label="Vista previa de animación Lottie"></div></main>
-<span id="status">Cargando animación…</span><button type="button" id="play">Reproducir</button>
+<span id="status">Cargando animación…</span>
+<div id="transport" aria-label="Controles de reproducción Lottie">
+  <button type="button" id="play">Reproducir</button>
+  <button type="button" id="restart">Reiniciar</button>
+  <input type="range" id="seek" min="0" max="100" step="0.1" value="0" aria-label="Posición de la animación">
+  <output id="progress" for="seek">0%</output>
+</div>
 <script src="${safePlayerUrl}"></script>
 <script>
 const status = document.getElementById("status");
 const play = document.getElementById("play");
+const restart = document.getElementById("restart");
+const seek = document.getElementById("seek");
+const progress = document.getElementById("progress");
 try {
   if (!window.lottie?.loadAnimation) throw new Error("El reproductor local no está disponible");
   const animationData = ${animationData};
@@ -93,22 +106,56 @@ try {
   const sync = () => {
     play.textContent = instance.isPaused ? "Reproducir" : "Pausar";
   };
+  const showProgress = (percentage) => {
+    if (!Number.isFinite(percentage)) return;
+    const value = Math.max(0, Math.min(100, percentage));
+    seek.value = String(Math.round(value * 10) / 10);
+    progress.textContent = Math.round(value) + "%";
+  };
+  const syncFrame = () => {
+    const total = Number(instance.totalFrames);
+    const current = Number(instance.currentFrame);
+    if (Number.isFinite(total) && total > 0 && Number.isFinite(current)) {
+      showProgress(current / total * 100);
+    }
+  };
+  instance.addEventListener("enterFrame", syncFrame);
   instance.addEventListener("DOMLoaded", () => {
     status.textContent = prefersReducedMotion
       ? "Movimiento reducido: reproducción manual"
       : "Vista previa local";
     sync();
+    syncFrame();
   });
   instance.addEventListener("data_failed", () => {
     status.textContent = "No se pudo reproducir esta animación";
   });
-  instance.addEventListener("complete", sync);
-  instance.addEventListener("loopComplete", sync);
+  instance.addEventListener("complete", () => {
+    sync();
+    showProgress(100);
+  });
+  instance.addEventListener("loopComplete", () => {
+    sync();
+    syncFrame();
+  });
   play.addEventListener("click", () => {
     if (instance.isPaused) instance.play();
     else instance.pause();
     sync();
   });
+  const seekTo = (percentage) => {
+    const total = Number(instance.totalFrames);
+    if (!Number.isFinite(percentage) || !Number.isFinite(total) || total <= 0) return;
+    const position = Math.max(0, Math.min(100, percentage));
+    const wasPlaying = !instance.isPaused;
+    // Lottie frames are zero-indexed. Avoid requesting the first frame after the end.
+    instance.goToAndStop(Math.min(total - 0.01, total * position / 100), true);
+    if (wasPlaying) instance.play();
+    showProgress(position);
+    sync();
+  };
+  seek.addEventListener("input", () => seekTo(Number(seek.value)));
+  restart.addEventListener("click", () => seekTo(0));
   window.addEventListener("message", (event) => {
     if (event.source !== window.parent) return;
     const message = event.data;
