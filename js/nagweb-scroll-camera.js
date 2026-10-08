@@ -301,6 +301,9 @@ function mapCurrent(s,pct){
  return C.pose(C.config(s),pct/100,window.NAGWEB_STORY_MODEL,s.sdEase,reduced,undefined,previewReferenceSize(s));
 }
 function mapLabel(v,pct){return 'Ahora: '+Math.round(pct*10)/10+'% · X '+Math.round(v.x)+' · Y '+Math.round(v.y)+' · Z '+Math.round(v.z);}
+function mapFrameOptions(list,at){
+ return list.map(function(f){return '<option value="'+f.at+'"'+(f.at===at?' selected':'')+'>'+f.at+'%</option>';}).join('');
+}
 function freeSegmentPaths(keys,samples,spec,kind,sampleAt){
  if(!keys||keys.length<3)return '';
  var html='',stroke=kind==='look'?'var(--accent)':'currentColor';
@@ -357,6 +360,10 @@ function spatialMap(s,list,k){
  var draw=C.pathSamples(Object.assign({},cfg,{frames:list}),window.NAGWEB_STORY_MODEL,s.sdEase),path=draw.map(function(f){var p=C.mapPoint(f,spec);return p.x+','+p.y;}).join(' ');
  var lookDraw=cfg&&cfg.orientationMode==='lookAt'?C.lookSamples(cfg,window.NAGWEB_STORY_MODEL,s.sdEase,undefined,size):[],lookPath=lookDraw.map(function(f){var p=C.mapPoint(f,spec);return p.x+','+p.y;}).join(' '),lookNow=cfg&&cfg.orientationMode==='lookAt'?C.lookTarget(cfg,progress(s)/100,window.NAGWEB_STORY_MODEL,s.sdEase,size):null,lookPoint=lookNow?C.mapPoint(lookNow,spec):null;
  var html='<details data-camera-map-box'+(mapOpen[s.id]?' open':'')+'><summary style="cursor:pointer;margin:8px 0">Mapa del recorrido</summary><label>Vista <select class="csel" data-camera-map-plane><option value="top"'+(plane==='top'?' selected':'')+'>Desde arriba · X/Z</option><option value="front"'+(plane==='front'?' selected':'')+'>De frente · X/Y</option></select></label>';
+ if(cfg&&cfg.orientationMode==='lookAt'&&looks.length){
+  html+='<div data-camera-map-pair style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0"><label style="flex:1;min-width:110px">◆ Encuadre <select class="csel" data-camera-map-camera-select aria-label="Encuadre seleccionado en el mapa">'+mapFrameOptions(list,k.at)+'</select></label><label style="flex:1;min-width:110px">● Objetivo <select class="csel" data-camera-map-look-select aria-label="Objetivo seleccionado en el mapa">'+mapFrameOptions(looks,lk.at)+'</select></label></div>';
+  html+='<p class="hint gh">Seleccioná cada recorrido por separado. La vista previa sigue el último punto elegido.</p>';
+ }
  html+='<div data-camera-map data-plane="'+plane+'" data-range="'+spec.range+'" style="position:relative;width:100%;aspect-ratio:1.5;border:1px solid var(--line);margin-top:8px;touch-action:none">';
  html+='<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:auto"><path d="M50 0V100M0 50H100" stroke="currentColor" opacity=".2" stroke-width=".5"/><polyline data-camera-map-path points="'+path+'" fill="none" stroke="currentColor" opacity=".65" stroke-width=".7"/>';
  if(lookPath)html+='<polyline data-camera-look-map-path-hit points="'+lookPath+'" fill="none" stroke="var(--accent)" opacity=".001" stroke-width="6" pointer-events="stroke" style="cursor:crosshair"/><polyline data-camera-look-map-path points="'+lookPath+'" fill="none" stroke="var(--accent)" opacity=".65" stroke-width=".7" stroke-dasharray="2 2" pointer-events="stroke" style="cursor:crosshair"/>';
@@ -804,6 +811,16 @@ if(pane){
  });
  pane.addEventListener('change',function(ev){
   var input=ev.target;
+  if(input.dataset.cameraMapCameraSelect!==undefined){
+   var cs=sec(),ca=+input.value;
+   if(C.config(cs)&&keys(cs).some(function(f){return f.at===ca;}))jump(cs,ca);else renderPane();
+   return;
+  }
+  if(input.dataset.cameraMapLookSelect!==undefined){
+   var ls=sec(),la=+input.value,lc=C.config(ls);
+   if(lc&&lc.orientationMode==='lookAt'&&lookKeys(ls).some(function(f){return f.at===la;}))jumpLook(ls,la);else renderPane();
+   return;
+  }
   if(input.dataset.cameraPresetChoice!==undefined){presetChoices[sec().id]=input.value;return;}
   if(input.dataset.cameraPathMode!==undefined){
    var pathScene=sec(),mode=input.value==='smooth'?'smooth':'linear',currentMode=pathScene.sdCameraPathMode==='smooth'?'smooth':'linear';
