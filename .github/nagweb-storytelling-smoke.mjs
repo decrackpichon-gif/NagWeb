@@ -146,13 +146,16 @@ export async function runStorytellingSmoke(page){
 
  // Alt+Shift + handle de tamaño escala proporcionalmente texto y caja en Diseño base.
  await page.evaluate(()=>{sec().elements[0].x=20;sec().elements[0].w=60;sec().elements[0].rot=0;sec().elements[0].customSize=0;renderPane();renderPreview();});
- await page.waitForFunction(()=>document.querySelector('#preview')?.contentDocument?.querySelector('.nw-story-transform-h.size'));
- previewHandle=await page.$('#preview');previewFrame=await previewHandle.contentFrame();
- await previewFrame.evaluate(()=>{
-  const h=document.querySelector('.nw-story-transform-h.size'),r=h.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;
-  h.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,clientX:x,clientY:y,button:0,pointerId:31,altKey:true,shiftKey:true}));
-  window.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,clientX:x+70,clientY:y+70,button:0,pointerId:31,altKey:true,shiftKey:true}));
-  window.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,clientX:x+70,clientY:y+70,button:0,pointerId:31,altKey:true,shiftKey:true}));
+ // Read readiness and dispatch the gesture in one callback: a queued preview reload
+ // must not invalidate the handle between an earlier wait and the pointer events.
+ await page.waitForFunction(()=>{
+  const f=document.querySelector('#preview'),d=f?.contentDocument,w=f?.contentWindow,h=d?.querySelector('.nw-story-transform-h.size');
+  if(!h||h.style.display!=='block'||!d.querySelector('[data-id="story-text"]'))return false;
+  const r=h.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;
+  h.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,clientX:x,clientY:y,button:0,pointerId:31,altKey:true,shiftKey:true}));
+  w.dispatchEvent(new w.PointerEvent('pointermove',{bubbles:true,clientX:x+70,clientY:y+70,button:0,pointerId:31,altKey:true,shiftKey:true}));
+  w.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true,clientX:x+70,clientY:y+70,button:0,pointerId:31,altKey:true,shiftKey:true}));
+  return true;
  });
  await page.waitForFunction(()=>sec().elements[0].w>60&&sec().elements[0].customSize>0);
  const proportional=await page.evaluate(()=>({w:sec().elements[0].w,size:sec().elements[0].customSize,frames:JSON.stringify(NAGWEB_STORY_EDITOR.frames(sec().elements[0]))}));
