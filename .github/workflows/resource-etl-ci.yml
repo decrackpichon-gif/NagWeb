@@ -74,10 +74,10 @@ jobs:
         run: |
           node src/vault-cli.mjs \
             --sources=shadcn \
-            --limit=22 \
+            --limit=23 \
             --out=ci-vault-shadcn \
             --react-previews \
-            --react-preview-limit=28
+            --react-preview-limit=30
 
           node - <<'NODE'
           const fs = require("fs");
@@ -112,6 +112,15 @@ jobs:
               console.error(JSON.stringify(buttonGroup, null, 2));
               process.exit(1);
             }
+          }
+
+          const form = audit.items.find(
+            (entry) => entry.resourceId === "shadcn:form"
+          );
+          if (!form || !form.ok) {
+            console.error("shadcn:form did not compile with react-hook-form");
+            console.error(JSON.stringify(form, null, 2));
+            process.exit(1);
           }
 
           const drawer = audit.items.find(

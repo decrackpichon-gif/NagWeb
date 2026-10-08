@@ -28,7 +28,8 @@ export const REACT_PREVIEW_RUNTIME_PACKAGES = new Set([
   "cmdk",
   "embla-carousel-react",
   "react-day-picker",
-  "vaul"
+  "vaul",
+  "react-hook-form"
 ]);
 
 export const REACT_PREVIEW_VIRTUAL_PACKAGES = new Set([
