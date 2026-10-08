@@ -680,7 +680,14 @@ export async function runCameraBrowserSmoke(page){
    orientation:sec().sdCameraOrientationMode,
    camera:JSON.stringify(sec().sdCameraFrames)
   }));
-  const overlapState=()=>page.evaluate(()=>{
+  const exclusiveState=()=>page.evaluate(()=>{
+    const regions=Array.from(document.querySelectorAll('[data-camera-overview-fov-exclusive]'));
+    return {enabled:document.querySelector('[data-camera-overview-compare-exclusive-toggle]')?.checked===true,
+     summary:document.querySelector('[data-camera-overview-exclusive-summary]')?.textContent||'',
+     regions:regions.map(n=>({which:n.dataset.cameraOverviewFovExclusive,percent:+n.dataset.cameraOverviewExclusivePercent,
+      d:n.getAttribute('d'),rule:n.getAttribute('fill-rule'),pointer:n.getAttribute('pointer-events')}))};
+   });
+   const overlapState=()=>page.evaluate(()=>{
    const result=document.querySelector('[data-camera-overview-overlap-summary]'),poly=document.querySelector('[data-camera-overview-fov-overlap]');
    const parse=poly?.getAttribute('points')?.split(' ').map(p=>p.split(',').map(Number))||[];
    return {status:result?.dataset.cameraOverviewOverlapStatus||'',message:result?.textContent||'',note:result?.nextElementSibling?.textContent||'',
@@ -696,10 +703,20 @@ export async function runCameraBrowserSmoke(page){
   assert.ok(Math.abs(cov.a-100)<.01&&Math.abs(cov.b-100)<.01,'Identical A/B cones share 100% of each projected area');
   assert.ok(cov.finite&&cov.nonInteractive,'Overlap polygon uses valid SVG coordinates and does not intercept editing');
   assert.ok(cov.note.includes('proyectada X/Z o X/Y')&&cov.note.includes('no visibilidad real'),'Diagnostic clearly distinguishes 2D coverage from actual 3D visibility');
+   let exclusive=await exclusiveState();
+   assert.equal(exclusive.enabled,false,'Exclusive regions default off to keep the minimap uncluttered');
+   assert.equal(exclusive.regions.length,0);
+   await page.click('[data-camera-overview-compare-exclusive-toggle]');
+   exclusive=await exclusiveState();
+   assert.equal(exclusive.enabled,true,'Exclusive overlay switches on');
+   assert.deepEqual(exclusive.regions.map(r=>r.which),['a','b']);
+   assert.ok(exclusive.regions.every(r=>Math.abs(r.percent)<.01&&r.rule==='evenodd'&&r.pointer==='none'&&!r.d.includes('NaN')),'Identical cones: zero exclusive area and finite non-interactive paths');
+   assert.ok(exclusive.summary.includes('Solo A:')&&exclusive.summary.includes('Solo B:'),'A/B exclusive coverage is explained');
   await page.click('[data-camera-overview-compare-fov-toggle]');
   cov=await overlapState();
   assert.equal(cov.polygon,false,'Hiding cones also hides purple overlap visualization');
   assert.equal(cov.visibleCones,0);
+   assert.equal((await exclusiveState()).regions.length,0,'Hiding cones also hides exclusive areas');
   assert.equal(cov.status,'shared','Hiding geometry retains computed coverage in the diagnostic');
   assert.ok(cov.message.includes('conos ocultos'),'Hidden cones are labeled in diagnostic');
   await page.click('[data-camera-overview-compare-fov-toggle]');
@@ -709,6 +726,9 @@ export async function runCameraBrowserSmoke(page){
   cov=await overlapState();
   assert.equal(cov.status,'unavailable','Edge-on projection reports unavailable instead of falsely reporting zero overlap');
   assert.equal(cov.polygon,false,'Edge-on geometry has no misleading filled area');
+   exclusive=await exclusiveState();
+   assert.equal(exclusive.regions.length,0,'Edge-on view does not fake exclusive areas');
+   assert.ok(exclusive.summary.includes('no evaluable'),'Unsupported projected exclusivity is explained');
   await page.select('[data-camera-map-plane]','top');
   // Spread manually oriented camera intervals far apart so the projected cones are disjoint.
   await page.evaluate(()=>{
@@ -722,6 +742,9 @@ export async function runCameraBrowserSmoke(page){
   assert.equal(cov.status,'none','Well-separated camera cones report no projected overlap');
   assert.equal(cov.polygon,false,'Disjoint cones do not draw a shared purple region');
   assert.ok(cov.message.includes('Sin superposición'),'No-overlap diagnostic explains the result');
+   exclusive=await exclusiveState();
+   assert.equal(exclusive.regions.length,2,'Separate cones render two distinct exclusive areas');
+   assert.ok(exclusive.regions.every(r=>Math.abs(r.percent-100)<.01&&r.rule==='evenodd'&&r.pointer==='none'),'Disjoint cones: 100% exclusive of their own projected areas');
   await page.evaluate(saved=>{
    const sc=sec();sc.sdCameraOrientationMode=saved.orientation;
    sc.sdCameraFrames=JSON.parse(saved.camera);renderPane();
@@ -730,7 +753,11 @@ export async function runCameraBrowserSmoke(page){
   await page.select('[data-camera-overview-compare-b]',originalOverlapSelection.b);
   assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),motionNavigationInitial.frames,'Overlap visualization does not change authored camera frames');
   assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraLookFrames)),motionNavigationInitial.looks,'Overlap visualization does not change authored look frames');
-  assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'Coverage calculations and UI do not add undo snapshots');
+  await page.click('[data-camera-overview-compare-exclusive-toggle]');
+   exclusive=await exclusiveState();
+   assert.equal(exclusive.enabled,false,'Exclusive overlay can be disabled again');
+   assert.equal(exclusive.regions.length,0,'Hiding exclusive areas preserves existing cone visualization');
+   assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'Coverage calculations and UI do not add undo snapshots');
   console.log('Camera minimap FOV overlap: 100% shared, separate cones, edge-on unavailable, toggle, restore and no scene edits OK');
 
 
