@@ -74,10 +74,10 @@ jobs:
         run: |
           node src/vault-cli.mjs \
             --sources=shadcn \
-            --limit=18 \
+            --limit=22 \
             --out=ci-vault-shadcn \
             --react-previews \
-            --react-preview-limit=24
+            --react-preview-limit=28
 
           node - <<'NODE'
           const fs = require("fs");
