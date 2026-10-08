@@ -268,7 +268,7 @@ function createCamera(){
 }
 window.NAGWEB_CREATE_SCROLL_CAMERA=createCamera;
 window.NAGWEB_SCROLL_CAMERA=createCamera();
-var presetChoices=Object.create(null),holdDurations=Object.create(null),mapOpen=Object.create(null),mapPlanes=Object.create(null),mapFovVisible=Object.create(null),mapZoom=Object.create(null),mapPan=Object.create(null),mapWheelCarry=Object.create(null),mapOverviewVisible=Object.create(null),mapOverviewPickHistory=Object.create(null),mapOverviewSamples=Object.create(null),mapOverviewDetected=Object.create(null),mapOverviewMetrics=Object.create(null),mapOverviewMetricsOpen=Object.create(null),mapOverviewPaceVisible=Object.create(null),mapOverviewComparison=Object.create(null),mapOverviewComparePreview=Object.create(null),mapOverviewCompareFovVisible=Object.create(null),mapOverviewEventFilter=Object.create(null),mapOverviewEventChosen=Object.create(null),mapPickHistory=Object.create(null),suppressedClick=null,selected=Object.create(null),lookSelected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
+var presetChoices=Object.create(null),holdDurations=Object.create(null),mapOpen=Object.create(null),mapPlanes=Object.create(null),mapFovVisible=Object.create(null),mapZoom=Object.create(null),mapPan=Object.create(null),mapWheelCarry=Object.create(null),mapOverviewVisible=Object.create(null),mapOverviewPickHistory=Object.create(null),mapOverviewSamples=Object.create(null),mapOverviewDetected=Object.create(null),mapOverviewMetrics=Object.create(null),mapOverviewMetricsOpen=Object.create(null),mapOverviewPaceVisible=Object.create(null),mapOverviewComparison=Object.create(null),mapOverviewComparePreview=Object.create(null),mapOverviewCompareFovVisible=Object.create(null),mapOverviewCompareExclusiveVisible=Object.create(null),mapOverviewEventFilter=Object.create(null),mapOverviewEventChosen=Object.create(null),mapPickHistory=Object.create(null),suppressedClick=null,selected=Object.create(null),lookSelected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
 function safeLabel(v){return String(v==null?'':v).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,42).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];});}
 function targetLabel(e){var label=safeLabel(e&&((e.name||e.text||e.label)||e.type));return label||'Elemento';}
 function keys(s){return C.frames(C.config(s),s.sdEase);}
@@ -771,37 +771,59 @@ function mapOverviewCompareFovOverlap(frames,spec,size,perspective){
  var areaA=Math.abs(mapOverviewPolygonSignedArea(shapeA)),areaB=Math.abs(mapOverviewPolygonSignedArea(shapeB));
  if(areaA<=1e-8||areaB<=1e-8)return {state:'unavailable',reason:'La proyección no permite medir un área fiable'};
  var shared=mapOverviewPolygonIntersection(shapeA,shapeB),areaShared=Math.abs(mapOverviewPolygonSignedArea(shared));
- if(areaShared<=1e-8)return {state:'none',points:[],areaShared:0,percentA:0,percentB:0};
- return {state:'shared',points:shared,areaShared:areaShared,percentA:Math.min(100,areaShared/areaA*100),percentB:Math.min(100,areaShared/areaB*100)};
+ if(areaShared<=1e-8)return {state:'none',points:[],shapeA:shapeA,shapeB:shapeB,areaShared:0,percentA:0,percentB:0,exclusiveA:100,exclusiveB:100};
+ var percentA=Math.min(100,areaShared/areaA*100),percentB=Math.min(100,areaShared/areaB*100);
+ return {state:'shared',points:shared,shapeA:shapeA,shapeB:shapeB,areaShared:areaShared,percentA:percentA,percentB:percentB,exclusiveA:Math.max(0,100-percentA),exclusiveB:Math.max(0,100-percentB)};
+}
+// Non-destructive SVG even-odd regions reuse the existing intersection polygon.
+function mapOverviewCompareExclusiveSvg(overlap,visible){
+ if(!visible||!overlap||(overlap.state!=='shared'&&overlap.state!=='none'))return '';
+ function contour(points){return points.length?'M'+points.map(function(p){return p.x+' '+p.y;}).join('L')+'Z':'';}
+ var hole=overlap.state==='shared'&&overlap.points.length>=3?contour(overlap.points):'',out='';
+ [['a',overlap.shapeA,'#22d3ee'],['b',overlap.shapeB,'#f472b6']].forEach(function(entry){
+  var which=entry[0],shape=entry[1],color=entry[2],pct=overlap[which==='a'?'exclusiveA':'exclusiveB'];
+  if(!shape||shape.length<3)return;
+  out+='<path data-camera-overview-fov-exclusive="'+which+'" data-camera-overview-exclusive-percent="'+pct+'" d="'+contour(shape)+hole+'" fill="'+color+'" fill-opacity=".29" fill-rule="evenodd" stroke="none" pointer-events="none"><title>Solo '+which.toUpperCase()+' · '+mapOverviewMetricNumber(pct)+'% de su área proyectada</title></path>';
+ });
+ return out;
 }
 function mapOverviewCompareOverlapSvg(overlap){
  if(!overlap||overlap.state!=='shared'||!overlap.points||overlap.points.length<3)return '';
  return '<polygon data-camera-overview-fov-overlap data-camera-overview-overlap-a="'+overlap.percentA+'" data-camera-overview-overlap-b="'+overlap.percentB+'" points="'+overlap.points.map(function(p){return p.x+','+p.y;}).join(' ')+'" fill="#a78bfa" fill-opacity=".34" stroke="#a78bfa" stroke-width=".9" stroke-dasharray="1.6 1" pointer-events="none"><title>Área compartida · '+mapOverviewMetricNumber(overlap.percentA)+'% del cono A · '+mapOverviewMetricNumber(overlap.percentB)+'% del cono B (proyección 2D)</title></polygon>';
 }
 function mapOverviewCompareOverlapHtml(overlap,visible){
+ var showExclusive=mapOverviewCompareExclusiveVisible[sec().id]===true;
  if(!overlap)return '';
  var label=overlap.state==='shared'?'Zona compartida: '+mapOverviewMetricNumber(overlap.percentA)+'% de A · '+mapOverviewMetricNumber(overlap.percentB)+'% de B':
    overlap.state==='none'?'Sin superposición en esta proyección':'No evaluable: '+(overlap.reason||'proyección de perfil');
  return '<div data-camera-overview-overlap-summary data-camera-overview-overlap-status="'+overlap.state+'" style="margin-top:4px;font-size:10px;line-height:1.5">'+
   '<span style="font-weight:600;color:#a78bfa">◆● Cobertura A/B: </span>'+label+(visible?'':' · conos ocultos')+'</div>'+
-  '<div style="opacity:.75;font-size:10px">Porcentajes de área proyectada X/Z o X/Y, no visibilidad real ni volumen 3D.</div>';
+  '<div style="opacity:.75;font-size:10px">Porcentajes de área proyectada X/Z o X/Y, no visibilidad real ni volumen 3D.</div>'+
+  '<div data-camera-overview-exclusive-summary data-camera-overview-exclusive-status="'+overlap.state+'" style="font-size:10px;margin-top:3px">'+
+  (overlap.state==='unavailable'?'Exclusividad no evaluable en esta proyección':
+   '<span style="color:#22d3ee">Solo A: '+mapOverviewMetricNumber(overlap.exclusiveA)+'%</span> · <span style="color:#f472b6">Solo B: '+mapOverviewMetricNumber(overlap.exclusiveB)+'%</span> · <span style="color:#a78bfa">En común</span>'+
+   (showExclusive&&visible?' · regiones diferenciadas':' · activar regiones exclusivas para verlas'))+'</div>';
 }
 function mapOverviewCompareFovSvg(frames,spec,size,perspective,visible,overlap){
+ var showExclusive=mapOverviewCompareExclusiveVisible[sec().id]===true;
  if(!frames||!frames.a||!frames.b||!visible)return '';
  var out='<g data-camera-overview-compare-fovs pointer-events="none">';
  [['a',frames.a,'#22d3ee'],['b',frames.b,'#f472b6']].forEach(function(entry){
   var which=entry[0],frame=entry[1],color=entry[2],fov=mapFieldOfViewPose(frame.pose,spec,size,perspective);
   if(!fov)return;
-  out+='<polygon data-camera-overview-fov="'+which+'" data-camera-overview-fov-angle="'+fov.angle+'" points="'+fov.points+'" fill="'+color+'" fill-opacity="'+(which==='a'?'.13':'.10')+'" stroke="'+color+'" stroke-width=".85" stroke-opacity=".86"'+(which==='b'?' stroke-dasharray="2 1"':'')+'><title>'+which.toUpperCase()+' · campo de visión aproximado '+mapOverviewMetricNumber(fov.angle)+'°</title></polygon>';
+  out+='<polygon data-camera-overview-fov="'+which+'" data-camera-overview-fov-angle="'+fov.angle+'" points="'+fov.points+'" fill="'+color+'" fill-opacity="'+(showExclusive&&overlap&&overlap.state!=='unavailable'?'.02':which==='a'?'.13':'.10')+'" stroke="'+color+'" stroke-width=".85" stroke-opacity=".86"'+(which==='b'?' stroke-dasharray="2 1"':'')+'><title>'+which.toUpperCase()+' · campo de visión aproximado '+mapOverviewMetricNumber(fov.angle)+'°</title></polygon>';
  });
- out+=mapOverviewCompareOverlapSvg(overlap);
+ out+=mapOverviewCompareExclusiveSvg(overlap,showExclusive);
+  out+=mapOverviewCompareOverlapSvg(overlap);
  return out+'</g>';
 }
 function mapOverviewCompareFovHtml(size,perspective,visible,overlap){
+ var showExclusive=mapOverviewCompareExclusiveVisible[sec().id]===true;
  var width=size&&+size.width,depth=Number.isFinite(+perspective)&&+perspective>0?+perspective:1000;
  var angle=Number.isFinite(width)&&width>0?2*Math.atan(width/(2*Math.max(1,depth)))*180/Math.PI:null;
  return '<label style="display:flex;gap:5px;align-items:center;margin-top:5px;cursor:pointer;font-size:10px">'+
   '<input type="checkbox" data-camera-overview-compare-fov-toggle aria-label="Mostrar campos de visión A/B"'+(visible?' checked':'')+'>Mostrar conos de visión A/B</label>'+
+   '<label style="display:flex;gap:5px;align-items:center;margin-top:3px;cursor:pointer;font-size:10px"><input type="checkbox" data-camera-overview-compare-exclusive-toggle aria-label="Distinguir áreas exclusivas A/B"'+(showExclusive?' checked':'')+'>Distinguir áreas exclusivas A/B</label>'+
   '<div data-camera-overview-compare-fov-note style="font-size:10px;opacity:.75">Cian continuo: A · rosa punteado: B'+(angle!==null?' · apertura horizontal aprox. '+mapOverviewMetricNumber(angle)+'°':'')+'. Proyección indicativa, no representa oclusiones; vista de perfil: cono oculto.</div>'+mapOverviewCompareOverlapHtml(overlap,visible);
 }
 function mapOverviewComparePoseSvg(frames,spec,size,perspective,showFov,overlap){
@@ -1974,7 +1996,16 @@ if(pane){
  });
  pane.addEventListener('change',function(ev){
   var input=ev.target;
-  if(input.dataset.cameraOverviewCompareFovToggle!==undefined){
+  if(input.dataset.cameraOverviewCompareExclusiveToggle!==undefined){
+    var xs=sec();if(!C.config(xs))return;
+    mapOverviewCompareExclusiveVisible[xs.id]=!!input.checked;
+    mapOverviewMetricsOpen[xs.id]=true;
+    renderPane();
+    var exclusiveInput=pane.querySelector('[data-camera-overview-compare-exclusive-toggle]');
+    if(exclusiveInput)exclusiveInput.focus({preventScroll:true});
+    return;
+   }
+   if(input.dataset.cameraOverviewCompareFovToggle!==undefined){
    var fs=sec();if(!C.config(fs))return;
    mapOverviewCompareFovVisible[fs.id]=!!input.checked;
    mapOverviewMetricsOpen[fs.id]=true;
