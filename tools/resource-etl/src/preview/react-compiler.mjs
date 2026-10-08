@@ -245,6 +245,35 @@ function aliasCandidatesForRegistryResource(resource) {
   return [...aliases];
 }
 
+function buildInternalArtifactAliasMap(resources) {
+  const map = new Map();
+
+  for (const resource of resources) {
+    for (const artifact of resource.artifacts || []) {
+      if (
+        artifact.role !== "component" ||
+        typeof artifact.content !== "string"
+      ) {
+        continue;
+      }
+
+      const artifactPath = normalizePath(
+        artifact.targetPath || artifact.sourcePath || artifact.id
+      );
+      const normalized = withoutExtension(artifactPath);
+
+      for (const segment of ["hooks/", "components/", "lib/"]) {
+        const index = normalized.indexOf(segment);
+        if (index >= 0) {
+          map.set(`@/${normalized.slice(index)}`, artifactPath);
+        }
+      }
+    }
+  }
+
+  return map;
+}
+
 function buildRegistryAliasMap(registryResources) {
   const map = new Map();
 
@@ -418,12 +447,17 @@ export async function compileReactResource(
   );
   const allResources = [previewResource, ...previewRegistryResources];
   const registryAliasMap = buildRegistryAliasMap(previewRegistryResources);
+  const internalAliasMap = buildInternalArtifactAliasMap(allResources);
+  const aliasMap = new Map([
+    ...registryAliasMap,
+    ...internalAliasMap
+  ]);
   const auditResource = {
     ...previewResource,
     artifacts: allResources.flatMap((item) => item.artifacts || [])
   };
   const auditOptions = {
-    resolvedAliases: [...registryAliasMap.keys()],
+    resolvedAliases: [...aliasMap.keys()],
     resolvedRegistryDependencies
   };
 
@@ -600,7 +634,7 @@ root.render(React.createElement(App));
       build.onResolve(
         { filter: /^@\//, namespace: "nagweb-resource" },
         (args) => {
-          const resolved = registryAliasMap.get(args.path);
+          const resolved = aliasMap.get(args.path);
           if (!resolved) return;
           return {
             path: resolved,

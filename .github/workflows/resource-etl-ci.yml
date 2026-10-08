@@ -289,6 +289,26 @@ jobs:
             --file=ci-vault-motion-primitives-coverage/react-preview-audit.json \
             --provider=motion-primitives
 
+          node - <<'NODE'
+          const fs = require("fs");
+          const audit = JSON.parse(
+            fs.readFileSync(
+              "ci-vault-motion-primitives-coverage/react-preview-audit.json",
+              "utf8"
+            )
+          );
+          const motion = audit.items.filter((entry) =>
+            entry.resourceId.startsWith("motion-primitives:")
+          );
+          const failed = motion.filter((entry) => !entry.ok);
+          if (failed.length) {
+            console.error("Motion Primitives still has deferred previews:");
+            console.error(JSON.stringify(failed, null, 2));
+            process.exit(1);
+          }
+          console.log("Motion Primitives local hook aliases: OK", motion.length);
+          NODE
+
       - name: Smoke test external ETL sources
         working-directory: tools/resource-etl
         shell: bash
