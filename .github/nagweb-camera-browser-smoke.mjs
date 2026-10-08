@@ -345,6 +345,37 @@ export async function runCameraBrowserSmoke(page){
   assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'3D diagnostics must not add undo history entries');
   console.log('Camera minimap 3D path metrics: arc length, zero-speed hold, pace deltas, live scrub and view persistence OK');
 
+  // Pace overlay: classify sampled camera/look motion by distance per 1% of Director progress.
+  const paceInitial=await page.evaluate(()=>{
+   const mini=document.querySelector('[data-camera-overview]');
+   const bars=kind=>Array.from(mini.querySelectorAll('[data-camera-overview-pace="'+kind+'"] [data-camera-overview-pace-band]')).map(el=>el.getAttribute('data-camera-overview-pace-band'));
+   return {camera:bars('camera'),look:bars('look'),checked:document.querySelector('[data-camera-overview-pace-toggle]')?.checked,
+     legend:document.querySelector('[data-camera-overview-pace-legend]')?.textContent,
+     summaryOpen:document.querySelector('[data-camera-overview-metrics]')?.open};
+  });
+  assert.equal(paceInitial.checked,true,'3D rhythm overlay is initially enabled');
+  assert.deepEqual(paceInitial.camera,['fast','pause','fast','fast','normal'],'Camera pace overlay identifies moving, held and slower intervals');
+  assert.deepEqual(paceInitial.look,['fast','pause','fast','fast','normal'],'Look target has independent pace bands');
+  assert.ok(paceInitial.legend.includes('Lento')&&paceInitial.legend.includes('Pausa'),'Pace legend explains visual categories');
+  assert.equal(paceInitial.summaryOpen,true,'Pace legend appears in expanded diagnostics');
+  await page.click('[data-camera-overview-pace-toggle]');
+  await page.waitForFunction(()=>!document.querySelector('[data-camera-overview-pace]'));
+  assert.equal(await page.$eval('[data-camera-overview-pace-toggle]',n=>n.checked),false,'Visual rhythm can be disabled without hiding the minimap');
+  assert.equal(await page.$eval('[data-camera-overview-metrics]',n=>n.open),true,'Pace toggle keeps diagnostics expanded');
+  assert.ok(await page.$('[data-camera-overview-path]'),'Original camera trajectory remains visible with rhythm hidden');
+  await page.select('[data-camera-map-plane]','front');
+  assert.equal(await page.$eval('[data-camera-overview-pace-toggle]',n=>n.checked),false,'Pace visibility is preserved when changing projection');
+  await page.click('[data-camera-overview-pace-toggle]');
+  await page.waitForFunction(()=>document.querySelectorAll('[data-camera-overview-pace]').length===2);
+  assert.equal(await page.$$eval('[data-camera-overview-pace-band="pause"]',els=>els.length),2,'Both camera and look display 3D pauses in front view');
+  await page.select('[data-camera-map-plane]','top');
+  assert.equal(await page.$$eval('[data-camera-overview-pace-band="fast"]',els=>els.length),6,'Rhythm overlay remains usable after returning to top view');
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),motionNavigationInitial.frames,'Rhythm visualization does not modify camera frames');
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraLookFrames)),motionNavigationInitial.looks,'Rhythm visualization does not modify look frames');
+  assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'Rhythm visualization does not modify the undo history');
+  console.log('Camera minimap pace overlay: camera/look categories, pause marks, toggle, two projections, nondestructive behavior OK');
+
+
 
 
   await page.select('[data-camera-map-plane]','front');
