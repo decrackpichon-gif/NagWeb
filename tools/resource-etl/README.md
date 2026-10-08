@@ -712,3 +712,38 @@ Cada recurso conserva el HTML y CSS necesarios para funcionar sin CDN ni runtime
 El renderer HTML de NagWeb ahora aplica bindings `css-variable` de forma genérica. Esto permite que futuros recursos HTML/CSS usen variables editables sin crear un adaptador específico por biblioteca.
 
 React Bits fue revisado pero no se espeja: su licencia MIT + Commons Clause permite usar los componentes dentro de productos, pero prohíbe redistribuir los componentes mismos, incluso agrupados en un bundle.
+
+
+## Cliente de lectura del Vault persistente
+
+`src/runtime/persistent-vault-client.mjs` es el puente entre la biblioteca persistente y la interfaz de NagWeb.
+
+Su flujo está pensado para que el editor no cargue 36 MB de JSON al abrir la biblioteca:
+
+1. descarga `vault-manifest.json`;
+2. descarga y verifica `all/browse-index.json.gz`, actualmente de unos cientos de KB;
+3. permite buscar, filtrar y paginar todos los recursos;
+4. recién al pedir el código de un recurso descarga y verifica `all/library.json.gz`;
+5. mantiene la biblioteca completa en memoria para los siguientes usos.
+
+El cliente verifica SHA-256 antes de aceptar el índice o la biblioteca completa.
+
+Ejemplo:
+
+```js
+import {
+  createNagWebPersistentVaultClient
+} from "./runtime/persistent-vault-client.mjs";
+
+const vault = createNagWebPersistentVaultClient();
+
+const results = await vault.search({
+  query: "loader",
+  providers: ["spinkit"],
+  limit: 24
+});
+
+const resource = await vault.getResource(results.items[0].id);
+```
+
+También expone `facets()` para construir filtros por proveedor, familia y tipo sin conocer de antemano qué fuentes forman parte del Vault.

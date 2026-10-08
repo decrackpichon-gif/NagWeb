@@ -309,6 +309,11 @@ jobs:
           console.log("Motion Primitives local hook aliases: OK", motion.length);
           NODE
 
+      - name: Verify persistent Vault client
+        working-directory: tools/resource-etl
+        shell: bash
+        run: npm run vault:client:smoke
+
       - name: Smoke test external ETL sources
         working-directory: tools/resource-etl
         shell: bash

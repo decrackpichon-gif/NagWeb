@@ -14,7 +14,8 @@
     "vault:all": "node src/vault-cli.mjs --sources=lucide,shadcn,magicui,motion-primitives,animxyz,threejs,hyperui,uiverse,csshake,magic-css,spinkit,glsl-noise --all",
     "uiverse:inventory": "node src/uiverse-inventory-cli.mjs",
     "uiverse:batch": "node src/uiverse-batch-cli.mjs",
-    "vault:restore": "node src/snapshot/restore-persistent-vault.mjs"
+    "vault:restore": "node src/snapshot/restore-persistent-vault.mjs",
+    "vault:client:smoke": "node src/persistent-vault-client-smoke.mjs"
   },
   "devDependencies": {
     "@tailwindcss/browser": "4.3.3",
