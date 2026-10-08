@@ -676,3 +676,20 @@ npm run vault:restore -- --snapshots=uiverse,lucide --out=vault-restored
 ```
 
 En Windows, la opción **17 · RECONSTRUIR Vault desde NUESTRA copia persistente** hace la restauración completa con previews React y no consulta a los proveedores originales.
+
+
+## Bundle único del Vault
+
+La rama persistente publica además:
+
+```text
+all/library.json.gz
+all/browse-index.json.gz
+all/manifest.json
+```
+
+`library.json.gz` contiene todos los recursos livianos persistidos en un único archivo comprimido y verificado por SHA-256.
+
+`browse-index.json.gz` contiene únicamente metadata liviana de navegación y búsqueda: ID, título, tipo, proveedor, categorías, tags, capacidades y texto de búsqueda. Está pensado para que la interfaz de NagWeb pueda mostrar la biblioteca completa sin cargar primero todo el código fuente.
+
+La restauración completa usa automáticamente el bundle consolidado cuando existe. Las restauraciones parciales con `--snapshots=...` siguen usando los snapshots individuales.

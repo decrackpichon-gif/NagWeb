@@ -205,6 +205,7 @@ echo Reconstruyendo NagWeb Vault desde resource-vault-data...
 echo.
 echo No se consultan Uiverse, Lucide, Three.js ni los otros proveedores.
 echo Se verifican los checksums SHA-256 antes de restaurar.
+echo Si existe, se usa el bundle unico de toda la biblioteca.
 echo.
 call npm install --no-package-lock --no-audit --no-fund
 if errorlevel 1 goto done

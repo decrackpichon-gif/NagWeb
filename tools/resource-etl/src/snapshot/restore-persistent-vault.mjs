@@ -99,16 +99,17 @@ const snapshots = (globalManifest.snapshots || []).filter(
   (snapshot) => !wanted || wanted.has(snapshot.id)
 );
 
-if (!snapshots.length) {
+if (wanted && !snapshots.length) {
   throw new Error("No matching snapshots selected.");
 }
 
 const resourcesById = new Map();
 const verified = [];
 
-for (const snapshot of snapshots) {
+if (!wanted && globalManifest.consolidated?.libraryPath) {
+  const snapshot = globalManifest.consolidated;
   console.log(
-    `\n[${snapshot.id}] downloading/verifying ${snapshot.count} resources...`
+    `\n[all] downloading/verifying consolidated ${snapshot.count} resource bundle...`
   );
 
   const compressed = await readSnapshot(snapshot.libraryPath);
@@ -116,17 +117,16 @@ for (const snapshot of snapshots) {
 
   if (!snapshot.sha256 || actualSha !== snapshot.sha256) {
     throw new Error(
-      `Snapshot checksum mismatch for ${snapshot.id}: expected ${snapshot.sha256}, got ${actualSha}`
+      `Consolidated Vault checksum mismatch: expected ${snapshot.sha256}, got ${actualSha}`
     );
   }
 
-  const decoded = gunzipSync(compressed);
-  const payload = JSON.parse(decoded.toString("utf8"));
+  const payload = JSON.parse(gunzipSync(compressed).toString("utf8"));
   const resources = payload.resources || [];
 
   if (resources.length !== snapshot.count) {
     throw new Error(
-      `Snapshot count mismatch for ${snapshot.id}: manifest=${snapshot.count}, library=${resources.length}`
+      `Consolidated Vault count mismatch: manifest=${snapshot.count}, library=${resources.length}`
     );
   }
 
@@ -136,15 +136,56 @@ for (const snapshot of snapshots) {
   }
 
   verified.push({
-    id: snapshot.id,
+    id: "all",
     count: resources.length,
     sha256: actualSha,
     compressedBytes: compressed.length
   });
 
   console.log(
-    `[${snapshot.id}] verified ${resources.length} · SHA-256 OK`
+    `[all] verified ${resources.length} resources · SHA-256 OK`
   );
+} else {
+  for (const snapshot of snapshots) {
+    console.log(
+      `\n[${snapshot.id}] downloading/verifying ${snapshot.count} resources...`
+    );
+
+    const compressed = await readSnapshot(snapshot.libraryPath);
+    const actualSha = sha256(compressed);
+
+    if (!snapshot.sha256 || actualSha !== snapshot.sha256) {
+      throw new Error(
+        `Snapshot checksum mismatch for ${snapshot.id}: expected ${snapshot.sha256}, got ${actualSha}`
+      );
+    }
+
+    const decoded = gunzipSync(compressed);
+    const payload = JSON.parse(decoded.toString("utf8"));
+    const resources = payload.resources || [];
+
+    if (resources.length !== snapshot.count) {
+      throw new Error(
+        `Snapshot count mismatch for ${snapshot.id}: manifest=${snapshot.count}, library=${resources.length}`
+      );
+    }
+
+    for (const resource of resources) {
+      if (!resource?.id) continue;
+      resourcesById.set(resource.id, resource);
+    }
+
+    verified.push({
+      id: snapshot.id,
+      count: resources.length,
+      sha256: actualSha,
+      compressedBytes: compressed.length
+    });
+
+    console.log(
+      `[${snapshot.id}] verified ${resources.length} · SHA-256 OK`
+    );
+  }
 }
 
 await mkdir(rootDir, { recursive: true });

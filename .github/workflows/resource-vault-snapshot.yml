@@ -234,6 +234,36 @@ jobs:
           node tools/resource-etl/src/snapshot/build-global-vault-manifest.mjs \
             --root="$PUBLISH_DIR"
 
+          node tools/resource-etl/src/snapshot/build-consolidated-vault.mjs \
+            --root="$PUBLISH_DIR"
+
+          node - <<'NODE'
+          const fs = require("fs");
+          const manifest = JSON.parse(
+            fs.readFileSync(
+              process.env.RUNNER_TEMP +
+                "/nagweb-resource-vault-publish/vault-manifest.json",
+              "utf8"
+            )
+          );
+          const all = manifest.consolidated;
+          if (!all || all.count !== manifest.totalResources) {
+            throw new Error("Consolidated Vault count mismatch");
+          }
+          if (!all.sha256 || all.sha256.length !== 64) {
+            throw new Error("Missing consolidated Vault SHA-256");
+          }
+          if (!all.browseIndexSha256 || all.browseIndexSha256.length !== 64) {
+            throw new Error("Missing global browse-index SHA-256");
+          }
+          console.log(
+            "Consolidated Vault verified",
+            all.count,
+            all.compressedBytes,
+            all.browseIndexBytes
+          );
+          NODE
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
@@ -243,6 +273,6 @@ jobs:
 
           cp -R "$PUBLISH_DIR"/. .
 
-          git add README.md vault-manifest.json uiverse core-code lucide threejs-code
+          git add README.md vault-manifest.json all uiverse core-code lucide threejs-code
           git commit -m "data: refresh lightweight resource snapshots"
           git push --force origin HEAD:resource-vault-data
