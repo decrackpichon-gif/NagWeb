@@ -29,6 +29,7 @@
     "react-day-picker": "9.7.0",
     "vaul": "1.1.2",
     "react-hook-form": "7.62.0",
-    "recharts": "3.8.0"
+    "recharts": "3.8.0",
+    "input-otp": "1.4.2"
   }
 }

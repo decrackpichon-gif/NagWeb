@@ -74,10 +74,10 @@ jobs:
         run: |
           node src/vault-cli.mjs \
             --sources=shadcn \
-            --limit=23 \
+            --limit=27 \
             --out=ci-vault-shadcn \
             --react-previews \
-            --react-preview-limit=30
+            --react-preview-limit=36
 
           node - <<'NODE'
           const fs = require("fs");
@@ -112,6 +112,15 @@ jobs:
               console.error(JSON.stringify(buttonGroup, null, 2));
               process.exit(1);
             }
+          }
+
+          const inputOtp = audit.items.find(
+            (entry) => entry.resourceId === "shadcn:input-otp"
+          );
+          if (!inputOtp || !inputOtp.ok) {
+            console.error("shadcn:input-otp did not compile with input-otp");
+            console.error(JSON.stringify(inputOtp, null, 2));
+            process.exit(1);
           }
 
           const form = audit.items.find(

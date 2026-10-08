@@ -30,7 +30,8 @@ export const REACT_PREVIEW_RUNTIME_PACKAGES = new Set([
   "react-day-picker",
   "vaul",
   "react-hook-form",
-  "recharts"
+  "recharts",
+  "input-otp"
 ]);
 
 export const REACT_PREVIEW_VIRTUAL_PACKAGES = new Set([
