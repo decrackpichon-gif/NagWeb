@@ -236,6 +236,39 @@ export async function runCameraBrowserSmoke(page){
   assert.deepEqual(motionEvents.look,['reverse','pause','turn'],'Look motion analysis is independent');
   assert.equal(motionEvents.summary,'◆ ‖1 ↶1 ↗1 · ● ‖1 ↶1 ↗1','Minimap summarizes events by track');
   assert.equal(motionEvents.tooltips,6,'Each motion event has an accessible explanation');
+
+  // Motion event navigation: select exact event, step through distinct times, click marker.
+  const motionNavigationInitial=await page.evaluate(()=>({
+   count:document.querySelectorAll('[data-camera-overview-event-select] option').length,
+   names:Array.from(document.querySelectorAll('[data-camera-overview-event-select] option')).map(o=>o.textContent),
+   frames:JSON.stringify(sec().sdCameraFrames),looks:JSON.stringify(sec().sdCameraLookFrames),
+   historyCount:history.length
+  }));
+  assert.equal(motionNavigationInitial.count,7,'All six motion events are individually selectable');
+  assert.ok(motionNavigationInitial.names[3].includes('Pausa')&&motionNavigationInitial.names[3].includes('30%'),'Paused interval appears with its timestamp');
+  await page.select('[data-camera-overview-event-select]','2');
+  await page.waitForFunction(()=>Math.abs(+document.querySelector('[data-camera-seek]').value-30)<.01);
+  assert.equal(+await page.$eval('[data-camera-seek]',n=>n.value),30,'Selecting a motion event seeks directly to that moment');
+  await page.click('[data-camera-overview-event-step="-1"]');
+  await page.waitForFunction(()=>Math.abs(+document.querySelector('[data-camera-seek]').value-20)<.01);
+  assert.equal(+await page.$eval('[data-camera-seek]',n=>n.value),20,'Previous skips duplicate events at the same moment');
+  await page.click('[data-camera-overview-event-step="1"]');
+  await page.waitForFunction(()=>Math.abs(+document.querySelector('[data-camera-seek]').value-30)<.01);
+  assert.equal(+await page.$eval('[data-camera-seek]',n=>n.value),30,'Next navigates to following event time');
+  const markerHit=await page.$eval('[data-camera-overview-event-kind="camera"][data-camera-overview-event-type="turn"] circle',n=>{
+   n.scrollIntoView({block:'center',inline:'nearest'});const r=n.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};
+  });
+  await page.mouse.click(markerHit.x,markerHit.y);
+  await page.waitForFunction(()=>Math.abs(+document.querySelector('[data-camera-seek]').value-60)<.01);
+  assert.equal(+await page.$eval('[data-camera-seek]',n=>n.value),60,'Clicking turn glyph seeks directly to detected moment');
+  const motionNavigationFinal=await page.evaluate(()=>({
+   frames:JSON.stringify(sec().sdCameraFrames),looks:JSON.stringify(sec().sdCameraLookFrames),historyCount:history.length
+  }));
+  assert.deepEqual(motionNavigationFinal,motionNavigationInitial&&{
+   frames:motionNavigationInitial.frames,looks:motionNavigationInitial.looks,historyCount:motionNavigationInitial.historyCount
+  },'Motion event navigation cannot change authored keyframes or project history');
+  console.log('Camera minimap event navigation: select, previous/next, clickable glyph and nondestructive seek OK');
+
   await page.select('[data-camera-map-plane]','front');
   assert.equal(await page.$$eval('[data-camera-overview-event-kind]',nodes=>nodes.length),6,'Motion analysis uses XYZ, not the current 2D projection');
   await page.select('[data-camera-map-plane]','top');
