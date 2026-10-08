@@ -1218,7 +1218,7 @@ if(pane){
   if(button===suppressedClick){suppressedClick=null;return;}
   var s=sec(),cfg=C.config(s);if(!cfg)return;var list=keys(s);
   if(button.dataset.cameraOverviewToggle!==undefined){
-   mapOverviewVisible[s.id]=!(mapOverviewVisible[s.id]===undefined?zoom>1:mapOverviewVisible[s.id]);
+   mapOverviewVisible[s.id]=!(mapOverviewVisible[s.id]===undefined?(mapZoom[s.id]||1)>1:mapOverviewVisible[s.id]);
    renderPane();
    var toggle=pane.querySelector('[data-camera-overview-toggle]');if(toggle)toggle.focus({preventScroll:true});
    return;
