@@ -213,6 +213,10 @@ async function previewDoc(resource, values = {}) {
   return null;
 }
 
+function isLottieLivePreview(resource) {
+  return ["lottie", "dotlottie-web"].includes(resource?.runtime?.renderer);
+}
+
 function isMagicCssLivePreview(resource) {
   return resource?.source?.provider === "magic-css" &&
     resource?.runtime?.renderer === "nagweb-css-inline-effect";
@@ -228,21 +232,28 @@ function updateCssLivePreview(resource) {
     resource !== selectedResource || !el.detail.open || el.preview.hidden
   ) return;
   const isMagic = isMagicCssLivePreview(resource);
-  if (!isMagic && !isCssShakeLivePreview(resource)) return;
+  const isLottie = isLottieLivePreview(resource);
+  if (!isMagic && !isCssShakeLivePreview(resource) && !isLottie) return;
 
   // A sandboxed srcdoc frame has an opaque origin. It validates event.source,
   // resourceId and the permitted message type and values.
-  const message = isMagic
+  const message = isLottie
     ? {
-      type: "nagweb:magic-css-preview:update",
+      type: "nagweb:lottie-preview:update",
       resourceId: resource.id,
       values: { ...selectedValues }
     }
-    : {
-      type: "nagweb:cssshake-preview:update",
-      resourceId: resource.id,
-      trigger: selectedValues.trigger
-    };
+    : isMagic
+      ? {
+        type: "nagweb:magic-css-preview:update",
+        resourceId: resource.id,
+        values: { ...selectedValues }
+      }
+      : {
+        type: "nagweb:cssshake-preview:update",
+        resourceId: resource.id,
+        trigger: selectedValues.trigger
+      };
   el.preview.contentWindow?.postMessage(message, "*");
 }
 
@@ -439,7 +450,7 @@ async function openDetail(id) {
   el.copyCode.disabled = !artifact?.content;
 
   const doc = await previewDoc(resource, selectedValues);
-  const isLottie = ["lottie", "dotlottie-web"].includes(resource.runtime?.renderer);
+  const isLottie = isLottieLivePreview(resource);
   const isCssShake = isCssShakeLivePreview(resource);
   const isMagicCss = isMagicCssLivePreview(resource);
   el.preview.setAttribute("sandbox",
@@ -450,7 +461,7 @@ async function openDetail(id) {
     el.preview.hidden = false;
     el.preview.srcdoc = doc;
     el.previewNote.textContent = isLottie
-      ? "Vista previa Lottie animada con reproductor local y aislamiento de seguridad."
+      ? "Velocidad y repetición cambian sin reiniciar. La reproducción automática controla inicio y pausa."
       : isCssShake
         ? "Compará Hover y Siempre sin reiniciar. La pausa se conserva al cambiar de modo."
         : isMagicCss
@@ -557,7 +568,11 @@ window.addEventListener("message", (event) => {
 async function redrawEditablePreview() {
   const resource = selectedResource;
   if (!resource || el.customize.hidden) return;
-  if (isMagicCssLivePreview(resource) || isCssShakeLivePreview(resource)) {
+  if (
+    isLottieLivePreview(resource) ||
+    isMagicCssLivePreview(resource) ||
+    isCssShakeLivePreview(resource)
+  ) {
     updateCssLivePreview(resource);
     return;
   }

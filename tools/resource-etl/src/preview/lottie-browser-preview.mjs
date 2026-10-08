@@ -52,6 +52,7 @@ export function buildLottieBrowserPreview(resource, values = {}, { playerUrl } =
     .replaceAll("<", "\\u003c")
     .replaceAll("\u2028", "\\u2028")
     .replaceAll("\u2029", "\\u2029");
+  const escapedResourceId = JSON.stringify(resource.id).replaceAll("<", "\\u003c");
   const origin = source.origin;
   const safePlayerUrl = source.href.replaceAll("&", "&amp;").replaceAll('"', "&quot;");
 
@@ -76,6 +77,7 @@ try {
   if (!window.lottie?.loadAnimation) throw new Error("El reproductor local no está disponible");
   const animationData = ${animationData};
   const prefersReducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const previewResourceId = ${escapedResourceId};
   const instance = window.lottie.loadAnimation({
     container: document.getElementById("animation"),
     renderer: "svg",
@@ -85,6 +87,9 @@ try {
     rendererSettings: { preserveAspectRatio: "xMidYMid meet" }
   });
   instance.setSpeed(${speed});
+  let configuredSpeed = ${speed};
+  let configuredLoop = ${JSON.stringify(loop)};
+  let configuredAutoplay = ${JSON.stringify(autoplay)};
   const sync = () => {
     play.textContent = instance.isPaused ? "Reproducir" : "Pausar";
   };
@@ -103,6 +108,40 @@ try {
     if (instance.isPaused) instance.play();
     else instance.pause();
     sync();
+  });
+  window.addEventListener("message", (event) => {
+    if (event.source !== window.parent) return;
+    const message = event.data;
+    if (
+      message?.type !== "nagweb:lottie-preview:update" ||
+      message.resourceId !== previewResourceId
+    ) return;
+
+    const values = message.values;
+    if (
+      !values || typeof values !== "object" ||
+      typeof values.speed !== "number" ||
+      !Number.isFinite(values.speed) ||
+      values.speed < 0.1 || values.speed > 4 ||
+      typeof values.loop !== "boolean" ||
+      typeof values.autoplay !== "boolean"
+    ) return;
+
+    if (configuredSpeed !== values.speed) {
+      configuredSpeed = values.speed;
+      instance.setSpeed(configuredSpeed);
+    }
+    if (configuredLoop !== values.loop) {
+      configuredLoop = values.loop;
+      instance.setLoop(configuredLoop);
+    }
+    if (configuredAutoplay !== values.autoplay) {
+      configuredAutoplay = values.autoplay;
+      if (configuredAutoplay && !prefersReducedMotion) instance.play();
+      else instance.pause();
+      sync();
+    }
+    // Speed/loop changes never replace the animation or alter manual pause.
   });
 } catch (error) {
   status.textContent = "Vista previa no disponible para esta animación";

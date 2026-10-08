@@ -889,7 +889,7 @@ assert.match(hoverShakeDoc, /class="demo shake-hard"/);
 assert.match(hoverShakeDoc, /class="demo shake-hard shake-constant"/);
 assert.match(hoverShakeDoc, /class="mode selected" aria-label="Modo Hover"/);
 assert.match(hoverShakeDoc, /class="mode " aria-label="Modo Siempre"/);
-assert.equal((hoverShakeDoc.match(/Elegido para insertar/g) || []).length, 1);
+assert.equal((hoverShakeDoc.match(/<span class="tag">Elegido para insertar<\/span>/g) || []).length, 1);
 assert.match(hoverShakeDoc, /<script nonce="nagweb-cssshake-preview-v1">/);
 assert.match(hoverShakeDoc, /prefers-reduced-motion:reduce/);
 assert.match(hoverShakeDoc, /Pasá el cursor/);
@@ -902,7 +902,7 @@ assert.match(constantShakeDoc, /class="demo shake-hard shake-constant"/);
 assert.match(constantShakeDoc, /class="demo shake-hard"/);
 assert.match(constantShakeDoc, /class="mode selected" aria-label="Modo Siempre"/);
 assert.match(constantShakeDoc, /class="mode " aria-label="Modo Hover"/);
-assert.equal((constantShakeDoc.match(/Elegido para insertar/g) || []).length, 1);
+assert.equal((constantShakeDoc.match(/<span class="tag">Elegido para insertar<\/span>/g) || []).length, 1);
 assert.match(constantShakeDoc, /Reproducción continua/);
 assert.equal(buildCssShakeBrowserPreview(shakePreviewResource,
   {}, { stylesheet: "" }), null);
@@ -1127,3 +1127,76 @@ sendShakeUpdate(shakeParent, shakePreviewResource.id, "hover");
 assert.equal(hoverLiveCard.classes.has("selected"), true);
 assert.equal(constantLiveCard.classes.has("selected"), false);
 assert.equal(pauseCheckbox.checked, true, "Switching back still keeps paused state");
+
+const lottieRuntimeScript = lottiePreviewDocument.split("<script>")[1]?.split("</script>")[0];
+assert.ok(lottieRuntimeScript, "Lottie browser preview includes live update handler");
+const lottieCalls = [];
+let lottieMessageHandler;
+const lottieParent = {};
+const fakePlayButton = { textContent: "", hidden: false };
+const fakeStatus = { textContent: "" };
+const fakeLottieInstance = {
+  isPaused: true,
+  setSpeed(value) { lottieCalls.push(["speed", value]); },
+  setLoop(value) { lottieCalls.push(["loop", value]); },
+  play() { this.isPaused = false; lottieCalls.push(["play"]); },
+  pause() { this.isPaused = true; lottieCalls.push(["pause"]); },
+  addEventListener() {}
+};
+runInNewContext(lottieRuntimeScript, {
+  window: {
+    parent: lottieParent,
+    lottie: {
+      loadAnimation() { return fakeLottieInstance; }
+    },
+    addEventListener(type, handler) {
+      assert.equal(type, "message");
+      lottieMessageHandler = handler;
+    }
+  },
+  document: {
+    getElementById(id) {
+      if (id === "status") return fakeStatus;
+      if (id === "play") {
+        return { ...fakePlayButton, addEventListener() {} };
+      }
+      return {};
+    }
+  },
+  matchMedia() { return { matches: false }; }
+});
+assert.equal(typeof lottieMessageHandler, "function");
+const sendLottie = (source, resourceId, values) => lottieMessageHandler({
+  source,
+  data: {
+    type: "nagweb:lottie-preview:update",
+    resourceId, values
+  }
+});
+assert.deepEqual(lottieCalls, [["speed", 2.5]]);
+sendLottie({}, lottieEditableResource.id,
+  { speed: 3, loop: true, autoplay: false });
+sendLottie(lottieParent, "wrong-resource",
+  { speed: 3, loop: true, autoplay: false });
+sendLottie(lottieParent, lottieEditableResource.id,
+  { speed: "malicious", loop: true, autoplay: false });
+assert.deepEqual(lottieCalls, [["speed", 2.5]], "Reject invalid live messages");
+sendLottie(lottieParent, lottieEditableResource.id,
+  { speed: 3, loop: true, autoplay: false });
+assert.deepEqual(lottieCalls, [
+  ["speed", 2.5], ["speed", 3], ["loop", true]
+]);
+assert.equal(fakeLottieInstance.isPaused, true, "Playback remains paused");
+fakeLottieInstance.play();
+sendLottie(lottieParent, lottieEditableResource.id,
+  { speed: 4, loop: false, autoplay: false });
+assert.equal(fakeLottieInstance.isPaused, false,
+  "Editing speed and loop does not cancel manual playback");
+sendLottie(lottieParent, lottieEditableResource.id,
+  { speed: 4, loop: false, autoplay: true });
+assert.equal(fakeLottieInstance.isPaused, false,
+  "Enabling autoplay starts playback without reloading");
+sendLottie(lottieParent, lottieEditableResource.id,
+  { speed: 4, loop: false, autoplay: false });
+assert.equal(fakeLottieInstance.isPaused, true,
+  "Disabling autoplay pauses playback");
