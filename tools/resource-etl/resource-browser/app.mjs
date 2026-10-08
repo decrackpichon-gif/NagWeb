@@ -5,6 +5,7 @@ import { defaultEditableValues } from "../src/runtime/instance.mjs";
 import { describeEditableControls } from "../src/runtime/editable-controls.mjs";
 import { buildLottieBrowserPreview } from "../src/preview/lottie-browser-preview.mjs";
 import { buildCssShakeBrowserPreview } from "../src/preview/csshake-browser-preview.mjs";
+import { buildMagicCssBrowserPreview } from "../src/preview/magiccss-browser-preview.mjs";
 import {
   buildResourceApplyEnvelope,
   resolveResourceApplyTarget,
@@ -197,10 +198,7 @@ async function previewDoc(resource, values = {}) {
   }
 
   if (renderer === "nagweb-css-inline-effect") {
-    const style = (resource.artifacts || []).find((item) => item.role === "stylesheet");
-    const effect = resource.runtime?.setup || {};
-    if (!style?.content || !effect.className) return null;
-    return `<!doctype html><style>${style.content} html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#f4f5f7;perspective:1200px}.demo{width:210px;height:130px;border-radius:24px;background:#fff;box-shadow:0 24px 70px #0002;display:grid;place-items:center;font:700 16px system-ui}</style><div class="demo ${esc(effect.baseClass || "")} ${esc(effect.className)}">${esc(resource.title)}</div>`;
+    return buildMagicCssBrowserPreview(resource, values);
   }
 
   if (renderer === "nagweb-css-class-effect") {
@@ -259,7 +257,7 @@ function renderEditableControls(resource) {
   const renderer = resource.runtime?.renderer;
   el.customizeTitle.textContent = renderer === "nagweb-svg"
     ? "Personalizar ícono"
-    : ["lottie", "dotlottie-web", "nagweb-css-class-effect"].includes(renderer)
+    : ["lottie", "dotlottie-web", "nagweb-css-class-effect", "nagweb-css-inline-effect"].includes(renderer)
       ? "Personalizar animación"
       : "Personalizar componente CSS";
 
@@ -407,8 +405,10 @@ async function openDetail(id) {
   const isLottie = ["lottie", "dotlottie-web"].includes(resource.runtime?.renderer);
   const isCssShake = resource.source?.provider === "csshake" &&
     resource.runtime?.renderer === "nagweb-css-class-effect";
+  const isMagicCss = resource.source?.provider === "magic-css" &&
+    resource.runtime?.renderer === "nagweb-css-inline-effect";
   el.preview.setAttribute("sandbox", doc && isLottie ? "allow-scripts" : "");
-  el.previewReplay.hidden = !doc || !isCssShake;
+  el.previewReplay.hidden = !doc || !(isCssShake || isMagicCss);
   if (doc) {
     el.previewFallback.hidden = true;
     el.preview.hidden = false;
@@ -417,7 +417,9 @@ async function openDetail(id) {
       ? "Vista previa Lottie animada con reproductor local y aislamiento de seguridad."
       : isCssShake
         ? "Compará Hover y Siempre. El modo destacado es el que se insertará."
-        : "Preview segura generada desde nuestra copia persistente.";
+        : isMagicCss
+          ? "Ajustá duración, demora, curva y repeticiones. Reiniciá para ver otra vez."
+          : "Preview segura generada desde nuestra copia persistente.";
   } else {
     el.preview.hidden = true;
     el.previewFallback.hidden = false;
@@ -542,10 +544,10 @@ el.previewReplay.addEventListener("click", async () => {
     !Object.entries(values).every(([id, value]) => selectedValues[id] === value)
   ) return;
 
-  // Force a new srcdoc navigation, restarting CSS animations without
+  // Force a new srcdoc navigation for supported CSS animations without
   // injecting scripts into the sandboxed content or changing Apply values.
   previewReplayRevision += 1;
-  el.preview.srcdoc = `${doc}\n<!-- csshake-replay:${previewReplayRevision} -->`;
+  el.preview.srcdoc = `${doc}\n<!-- css-preview-replay:${previewReplayRevision} -->`;
 });
 
 el.resetCustomize.addEventListener("click", () => {

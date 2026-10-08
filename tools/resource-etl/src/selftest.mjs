@@ -16,7 +16,8 @@ import {
 import {
   transformLucideIcon,
   transformMagicUiComponent,
-  transformSpinKitLoader
+  transformSpinKitLoader,
+  transformMagicCssEffect
 } from "./light-transformers.mjs";
 import { looksLikeLottie } from "./importers/lottie-local.mjs";
 import { CSSSHAKE_EFFECTS } from "./extractors/csshake.mjs";
@@ -41,6 +42,7 @@ import {
 import { buildStaticPreview } from "./preview/build-preview.mjs";
 import { buildLottieBrowserPreview } from "./preview/lottie-browser-preview.mjs";
 import { buildCssShakeBrowserPreview } from "./preview/csshake-browser-preview.mjs";
+import { buildMagicCssBrowserPreview } from "./preview/magiccss-browser-preview.mjs";
 import { buildVaultGallery } from "./gallery/build-gallery.mjs";
 import { buildReactPreviewRecipe } from "./preview/recipes.mjs";
 import {
@@ -916,3 +918,62 @@ const hostileCssShake = buildCssShakeBrowserPreview(shakePreviewResource,
   {}, { stylesheet: "</style><script>alert(1)</script>" });
 assert.ok(hostileCssShake);
 assert.equal(hostileCssShake.includes("</style><script>alert(1)</script>"), false);
+
+const magicCssResource = transformMagicCssEffect({
+  raw: {
+    baseCss: ".magictime{animation-duration:1s}",
+    repository: "https://github.com/miniMAC/magic",
+    commit: "test-sha",
+    packageJson: { version: "1.0.0" }
+  },
+  item: {
+    name: "puffIn", category: "entrance", path: "effects/puffIn.css",
+    code: ".puffIn{animation-name:fadeIn}"
+  }
+});
+assert.deepEqual(describeEditableControls(magicCssResource).map(
+  (item) => [item.id, item.kind]
+), [
+  ["duration", "range"], ["delay", "range"],
+  ["easing", "select"], ["iterations", "range"]
+]);
+const magicValues = {
+  duration: 2.5, delay: 0.6, easing: "ease-out", iterations: 3
+};
+const magicPreview = buildMagicCssBrowserPreview(magicCssResource, magicValues);
+assert.ok(magicPreview);
+assert.match(magicPreview, /class="demo magictime puffIn"/);
+assert.match(magicPreview, /animation-duration:2\.5s!important/);
+assert.match(magicPreview, /animation-delay:0\.6s!important/);
+assert.match(magicPreview, /animation-timing-function:ease-out!important/);
+assert.match(magicPreview, /animation-iteration-count:3!important/);
+assert.match(magicPreview, /prefers-reduced-motion:reduce/);
+assert.match(magicPreview, /script-src 'none'/);
+assert.equal(magicPreview.includes("<script"), false);
+const appliedMagicCss = buildResourceApplyEnvelope(magicCssResource, {
+  values: magicValues
+}).descriptor;
+assert.equal(appliedMagicCss.kind, "css-inline-effect");
+assert.equal(appliedMagicCss.payload.duration, 2.5);
+assert.equal(appliedMagicCss.payload.delay, 0.6);
+assert.equal(appliedMagicCss.payload.easing, "ease-out");
+assert.equal(appliedMagicCss.payload.iterations, 3);
+const resetMagic = defaultEditableValues(magicCssResource);
+assert.equal(resetMagic.duration, 1);
+assert.equal(resetMagic.delay, 0);
+assert.equal(resetMagic.easing, "ease");
+assert.equal(resetMagic.iterations, 1);
+assert.equal(buildMagicCssBrowserPreview({
+  ...magicCssResource, source: { provider: "untrusted" }
+}, magicValues), null);
+const escapedMagic = buildMagicCssBrowserPreview({
+  ...magicCssResource,
+  artifacts: magicCssResource.artifacts.map((artifact) =>
+    artifact.role === "stylesheet"
+      ? { ...artifact, content: "</style><script>alert(1)</script>" }
+      : artifact)
+}, { duration: Infinity, easing: "unexpected" });
+assert.ok(escapedMagic);
+assert.equal(escapedMagic.includes("</style><script>alert(1)</script>"), false);
+assert.match(escapedMagic, /animation-duration:1s!important/);
+assert.match(escapedMagic, /animation-timing-function:ease!important/);

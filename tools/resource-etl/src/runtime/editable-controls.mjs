@@ -6,7 +6,8 @@ export function describeEditableControls(resource) {
     "nagweb-svg",
     "lottie",
     "dotlottie-web",
-    "nagweb-css-class-effect"
+    "nagweb-css-class-effect",
+    "nagweb-css-inline-effect"
   ].includes(renderer)) return [];
 
   const controls = [];
@@ -31,8 +32,12 @@ export function describeEditableControls(resource) {
           ? ["speed", "loop", "autoplay"].includes(id) &&
             prop.binding?.type === "runtime" &&
             prop.binding?.path === `lottie.${id}`
-          : id === "trigger" && prop.binding?.type === "runtime" &&
-            prop.binding?.path === "cssEffect.trigger";
+          : renderer === "nagweb-css-inline-effect"
+            ? ["duration", "delay", "easing", "iterations"].includes(id) &&
+              prop.binding?.type === "runtime" &&
+              prop.binding?.path === `cssEffect.${id}`
+            : id === "trigger" && prop.binding?.type === "runtime" &&
+              prop.binding?.path === "cssEffect.trigger";
     if (!validBinding) continue;
 
     const base = {
