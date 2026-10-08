@@ -413,6 +413,62 @@ export async function runCameraBrowserSmoke(page){
   assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'Rhythm visualization does not modify the undo history');
   console.log('Camera minimap pace overlay: camera/look categories, pause marks, toggle, two projections, nondestructive behavior OK');
 
+  // A/B interval overlays: distinct tracks, pause rings, coincident paths and disclosure visibility.
+  await page.waitForFunction(()=>{
+   const detail=document.querySelector('[data-camera-overview-metrics]'),overlay=document.querySelector('[data-camera-overview-compare-overlay]');
+   return detail?.open&&overlay&&getComputedStyle(overlay).display!=='none';
+  });
+  const comparisonOverlay=()=>page.$eval('[data-camera-overview-compare-overlay]',node=>{
+   const info=letter=>{
+    const el=node.querySelector('[data-camera-overview-compare="'+letter+'"]');
+    return {kind:el?.dataset.cameraOverviewCompareKind,from:el?.dataset.cameraOverviewCompareFrom,
+     to:el?.dataset.cameraOverviewCompareTo,polyline:!!el?.querySelector('polyline'),
+     pause:!!el?.querySelector('[data-camera-overview-compare-hold]'),
+     stroke:el?.querySelector('polyline')?.getAttribute('stroke'),
+     dash:el?.querySelector('polyline')?.getAttribute('stroke-dasharray'),
+     title:el?.querySelector('title')?.textContent};
+   };
+   return {visible:getComputedStyle(node).display!=='none',noPointerEvents:node.getAttribute('pointer-events')==='none',a:info('a'),b:info('b')};
+  });
+  let comparisonView=await comparisonOverlay();
+  assert.equal(comparisonView.noPointerEvents,true,'A/B overlays must not intercept map interactions');
+  assert.equal(comparisonView.a.kind,'camera','A overlays the camera interval');
+  assert.equal(comparisonView.b.kind,'look','B overlays the look interval independently');
+  assert.equal(comparisonView.a.stroke,'#22d3ee','A has distinctive cyan stroke');
+  assert.equal(comparisonView.b.stroke,'#f472b6','B has distinctive pink stroke');
+  assert.equal(comparisonView.b.dash,'2 1.2','B has dashed stroke, including for coincident geometry');
+  await page.select('[data-camera-overview-compare-b]','camera:20:40');
+  comparisonView=await comparisonOverlay();
+  assert.equal(comparisonView.b.pause,true,'Paused comparison interval draws a ring instead of an invisible path');
+  assert.equal(comparisonView.b.from,'20');
+  assert.equal(comparisonView.b.to,'40');
+  await page.select('[data-camera-overview-compare-b]','camera:40:60');
+  comparisonView=await comparisonOverlay();
+  assert.equal(comparisonView.a.polyline,true,'A remains visible for the forward interval');
+  assert.equal(comparisonView.b.polyline,true,'B remains visible for the reverse interval on the same line');
+  assert.equal(comparisonView.b.dash,'2 1.2','Coincident B route is visually distinct');
+  await page.select('[data-camera-overview-compare-a]','look:0:20');
+  comparisonView=await comparisonOverlay();
+  assert.equal(comparisonView.a.kind,'look','Changing A highlights the chosen look trajectory');
+  assert.equal(comparisonView.b.kind,'camera','Changing A preserves selected camera B');
+  await page.click('[data-camera-overview-metrics] summary');
+  await page.waitForFunction(()=>getComputedStyle(document.querySelector('[data-camera-overview-compare-overlay]')).display==='none');
+  await page.click('[data-camera-overview-metrics] summary');
+  await page.waitForFunction(()=>getComputedStyle(document.querySelector('[data-camera-overview-compare-overlay]')).display!=='none');
+  await page.select('[data-camera-map-plane]','front');
+  comparisonView=await comparisonOverlay();
+  assert.equal(comparisonView.visible,true,'Selected intervals remain visible in front view');
+  assert.equal(comparisonView.a.kind,'look');
+  assert.equal(comparisonView.b.kind,'camera');
+  await page.select('[data-camera-map-plane]','top');
+  comparisonView=await comparisonOverlay();
+  assert.equal(comparisonView.visible,true,'Selected intervals remain visible after returning to top view');
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),motionNavigationInitial.frames,'Comparison overlays do not change camera keyframes');
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraLookFrames)),motionNavigationInitial.looks,'Comparison overlays do not change look keyframes');
+  assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'Comparison overlays do not add undo history');
+  console.log('Camera minimap A/B overlays: distinct cyan/pink, hold rings, reverse overlap, live selections, disclosure and projections OK');
+
+
 
 
 
