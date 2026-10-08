@@ -1,0 +1,109 @@
+name: Resource Vault Snapshot
+
+on:
+  push:
+    branches:
+      - feat/resource-etl-v1
+    paths:
+      - ".github/workflows/resource-vault-snapshot.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: resource-vault-snapshot
+  cancel-in-progress: true
+
+jobs:
+  uiverse-snapshot:
+    name: Build persistent Uiverse snapshot
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout NagWeb ETL
+        uses: actions/checkout@v4
+        with:
+          ref: feat/resource-etl-v1
+          fetch-depth: 0
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Clone Uiverse Galaxy
+        shell: bash
+        run: |
+          git clone --depth=1 https://github.com/uiverse-io/galaxy.git "$RUNNER_TEMP/uiverse-galaxy"
+          git -C "$RUNNER_TEMP/uiverse-galaxy" rev-parse HEAD > "$RUNNER_TEMP/uiverse-commit.txt"
+
+      - name: Build compact provider snapshot
+        working-directory: tools/resource-etl
+        shell: bash
+        run: |
+          SOURCE_COMMIT="$(cat "$RUNNER_TEMP/uiverse-commit.txt")"
+          node src/snapshot/build-uiverse-snapshot.mjs \
+            --source-dir="$RUNNER_TEMP/uiverse-galaxy" \
+            --out-dir="$RUNNER_TEMP/nagweb-uiverse-snapshot" \
+            --commit="$SOURCE_COMMIT"
+          cp "$RUNNER_TEMP/uiverse-galaxy/LICENSE" "$RUNNER_TEMP/nagweb-uiverse-snapshot/LICENSE"
+
+      - name: Verify snapshot
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs = require("fs");
+          const path = process.env.RUNNER_TEMP + "/nagweb-uiverse-snapshot";
+          const manifest = JSON.parse(
+            fs.readFileSync(path + "/manifest.json", "utf8")
+          );
+          if (manifest.autonomousResources < 3000) {
+            throw new Error(
+              "Unexpectedly small autonomous Uiverse snapshot: " +
+              manifest.autonomousResources
+            );
+          }
+          if (!manifest.compressedSha256 || manifest.compressedSha256.length !== 64) {
+            throw new Error("Missing snapshot SHA-256");
+          }
+          if (!fs.existsSync(path + "/library.json.gz")) {
+            throw new Error("Missing compressed library");
+          }
+          console.log("Persistent Uiverse snapshot verified", manifest);
+          NODE
+
+      - name: Publish resource-vault-data branch
+        shell: bash
+        run: |
+          SNAPSHOT_DIR="$RUNNER_TEMP/nagweb-uiverse-snapshot"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git switch --orphan resource-vault-data
+          git rm -rf . || true
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+
+          mkdir -p uiverse
+          cp "$SNAPSHOT_DIR/library.json.gz" uiverse/library.json.gz
+          cp "$SNAPSHOT_DIR/catalog.json" uiverse/catalog.json
+          cp "$SNAPSHOT_DIR/manifest.json" uiverse/manifest.json
+          cp "$SNAPSHOT_DIR/skipped.json" uiverse/skipped.json
+          cp "$SNAPSHOT_DIR/LICENSE" uiverse/LICENSE
+          cp "$SNAPSHOT_DIR/README.md" uiverse/README.md
+
+          cat > README.md <<'EOF'
+          # NagWeb Resource Vault Data
+
+          Generated persistent snapshots of lightweight resources mirrored by NagWeb under their verified redistribution licenses.
+
+          This branch is generated data, not application source code. It is force-refreshed so snapshot history does not grow without bound.
+
+          Current providers:
+          - Uiverse Galaxy
+          EOF
+
+          git add README.md uiverse
+          git commit -m "data: refresh Uiverse resource snapshot"
+          git push --force origin HEAD:resource-vault-data
