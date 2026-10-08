@@ -620,3 +620,12 @@ assert.throws(
     }),
   /no NagWeb insert adapter/
 );
+
+const coloredSvgEnvelope = buildResourceApplyEnvelope(lucideResource, {
+  requestId: "test-custom-svg-color",
+  values: { stroke: "#e34b76" }
+});
+assert.equal(coloredSvgEnvelope.descriptor.kind, "svg");
+assert.equal(coloredSvgEnvelope.descriptor.payload.stroke, "#e34b76");
+assert.equal(coloredSvgEnvelope.descriptor.instance.values.stroke, "#e34b76");
+assert.equal(applyEnvelope.descriptor.payload.stroke, "#000000");

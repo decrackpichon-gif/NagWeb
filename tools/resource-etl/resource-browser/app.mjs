@@ -39,6 +39,9 @@ const el = {
   preview: document.querySelector("[data-preview]"),
   previewFallback: document.querySelector("[data-preview-fallback]"),
   previewNote: document.querySelector("[data-preview-note]"),
+  svgColor: document.querySelector("[data-svg-color]"),
+  strokeInput: document.querySelector("[data-icon-stroke]"),
+  strokeValue: document.querySelector("[data-icon-stroke-value]"),
   apply: document.querySelector("[data-apply]"),
   applyStatus: document.querySelector("[data-apply-status]"),
   applyBox: document.querySelector(".apply-box"),
@@ -50,6 +53,7 @@ const el = {
 
 let offset = 0;
 let selectedResource = null;
+let selectedValues = {};
 let searchTimer = null;
 let pendingApplyId = null;
 let pendingApplyResourceId = null;
@@ -152,7 +156,7 @@ function cssVarStyle(resource) {
     .join(";");
 }
 
-async function previewDoc(resource) {
+async function previewDoc(resource, values = {}) {
   const renderer = resource.runtime?.renderer;
   const provider = resource.source?.provider;
 
@@ -161,7 +165,10 @@ async function previewDoc(resource) {
       (item) => item.role === "icon-data"
     );
     if (!artifact?.content) return null;
-    return `<!doctype html><style>html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#f4f5f7}svg{width:min(45vw,160px);height:min(45vw,160px);stroke:#111}</style>${artifact.content}`;
+    const stroke = /^#[0-9a-f]{6}$/i.test(values.stroke || "")
+      ? values.stroke
+      : "#111111";
+    return `<!doctype html><style>html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#f4f5f7}svg{width:min(45vw,160px);height:min(45vw,160px);stroke:${stroke}}</style>${artifact.content}`;
   }
 
   if (renderer === "nagweb-html-tailwind" && provider !== "hyperui") {
@@ -229,8 +236,25 @@ function updateApplyReadiness(resource) {
   el.applyStatus.textContent = "Recurso listo para aplicar en el editor conectado.";
 }
 
+function configureSvgColor(resource) {
+  const colorProp = resource.runtime?.renderer === "nagweb-svg"
+    ? (resource.editableProps || []).find(
+      (prop) => prop.id === "stroke" && prop.valueType === "color"
+    )
+    : null;
+  const color = colorProp?.defaultValue;
+  if (!/^#[0-9a-f]{6}$/i.test(color || "")) return;
+
+  selectedValues.stroke = color;
+  el.strokeInput.value = color;
+  el.strokeValue.textContent = color.toUpperCase();
+  el.svgColor.hidden = false;
+}
+
 async function openDetail(id) {
   selectedResource = null;
+  selectedValues = {};
+  el.svgColor.hidden = true;
   el.apply.disabled = true;
   el.applyStatus.textContent = "Comprobando si el recurso se puede insertar…";
   el.detail.showModal();
@@ -242,6 +266,7 @@ async function openDetail(id) {
 
   const resource = await vault.getResource(id);
   selectedResource = resource;
+  if (resource) configureSvgColor(resource);
   updateApplyReadiness(resource);
 
   if (!resource) {
@@ -267,7 +292,7 @@ async function openDetail(id) {
   el.code.textContent = artifact?.content || JSON.stringify(resource.runtime || {}, null, 2);
   el.copyCode.disabled = !artifact?.content;
 
-  const doc = await previewDoc(resource);
+  const doc = await previewDoc(resource, selectedValues);
   if (doc) {
     el.previewFallback.hidden = true;
     el.preview.hidden = false;
@@ -371,11 +396,27 @@ window.addEventListener("message", (event) => {
     event.data.message || "El editor informó un error al aplicar el recurso.";
 });
 
+el.strokeInput.addEventListener("input", async () => {
+  const resource = selectedResource;
+  if (!resource || el.svgColor.hidden) return;
+  const stroke = el.strokeInput.value;
+  if (!/^#[0-9a-f]{6}$/i.test(stroke)) return;
+
+  selectedValues.stroke = stroke;
+  el.strokeValue.textContent = stroke.toUpperCase();
+  const doc = await previewDoc(resource, { ...selectedValues });
+  if (doc && selectedResource === resource && selectedValues.stroke === stroke) {
+    el.preview.srcdoc = doc;
+  }
+});
+
 el.apply.addEventListener("click", () => {
   if (!selectedResource || !applyTarget || pendingApplyId) return;
 
   try {
-    const envelope = buildResourceApplyEnvelope(selectedResource);
+    const envelope = buildResourceApplyEnvelope(selectedResource, {
+      values: { ...selectedValues }
+    });
     const id = sendResourceApplyEnvelope(envelope, applyTarget);
 
     clearTimeout(pendingApplyTimer);

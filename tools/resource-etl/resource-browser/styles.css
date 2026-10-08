@@ -88,3 +88,12 @@ pre{white-space:pre-wrap;word-break:break-word;background:#090b0e;border:1px sol
 .apply-box button{width:100%}
 .apply-box p{margin:8px 2px 0;color:var(--muted);font-size:11px;line-height:1.4}
 .apply-box[data-connected="true"]{border-color:#667c3d;background:#c8f36c12}
+
+.customize{padding:13px;border:1px solid var(--line);background:var(--panel-2);border-radius:12px;margin:18px 0}
+.customize[hidden]{display:none}
+.customize strong{font-size:13px}
+.customize label{display:block;color:var(--muted);font-size:12px;margin-top:12px}
+.customize .color-row{display:flex;align-items:center;gap:12px;margin-top:8px}
+.customize input[type="color"]{width:52px;height:38px;padding:3px;cursor:pointer}
+.customize output{font:12px ui-monospace,monospace}
+.customize p{color:var(--muted);font-size:11px;line-height:1.4;margin:10px 0 0}
