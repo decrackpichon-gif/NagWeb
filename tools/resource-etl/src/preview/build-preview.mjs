@@ -34,13 +34,17 @@ function htmlPreview(descriptor, title, resource) {
   const js = needsHyperUi
     ? '<script src="../providers/hyperui/hyperui-runtime/files/component.js" defer></script>'
     : "";
+  const cssVariables = descriptor.payload.cssVariables || {};
+  const variableStyle = Object.entries(cssVariables)
+    .map(([name, value]) => `${escapeHtml(name)}:${escapeHtml(value)}`)
+    .join(";");
 
   return `<!doctype html>
 <html class="${descriptor.payload.theme === "dark" ? "dark" : ""}">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <title>${escapeHtml(title)}</title>${css}${js}
-<style>html,body{min-height:100%;margin:0}</style>
-</head><body>${body}</body></html>`;
+<style>html,body{min-height:100%;margin:0}.nagweb-resource-root{min-height:100%;display:grid;place-items:center}</style>
+</head><body><div class="nagweb-resource-root" style="${variableStyle}">${body}</div></body></html>`;
 }
 
 function cssEffectPreview(descriptor, title) {

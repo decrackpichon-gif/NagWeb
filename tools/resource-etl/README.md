@@ -698,3 +698,17 @@ La restauración completa usa automáticamente el bundle consolidado cuando exis
 ### IDs de Uiverse sin colisiones
 
 Los IDs de Uiverse incluyen categoría, autor y slug, por ejemplo `uiverse:cards:praashoo7:thin-sloth-31`. El snapshot de Uiverse y el bundle consolidado rechazan IDs duplicados en vez de sobrescribirlos silenciosamente.
+
+
+## SpinKit · loaders CSS autónomos
+
+SpinKit se incorpora bajo licencia MIT con sus 12 loaders oficiales.
+
+Cada recurso conserva el HTML y CSS necesarios para funcionar sin CDN ni runtime externo. Los controles universales exponen:
+
+- tamaño mediante `--sk-size`;
+- color mediante `--sk-color`.
+
+El renderer HTML de NagWeb ahora aplica bindings `css-variable` de forma genérica. Esto permite que futuros recursos HTML/CSS usen variables editables sin crear un adaptador específico por biblioteca.
+
+React Bits fue revisado pero no se espeja: su licencia MIT + Commons Clause permite usar los componentes dentro de productos, pero prohíbe redistribuir los componentes mismos, incluso agrupados en un bundle.

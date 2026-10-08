@@ -1732,3 +1732,116 @@ export function transformMagicCssEffect({ raw, item }) {
     }
   };
 }
+
+
+export function transformSpinKitLoader({ raw, item }) {
+  const fetchedAt = now();
+  const policy = getSourcePolicy("spinkit");
+  const content = `<style>${raw.css}</style>\n${item.html}`;
+
+  return {
+    schemaVersion: "1.0",
+    id: `spinkit:${item.name}`,
+    slug: `spinkit-${item.name}`,
+    name: item.name,
+    title: item.title,
+    description: `SpinKit CSS loader "${item.title}" stored as autonomous HTML/CSS.`,
+    family: "animation",
+    kind: "html-component",
+    source: {
+      provider: "spinkit",
+      externalId: item.name,
+      sourceUrl: `${raw.repository}#${item.name}`,
+      repositoryUrl: raw.repository,
+      fetchedAt,
+      version: raw.packageJson?.version,
+      commit: raw.commit
+    },
+    license: {
+      id: policy.licenseId,
+      name: policy.licenseName,
+      url: policy.licenseUrl,
+      commercialUse: true,
+      modificationAllowed: true,
+      redistributionAllowed: true,
+      attributionRequired: true,
+      attributionText: "SpinKit · Tobias Ahlin · MIT License",
+      verified: true
+    },
+    taxonomy: {
+      categories: ["animation", "loader", "css"],
+      tags: [item.name, "spinkit", "loader", "spinner", "css", "animation"]
+    },
+    previews: [],
+    artifacts: [{
+      id: "component",
+      role: "component",
+      format: "html",
+      mimeType: "text/html",
+      content,
+      sourcePath: "README.md",
+      targetPath: "component.html"
+    }],
+    runtime: {
+      type: "html",
+      renderer: "nagweb-html-tailwind",
+      entryArtifactId: "component",
+      cssVariables: {
+        "--sk-size": "40px",
+        "--sk-color": "#333333"
+      }
+    },
+    editableProps: [
+      {
+        id: "size",
+        label: "Tamaño",
+        group: "Loader",
+        valueType: "number",
+        control: "slider",
+        defaultValue: 40,
+        binding: { type: "css-variable", variable: "--sk-size" },
+        constraints: { min: 8, max: 240, step: 1, unit: "px" },
+        responsive: true,
+        animatable: true
+      },
+      {
+        id: "color",
+        label: "Color",
+        group: "Loader",
+        valueType: "color",
+        control: "color",
+        defaultValue: "#333333",
+        binding: { type: "css-variable", variable: "--sk-color" },
+        responsive: true,
+        animatable: true
+      }
+    ],
+    compatibility: {
+      nagweb: { supported: true, renderer: "html", tested: false },
+      html: true,
+      css: true
+    },
+    capabilities: ["animatable", "editable-colors", "responsive"],
+    technical: {
+      type: "css-loader",
+      codeOnly: true,
+      packageVersion: raw.packageJson?.version
+    },
+    search: {
+      text: `${item.title} SpinKit loader spinner CSS animation`,
+      keywords: [item.name, "spinkit", "loader", "spinner", "css", "animation"]
+    },
+    ingestion: {
+      extractor: "spinkit",
+      extractorVersion: EXTRACTOR_VERSION,
+      fetchedAt,
+      transformedAt: now(),
+      sourceHash: hash(content),
+      status: "validated",
+      warnings: []
+    },
+    sourceData: {
+      html: item.html
+    }
+  };
+}

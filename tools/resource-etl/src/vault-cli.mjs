@@ -9,6 +9,7 @@ import { extractMotionPrimitives } from "./extractors/motion-primitives.mjs";
 import { extractAnimXyzCore } from "./extractors/animxyz.mjs";
 import { extractCssShake } from "./extractors/csshake.mjs";
 import { extractMagicCssEffects } from "./extractors/magic-css.mjs";
+import { extractSpinKit } from "./extractors/spinkit.mjs";
 import { extractThreeCodeScenes } from "./extractors/threejs.mjs";
 import {
   transformLucideIcon,
@@ -22,6 +23,7 @@ import {
   transformCssShakeRuntime,
   transformCssShakeEffect,
   transformMagicCssEffect,
+  transformSpinKitLoader,
   transformThreeCodeScene,
   transformUiverseComponent
 } from "./light-transformers.mjs";
@@ -54,7 +56,7 @@ function parseArgs(argv) {
 }
 
 function parseSources(value) {
-  return String(value || "lucide,shadcn,magicui,motion-primitives,animxyz,threejs,hyperui,uiverse,csshake,magic-css,glsl-noise")
+  return String(value || "lucide,shadcn,magicui,motion-primitives,animxyz,threejs,hyperui,uiverse,csshake,magic-css,spinkit,glsl-noise")
     .split(",")
     .map((source) => source.trim().toLowerCase())
     .filter(Boolean);
@@ -171,6 +173,17 @@ async function collectSource(source, args) {
         commit: raw.commit,
         item
       })
+    );
+  }
+
+  if (source === "spinkit") {
+    assertFullMirrorAllowed("spinkit");
+    const raw = await extractSpinKit({ limit, all });
+    console.log(
+      `[spinkit] ${raw.items.length}/${raw.totalAvailable} loaders selected.`
+    );
+    return raw.items.map((item) =>
+      transformSpinKitLoader({ raw, item })
     );
   }
 

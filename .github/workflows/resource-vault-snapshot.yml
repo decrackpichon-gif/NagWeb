@@ -1,5 +1,5 @@
 name: Resource Vault Snapshot
-# snapshot schema: 2
+# snapshot schema: 3
 
 on:
   push:
@@ -87,7 +87,7 @@ jobs:
         shell: bash
         run: |
           node src/vault-cli.mjs \
-            --sources=shadcn,magicui,motion-primitives,animxyz,hyperui,csshake,magic-css,glsl-noise \
+            --sources=shadcn,magicui,motion-primitives,animxyz,hyperui,csshake,magic-css,spinkit,glsl-noise \
             --all \
             --out="$RUNNER_TEMP/nagweb-core-vault"
 
@@ -134,7 +134,8 @@ jobs:
             "magic-css",
             "magicui",
             "motion-primitives",
-            "shadcn"
+            "shadcn",
+            "spinkit"
           ];
           for (const provider of expected) {
             if (!manifest.providers.includes(provider)) {

@@ -3,6 +3,28 @@ import {
   selectArtifact
 } from "./instance.mjs";
 
+function cssVariableValues(resource, instance) {
+  const output = {};
+
+  for (const prop of resource.editableProps || []) {
+    if (prop.binding?.type !== "css-variable") continue;
+
+    let value = instance.values?.[prop.id];
+    if (value === undefined || value === null) continue;
+
+    if (
+      typeof value === "number" &&
+      prop.constraints?.unit
+    ) {
+      value = `${value}${prop.constraints.unit}`;
+    }
+
+    output[prop.binding.variable] = String(value);
+  }
+
+  return output;
+}
+
 function parseJsonArtifact(artifact) {
   if (!artifact?.content) return null;
   try {
@@ -42,7 +64,11 @@ export function buildInsertDescriptor(resource, options = {}) {
       payload: {
         html: artifact?.content || "",
         dependencies: resource.runtime?.registryDependencies || [],
-        theme: instance.values.theme || "light"
+        theme: instance.values.theme || "light",
+        cssVariables: {
+          ...(resource.runtime?.cssVariables || {}),
+          ...cssVariableValues(resource, instance)
+        }
       }
     };
   }

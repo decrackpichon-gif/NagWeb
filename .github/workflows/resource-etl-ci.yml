@@ -46,7 +46,7 @@ jobs:
         working-directory: tools/resource-etl
         run: >
           node src/vault-cli.mjs
-          --sources=lucide,shadcn,magicui,motion-primitives,animxyz,threejs,hyperui,csshake,glsl-noise
+          --sources=lucide,shadcn,magicui,motion-primitives,animxyz,threejs,hyperui,csshake,spinkit,glsl-noise
           --limit=2
           --out=ci-vault
           --react-previews
@@ -504,6 +504,65 @@ jobs:
           mv ci-vault-uiverse-resume/uiverse-checkpoint.before-guard-test.json \
             ci-vault-uiverse-resume/uiverse-checkpoint.json
 
+
+
+      - name: Verify SpinKit autonomous loaders
+        working-directory: tools/resource-etl
+        shell: bash
+        run: |
+          node src/vault-cli.mjs \
+            --sources=spinkit \
+            --all \
+            --out=ci-vault-spinkit
+
+          node --input-type=module - <<'NODE'
+          import fs from "node:fs";
+          import path from "node:path";
+          import { buildInsertDescriptor } from "./src/runtime/insert-adapters.mjs";
+
+          const catalog = JSON.parse(
+            fs.readFileSync("ci-vault-spinkit/catalog.json", "utf8")
+          );
+          const items = (catalog.resources || []).filter(
+            (entry) => entry.source?.provider === "spinkit"
+          );
+
+          if (items.length !== 12) {
+            throw new Error(`Expected 12 SpinKit loaders, got ${items.length}`);
+          }
+
+          const deferred = items.filter(
+            (entry) => entry.previewStatus !== "ready"
+          );
+          if (deferred.length) {
+            throw new Error(`SpinKit has deferred previews: ${deferred.length}`);
+          }
+
+          const planeEntry = items.find((entry) => entry.id === "spinkit:plane");
+          if (!planeEntry?.vaultPath) {
+            throw new Error("Missing spinkit:plane resource");
+          }
+
+          const plane = JSON.parse(
+            fs.readFileSync(
+              path.join("ci-vault-spinkit", planeEntry.vaultPath),
+              "utf8"
+            )
+          );
+
+          const descriptor = buildInsertDescriptor(plane, {
+            values: { size: 72, color: "#ff0066" }
+          });
+
+          if (descriptor.payload.cssVariables["--sk-size"] !== "72px") {
+            throw new Error("SpinKit size css-variable binding failed");
+          }
+          if (descriptor.payload.cssVariables["--sk-color"] !== "#ff0066") {
+            throw new Error("SpinKit color css-variable binding failed");
+          }
+
+          console.log("SpinKit autonomous loaders: OK", items.length);
+          NODE
 
       - name: Verify Magic.css autonomous effects
         working-directory: tools/resource-etl

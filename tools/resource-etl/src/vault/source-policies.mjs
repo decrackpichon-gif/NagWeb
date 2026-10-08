@@ -23,6 +23,22 @@ export const SOURCE_POLICIES = {
     noticeRequired: true,
     notes: "Do not mirror for NagWeb without OEM commercial permission; the license explicitly calls out application builders/toolkits."
   },
+  spinkit: {
+    mirrorMode: "full",
+    licenseId: "MIT",
+    licenseName: "MIT License",
+    licenseUrl: "https://github.com/tobiasahlin/SpinKit/blob/master/LICENSE",
+    noticeRequired: true,
+    notes: "SpinKit CSS/HTML loaders may be mirrored. Preserve the MIT copyright and permission notice."
+  },
+  "react-bits": {
+    mirrorMode: "metadata-only",
+    licenseId: "MIT-Plus-Commons-Clause",
+    licenseName: "MIT + Commons Clause",
+    licenseUrl: "https://github.com/DavidHDev/react-bits/blob/main/LICENSE.md",
+    noticeRequired: true,
+    notes: "Do not mirror or bundle React Bits component source. The Commons Clause permits use in products but prohibits redistributing the components themselves."
+  },
   "magic-css": {
     mirrorMode: "full",
     licenseId: "MIT",
