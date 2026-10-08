@@ -268,7 +268,7 @@ function createCamera(){
 }
 window.NAGWEB_CREATE_SCROLL_CAMERA=createCamera;
 window.NAGWEB_SCROLL_CAMERA=createCamera();
-var presetChoices=Object.create(null),holdDurations=Object.create(null),mapOpen=Object.create(null),mapPlanes=Object.create(null),mapFovVisible=Object.create(null),suppressedClick=null,selected=Object.create(null),lookSelected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
+var presetChoices=Object.create(null),holdDurations=Object.create(null),mapOpen=Object.create(null),mapPlanes=Object.create(null),mapFovVisible=Object.create(null),mapPickHistory=Object.create(null),suppressedClick=null,selected=Object.create(null),lookSelected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
 function safeLabel(v){return String(v==null?'':v).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,42).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];});}
 function targetLabel(e){var label=safeLabel(e&&((e.name||e.text||e.label)||e.type));return label||'Elemento';}
 function keys(s){return C.frames(C.config(s),s.sdEase);}
@@ -301,6 +301,30 @@ function mapCurrent(s,pct){
  return C.pose(C.config(s),pct/100,window.NAGWEB_STORY_MODEL,s.sdEase,reduced,undefined,previewReferenceSize(s));
 }
 function mapLabel(v,pct){return 'Ahora: '+Math.round(pct*10)/10+'% · X '+Math.round(v.x)+' · Y '+Math.round(v.y)+' · Z '+Math.round(v.z);}
+function mapOverlapBadges(cameraKeys,lookKeys,spec){
+ var points=[],used=Object.create(null),html='';
+ (cameraKeys||[]).concat(lookKeys||[]).forEach(function(k){points.push(C.mapPoint(k,spec));});
+ points.forEach(function(p,i){
+  if(used[i])return;
+  var members=[];
+  points.forEach(function(q,j){if(!used[j]&&Math.hypot(q.x-p.x,q.y-p.y)<=1.5)members.push(j);});
+  if(members.length<2)return;
+  members.forEach(function(j){used[j]=true;});
+  var bx=Math.max(3,Math.min(97,p.x+3.5)),by=Math.max(3,Math.min(97,p.y-3.5)),label=members.length>99?'99+':String(members.length);
+  html+='<g data-camera-overlap-count="'+members.length+'" pointer-events="none"><circle cx="'+bx+'" cy="'+by+'" r="3.1" fill="var(--accent)" stroke="currentColor" stroke-width=".35"/><text x="'+bx+'" y="'+by+'" fill="white" font-size="2.7" font-weight="bold" text-anchor="middle" dominant-baseline="central">'+label+'</text></g>';
+ });
+ return html;
+}
+function nextSpatialHit(hits,previous,clientX,clientY){
+ if(!hits.length)return null;
+ hits.sort(function(a,b){return a.d-b.d||String(a.kind).localeCompare(String(b.kind))||a.at-b.at;});
+ var near=hits.filter(function(h){return h.d<=hits[0].d+2;});
+ if(previous&&Math.hypot(clientX-previous.x,clientY-previous.y)<=8){
+  var idx=near.findIndex(function(h){return h.kind===previous.kind&&h.at===previous.at;});
+  if(idx>=0)return near[(idx+1)%near.length];
+ }
+ return near[0];
+}
 function mapFrameOptions(list,at){
  return list.map(function(f){return '<option value="'+f.at+'"'+(f.at===at?' selected':'')+'>'+f.at+'%</option>';}).join('');
 }
@@ -428,6 +452,8 @@ function mapDraw(map,list,spec,s,lookList){
    });
   }
  }
+ var overlapGroup=map.querySelector('[data-camera-map-overlaps]');
+ if(overlapGroup)overlapGroup.innerHTML=mapOverlapBadges(list,cfg&&cfg.orientationMode==='lookAt'?resolved:[],spec);
 }
 function spatialMap(s,list,k){
  var plane=mapPlanes[s.id]||'top',cfg=C.config(s),looks=cfg&&cfg.orientationMode==='lookAt'?lookKeys(s):[],lk=looks.length?chooseLook(s,looks):null,size=previewReferenceSize(s),resolvedLooks=resolvedLookKeys(s,cfg,looks,size),tangents=cfg&&cfg.pathMode==='smooth'?list.flatMap(function(f){return[C.tangentHandle(list,f.at,'in'),C.tangentHandle(list,f.at,'out')];}).filter(Boolean):[],lookTangents=cfg&&cfg.lookPathMode==='smooth'?resolvedLooks.flatMap(function(f){return[C.lookTangentHandle(resolvedLooks,f.at,'in'),C.lookTangentHandle(resolvedLooks,f.at,'out')];}).filter(Boolean):[],spec=C.mapSpec(list.concat(resolvedLooks,tangents,lookTangents),plane),point=C.mapPoint(k,spec),tangentIn=cfg&&cfg.pathMode==='smooth'?C.tangentHandle(list,k.at,'in'):null,tangentOut=cfg&&cfg.pathMode==='smooth'?C.tangentHandle(list,k.at,'out'):null,tangentInPoint=tangentIn?C.mapPoint(tangentIn,spec):null,tangentOutPoint=tangentOut?C.mapPoint(tangentOut,spec):null,resolvedLk=lk&&lk.targetId?(C.elementTarget(cfg,lk.targetId,lk.at/100,window.NAGWEB_STORY_MODEL,s.sdEase,size)||lk):lk,lookKeyPoint=resolvedLk?C.mapPoint(resolvedLk,spec):null,lookTangentIn=cfg&&cfg.lookPathMode==='smooth'&&lk?C.lookTangentHandle(resolvedLooks,lk.at,'in'):null,lookTangentOut=cfg&&cfg.lookPathMode==='smooth'&&lk?C.lookTangentHandle(resolvedLooks,lk.at,'out'):null,lookTangentInPoint=lookTangentIn?C.mapPoint(lookTangentIn,spec):null,lookTangentOutPoint=lookTangentOut?C.mapPoint(lookTangentOut,spec):null,current=mapCurrent(s,progress(s)),now=C.mapPoint(current,spec);
@@ -455,6 +481,7 @@ function spatialMap(s,list,k){
  resolvedLooks.forEach(function(f){var p=C.mapPoint(f,spec);html+='<circle data-camera-look-map-dot="'+f.at+'" cx="'+p.x+'" cy="'+p.y+'" r="1.55" fill="var(--accent)" opacity=".65" stroke="transparent" stroke-width="5" style="cursor:pointer;pointer-events:all"/>';});
  html+='<circle data-camera-position cx="'+now.x+'" cy="'+now.y+'" r="3" fill="none" stroke="var(--accent)" stroke-width="1"/>';
  if(lookPoint)html+='<circle data-camera-look-position cx="'+lookPoint.x+'" cy="'+lookPoint.y+'" r="2.2" fill="var(--accent)" opacity=".8"/>';
+ html+='<g data-camera-map-overlaps pointer-events="none">'+mapOverlapBadges(list,resolvedLooks,spec)+'</g>';
  html+='</svg>';
  if(tangentInPoint)html+='<button type="button" class="btn tiny" data-camera-tension-handle="'+k.at+'" data-camera-tension-side="in" data-camera-handle-free="'+(tangentIn&&tangentIn.free?'true':'false')+'" aria-label="Editar entrada de curva" title="'+(tangentIn&&tangentIn.free?'Dirección libre · arrastrá en el mapa':'Automática · arrastrá para ajustar tensión')+'" style="position:absolute;left:'+tangentInPoint.x+'%;top:'+tangentInPoint.y+'%;transform:translate(-50%,-50%);touch-action:none;padding:1px 4px;border-radius:50%;z-index:19">◁</button>';
  if(tangentOutPoint)html+='<button type="button" class="btn tiny" data-camera-tension-handle="'+k.at+'" data-camera-tension-side="out" data-camera-handle-free="'+(tangentOut&&tangentOut.free?'true':'false')+'" aria-label="Editar salida de curva" title="'+(tangentOut&&tangentOut.free?'Dirección libre · arrastrá en el mapa':'Automática · arrastrá para ajustar tensión')+'" style="position:absolute;left:'+tangentOutPoint.x+'%;top:'+tangentOutPoint.y+'%;transform:translate(-50%,-50%);touch-action:none;padding:1px 4px;border-radius:50%;z-index:19">▷</button>';
@@ -466,7 +493,7 @@ function spatialMap(s,list,k){
  if(lookKeyPoint)html+='<p class="hint gh" data-camera-map-selection-label>◆ '+k.at+'% ↔ ● '+lk.at+'% · Distancia XYZ: '+Math.round(Math.hypot(k.x-resolvedLk.x,k.y-resolvedLk.y,k.z-resolvedLk.z))+' px. Guía comparativa, no vincula los recorridos.</p>';
  if(s.sdCameraResponsive)html+='<p class="hint gh">El mapa muestra el recorrido con el ancho de referencia.</p>';
  html+='<p class="hint gh" data-camera-position-label>'+mapLabel(current,progress(s))+'</p>';
- html+='<p class="hint gh">◆ encuadre seleccionado · ○ posición actual'+(tangentInPoint||tangentOutPoint?' · ◁ entrada / ▷ salida':'')+(cfg&&cfg.orientationMode==='lookAt'?' · ● objetivo seleccionado · línea punteada: recorrido de mirada'+(lookTangentInPoint||lookTangentOutPoint?' · ◁/▷ del ●: curva de mirada':''):'')+(cfg&&(cfg.pathMode==='smooth'||cfg.lookPathMode==='smooth')?' · Trazo destacado: tramo Bézier libre; trazo normal: Catmull-Rom':'')+' · Flecha: orientación de ◆. Área translúcida: campo de visión aproximado (se oculta de perfil). Clic cerca de un punto: seleccionar · Doble clic línea normal: agregar ◆ · línea punteada: agregar ● · Arrastrá ◆ o ● · Arrastrá ◯: ajustar curva · Shift + arrastre: bloquear al eje dominante. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Flechas: 25 px; Shift + flecha: 100 px. Escape cancela. Escala: ±'+Math.round(spec.range)+' px.</p></details>';
+ html+='<p class="hint gh">◆ encuadre seleccionado · ○ posición actual'+(tangentInPoint||tangentOutPoint?' · ◁ entrada / ▷ salida':'')+(cfg&&cfg.orientationMode==='lookAt'?' · ● objetivo seleccionado · línea punteada: recorrido de mirada'+(lookTangentInPoint||lookTangentOutPoint?' · ◁/▷ del ●: curva de mirada':''):'')+(cfg&&(cfg.pathMode==='smooth'||cfg.lookPathMode==='smooth')?' · Trazo destacado: tramo Bézier libre; trazo normal: Catmull-Rom':'')+' · Flecha: orientación de ◆. Área translúcida: campo de visión aproximado (se oculta de perfil). Número junto a un punto: marcadores superpuestos; clic repetido para alternarlos. Clic cerca de un punto: seleccionar · Doble clic línea normal: agregar ◆ · línea punteada: agregar ● · Arrastrá ◆ o ● · Arrastrá ◯: ajustar curva · Shift + arrastre: bloquear al eje dominante. Horizontal: X. Vertical: '+(spec.axis==='z'?'Z (arriba = adelante)':'Y (abajo = abajo)')+'. Flechas: 25 px; Shift + flecha: 100 px. Escape cancela. Escala: ±'+Math.round(spec.range)+' px.</p></details>';
  return html;
 }
 C.panel=function(s){
@@ -583,9 +610,8 @@ function pickSpatial(s,map,clientX,clientY){
  keys(s).forEach(function(k){add('camera',k,k);});
  if(cfg.orientationMode==='lookAt'){var list=lookKeys(s),resolved=resolvedLookKeys(s,cfg,list,size);list.forEach(function(k,i){add('look',k,resolved[i]||k);});}
  if(!hits.length)return false;
- hits.sort(function(a,b){return a.d-b.d;});
- var near=hits.filter(function(h){return h.d<=hits[0].d+2;}),cameraAt=selected[s.id],lookAt=lookSelected[s.id];
- var best=near.find(function(h){return h.kind==='camera'?h.at!==cameraAt:h.at!==lookAt;})||near[0];
+ var best=nextSpatialHit(hits,mapPickHistory[s.id],clientX,clientY);
+ mapPickHistory[s.id]={kind:best.kind,at:best.at,x:clientX,y:clientY};
  if(best.kind==='look')jumpLook(s,best.at);else jump(s,best.at);
  return true;
 }
