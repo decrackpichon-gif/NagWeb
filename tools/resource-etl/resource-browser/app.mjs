@@ -4,6 +4,7 @@ import {
 import { defaultEditableValues } from "../src/runtime/instance.mjs";
 import { describeEditableControls } from "../src/runtime/editable-controls.mjs";
 import { buildLottieBrowserPreview } from "../src/preview/lottie-browser-preview.mjs";
+import { buildCssShakeBrowserPreview } from "../src/preview/csshake-browser-preview.mjs";
 import {
   buildResourceApplyEnvelope,
   resolveResourceApplyTarget,
@@ -204,11 +205,9 @@ async function previewDoc(resource, values = {}) {
     const dependency = (resource.runtime?.registryDependencies || [])[0];
     const runtime = dependency ? await vault.getResource(dependency) : null;
     const style = (runtime?.artifacts || []).find((item) => item.role === "stylesheet");
-    const data = (resource.artifacts || []).find((item) => item.role === "animation-data");
-    if (!style?.content || !data?.content) return null;
-    const effect = JSON.parse(data.content);
-    const classes = (effect.previewClassNames || [effect.className]).join(" ");
-    return `<!doctype html><style>${style.content} html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#f4f5f7}.demo{padding:24px 34px;border-radius:18px;background:#fff;box-shadow:0 20px 60px #0002;font:700 16px system-ui}</style><div class="demo ${esc(classes)}">${esc(resource.title)}</div>`;
+    return buildCssShakeBrowserPreview(resource, values, {
+      stylesheet: style?.content
+    });
   }
 
   return null;
@@ -410,7 +409,9 @@ async function openDetail(id) {
     el.preview.srcdoc = doc;
     el.previewNote.textContent = isLottie
       ? "Vista previa Lottie animada con reproductor local y aislamiento de seguridad."
-      : "Preview segura generada desde nuestra copia persistente.";
+      : resource.source?.provider === "csshake"
+        ? "Probá el modo Hover o Siempre en el selector de activación."
+        : "Preview segura generada desde nuestra copia persistente.";
   } else {
     el.preview.hidden = true;
     el.previewFallback.hidden = false;

@@ -40,6 +40,7 @@ import {
 } from "./runtime/resource-apply-bridge.mjs";
 import { buildStaticPreview } from "./preview/build-preview.mjs";
 import { buildLottieBrowserPreview } from "./preview/lottie-browser-preview.mjs";
+import { buildCssShakeBrowserPreview } from "./preview/csshake-browser-preview.mjs";
 import { buildVaultGallery } from "./gallery/build-gallery.mjs";
 import { buildReactPreviewRecipe } from "./preview/recipes.mjs";
 import {
@@ -863,3 +864,46 @@ const sanitizedPreview = buildLottieBrowserPreview(hostileLottie, {}, { playerUr
 assert.ok(sanitizedPreview);
 assert.equal(sanitizedPreview.includes("</script><script>alert(1)</script>"), false);
 assert.match(sanitizedPreview, /\\u003c\/script>/);
+
+const shakePreviewResource = {
+  ...shakeEditableResource,
+  source: { ...shakeEditableResource.source, provider: "csshake" },
+  title: "Prueba <Shake>",
+  artifacts: [{
+    id: "effect", role: "animation-data",
+    content: JSON.stringify({
+      className: "shake-hard",
+      trigger: "hover",
+      previewClassNames: ["shake-hard", "shake-constant"]
+    })
+  }]
+};
+const shakeCss = ".shake-hard:hover{animation-name:shake-hard}.shake-hard.shake-constant{animation-name:shake-hard}";
+const hoverShakeDoc = buildCssShakeBrowserPreview(shakePreviewResource,
+  { trigger: "hover" }, { stylesheet: shakeCss });
+assert.ok(hoverShakeDoc);
+assert.match(hoverShakeDoc, /class="demo shake-hard"/);
+assert.doesNotMatch(hoverShakeDoc, /class="demo shake-hard shake-constant"/);
+assert.match(hoverShakeDoc, /Pasá el cursor/);
+assert.match(hoverShakeDoc, /Prueba &lt;Shake&gt;/);
+assert.match(hoverShakeDoc, /script-src 'none'/);
+
+const constantShakeDoc = buildCssShakeBrowserPreview(shakePreviewResource,
+  { trigger: "constant" }, { stylesheet: shakeCss });
+assert.match(constantShakeDoc, /class="demo shake-hard shake-constant"/);
+assert.match(constantShakeDoc, /Reproducción continua/);
+assert.equal(buildCssShakeBrowserPreview(shakePreviewResource,
+  {}, { stylesheet: "" }), null);
+assert.equal(buildCssShakeBrowserPreview({
+  ...shakePreviewResource,
+  artifacts: [{ role: "animation-data", content: "{invalid" }]
+}, {}, { stylesheet: shakeCss }), null);
+assert.equal(buildCssShakeBrowserPreview({
+  ...shakePreviewResource,
+  artifacts: [{ role: "animation-data",
+    content: '{"className":"shake-hard\" onclick=\"alert(1)"}' }]
+}, {}, { stylesheet: shakeCss }), null);
+const hostileCssShake = buildCssShakeBrowserPreview(shakePreviewResource,
+  {}, { stylesheet: "</style><script>alert(1)</script>" });
+assert.ok(hostileCssShake);
+assert.equal(hostileCssShake.includes("</style><script>alert(1)</script>"), false);
