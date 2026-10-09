@@ -13,9 +13,9 @@ const {chromium}=require('playwright');
   const generated=await page.evaluate(()=>{
    const p=starterProject();snapOn=false;p.progress=false;p.bloom=false;p.light='soft';
    p.sections=[mkSection({id:'space',layout:'free',sdEnabled:true,sdCameraEnabled:true,sdEase:'linear',sdCameraFrames:[{at:0,x:0,y:0,z:0},{at:100,x:60,y:20,z:20,rotate:5,rotateX:8,rotateY:16}],elements:[
-    mkEl('shape3d',{id:'box',shape:'box',motion:'still',env:'',x:65,y:50,w:20,offZ:1,dragRotate:true,dragInertia:0}),
-    mkEl('shape3d',{id:'model',shape:'model',modelId:'triangle',motion:'still',env:'',x:35,y:50,w:20,dragRotate:true,dragAxis:'y',dragInertia:0}),
-    mkEl('shape3d',{id:'far',shape:'box',motion:'still',env:'',x:65,y:50,w:20,offZ:-2,dragRotate:true,dragInertia:0})]})];
+    mkEl('shape3d',{sdEnter:'none',id:'box',shape:'box',motion:'still',env:'',x:65,y:50,w:20,offZ:1,dragRotate:true,dragInertia:0}),
+    mkEl('shape3d',{sdEnter:'none',id:'model',shape:'model',modelId:'triangle',motion:'still',env:'',x:35,y:50,w:20,dragRotate:true,dragAxis:'y',dragInertia:0}),
+    mkEl('shape3d',{sdEnter:'none',id:'far',shape:'box',motion:'still',env:'',x:65,y:50,w:20,offZ:-2,dragRotate:true,dragInertia:0})]})];
    const bin=new Float32Array([-1,-1,0,1,-1,0,0,1,0]),json={asset:{version:'2.0'},scene:0,scenes:[{nodes:[0]}],nodes:[{mesh:0}],meshes:[{name:'realGLB',primitives:[{attributes:{POSITION:0}}]}],buffers:[{byteLength:bin.byteLength}],bufferViews:[{buffer:0,byteOffset:0,byteLength:bin.byteLength}],accessors:[{bufferView:0,componentType:5126,count:3,type:'VEC3',min:[-1,-1,0],max:[1,1,0]}]};
    let j=JSON.stringify(json);while(j.length%4)j+=' ';const bytes=new Uint8Array(28+j.length+bin.byteLength),v=new DataView(bytes.buffer);v.setUint32(0,0x46546c67,true);v.setUint32(4,2,true);v.setUint32(8,bytes.length,true);v.setUint32(12,j.length,true);v.setUint32(16,0x4e4f534a,true);bytes.set(new TextEncoder().encode(j),20);v.setUint32(20+j.length,bin.byteLength,true);v.setUint32(24+j.length,0x004e4942,true);bytes.set(new Uint8Array(bin.buffer),28+j.length);
    p.assets.models=[{id:'triangle',format:'glb',data:btoa(String.fromCharCode(...bytes))}];return{edit:generateSite(structuredClone(p),true,false,false),exported:generateSite(structuredClone(p),false,false,false)};

@@ -91,3 +91,10 @@ la prueba del renderizador comprueba la sintaxis de scripts inline de `index.htm
   los materiales, navegadores, animaciones GLB, transiciones e inercia combinadas.
 - No se despliega en Vercel ni se hace merge a main. `feat/scroll-camera-v1`
   conserva su despliegue por Git deshabilitado en `vercel.json`.
+
+## Actualización posterior
+
+El límite de timing propio de formas y GLB anclados queda reemplazado por
+[Timing individual de objetos espaciales v1](spatial-timing-v1.md).
+El bloom recibe los materiales atenuados por el Director; el alcance del fade
+y los límites de grupos, blur y materiales están documentados en esa etapa.

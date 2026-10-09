@@ -97,3 +97,10 @@ Un clic derecho real sobre el GLB envía su identidad al menú contextual.
   cámara histórica. No se integra timing individual ni objetivos 3D de «Mirar hacia».
 - No se despliega en Vercel ni se hace merge a main. La rama sigue siendo
   `feat/scroll-camera-v1`, con despliegue por Git deshabilitado.
+
+## Actualización posterior
+
+El timing propio de objetos anclados ahora se integra como se documenta en
+[Timing individual de objetos espaciales v1](spatial-timing-v1.md).
+El picking y los marcos proyectados respetan esa visibilidad. Un giro activo
+se cancela si el Director oculta el objeto, y su inercia se detiene.
