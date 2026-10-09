@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import "./control-panel-selftest.mjs";
 import { runInNewContext } from "node:vm";
 import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";

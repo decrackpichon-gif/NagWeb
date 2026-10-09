@@ -833,3 +833,16 @@ URL prevista cuando Pages esté habilitado:
 Limitaciones actuales: las vistas previas cubren sólo las familias compatibles.
 El botón de inserción requiere abrir la biblioteca desde un editor conectado;
 la edición posterior en el lienzo principal todavía está pendiente.
+
+## Micro-etapa 43: organización de la personalización
+
+La biblioteca agrupa los controles disponibles en secciones plegables de colores,
+tamaño, espaciado, texto y apariencia, animación y otros ajustes. Solo muestra
+categorías con controles y abre inicialmente la primera. Cada sección informa
+cuántos ajustes contiene y cuántos fueron modificados; el panel también muestra
+el total. Se pueden abrir varias categorías y operar sus encabezados con teclado.
+Plegar no descarta valores ni altera la inserción. Restaurar vuelve a los valores
+originales y conserva las secciones abiertas dentro del recurso actual; abrir
+otro recurso reinicia la organización. No se agregan propiedades editables.
+La prueba offline incluye agrupación y eventos de personalización, conservación
+de valores, contadores y restauración, y se ejecuta en CI Linux y Windows.

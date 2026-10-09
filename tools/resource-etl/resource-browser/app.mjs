@@ -3,6 +3,7 @@ import {
 } from "../src/runtime/persistent-vault-client.mjs";
 import { defaultEditableValues } from "../src/runtime/instance.mjs";
 import { describeEditableControls } from "../src/runtime/editable-controls.mjs";
+import { groupEditableControls, countChangedControls } from "./control-groups.mjs";
 import { htmlWithCustomStyle } from "../src/runtime/html-css-customization.mjs";
 import { buildLottieBrowserPreview } from "../src/preview/lottie-browser-preview.mjs";
 import { buildCssShakeBrowserPreview } from "../src/preview/csshake-browser-preview.mjs";
@@ -300,9 +301,35 @@ function updateApplyReadiness(resource) {
   el.applyStatus.textContent = "Recurso listo para aplicar en el editor conectado.";
 }
 
-function renderEditableControls(resource) {
+function renderEditableControls(resource, { preserveGroups = false } = {}) {
+  const previousGroups = new Map([...el.customizeControls.querySelectorAll("details")]
+    .map(group => [group.dataset.category, group.open]));
   el.customizeControls.replaceChildren();
   const controls = describeEditableControls(resource);
+  const overview = document.createElement("p");
+  overview.className = "customize-overview";
+  overview.setAttribute("role", "status");
+  el.customizeControls.appendChild(overview);
+  const groups = groupEditableControls(controls).map((group, index) => {
+    const section = document.createElement("details");
+    section.className = "control-group";
+    section.dataset.category = group.id;
+    section.open = preserveGroups && previousGroups.has(group.id)
+      ? previousGroups.get(group.id) : index === 0;
+    const summary = document.createElement("summary");
+    section.appendChild(summary);
+    el.customizeControls.appendChild(section);
+    return { ...group, section, summary };
+  });
+  const updateSummary = () => {
+    const changed = countChangedControls(controls, selectedValues);
+    overview.textContent = `${controls.length} ajustes · ${groups.length} categorías · ${changed} modificados`;
+    for (const group of groups) {
+      const count = countChangedControls(group.controls, selectedValues);
+      group.summary.textContent = `${group.label} (${group.controls.length}) · ${count} modificados`;
+    }
+    el.resetCustomize.disabled = changed === 0;
+  };
   const renderer = resource.runtime?.renderer;
   el.customizeTitle.textContent = renderer === "nagweb-svg"
     ? "Personalizar ícono"
@@ -311,7 +338,7 @@ function renderEditableControls(resource) {
       : "Personalizar componente CSS";
 
   for (const [index, control] of controls.entries()) {
-    selectedValues[control.id] = control.defaultValue;
+    if (!Object.hasOwn(selectedValues, control.id)) selectedValues[control.id] = control.defaultValue;
     const field = document.createElement("div");
     const label = document.createElement("label");
     const row = document.createElement("div");
@@ -326,18 +353,18 @@ function renderEditableControls(resource) {
     if (control.kind === "color") {
       row.className = "color-row";
       input.type = "color";
-      input.value = control.defaultValue;
+      input.value = selectedValues[control.id];
     } else if (control.kind === "range") {
       row.className = "size-row";
       input.type = "range";
       input.min = String(control.min);
       input.max = String(control.max);
       input.step = String(control.step);
-      input.value = String(control.defaultValue);
+      input.value = String(selectedValues[control.id]);
     } else if (control.kind === "toggle") {
       row.className = "toggle-row";
       input.type = "checkbox";
-      input.checked = control.defaultValue;
+      input.checked = selectedValues[control.id];
     } else {
       row.className = "select-row";
       const select = document.createElement("select");
@@ -349,7 +376,7 @@ function renderEditableControls(resource) {
         choice.textContent = option.label;
         select.appendChild(choice);
       }
-      select.value = control.defaultValue;
+      select.value = selectedValues[control.id];
       row.appendChild(select);
     }
 
@@ -360,7 +387,7 @@ function renderEditableControls(resource) {
         : control.kind === "toggle"
           ? value ? "Activado" : "Desactivado"
           : control.options.find((option) => option.value === value)?.label || value;
-    output.textContent = format(control.defaultValue);
+    output.textContent = format(selectedValues[control.id]);
 
     const controlElement = control.kind === "select" ? row.querySelector("select") : input;
     controlElement.addEventListener("change", () => {
@@ -380,6 +407,7 @@ function renderEditableControls(resource) {
 
       selectedValues[control.id] = value;
       output.textContent = format(value);
+      updateSummary();
       redrawEditablePreview();
     });
     if (control.kind === "color" || control.kind === "range") {
@@ -393,6 +421,7 @@ function renderEditableControls(resource) {
           value < control.min || value > control.max) return;
         selectedValues[control.id] = value;
         output.textContent = format(value);
+        updateSummary();
         redrawEditablePreview();
       });
     }
@@ -400,8 +429,9 @@ function renderEditableControls(resource) {
     if (control.kind !== "select") row.appendChild(input);
     row.appendChild(output);
     field.append(label, row);
-    el.customizeControls.appendChild(field);
+    groups.find(group => group.controls.includes(control)).section.appendChild(field);
   }
+  updateSummary();
   el.customize.hidden = controls.length === 0;
 }
 
@@ -610,7 +640,7 @@ el.resetCustomize.addEventListener("click", () => {
   if (!selectedResource || el.customize.hidden) return;
 
   selectedValues = defaultEditableValues(selectedResource);
-  renderEditableControls(selectedResource);
+  renderEditableControls(selectedResource, { preserveGroups: true });
   redrawEditablePreview();
 });
 
