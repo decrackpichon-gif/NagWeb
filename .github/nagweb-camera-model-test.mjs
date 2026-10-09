@@ -595,6 +595,7 @@ const spatialScene={...targetScene,id:'spatial-target',sdPerspective:1000,elemen
  {id:'nested3d',type:'shape3d',anchor:true,parent:'shape',x:50,y:50},
  {id:'light',type:'light3d',x:50,y:50}
  ],sdCameraLookFrames:[{at:0,targetId:'glb',x:0,y:0,z:900},{at:100,targetId:'glb',x:0,y:0,z:900}]};
+const untouchedSpatialScene=JSON.stringify(spatialScene.elements);
 const spatialCfg=C.config(spatialScene),spatialCompiled=C.compile(spatialCfg,M,'linear');
 assert.deepEqual(Array.from(spatialCfg.targets,x=>x.id),['glb','shape']);
 assert.equal(C.targetEligible(spatialScene.elements[0],spatialScene),true);
@@ -617,5 +618,5 @@ const expected3D=C.lookAngles({x:0,y:0,z:0},moving3D);
 assert.ok(Math.abs(aimed3D.rotateX-expected3D.rotateX)<1e-9&&Math.abs(aimed3D.rotateY-expected3D.rotateY)<1e-9,'Look-at follows animated GLB center');
 const spatialMissing={...spatialCfg,targets:[]};
 assert.equal(C.lookTarget(spatialMissing,.5,M,'linear',{width:1000,height:800},spatialCompiled).z,900,'Removed GLB returns to authored fallback XYZ');
-assert.equal(JSON.stringify(spatialScene.elements),JSON.stringify(spatialScene.elements.slice()),'Camera target evaluation is read-only');
+assert.equal(JSON.stringify(spatialScene.elements),untouchedSpatialScene,'Camera target evaluation is read-only');
 console.log('Camera 3D targets: GLB/shape eligibility, spatial depth, animated XYZ, WebGL parity, CSS exclusion and fallback OK');
