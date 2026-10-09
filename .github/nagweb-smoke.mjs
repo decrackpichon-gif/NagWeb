@@ -56,6 +56,7 @@ import './nagweb-spread-model-test.mjs';
 import './nagweb-scatter-model-test.mjs';
 import {runMotionScatterSmoke} from './nagweb-motion-scatter-smoke.mjs';
 import {runMotionScatterPathsSmoke} from './nagweb-motion-scatter-paths-smoke.mjs';
+import {runMotionScatterDragSmoke} from './nagweb-motion-scatter-drag-smoke.mjs';
 import './nagweb-fan-model-test.mjs';
 import {runMotionFanSmoke} from './nagweb-motion-fan-smoke.mjs';
 import './nagweb-feed-model-test.mjs';
@@ -423,7 +424,7 @@ if(suite==='all'||suite==='sphere-wall'){await runMotionSphereSmoke(page);await 
 if(suite==='all'||suite==='sphere-cascade'){await runMotionSphereCascadeSmoke(page);await runMotionStreamPlacementSmoke(page,'sphere-cascade');await runMotionBatchImagesSmoke(page,['sphere-cascade']);}
 if(suite==='all'||suite==='totem-wall'){await runMotionTotemWallSmoke(page);await runMotionStreamPlacementSmoke(page,'totem-wall');await runMotionBatchImagesSmoke(page,['totem-wall']);}
 if(suite==='all'||suite==='parallax-totem'){await runMotionParallaxTotemSmoke(page);await runMotionStreamPlacementSmoke(page,'parallax-totem');await runMotionBatchImagesSmoke(page,['parallax-totem']);}
-if(suite==='all'||suite==='scatter-dial'){await runMotionScatterSmoke(page);await runMotionScatterPathsSmoke(page);await runMotionStreamPlacementSmoke(page,'scatter-dial');await runMotionBatchImagesSmoke(page,['scatter-dial']);}
+if(suite==='all'||suite==='scatter-dial'){await runMotionScatterSmoke(page);await runMotionScatterPathsSmoke(page);await runMotionScatterDragSmoke(page);await runMotionStreamPlacementSmoke(page,'scatter-dial');await runMotionBatchImagesSmoke(page,['scatter-dial']);}
 if(suite==='all'||suite==='fan-shuffle'){await runMotionFanSmoke(page);await runMotionStreamPlacementSmoke(page,'fan-shuffle');await runMotionBatchImagesSmoke(page,['fan-shuffle']);}
 if(suite==='all'||suite==='feed-scroll'){await runMotionFeedSmoke(page);await runMotionStreamPlacementSmoke(page,'feed-scroll');await runMotionBatchImagesSmoke(page,['feed-scroll']);}
 if(suite==='all'||suite==='collage-reel'){await runMotionCollageSmoke(page);await runMotionStreamPlacementSmoke(page,'collage-reel');await runMotionBatchImagesSmoke(page,['collage-reel']);}
