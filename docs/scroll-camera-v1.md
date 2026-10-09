@@ -501,3 +501,77 @@ Preview y exportación resuelven la misma trayectoria de mirada. Las pruebas en
 Chromium cubren activación sin salto, edición numérica, arrastre físico, historial,
 sincronización de campos, cambio real de orientación y paridad de la matriz
 exportada.
+
+## Renderizado real de objetos anclados (micro-etapa 2026-10-09)
+
+El renderizador de producción está en el HTML generado por `generateSite` de
+`index.html`: `build` crea el Group común que recibe formas o modelos, y
+`loadModel`/`fitGLTF` cargan GLB usando Three.js r128. El anclaje genérico
+`NAGWEB_3D_ANCHOR` no era el responsable de dibujar esos objetos.
+
+`js/nagweb-spatial-renderer.js` conecta ahora esos Groups mediante
+`bindThreeCamera` al evento `nagweb:spatial-camera`. El Director anuncia las
+stages habilitadas al terminar su instalación (`nagweb:spatial-ready`). La pose
+inicial se recupera del caché del puente; no requiere mover el scroll. El tercer
+argumento opcional de `bindThreeCamera(stage, camera, onState)` recibe también
+esa pose inicial, y los eventos de stages hijas no modifican cámaras padre.
+
+Cada stage tiene una PerspectiveCamera propia en unidades CSS px. El centro del
+ancla se toma de `offsetLeft/offsetTop` y se coloca respecto del centro de la
+stage, con el plano base en `z = -cssPerspective`. La escala deriva del ancho del
+ancla y del radio nativo. El objeto conserva su posición cuando cambia la pose;
+no se vuelve a proyectar sobre un rectángulo DOM transformado. Un GLB cargado
+asíncronamente conserva el mismo Group y se mide cuando tiene geometría.
+
+El ticker de renderizado existente dibuja una pasada por stage visible, con
+viewport y scissor, y restaura visibilidad y estado del renderer incluso ante
+excepciones. No lee scroll ni evalúa progreso: el Director sigue siendo su único
+dueño. La cámara GSAP anterior se usa exclusivamente para la pasada histórica.
+El picking para girar objetos utiliza la cámara y viewport correspondientes.
+Los bindings se liberan al reconectar y al abandonar definitivamente la página;
+se conservan durante pagehide persistido para permitir bfcache.
+
+El puente vuelve a publicar si cambia el tamaño de la stage, aunque la pose no
+cambie. Esto evita dejar FOV/aspect desactualizados después de un resize.
+
+### Validación reproducible
+
+Requiere Node, Three.js 0.128.0, GSAP 3.12.5 y Playwright 1.62.1 para las pruebas;
+no agrega dependencias al sitio exportado. En un entorno de prueba separado:
+
+```sh
+npm install --prefix work/test-deps --no-save three@0.128.0 gsap@3.12.5 playwright@1.62.1
+# Agregar work/test-deps/node_modules a NODE_PATH para ambas pruebas.
+node tests/spatial-renderer.integration.cjs
+node tests/spatial-renderer.browser.cjs
+```
+
+Playwright necesita Chromium instalado. `NAGWEB_BROWSER` permite indicar el
+Chrome/Chromium local. La prueba de integración también acepta la ruta al build
+UMD r128 de Three.js como primer argumento. Opcionalmente,
+`NAGWEB_TEST_VENDOR_DIR` apunta a un directorio con `three.cjs`, `GLTFLoader.js`,
+`gsap.js` y `ScrollTrigger.js`; la prueba del navegador los sirve localmente.
+
+Pruebas realizadas: geometrías/cámaras reales, replay inicial, aislamiento entre
+stages, GLB mínimo real a través de GLTFLoader, diseño y exportación generados,
+scrub manual 0→100%, resize sin cambio de pose, reduced-motion, offscreen,
+reconexión/teardown, restauración ante excepción y sintaxis de scripts inline.
+La prueba del navegador usa WebGL de Chrome con SwiftShader. Las capturas y HTML
+de prueba se guardan en `work/` y no se versionan.
+
+### Límites de esta micro-etapa
+
+- Participan `shape3d` con `anchor:true` de escenas con cámara espacial habilitada.
+  Objetos sin ancla, escenas sin cámara, horizontales y luces conservan su ruta
+  anterior. No se añade una cámara global para todo el sitio.
+- Los objetos espaciales se dibujan después del composer existente: no reciben
+  bloom. Las luces de escena todavía no convierten sus posiciones/distancias a
+  unidades CSS px; la iluminación no tiene paridad completa.
+- Se conserva la orientación/movimiento local del Group y el tamaño del ancla.
+  No se integra aún su timing individual, ni se añaden objetos 3D como objetivos
+  de «Mirar hacia». El marco DOM de edición permanece en coordenadas del diseño.
+- No se implementa oclusión mutua DOM/WebGL ni se valida aquí la combinación con
+  transiciones de escena, inercia, todos los materiales, modelos externos o
+  hardware móvil. Los GLB con animaciones siguen el comportamiento anterior.
+- Esta etapa no despliega en Vercel ni modifica main. `vercel.json` mantiene
+  deshabilitados los despliegues de `feat/scroll-camera-v1`.
