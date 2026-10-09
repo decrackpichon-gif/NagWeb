@@ -1747,6 +1747,62 @@ export async function runCameraBrowserSmoke(page){
   assert.equal(await page.$eval('[data-camera-scene-object]',elements=>elements.length),1,'Temporary type examples are removed after the footprint test');
   console.log('Camera scene footprints: typed text/image/container guides and schematic sizes on top/front/side OK');
 
+  // Micro-etapa 51: inspect an object's actual XYZ and distance to camera without editing anything.
+  const inspectBase=await page.evaluate(()=>({
+   elements:JSON.stringify(sec().elements),frames:JSON.stringify(sec().sdCameraFrames),
+   looks:JSON.stringify(sec().sdCameraLookFrames),history:history.length
+  }));
+  const inspectRead=()=>page.evaluate(()=>{
+   const box=document.querySelector('[data-camera-object-inspector]'),
+    marker=document.querySelector('[data-camera-scene-object-pick="0"]'),
+    ring=document.querySelector('[data-camera-scene-object-active]');
+   return {
+    selected:box?.querySelector('[data-camera-object-select]')?.value??null,
+    xyz:box?.querySelector('[data-camera-object-xyz]')?.textContent||'',
+    distance:box?.querySelector('[data-camera-object-distance]')?.textContent||'',
+    offset:box?.querySelector('[data-camera-object-offset]')?.textContent||'',
+    active:ring?.style.display!=='none',hit:marker?.getAttribute('pointer-events'),
+    elements:JSON.stringify(sec().elements),frames:JSON.stringify(sec().sdCameraFrames),
+    looks:JSON.stringify(sec().sdCameraLookFrames),history:history.length
+   };
+  });
+  await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',0));
+  assert.equal((await inspectRead()).selected,'','Inspector starts without accidental selection');
+  await page.select('[data-camera-object-select]','0');
+  let inspected=await inspectRead();
+  assert.equal(inspected.selected,'0','Object can be selected from accessible dropdown');
+  assert.ok(inspected.xyz.includes('X 250')&&inspected.xyz.includes('Z 500'),'Inspector displays the actual element XYZ');
+  assert.ok(inspected.distance.includes('559 px'),'Inspector computes Euclidean XYZ distance to the camera');
+  assert.equal(inspected.hit,'all','Map object centre can be clicked independently of its outline');
+  assert.equal(inspected.active,true,'Selected object receives visible highlight');
+  await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',.5));
+  await page.waitForFunction(()=>document.querySelector('[data-camera-object-xyz]')?.textContent.includes('X 300'));
+  inspected=await inspectRead();
+  assert.ok(inspected.xyz.includes('X 300')&&inspected.xyz.includes('Z 550'),'Inspector follows object animated X and Z');
+  assert.ok(inspected.distance&&!inspected.distance.includes('559 px'),'Inspector distance follows the current camera and object positions');
+  assert.equal(inspected.history,inspectBase.history,'Scrubbing and inspecting adds no undo snapshot');
+  assert.equal(inspected.elements,inspectBase.elements,'Inspection does not edit scene objects');
+  assert.equal(inspected.frames,inspectBase.frames,'Inspection does not edit camera keyframes');
+  assert.equal(inspected.looks,inspectBase.looks,'Inspection does not edit look targets');
+  await page.select('[data-camera-object-select]','');
+  assert.equal((await inspectRead()).selected,'','Inspector supports clearing selection');
+  await page.$eval('[data-camera-map]',el=>el.scrollIntoView({block:'center'}));
+  const hit=await page.$eval('[data-camera-scene-object-pick="0"]',el=>{
+   const r=el.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2};
+  });
+  await page.mouse.click(hit.x,hit.y);
+  await page.waitForFunction(()=>document.querySelector('[data-camera-object-select]')?.value==='0');
+  inspected=await inspectRead();
+  assert.equal(inspected.selected,'0','Clicking object centre on spatial map selects it');
+  assert.equal(inspected.history,inspectBase.history,'Direct map picking remains read-only');
+  await page.click('[data-camera-scene-objects-toggle]');
+  assert.equal(await page.$eval('[data-camera-object-inspector]',els=>els.length),0,'Hiding objects hides inspection panel');
+  await page.click('[data-camera-scene-objects-toggle]');
+  assert.equal((await inspectRead()).selected,'','Hidden object selection is not resurrected');
+  await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',0));
+  console.log('Camera object inspector: direct map click, dropdown, live XYZ/distance, selection reset and no edits OK');
+
+
 
   await page.click('[data-camera-look-jump="0"]');
   await page.waitForFunction(()=>document.querySelector('[data-camera-look-target]')?.dataset.cameraLookAt==='0');
