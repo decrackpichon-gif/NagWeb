@@ -855,6 +855,11 @@ assert.match(lottiePreviewDocument, /id="forward5" aria-label="Avanzar cinco seg
 assert.match(lottiePreviewDocument, /id="frame" aria-live="off"/);
 assert.match(lottiePreviewDocument, /id="time" aria-label="Tiempo transcurrido y duración total/);
 assert.match(lottiePreviewDocument, /id="frame-jump" type="number" min="1" step="1"/);
+assert.match(lottiePreviewDocument, /id="bookmarks"/);
+assert.match(lottiePreviewDocument, /id="save-mark"/);
+assert.match(lottiePreviewDocument, /id="mark-list"/);
+assert.match(lottiePreviewDocument, /id="go-mark"/);
+assert.match(lottiePreviewDocument, /id="delete-mark"/);
 assert.match(lottiePreviewDocument, /id="progress" for="seek"/);
 assert.equal(buildLottieBrowserPreview(lottieEditableResource, {}, {
   playerUrl: "javascript:alert(1)"
@@ -1178,6 +1183,22 @@ const fakeFrameJump = {
   value: "1", max: "",
   addEventListener(type, handler) { fakeUiActions["frame-jump:" + type] = handler; }
 };
+const fakeBookmarkAction = (id) => ({
+  disabled: false,
+  addEventListener(type, handler) { fakeUiActions[id + ":" + type] = handler; }
+});
+const fakeSaveMark = fakeBookmarkAction("save-mark");
+const fakeGoMark = fakeBookmarkAction("go-mark");
+const fakeDeleteMark = fakeBookmarkAction("delete-mark");
+const fakeMarkCount = { textContent: "" };
+const fakeMarkList = {
+  value: "", items: [], disabled: false,
+  replaceChildren(...items) {
+    this.items = items;
+    this.value = items[0]?.value || "";
+  },
+  addEventListener(type, handler) { fakeUiActions["mark-list:" + type] = handler; }
+};
 const fakeLottieEvents = {};
 const fakeStatus = { textContent: "" };
 const fakeLottieInstance = {
@@ -1221,7 +1242,16 @@ runInNewContext(lottieRuntimeScript, {
       if (id === "progress") return fakeProgressOutput;
       if (id === "time") return fakeTimeOutput;
       if (id === "frame-jump") return fakeFrameJump;
+      if (id === "save-mark") return fakeSaveMark;
+      if (id === "go-mark") return fakeGoMark;
+      if (id === "delete-mark") return fakeDeleteMark;
+      if (id === "mark-count") return fakeMarkCount;
+      if (id === "mark-list") return fakeMarkList;
       return {};
+    },
+    createElement(tag) {
+      assert.equal(tag, "option");
+      return { value: "", textContent: "" };
     }
   },
   matchMedia() { return { matches: false }; }
@@ -1423,3 +1453,58 @@ assert.equal(fakeLottieInstance.currentFrame, 5999,
   "Five-second skip clamps at end");
 assert.equal(fakeSkipForward.disabled, true);
 fakeLottieInstance.totalFrames = 12;
+
+assert.equal(fakeMarkCount.textContent, "Marcadores (0/8)");
+assert.equal(fakeGoMark.disabled, true);
+assert.equal(fakeDeleteMark.disabled, true);
+assert.equal(typeof fakeUiActions["save-mark:click"], "function");
+assert.equal(typeof fakeUiActions["go-mark:click"], "function");
+assert.equal(typeof fakeUiActions["delete-mark:click"], "function");
+fakeLottieInstance.totalFrames = 6000;
+fakeLottieInstance.currentFrame = 2700;
+fakeLottieInstance.pause();
+fakeUiActions["save-mark:click"]();
+assert.equal(fakeMarkCount.textContent, "Marcadores (1/8)");
+assert.equal(fakeMarkList.value, "2700");
+assert.match(fakeMarkList.items[0].textContent, /Fot\. 2701 · 1:30\.00/);
+fakeUiActions["save-mark:click"]();
+assert.equal(fakeMarkList.items.length, 1, "Duplicate bookmarks are deduplicated");
+fakeLottieInstance.currentFrame = 150;
+fakeUiActions["save-mark:click"]();
+assert.deepEqual(fakeMarkList.items.map(o => o.value), ["150", "2700"],
+  "Bookmarks stay sorted by frame");
+fakeLottieInstance.currentFrame = 42;
+fakeMarkList.value = "2700";
+fakeUiActions["go-mark:click"]();
+assert.equal(fakeLottieInstance.currentFrame, 2700);
+assert.equal(fakeLottieInstance.isPaused, true, "Paused bookmark navigation remains paused");
+fakeLottieInstance.play();
+fakeMarkList.value = "150";
+fakeUiActions["go-mark:click"]();
+assert.equal(fakeLottieInstance.currentFrame, 150);
+assert.equal(fakeLottieInstance.isPaused, false, "Playing bookmark navigation resumes");
+fakeUiActions["delete-mark:click"]();
+assert.equal(fakeMarkList.items.length, 1);
+assert.equal(fakeMarkList.items[0].value, "2700");
+assert.equal(fakeMarkCount.textContent, "Marcadores (1/8)");
+fakeMarkList.value = "999";
+const bookmarkCallCount = lottieCalls.length;
+fakeUiActions["go-mark:click"]();
+assert.equal(lottieCalls.length, bookmarkCallCount,
+  "Forged bookmark selection cannot seek");
+for (const index of [100, 200, 300, 400, 500, 600, 700]) {
+  fakeLottieInstance.currentFrame = index;
+  fakeUiActions["save-mark:click"]();
+}
+assert.equal(fakeMarkCount.textContent, "Marcadores (8/8)");
+assert.equal(fakeSaveMark.disabled, true, "Marker count is capped at eight");
+fakeLottieInstance.currentFrame = 800;
+fakeUiActions["save-mark:click"]();
+assert.equal(fakeMarkList.items.length, 8, "Ninth bookmark cannot be stored");
+fakeMarkList.value = "2700";
+fakeUiActions["delete-mark:click"]();
+assert.equal(fakeSaveMark.disabled, false, "Deleting bookmark frees one slot");
+assert.equal(fakeMarkList.items.length, 7);
+// Editing preview-only markers must never add fields to NagWeb Apply values.
+assert.deepEqual(editedLottieEnvelope.descriptor.payload.speed, 2);
+assert.equal(editedLottieEnvelope.descriptor.payload.loop, false);

@@ -65,6 +65,14 @@ html,body{width:100%;height:100%;margin:0;background:#f4f5f7;font-family:system-
 main{width:100%;height:calc(100% - 126px);display:grid;place-items:center}
 #animation{width:min(90%,340px);height:min(90%,340px);display:grid;place-items:center}
 #status{position:absolute;top:10px;left:12px;font-size:11px;color:#69717c}
+#bookmarks{position:absolute;top:8px;right:8px;z-index:2;max-width:calc(100% - 16px);font-size:11px;color:#344051}
+#bookmarks summary{width:max-content;max-width:100%;margin-left:auto;cursor:pointer;list-style:none;border:1px solid #c3c8d0;background:#fff;border-radius:7px;padding:6px 10px}
+#bookmarks summary::-webkit-details-marker{display:none}
+#bookmark-menu{margin-top:5px;display:flex;flex-wrap:wrap;gap:5px;justify-content:flex-end;align-items:center;padding:8px;border:1px solid #c3c8d0;border-radius:9px;background:#fff;box-shadow:0 6px 20px #0002}
+#bookmark-menu button,#mark-list{font:11px system-ui;border:1px solid #c3c8d0;border-radius:7px;background:#fff;color:#263445;padding:6px}
+#bookmark-menu button{cursor:pointer}
+#bookmark-menu button:disabled{opacity:.45;cursor:not-allowed}
+#mark-list{flex:1;min-width:130px;max-width:210px}
 #transport{position:absolute;bottom:0;left:0;right:0;min-height:116px;box-sizing:border-box;padding:8px 12px;display:grid;grid-template-columns:repeat(6,auto) minmax(0,1fr);grid-template-areas:"play restart back5 prev next forward5 frame" "seek seek seek seek seek seek progress" "jump jump jump time time time time";align-items:center;gap:7px;background:#fff;border-top:1px solid #dce1e7}
 #transport button{border:1px solid #c3c8d0;background:#fff;color:#111;border-radius:8px;padding:7px 10px;cursor:pointer}
 #transport button:disabled{opacity:.45;cursor:not-allowed}
@@ -85,6 +93,15 @@ main{width:100%;height:calc(100% - 126px);display:grid;place-items:center}
 </style></head><body>
 <main><div id="animation" role="img" aria-label="Vista previa de animación Lottie"></div></main>
 <span id="status">Cargando animación…</span>
+<details id="bookmarks">
+  <summary id="mark-count">Marcadores (0/8)</summary>
+  <div id="bookmark-menu" aria-label="Marcadores temporales de esta vista previa">
+    <button type="button" id="save-mark" title="Guardar el fotograma actual">+ Guardar</button>
+    <select id="mark-list" aria-label="Elegir un fotograma guardado"></select>
+    <button type="button" id="go-mark" disabled>Ir</button>
+    <button type="button" id="delete-mark" disabled>Eliminar</button>
+  </div>
+</details>
 <div id="transport" aria-label="Controles de reproducción Lottie">
   <button type="button" id="play">Reproducir</button>
   <button type="button" id="restart">Reiniciar</button>
@@ -112,6 +129,11 @@ const seek = document.getElementById("seek");
 const progress = document.getElementById("progress");
 const time = document.getElementById("time");
 const frameJump = document.getElementById("frame-jump");
+const saveMark = document.getElementById("save-mark");
+const markList = document.getElementById("mark-list");
+const goMark = document.getElementById("go-mark");
+const deleteMark = document.getElementById("delete-mark");
+const markCount = document.getElementById("mark-count");
 try {
   if (!window.lottie?.loadAnimation) throw new Error("El reproductor local no está disponible");
   const animationData = ${animationData};
@@ -180,6 +202,29 @@ try {
     back5.disabled = index === 0;
     forward5.disabled = index === count - 1;
   };
+  // These markers belong only to the open preview, not to resource metadata.
+  const markedFrames = [];
+  const maxMarkers = 8;
+  const refreshMarkers = (preferredFrame = null) => {
+    const selected = preferredFrame === null ? markList.value : String(preferredFrame);
+    const options = markedFrames.map((index) => {
+      const option = document.createElement("option");
+      option.value = String(index);
+      option.textContent = "Fot. " + (index + 1) +
+        " · " + formatTime(index / frameRate);
+      return option;
+    });
+    markList.replaceChildren(...options);
+    markList.value = markedFrames.includes(Number(selected)) && selected !== ""
+      ? selected : options[0]?.value || "";
+    const validSelection = markList.value !== "" &&
+      markedFrames.includes(Number(markList.value));
+    markCount.textContent = "Marcadores (" + markedFrames.length + "/" + maxMarkers + ")";
+    saveMark.disabled = markedFrames.length >= maxMarkers || frameCount() === 0;
+    goMark.disabled = !validSelection;
+    deleteMark.disabled = !validSelection;
+  };
+  refreshMarkers();
   const syncFrame = () => {
     const total = Number(instance.totalFrames);
     const current = Number(instance.currentFrame);
@@ -289,6 +334,35 @@ try {
     sync();
   });
   restart.addEventListener("click", () => seekTo(0));
+  saveMark.addEventListener("click", () => {
+    const count = frameCount();
+    const current = Number(instance.currentFrame);
+    if (!count || !Number.isFinite(current)) return;
+    const index = Math.max(0, Math.min(count - 1, Math.floor(current)));
+    if (!markedFrames.includes(index)) {
+      if (markedFrames.length >= maxMarkers) return;
+      markedFrames.push(index);
+      markedFrames.sort((a, b) => a - b);
+    }
+    refreshMarkers(index);
+  });
+  markList.addEventListener("change", () => refreshMarkers());
+  goMark.addEventListener("click", () => {
+    const text = markList.value;
+    const target = Number(text);
+    if (!text || !markedFrames.includes(target)) return;
+    const wasPlaying = !instance.isPaused;
+    instance.goToAndStop(target, true);
+    if (wasPlaying) instance.play();
+    syncFrame();
+    sync();
+  });
+  deleteMark.addEventListener("click", () => {
+    const target = Number(markList.value);
+    if (markList.value === "" || !markedFrames.includes(target)) return;
+    markedFrames.splice(markedFrames.indexOf(target), 1);
+    refreshMarkers();
+  });
   window.addEventListener("message", (event) => {
     if (event.source !== window.parent) return;
     const message = event.data;
@@ -333,6 +407,10 @@ try {
   forward5.disabled = true;
   seek.disabled = true;
   frameJump.disabled = true;
+  saveMark.disabled = true;
+  markList.disabled = true;
+  goMark.disabled = true;
+  deleteMark.disabled = true;
 }
 </script></body></html>`;
 }
