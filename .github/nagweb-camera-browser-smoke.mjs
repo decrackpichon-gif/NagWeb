@@ -707,6 +707,14 @@ export async function runCameraBrowserSmoke(page){
        current:n.dataset.cameraOverviewPlaneCurrent,text:n.textContent})),
       delta:root?.querySelector('[data-camera-overview-plane-delta]')?.dataset.cameraOverviewPlaneDeltaValue??null,
       unavailable:!!root?.querySelector('[data-camera-overview-plane-delta-unavailable]'),
+      meters:Array.from(root?.querySelectorAll('[data-camera-overview-plane-meter]')||[]).map(m=>({
+       plane:m.dataset.cameraOverviewPlaneMeter,status:m.dataset.cameraOverviewPlaneMeterStatus,
+       hidden:m.getAttribute('aria-hidden'),pointer:m.style.pointerEvents,
+       width:parseFloat(m.querySelector('[data-camera-overview-plane-fill]')?.style.width||'NaN'),
+       fill:m.querySelector('[data-camera-overview-plane-fill]')?.style.background||'',
+       marker:!!m.querySelector('[data-camera-overview-plane-tiny]')
+      })),
+      tinyNote:!!root?.querySelector('[data-camera-overview-plane-tiny-note]'),
       text:root?.textContent||''};
    });
    const unionState=()=>page.evaluate(()=>{
@@ -750,6 +758,12 @@ export async function runCameraBrowserSmoke(page){
    assert.equal(planes.cells[1].value,'','Edge-on frontal view does not invent coverage');
    assert.ok(planes.unavailable&&planes.text.includes('No evaluable'),'Unavailable plane cannot produce a false delta');
    assert.ok(planes.text.includes('No compara volumen, oclusión ni visibilidad 3D'),'Differences describe only projected geometry');
+   assert.deepEqual(planes.meters.map(m=>m.plane),['top','front'],'Two compact coverage meters follow top/front order');
+   assert.equal(planes.meters[0].status,'measured','100% area has a measured meter');
+   assert.equal(planes.meters[0].width,100,'Full shared top view fills 100% of its track');
+   assert.equal(planes.meters[1].status,'unavailable','Edge-on frontal coverage has an unavailable meter');
+   assert.ok(Number.isNaN(planes.meters[1].width)&&!planes.meters[1].marker,'Invalid projection does not fake a filled bar');
+   assert.ok(planes.meters.every(m=>m.hidden==='true'&&m.pointer==='none'),'Meters are decorative and cannot intercept camera editing');
    let exclusive=await exclusiveState();
    assert.equal(exclusive.enabled,false,'Exclusive regions default off to keep the minimap uncluttered');
    assert.equal(exclusive.regions.length,0);
@@ -795,6 +809,8 @@ export async function runCameraBrowserSmoke(page){
    planes=await planesState();
    assert.equal(planes.cells[0].current,'false','Top is no longer the current viewport');
    assert.equal(planes.cells[1].current,'true','Frontal is clearly marked as the active map');
+   assert.equal(planes.meters[0].width,100,'Switching views keeps the same normalized top bar');
+   assert.equal(planes.meters[1].status,'unavailable','Switching views does not invent frontal coverage');
    assert.ok(Math.abs(+planes.cells[0].value-100)<.001&&planes.cells[1].value==='','Available top result stays visible when switching to front');
   assert.equal(cov.polygon,false,'Edge-on geometry has no misleading filled area');
    exclusive=await exclusiveState();
@@ -828,6 +844,8 @@ export async function runCameraBrowserSmoke(page){
    planes=await planesState();
    assert.equal(planes.region,'shared','Default two-plane metric is shared coverage');
    assert.equal(+planes.cells[0].value,0,'Separate cones have zero shared top-plane area');
+   assert.equal(planes.meters[0].width,0,'Zero projected coverage has zero bar width');
+   assert.equal(planes.meters[0].marker,false,'Exactly zero area must not have the presence marker');
    await page.select('[data-camera-overview-compare-focus]','a');
    focus=await focusState();
    assert.equal(focus.value,'a','Exclusive A focus is selected');
@@ -840,6 +858,7 @@ export async function runCameraBrowserSmoke(page){
    planes=await planesState();
    assert.equal(planes.region,'a','Plane comparison follows selected exclusive A region');
    assert.ok(+planes.cells[0].value>0,'Top view measures exclusive A against combined area');
+   assert.equal(planes.meters[0].fill,'rgb(34, 211, 238)','Exclusive A uses its cyan focus color in the meter');
    detail=await focusDetailState();
    assert.equal(detail.kind,'a','Exclusive A focus displays A context');
    assert.ok(detail.content.includes('100,0% del encuadre A')&&detail.content.includes('% del área combinada')&&detail.content.includes('no se superpone con B'),'Exclusive A clarifies the two area denominators');
@@ -852,6 +871,7 @@ export async function runCameraBrowserSmoke(page){
    assert.equal(union.parts.find(p=>p.kind==='b').opacity,1,'Focus on B also highlights its share in the bar');
    planes=await planesState();
    assert.equal(planes.region,'b','Plane comparison follows selected exclusive B region');
+   assert.equal(planes.meters[0].fill,'rgb(244, 114, 182)','Exclusive B uses its pink focus color in the meter');
    detail=await focusDetailState();
    assert.equal(detail.kind,'b','Exclusive B focus displays B context');
    assert.ok(detail.content.includes('100,0% del encuadre B')&&detail.content.includes('% del área combinada')&&detail.content.includes('no se superpone con A'),'Exclusive B clarifies the two area denominators');
@@ -876,8 +896,11 @@ export async function runCameraBrowserSmoke(page){
    planes=await planesState();
    assert.equal(planes.region,'shared','Pitched camera keeps common region as default metric');
    assert.ok(planes.cells.every(c=>c.value!==''&&Number.isFinite(+c.value)),'Tilting the camera allows measurable X/Z and X/Y projections');
+   assert.ok(planes.meters.every((m,i)=>m.status==='measured'&&Math.abs(m.width- +planes.cells[i].value)<.001),'Both meter fills are exactly proportional to measured coverage');
+   assert.equal(planes.tinyNote,false,'Ordinary coverage has no unnecessary marker explanation');
    assert.ok(planes.delta!==null&&Number.isFinite(+planes.delta),'Both valid projections show a finite difference in percentage points');
    assert.ok(Math.abs(+planes.delta-(+planes.cells[1].value- +planes.cells[0].value))<.000001,'Frontal minus top delta uses matching area denominators');
+   assert.ok(planes.text.includes('Mayor proporción en X/Z')||planes.text.includes('Mayor proporción en X/Y')||planes.text.includes('Variación menor a 0,1 punto'),'Plain-language reading matches measurable difference');
    await page.select('[data-camera-map-plane]','front');
    planes=await planesState();
    assert.equal(planes.cells[1].current,'true','Switching planes changes the current marker but not measurements');
@@ -901,7 +924,7 @@ export async function runCameraBrowserSmoke(page){
    assert.equal(exclusive.enabled,false,'Exclusive overlay can be disabled again');
    assert.equal(exclusive.regions.length,0,'Hiding exclusive areas preserves existing cone visualization');
    assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'Coverage calculations and UI do not add undo snapshots');
-  console.log('Camera minimap FOV overlap/union: top/front comparison, active plane, unavailable views, finite deltas and non-destructive restore OK');
+  console.log('Camera minimap FOV overlap/union: scaled top/front coverage bars, tiny marker semantics, and unchanged editor frames OK');
 
 
 
