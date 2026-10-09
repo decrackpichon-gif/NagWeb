@@ -33,6 +33,18 @@ class Element {
   setAttribute(name, value) { this[name] = value; }
   removeAttribute(name) { delete this[name]; }
   addEventListener(name, callback) { this.events[name] = callback; }
+  focus() { context.document.activeElement = this; }
+  contains(element) { return this === element || this.children.some(child => child.contains(element)); }
+  set hidden(value) {
+    this.isHidden = value;
+    if (value && this.contains(context.document.activeElement)) context.document.activeElement = null;
+  }
+  get hidden() { return this.isHidden; }
+  set disabled(value) {
+    this.isDisabled = value;
+    if (value && context.document.activeElement === this) context.document.activeElement = null;
+  }
+  get disabled() { return this.isDisabled; }
   querySelectorAll(tag) {
     return this.children.flatMap(child => [ ...(child.tag === tag ? [child] : []), ...child.querySelectorAll(tag) ]);
   }
@@ -59,7 +71,9 @@ let sections = el.customizeControls.querySelectorAll("details");
 assert.deepEqual(sections.map(s => s.open), [true, false, false]);
 sections[0].open = false;
 sections[2].open = true;
-const inputs = el.customizeControls.querySelectorAll("input");
+const editableInputs = () => el.customizeControls.querySelectorAll("input")
+  .filter(input => !input.dataset.changedOnly);
+const inputs = editableInputs();
 inputs[1].value = "32";
 inputs[1].events.input();
 inputs[2].checked = false;
@@ -119,7 +133,7 @@ inputs[1].events.input();
 select.value = "reverse";
 select.events.change();
 context.renderEditableControls(resource, { preserveGroups: true });
-assert.equal(el.customizeControls.querySelectorAll("input")[1].value, "32");
+assert.equal(editableInputs()[1].value, "32");
 assert.equal(el.customizeControls.querySelector("select").value, "reverse");
 for (const control of controls) values[control.id] = control.defaultValue;
 context.renderEditableControls(resource, { preserveGroups: true });
@@ -127,6 +141,74 @@ sections = el.customizeControls.querySelectorAll("details");
 assert.deepEqual(sections.map(s => s.open), [false, false, true]);
 assert.match(el.customizeControls.children[0].textContent, /0 modificados/);
 assert.equal(el.resetCustomize.disabled, true);
-assert.equal(el.customizeControls.querySelectorAll("input")[1].value, "24");
+assert.equal(editableInputs()[1].value, "24");
 context.renderEditableControls(resource);
 assert.deepEqual(el.customizeControls.querySelectorAll("details").map(s => s.open), [true, false, false]);
+
+// Filtering is presentation only: no preview redraw, no value loss or DOM rebuild.
+let filter = el.customizeControls.querySelectorAll("input").find(input => input.dataset.changedOnly);
+sections = el.customizeControls.querySelectorAll("details");
+const editedInputs = editableInputs();
+const beforeFilterRedraws = redraws;
+assert.equal(filter.checked, false);
+filter.checked = true;
+filter.events.change();
+assert.ok(sections.every(section => section.hidden));
+assert.equal(el.customizeControls.querySelectorAll("p")[1].hidden, false);
+assert.equal(redraws, beforeFilterRedraws);
+filter.checked = false;
+filter.events.change();
+assert.ok(sections.every(section => !section.hidden));
+sections[1].open = true;
+editedInputs[1].value = "40";
+editedInputs[1].events.input();
+const animationSelect = sections[2].querySelector("select");
+animationSelect.value = "reverse";
+animationSelect.events.change();
+const beforeValues = { ...values };
+const beforeChangedFilterRedraws = redraws;
+filter.checked = true;
+filter.events.change();
+assert.deepEqual(values, beforeValues);
+assert.equal(redraws, beforeChangedFilterRedraws);
+assert.deepEqual(sections.map(section => section.hidden), [true, false, false]);
+assert.equal(editedInputs[1], editableInputs()[1]);
+assert.equal(sections[1].children[1].hidden, false);
+assert.equal(sections[2].children[1].hidden, true, "Unchanged toggles are hidden within a changed category");
+assert.equal(sections[2].children[2].hidden, false);
+context.document.activeElement = sections[2].querySelector("button");
+sections[2].querySelector("button").events.click();
+assert.equal(sections[2].hidden, true);
+assert.equal(context.document.activeElement, filter);
+assert.equal(values.size, 40);
+context.document.activeElement = editedInputs[1];
+editedInputs[1].value = "24";
+editedInputs[1].events.input();
+assert.equal(context.document.activeElement, filter, "Hidden focused controls return focus to the filter");
+assert.equal(el.customizeControls.querySelectorAll("p")[1].hidden, false);
+filter.checked = false;
+filter.events.change();
+editedInputs[0].value = "#AABBCC";
+editedInputs[0].events.input();
+filter.checked = true;
+filter.events.change();
+assert.equal(sections[0].hidden, true, "Color case alone does not count as a modification");
+filter.checked = false;
+filter.events.change();
+editedInputs[1].value = "48";
+editedInputs[1].events.input();
+filter.checked = true;
+filter.events.change();
+context.renderEditableControls(resource, { preserveGroups: true });
+filter = el.customizeControls.querySelectorAll("input").find(input => input.dataset.changedOnly);
+assert.equal(filter.checked, true);
+assert.equal(values.size, 48);
+assert.deepEqual(el.customizeControls.querySelectorAll("details").map(section => section.open), [true, true, false]);
+for (const control of controls) values[control.id] = control.defaultValue;
+context.renderEditableControls(resource, { preserveGroups: true });
+assert.equal(el.customizeControls.querySelectorAll("input").find(input => input.dataset.changedOnly).checked, true);
+assert.ok(el.customizeControls.querySelectorAll("details").every(section => section.hidden));
+assert.equal(el.customizeControls.querySelectorAll("p")[1].hidden, false);
+context.renderEditableControls(resource);
+assert.equal(el.customizeControls.querySelectorAll("input").find(input => input.dataset.changedOnly).checked, false);
+assert.ok(el.customizeControls.querySelectorAll("details").every(section => !section.hidden));

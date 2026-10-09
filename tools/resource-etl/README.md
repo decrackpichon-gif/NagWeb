@@ -855,3 +855,14 @@ contadores y vista previa sin reconstruir el panel. Conserva los cambios de
 las demás categorías, las secciones abiertas, el foco y el desplazamiento.
 La restauración global sigue disponible. Las pruebas offline verifican el
 aislamiento entre categorías, tipos de controles, estados y eventos obsoletos.
+
+## Micro-etapa 45: ver solo ajustes modificados
+
+El filtro «Mostrar solo ajustes modificados» oculta los controles que mantienen
+su valor original y las categorías sin cambios. Los contadores siguen mostrando
+el total del recurso. Si no quedan cambios, el panel indica cómo volver a ver
+todos los ajustes. Cambiar la vista no altera valores ni reinicia la vista previa.
+Conserva las secciones abiertas y el filtro al restaurar valores; abrir otro
+recurso vuelve a la vista completa. Si un control enfocado queda oculto al
+restaurarlo, el foco vuelve al filtro. Las pruebas verifican filtrado, restauración
+por categoría y global, estados, equivalencia de colores y conservación de valores.
