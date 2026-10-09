@@ -1897,7 +1897,7 @@ export async function runCameraBrowserSmoke(page){
   const old3DElements=await page.evaluate(()=>JSON.stringify(sec().elements));
   await page.evaluate(()=>{
    sec().elements.push(mkEl('shape3d',{id:'camera-glb-look-target',name:'Modelo GLB anclado',
-    anchor:true,x:70,y:40,w:20,h:20,offZ:3,shape:'model',sdEnter:'none',
+    anchor:true,x:70,y:40,w:20,h:20,offZ:3,shape:'model',sdEnter:'none',sdKeyframesEnabled:true,
     sdKeyframes:[{at:0,x:0,y:0,z:0,ease:'linear'},{at:100,x:60,y:20,z:80}]}));
    renderPane();
   });
