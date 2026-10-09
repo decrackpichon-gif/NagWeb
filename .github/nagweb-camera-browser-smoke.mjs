@@ -755,7 +755,7 @@ export async function runCameraBrowserSmoke(page){
       tinyNote:!!root?.querySelector('[data-camera-overview-plane-tiny-note]'),
       severity:root?.querySelector('[data-camera-overview-plane-severity]')?.dataset.cameraOverviewPlaneSeverityLevel??null,
       orientation:(()=>{
-       const el=root?.querySelector('[data-camera-overview-plane-orientation]');
+       const el=document.querySelector('[data-camera-overview-technical] [data-camera-overview-plane-orientation]');
        return el?{dx:+el.dataset.cameraOverviewPlaneRotationX,dy:+el.dataset.cameraOverviewPlaneRotationY,text:el.textContent}:null;
       })(),
       text:root?.textContent||''};
