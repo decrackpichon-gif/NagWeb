@@ -122,7 +122,7 @@ paneElementNew=function(){
  timing+=cRow('Giro / tamaño',cNum('el.sdRotate',e.sdRotate,'°',{step:5,min:-720,max:720})+cNum('el.sdScale',e.sdScale,'%',{step:5,min:10,max:500}));
  timing+='<p class="hint gh">En movimiento: − horizontal va a la izquierda y + a la derecha; − vertical va hacia arriba y + hacia abajo. Ejemplo: 20% → 55% hace que empiece cerca del 20% y complete su recorrido alrededor del 55%.</p>';
  if(raw.type==='shape3d'){
-  timing+='<p class="hint gh">'+(raw.anchor!==false?(s.sdCameraEnabled?'Este objeto 3D está anclado al lienzo: sigue el movimiento del Director y también la cámara de escena mediante su ancla DOM. La cámara de Three.js conserva su orientación propia.':'Este objeto 3D está anclado al lienzo: el Director mueve su ancla, así que el objeto Three.js la sigue.'):'Este 3D no está anclado al lienzo. Activá su opción de anclaje si querés dirigirlo desde esta línea de tiempo.')+'</p>';
+  timing+='<p class="hint gh">'+(raw.anchor!==false?(s.sdCameraEnabled?'Este objeto 3D está anclado al lienzo: recibe la cámara de escena y su entrada, salida, posición, giro, tamaño y opacidad desde el Director. El desenfoque individual del 3D todavía no está disponible.':'Este objeto 3D está anclado al lienzo: el Director mueve su ancla, así que el objeto Three.js la sigue.'):'Este 3D no está anclado al lienzo. Activá su opción de anclaje si querés dirigirlo desde esta línea de tiempo.')+'</p>';
  }
  if(editor)timing=(editor.active(raw)?'':timing)+editor.panel(s,raw);
  timing+=window.NAGWEB_SCROLL_CAMERA.elementPanel(s,raw);
@@ -272,7 +272,7 @@ function rt(DATA,createModel,createStreamModel,createCamera){
    var cs=getComputedStyle(n),baseOpacity=parseFloat(cs.opacity),baseFilter=cs.filter&&cs.filter!=='none'?cs.filter:'blur(0px)',basePointer=cs.pointerEvents||'auto';
    n.style.setProperty('--nw-sd-base-opacity',isFinite(baseOpacity)?baseOpacity:1);
    n.style.setProperty('--nw-sd-base-filter',baseFilter);n.setAttribute('data-nw-sd-el','1');
-   els.push({n:n,c:c,cameraLayer:cameraPaint?camera.layer(cfg.camera,c.id):null,cameraShared:cameraPaint?cameraPaint.contains(n):false,basePointer:basePointer,depth:null,depthValue:''});
+   els.push({n:n,c:c,cameraLayer:cameraPaint?camera.layer(cfg.camera,c.id):null,cameraShared:cameraPaint?cameraPaint.contains(n):false,basePointer:basePointer,baseOpacity:isFinite(baseOpacity)?baseOpacity:1,depth:null,depthValue:''});
   });
   var ordered=cfg.depthOrder?els.filter(function(q){return q.c.keyframes&&q.c.keyframes.length;}):[];
   var streamPaint=streamRenderer(stage,cfg);
@@ -305,6 +305,8 @@ function rt(DATA,createModel,createStreamModel,createCamera){
       q.depthValue=transform;
      }
     }
+    // One-way evaluated state for WebGL. The renderer never evaluates progress.
+    if(cameraPaint)n.__nwSpatialPose=Object.freeze(Object.assign({},v,{opacity:op*q.baseOpacity}));
     n.style.setProperty('--nw-sd-opacity',op.toFixed(4));
     n.style.setProperty('--nw-sd-blur',v.blur.toFixed(2)+'px');
     n.style.pointerEvents=op<.025?'none':q.basePointer;
@@ -348,7 +350,7 @@ var SD_CSS=[
 
 var _generateSite=generateSite;
 generateSite=function(p,edit,minify,mobile){
- p=Object.assign({},p,{sections:(p.sections||[]).map(function(s){if((!directed(s)&&!(s.elements||[]).some(function(e){return e.nwMotionInstance;}))||s.layout==='horizontal')return s;return Object.assign({},s,{pin:directed(s)?false:s.pin,syncReveal:directed(s)?false:s.syncReveal,elements:(s.elements||[]).map(function(e){return model.eligible(e,s)&&(directed(s)||groupOwner(s,e))?Object.assign({},e,{anim:'none',parallax:0}):e;})});})});
+ p=Object.assign({},p,{sections:(p.sections||[]).map(function(s){if((!directed(s)&&!(s.elements||[]).some(function(e){return e.nwMotionInstance;}))||s.layout==='horizontal')return s;return Object.assign({},s,{pin:directed(s)?false:s.pin,syncReveal:directed(s)?false:s.syncReveal,elements:(s.elements||[]).map(function(e){return model.eligible(e,s)&&(directed(s)||groupOwner(s,e))?Object.assign({},e,{anim:'none',parallax:0,nwSpatialDirected:e.type==='shape3d'&&e.anchor!==false&&!!window.NAGWEB_SCROLL_CAMERA.config(s)}):e;})});})});
  var html=_generateSite(p,edit,minify,mobile);
  var secs=(p.sections||[]).filter(function(s){return directed(s)&&s.layout!=='horizontal';});
 

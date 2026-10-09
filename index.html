@@ -16802,6 +16802,7 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
   if(animate){
     objects.forEach(function(g){
       var o = g.userData.o, amt = o.amount, secEl = sections[o.sec];
+      if(o.nwSpatialDirected && g.userData.holder) return;
       var afterHorizontal = o.sec > 0 && SECS[o.sec - 1].layout === 'horizontal';
       var start = afterHorizontal ? 'top 72%' : 'top bottom';
 
@@ -16893,7 +16894,9 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
     var lastSpin = performance.now();
     spinStep = function(){
       var now = performance.now(), dt = Math.min(now - lastSpin, 50); lastSpin = now;
+      if(dragTarget && spatial3D.owns(dragTarget) && !spatial3D.interactive(dragTarget)) endDrag({pointerId:dragPointer,type:'pointercancel'});
       DRAGGABLE.forEach(function(g){
+        if(spatial3D.owns(g) && !spatial3D.interactive(g)){g.userData.spinVX=0;g.userData.spinVY=0;return;}
         if(g === dragTarget) return;
         var vx = g.userData.spinVX, vy = g.userData.spinVY;
         if(!vx && !vy) return;
@@ -16925,6 +16928,7 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
     }
     function spinMove(ev){
       if(dragTarget){
+        if(spatial3D.owns(dragTarget) && !spatial3D.interactive(dragTarget)){endDrag({pointerId:dragPointer,type:'pointercancel'});return;}
         if(ev.pointerId !== dragPointer) return;
         var pr = dragParams(dragTarget), now = performance.now(), dt = Math.max(now - dragLT, 1);
         var ry = pr.axis === 'x' ? 0 : (ev.clientX - dragLX) * pr.sens;
@@ -16974,6 +16978,7 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
     if(spinStep) spinStep();
     objects.forEach(function(g){
       var o = g.userData.o;
+      if(o.nwSpatialDirected && g.userData.holder) return;
       if(animate && o.motion !== 'still' && o.motion !== 'spin' && o.motion !== 'tumble' && o.motion !== 'flip') g.rotation.y += .0016;
       g.position.y = o.motion === 'wave' ? g.position.y : (g.userData.baseY + (animate ? Math.sin(t*.6 + o.sec)*.12 : 0));
       if(o.shape === 'wave'){
@@ -17141,6 +17146,7 @@ ${edit ? `
 
       function move(e){
         var dx = (e.clientX - sx) / rect.width * 100, dy = (e.clientY - sy) / rect.height * 100;
+        if(anchorObject&&!spatial3D.interactive(anchorObject)){up();return;}
         if(anchorObject&&e.pointerId!==ev.pointerId)return;
         if(anchorStart){
           var point = spatial3D.anchorPoint(anchorObject,e.clientX,e.clientY);if(!point)return;
@@ -17259,7 +17265,7 @@ ${edit ? `
 
     var v3 = new THREE.Vector3(),proxyBox=new THREE.Box3(),proxyPoint=new THREE.Vector3();
     function anchorProxyBounds(g,v){
-      if(!g.visible||!g.userData.holder.visible)return null;
+      if(!spatial3D.interactive(g))return null;
       proxyBox.setFromObject(g);if(proxyBox.isEmpty())return null;
       var left=Infinity,top=Infinity,right=-Infinity,bottom=-Infinity;
       [proxyBox.min.x,proxyBox.max.x].forEach(function(x){[proxyBox.min.y,proxyBox.max.y].forEach(function(y){[proxyBox.min.z,proxyBox.max.z].forEach(function(z){
