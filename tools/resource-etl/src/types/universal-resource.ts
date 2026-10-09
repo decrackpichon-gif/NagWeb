@@ -41,6 +41,7 @@ export type EditableBinding =
   | { type: "css-variable"; variable: string }
   | { type: "css-property"; property: string; selector?: string }
   | { type: "css-color-token"; token: string }
+  | { type: "css-pixel-declaration"; property: string; originalValue: number }
   | { type: "text-content"; target?: string }
   | {
       type: "transform";

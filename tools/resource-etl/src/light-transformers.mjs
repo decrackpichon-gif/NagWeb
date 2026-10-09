@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { inferEditablePropsFromTsx } from "./analyzers/tsx-editable-props.mjs";
+import { inferUiverseCssDimensionProps } from "./runtime/uiverse-dimensions.mjs";
 import { inferUiverseCssColorProps } from "./runtime/uiverse-colors.mjs";
 import { getSourcePolicy } from "./vault/source-policies.mjs";
 
@@ -1524,7 +1525,8 @@ export function transformUiverseComponent({ repository, commit, item }) {
         responsive: true,
         animatable: true
       },
-      ...inferUiverseCssColorProps(content)
+      ...inferUiverseCssColorProps(content),
+      ...inferUiverseCssDimensionProps(content)
     ],
     compatibility: {
       nagweb: { supported: true, renderer: "html", tested: false },

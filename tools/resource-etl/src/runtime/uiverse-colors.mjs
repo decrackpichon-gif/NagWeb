@@ -1,3 +1,5 @@
+import { inferUiverseCssDimensionProps } from "./uiverse-dimensions.mjs";
+
 // Infer hexadecimal, rgb() and rgba() colors from real CSS declarations.
 // Operates on the component's own <style> tags, never on arbitrary markup.
 const STYLE_BLOCK = /(<style\b[^>]*>)([\s\S]*?)(<\/style\s*>)/gi;
@@ -95,8 +97,10 @@ export function effectiveUiverseEditableProps(resource) {
   const original = resource?.editableProps || [];
   if (!isUiverseHtml(resource)) return original;
   const seen = new Set(original.map(prop => prop.id));
-  return [...original, ...inferUiverseCssColorProps(mainHtml(resource))
-    .filter(prop => !seen.has(prop.id))];
+  return [...original, ...[
+    ...inferUiverseCssColorProps(mainHtml(resource)),
+    ...inferUiverseCssDimensionProps(mainHtml(resource))
+  ].filter(prop => !seen.has(prop.id))];
 }
 
 export function isSupportedUiverseCssColor(resource, prop) {

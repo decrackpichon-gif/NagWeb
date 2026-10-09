@@ -38,6 +38,11 @@ import { buildInsertDescriptor } from "./runtime/insert-adapters.mjs";
 import { describeCssEditableControls, describeEditableControls } from "./runtime/editable-controls.mjs";
 import { htmlCssPropertyStyle } from "./runtime/html-css-customization.mjs";
 import {
+  inferUiverseCssDimensionProps,
+  applyUiverseCssDimensionValues,
+  isSupportedUiverseCssDimension
+} from "./runtime/uiverse-dimensions.mjs";
+import {
   inferUiverseCssColorProps,
   effectiveUiverseEditableProps,
   applyUiverseCssColorValues
@@ -1582,6 +1587,7 @@ try {
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "persistent-vault-client.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "html-css-customization.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-colors.mjs"))).isFile());
+  assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-dimensions.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "resource-browser", "vendor", "lottie_light.min.js"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, ".nojekyll"))).isFile());
   await assert.rejects(stat(path.join(publicPreviewDir, "src", "cli.mjs")),
@@ -1752,3 +1758,85 @@ assert.deepEqual(inferUiverseCssColorProps(
   '<style>.a{color:rgb(300,20,20);background:rgba(1,2,3,1.5);' +
   'border-color:rgb(1 2 3);stroke:rgba(1,2,3)}' +
   '</style>'), [], "Reject invalid and unsupported RGB syntaxes");
+
+const sizedUiverseHtml = '<style>' +
+  '.card {border-radius: 12px; width:160px;height: 40px; color: #fff;' +
+  'padding:18px; transform: translateX(20px)}' +
+  '.card:hover {border-radius:12px;width:160px}' +
+  '.child {width: 160px; min-width: 90px; max-height: 300px}' +
+  '/* .comment {width: 50px; border-radius: 40px;} */' +
+  '.ignored {width: 40%; height:calc(100% - 12px);' +
+  'border-radius: 6px 10px; background:url(https://example.test/width:50px);}' +
+  '.large {width: 5000px; height:1400px}' +
+  '.quoted:before {content:"width:77px;";}' +
+  '</style><div data-size="width:160px" class="card">Hola</div>';
+const inferredSizes = inferUiverseCssDimensionProps(sizedUiverseHtml);
+assert.deepEqual(inferredSizes.map(p => [p.binding.property, p.defaultValue]),
+  [["border-radius",12], ["width",160], ["height",40], ["min-width",90], ["max-height",300]],
+  "Only bounded, genuine simple pixel declarations become controls");
+assert.deepEqual(inferredSizes.map(p => p.id),
+  ["uiverseLength1","uiverseLength2","uiverseLength3","uiverseLength4","uiverseLength5"]);
+const sizedSavedUiverse = {
+  ...persistedUiverse, artifacts:[{
+    ...persistedUiverse.artifacts[0], content:sizedUiverseHtml
+  }]
+};
+assert.deepEqual(describeEditableControls(sizedSavedUiverse).map(p => p.id),
+  ["opacity","scale","uiverseColor1","uiverseLength1","uiverseLength2",
+    "uiverseLength3","uiverseLength4","uiverseLength5"],
+  "Old saved Uiverse gains real dimensions without re-import");
+assert.equal(isSupportedUiverseCssDimension(sizedSavedUiverse, inferredSizes[0]),true);
+assert.equal(isSupportedUiverseCssDimension(sizedSavedUiverse, {
+  ...inferredSizes[0], binding:{...inferredSizes[0].binding,property:"position"}
+}),false, "Forged CSS property metadata cannot expose misleading options");
+assert.equal(applyUiverseCssDimensionValues(sizedSavedUiverse, {}, sizedUiverseHtml),
+  sizedUiverseHtml,"Unedited CSS dimensions remain byte-for-byte unchanged");
+const sizedApplied = buildResourceApplyEnvelope(sizedSavedUiverse, {
+  values:{uiverseLength1:25,uiverseLength2:220,
+    uiverseLength3:55,uiverseLength4:105,uiverseLength5:450}
+});
+assert.match(sizedApplied.descriptor.payload.html,
+  /border-radius: 25px; width:220px;height: 55px/);
+assert.match(sizedApplied.descriptor.payload.html,
+  /min-width: 105px; max-height: 450px/);
+assert.match(sizedApplied.descriptor.payload.html,
+  /\.card:hover \{border-radius:25px;width:220px\}/);
+assert.match(sizedApplied.descriptor.payload.html,
+  /padding:18px; transform: translateX\(20px\)/);
+assert.match(sizedApplied.descriptor.payload.html,
+  /width: 40%; height:calc\(100% - 12px\)/);
+assert.match(sizedApplied.descriptor.payload.html,
+  /\/\* \.comment \{width: 50px; border-radius: 40px;\} \*\//);
+assert.match(sizedApplied.descriptor.payload.html, /data-size="width:160px"/);
+assert.match(sizedApplied.descriptor.payload.html, /width: 5000px; height:1400px/);
+assert.match(sizedApplied.descriptor.payload.html, /content:"width:77px;"/);
+assert.deepEqual(sizedApplied.resource.editableProps.slice(-5).map(p=>p.id),
+  ["uiverseLength1","uiverseLength2","uiverseLength3","uiverseLength4","uiverseLength5"],
+  "Applied metadata preserves editable dimensions");
+assert.equal(sizedApplied.descriptor.instance.values.uiverseLength2,220);
+assert.equal(sizedSavedUiverse.artifacts[0].content,sizedUiverseHtml,
+  "Original CSS remains untouched after applying dimensions");
+assert.equal(applyUiverseCssDimensionValues(sizedSavedUiverse, {
+  uiverseLength1:"20;position:fixed", uiverseLength2:Infinity,
+  uiverseLength3:-10, uiverseLength4:3000, uiverseLength5:450.5
+},sizedUiverseHtml),sizedUiverseHtml,
+  "Invalid, out-of-bounds, and out-of-step values are not applied");
+assert.deepEqual(inferUiverseCssDimensionProps(
+  '<style>.b{border-radius: 6px 8px;width: 30em;' +
+  'height:var(--height);min-width:calc(40px + 2vw)}</style>'),
+  [],"No fabricated sliders for shorthand, relative, or dynamic CSS");
+const fractionHtml = '<style>.x{border-top-left-radius:4.5px;' +
+  'height:35.25px}</style>';
+assert.deepEqual(inferUiverseCssDimensionProps(fractionHtml)
+  .map(p=>p.constraints.step),[0.1,0.01],
+  "Fractional original CSS pixel values retain precise range steps");
+const fractionResource = {
+  ...persistedUiverse,
+  artifacts:[{...persistedUiverse.artifacts[0],content:fractionHtml}]
+};
+assert.match(applyUiverseCssDimensionValues(fractionResource,
+  {uiverseLength1:7.5,uiverseLength2:35.75},fractionHtml),
+  /border-top-left-radius:7.5px;height:35.75px/);
+assert.equal(inferUiverseCssDimensionProps(
+  '<style>'+Array.from({length:12},(_item,i)=>'.c'+i+'{width:'+(i+10)+'px}').join('')+
+  '</style>').length,8,"Maximum eight length controls per component");
