@@ -1802,6 +1802,73 @@ export async function runCameraBrowserSmoke(page){
   await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',0));
   console.log('Camera object inspector: direct map click, dropdown, live XYZ/distance, selection reset and no edits OK');
 
+  // Micro-etapa 52: align manual camera to scene object, or link current look key when in lookAt mode.
+  await page.select('[data-camera-object-select]','0');
+  const beforeAim=await page.evaluate(()=>({
+   frames:JSON.stringify(sec().sdCameraFrames),looks:JSON.stringify(sec().sdCameraLookFrames),
+   elements:JSON.stringify(sec().elements),mode:sec().sdCameraOrientationMode,history:history.length
+  }));
+  assert.ok(await page.$('[data-camera-aim-at-object]'),'Aiming CTA appears after selecting a scene object');
+  await page.evaluate(()=>{sec().sdCameraOrientationMode='manual';renderPane();});
+  await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',.42));
+  const expectedAngle=await page.evaluate(()=>{
+   const s=sec(),cfg=NAGWEB_SCROLL_CAMERA.config(s),size={width:1000,height:1000};
+   const camera=NAGWEB_SCROLL_CAMERA.pose(cfg,.42,NAGWEB_STORY_MODEL,s.sdEase,false,undefined,size);
+   const target=NAGWEB_SCROLL_CAMERA.elementTarget(cfg,'camera-target-el',.42,NAGWEB_STORY_MODEL,s.sdEase,size);
+   return {camera,angle:NAGWEB_SCROLL_CAMERA.lookAngles(camera,target)};
+  });
+  await page.click('[data-camera-aim-at-object]');
+  let state=await page.evaluate(()=>({
+   mode:sec().sdCameraOrientationMode,frames:JSON.parse(JSON.stringify(sec().sdCameraFrames)),
+   looks:JSON.stringify(sec().sdCameraLookFrames),history:history.length,elements:JSON.stringify(sec().elements)
+  }));
+  const aimed=state.frames.find(k=>k.at===42);
+  assert.equal(state.mode,'manual','Manual aim never changes whole-scene orientation');
+  assert.equal(state.frames.length,JSON.parse(beforeAim.frames).length+1,'Manual aim creates only one new point at the exact scrub instant');
+  assert.ok(aimed&&Math.abs(aimed.rotateX-expectedAngle.angle.rotateX)<.001&&Math.abs(aimed.rotateY-expectedAngle.angle.rotateY)<.001,'Manual aim uses 3D target orientation');
+  assert.ok(['x','y','z','rotate'].every(k=>Math.abs(aimed[k]-expectedAngle.camera[k])<.001),'Manual aim preserves sampled XYZ and horizon rotation');
+  assert.deepEqual(state.frames.filter(k=>k.at!==42),JSON.parse(beforeAim.frames),'Other camera moments are unchanged');
+  assert.equal(state.history,beforeAim.history+1,'Aiming generates exactly one undo snapshot');
+  assert.equal(state.looks,beforeAim.looks,'Manual aim leaves the look path unchanged');
+  assert.equal(state.elements,beforeAim.elements,'Aiming never moves objects');
+  await page.evaluate(()=>undo());
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),beforeAim.frames,'Undo restores manual camera trajectory');
+  await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',0));
+  await page.click('[data-camera-aim-at-object]');
+  state=await page.evaluate(()=>({frames:sec().sdCameraFrames.map(k=>({...k})),history:history.length}));
+  assert.equal(state.frames.length,JSON.parse(beforeAim.frames).length,'Existing manual key is edited rather than duplicated');
+  assert.ok(Math.abs(state.frames.find(k=>k.at===0).rotateY)>1,'Aim rotates the existing camera towards the object');
+  await page.evaluate(()=>undo());
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),beforeAim.frames,'Undo existing-key manual orientation');
+  await page.evaluate(()=>{sec().sdCameraOrientationMode='lookAt';renderPane();});
+  await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',.5));
+  await page.click('[data-camera-aim-at-object]');
+  state=await page.evaluate(()=>({
+   mode:sec().sdCameraOrientationMode,frames:JSON.stringify(sec().sdCameraFrames),
+   looks:JSON.parse(JSON.stringify(sec().sdCameraLookFrames)),history:history.length
+  }));
+  assert.equal(state.mode,'lookAt','Linked aim keeps the original lookAt orientation mode');
+  assert.equal(state.looks.length,JSON.parse(beforeAim.looks).length+1,'One exact target key inserted at 50%');
+  assert.equal(state.looks.find(k=>k.at===50)?.targetId,'camera-target-el','New look target links to the selected object');
+  assert.deepEqual(state.looks.filter(k=>k.at!==50),JSON.parse(beforeAim.looks),'Other look keys retain their original values');
+  assert.equal(state.frames,beforeAim.frames,'Linked aim does not change any camera key');
+  const afterFirst=state.history;
+  await page.click('[data-camera-aim-at-object]');
+  assert.equal(await page.evaluate(()=>history.length),afterFirst,'Repeated aim at same object/time is a no-op');
+  await page.evaluate(()=>undo());
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraLookFrames)),beforeAim.looks,'Undo removes inserted target key');
+  await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',0));
+  await page.click('[data-camera-aim-at-object]');
+  state=await page.evaluate(()=>({looks:sec().sdCameraLookFrames.map(k=>({...k}))}));
+  assert.equal(state.looks.length,JSON.parse(beforeAim.looks).length,'Existing look target reused at 0%');
+  assert.equal(state.looks.find(k=>k.at===0)?.targetId,'camera-target-el','Existing look target binds the object');
+  await page.evaluate(()=>undo());
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraLookFrames)),beforeAim.looks,'Existing target binding can be undone');
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().elements)),beforeAim.elements,'All aim scenarios leave elements unchanged');
+  await page.select('[data-camera-object-select]','');
+  console.log('Camera aim: exact manual orientation and linked look-at target, undo and no duplicate points OK');
+
+
 
 
   await page.click('[data-camera-look-jump="0"]');
