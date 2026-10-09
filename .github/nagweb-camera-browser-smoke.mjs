@@ -700,6 +700,15 @@ export async function runCameraBrowserSmoke(page){
     return {present:!!detail,kind:detail?.dataset.cameraOverviewFocusKind||'',
      content:detail?.textContent||'',role:detail?.getAttribute('role')||''};
    });
+   const planesState=()=>page.evaluate(()=>{
+    const root=document.querySelector('[data-camera-overview-plane-comparison]'),parts=Array.from(root?.querySelectorAll('[data-camera-overview-plane]')||[]);
+    return {exists:!!root,region:root?.dataset.cameraOverviewPlaneRegion||'',
+      cells:parts.map(n=>({plane:n.dataset.cameraOverviewPlane,value:n.dataset.cameraOverviewPlaneValue,
+       current:n.dataset.cameraOverviewPlaneCurrent,text:n.textContent})),
+      delta:root?.querySelector('[data-camera-overview-plane-delta]')?.dataset.cameraOverviewPlaneDeltaValue??null,
+      unavailable:!!root?.querySelector('[data-camera-overview-plane-delta-unavailable]'),
+      text:root?.textContent||''};
+   });
    const unionState=()=>page.evaluate(()=>{
     const bar=document.querySelector('[data-camera-overview-union-bar]'),legend=document.querySelector('[data-camera-overview-union-legend]');
     return {present:!!bar,aria:bar?.getAttribute('aria-label')||'',role:bar?.getAttribute('role')||'',
@@ -732,6 +741,15 @@ export async function runCameraBrowserSmoke(page){
    assert.deepEqual(union.parts.map(p=>p.kind),['a','shared','b'],'Bar shows exclusive A, shared, exclusive B in spatial order');
    assert.ok(Math.abs(union.parts[0].percent)<.001&&Math.abs(union.parts[1].percent-100)<.001&&Math.abs(union.parts[2].percent)<.001,'Identical cones have 100% common area of the projected union');
    assert.ok(union.aria.includes('En común 100')&&union.note.includes('Distinto de los porcentajes calculados sobre cada cono'),'Bar clearly distinguishes union versus individual-cone denominators');
+   let planes=await planesState();
+   assert.equal(planes.exists,true,'Top/front projected coverage comparison is available');
+   assert.equal(planes.region,'shared','Default comparison measures shared fraction of projected union');
+   assert.deepEqual(planes.cells.map(c=>c.plane),['top','front'],'Both planes use the same A/B selection');
+   assert.equal(planes.cells[0].current,'true','Current top map is marked');
+   assert.ok(Math.abs(+planes.cells[0].value-100)<.001,'Identical cones: full shared area in top view');
+   assert.equal(planes.cells[1].value,'','Edge-on frontal view does not invent coverage');
+   assert.ok(planes.unavailable&&planes.text.includes('No evaluable'),'Unavailable plane cannot produce a false delta');
+   assert.ok(planes.text.includes('No compara volumen, oclusión ni visibilidad 3D'),'Differences describe only projected geometry');
    let exclusive=await exclusiveState();
    assert.equal(exclusive.enabled,false,'Exclusive regions default off to keep the minimap uncluttered');
    assert.equal(exclusive.regions.length,0);
@@ -774,6 +792,10 @@ export async function runCameraBrowserSmoke(page){
   await page.select('[data-camera-map-plane]','front');
   cov=await overlapState();
   assert.equal(cov.status,'unavailable','Edge-on projection reports unavailable instead of falsely reporting zero overlap');
+   planes=await planesState();
+   assert.equal(planes.cells[0].current,'false','Top is no longer the current viewport');
+   assert.equal(planes.cells[1].current,'true','Frontal is clearly marked as the active map');
+   assert.ok(Math.abs(+planes.cells[0].value-100)<.001&&planes.cells[1].value==='','Available top result stays visible when switching to front');
   assert.equal(cov.polygon,false,'Edge-on geometry has no misleading filled area');
    exclusive=await exclusiveState();
    assert.equal(exclusive.regions.length,0,'Edge-on view does not fake exclusive areas');
@@ -803,6 +825,9 @@ export async function runCameraBrowserSmoke(page){
    assert.ok(Math.abs(union.parts.reduce((sum,p)=>sum+p.percent,0)-100)<.000001,'Bar segments always sum to the total union');
    assert.ok(union.parts.every(p=>Math.abs(p.width-p.percent)<.001),'Each bar segment uses its measured width, allowing browser CSS rounding');
    assert.ok(union.aria.includes('En común 0,0%'),'Disjoint cones report exactly 0% common projected area, not a rounding artifact');
+   planes=await planesState();
+   assert.equal(planes.region,'shared','Default two-plane metric is shared coverage');
+   assert.equal(+planes.cells[0].value,0,'Separate cones have zero shared top-plane area');
    await page.select('[data-camera-overview-compare-focus]','a');
    focus=await focusState();
    assert.equal(focus.value,'a','Exclusive A focus is selected');
@@ -812,6 +837,9 @@ export async function runCameraBrowserSmoke(page){
    union=await unionState();
    assert.equal(union.parts.find(p=>p.kind==='a').opacity,1,'Focus on A also highlights its share in the bar');
    assert.equal(union.parts.find(p=>p.kind==='b').opacity,.28,'The B segment is dimmed in the bar');
+   planes=await planesState();
+   assert.equal(planes.region,'a','Plane comparison follows selected exclusive A region');
+   assert.ok(+planes.cells[0].value>0,'Top view measures exclusive A against combined area');
    detail=await focusDetailState();
    assert.equal(detail.kind,'a','Exclusive A focus displays A context');
    assert.ok(detail.content.includes('100,0% del encuadre A')&&detail.content.includes('% del área combinada')&&detail.content.includes('no se superpone con B'),'Exclusive A clarifies the two area denominators');
@@ -822,6 +850,8 @@ export async function runCameraBrowserSmoke(page){
    assert.equal(focus.areas.find(r=>r.which==='a').opacity,.05,'A is dimmed');
    union=await unionState();
    assert.equal(union.parts.find(p=>p.kind==='b').opacity,1,'Focus on B also highlights its share in the bar');
+   planes=await planesState();
+   assert.equal(planes.region,'b','Plane comparison follows selected exclusive B region');
    detail=await focusDetailState();
    assert.equal(detail.kind,'b','Exclusive B focus displays B context');
    assert.ok(detail.content.includes('100,0% del encuadre B')&&detail.content.includes('% del área combinada')&&detail.content.includes('no se superpone con A'),'Exclusive B clarifies the two area denominators');
@@ -838,6 +868,26 @@ export async function runCameraBrowserSmoke(page){
    await page.select('[data-camera-overview-compare-focus]','all');
    focus=await focusState();
    assert.ok(focus.areas.every(r=>r.opacity===.29),'Default view restores balanced area emphasis');
+   await page.evaluate(()=>{
+    const sc=sec();
+    sc.sdCameraFrames=sc.sdCameraFrames.map(f=>({...f,rotateX:25}));
+    renderPane();
+   });
+   planes=await planesState();
+   assert.equal(planes.region,'shared','Pitched camera keeps common region as default metric');
+   assert.ok(planes.cells.every(c=>c.value!==''&&Number.isFinite(+c.value)),'Tilting the camera allows measurable X/Z and X/Y projections');
+   assert.ok(planes.delta!==null&&Number.isFinite(+planes.delta),'Both valid projections show a finite difference in percentage points');
+   assert.ok(Math.abs(+planes.delta-(+planes.cells[1].value- +planes.cells[0].value))<.000001,'Frontal minus top delta uses matching area denominators');
+   await page.select('[data-camera-map-plane]','front');
+   planes=await planesState();
+   assert.equal(planes.cells[1].current,'true','Switching planes changes the current marker but not measurements');
+   assert.ok(planes.cells.every(c=>c.value!==''),'Both projected values remain when current plane changes');
+   await page.select('[data-camera-map-plane]','top');
+   await page.evaluate(()=>{
+    const sc=sec();
+    sc.sdCameraFrames=sc.sdCameraFrames.map(f=>({...f,rotateX:0}));
+    renderPane();
+   });
   await page.evaluate(saved=>{
    const sc=sec();sc.sdCameraOrientationMode=saved.orientation;
    sc.sdCameraFrames=JSON.parse(saved.camera);renderPane();
@@ -851,7 +901,7 @@ export async function runCameraBrowserSmoke(page){
    assert.equal(exclusive.enabled,false,'Exclusive overlay can be disabled again');
    assert.equal(exclusive.regions.length,0,'Hiding exclusive areas preserves existing cone visualization');
    assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'Coverage calculations and UI do not add undo snapshots');
-  console.log('Camera minimap FOV overlap/union: compact contextual focus, identical/disjoint and profile cases, accessible status, no edits OK');
+  console.log('Camera minimap FOV overlap/union: top/front comparison, active plane, unavailable views, finite deltas and non-destructive restore OK');
 
 
 
