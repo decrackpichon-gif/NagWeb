@@ -268,7 +268,7 @@ function createCamera(){
 }
 window.NAGWEB_CREATE_SCROLL_CAMERA=createCamera;
 window.NAGWEB_SCROLL_CAMERA=createCamera();
-var presetChoices=Object.create(null),holdDurations=Object.create(null),cameraEasyStep=Object.create(null),mapOpen=Object.create(null),mapPlanes=Object.create(null),mapFovVisible=Object.create(null),mapZoom=Object.create(null),mapPan=Object.create(null),mapWheelCarry=Object.create(null),mapOverviewVisible=Object.create(null),mapOverviewPickHistory=Object.create(null),mapOverviewSamples=Object.create(null),mapOverviewDetected=Object.create(null),mapOverviewMetrics=Object.create(null),mapOverviewMetricsOpen=Object.create(null),mapOverviewPaceVisible=Object.create(null),mapOverviewComparison=Object.create(null),mapOverviewComparePreview=Object.create(null),mapOverviewCompareFovVisible=Object.create(null),mapOverviewCompareExclusiveVisible=Object.create(null),mapOverviewCompareFocus=Object.create(null),mapOverviewTechnicalOpen=Object.create(null),mapOverviewEventFilter=Object.create(null),mapOverviewEventChosen=Object.create(null),mapPickHistory=Object.create(null),suppressedClick=null,selected=Object.create(null),lookSelected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
+var presetChoices=Object.create(null),holdDurations=Object.create(null),cameraEasyStep=Object.create(null),mapOpen=Object.create(null),mapPlanes=Object.create(null),mapFovVisible=Object.create(null),mapObjectVisible=Object.create(null),mapObjectPlans=Object.create(null),mapZoom=Object.create(null),mapPan=Object.create(null),mapWheelCarry=Object.create(null),mapOverviewVisible=Object.create(null),mapOverviewPickHistory=Object.create(null),mapOverviewSamples=Object.create(null),mapOverviewDetected=Object.create(null),mapOverviewMetrics=Object.create(null),mapOverviewMetricsOpen=Object.create(null),mapOverviewPaceVisible=Object.create(null),mapOverviewComparison=Object.create(null),mapOverviewComparePreview=Object.create(null),mapOverviewCompareFovVisible=Object.create(null),mapOverviewCompareExclusiveVisible=Object.create(null),mapOverviewCompareFocus=Object.create(null),mapOverviewTechnicalOpen=Object.create(null),mapOverviewEventFilter=Object.create(null),mapOverviewEventChosen=Object.create(null),mapPickHistory=Object.create(null),suppressedClick=null,selected=Object.create(null),lookSelected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
 function safeLabel(v){return String(v==null?'':v).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,42).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];});}
 function targetLabel(e){var label=safeLabel(e&&((e.name||e.text||e.label)||e.type));return label||'Elemento';}
 function keys(s){return C.frames(C.config(s),s.sdEase);}
@@ -299,6 +299,56 @@ function resolvedLookKeys(s,cfg,list,size){
 function mapCurrent(s,pct){
  var reduced=typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
  return C.pose(C.config(s),pct/100,window.NAGWEB_STORY_MODEL,s.sdEase,reduced,undefined,previewReferenceSize(s));
+}
+// Read-only guides reuse the same free-canvas target evaluation as "Mirar elemento".
+function mapObjectPlan(s,cfg,size){
+ if(!cfg||s.layout!=='free'||!window.NAGWEB_STORY_MODEL)return null;
+ var model=window.NAGWEB_STORY_MODEL,raw=Object.create(null),tracks=Object.create(null);
+ (s.elements||[]).forEach(function(e){if(C.targetEligible(e,s))raw[String(e.id)]=e;});
+ var entries=[];
+ (cfg.targets||[]).slice(0,16).forEach(function(t){
+  var source=raw[String(t.id)];if(!source)return;
+  try{
+   tracks[t.id]=model.compile(t.motion||{id:t.id});
+   entries.push({id:t.id,label:targetLabel(source),kind:source.type||'elemento'});
+  }catch(_){}
+ });
+ return {cfg:cfg,size:size,entries:entries,compiled:{targetTracks:tracks},total:(cfg.targets||[]).length};
+}
+function mapObjectPositions(s,plan,pct){
+ if(!plan||!plan.entries.length)return [];
+ var p=Math.max(0,Math.min(1,Number.isFinite(+pct)?+pct/100:0)),model=window.NAGWEB_STORY_MODEL;
+ return plan.entries.map(function(item){
+  var v;
+  try{v=C.elementTarget(plan.cfg,item.id,p,model,s.sdEase,plan.size,plan.compiled);}catch(_){v=null;}
+  return {item:item,point:v&&[v.x,v.y,v.z].every(Number.isFinite)?v:null};
+ });
+}
+function mapObjectMarkersHtml(s,plan,spec,pct){
+ if(!plan||mapObjectVisible[s.id]===false)return '';
+ var rows=mapObjectPositions(s,plan,pct);
+ return '<g data-camera-scene-objects pointer-events="none" aria-hidden="true">'+rows.map(function(row,i){
+  var v=row.point;if(!v)return '';
+  var at=C.mapPoint(v,spec);
+  var label=safeLabel(row.item.label).slice(0,32);
+  return '<g data-camera-scene-object="'+i+'" data-camera-scene-object-id="'+safeLabel(row.item.id)+'" data-camera-scene-object-kind="'+safeLabel(row.item.kind)+'" transform="translate('+at.x+' '+at.y+')">'+
+   '<circle r="2.1" fill="#60a5fa" fill-opacity=".22" stroke="#60a5fa" stroke-width=".7"/>'+
+   '<circle r=".65" fill="#93c5fd"/>'+
+   (i<8?'<text x="2.8" y="-2.1" font-size="2.65" fill="currentColor" stroke="var(--bg,#1c1e23)" stroke-width=".5" paint-order="stroke">'+(i+1)+' · '+label+'</text>':'')+
+   '</g>';
+ }).join('')+'</g>';
+}
+function mapObjectPaint(map,s,spec,pct){
+ var root=map&&map.querySelector('[data-camera-scene-objects]'),plan=mapObjectPlans[s.id];
+ if(!root||!plan||mapObjectVisible[s.id]===false)return;
+ var positions=mapObjectPositions(s,plan,pct);
+ positions.forEach(function(row,i){
+  var el=root.querySelector('[data-camera-scene-object="'+i+'"]');
+  if(!el)return;
+  if(!row.point){el.style.display='none';return;}
+  var p=C.mapPoint(row.point,spec);el.style.display='';
+  el.setAttribute('transform','translate('+p.x+' '+p.y+')');
+ });
 }
 function mapLabel(v,pct){return 'Ahora: '+Math.round(pct*10)/10+'% · X '+Math.round(v.x)+' · Y '+Math.round(v.y)+' · Z '+Math.round(v.z);}
 function mapOverlapBadges(cameraKeys,lookKeys,spec){
@@ -1498,7 +1548,9 @@ function cameraCreateAtCurrent(s,list,pct){
  return 'created';
 }
 function spatialMap(s,list,k){
- var plane=['top','front','side'].includes(mapPlanes[s.id])?mapPlanes[s.id]:'top',cfg=C.config(s),looks=cfg&&cfg.orientationMode==='lookAt'?lookKeys(s):[],lk=looks.length?chooseLook(s,looks):null,size=previewReferenceSize(s),resolvedLooks=resolvedLookKeys(s,cfg,looks,size),tangents=cfg&&cfg.pathMode==='smooth'?list.flatMap(function(f){return[C.tangentHandle(list,f.at,'in'),C.tangentHandle(list,f.at,'out')];}).filter(Boolean):[],lookTangents=cfg&&cfg.lookPathMode==='smooth'?resolvedLooks.flatMap(function(f){return[C.lookTangentHandle(resolvedLooks,f.at,'in'),C.lookTangentHandle(resolvedLooks,f.at,'out')];}).filter(Boolean):[],zoom=mapZoom[s.id]||1,spec=C.mapSpec(list.concat(resolvedLooks,tangents,lookTangents),plane);
+ var objectPlan=mapObjectPlan(s,C.config(s),previewReferenceSize(s));
+ mapObjectPlans[s.id]=objectPlan;
+ var plane=['top','front','side'].includes(mapPlanes[s.id])?mapPlanes[s.id]:'top',cfg=C.config(s),looks=cfg&&cfg.orientationMode==='lookAt'?lookKeys(s):[],lk=looks.length?chooseLook(s,looks):null,size=previewReferenceSize(s),resolvedLooks=resolvedLookKeys(s,cfg,looks,size),tangents=cfg&&cfg.pathMode==='smooth'?list.flatMap(function(f){return[C.tangentHandle(list,f.at,'in'),C.tangentHandle(list,f.at,'out')];}).filter(Boolean):[],lookTangents=cfg&&cfg.lookPathMode==='smooth'?resolvedLooks.flatMap(function(f){return[C.lookTangentHandle(resolvedLooks,f.at,'in'),C.lookTangentHandle(resolvedLooks,f.at,'out')];}).filter(Boolean):[],zoom=mapZoom[s.id]||1,objectPoints=objectPlan&&mapObjectVisible[s.id]!==false?mapObjectPositions(s,objectPlan,progress(s)).map(function(o){return o.point;}).filter(Boolean):[],spec=C.mapSpec(list.concat(resolvedLooks,tangents,lookTangents,objectPoints),plane);
  spec.range/=zoom;
  if(zoom>1)mapPanOrigin(spec,k,mapPan[s.id]);
  var point=C.mapPoint(k,spec),tangentIn=cfg&&cfg.pathMode==='smooth'?C.tangentHandle(list,k.at,'in'):null,tangentOut=cfg&&cfg.pathMode==='smooth'?C.tangentHandle(list,k.at,'out'):null,tangentInPoint=tangentIn?C.mapPoint(tangentIn,spec):null,tangentOutPoint=tangentOut?C.mapPoint(tangentOut,spec):null,resolvedLk=lk&&lk.targetId?(C.elementTarget(cfg,lk.targetId,lk.at/100,window.NAGWEB_STORY_MODEL,s.sdEase,size)||lk):lk,lookKeyPoint=resolvedLk?C.mapPoint(resolvedLk,spec):null,lookTangentIn=cfg&&cfg.lookPathMode==='smooth'&&lk?C.lookTangentHandle(resolvedLooks,lk.at,'in'):null,lookTangentOut=cfg&&cfg.lookPathMode==='smooth'&&lk?C.lookTangentHandle(resolvedLooks,lk.at,'out'):null,lookTangentInPoint=lookTangentIn?C.mapPoint(lookTangentIn,spec):null,lookTangentOutPoint=lookTangentOut?C.mapPoint(lookTangentOut,spec):null,current=mapCurrent(s,progress(s)),now=C.mapPoint(current,spec);
@@ -1508,6 +1560,12 @@ function spatialMap(s,list,k){
  html+='<div style="display:flex;align-items:center;gap:5px;margin:6px 0"><span style="font-size:12px">Zoom</span><button class="btn tiny" type="button" data-camera-map-zoom="-1" aria-label="Alejar mapa"'+(zoom<=.5?' disabled':'')+'>−</button><span data-camera-map-zoom-label style="min-width:38px;text-align:center;font-size:12px">'+Math.round(zoom*100)+'%</span><button class="btn tiny" type="button" data-camera-map-zoom="1" aria-label="Acercar mapa"'+(zoom>=3?' disabled':'')+'>+</button><button class="btn tiny" type="button" data-camera-map-zoom="0" aria-label="Restablecer zoom del mapa"'+(zoom===1?' disabled':'')+'>Ajustar</button></div>';
  html+='<div data-camera-map-pan-controls style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:4px 0"><span style="font-size:12px;margin-right:4px">Desplazar</span><button class="btn tiny" type="button" data-camera-map-pan="left" aria-label="Desplazar vista a la izquierda"'+(zoom<=1?' disabled':'')+'>←</button><button class="btn tiny" type="button" data-camera-map-pan="up" aria-label="Desplazar vista hacia arriba"'+(zoom<=1?' disabled':'')+'>↑</button><button class="btn tiny" type="button" data-camera-map-pan="down" aria-label="Desplazar vista hacia abajo"'+(zoom<=1?' disabled':'')+'>↓</button><button class="btn tiny" type="button" data-camera-map-pan="right" aria-label="Desplazar vista a la derecha"'+(zoom<=1?' disabled':'')+'>→</button><button class="btn tiny" type="button" data-camera-map-pan="center" aria-label="Recentrar vista en el encuadre seleccionado"'+(zoom<=1||!(mapPan[s.id]&&(mapPan[s.id].x||mapPan[s.id].y))?' disabled':'')+'>Centrar ◆</button>'+(lk?'<button class="btn tiny" type="button" data-camera-map-pan="look" aria-label="Centrar vista en el objetivo de mirada seleccionado"'+(zoom<=1?' disabled':'')+'>Centrar ●</button>':'')+'</div>';
  html+='<button class="btn tiny" type="button" data-camera-overview-toggle aria-label="'+((mapOverviewVisible[s.id]===undefined?zoom>1:mapOverviewVisible[s.id])?'Ocultar':'Mostrar')+' vista general del mapa" style="margin:3px 0">'+((mapOverviewVisible[s.id]===undefined?zoom>1:mapOverviewVisible[s.id])?'Ocultar':'Mostrar')+' vista general</button>';
+ html+='<div data-camera-scene-objects-info style="font-size:11px;margin:5px 0">'+
+  (objectPlan&&objectPlan.total?
+   '<label style="display:inline-flex;gap:6px;align-items:center"><input type="checkbox" data-camera-scene-objects-toggle'+(mapObjectVisible[s.id]===false?'':' checked')+'> Mostrar objetos de la escena ('+objectPlan.entries.length+(objectPlan.total>objectPlan.entries.length?' de '+objectPlan.total:'')+')</label>'+
+   '<div style="opacity:.7;font-size:10px">Puntos guía en su posición animada y profundidad; no muestran tamaños ni oclusiones reales. No se pueden arrastrar todavía.</div>':
+   '<div style="opacity:.7">'+(s.layout!=='free'?'Las guías de objetos están disponibles en Lienzo libre.':'No hay objetos compatibles para mostrar en esta escena.')+'</div>')+
+  '</div>';
  html+='<label style="display:inline-flex;align-items:center;gap:6px;margin:6px 0;font-size:12px"><input type="checkbox" data-camera-map-fov-toggle aria-label="Mostrar campo de visión aproximado"'+(mapFovVisible[s.id]!==false?' checked':'')+(plane==='side'?' disabled title="El campo de visión queda de perfil en la vista lateral."':'')+'> Mostrar campo de visión</label>';
  html+='<div data-camera-map-pair style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0">'+mapKeyframeNavigation(list,k.at,'camera')+(lk?mapKeyframeNavigation(looks,lk.at,'look'):'')+'</div>';
  if(lk)html+='<p class="hint gh">◆ y ● se navegan por separado; la vista previa sigue el último punto elegido.</p>';
@@ -1518,6 +1576,7 @@ function spatialMap(s,list,k){
  if(lookPath)html+='<polyline data-camera-look-map-path-hit points="'+lookPath+'" fill="none" stroke="var(--accent)" opacity=".001" stroke-width="6" pointer-events="stroke" style="cursor:crosshair"/><polyline data-camera-look-map-path points="'+lookPath+'" fill="none" stroke="var(--accent)" opacity=".65" stroke-width=".7" stroke-dasharray="2 2" pointer-events="stroke" style="cursor:crosshair"/>';
  html+='<g data-camera-free-segments pointer-events="none">'+(cfg.pathMode==='smooth'?freeSegmentPaths(list,draw,spec,'camera',function(p){return C.pose(Object.assign({},cfg,{frames:list}),p,window.NAGWEB_STORY_MODEL,s.sdEase,false);}):'')+'</g>';
  html+='<g data-camera-look-free-segments pointer-events="none">'+(cfg.lookPathMode==='smooth'?freeSegmentPaths(resolvedLooks,lookDraw,spec,'look',function(p){return C.lookTarget(cfg,p,window.NAGWEB_STORY_MODEL,s.sdEase,size);}):'')+'</g>';
+ html+=mapObjectMarkersHtml(s,objectPlan,spec,progress(s));
  html+=mapFovSvg(mapFieldOfView(s,list,looks,k.at,spec,size),mapFovVisible[s.id]!==false);
  html+=mapHeadingSvg(mapHeading(s,list,looks,k.at,spec,size));
  if(lookKeyPoint)html+='<line data-camera-map-selection-link x1="'+point.x+'" y1="'+point.y+'" x2="'+lookKeyPoint.x+'" y2="'+lookKeyPoint.y+'" stroke="var(--accent)" stroke-width=".75" stroke-dasharray="1 4" opacity=".7" pointer-events="none"/>';
@@ -1662,6 +1721,7 @@ C.paint=function(pct){
  if(map&&C.config(s)){
   var spec=mapSpecFromNode(map),v=mapCurrent(s,pct),p=C.mapPoint(v,spec),dot=map.querySelector('[data-camera-position]'),label=pane.querySelector('[data-camera-position-label]');
   if(dot){dot.setAttribute('cx',p.x);dot.setAttribute('cy',p.y);}if(label)label.textContent=mapLabel(v,pct);
+  mapObjectPaint(map,s,spec,pct);
   var cfg=C.config(s),lookDot=map.querySelector('[data-camera-look-position]'),look=cfg&&cfg.orientationMode==='lookAt'?C.lookTarget(cfg,pct/100,window.NAGWEB_STORY_MODEL,s.sdEase,previewReferenceSize(s)):null;
   if(lookDot&&look){var lp=C.mapPoint(look,spec);lookDot.setAttribute('cx',lp.x);lookDot.setAttribute('cy',lp.y);}
   var overviewNode=map.querySelector('[data-camera-overview]');
@@ -2262,7 +2322,15 @@ if(pane){
    if(input.value!==''&&Number.isInteger(idx)&&idx>=0&&idx<events.length)mapOverviewEventGo(es,events[idx]);
    return;
   }
-  if(input.dataset.cameraMapFovToggle!==undefined){
+  if(input.dataset.cameraSceneObjectsToggle!==undefined){
+    var scene=sec();if(!C.config(scene))return;
+    mapObjectVisible[scene.id]=!!input.checked;
+    renderPane();
+    var control=pane.querySelector('[data-camera-scene-objects-toggle]');
+    if(control)control.focus({preventScroll:true});
+    return;
+   }
+   if(input.dataset.cameraMapFovToggle!==undefined){
    var fs=sec();if(!C.config(fs))return;
    mapFovVisible[fs.id]=!!input.checked;
    var map=input.closest('[data-camera-map-box]'),guide=map&&map.querySelector('[data-camera-fov-guide]');
