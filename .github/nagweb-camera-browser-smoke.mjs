@@ -695,6 +695,11 @@ export async function runCameraBrowserSmoke(page){
      areas:regions.map(n=>({which:n.dataset.cameraOverviewFovExclusive,opacity:+n.getAttribute('fill-opacity'),stroke:n.getAttribute('stroke')})),
      sharedOpacity:shared?+shared.getAttribute('fill-opacity'):null,sharedWidth:shared?+shared.getAttribute('stroke-width'):null};
    });
+   const focusDetailState=()=>page.evaluate(()=>{
+    const detail=document.querySelector('[data-camera-overview-focus-detail]');
+    return {present:!!detail,kind:detail?.dataset.cameraOverviewFocusKind||'',
+     content:detail?.textContent||'',role:detail?.getAttribute('role')||''};
+   });
    const unionState=()=>page.evaluate(()=>{
     const bar=document.querySelector('[data-camera-overview-union-bar]'),legend=document.querySelector('[data-camera-overview-union-legend]');
     return {present:!!bar,aria:bar?.getAttribute('aria-label')||'',role:bar?.getAttribute('role')||'',
@@ -745,6 +750,16 @@ export async function runCameraBrowserSmoke(page){
    union=await unionState();
    assert.equal(union.parts.find(p=>p.kind==='shared').opacity,1,'The combined-area bar emphasizes the shared region');
    assert.ok(union.parts.filter(p=>p.kind!=='shared').every(p=>p.opacity===.28),'Other combined-area segments are dimmed, preserving their proportions');
+   let detail=await focusDetailState();
+   assert.equal(detail.kind,'shared','Shared focus shows its corresponding contextual detail');
+   assert.ok(detail.content.includes('100,0% del encuadre A')&&detail.content.includes('100,0% del encuadre B')&&detail.content.includes('100,0% del área combinada'),'Shared focus distinguishes both cones and combined denominator');
+   assert.equal(detail.role,'status','Selected region explanation is accessible');
+   await page.select('[data-camera-overview-compare-focus]','a');
+   detail=await focusDetailState();
+   assert.equal(detail.kind,'a');
+   assert.ok(detail.content.includes('0,0% del encuadre A')&&detail.content.includes('0,0% del área combinada')&&detail.content.includes('Sin área exclusiva'),'Identical cones explain that A has no exclusive area');
+   await page.select('[data-camera-overview-compare-focus]','all');
+   assert.equal((await focusDetailState()).present,false,'All-regions mode omits redundant contextual text');
    await page.select('[data-camera-overview-compare-focus]','all');
   await page.click('[data-camera-overview-compare-fov-toggle]');
   cov=await overlapState();
@@ -763,6 +778,7 @@ export async function runCameraBrowserSmoke(page){
    exclusive=await exclusiveState();
    assert.equal(exclusive.regions.length,0,'Edge-on view does not fake exclusive areas');
    assert.ok(exclusive.summary.includes('no evaluable'),'Unsupported projected exclusivity is explained');
+   assert.equal((await focusDetailState()).present,false,'Profile projections do not show fabricated contextual percentages');
    union=await unionState();
    assert.equal(union.present,false,'Edge-on projection does not display a misleading projected-area distribution');
   await page.select('[data-camera-map-plane]','top');
@@ -796,6 +812,9 @@ export async function runCameraBrowserSmoke(page){
    union=await unionState();
    assert.equal(union.parts.find(p=>p.kind==='a').opacity,1,'Focus on A also highlights its share in the bar');
    assert.equal(union.parts.find(p=>p.kind==='b').opacity,.28,'The B segment is dimmed in the bar');
+   detail=await focusDetailState();
+   assert.equal(detail.kind,'a','Exclusive A focus displays A context');
+   assert.ok(detail.content.includes('100,0% del encuadre A')&&detail.content.includes('% del área combinada')&&detail.content.includes('no se superpone con B'),'Exclusive A clarifies the two area denominators');
    await page.select('[data-camera-overview-compare-focus]','b');
    focus=await focusState();
    assert.equal(focus.value,'b','Exclusive B focus is selected');
@@ -803,14 +822,19 @@ export async function runCameraBrowserSmoke(page){
    assert.equal(focus.areas.find(r=>r.which==='a').opacity,.05,'A is dimmed');
    union=await unionState();
    assert.equal(union.parts.find(p=>p.kind==='b').opacity,1,'Focus on B also highlights its share in the bar');
+   detail=await focusDetailState();
+   assert.equal(detail.kind,'b','Exclusive B focus displays B context');
+   assert.ok(detail.content.includes('100,0% del encuadre B')&&detail.content.includes('% del área combinada')&&detail.content.includes('no se superpone con A'),'Exclusive B clarifies the two area denominators');
    await page.select('[data-camera-map-plane]','front');
    focus=await focusState();
    assert.equal(focus.value,'b','Focus persists across projection changes');
    assert.equal(focus.disabled,true,'Focus cannot claim reliable areas in edge-on view');
+   assert.equal((await focusDetailState()).present,false,'Previously selected focus must not show bogus edge-on coverage');
    await page.select('[data-camera-map-plane]','top');
    focus=await focusState();
    assert.equal(focus.value,'b','Focus is restored on evaluable projections');
    assert.equal(focus.disabled,false,'Focus becomes available again');
+   assert.equal((await focusDetailState()).kind,'b','Returning to an evaluable view restores the selected region explanation');
    await page.select('[data-camera-overview-compare-focus]','all');
    focus=await focusState();
    assert.ok(focus.areas.every(r=>r.opacity===.29),'Default view restores balanced area emphasis');
@@ -827,7 +851,7 @@ export async function runCameraBrowserSmoke(page){
    assert.equal(exclusive.enabled,false,'Exclusive overlay can be disabled again');
    assert.equal(exclusive.regions.length,0,'Hiding exclusive areas preserves existing cone visualization');
    assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'Coverage calculations and UI do not add undo snapshots');
-  console.log('Camera minimap FOV overlap/union: normalized A/shared/B area bar, accessibility, edge-on exclusion, focus synchronization, no edits OK');
+  console.log('Camera minimap FOV overlap/union: compact contextual focus, identical/disjoint and profile cases, accessible status, no edits OK');
 
 
 
