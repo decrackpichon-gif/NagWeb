@@ -1587,7 +1587,7 @@ try {
     "src/preview/csshake-browser-preview.mjs",
     "src/preview/magiccss-browser-preview.mjs"]) {
     const source = await readFile(path.join(publicPreviewDir, location), "utf8");
-    for (const match of source.matchAll(/\\bfrom\\s*["'](\\.[^"']+)["']/g)) {
+    for (const match of source.matchAll(/\bfrom\s*["'](\.[^"']+)["']/g)) {
       const file = path.resolve(path.dirname(path.join(publicPreviewDir, location)), match[1]);
       assert.ok((await stat(file)).isFile(),
         "Public site must include dependency " + match[1] + " of " + location);
