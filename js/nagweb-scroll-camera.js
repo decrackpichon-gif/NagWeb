@@ -763,6 +763,14 @@ function mapOverviewPolygonFromFov(fov){
  var points=fov.points.split(' ').map(function(pair){var a=pair.split(',').map(Number);return {x:a[0],y:a[1]};});
  return points.length===3&&points.every(function(p){return Number.isFinite(p.x)&&Number.isFinite(p.y);})?points:[];
 }
+// These three percentages share one denominator: the projected union of cones A and B.
+function mapOverviewUnionParts(areaA,areaB,shared){
+ if(![areaA,areaB,shared].every(Number.isFinite)||areaA<=1e-8||areaB<=1e-8)return null;
+ var both=Math.max(0,Math.min(areaA,areaB,shared)),total=areaA+areaB-both;
+ if(total<=1e-8)return null;
+ var a=Math.max(0,(areaA-both)/total*100),b=Math.max(0,(areaB-both)/total*100);
+ return {a:a,shared:Math.max(0,100-a-b),b:b};
+}
 function mapOverviewCompareFovOverlap(frames,spec,size,perspective){
  if(!frames||!frames.a||!frames.b)return {state:'unavailable',reason:'Faltan encuadres A/B'};
  var shapeA=mapOverviewPolygonFromFov(mapFieldOfViewPose(frames.a.pose,spec,size,perspective));
@@ -771,9 +779,9 @@ function mapOverviewCompareFovOverlap(frames,spec,size,perspective){
  var areaA=Math.abs(mapOverviewPolygonSignedArea(shapeA)),areaB=Math.abs(mapOverviewPolygonSignedArea(shapeB));
  if(areaA<=1e-8||areaB<=1e-8)return {state:'unavailable',reason:'La proyección no permite medir un área fiable'};
  var shared=mapOverviewPolygonIntersection(shapeA,shapeB),areaShared=Math.abs(mapOverviewPolygonSignedArea(shared));
- if(areaShared<=1e-8)return {state:'none',points:[],shapeA:shapeA,shapeB:shapeB,areaShared:0,percentA:0,percentB:0,exclusiveA:100,exclusiveB:100};
+ if(areaShared<=1e-8)return {state:'none',points:[],shapeA:shapeA,shapeB:shapeB,areaShared:0,percentA:0,percentB:0,exclusiveA:100,exclusiveB:100,union:mapOverviewUnionParts(areaA,areaB,0)};
  var percentA=Math.min(100,areaShared/areaA*100),percentB=Math.min(100,areaShared/areaB*100);
- return {state:'shared',points:shared,shapeA:shapeA,shapeB:shapeB,areaShared:areaShared,percentA:percentA,percentB:percentB,exclusiveA:Math.max(0,100-percentA),exclusiveB:Math.max(0,100-percentB)};
+ return {state:'shared',points:shared,shapeA:shapeA,shapeB:shapeB,areaShared:areaShared,percentA:percentA,percentB:percentB,exclusiveA:Math.max(0,100-percentA),exclusiveB:Math.max(0,100-percentB),union:mapOverviewUnionParts(areaA,areaB,areaShared)};
 }
 // Non-destructive SVG even-odd regions reuse the existing intersection polygon.
 function mapOverviewCompareCoverageLabel(n){return n>0&&n<.1?'menos de 0,1':mapOverviewMetricNumber(n);}
@@ -797,6 +805,24 @@ function mapOverviewCompareOverlapSvg(overlap){
  if(!overlap||overlap.state!=='shared'||!overlap.points||overlap.points.length<3)return '';
  return '<polygon data-camera-overview-fov-overlap data-camera-overview-overlap-a="'+overlap.percentA+'" data-camera-overview-overlap-b="'+overlap.percentB+'" points="'+overlap.points.map(function(p){return p.x+','+p.y;}).join(' ')+'" fill="#a78bfa" fill-opacity="'+(focus==='all'?'.34':focus==='shared'?'.76':'.07')+'" stroke="#a78bfa" stroke-width="'+(focus==='shared'?'1.65':'.9')+'" stroke-dasharray="'+(focus==='shared'?'none':'1.6 1')+'" pointer-events="none"><title>Área compartida · '+mapOverviewCompareCoverageLabel(overlap.percentA)+'% del cono A · '+mapOverviewCompareCoverageLabel(overlap.percentB)+'% del cono B (proyección 2D)</title></polygon>';
 }
+function mapOverviewCompareUnionHtml(overlap){
+ if(!overlap||!overlap.union||(overlap.state!=='shared'&&overlap.state!=='none'))return '';
+ var focus=mapOverviewCompareExclusiveVisible[sec().id]===true?mapOverviewCompareFocusMode():'all';
+ var parts=[['a','Solo A','#22d3ee'],['shared','En común','#a78bfa'],['b','Solo B','#f472b6']].map(function(item){
+  return {key:item[0],label:item[1],color:item[2],value:overlap.union[item[0]]};
+ });
+ var description='Área combinada proyectada: '+parts.map(function(part){return part.label+' '+mapOverviewCompareCoverageLabel(part.value)+'%';}).join('; ');
+ return '<div data-camera-overview-union-summary style="margin-top:6px;padding-top:5px;border-top:1px solid var(--border,#5555);font-size:10px;line-height:1.45">'+
+  '<div style="display:flex;justify-content:space-between;gap:6px"><span style="font-weight:600">Reparto del área combinada A∪B</span><span>100%</span></div>'+
+  '<div data-camera-overview-union-bar role="img" aria-label="'+description+'" style="display:flex;width:100%;height:10px;overflow:hidden;border-radius:3px;background:var(--border,#6666);margin:3px 0">'+
+  parts.map(function(part){
+   var opacity=focus==='all'||focus===part.key?'1':'.28';
+   return '<span data-camera-overview-union-part="'+part.key+'" data-camera-overview-union-percent="'+part.value+'" title="'+part.label+' · '+mapOverviewCompareCoverageLabel(part.value)+'% de la unión proyectada" style="display:block;flex:0 0 '+part.value+'%;height:100%;min-width:0;background:'+part.color+';opacity:'+opacity+'"></span>';
+  }).join('')+'</div>'+
+  '<div data-camera-overview-union-legend style="display:flex;gap:7px;flex-wrap:wrap">'+
+  parts.map(function(part){return '<span style="color:'+part.color+'">'+part.label+' '+mapOverviewCompareCoverageLabel(part.value)+'%</span>';}).join('')+'</div>'+
+  '<div style="opacity:.7">Base: A∪B = 100% de la superficie proyectada conjunta. Distinto de los porcentajes calculados sobre cada cono.</div></div>';
+}
 function mapOverviewCompareOverlapHtml(overlap,visible){
  var showExclusive=mapOverviewCompareExclusiveVisible[sec().id]===true;
  if(!overlap)return '';
@@ -808,7 +834,7 @@ function mapOverviewCompareOverlapHtml(overlap,visible){
   '<div data-camera-overview-exclusive-summary data-camera-overview-exclusive-status="'+overlap.state+'" style="font-size:10px;margin-top:3px">'+
   (overlap.state==='unavailable'?'Exclusividad no evaluable en esta proyección':
    '<span style="color:#22d3ee">Solo A: '+mapOverviewCompareCoverageLabel(overlap.exclusiveA)+'%</span> · <span style="color:#f472b6">Solo B: '+mapOverviewCompareCoverageLabel(overlap.exclusiveB)+'%</span> · <span style="color:#a78bfa">En común</span>'+
-   (showExclusive&&visible?' · regiones diferenciadas':' · activar regiones exclusivas para verlas'))+'</div>';
+   (showExclusive&&visible?' · regiones diferenciadas':' · activar regiones exclusivas para verlas'))+'</div>'+mapOverviewCompareUnionHtml(overlap);
 }
 function mapOverviewCompareFovSvg(frames,spec,size,perspective,visible,overlap){
  var showExclusive=mapOverviewCompareExclusiveVisible[sec().id]===true;
