@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [feed-scroll, editor, procedural, diagonal, grid, zoom, drop, shift, spiral, film, totem, peel, burst, photo, wheel, spin, bottom, cover, cover-vertical, ring, ring-vertical, trail, dance, deck, showcase, split, wipe, stripe, mosaic, hero, flip, orbit-carousel, column-drift, spotlight, focus-orbit, focus-slider, sphere-wall, sphere-cascade, totem-wall, parallax-totem, vortex-spin, sphere-globe, orbit-globe, mosaic-marquee, grid-zoom-strip, depth-stack-scroll, spread-rows, spread-columns, sweep-ring, triple-scene, collage-reel]
+        suite: [fan-shuffle, editor, procedural, diagonal, grid, zoom, drop, shift, spiral, film, totem, peel, burst, photo, wheel, spin, bottom, cover, cover-vertical, ring, ring-vertical, trail, dance, deck, showcase, split, wipe, stripe, mosaic, hero, flip, orbit-carousel, column-drift, spotlight, focus-orbit, focus-slider, sphere-wall, sphere-cascade, totem-wall, parallax-totem, vortex-spin, sphere-globe, orbit-globe, mosaic-marquee, grid-zoom-strip, depth-stack-scroll, spread-rows, spread-columns, sweep-ring, triple-scene, collage-reel, feed-scroll]
     name: browser-smoke (${{ matrix.suite }})
     steps:
       - uses: actions/checkout@v4
