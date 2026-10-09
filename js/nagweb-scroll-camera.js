@@ -881,7 +881,26 @@ function mapOverviewComparePlaneMeterHtml(plane,value,color){
   (valid?'<span data-camera-overview-plane-fill="'+plane+'" data-camera-overview-plane-fill-value="'+amount+'" style="display:block;width:'+amount+'%;height:100%;border-radius:3px;background:'+color+'"></span>':'')+
   (tiny?'<span data-camera-overview-plane-tiny="'+plane+'" style="position:absolute;left:0;top:-2px;width:2px;height:11px;border-radius:1px;background:'+color+';box-shadow:0 0 0 1px var(--bg,#1c1e23)"></span>':'')+'</div>';
 }
-function mapOverviewComparePlanesHtml(planes,currentPlane){
+// Descriptive thresholds (percentage points), not statistical significance.
+function mapOverviewComparePlaneSeverity(delta){
+ if(!Number.isFinite(delta))return null;
+ var abs=Math.abs(delta);
+ return abs<1?{level:'minimal',text:'Diferencia mínima entre planos (menos de 1 punto)'}:
+  abs<10?{level:'moderate',text:'Diferencia moderada entre planos (de 1 a menos de 10 puntos)'}:
+  {level:'marked',text:'Diferencia marcada entre planos (10 puntos o más)'};
+}
+function mapOverviewComparePlaneOrientationHtml(frames){
+ if(!frames||!frames.a||!frames.b||!frames.a.pose||!frames.b.pose)return '';
+ var a=frames.a.pose,b=frames.b.pose;
+ if(![a.rotateX,a.rotateY,b.rotateX,b.rotateY].every(function(v){return Number.isFinite(+v);}))return '';
+ var dx=mapOverviewCompareAngleDelta(a.rotateX,b.rotateX),dy=mapOverviewCompareAngleDelta(a.rotateY,b.rotateY);
+ var stable=Math.abs(dx)<.05&&Math.abs(dy)<.05;
+ return '<div data-camera-overview-plane-orientation data-camera-overview-plane-rotation-x="'+dx+'" data-camera-overview-plane-rotation-y="'+dy+'" style="margin-top:4px;opacity:.88">'+
+  (stable?'A y B mantienen la misma inclinación X y dirección Y.':
+   'Giros B − A: inclinación X '+mapOverviewSignedMetric(dx)+'° · dirección Y '+mapOverviewSignedMetric(dy)+'°.')+
+  ' X/Z refleja la dirección horizontal (Y); X/Y, la inclinación (X). El desplazamiento XYZ también influye en las áreas; estos giros no demuestran por sí solos la causa.</div>';
+}
+function mapOverviewComparePlanesHtml(planes,currentPlane,frames){
  if(!planes||!planes.top||!planes.front)return '';
  var focus=mapOverviewCompareExclusiveVisible[sec().id]===true?mapOverviewCompareFocusMode():'all';
  var key=focus==='a'?'a':focus==='b'?'b':'shared';
@@ -898,16 +917,19 @@ function mapOverviewComparePlanesHtml(planes,currentPlane){
    mapOverviewComparePlaneMeterHtml(entry[0],value,color)+'</div>';
  }).join('');
  var delta=front!==null&&top!==null?front-top:null;
+ var severity=mapOverviewComparePlaneSeverity(delta);
  var interpretation=delta===null?'':Math.abs(delta)<.1?' · Variación menor a 0,1 punto':delta>0?' · Mayor proporción en X/Y':' · Mayor proporción en X/Z';
  var difference=delta!==null?'<div data-camera-overview-plane-delta data-camera-overview-plane-delta-value="'+delta+'">X/Y − X/Z: '+mapOverviewSignedMetric(delta)+' puntos porcentuales'+interpretation+'</div>':
   '<div data-camera-overview-plane-delta-unavailable style="opacity:.72">Sin diferencia calculable: una proyección no permite medir el área.</div>';
  return '<div data-camera-overview-plane-comparison data-camera-overview-plane-region="'+key+'" style="margin-top:5px;padding-top:5px;border-top:1px solid var(--border,#5555);font-size:10px;line-height:1.5">'+
   '<div style="font-weight:600">'+label+' · comparación de planos</div>'+
   '<div style="display:flex;flex-wrap:wrap;gap:5px 10px">'+cells+'</div>'+difference+
+  (severity?'<div data-camera-overview-plane-severity data-camera-overview-plane-severity-level="'+severity.level+'" style="font-weight:600">'+severity.text+'</div>':'')+
+  mapOverviewComparePlaneOrientationHtml(frames)+
   ((top!==null&&top>0&&top<1)||(front!==null&&front>0&&front<1)?'<div data-camera-overview-plane-tiny-note style="opacity:.8">Marca vertical: cobertura menor al 1%, resaltada para verla (no a escala).</div>':'')+
   '<div style="opacity:.72">Porcentaje del área combinada A∪B en cada proyección 2D. No compara volumen, oclusión ni visibilidad 3D.</div></div>';
 }
-function mapOverviewCompareFovHtml(size,perspective,visible,overlap,planes,currentPlane){
+function mapOverviewCompareFovHtml(size,perspective,visible,overlap,planes,currentPlane,frames){
  var showExclusive=mapOverviewCompareExclusiveVisible[sec().id]===true;
  var width=size&&+size.width,depth=Number.isFinite(+perspective)&&+perspective>0?+perspective:1000;
  var angle=Number.isFinite(width)&&width>0?2*Math.atan(width/(2*Math.max(1,depth)))*180/Math.PI:null;
@@ -916,7 +938,7 @@ function mapOverviewCompareFovHtml(size,perspective,visible,overlap,planes,curre
    '<label style="display:flex;gap:5px;align-items:center;margin-top:3px;cursor:pointer;font-size:10px"><input type="checkbox" data-camera-overview-compare-exclusive-toggle aria-label="Distinguir áreas exclusivas A/B"'+(showExclusive?' checked':'')+'>Distinguir áreas exclusivas A/B</label>'+
    (showExclusive?'<label style="display:inline-flex;align-items:center;gap:5px;margin:3px 0;font-size:10px">Destacar <select class="csel" data-camera-overview-compare-focus aria-label="Destacar región proyectada A/B" style="min-width:92px;font-size:10px"'+(!visible||!overlap||overlap.state==='unavailable'?' disabled':'')+'>'+
    [['all','Todas'],['a','Solo A'],['b','Solo B'],['shared','Compartida']].map(function(item){return '<option value="'+item[0]+'"'+(mapOverviewCompareFocusMode()===item[0]?' selected':'')+'>'+item[1]+'</option>';}).join('')+'</select></label>':'')+
-  '<div data-camera-overview-compare-fov-note style="font-size:10px;opacity:.75">Cian continuo: A · rosa punteado: B'+(angle!==null?' · apertura horizontal aprox. '+mapOverviewMetricNumber(angle)+'°':'')+'. Proyección indicativa, no representa oclusiones; vista de perfil: cono oculto.</div>'+mapOverviewCompareOverlapHtml(overlap,visible)+mapOverviewComparePlanesHtml(planes,currentPlane);
+  '<div data-camera-overview-compare-fov-note style="font-size:10px;opacity:.75">Cian continuo: A · rosa punteado: B'+(angle!==null?' · apertura horizontal aprox. '+mapOverviewMetricNumber(angle)+'°':'')+'. Proyección indicativa, no representa oclusiones; vista de perfil: cono oculto.</div>'+mapOverviewCompareOverlapHtml(overlap,visible)+mapOverviewComparePlanesHtml(planes,currentPlane,frames);
 }
 function mapOverviewComparePoseSvg(frames,spec,size,perspective,showFov,overlap){
  if(!frames||!frames.a||!frames.b||!spec)return '';
@@ -985,7 +1007,7 @@ function mapOverviewCompareHtml(stats,selected,pct,preferred,frames,size,perspec
   '<div data-camera-overview-compare-result style="margin-top:4px" aria-live="polite">'+mapOverviewCompareText(chosen.a,chosen.b)+'</div>'+
  '<div style="display:flex;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap"><button class="btn tiny" type="button" data-camera-overview-compare-jump="a" aria-label="Ir al centro del tramo A" title="Previsualizar el punto medio de A">Ir a A</button><button class="btn tiny" type="button" data-camera-overview-compare-jump="b" aria-label="Ir al centro del tramo B" title="Previsualizar el punto medio de B">Ir a B</button><button class="btn tiny" type="button" data-camera-overview-compare-alternate aria-label="Alternar entre los tramos A y B">Alternar → '+mapOverviewCompareAlternate(stats,selected,pct,preferred).toUpperCase()+'</button></div>'+
  '<div data-camera-overview-preview-status aria-live="polite" style="font-size:10px;margin-top:4px;font-weight:600">'+mapOverviewComparePreviewLabel(stats,selected,pct,preferred)+'</div>'+
-  '<div style="opacity:.75">Diferencia B respecto de A. Comparación en píxeles 3D y px por 1% de scroll.</div>'+mapOverviewComparePoseHtml(frames)+mapOverviewCompareFovHtml(size,perspective,showFov,overlap,planes,currentPlane)+'</div>';
+  '<div style="opacity:.75">Diferencia B respecto de A. Comparación en píxeles 3D y px por 1% de scroll.</div>'+mapOverviewComparePoseHtml(frames)+mapOverviewCompareFovHtml(size,perspective,showFov,overlap,planes,currentPlane,frames)+'</div>';
 }
 function mapOverviewHoverHit(samples,stats,spec,point,width,height){
  if(!stats||!samples||!spec||!point||!width||!height)return null;
