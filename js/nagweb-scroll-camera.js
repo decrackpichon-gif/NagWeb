@@ -1837,7 +1837,7 @@ C.panel=function(s){
    else if(lk.targetId)html+='<p class="hint gh">La cámara sigue el elemento y sus keyframes X/Y/Z del Director. Elegí Punto XYZ para editar el ● a mano.</p>';
    var focusedModel=C.config(s).targets.some(function(t){return t.id===lk.targetId&&t.kind==='shape3d';});
    if(focusedModel){
-    html+='<p class="hint gh">Ajustar punto de enfoque 3D: mueve la mirada respecto del ancla, no el modelo. Y negativo mira más arriba; Z positivo, más cerca de la cámara.</p>';
+    html+='<p class="hint gh">Ajustar punto de enfoque 3D: mueve la mirada respecto del ancla, no el modelo. Y negativo mira más arriba; Z positivo aumenta la coordenada de profundidad.</p>';
     ['X','Y','Z'].forEach(function(axis){
      var field='focusOffset'+axis,value=Number.isFinite(+lk[field])?+lk[field]:0;
      html+=cRow('Enfoque '+axis+' (px)','<input type="number" class="cnum" aria-label="Desplazamiento del enfoque 3D '+axis+'" data-camera-look-focus-offset="'+axis.toLowerCase()+'" data-camera-look-at="'+lk.at+'" value="'+value+'" min="-4000" max="4000" step="10">');
@@ -2612,7 +2612,11 @@ if(pane){
    var raw=Number(input.value);if(input.value===''||!Number.isFinite(raw)){renderPane();return;}
    var value=Math.max(-4000,Math.min(4000,raw)),previous=Number(fk[field])||0;
    if(value===previous){input.value=String(value);return;}
-   snapshot();fk[field]=value;persistLook(fs,frames,fk.at);return;
+   snapshot();fk[field]=value;
+   // Keep a useful XYZ fallback if the 3D target is deleted later.
+   var resolved=C.resolveLookFrame(fc,fk,fk.at/100,window.NAGWEB_STORY_MODEL,fs.sdEase,previewReferenceSize(fs));
+   if(resolved){fk.x=resolved.x;fk.y=resolved.y;fk.z=resolved.z;}
+   persistLook(fs,frames,fk.at);return;
   }
   if(input.dataset.cameraLookHandleMode!==undefined){
    var lhs=sec(),lhList=lookKeys(lhs),lhAt=+input.dataset.cameraLookAt,lhSide=input.dataset.cameraLookHandleSide==='in'?'in':'out',lhKey=lhList.find(function(k){return k.at===lhAt;}),lhFree=input.value==='free';
