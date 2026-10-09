@@ -1651,6 +1651,53 @@ export async function runCameraBrowserSmoke(page){
    curEl=0;selection=[];secFocus=true;saveProject();renderScenes();renderPane();renderPreview();
   });
   await page.waitForFunction(()=>document.querySelector('[data-camera-look-jump="0"]')&&document.querySelector('[data-camera-look-target]'));
+
+  // Micro-etapa 49: animated free-canvas objects appear as read-only anchors in the map.
+  const sceneGuideRead=()=>page.evaluate(()=>{
+   const map=document.querySelector('[data-camera-map]'),group=map?.querySelector('[data-camera-scene-objects]'),
+    marks=Array.from(group?.querySelectorAll('[data-camera-scene-object]')||[]),target=marks[0],
+    match=target?.getAttribute('transform')?.match(/translate\(([-\d.]+) ([-\d.]+)\)/);
+   return {count:marks.length,id:target?.getAttribute('data-camera-scene-object-id'),
+    plane:map?.dataset.plane,point:match?{x:+match[1],y:+match[2]}:null,
+    noPointer:group?.getAttribute('pointer-events')==='none',label:target?.querySelector('text')?.textContent||'',
+    checked:document.querySelector('[data-camera-scene-objects-toggle]')?.checked,
+    frames:JSON.stringify(sec().sdCameraFrames),elements:JSON.stringify(sec().elements),undo:history.length};
+  });
+  await page.select('[data-camera-map-plane]','top');
+  let guide=await sceneGuideRead();
+  assert.equal(guide.count,1,'Free canvas shows one top-level eligible scene element');
+  assert.equal(guide.id,'camera-target-el','Guide matches the real scene element');
+  assert.equal(guide.noPointer,true,'Object guides cannot intercept map drags');
+  assert.ok(guide.checked&&guide.label.includes('Objetivo móvil'),'Object guide has a visible human-readable label');
+  const guideBase=guide;
+  await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',.5));
+  await page.waitForFunction(prev=>{
+   const el=document.querySelector('[data-camera-scene-object]'),match=el?.getAttribute('transform')?.match(/translate\(([-\d.]+) ([-\d.]+)\)/);
+   return !!match&&Math.abs(+match[1]-prev)>1;
+  },{},guideBase.point.x);
+  guide=await sceneGuideRead();
+  assert.ok(guide.point.x>guideBase.point.x,'Free-canvas guide follows X animation at 50% scroll');
+  assert.equal(guide.elements,guideBase.elements,'Inspecting animated guides never changes scene elements');
+  for(const plane of ['front','side']){
+   await page.select('[data-camera-map-plane]',plane);
+   guide=await sceneGuideRead();
+   assert.equal(guide.count,1,'Guide stays visible in '+plane+' projection');
+   assert.equal(guide.plane,plane,'Guide follows selected '+plane+' projection');
+   assert.ok(guide.point&&Number.isFinite(guide.point.x)&&Number.isFinite(guide.point.y),'Position stays finite in '+plane);
+  }
+  await page.select('[data-camera-map-plane]','top');
+  await page.click('[data-camera-scene-objects-toggle]');
+  assert.equal(await page.$eval('[data-camera-scene-object]',els=>els.length),0,'Object references can be hidden');
+  assert.equal(await page.$eval('[data-camera-scene-objects-toggle]',el=>el.checked),false,'Visibility toggle stays disabled');
+  await page.click('[data-camera-scene-objects-toggle]');
+  guide=await sceneGuideRead();
+  assert.equal(guide.count,1,'Object guides return without new scene edits');
+  assert.equal(guide.elements,guideBase.elements,'Toggling guides does not change elements');
+  assert.equal(guide.frames,guideBase.frames,'Toggling guides does not change camera keyframes');
+  assert.equal(guide.undo,guideBase.undo,'Guide inspection adds no undo history');
+  await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',0));
+  console.log('Camera objects: animated free-canvas anchors, three planes, read-only visibility toggle OK');
+
   await page.click('[data-camera-look-jump="0"]');
   await page.waitForFunction(()=>document.querySelector('[data-camera-look-target]')?.dataset.cameraLookAt==='0');
   await page.select('[data-camera-look-target]','camera-target-el');
