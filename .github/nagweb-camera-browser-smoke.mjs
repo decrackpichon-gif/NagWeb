@@ -1893,6 +1893,47 @@ export async function runCameraBrowserSmoke(page){
   await page.select('[data-camera-object-select]','');
   console.log('Camera aim: exact manual orientation and linked look-at target, undo and no duplicate points OK');
 
+  // Anchored Three.js forms and GLBs can be targeted without joining CSS camera layers.
+  const old3DElements=await page.evaluate(()=>JSON.stringify(sec().elements));
+  await page.evaluate(()=>{
+   sec().elements.push(mkEl('shape3d',{id:'camera-glb-look-target',name:'Modelo GLB anclado',
+    anchor:true,x:70,y:40,w:20,h:20,offZ:3,shape:'model',sdEnter:'none',
+    sdKeyframes:[{at:0,x:0,y:0,z:0,ease:'linear'},{at:100,x:60,y:20,z:80}]}));
+   renderPane();
+  });
+  const target3D=await page.evaluate(()=>{
+   const s=sec(),cfg=NAGWEB_SCROLL_CAMERA.config(s);
+   const stage=document.querySelector('#preview')?.contentDocument?.querySelector('.sc[data-id="camera-browser-scene"] .nw-sd-stage');
+   const size={width:stage?.clientWidth||1000,height:stage?.clientHeight||800};
+   const first=NAGWEB_SCROLL_CAMERA.elementTarget(cfg,'camera-glb-look-target',0,NAGWEB_STORY_MODEL,s.sdEase,size);
+   const next=NAGWEB_SCROLL_CAMERA.elementTarget(cfg,'camera-glb-look-target',1,NAGWEB_STORY_MODEL,s.sdEase,size);
+   const mark=document.querySelector('[data-camera-scene-object-id="camera-glb-look-target"]');
+   const select=document.querySelector('[data-camera-look-target]');
+   return {first,next,mark:mark?.getAttribute('data-camera-scene-object-role'),
+    options:Array.from(select?.options||[]).map(o=>o.value),
+    isCSSLayer:cfg.layers.some(l=>l.id==='camera-glb-look-target')};
+  });
+  assert.equal(target3D.mark,'3d','3D object is visually distinguishable on camera map');
+  assert.ok(target3D.options.includes('camera-glb-look-target'),'GLB appears in the camera look target selector');
+  assert.equal(target3D.isCSSLayer,false,'3D object is not double-transformed as an HTML layer');
+  assert.ok(Number.isFinite(target3D.first.z)&&target3D.first.z>0,'GLB target uses real spatial depth');
+  assert.equal(target3D.next.x-target3D.first.x,60,'GLB look target follows the Director animated X');
+  assert.equal(target3D.next.y-target3D.first.y,20,'GLB look target follows the Director animated Y');
+  assert.equal(target3D.next.z-target3D.first.z,-80,'GLB look target inverts WebGL Z into camera-forward Z');
+  await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',0));
+  const aim3DBefore=await page.evaluate(()=>({looks:JSON.stringify(sec().sdCameraLookFrames),history:history.length}));
+  await page.select('[data-camera-object-select]','1');
+  assert.ok((await page.$eval('[data-camera-object-xyz]',el=>el.textContent)).includes('Z '),'Inspector shows GLB spatial coordinates');
+  await page.click('[data-camera-aim-at-object]');
+  const aimed3D=await page.evaluate(()=>({target:sec().sdCameraLookFrames.find(k=>k.at===0)?.targetId,history:history.length}));
+  assert.equal(aimed3D.target,'camera-glb-look-target','Aim action links GLB to current look key');
+  assert.equal(aimed3D.history,aim3DBefore.history+1,'GLB aim creates one undo step');
+  await page.evaluate(()=>undo());
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraLookFrames)),aim3DBefore.looks,'GLB look targeting supports Undo');
+  await page.evaluate(original=>{sec().elements=JSON.parse(original);renderPane();},old3DElements);
+  console.log('Camera GLB look target: 3D map guide, spatial XYZ, dynamic target binding, CSS isolation and undo OK');
+
+
 
 
 
