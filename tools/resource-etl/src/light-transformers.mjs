@@ -3,6 +3,7 @@ import { inferEditablePropsFromTsx } from "./analyzers/tsx-editable-props.mjs";
 import { inferUiverseCssDimensionProps } from "./runtime/uiverse-dimensions.mjs";
 import { inferUiverseCssSpacingProps } from "./runtime/uiverse-spacing.mjs";
 import { inferUiverseCssTypeBorderProps } from "./runtime/uiverse-type-borders.mjs";
+import { inferUiverseCssTimingProps } from "./runtime/uiverse-timing.mjs";
 import { inferUiverseCssColorProps } from "./runtime/uiverse-colors.mjs";
 import { getSourcePolicy } from "./vault/source-policies.mjs";
 
@@ -1530,7 +1531,8 @@ export function transformUiverseComponent({ repository, commit, item }) {
       ...inferUiverseCssColorProps(content),
       ...inferUiverseCssDimensionProps(content),
       ...inferUiverseCssSpacingProps(content),
-      ...inferUiverseCssTypeBorderProps(content)
+      ...inferUiverseCssTypeBorderProps(content),
+      ...inferUiverseCssTimingProps(content)
     ],
     compatibility: {
       nagweb: { supported: true, renderer: "html", tested: false },

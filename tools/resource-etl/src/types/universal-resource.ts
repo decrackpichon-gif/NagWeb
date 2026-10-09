@@ -44,6 +44,7 @@ export type EditableBinding =
   | { type: "css-pixel-declaration"; property: string; originalValue: number }
   | { type: "css-spacing-declaration"; property: string; originalValue: number }
   | { type: "css-type-border-declaration"; property: string; originalValue: number }
+  | { type: "css-timing-declaration"; property: string; role: "duration" | "delay"; originalValue: number }
   | { type: "text-content"; target?: string }
   | {
       type: "transform";

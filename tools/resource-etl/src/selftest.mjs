@@ -53,6 +53,11 @@ import {
   isSupportedUiverseCssTypeBorder
 } from "./runtime/uiverse-type-borders.mjs";
 import {
+  inferUiverseCssTimingProps,
+  applyUiverseCssTimingValues,
+  isSupportedUiverseCssTiming
+} from "./runtime/uiverse-timing.mjs";
+import {
   inferUiverseCssColorProps,
   effectiveUiverseEditableProps,
   applyUiverseCssColorValues
@@ -1600,6 +1605,7 @@ try {
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-dimensions.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-spacing.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-type-borders.mjs"))).isFile());
+  assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-timing.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "resource-browser", "vendor", "lottie_light.min.js"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, ".nojekyll"))).isFile());
   await assert.rejects(stat(path.join(publicPreviewDir, "src", "cli.mjs")),
@@ -2028,3 +2034,108 @@ assert.deepEqual(inferUiverseCssTypeBorderProps(
 assert.equal(inferUiverseCssTypeBorderProps(
   '<style>'+Array.from({length:12},(_,i)=>'.x'+i+'{font-size:'+(i+10)+'px}').join('')+
   '</style>').length,8,"Limit inferred controls per resource");
+
+const animatedUiverseCss = '<style>' +
+  '.sample{animation-duration:1.2s; animation-delay:-250ms;' +
+  'transition-duration:300ms;transition-delay:.15s}' +
+  '.sample:hover{animation:wobble 800ms ease-in-out .2s infinite;' +
+  'transition:opacity .4s ease 100ms}' +
+  '.same{animation:wobble 800ms linear infinite; transition:color .4s linear}' +
+  '/* .fake{animation-duration:9s;transition-delay:4s;} */' +
+  '.quoted:after{content:"animation-duration:7s;";}' +
+  '.skip{animation:spin 500ms, fade 1s;' +
+  'transition:transform .4s cubic-bezier(.2,.4,0,1);' +
+  'animation-delay:var(--delay);transition-duration:calc(1s + .5s)}' +
+  '</style><button data-animation="animation-duration:1.2s">Animar</button>';
+const animatedProps = inferUiverseCssTimingProps(animatedUiverseCss);
+assert.deepEqual(animatedProps.map(p=>[p.binding.property,p.binding.role,p.defaultValue]),[
+  ["animation-duration","duration",1.2],
+  ["animation-delay","delay",-0.25],
+  ["transition-duration","duration",0.3],
+  ["transition-delay","delay",0.15],
+  ["animation","duration",0.8],
+  ["animation","delay",0.2],
+  ["transition","duration",0.4],
+  ["transition","delay",0.1]
+], "CSS time controls reflect real longhand and simple shorthand timing values");
+assert.deepEqual(animatedProps.map(p=>p.id),
+  Array.from({length:8},(_v,i)=>"uiverseTime"+(i+1)));
+assert.ok(animatedProps.every(p=>p.constraints.unit==="s"),
+  "UI consistently displays seconds, even when source uses milliseconds");
+assert.equal(animatedProps[1].constraints.min,-10,
+  "Animation delays may be negative while durations cannot");
+const persistedAnimated = {
+  ...persistedUiverse,
+  artifacts:[{...persistedUiverse.artifacts[0],content:animatedUiverseCss}]
+};
+assert.deepEqual(describeEditableControls(persistedAnimated).map(p=>p.id)
+  .filter(id=>id.startsWith("uiverseTime")),
+  animatedProps.map(p=>p.id), "Existing persisted animations get real timing controls");
+assert.equal(isSupportedUiverseCssTiming(persistedAnimated,animatedProps[1]),true);
+assert.equal(isSupportedUiverseCssTiming(persistedAnimated,{
+  ...animatedProps[1],binding:{...animatedProps[1].binding,property:"position"}
+}),false,"Forged timing metadata cannot expose arbitrary CSS controls");
+assert.equal(applyUiverseCssTimingValues(persistedAnimated,{},animatedUiverseCss),
+  animatedUiverseCss,"Untouched animation timing stays byte-for-byte identical");
+const adjustedAnimation = buildResourceApplyEnvelope(persistedAnimated,{
+  values:{
+    uiverseTime1:2,
+    uiverseTime2:-0.5,
+    uiverseTime3:0.75,
+    uiverseTime4:0.4,
+    uiverseTime5:1.1,
+    uiverseTime6:0.5,
+    uiverseTime7:0.9,
+    uiverseTime8:0.25
+  }
+});
+assert.match(adjustedAnimation.descriptor.payload.html,
+  /animation-duration:2s; animation-delay:-500ms;/);
+assert.match(adjustedAnimation.descriptor.payload.html,
+  /transition-duration:750ms;transition-delay:0.4s/);
+assert.match(adjustedAnimation.descriptor.payload.html,
+  /animation:wobble 1100ms ease-in-out 0.5s infinite/);
+assert.match(adjustedAnimation.descriptor.payload.html,
+  /transition:opacity 0.9s ease 250ms/);
+assert.match(adjustedAnimation.descriptor.payload.html,
+  /animation:wobble 1100ms linear infinite; transition:color 0.9s linear/);
+assert.match(adjustedAnimation.descriptor.payload.html,
+  /\/\* \.fake\{animation-duration:9s;transition-delay:4s;\} \*\//);
+assert.match(adjustedAnimation.descriptor.payload.html,
+  /content:"animation-duration:7s;"/);
+assert.match(adjustedAnimation.descriptor.payload.html,
+  /animation:spin 500ms, fade 1s/);
+assert.match(adjustedAnimation.descriptor.payload.html,
+  /transition:transform .4s cubic-bezier\(.2,.4,0,1\)/);
+assert.match(adjustedAnimation.descriptor.payload.html,
+  /data-animation="animation-duration:1.2s"/);
+assert.deepEqual(adjustedAnimation.resource.editableProps.map(p=>p.id)
+  .filter(id=>id.startsWith("uiverseTime")),
+  animatedProps.map(p=>p.id),"Inserted resource retains its timing metadata");
+assert.equal(adjustedAnimation.descriptor.instance.values.uiverseTime5,1.1,
+  "Inserted instance carries the chosen timing value");
+assert.equal(persistedAnimated.artifacts[0].content,animatedUiverseCss,
+  "The source resource cannot be changed by animation editing");
+assert.equal(applyUiverseCssTimingValues(persistedAnimated,{
+  uiverseTime1:99,uiverseTime2:-20,uiverseTime3:"0.9s",
+  uiverseTime4:Infinity,uiverseTime5:0.1234,uiverseTime6:NaN,
+  uiverseTime7:10.001,uiverseTime8:null
+},animatedUiverseCss),animatedUiverseCss,
+  "Invalid, out of range, off-step and non-numeric timing input is ignored");
+const freshAnimated = transformUiverseComponent({
+  repository:"https://github.com/uiverse-io/galaxy",commit:"test",
+  item:{metadata:{category:"Buttons",author:"designer",slug:"animated"},
+    content:animatedUiverseCss,entry:{path:"Buttons/designer_animated.html",sha:"abc"}}
+});
+assert.deepEqual(freshAnimated.editableProps.map(p=>p.id)
+  .filter(id=>id.startsWith("uiverseTime")),animatedProps.map(p=>p.id),
+  "Newly imported components persist the same timing controls");
+assert.deepEqual(inferUiverseCssTimingProps(
+  '<style>.a{animation-duration:3s,2s;animation-delay:var(--delay);' +
+  'transition:opacity 2s cubic-bezier(.1,.2,.3,.4);' +
+  'animation:spin -3s ease;transition-duration:inherit}</style>'),[],
+  "Unsupported multi-track, complex, variable or negative duration CSS is skipped");
+assert.equal(inferUiverseCssTimingProps(
+  '<style>'+Array.from({length:11},(_v,i)=>
+    '.t'+i+'{animation-delay:'+i+'s}').join('')+'</style>').length,8,
+  "Limit the number of controls on heavily animated components");
