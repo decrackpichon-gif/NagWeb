@@ -5,6 +5,7 @@ import { applyUiverseCssTypeBorderValues } from "./uiverse-type-borders.mjs";
 import { applyUiverseCssTimingValues } from "./uiverse-timing.mjs";
 import { applyUiverseCssMultiTimingValues } from "./uiverse-multi-timing.mjs";
 import { applyUiverseCssBezierValues } from "./uiverse-bezier.mjs";
+import { applyUiverseCssEasingValues } from "./uiverse-easing.mjs";
 
 // Safely translate explicit, supported HTML styling props into visible edits.
 // This is a small allowlist, not arbitrary CSS code supplied by a resource.
@@ -61,6 +62,7 @@ export function htmlWithCustomStyle(resource, values, html) {
   html = applyUiverseCssTimingValues(resource, values, html);
   html = applyUiverseCssMultiTimingValues(resource, values, html);
   html = applyUiverseCssBezierValues(resource, values, html);
+  html = applyUiverseCssEasingValues(resource, values, html);
   const css = htmlCssPropertyStyle(resource, values);
   if (!css || !html) return html || "";
   // Inline style on the actual HTML wrapper survives the insert pipeline.

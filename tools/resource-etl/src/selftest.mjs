@@ -68,6 +68,11 @@ import {
   isSupportedUiverseCssBezier
 } from "./runtime/uiverse-bezier.mjs";
 import {
+  inferUiverseCssEasingProps,
+  applyUiverseCssEasingValues,
+  isSupportedUiverseCssEasing
+} from "./runtime/uiverse-easing.mjs";
+import {
   inferUiverseCssColorProps,
   effectiveUiverseEditableProps,
   applyUiverseCssColorValues
@@ -1618,6 +1623,7 @@ try {
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-timing.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-multi-timing.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-bezier.mjs"))).isFile());
+  assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-easing.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "resource-browser", "vendor", "lottie_light.min.js"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, ".nojekyll"))).isFile());
   await assert.rejects(stat(path.join(publicPreviewDir, "src", "cli.mjs")),
@@ -2384,3 +2390,113 @@ assert.equal(inferUiverseCssBezierProps(
   '<style>'+Array.from({length:5},(_,i)=>
     '.c'+i+'{animation:move 1s cubic-bezier('+i/10+',.2,.8,1)}').join('')+
   '</style>').length,12,"Limit Bezier sliders to three source curves");
+
+
+const presetEasingCss = '<style>' +
+  '.button{animation:spin 1s ease-in .2s infinite,fade 600ms ease-out both;' +
+  'transition:transform .3s linear, opacity 250ms ease-in-out .1s;' +
+  'animation-timing-function:ease,step-end;' +
+  'transition-timing-function: linear}' +
+  '.button:hover{animation:spin 1s ease-in .2s infinite,fade 600ms ease-out both}' +
+  '/* .comment{animation:spin 1s ease-out} */' +
+  '.quoted:before{content:"animation:spin 1s ease-in";}' +
+  '.skip{animation:spin 1s cubic-bezier(.2,.4,0,1);' +
+  'transition:opacity .4s steps(4,end);' +
+  'animation:spin 1s var(--ease);animation:spin 1s ease!important}' +
+  '</style><button data-easing="ease-in-out">Click</button>';
+const detectedEasings = inferUiverseCssEasingProps(presetEasingCss);
+assert.deepEqual(detectedEasings.map(p=>[
+  p.binding.property,p.binding.trackIndex,p.defaultValue
+]), [
+  ["animation",0,"ease-in"],["animation",1,"ease-out"],
+  ["transition",0,"linear"],["transition",1,"ease-in-out"],
+  ["animation-timing-function",0,"ease"],
+  ["animation-timing-function",1,"step-end"],
+  ["transition-timing-function",0,"linear"]
+], "CSS easing presets are inferred only from actual compatible declarations");
+assert.deepEqual(detectedEasings.map(p=>p.id),
+  ["uiverseEase1","uiverseEase2","uiverseEase3","uiverseEase4",
+    "uiverseEase5","uiverseEase6","uiverseEase7"]);
+const storedPresetResource={
+  ...persistedUiverse,
+  artifacts:[{...persistedUiverse.artifacts[0],content:presetEasingCss}]
+};
+assert.deepEqual(describeEditableControls(storedPresetResource)
+  .filter(c=>c.id.startsWith("uiverseEase")).map(c=>c.kind),
+  Array(7).fill("select"),"Existing Uiverse components gain real preset dropdowns");
+assert.equal(isSupportedUiverseCssEasing(storedPresetResource,detectedEasings[1]),true);
+assert.equal(isSupportedUiverseCssEasing(storedPresetResource,{
+  ...detectedEasings[1],
+  binding:{...detectedEasings[1].binding,trackIndex:99}
+}),false,"Forged animation track metadata does not create new controls");
+assert.equal(isSupportedUiverseCssEasing(storedPresetResource,{
+  ...detectedEasings[1],constraints:{options:[
+    {value:"not-css",label:"Invalid"},...detectedEasings[1].constraints.options]
+  ]}
+}),false,"Only verified preset choices are exposed");
+assert.equal(applyUiverseCssEasingValues(storedPresetResource,{},
+  presetEasingCss),presetEasingCss,
+  "Default easing values preserve every original CSS byte");
+const adjustedPresets=buildResourceApplyEnvelope(storedPresetResource,{
+  values:{
+    uiverseEase1:"ease-out",uiverseEase2:"ease-in",
+    uiverseEase3:"ease",uiverseEase4:"linear",
+    uiverseEase5:"ease-in-out",uiverseEase6:"step-start",
+    uiverseEase7:"step-end"
+  }
+});
+assert.match(adjustedPresets.descriptor.payload.html,
+  /animation:spin 1s ease-out .2s infinite,fade 600ms ease-in both/);
+assert.match(adjustedPresets.descriptor.payload.html,
+  /transition:transform .3s ease, opacity 250ms linear .1s/);
+assert.match(adjustedPresets.descriptor.payload.html,
+  /animation-timing-function:ease-in-out,step-start/);
+assert.match(adjustedPresets.descriptor.payload.html,
+  /transition-timing-function: step-end/);
+assert.match(adjustedPresets.descriptor.payload.html,
+  /\.button:hover\{animation:spin 1s ease-out .2s infinite,fade 600ms ease-in both\}/);
+assert.match(adjustedPresets.descriptor.payload.html,
+  /\/\* \.comment\{animation:spin 1s ease-out\} \*\//);
+assert.match(adjustedPresets.descriptor.payload.html,
+  /content:"animation:spin 1s ease-in"/);
+assert.match(adjustedPresets.descriptor.payload.html,
+  /animation:spin 1s cubic-bezier\(.2,.4,0,1\)/);
+assert.match(adjustedPresets.descriptor.payload.html,
+  /transition:opacity .4s steps\(4,end\)/);
+assert.match(adjustedPresets.descriptor.payload.html,
+  /data-easing="ease-in-out"/);
+assert.equal(adjustedPresets.descriptor.instance.values.uiverseEase6,
+  "step-start","The insertion descriptor preserves the selected preset");
+assert.deepEqual(adjustedPresets.resource.editableProps
+  .filter(p=>p.id.startsWith("uiverseEase")).map(p=>p.id),
+  detectedEasings.map(p=>p.id),
+  "The editor receives metadata for each easing selector");
+assert.equal(storedPresetResource.artifacts[0].content,presetEasingCss,
+  "The stored source remains immutable");
+assert.equal(applyUiverseCssEasingValues(storedPresetResource,{
+  uiverseEase1:"ease;position:fixed",uiverseEase2:"cubic-bezier(.1,.2,.3,.4)",
+  uiverseEase3:99,uiverseEase4:"",uiverseEase5:null,
+  uiverseEase6:{value:"linear"},uiverseEase7:["linear"]
+},presetEasingCss),presetEasingCss,
+  "Invalid, injected and non-string selection values cannot rewrite CSS");
+const newlyImportedPresets=transformUiverseComponent({
+  repository:"https://github.com/uiverse-io/galaxy",commit:"test",
+  item:{metadata:{category:"Buttons",author:"designer",slug:"presets"},
+    content:presetEasingCss,entry:{path:"Buttons/designer_presets.html",sha:"ee"}}
+});
+assert.deepEqual(newlyImportedPresets.editableProps
+  .filter(p=>p.id.startsWith("uiverseEase")).map(p=>p.id),
+  detectedEasings.map(p=>p.id),
+  "New Uiverse imports persist the same verified easing selectors");
+assert.deepEqual(inferUiverseCssEasingProps(
+  '<style>.bad{animation:spin 1s cubic-bezier(.2,.4,.6,1);' +
+  'transition:opacity 1s steps(4,end);' +
+  'animation:spin ease-in;transition-timing-function:var(--ease);' +
+  'animation-timing-function:inherit}</style>'),[],
+  "Complex functions, implicit durations and dynamic easing are skipped");
+assert.equal(inferUiverseCssEasingProps(
+  '<style>'+Array.from({length:10},(_,i)=>
+    '.p'+i+'{animation-timing-function:'+(
+      i%2?"ease-in":"ease-out")+';transition-timing-function:linear}').join('')+
+  '</style>').length<=8,true,
+  "The library caps inferred preset controls per component");
