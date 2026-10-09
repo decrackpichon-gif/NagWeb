@@ -620,3 +620,32 @@ const spatialMissing={...spatialCfg,targets:[]};
 assert.equal(C.lookTarget(spatialMissing,.5,M,'linear',{width:1000,height:800},spatialCompiled).z,900,'Removed GLB returns to authored fallback XYZ');
 assert.equal(JSON.stringify(spatialScene.elements),untouchedSpatialScene,'Camera target evaluation is read-only');
 console.log('Camera 3D targets: GLB/shape eligibility, spatial depth, animated XYZ, WebGL parity, CSS exclusion and fallback OK');
+
+
+// 3D focal offsets: author a viewpoint on the model rather than its invisible pivot.
+const focusScene={...spatialScene,sdCameraLookPathMode:'linear',sdCameraLookFrames:[
+ {at:0,targetId:'glb',x:100,y:0,z:700,focusOffsetX:10,focusOffsetY:-80,focusOffsetZ:25,ease:'linear'},
+ {at:100,targetId:'glb',x:100,y:0,z:700,focusOffsetX:-20,focusOffsetY:-40,focusOffsetZ:-15,ease:'linear'}
+]};
+const focusConfig=C.config(focusScene),focusCompiled=C.compile(focusConfig,M,'linear'),focusSize={width:1000,height:800};
+const focusBase=C.elementTarget(focusConfig,'glb',.5,M,'linear',focusSize,focusCompiled);
+const actualFocus=C.lookTarget(focusConfig,.5,M,'linear',focusSize,focusCompiled);
+assert.ok(Math.abs(actualFocus.x-(focusBase.x-5))<1e-8);
+assert.ok(Math.abs(actualFocus.y-(focusBase.y-60))<1e-8);
+assert.ok(Math.abs(actualFocus.z-(focusBase.z+5))<1e-8,'Focus offsets are animated independently from GLB movement');
+const offsetAngles=C.pose(focusConfig,.5,M,'linear',false,focusCompiled,focusSize);
+const manualAngles=C.lookAngles({x:0,y:0,z:0},actualFocus);
+assert.ok(Math.abs(offsetAngles.rotateX-manualAngles.rotateX)<1e-8&&Math.abs(offsetAngles.rotateY-manualAngles.rotateY)<1e-8);
+const firstFocus=C.resolveLookFrame(focusConfig,focusConfig.lookFrames[0],0,M,'linear',focusSize,focusCompiled);
+const rawFocus=C.elementTarget(focusConfig,'glb',0,M,'linear',focusSize,focusCompiled);
+assert.equal(firstFocus.x,rawFocus.x+10);assert.equal(firstFocus.y,rawFocus.y-80);assert.equal(firstFocus.z,rawFocus.z+25);
+assert.deepEqual(JSON.parse(JSON.stringify(C.normalizeLook(focusConfig.lookFrames))),JSON.parse(JSON.stringify(focusConfig.lookFrames)),'Offset XYZ persists through camera normalization');
+const oldTarget=C.normalizeLook([{at:0,targetId:'glb',x:10,y:20,z:30}])[0];
+assert.equal(Object.prototype.hasOwnProperty.call(oldTarget,'focusOffsetX'),false,'Older look keys are not modified');
+const bounded=C.normalizeLook([{at:0,targetId:'glb',focusOffsetX:9000,focusOffsetY:-9000,focusOffsetZ:'oops'}])[0];
+assert.equal(bounded.focusOffsetX,4000);assert.equal(bounded.focusOffsetY,-4000);assert.ok(!Object.prototype.hasOwnProperty.call(bounded,'focusOffsetZ'));
+const deletedFocus=C.lookTarget({...focusConfig,targets:[]},.5,M,'linear',focusSize,focusCompiled);
+assert.equal(deletedFocus.x,100);assert.equal(deletedFocus.y,0);assert.equal(deletedFocus.z,700,'Missing GLB falls back to saved un-offset XYZ');
+const neutralFocus=C.lookTarget({...focusConfig,lookFrames:C.normalizeLook([{at:0,targetId:'glb',x:0,y:0,z:700},{at:100,targetId:'glb',x:0,y:0,z:700}])},.5,M,'linear',focusSize,focusCompiled);
+assert.ok(Math.abs(neutralFocus.x-focusBase.x)<1e-8&&Math.abs(neutralFocus.y-focusBase.y)<1e-8&&Math.abs(neutralFocus.z-focusBase.z)<1e-8,'Zero/absent focus settings preserve existing camera output');
+console.log('Camera 3D focus: linked point offsets, interpolation, fallback, safe bounds, backward compatibility and pose OK');
