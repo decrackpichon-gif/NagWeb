@@ -124,6 +124,10 @@ pre{white-space:pre-wrap;word-break:break-word;background:#090b0e;border:1px sol
 .customize [hidden]{display:none}
 .customize .changed-only{display:flex;align-items:center;gap:8px;color:#e9ebef;font-size:13px;line-height:1.5;cursor:pointer}
 .customize .changed-only input{width:18px;height:18px;padding:0;flex-shrink:0;accent-color:var(--accent);cursor:pointer}
+.customize .control-search{color:#e9ebef;font-size:13px}
+.customize .control-search input{margin-top:6px}
+.customize .clear-control-search{margin-top:8px;font-size:12px}
+.customize .clear-control-search:disabled{opacity:.5;cursor:default}
 
 .preview-panel .preview-replay{align-self:flex-start;margin-top:10px}
 .preview-panel .preview-replay[hidden]{display:none}

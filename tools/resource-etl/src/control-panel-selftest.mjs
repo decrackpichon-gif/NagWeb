@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { runInNewContext } from "node:vm";
-import { groupEditableControls, countChangedControls } from "../resource-browser/control-groups.mjs";
+import { groupEditableControls, countChangedControls, matchesControlSearch } from "../resource-browser/control-groups.mjs";
 
 const controls = [
   { id: "stroke", label: "Color", kind: "color", defaultValue: "#aabbcc" },
@@ -23,6 +23,11 @@ for (const [id, expected] of categoryCases) {
   assert.equal(groupEditableControls([{ id, kind: "range" }])[0].id, expected);
 }
 assert.equal(countChangedControls(controls, { stroke: "#AABBCC", loop: false }), 1);
+assert.equal(matchesControlSearch(controls[1], "  TAMANO  "), true);
+assert.equal(matchesControlSearch(controls[3], "direccio\u0301n"), true);
+assert.equal(matchesControlSearch(controls[3], "uiverseplay1"), true);
+assert.equal(matchesControlSearch(controls[0], "   "), true);
+assert.equal(matchesControlSearch(controls[0], "<script>"), false);
 
 // Exercise the actual browser renderer and event handlers without a network or DOM dependency.
 class Element {
@@ -62,7 +67,7 @@ const renderer = source.slice(source.indexOf("function renderEditableControls(")
 const context = {
   document: { createElement: tag => new Element(tag) }, el,
   selectedResource: resource, selectedValues: values,
-  describeEditableControls: () => controls, groupEditableControls, countChangedControls,
+  describeEditableControls: () => controls, groupEditableControls, countChangedControls, matchesControlSearch,
   redrawEditablePreview: () => { redraws += 1; }
 };
 runInNewContext(renderer, context);
@@ -72,7 +77,7 @@ assert.deepEqual(sections.map(s => s.open), [true, false, false]);
 sections[0].open = false;
 sections[2].open = true;
 const editableInputs = () => el.customizeControls.querySelectorAll("input")
-  .filter(input => !input.dataset.changedOnly);
+  .filter(input => !input.dataset.changedOnly && !input.dataset.searchControls);
 const inputs = editableInputs();
 inputs[1].value = "32";
 inputs[1].events.input();
@@ -211,4 +216,92 @@ assert.ok(el.customizeControls.querySelectorAll("details").every(section => sect
 assert.equal(el.customizeControls.querySelectorAll("p")[1].hidden, false);
 context.renderEditableControls(resource);
 assert.equal(el.customizeControls.querySelectorAll("input").find(input => input.dataset.changedOnly).checked, false);
+assert.ok(el.customizeControls.querySelectorAll("details").every(section => !section.hidden));
+
+// Search composes with changed-only filtering and never mutates the resource's values.
+let search = el.customizeControls.querySelectorAll("input").find(input => input.dataset.searchControls);
+let clearSearch = el.customizeControls.querySelectorAll("button").find(button => button.className === "secondary clear-control-search");
+filter = el.customizeControls.querySelectorAll("input").find(input => input.dataset.changedOnly);
+sections = el.customizeControls.querySelectorAll("details");
+const searchInputs = editableInputs();
+sections[1].open = true;
+searchInputs[1].value = "36";
+searchInputs[1].events.input();
+const searchedSelect = sections[2].querySelector("select");
+searchedSelect.value = "reverse";
+searchedSelect.events.change();
+const searchValues = { ...values };
+const searchRedraws = redraws;
+assert.equal(search.value, "");
+assert.equal(clearSearch.disabled, true);
+search.value = "  DIRECCION  ";
+search.events.input();
+assert.deepEqual(sections.map(section => section.hidden), [true, true, false]);
+assert.equal(sections[2].children[1].hidden, true);
+assert.equal(sections[2].children[2].hidden, false);
+assert.match(sections[2].querySelector("summary").textContent, /1 visibles/);
+assert.match(el.customizeControls.children[0].textContent, /1 visibles/);
+assert.equal(clearSearch.disabled, false);
+filter.checked = true;
+filter.events.change();
+assert.deepEqual(values, searchValues);
+assert.equal(redraws, searchRedraws);
+assert.equal(el.customizeControls.querySelector("select"), searchedSelect);
+search.value = "color";
+search.events.input();
+assert.ok(sections.every(section => section.hidden));
+assert.match(el.customizeControls.querySelectorAll("p")[1].textContent, /entre los ajustes modificados/);
+filter.checked = false;
+filter.events.change();
+assert.equal(sections[0].hidden, false);
+search.value = "<script>alert(1)</script>";
+search.events.input();
+assert.ok(sections.every(section => section.hidden));
+assert.equal(search.value, "<script>alert(1)</script>");
+assert.match(el.customizeControls.querySelectorAll("p")[1].textContent, /No hay ajustes que coincidan/);
+search.value = "tamano";
+search.events.input();
+filter.checked = true;
+filter.events.change();
+clearSearch.events.click();
+assert.equal(search.value, "");
+assert.equal(filter.checked, true);
+assert.deepEqual(sections.map(section => section.hidden), [true, false, false]);
+assert.deepEqual(sections.map(section => section.open), [true, true, false]);
+assert.equal(context.document.activeElement, search);
+assert.deepEqual(values, searchValues);
+assert.equal(redraws, searchRedraws);
+search.value = "direction-does-not-match";
+search.events.input();
+context.selectedResource = {};
+clearSearch.events.click();
+assert.equal(search.value, "direction-does-not-match", "Obsolete buttons cannot change the panel");
+context.selectedResource = resource;
+search.value = "DIRECCIÓN";
+search.events.input();
+// Reset the whole category even if search hides some of its modified controls.
+filter.checked = false;
+filter.events.change();
+sections[2].querySelector("input").checked = false;
+sections[2].querySelector("input").events.change();
+context.document.activeElement = sections[2].querySelector("button");
+filter.checked = true;
+filter.events.change();
+sections[2].querySelector("button").events.click();
+assert.equal(values.loop, true);
+assert.equal(values.uiversePlay1, "normal");
+assert.equal(values.size, 36);
+assert.equal(context.document.activeElement, search);
+assert.ok(sections.every(section => section.hidden));
+context.renderEditableControls(resource, { preserveGroups: true });
+search = el.customizeControls.querySelectorAll("input").find(input => input.dataset.searchControls);
+assert.equal(search.value, "DIRECCIÓN");
+assert.equal(el.customizeControls.querySelectorAll("input").find(input => input.dataset.changedOnly).checked, true);
+assert.deepEqual(el.customizeControls.querySelectorAll("details").map(section => section.open), [true, true, false]);
+for (const control of controls) values[control.id] = control.defaultValue;
+context.renderEditableControls(resource, { preserveGroups: true });
+assert.equal(el.customizeControls.querySelectorAll("input").find(input => input.dataset.searchControls).value, "DIRECCIÓN");
+assert.ok(el.customizeControls.querySelectorAll("details").every(section => section.hidden));
+context.renderEditableControls(resource);
+assert.equal(el.customizeControls.querySelectorAll("input").find(input => input.dataset.searchControls).value, "");
 assert.ok(el.customizeControls.querySelectorAll("details").every(section => !section.hidden));

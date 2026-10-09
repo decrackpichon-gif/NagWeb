@@ -866,3 +866,15 @@ Conserva las secciones abiertas y el filtro al restaurar valores; abrir otro
 recurso vuelve a la vista completa. Si un control enfocado queda oculto al
 restaurarlo, el foco vuelve al filtro. Las pruebas verifican filtrado, restauración
 por categoría y global, estados, equivalencia de colores y conservación de valores.
+
+## Micro-etapa 46: búsqueda de ajustes
+
+«Buscar ajustes» filtra por nombre o identificador, sin distinguir mayúsculas ni
+acentos. Se combina con «solo modificados», muestra cuántos ajustes quedan
+visibles y oculta categorías sin coincidencias. «Limpiar búsqueda» conserva el
+filtro de modificados, los valores y las secciones abiertas. La búsqueda no
+reconstruye controles ni reinicia la vista previa; se conserva al restaurar y
+se limpia al abrir otro recurso. Restaurar una categoría sigue restaurándola
+completa, incluidos los ajustes ocultos; el botón lo aclara en su ayuda.
+Las pruebas cubren coincidencias, búsquedas sin resultados, ambos filtros,
+conservación de estados, restauración, foco y texto tratado como texto literal.

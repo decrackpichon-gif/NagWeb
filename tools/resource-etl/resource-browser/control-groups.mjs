@@ -32,3 +32,10 @@ export function countChangedControls(controls, values) {
       : value !== control.defaultValue;
   }).length;
 }
+
+export function matchesControlSearch(control, query) {
+  const normalize = value => String(value || "").normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  const needle = normalize(query);
+  return !needle || normalize(control.label).includes(needle) || normalize(control.id).includes(needle);
+}

@@ -3,7 +3,7 @@ import {
 } from "../src/runtime/persistent-vault-client.mjs";
 import { defaultEditableValues } from "../src/runtime/instance.mjs";
 import { describeEditableControls } from "../src/runtime/editable-controls.mjs";
-import { groupEditableControls, countChangedControls } from "./control-groups.mjs";
+import { groupEditableControls, countChangedControls, matchesControlSearch } from "./control-groups.mjs";
 import { htmlWithCustomStyle } from "../src/runtime/html-css-customization.mjs";
 import { buildLottieBrowserPreview } from "../src/preview/lottie-browser-preview.mjs";
 import { buildCssShakeBrowserPreview } from "../src/preview/csshake-browser-preview.mjs";
@@ -305,6 +305,7 @@ function renderEditableControls(resource, { preserveGroups = false } = {}) {
   const previousChangedOnly = el.customizeControls.querySelectorAll("input");
   const changedOnlyWasChecked = [...previousChangedOnly]
     .find(input => input.dataset.changedOnly)?.checked === true;
+  const previousSearch = [...previousChangedOnly].find(input => input.dataset.searchControls)?.value || "";
   const previousGroups = new Map([...el.customizeControls.querySelectorAll("details")]
     .map(group => [group.dataset.category, group.open]));
   el.customizeControls.replaceChildren();
@@ -315,6 +316,23 @@ function renderEditableControls(resource, { preserveGroups = false } = {}) {
   overview.className = "customize-overview";
   overview.setAttribute("role", "status");
   el.customizeControls.appendChild(overview);
+  const searchLabel = document.createElement("label");
+  searchLabel.className = "control-search";
+  const searchText = document.createElement("span");
+  searchText.textContent = "Buscar ajustes";
+  const search = document.createElement("input");
+  search.type = "search";
+  search.maxLength = 120;
+  search.dataset.searchControls = "true";
+  search.placeholder = "Nombre del ajuste";
+  search.value = preserveGroups ? previousSearch : "";
+  searchLabel.append(searchText, search);
+  el.customizeControls.appendChild(searchLabel);
+  const clearSearch = document.createElement("button");
+  clearSearch.type = "button";
+  clearSearch.className = "secondary clear-control-search";
+  clearSearch.textContent = "Limpiar búsqueda";
+  el.customizeControls.appendChild(clearSearch);
   const filterLabel = document.createElement("label");
   filterLabel.className = "changed-only";
   const changedOnly = document.createElement("input");
@@ -339,6 +357,7 @@ function renderEditableControls(resource, { preserveGroups = false } = {}) {
     reset.type = "button";
     reset.className = "secondary reset-category";
     reset.textContent = `Restaurar ${group.label.toLowerCase()}`;
+    reset.title = "Restaura toda la categoría, incluidos los ajustes ocultos por los filtros.";
     reset.addEventListener("click", () => {
       if (selectedResource !== resource || el.customize.hidden || reset.disabled) return;
       for (const control of group.controls) {
@@ -355,25 +374,49 @@ function renderEditableControls(resource, { preserveGroups = false } = {}) {
   const updateSummary = () => {
     const focusedElement = document.activeElement;
     const changed = countChangedControls(controls, selectedValues);
-    overview.textContent = `${controls.length} ajustes · ${groups.length} categorías · ${changed} modificados`;
-    emptyChanges.hidden = !changedOnly.checked || changed > 0;
+    const hasSearch = search.value.trim().length > 0;
+    const visibleIds = new Set();
+    const focusTarget = hasSearch ? search : changedOnly;
     for (const { control, field, input } of fields) {
-      field.hidden = changedOnly.checked && countChangedControls([control], selectedValues) === 0;
+      field.hidden = !matchesControlSearch(control, search.value) ||
+        changedOnly.checked && countChangedControls([control], selectedValues) === 0;
+      if (!field.hidden) visibleIds.add(control.id);
       // Keep keyboard focus visible when restoring the active control to its default.
-      if (field.hidden && focusedElement === input) changedOnly.focus();
+      if (field.hidden && focusedElement === input) focusTarget.focus();
     }
+    overview.textContent = `${controls.length} ajustes · ${groups.length} categorías · ${changed} modificados` +
+      (hasSearch || changedOnly.checked ? ` · ${visibleIds.size} visibles` : "");
+    emptyChanges.hidden = visibleIds.size > 0;
+    emptyChanges.textContent = hasSearch
+      ? changedOnly.checked
+        ? "No hay coincidencias entre los ajustes modificados. Limpiá la búsqueda o desmarcá el filtro."
+        : "No hay ajustes que coincidan. Limpiá la búsqueda para ver todos."
+      : "No hay ajustes modificados. Desmarcá el filtro para ver todos.";
+    clearSearch.disabled = search.value.length === 0;
     for (const group of groups) {
       const count = countChangedControls(group.controls, selectedValues);
       group.summary.textContent = `${group.label} (${group.controls.length}) · ${count} modificados`;
       group.reset.disabled = count === 0;
-      group.section.hidden = changedOnly.checked && count === 0;
+      const visible = group.controls.filter(control => visibleIds.has(control.id)).length;
+      if (hasSearch || changedOnly.checked) group.summary.textContent += ` · ${visible} visibles`;
+      group.section.hidden = visible === 0;
       if (group.section.hidden &&
-          [group.reset, group.summary].includes(focusedElement)) changedOnly.focus();
+          [group.reset, group.summary].includes(focusedElement)) focusTarget.focus();
     }
     el.resetCustomize.disabled = changed === 0;
   };
   changedOnly.addEventListener("change", () => {
     if (selectedResource !== resource || el.customize.hidden) return;
+    updateSummary();
+  });
+  search.addEventListener("input", () => {
+    if (selectedResource !== resource || el.customize.hidden) return;
+    updateSummary();
+  });
+  clearSearch.addEventListener("click", () => {
+    if (selectedResource !== resource || el.customize.hidden || clearSearch.disabled) return;
+    search.value = "";
+    search.focus();
     updateSummary();
   });
   const renderer = resource.runtime?.renderer;
