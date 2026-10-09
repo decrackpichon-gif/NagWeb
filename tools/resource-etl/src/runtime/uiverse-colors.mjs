@@ -1,4 +1,5 @@
 import { inferUiverseCssDimensionProps } from "./uiverse-dimensions.mjs";
+import { inferUiverseCssSpacingProps } from "./uiverse-spacing.mjs";
 
 // Infer hexadecimal, rgb() and rgba() colors from real CSS declarations.
 // Operates on the component's own <style> tags, never on arbitrary markup.
@@ -99,7 +100,8 @@ export function effectiveUiverseEditableProps(resource) {
   const seen = new Set(original.map(prop => prop.id));
   return [...original, ...[
     ...inferUiverseCssColorProps(mainHtml(resource)),
-    ...inferUiverseCssDimensionProps(mainHtml(resource))
+    ...inferUiverseCssDimensionProps(mainHtml(resource)),
+    ...inferUiverseCssSpacingProps(mainHtml(resource))
   ].filter(prop => !seen.has(prop.id))];
 }
 

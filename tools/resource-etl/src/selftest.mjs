@@ -43,6 +43,11 @@ import {
   isSupportedUiverseCssDimension
 } from "./runtime/uiverse-dimensions.mjs";
 import {
+  inferUiverseCssSpacingProps,
+  applyUiverseCssSpacingValues,
+  isSupportedUiverseCssSpacing
+} from "./runtime/uiverse-spacing.mjs";
+import {
   inferUiverseCssColorProps,
   effectiveUiverseEditableProps,
   applyUiverseCssColorValues
@@ -1588,6 +1593,7 @@ try {
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "html-css-customization.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-colors.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-dimensions.mjs"))).isFile());
+  assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-spacing.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "resource-browser", "vendor", "lottie_light.min.js"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, ".nojekyll"))).isFile());
   await assert.rejects(stat(path.join(publicPreviewDir, "src", "cli.mjs")),
@@ -1785,8 +1791,8 @@ const sizedSavedUiverse = {
 };
 assert.deepEqual(describeEditableControls(sizedSavedUiverse).map(p => p.id),
   ["opacity","scale","uiverseColor1","uiverseLength1","uiverseLength2",
-    "uiverseLength3","uiverseLength4","uiverseLength5"],
-  "Old saved Uiverse gains real dimensions without re-import");
+    "uiverseLength3","uiverseLength4","uiverseLength5","uiverseSpace1"],
+  "Old saved Uiverse gains dimensions and padding without re-import");
 assert.equal(isSupportedUiverseCssDimension(sizedSavedUiverse, inferredSizes[0]),true);
 assert.equal(isSupportedUiverseCssDimension(sizedSavedUiverse, {
   ...inferredSizes[0], binding:{...inferredSizes[0].binding,property:"position"}
@@ -1812,7 +1818,8 @@ assert.match(sizedApplied.descriptor.payload.html,
 assert.match(sizedApplied.descriptor.payload.html, /data-size="width:160px"/);
 assert.match(sizedApplied.descriptor.payload.html, /width: 5000px; height:1400px/);
 assert.match(sizedApplied.descriptor.payload.html, /content:"width:77px;"/);
-assert.deepEqual(sizedApplied.resource.editableProps.slice(-5).map(p=>p.id),
+assert.deepEqual(sizedApplied.resource.editableProps.map(p=>p.id)
+  .filter(id=>id.startsWith("uiverseLength")),
   ["uiverseLength1","uiverseLength2","uiverseLength3","uiverseLength4","uiverseLength5"],
   "Applied metadata preserves editable dimensions");
 assert.equal(sizedApplied.descriptor.instance.values.uiverseLength2,220);
@@ -1842,3 +1849,77 @@ assert.match(applyUiverseCssDimensionValues(fractionResource,
 assert.equal(inferUiverseCssDimensionProps(
   '<style>'+Array.from({length:12},(_item,i)=>'.c'+i+'{width:'+(i+10)+'px}').join('')+
   '</style>').length,8,"Maximum eight length controls per component");
+
+const spacingCss = '<style>' +
+  '.button{padding: 12px;margin:-8px;padding-top:5.5px;' +
+  'margin-right: 15px; margin-bottom: 0px}' +
+  '.button:hover {padding:12px;margin:-8px}' +
+  '/* .fake {margin: 99px;padding:100px;} */' +
+  '.quoted:after {content:"margin: 50px;";}' +
+  '.other{margin:10%;padding:calc(5px + 2vw);' +
+  'padding:4px 8px; margin:auto; margin-left:-301px;' +
+  'padding-right:-5px;padding-left:450px}' +
+  '</style><div data-space="padding: 12px">Hola</div>';
+const spacingProps = inferUiverseCssSpacingProps(spacingCss);
+assert.deepEqual(spacingProps.map(p=>[p.binding.property,p.defaultValue]),[
+  ["padding",12],["margin",-8],["padding-top",5.5],
+  ["margin-right",15],["margin-bottom",0]
+], "Real px padding and margin declarations get controls, without fake shorthand");
+assert.deepEqual(spacingProps.map(p=>p.constraints.min),
+  [0,-300,0,-300,-300],"Margin accepts negative values; padding does not");
+assert.equal(spacingProps[2].constraints.step,0.1);
+const spacingSavedUiverse={
+  ...persistedUiverse,
+  artifacts:[{...persistedUiverse.artifacts[0],content:spacingCss}]
+};
+assert.deepEqual(describeEditableControls(spacingSavedUiverse).map(p=>p.id),[
+  "opacity","scale",
+  "uiverseSpace1","uiverseSpace2","uiverseSpace3","uiverseSpace4","uiverseSpace5"
+], "Already-saved Uiverse resources expose spacing controls without re-import");
+assert.equal(isSupportedUiverseCssSpacing(spacingSavedUiverse,spacingProps[0]),true);
+assert.equal(isSupportedUiverseCssSpacing(spacingSavedUiverse,{
+  ...spacingProps[0],binding:{type:"css-spacing-declaration",property:"position",originalValue:12}
+}),false,"Forged CSS property metadata is rejected");
+assert.equal(applyUiverseCssSpacingValues(spacingSavedUiverse,{},spacingCss),spacingCss,
+  "Default spacing leaves original CSS byte-identical");
+const spacingApplied=buildResourceApplyEnvelope(spacingSavedUiverse,{
+  values:{uiverseSpace1:24,uiverseSpace2:-20,
+    uiverseSpace3:7.5,uiverseSpace4:25,uiverseSpace5:4}
+});
+assert.match(spacingApplied.descriptor.payload.html,
+  /padding: 24px;margin:-20px;padding-top:7.5px;/);
+assert.match(spacingApplied.descriptor.payload.html,
+  /margin-right: 25px; margin-bottom: 4px/);
+assert.match(spacingApplied.descriptor.payload.html,
+  /\.button:hover \{padding:24px;margin:-20px\}/);
+assert.match(spacingApplied.descriptor.payload.html,
+  /\/\* \.fake \{margin: 99px;padding:100px;\} \*\//);
+assert.match(spacingApplied.descriptor.payload.html,/content:"margin: 50px;"/);
+assert.match(spacingApplied.descriptor.payload.html,/data-space="padding: 12px"/);
+assert.match(spacingApplied.descriptor.payload.html,
+  /margin:10%;padding:calc\(5px \+ 2vw\);padding:4px 8px/);
+assert.match(spacingApplied.descriptor.payload.html,
+  /margin-left:-301px;padding-right:-5px;padding-left:450px/);
+assert.deepEqual(spacingApplied.resource.editableProps.map(p=>p.id)
+  .filter(id=>id.startsWith("uiverseSpace")),
+  ["uiverseSpace1","uiverseSpace2","uiverseSpace3","uiverseSpace4","uiverseSpace5"],
+  "Spacing metadata survives insertion bridge");
+assert.equal(spacingApplied.descriptor.instance.values.uiverseSpace2,-20);
+assert.equal(spacingSavedUiverse.artifacts[0].content,spacingCss,
+  "Original resource remains immutable");
+assert.equal(applyUiverseCssSpacingValues(spacingSavedUiverse,{
+  uiverseSpace1: "24;position:fixed", uiverseSpace2:-400,
+  uiverseSpace3:7.55, uiverseSpace4:Infinity,uiverseSpace5:802
+},spacingCss),spacingCss,"Invalid, out-of-range and off-step spacing is rejected");
+const generatedSpacing=transformUiverseComponent({
+  repository:"https://github.com/uiverse-io/galaxy",commit:"test",
+  item:{metadata:{category:"Buttons",author:"designer",slug:"spacing"},
+    content:spacingCss,entry:{path:"Buttons/designer_spacing.html",sha:"abc"}}
+});
+assert.deepEqual(generatedSpacing.editableProps.map(p=>p.id)
+  .filter(id=>id.startsWith("uiverseSpace")),
+  ["uiverseSpace1","uiverseSpace2","uiverseSpace3","uiverseSpace4","uiverseSpace5"],
+  "Newly imported Uiverse resources persist their real spacing properties");
+assert.equal(inferUiverseCssSpacingProps(
+  '<style>'+Array.from({length:12},(_v,i)=>'.x'+i+'{margin-top:'+i+'px}').join('')+
+  '</style>').length,8,"Spacing panel limits automatically inferred controls");

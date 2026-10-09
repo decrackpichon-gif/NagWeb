@@ -1,5 +1,6 @@
 import { applyUiverseCssColorValues } from "./uiverse-colors.mjs";
 import { applyUiverseCssDimensionValues } from "./uiverse-dimensions.mjs";
+import { applyUiverseCssSpacingValues } from "./uiverse-spacing.mjs";
 
 // Safely translate explicit, supported HTML styling props into visible edits.
 // This is a small allowlist, not arbitrary CSS code supplied by a resource.
@@ -51,6 +52,7 @@ export function htmlCssPropertyStyle(resource, values = {}) {
 export function htmlWithCustomStyle(resource, values, html) {
   html = applyUiverseCssColorValues(resource, values, html);
   html = applyUiverseCssDimensionValues(resource, values, html);
+  html = applyUiverseCssSpacingValues(resource, values, html);
   const css = htmlCssPropertyStyle(resource, values);
   if (!css || !html) return html || "";
   // Inline style on the actual HTML wrapper survives the insert pipeline.
