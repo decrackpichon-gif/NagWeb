@@ -591,3 +591,13 @@ con transparencia y recorte por escena. El límite de bloom de las etapas
 anteriores queda reemplazado por [Bloom de escenas espaciales v1](spatial-bloom-v1.md).
 El Director mantiene el control exclusivo del progreso. Continúan los límites
 de objetos sin ancla, oclusión DOM/WebGL, timing individual y validación móvil.
+
+## Actualización: interacción de objetos espaciales
+
+La etapa siguiente alinea el picking del giro con las cámaras y recortes de
+cada stage, y convierte los gestos de mover/redimensionar anclas desde el plano
+del objeto. El alcance y las pruebas quedan en
+[Interacción de objetos con cámara espacial v1](spatial-interaction-v1.md).
+El Director mantiene el control exclusivo del progreso. Los marcos siguen siendo
+DOM, ahora proyectados desde los bounds 3D de las anclas espaciales; no se añade
+oclusión mutua con WebGL.
