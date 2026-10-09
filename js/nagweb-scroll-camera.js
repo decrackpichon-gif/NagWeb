@@ -768,8 +768,8 @@ function mapOverviewUnionParts(areaA,areaB,shared){
  if(![areaA,areaB,shared].every(Number.isFinite)||areaA<=1e-8||areaB<=1e-8)return null;
  var both=Math.max(0,Math.min(areaA,areaB,shared)),total=areaA+areaB-both;
  if(total<=1e-8)return null;
- var a=Math.max(0,(areaA-both)/total*100),b=Math.max(0,(areaB-both)/total*100);
- return {a:a,shared:Math.max(0,100-a-b),b:b};
+ var a=Math.max(0,(areaA-both)/total*100),b=Math.max(0,(areaB-both)/total*100),common=both>0?both/total*100:0;
+ return {a:a,shared:common,b:b};
 }
 function mapOverviewCompareFovOverlap(frames,spec,size,perspective){
  if(!frames||!frames.a||!frames.b)return {state:'unavailable',reason:'Faltan encuadres A/B'};
