@@ -1633,16 +1633,16 @@ const vividUiverse = transformUiverseComponent({
 });
 assert.deepEqual(describeEditableControls(vividUiverse).map(prop => prop.id),
   ["opacity", "scale", "uiverseColor1", "uiverseColor2",
-    "uiverseColor3", "uiverseColor4"]);
-assert.equal(effectiveUiverseEditableProps(vividUiverse).length, 6,
-  "Palette is not duplicated when already saved in metadata");
+    "uiverseColor3", "uiverseColor4", "uiverseLength1"]);
+assert.equal(effectiveUiverseEditableProps(vividUiverse).length, 7,
+  "Color and pixel controls are not duplicated when already saved in metadata");
 const persistedUiverse = {
   ...vividUiverse, editableProps: vividUiverse.editableProps.slice(0, 2)
 };
 assert.deepEqual(describeEditableControls(persistedUiverse).map(prop => prop.id),
   ["opacity", "scale", "uiverseColor1", "uiverseColor2",
-    "uiverseColor3", "uiverseColor4"],
-  "Old persistent Uiverse resources can be customized without re-import");
+    "uiverseColor3", "uiverseColor4", "uiverseLength1"],
+  "Old persistent Uiverse resources gain color and width without re-import");
 const paletteValues = {
   uiverseColor1: "#1122ee",
   uiverseColor2: "#eeddcc",
@@ -1683,9 +1683,11 @@ assert.deepEqual(inferUiverseCssColorProps(
   ["#ffeedd","#aabbcc"], "Ignore URL tokens while editing genuine gradients");
 
 assert.deepEqual(buildResourceApplyEnvelope(persistedUiverse).resource.editableProps
-  .map(prop => prop.id).slice(-4),
+  .map(prop => prop.id).filter(id => id.startsWith("uiverseColor")),
   ["uiverseColor1", "uiverseColor2", "uiverseColor3", "uiverseColor4"],
   "Dynamic palette survives apply envelope even with an old resource snapshot");
+assert.equal(buildResourceApplyEnvelope(persistedUiverse).descriptor.instance.values.uiverseLength1,
+  100, "Existing pixel width also keeps its default in the insert descriptor");
 assert.equal(buildResourceApplyEnvelope(persistedUiverse).descriptor.instance.values.uiverseColor1,
   "#ffffff", "New controls also supply their default values to inserted instance");
 const unchangedComment = '<style>.a{color:#abcdef;/* color:#abcdef; */' +
