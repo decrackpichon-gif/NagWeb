@@ -70,6 +70,10 @@ let pendingApplyResourceId = null;
 let pendingApplyTimer = null;
 const applyTarget = resolveResourceApplyTarget();
 const editParams = new URLSearchParams(location.search);
+// Optional UI hint: absent means a generic host with unrestricted adapters.
+const hostKindsText = applyTarget ? editParams.get("hostKinds") : null;
+const hostKinds = hostKindsText === null ? null :
+  new Set(hostKindsText.split(",").filter(kind => /^(?:svg|html|react|threejs|css-inline-effect|css-class-effect|lottie)$/.test(kind)));
 const editResourceId = applyTarget ? editParams.get("editResource") : null;
 const editSession = editResourceId ? editParams.get("editSession") : null;
 let editInitialValues = {};
@@ -294,8 +298,9 @@ function updateApplyReadiness(resource) {
     return;
   }
 
+  let prepared;
   try {
-    buildResourceApplyEnvelope(resource, { requestId: "nagweb-apply-readiness" });
+    prepared = buildResourceApplyEnvelope(resource, { requestId: "nagweb-apply-readiness" });
   } catch (error) {
     el.applyStatus.textContent =
       /no NagWeb insert adapter/.test(error?.message || "")
@@ -307,6 +312,13 @@ function updateApplyReadiness(resource) {
   if (!applyTarget) {
     el.applyStatus.textContent =
       "Modo exploración: abrí la biblioteca desde NagWeb para insertar este recurso.";
+    return;
+  }
+
+  if (hostKinds && !hostKinds.has(prepared.descriptor.kind)) {
+    el.applyStatus.textContent = hostKinds.has("svg")
+      ? "Este editor admite por ahora insertar íconos SVG de trazo. Podés explorar y copiar el código de este recurso, pero todavía no aplicarlo al lienzo."
+      : "Este editor todavía no admite insertar este tipo de recurso. Podés explorarlo y copiar su código.";
     return;
   }
 
@@ -760,7 +772,7 @@ el.resetCustomize.addEventListener("click", () => {
 });
 
 el.apply.addEventListener("click", () => {
-  if (!selectedResource || !applyTarget || pendingApplyId) return;
+  if (!selectedResource || !applyTarget || pendingApplyId || el.apply.disabled) return;
 
   try {
     const envelope = buildResourceApplyEnvelope(selectedResource, {

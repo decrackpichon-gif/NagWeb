@@ -177,6 +177,8 @@ try {
     await showCategory("animation");
     await frame.getByLabel(playback.label, { exact: true }).selectOption("4");
     await changedOnly.check();
+    // The generic host deliberately does not advertise restricted capabilities.
+    await expect(frame.getByRole("button", { name: "Aplicar en NagWeb", exact: true })).toBeEnabled();
     await frame.getByRole("button", { name: "Aplicar en NagWeb", exact: true }).click();
     await frame.locator('[data-apply-status]').filter({ hasText: "Recurso aplicado en el editor de prueba." }).waitFor();
     const cssEnvelope = await page.evaluate(() => window.received.at(-1));
@@ -268,9 +270,9 @@ try {
   assert.equal(await page.evaluate(() => sec().elements.length), 1, "Only the library iframe can apply resources");
   await libraryFrame.getByRole("button", { name: "Cerrar", exact: true }).click();
   await libraryFrame.locator(`[data-resource-id="${css.id}"]`).click();
-  await libraryFrame.getByRole("button", { name: "Aplicar en NagWeb", exact: true }).click();
-  await expect(libraryFrame.locator('[data-apply-status]')).toContainText("Esta etapa permite insertar íconos SVG de trazo");
-  assert.equal(await page.evaluate(() => sec().elements.length), 1, "Unsupported resources must not mutate the editor");
+  await expect(libraryFrame.getByRole("button", { name: "Aplicar en NagWeb", exact: true })).toBeDisabled();
+  await expect(libraryFrame.locator('[data-apply-status]')).toContainText("Este editor admite por ahora insertar íconos SVG de trazo");
+  assert.equal(await page.evaluate(() => sec().elements.length), 1, "Unsupported resources must never reach the insertion handler");
   await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
   const svg = page.frameLocator("#preview").locator(`[data-id="${inserted.element.id}"] svg`);
   await expect(svg).toBeVisible();

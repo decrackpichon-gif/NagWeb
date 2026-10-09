@@ -942,3 +942,7 @@ La prueba en Chromium verifica cancelación, valores recuperados, actualización
 sin duplicado, conservación de propiedades, deshacer/rehacer y recarga; deja
 `editor-edited.png` junto con el informe del recorrido completo. También prueba
 rechazo de un destino eliminado y detección de un fallo de almacenamiento.
+
+## Micro-etapa 50: inserción según capacidades del editor
+
+NagWeb ahora informa a la Biblioteca Visual que su receptor admite insertar solamente SVG nativos. Para HTML/CSS y otros tipos, el detalle sigue disponible para explorar, previsualizar, personalizar y copiar, pero la acción Aplicar se deshabilita con una explicación clara. No se presenta como error de inserción algo que de antemano no está admitido. Esto es una indicación de interfaz, no un reemplazo de la validación del receptor. Otros editores que usen el protocolo sin hostKinds conservan el comportamiento genérico para recibir recursos HTML/CSS. La prueba real de Chromium cubre ambos casos.

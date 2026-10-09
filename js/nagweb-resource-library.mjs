@@ -52,6 +52,9 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     hint.textContent = context ? "Personalizá el ícono seleccionado y guardá los cambios." : "Insertá un ícono SVG de trazo en la escena actual.";
     const url = new URL("../tools/resource-etl/resource-browser/", import.meta.url);
     url.searchParams.set("hostOrigin", location.origin);
+    // Advertise this editor's current native insertion capability.
+    // The receiver still validates the actual SVG for each request.
+    url.searchParams.set("hostKinds", "svg");
     if (context) {
       url.searchParams.set("editResource", context.resourceId);
       url.searchParams.set("editSession", context.session);
