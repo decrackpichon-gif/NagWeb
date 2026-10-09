@@ -1,0 +1,8 @@
+{
+  "name": "NagWeb Resource Browser",
+  "sourceBranch": "feat/resource-etl-v1",
+  "sourceCommit": "20bce81399913490379abc3659988cc41fa93db9",
+  "dataBranch": "resource-vault-data",
+  "releaseType": "manual-github-pages",
+  "note": "Static publication branch. Site is available only after GitHub Pages is enabled in repository settings."
+}
