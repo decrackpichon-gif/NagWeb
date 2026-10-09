@@ -695,6 +695,16 @@ export async function runCameraBrowserSmoke(page){
      areas:regions.map(n=>({which:n.dataset.cameraOverviewFovExclusive,opacity:+n.getAttribute('fill-opacity'),stroke:n.getAttribute('stroke')})),
      sharedOpacity:shared?+shared.getAttribute('fill-opacity'):null,sharedWidth:shared?+shared.getAttribute('stroke-width'):null};
    });
+   const unionState=()=>page.evaluate(()=>{
+    const bar=document.querySelector('[data-camera-overview-union-bar]'),legend=document.querySelector('[data-camera-overview-union-legend]');
+    return {present:!!bar,aria:bar?.getAttribute('aria-label')||'',role:bar?.getAttribute('role')||'',
+      legend:legend?.textContent||'',
+      note:document.querySelector('[data-camera-overview-union-summary]')?.textContent||'',
+      parts:Array.from(bar?.querySelectorAll('[data-camera-overview-union-part]')||[]).map(el=>({
+        kind:el.dataset.cameraOverviewUnionPart,percent:+el.dataset.cameraOverviewUnionPercent,
+        width:el.style.flexBasis,opacity:el.style.opacity
+      }))};
+   });
    const overlapState=()=>page.evaluate(()=>{
    const result=document.querySelector('[data-camera-overview-overlap-summary]'),poly=document.querySelector('[data-camera-overview-fov-overlap]');
    const parse=poly?.getAttribute('points')?.split(' ').map(p=>p.split(',').map(Number))||[];
@@ -711,6 +721,12 @@ export async function runCameraBrowserSmoke(page){
   assert.ok(Math.abs(cov.a-100)<.01&&Math.abs(cov.b-100)<.01,'Identical A/B cones share 100% of each projected area');
   assert.ok(cov.finite&&cov.nonInteractive,'Overlap polygon uses valid SVG coordinates and does not intercept editing');
   assert.ok(cov.note.includes('proyectada X/Z o X/Y')&&cov.note.includes('no visibilidad real'),'Diagnostic clearly distinguishes 2D coverage from actual 3D visibility');
+   let union=await unionState();
+   assert.equal(union.present,true,'Identical cones have a compact combined-area bar');
+   assert.equal(union.role,'img','Combined-area breakdown has an accessible text alternative');
+   assert.deepEqual(union.parts.map(p=>p.kind),['a','shared','b'],'Bar shows exclusive A, shared, exclusive B in spatial order');
+   assert.ok(Math.abs(union.parts[0].percent)<.001&&Math.abs(union.parts[1].percent-100)<.001&&Math.abs(union.parts[2].percent)<.001,'Identical cones have 100% common area of the projected union');
+   assert.ok(union.aria.includes('En común 100')&&union.note.includes('Distinto de los porcentajes calculados sobre cada cono'),'Bar clearly distinguishes union versus individual-cone denominators');
    let exclusive=await exclusiveState();
    assert.equal(exclusive.enabled,false,'Exclusive regions default off to keep the minimap uncluttered');
    assert.equal(exclusive.regions.length,0);
@@ -726,6 +742,9 @@ export async function runCameraBrowserSmoke(page){
    assert.equal(focus.sharedOpacity,.76,'Shared region is emphasized in the minimap');
    assert.equal(focus.sharedWidth,1.65,'Shared outline becomes easier to see');
    assert.ok(focus.areas.every(r=>r.opacity===.05),'Nonfocused exclusive areas become unobtrusive');
+   union=await unionState();
+   assert.equal(union.parts.find(p=>p.kind==='shared').opacity,'1','The combined-area bar emphasizes the shared region');
+   assert.ok(union.parts.filter(p=>p.kind!=='shared').every(p=>p.opacity==='.28'),'Other combined-area segments are dimmed, preserving their proportions');
    await page.select('[data-camera-overview-compare-focus]','all');
   await page.click('[data-camera-overview-compare-fov-toggle]');
   cov=await overlapState();
@@ -744,6 +763,8 @@ export async function runCameraBrowserSmoke(page){
    exclusive=await exclusiveState();
    assert.equal(exclusive.regions.length,0,'Edge-on view does not fake exclusive areas');
    assert.ok(exclusive.summary.includes('no evaluable'),'Unsupported projected exclusivity is explained');
+   union=await unionState();
+   assert.equal(union.present,false,'Edge-on projection does not display a misleading projected-area distribution');
   await page.select('[data-camera-map-plane]','top');
   // Spread manually oriented camera intervals far apart so the projected cones are disjoint.
   await page.evaluate(()=>{
@@ -760,17 +781,27 @@ export async function runCameraBrowserSmoke(page){
    exclusive=await exclusiveState();
    assert.equal(exclusive.regions.length,2,'Separate cones render two distinct exclusive areas');
    assert.ok(exclusive.regions.every(r=>Math.abs(r.percent-100)<.01&&r.rule==='evenodd'&&r.pointer==='none'),'Disjoint cones: 100% exclusive of their own projected areas');
+   union=await unionState();
+   assert.equal(union.present,true,'Disjoint cones still have a measurable combined area');
+   assert.ok(union.parts[0].percent>0&&union.parts[2].percent>0&&Math.abs(union.parts[1].percent)<.001,'Separate cones have no shared part of the union');
+   assert.ok(Math.abs(union.parts.reduce((sum,p)=>sum+p.percent,0)-100)<.000001,'Bar segments always sum to the total union');
+   assert.ok(union.parts.every(p=>p.width===p.percent+'%'),'Each bar segment uses its own measured width');
    await page.select('[data-camera-overview-compare-focus]','a');
    focus=await focusState();
    assert.equal(focus.value,'a','Exclusive A focus is selected');
    assert.equal(focus.areas.find(r=>r.which==='a').opacity,.65,'A is emphasized');
    assert.equal(focus.areas.find(r=>r.which==='b').opacity,.05,'B is dimmed');
    assert.equal(focus.areas.find(r=>r.which==='a').stroke,'#22d3ee','Focused A has a visible boundary');
+   union=await unionState();
+   assert.equal(union.parts.find(p=>p.kind==='a').opacity,'1','Focus on A also highlights its share in the bar');
+   assert.equal(union.parts.find(p=>p.kind==='b').opacity,'.28','The B segment is dimmed in the bar');
    await page.select('[data-camera-overview-compare-focus]','b');
    focus=await focusState();
    assert.equal(focus.value,'b','Exclusive B focus is selected');
    assert.equal(focus.areas.find(r=>r.which==='b').opacity,.65,'B is emphasized');
    assert.equal(focus.areas.find(r=>r.which==='a').opacity,.05,'A is dimmed');
+   union=await unionState();
+   assert.equal(union.parts.find(p=>p.kind==='b').opacity,'1','Focus on B also highlights its share in the bar');
    await page.select('[data-camera-map-plane]','front');
    focus=await focusState();
    assert.equal(focus.value,'b','Focus persists across projection changes');
@@ -795,7 +826,7 @@ export async function runCameraBrowserSmoke(page){
    assert.equal(exclusive.enabled,false,'Exclusive overlay can be disabled again');
    assert.equal(exclusive.regions.length,0,'Hiding exclusive areas preserves existing cone visualization');
    assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'Coverage calculations and UI do not add undo snapshots');
-  console.log('Camera minimap FOV overlap: 100% shared, separate cones, edge-on unavailable, toggle, focus on A/B/shared, projection persistence, restore and no scene edits OK');
+  console.log('Camera minimap FOV overlap/union: normalized A/shared/B area bar, accessibility, edge-on exclusion, focus synchronization, no edits OK');
 
 
 
