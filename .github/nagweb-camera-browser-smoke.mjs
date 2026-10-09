@@ -870,7 +870,7 @@ export async function runCameraBrowserSmoke(page){
    assert.ok(focus.areas.every(r=>r.opacity===.29),'Default view restores balanced area emphasis');
    await page.evaluate(()=>{
     const sc=sec();
-    sc.sdCameraFrames=sc.sdCameraFrames.map(f=>({...f,rotateX:25}));
+    sc.sdCameraFrames=sc.sdCameraFrames.map(f=>({...f,rotateX:25,rotateY:30}));
     renderPane();
    });
    planes=await planesState();
@@ -885,7 +885,7 @@ export async function runCameraBrowserSmoke(page){
    await page.select('[data-camera-map-plane]','top');
    await page.evaluate(()=>{
     const sc=sec();
-    sc.sdCameraFrames=sc.sdCameraFrames.map(f=>({...f,rotateX:0}));
+    sc.sdCameraFrames=sc.sdCameraFrames.map(f=>({...f,rotateX:0,rotateY:0}));
     renderPane();
    });
   await page.evaluate(saved=>{
