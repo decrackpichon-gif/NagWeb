@@ -77,3 +77,9 @@ de escena e inercia combinadas con este cambio.
 
 No se despliega en Vercel ni se hace merge a main. La rama sigue siendo
 `feat/scroll-camera-v1` y mantiene deshabilitado su despliegue por Git.
+
+## Actualización posterior
+
+El límite de bloom queda reemplazado por la etapa documentada en
+[Bloom de escenas espaciales v1](spatial-bloom-v1.md). Los demás límites de
+iluminación y modelos de esta etapa continúan vigentes.

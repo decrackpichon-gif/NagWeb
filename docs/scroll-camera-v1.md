@@ -583,3 +583,11 @@ unidades y cámara de cada stage, y corrige sus controles de edición. Los lími
 sobre luces de la primera etapa quedan reemplazados por el alcance documentado
 en [Luces de escenas espaciales v1](spatial-lights-v1.md). Las limitaciones de
 bloom, objetos sin ancla y oclusión DOM/WebGL continúan vigentes.
+
+## Actualización: bloom espacial
+
+La micro-etapa siguiente añade el resplandor a formas y GLB de cada stage,
+con transparencia y recorte por escena. El límite de bloom de las etapas
+anteriores queda reemplazado por [Bloom de escenas espaciales v1](spatial-bloom-v1.md).
+El Director mantiene el control exclusivo del progreso. Continúan los límites
+de objetos sin ancla, oclusión DOM/WebGL, timing individual y validación móvil.
