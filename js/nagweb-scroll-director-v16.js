@@ -224,7 +224,7 @@ if(preview)preview.addEventListener('load',function(){
 
 /* ---------- export / preview runtime ---------- */
 function rt(DATA,createModel,createStreamModel,createCamera){
- var camera=createCamera();
+ var camera=createCamera(),spatialStages=[];
  var model=createModel(),streamModel=createStreamModel(),motion=window.matchMedia('(prefers-reduced-motion:reduce)'),states={},paints=[],clocks=[],clockResets=[],clockRAF=0,busy=0;
  function clockTick(t){clockRAF=0;var active=false;clocks.forEach(function(fn){if(fn(t))active=true;});if(active)clockRAF=requestAnimationFrame(clockTick);}
  function clockStart(){if(!clockRAF&&!document.hidden&&!motion.matches)clockRAF=requestAnimationFrame(clockTick);}
@@ -263,6 +263,7 @@ function rt(DATA,createModel,createStreamModel,createCamera){
   while(sec.firstChild)stage.appendChild(sec.firstChild);sec.appendChild(stage);
   }
   var cameraPaint=camera.attach(stage,cfg.camera,cfg.perspective),cameraTrack=cfg.camera?camera.compile(cfg.camera,model,cfg.ease):null;
+  if(cameraPaint)spatialStages.push(stage);
   var els=[];
   (cfg.elements||[]).forEach(function(c){
    var n=stage.querySelector('[data-id="'+c.id+'"]');if(!n)return;
@@ -321,6 +322,9 @@ function rt(DATA,createModel,createStreamModel,createCamera){
   paints.push(paint);paint();
  }
  (DATA||[]).forEach(setup);
+ // Renderer boots before the Director. Connect once, replaying the cached pose,
+ // without creating another progress evaluator or clock.
+ window.dispatchEvent(new CustomEvent('nagweb:spatial-ready',{detail:{camera:camera,stages:spatialStages}}));
  addEventListener('scroll',req,{passive:true});addEventListener('resize',req);
  // Apply accessibility changes immediately; background/offscreen frames may
  // throttle requestAnimationFrame exactly when their motion clock is stopped.

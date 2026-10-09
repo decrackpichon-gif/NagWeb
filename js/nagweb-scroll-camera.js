@@ -261,12 +261,13 @@ function createCamera(){
   if(typeof camera.updateMatrixWorld==='function')camera.updateMatrixWorld();
   return true;
  }
- function bindThreeCamera(stage,camera){
+ function bindThreeCamera(stage,camera,onState){
   if(!stage||typeof stage.addEventListener!=='function')return function(){};
-  var update=function(event){if(event&&event.detail&&event.detail.three)applyThreeCamera(camera,event.detail.three);};
+  function apply(state){applyThreeCamera(camera,state);if(typeof onState==='function')onState(state);}
+  var update=function(event){if(event&&event.target===stage&&event.detail&&event.detail.three)apply(event.detail.three);};
   stage.addEventListener('nagweb:spatial-camera',update);
   var lastState=threeCameraStates&&threeCameraStates.get(stage);
-  if(lastState)applyThreeCamera(camera,lastState);
+  if(lastState)apply(lastState);
   return function(){if(typeof stage.removeEventListener==='function')stage.removeEventListener('nagweb:spatial-camera',update);};
  }
  function attach(stage,c,perspective){
@@ -290,14 +291,14 @@ function createCamera(){
   stage.style.perspective=perspective+'px';stage.style.perspectiveOrigin='50% 50%';
   world.style.transformStyle='preserve-3d';world.setAttribute('data-nw-camera-world','');
   containers.forEach(function(id){var n=find(world,id);if(n&&n.style)n.style.transformStyle='preserve-3d';});
-  var animation=null,last='',lastScale=null;
+  var animation=null,last='',lastScale=null,lastWidth=null,lastHeight=null;
   function paint(v,scale){
    var factor=Number.isFinite(+scale)&&+scale>0?+scale:1;
    stage.style.perspective=(perspective*factor)+'px';
    // Camera translation is the inverse world translation. Positive Z travels forward.
    var value=transform(v);
-   if(value===last&&factor===lastScale)return;
-   last=value;lastScale=factor;
+   if(value===last&&factor===lastScale&&stage.clientWidth===lastWidth&&stage.clientHeight===lastHeight)return;
+   last=value;lastScale=factor;lastWidth=stage.clientWidth;lastHeight=stage.clientHeight;
    if(!v.x&&!v.y&&!v.z&&!v.rotateX&&!v.rotateY){
     if(animation)animation.cancel();animation=null;
    }else{

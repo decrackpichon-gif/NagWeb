@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html><head><script src="js/nagweb-spatial-renderer.js"></script><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* ===== Scrollcraft 1.3 · variantes agrupadas en Creativos e Interactivos + Baúl de Recuerdos ===== */
 .ip-tile{position:relative;cursor:pointer}
 .ip-tile .ip-vault-btn{position:absolute;right:8px;top:8px;width:27px;height:27px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(12,12,16,.76);color:#d9d9e2;display:grid;place-items:center;opacity:0;transform:translateY(-2px);transition:opacity .15s,transform .15s,background .15s,color .15s,border-color .15s;z-index:3;backdrop-filter:blur(8px);padding:0}
@@ -16498,6 +16498,13 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
     h.rotation.z = camera.rotation.z;
   }
 
+  var spatial3D = (${window.NAGWEB_CREATE_SPATIAL_RENDERER.toString()})(THREE, renderer, scene, objects);
+  function connectSpatial3D(ev){
+    spatial3D.connect(ev.detail.camera, ev.detail.stages);
+  }
+  window.addEventListener('nagweb:spatial-ready', connectSpatial3D);
+  window.addEventListener('pagehide', function(ev){ if(!ev.persisted){ spatial3D.destroy(); window.removeEventListener('nagweb:spatial-ready', connectSpatial3D); } });
+
   var DRAGGABLE = objects.filter(function(g){ return g.userData.o.dragRotate; });
 
   function buildLight(o){
@@ -16921,11 +16928,15 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
         if(!g.visible || (g.userData.holder && !g.userData.holder.visible)) return;
         _pb.setFromObject(g); if(_pb.isEmpty()) return;
         _pb.getBoundingSphere(_ps);
-        _pc.copy(_ps.center).project(camera);
+        var spatialView = spatial3D.view(g), pickCamera = spatialView ? spatialView.camera : camera;
+        var pickRect = spatialView ? spatialView.rect : {left:0,top:0,width:W,height:H};
+        pickCamera.updateMatrixWorld();
+        _pr.set(1, 0, 0).applyQuaternion(pickCamera.quaternion);
+        _pc.copy(_ps.center).project(pickCamera);
         if(_pc.z > 1) return;
-        _pe.copy(_ps.center).addScaledVector(_pr, _ps.radius).project(camera);
-        var sx = (_pc.x * .5 + .5) * W, sy = (-_pc.y * .5 + .5) * H;
-        var rad = Math.abs((_pe.x - _pc.x) * .5 * W) * .85;
+        _pe.copy(_ps.center).addScaledVector(_pr, _ps.radius).project(pickCamera);
+        var sx = pickRect.left + (_pc.x * .5 + .5) * pickRect.width, sy = pickRect.top + (-_pc.y * .5 + .5) * pickRect.height;
+        var rad = Math.abs((_pe.x - _pc.x) * .5 * pickRect.width) * .85;
         var d = Math.hypot(cx - sx, cy - sy);
         if(d <= rad && d < bestD){ bestD = d; best = g; }
       });
@@ -16978,7 +16989,7 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
   function tick(){
     var t = clock.getElapsedTime();
     camera.updateMatrixWorld();
-    objects.forEach(function(g){ if(g.userData.holder) placeAnchored(g); });
+    objects.forEach(function(g){ if(g.userData.holder && !spatial3D.owns(g)) placeAnchored(g); });
     if(spinStep) spinStep();
     objects.forEach(function(g){
       var o = g.userData.o;
@@ -16998,8 +17009,10 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
       }
     });
     if(EDIT) syncProxies();
-    if(composer) composer.render();
-    else renderer.render(scene, camera);
+    spatial3D.render(function(){
+      if(composer) composer.render();
+      else renderer.render(scene, camera);
+    });
   }
 
   window.addEventListener('resize', function(){
