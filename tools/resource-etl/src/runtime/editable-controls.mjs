@@ -1,6 +1,7 @@
 import { isSupportedHtmlCssProperty } from "./html-css-customization.mjs";
 import { isSupportedUiverseCssDimension } from "./uiverse-dimensions.mjs";
 import { isSupportedUiverseCssSpacing } from "./uiverse-spacing.mjs";
+import { isSupportedUiverseCssTypeBorder } from "./uiverse-type-borders.mjs";
 import {
   effectiveUiverseEditableProps,
   isSupportedUiverseCssColor
@@ -35,7 +36,8 @@ export function describeEditableControls(resource) {
         isSupportedHtmlCssProperty(prop) ||
         isSupportedUiverseCssColor(resource, prop) ||
         isSupportedUiverseCssDimension(resource, prop) ||
-        isSupportedUiverseCssSpacing(resource, prop)
+        isSupportedUiverseCssSpacing(resource, prop) ||
+        isSupportedUiverseCssTypeBorder(resource, prop)
       : renderer === "nagweb-svg"
         ? ["size", "stroke", "strokeWidth"].includes(id) &&
           prop.binding?.type === "runtime" &&

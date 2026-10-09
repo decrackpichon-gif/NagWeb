@@ -48,6 +48,11 @@ import {
   isSupportedUiverseCssSpacing
 } from "./runtime/uiverse-spacing.mjs";
 import {
+  inferUiverseCssTypeBorderProps,
+  applyUiverseCssTypeBorderValues,
+  isSupportedUiverseCssTypeBorder
+} from "./runtime/uiverse-type-borders.mjs";
+import {
   inferUiverseCssColorProps,
   effectiveUiverseEditableProps,
   applyUiverseCssColorValues
@@ -1594,6 +1599,7 @@ try {
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-colors.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-dimensions.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-spacing.mjs"))).isFile());
+  assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-type-borders.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "resource-browser", "vendor", "lottie_light.min.js"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, ".nojekyll"))).isFile());
   await assert.rejects(stat(path.join(publicPreviewDir, "src", "cli.mjs")),
@@ -1639,16 +1645,17 @@ const vividUiverse = transformUiverseComponent({
 });
 assert.deepEqual(describeEditableControls(vividUiverse).map(prop => prop.id),
   ["opacity", "scale", "uiverseColor1", "uiverseColor2",
-    "uiverseColor3", "uiverseColor4", "uiverseLength1"]);
-assert.equal(effectiveUiverseEditableProps(vividUiverse).length, 7,
+    "uiverseColor3", "uiverseColor4", "uiverseLength1",
+    "uiverseDetail1"]);
+assert.equal(effectiveUiverseEditableProps(vividUiverse).length, 8,
   "Color and pixel controls are not duplicated when already saved in metadata");
 const persistedUiverse = {
   ...vividUiverse, editableProps: vividUiverse.editableProps.slice(0, 2)
 };
 assert.deepEqual(describeEditableControls(persistedUiverse).map(prop => prop.id),
   ["opacity", "scale", "uiverseColor1", "uiverseColor2",
-    "uiverseColor3", "uiverseColor4", "uiverseLength1"],
-  "Old persistent Uiverse resources gain color and width without re-import");
+    "uiverseColor3", "uiverseColor4", "uiverseLength1", "uiverseDetail1"],
+  "Old Uiverse resources gain color, width and border thickness without re-import");
 const paletteValues = {
   uiverseColor1: "#1122ee",
   uiverseColor2: "#eeddcc",
@@ -1733,8 +1740,9 @@ const existingRgbResource = {
   artifacts: [{...persistedUiverse.artifacts[0], content:mixedRgbHtml}]
 };
 assert.deepEqual(describeEditableControls(existingRgbResource).map(p => p.id),
-  ["opacity", "scale", "uiverseColor1", "uiverseColor2", "uiverseColor3"],
-  "Old saved Uiverse resources with RGB colors gain the color controls");
+  ["opacity", "scale", "uiverseColor1", "uiverseColor2", "uiverseColor3",
+    "uiverseDetail1"],
+  "Old saved Uiverse with RGB colors also gains its original border thickness");
 assert.equal(applyUiverseCssColorValues(existingRgbResource, {},
   mixedRgbHtml), mixedRgbHtml,
   "Unchanged RGB and RGBA values remain byte-identical");
@@ -1758,7 +1766,7 @@ assert.match(rgbCustom.descriptor.payload.html, /data-color="rgb\(12, 34, 56\)"/
 assert.match(rgbCustom.descriptor.payload.html, /color:rgb\(999,2,3\)/,
   "Invalid RGB colors are never offered or overwritten");
 assert.equal(buildResourceApplyEnvelope(existingRgbResource).resource.editableProps.length,
-  5, "The editor receives the inferred RGB options in its insertion envelope");
+  6, "The editor receives RGB and original border options in its insertion envelope");
 assert.equal(applyUiverseCssColorValues(existingRgbResource,
   { uiverseColor1:"rgb(255,0,0)", uiverseColor2:"red; position:fixed" },
   mixedRgbHtml), mixedRgbHtml, "Only valid hex picker input may recolor RGB CSS");
@@ -1923,3 +1931,100 @@ assert.deepEqual(generatedSpacing.editableProps.map(p=>p.id)
 assert.equal(inferUiverseCssSpacingProps(
   '<style>'+Array.from({length:12},(_v,i)=>'.x'+i+'{margin-top:'+i+'px}').join('')+
   '</style>').length,8,"Spacing panel limits automatically inferred controls");
+
+const typographyBorderCss = '<style>' +
+  '.sample{font-size:16px;font-weight:400;border:2px solid #223344;' +
+  'border-left-width: 1.5px; border-radius: 6px}' +
+  '.sample:hover{font-size:16px;font-weight:400;border:2px dashed red}' +
+  '.sample:focus{border-top: 3px dotted #cccccc}' +
+  '/* .fake{font-size:77px;font-weight:700;border:10px solid red} */' +
+  '.quotes:before{content:"font-size:55px;border-width:4px";}' +
+  '.exclude{font-size:2rem;font-weight:bold;border-width:var(--width);' +
+  'border: 7px groove red; border-left:calc(2px + 1vw)}' +
+  '</style><button data-border="border:2px solid" class="sample">Click</button>';
+const detailProps=inferUiverseCssTypeBorderProps(typographyBorderCss);
+assert.deepEqual(detailProps.map(p=>[p.binding.property,p.defaultValue]),[
+  ["font-size",16], ["font-weight",400],["border",2],
+  ["border-left-width",1.5], ["border-top",3]
+], "Typography and border controls reflect actual CSS declarations");
+assert.deepEqual(detailProps.map(p=>p.id),
+  ["uiverseDetail1","uiverseDetail2","uiverseDetail3",
+    "uiverseDetail4","uiverseDetail5"]);
+assert.deepEqual(detailProps.map(p=>p.constraints.unit),
+  ["px","","px","px","px"]);
+assert.equal(detailProps[3].constraints.step,0.1);
+const oldTypographyResource={
+  ...persistedUiverse,
+  artifacts:[{...persistedUiverse.artifacts[0],content:typographyBorderCss}]
+};
+const availableTypographyIds=describeEditableControls(oldTypographyResource).map(p=>p.id);
+assert.deepEqual(availableTypographyIds.filter(id=>id.startsWith("uiverseDetail")),
+  ["uiverseDetail1","uiverseDetail2","uiverseDetail3",
+    "uiverseDetail4","uiverseDetail5"],
+  "Legacy Uiverse records gain type and border editing without re-import");
+assert.equal(isSupportedUiverseCssTypeBorder(oldTypographyResource,detailProps[2]),true);
+assert.equal(isSupportedUiverseCssTypeBorder(oldTypographyResource,{
+  ...detailProps[2],binding:{...detailProps[2].binding,property:"position"}
+}),false,"Injected property metadata does not create editing controls");
+assert.equal(applyUiverseCssTypeBorderValues(oldTypographyResource,{},
+  typographyBorderCss),typographyBorderCss,
+  "No change preserves CSS precisely, including original formatting");
+const typographyBorderValues={
+  uiverseDetail1:22,
+  uiverseDetail2:600,
+  uiverseDetail3:5,
+  uiverseDetail4:3.5,
+  uiverseDetail5:4
+};
+const detailedApplied=buildResourceApplyEnvelope(oldTypographyResource,{
+  values:typographyBorderValues
+});
+assert.match(detailedApplied.descriptor.payload.html,
+  /font-size:22px;font-weight:600;border:5px solid #223344/);
+assert.match(detailedApplied.descriptor.payload.html,
+  /border-left-width: 3.5px; border-radius: 6px/);
+assert.match(detailedApplied.descriptor.payload.html,
+  /\.sample:hover\{font-size:22px;font-weight:600;border:5px dashed red\}/);
+assert.match(detailedApplied.descriptor.payload.html,
+  /border-top: 4px dotted #cccccc/);
+assert.match(detailedApplied.descriptor.payload.html,
+  /\/\* \.fake\{font-size:77px;font-weight:700;border:10px solid red\} \*\//);
+assert.match(detailedApplied.descriptor.payload.html,
+  /content:"font-size:55px;border-width:4px"/);
+assert.match(detailedApplied.descriptor.payload.html,
+  /font-size:2rem;font-weight:bold;border-width:var\(--width\)/);
+assert.match(detailedApplied.descriptor.payload.html,
+  /border: 7px groove red; border-left:calc\(2px \+ 1vw\)/);
+assert.match(detailedApplied.descriptor.payload.html,
+  /data-border="border:2px solid"/);
+assert.deepEqual(detailedApplied.resource.editableProps
+  .filter(p=>p.id.startsWith("uiverseDetail")).map(p=>p.id),
+  ["uiverseDetail1","uiverseDetail2","uiverseDetail3",
+    "uiverseDetail4","uiverseDetail5"],"Insertion retains editing metadata");
+assert.equal(detailedApplied.descriptor.instance.values.uiverseDetail2,600,
+  "Typed settings remain in the generated resource instance");
+assert.equal(oldTypographyResource.artifacts[0].content,typographyBorderCss,
+  "Source CSS stays unchanged after applying edited values");
+assert.equal(applyUiverseCssTypeBorderValues(oldTypographyResource,{
+  uiverseDetail1:"22;position:fixed",uiverseDetail2:1200,
+  uiverseDetail3:-1,uiverseDetail4:2.35,uiverseDetail5:Infinity
+},typographyBorderCss),typographyBorderCss,
+  "Invalid, out-of-range, fractional-step and non-numeric values are rejected");
+const freshTypeResource=transformUiverseComponent({
+  repository:"https://github.com/uiverse-io/galaxy",commit:"test",
+  item:{metadata:{category:"Buttons",author:"designer",slug:"typography"},
+    content:typographyBorderCss,
+    entry:{path:"Buttons/designer_typography.html",sha:"abc"}}
+});
+assert.deepEqual(freshTypeResource.editableProps
+  .filter(p=>p.id.startsWith("uiverseDetail")).map(p=>p.id),
+  ["uiverseDetail1","uiverseDetail2","uiverseDetail3",
+    "uiverseDetail4","uiverseDetail5"],
+  "New resource imports persist the same discovered CSS values");
+assert.deepEqual(inferUiverseCssTypeBorderProps(
+  '<style>.x{font-size:2rem;font-weight:bold;' +
+  'border-width:calc(3px + 1px);border:3px groove black}</style>'),[],
+  "Complex or unsupported CSS never generates fictional controls");
+assert.equal(inferUiverseCssTypeBorderProps(
+  '<style>'+Array.from({length:12},(_,i)=>'.x'+i+'{font-size:'+(i+10)+'px}').join('')+
+  '</style>').length,8,"Limit inferred controls per resource");
