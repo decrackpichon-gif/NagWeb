@@ -330,7 +330,7 @@ function mapObjectMarkersHtml(s,plan,spec,pct){
  return '<g data-camera-scene-objects pointer-events="none" aria-hidden="true">'+rows.map(function(row,i){
   var v=row.point;if(!v)return '';
   var at=C.mapPoint(v,spec);
-  var label=safeLabel(row.item.label).slice(0,32);
+  var label=row.item.label; // targetLabel has already escaped untrusted text.
   return '<g data-camera-scene-object="'+i+'" data-camera-scene-object-id="'+safeLabel(row.item.id)+'" data-camera-scene-object-kind="'+safeLabel(row.item.kind)+'" transform="translate('+at.x+' '+at.y+')">'+
    '<circle r="2.1" fill="#60a5fa" fill-opacity=".22" stroke="#60a5fa" stroke-width=".7"/>'+
    '<circle r=".65" fill="#93c5fd"/>'+
