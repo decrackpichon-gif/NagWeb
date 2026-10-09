@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+import {tripleReference} from './fixtures/animos-triple-reference.mjs';
+const scope={window:{}};vm.runInNewContext(fs.readFileSync('js/nagweb-story-model.js','utf8'),scope);
+const m=scope.window.NAGWEB_STREAM_MODEL,cfg=m.config({kind:'triple-scene'}),plain=x=>JSON.parse(JSON.stringify(x)),pose=(p,c={},n=12,w=1280,h=720)=>m.layout(w,h,{...cfg,...c},p,n,1.6),near=(a,b)=>assert.ok(Math.abs(a-b)<1e-5,a+' != '+b);
+assert.equal(cfg.kind,'triple-scene');assert.equal(cfg.cardRatio,'16:9');assert.equal(cfg.padding,2);assert.equal(cfg.cornerRadius,3);assert.equal(cfg.easing,'custom');assert.equal(cfg.easeBezier,'0.88,0.14,0.12,0.86');assert.equal(cfg.motion,'continuous');
+for(const [key,s] of Object.entries(m.tripleSpecs)){assert.equal(cfg[key],s[0]);assert.equal(m.config({kind:cfg.kind,[key]:-999})[key],s[1]);assert.equal(m.config({kind:cfg.kind,[key]:999})[key],s[2]);assert.equal(m.config({kind:cfg.kind,[key]:NaN})[key],s[0]);}
+assert.equal(m.config({...cfg,columns:3.8}).columns,4);assert.equal(m.config({...cfg,perColumn:5.8}).perColumn,6);assert.equal(m.config({...cfg,easing:'__proto__'}).easing,'custom');assert.equal(m.config({...cfg,cardRatio:'frame'}).cardRatio,'16:9');
+for(const [n,expected] of [[0,12],[1,3],[3,3],[24,24],[99,24]])assert.equal(pose(0,{},n).length,expected);
+let comparisons=0;
+for(const easing of Object.keys(m.sweepEasings))for(const n of [3,12,24])for(const cardRatio of ['auto','16:9','3:4'])for(const variant of [{},{columns:5,perColumn:10,padding:20,gap:8,heroSize:100,heroGap:40,columnDrift:50,rowTilt:-40,rowRise:40,cornerRadius:12},{columns:2,perColumn:3,padding:0,gap:0,heroSize:30,heroGap:0,columnDrift:0,rowTilt:40,rowRise:0,easeBezier:'0.2,-0.7,0.8,1.7'}])for(const [w,h] of [[1280,720],[390,844]]){
+ const c=m.config({...cfg,easing,cardRatio,frameRatio:'auto',...variant});
+ for(const progress of [0,.1,.22,.28,.35,.47,.55,.57,.67,.76,.86,.93,.995,...[10,40,70,89,102,183,200,249,316,333].map(t=>t/350)]){
+  const cards=pose(progress,c,n,w,h),ref=tripleReference({width:w,height:h,t:(progress%1+1)%1,params:{...c,cardAspect:c.cardRatio},images:Array(n),imageRatio:1.6}),actual=cards.flatMap(card=>card.instances.map(t=>({slot:card.slot,t}))).sort((a,b)=>a.t.depth-b.t.depth);
+  assert.equal(actual.length,ref.length,easing+' '+n+' '+progress);for(let j=0;j<ref.length;j++){const r=ref[j],{slot,t}=actual[j];assert.equal(slot,r.slot);assert.equal(t.depth,r.drawOrder);near(t.center.x,r.x+r.w/2);near(t.center.y,r.y+r.h/2);near(t.mesh.width*t.cardScale,r.w);near(t.mesh.height*t.cardScale,r.h);near(t.planeClipRadius*t.cardScale,r.radius);assert.equal(t.alpha,1);assert.equal(t.shade,1);
+   for(const v of t.mesh.vertices){near(v.x,r.x+v.u*r.w);near(v.y,r.y+v.v*r.h);if(t.homography.inverse){const uv=m.projectPlane(t.homography.inverse,v.x,v.y);near(uv.x,v.u*t.mesh.width);near(uv.y,v.v*t.mesh.height);}}if(r.w>1&&r.h>1)assert.ok(m.meshUV(t.mesh,t.center.x,t.center.y));comparisons++;}
+  assert.deepEqual(plain(cards.map(c=>[c.textureWidth,c.textureHeight])),plain(pose(.72,c,n,w,h).map(c=>[c.textureWidth,c.textureHeight])));
+ }
+}
+assert.equal(pose(.47,{frameRatio:'auto'},12,1280,720)[0].columns,3);assert.equal(pose(.47,{frameRatio:'auto'},12,390,844)[0].columns,2);assert.equal(pose(.47,{columns:2,frameRatio:'auto'},12,390,844)[0].columns,2);
+assert.deepEqual(plain(pose(0)),plain(pose(1)));const a=pose(0)[0].instances[0],b=pose(.99999)[0].instances[0];near(a.center.x,b.center.x);near(a.center.y,b.center.y);near(a.cardScale,b.cardScale);
+const stages=p=>new Set(pose(p).flatMap(c=>c.instances.map(t=>t.stage)));assert.ok(stages(.1).has('hero'));assert.ok(stages(.3).has('columns'));assert.ok(stages(.26).has('hero')&&stages(.26).has('columns'));assert.ok(stages(.53).has('columns')&&stages(.53).has('row'));assert.ok(stages(.8).has('row'));assert.ok(stages(.995).has('final-hero'));
+for(const n of [3,12]){const seen=new Set;for(let p=0;p<1;p+=.01)for(const c of pose(p,{},n))if(c.visible)seen.add(c.slot);assert.equal(seen.size,n);}
+assert.ok(pose(.47,{},3).some(c=>c.instances.length>1),'Belt reuses sources');
+for(const columns of [2,5])for(const perColumn of [3,10])for(const rowTilt of [-40,40])for(const heroSize of [30,100])for(const easing of ['custom','elastic','impulse','swing'])for(const p of [.1,.28,.47,.55,.86,.94])for(const c of pose(p,{columns,perColumn,rowTilt,heroSize,easing,cornerRadius:12,padding:20,frameRatio:'auto',gap:8,columnDrift:50},24,390,844))for(const t of c.instances){assert.ok(t.width>0&&t.height>0&&t.cardScale>0);for(const v of t.mesh.vertices)assert.ok(Number.isFinite(v.x)&&Number.isFinite(v.y));}
+for(const p of [.04,.43,.93]){const t=pose(p,{cornerRadius:12}).flatMap(c=>c.instances).find(t=>t.mesh.width*t.cardScale>100);const corner=m.meshPoint(t.mesh,.005,.005);assert.equal(m.meshUV(t.mesh,corner.x,corner.y),null);assert.ok(m.meshUV(t.mesh,t.center.x,t.center.y));near(t.planeClipRadius*t.cardScale,Math.min(86.4,t.mesh.width*t.cardScale/2,t.mesh.height*t.cardScale/2));}
+for(const p of [.1,.47,.8,.94]){const a=pose(p,{frameRatio:'auto'}),b=pose(p,{frameRatio:'auto'},12,2560,1440);for(let i=0;i<a.length;i++)for(let j=0;j<a[i].instances.length;j++){const x=a[i].instances[j],y=b[i].instances[j];near(y.center.x,x.center.x*2);near(y.center.y,x.center.y*2);near(y.cardScale,x.cardScale);}}
+const scroll={start:20,end:80,turns:3};assert.equal(m.phase(.5,{...cfg,...scroll},true),1.5);assert.deepEqual(plain(m.layout(390,844,{...cfg,...scroll},.1,12,1.6,true)),plain(m.layout(390,844,{...cfg,...scroll},.9,12,1.6,true)));assert.deepEqual(plain(scope.window.NAGWEB_CREATE_STREAM_MODEL().layout(1280,720,cfg,.317,12,1.6)),plain(pose(.317)));
+console.log('Triple Scene: independent HAR oracle ('+comparisons+' planes), overlapping hero/belt/row stages, 12 easings/custom curve, upright reused sources and draw order, fixed physical corners/stable textures/inverse picking, 3–24 sources/extremes/mobile/scroll/exported factory OK');
