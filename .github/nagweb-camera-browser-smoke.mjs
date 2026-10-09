@@ -1929,15 +1929,23 @@ export async function runCameraBrowserSmoke(page){
   assert.equal(aimed3D.target,'camera-glb-look-target','Aim action links GLB to current look key');
   assert.equal(aimed3D.history,aim3DBefore.history+1,'GLB aim creates one undo step');
   // Adjust 3D look focus without altering the GLB, then unlink without losing the chosen point.
+  await page.evaluate(()=>{
+   window.__cameraBrowserFocusSize=(scene,cfg)=>{
+    const stage=document.getElementById('preview')?.contentDocument?.querySelector('.sc[data-id="'+scene.id+'"] .nw-sd-stage');
+    if(!stage?.clientWidth||!stage?.clientHeight)return {width:cfg.referenceWidth,height:cfg.referenceWidth};
+    const scale=NAGWEB_SCROLL_CAMERA.viewportScale(cfg,stage.clientWidth);
+    return {width:stage.clientWidth/scale,height:stage.clientHeight/scale};
+   };
+  });
   const focalStart=await page.evaluate(()=>{
-   const s=sec(),cfg=NAGWEB_SCROLL_CAMERA.config(s),size={width:1000,height:800};
+   const s=sec(),cfg=NAGWEB_SCROLL_CAMERA.config(s),size=window.__cameraBrowserFocusSize(s,cfg);
    return {looks:JSON.stringify(s.sdCameraLookFrames),objects:JSON.stringify(s.elements),undo:history.length,
     focus:NAGWEB_SCROLL_CAMERA.lookTarget(cfg,0,NAGWEB_STORY_MODEL,s.sdEase,size)};
   });
   assert.equal(await page.$eval('[data-camera-look-focus-offset]',nodes=>nodes.length),3,'3D-linked targets expose three numeric focus offsets');
   await page.$eval('[data-camera-look-focus-offset="y"]',el=>{el.value='-80';el.dispatchEvent(new Event('change',{bubbles:true}));});
   const focalAdjusted=await page.evaluate(()=>{
-   const s=sec(),cfg=NAGWEB_SCROLL_CAMERA.config(s),size={width:1000,height:800};
+   const s=sec(),cfg=NAGWEB_SCROLL_CAMERA.config(s),size=window.__cameraBrowserFocusSize(s,cfg);
    return {frame:s.sdCameraLookFrames.find(k=>k.at===0),look:NAGWEB_SCROLL_CAMERA.lookTarget(cfg,0,NAGWEB_STORY_MODEL,s.sdEase,size),
     objects:JSON.stringify(s.elements),undo:history.length};
   });
@@ -1945,7 +1953,7 @@ export async function runCameraBrowserSmoke(page){
   assert.ok(Math.abs(focalAdjusted.look.y-focalStart.focus.y+80)<.001,'Camera focus shifts 80 px upward');
   assert.ok(Math.abs(focalAdjusted.frame.y-focalAdjusted.look.y)<.001,'The keyframe caches the focused XYZ as a fallback');
   const lostModelFocus=await page.evaluate(()=>{
-   const s=sec(),cfg=NAGWEB_SCROLL_CAMERA.config(s),size={width:1000,height:800};
+   const s=sec(),cfg=NAGWEB_SCROLL_CAMERA.config(s),size=window.__cameraBrowserFocusSize(s,cfg);
    cfg.targets=cfg.targets.filter(t=>t.id!=='camera-glb-look-target');
    return NAGWEB_SCROLL_CAMERA.lookTarget(cfg,0,NAGWEB_STORY_MODEL,s.sdEase,size);
   });
@@ -1966,7 +1974,7 @@ export async function runCameraBrowserSmoke(page){
   assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraLookFrames)),focalStart.looks,'Undo focus restores original model aim');
   await page.evaluate(()=>undo());
   assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraLookFrames)),aim3DBefore.looks,'GLB look targeting supports Undo');
-  await page.evaluate(original=>{sec().elements=JSON.parse(original);renderPane();},old3DElements);
+  await page.evaluate(original=>{delete window.__cameraBrowserFocusSize;sec().elements=JSON.parse(original);renderPane();},old3DElements);
   console.log('Camera GLB look target: 3D map guide, spatial XYZ, dynamic target binding, CSS isolation and undo OK');
 
 
