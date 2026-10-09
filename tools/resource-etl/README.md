@@ -946,3 +946,20 @@ rechazo de un destino eliminado y detección de un fallo de almacenamiento.
 ## Micro-etapa 50: inserción según capacidades del editor
 
 NagWeb ahora informa a la Biblioteca Visual que su receptor admite insertar solamente SVG nativos. Para HTML/CSS y otros tipos, el detalle sigue disponible para explorar, previsualizar, personalizar y copiar, pero la acción Aplicar se deshabilita con una explicación clara. No se presenta como error de inserción algo que de antemano no está admitido. Esto es una indicación de interfaz, no un reemplazo de la validación del receptor. Otros editores que usen el protocolo sin hostKinds conservan el comportamiento genérico para recibir recursos HTML/CSS. La prueba real de Chromium cubre ambos casos.
+
+## Micro-etapa 51: sandbox HTML/CSS para la próxima integración
+
+Se incorporó `src/runtime/nagweb-html-sandbox.mjs`, un constructor aislado
+para previsualizar componentes HTML/CSS de Uiverse **sin insertar código ajeno
+en el DOM del editor**. Valida identidad, renderer, licencia, tamaño y
+dependencias; rechaza scripts, iframes anidados, formularios, atributos de
+eventos y referencias a recursos remotos. Los componentes compatibles se
+montan en un iframe con `sandbox=""` (sin scripts ni acceso al origen del
+editor), política de seguridad de contenido (CSP) que bloquea red y scripts y
+referencias externas, y `referrerpolicy="no-referrer"`.
+
+El smoke de Chromium ejecuta el constructor en el editor real, comprueba
+visualización de CSS, aislamiento de origen, atributos del iframe, restricciones
+de CSP y rechazo de marcado activo o de recursos sin licencia. Es una
+**preparación de integración**: la inserción persistente de HTML/CSS como
+elemento del lienzo principal sigue pendiente y no se anuncia como lista.

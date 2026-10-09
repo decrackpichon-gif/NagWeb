@@ -8,6 +8,7 @@ import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
 import { transformUiverseComponent } from "./light-transformers.mjs";
 import { describeEditableControls } from "./runtime/editable-controls.mjs";
+import { buildResourceApplyEnvelope } from "./runtime/resource-apply-bridge.mjs";
 
 // Run the unchanged production browser against an offline Vault and a test editor.
 const { chromium } = await import(process.env.NAGWEB_PLAYWRIGHT_MODULE
@@ -216,6 +217,76 @@ try {
     }));
   });
   await page.goto(`http://127.0.0.1:${server.address().port}/editor/`);
+  // Stage 51: security and visual checks for the sandbox renderer that will
+  // precede HTML/CSS insertion in later stages. No HTML enters the editor DOM.
+  const sandboxEnvelope = buildResourceApplyEnvelope(css, { requestId: "sandbox-stage-51" });
+  const sandboxCheck = await page.evaluate(async message => {
+    const { createUiverseSandboxFrame, prepareUiverseSandboxHtml } =
+      await import("/editor/tools/resource-etl/src/runtime/nagweb-html-sandbox.mjs");
+    const iframe = createUiverseSandboxFrame(message);
+    iframe.style.cssText = "position:fixed;left:0;top:0;width:180px;height:120px;z-index:9999";
+    iframe.dataset.htmlStagePreview = "";
+    await new Promise(resolve => {
+      iframe.addEventListener("load", resolve, { once: true });
+      document.body.append(iframe);
+    });
+    const malicious = [
+      '<script>parent.__injected = true</script>',
+      '<img src="https://example.test/track">',
+      '<div onclick="parent.__injected = true">Click</div>',
+      '<iframe srcdoc="<script>alert(1)</script>"></iframe>',
+      '<meta http-equiv="refresh" content="0;url=https://example.test">',
+      '<form action="https://example.test"><button>Enviar</button></form>'
+    ];
+    const denied = malicious.every(html => {
+      try {
+        prepareUiverseSandboxHtml({ ...message, descriptor: {
+          ...message.descriptor,
+          payload: { ...message.descriptor.payload, html }
+        } });
+        return false;
+      } catch { return true; }
+    });
+    const otherKindsRejected = ["svg", "react-component"].every(kind => {
+      try {
+        prepareUiverseSandboxHtml({ ...message, descriptor: {
+          ...message.descriptor, kind
+        } });
+        return false;
+      } catch { return true; }
+    });
+    const missingLicenseRejected = (() => {
+      try {
+        prepareUiverseSandboxHtml({ ...message, resource: {
+          ...message.resource, license: { ...message.resource.license, verified: false }
+        } });
+        return false;
+      } catch { return true; }
+    })();
+    return {
+      denied, otherKindsRejected, missingLicenseRejected,
+      noScriptPermission: !iframe.sandbox.contains("allow-scripts"),
+      noSameOriginPermission: !iframe.sandbox.contains("allow-same-origin"),
+      emptySandbox: iframe.getAttribute("sandbox") === "",
+      referrerPolicy: iframe.getAttribute("referrerpolicy"),
+      opaqueOrigin: iframe.contentDocument === null,
+      csp: iframe.srcdoc.includes("default-src 'none'") &&
+        iframe.srcdoc.includes("connect-src 'none'") &&
+        iframe.srcdoc.includes("script-src 'none'")
+    };
+  }, sandboxEnvelope);
+  assert.deepEqual(sandboxCheck, {
+    denied:true,otherKindsRejected:true,missingLicenseRejected:true,
+    noScriptPermission:true,noSameOriginPermission:true,
+    emptySandbox:true,referrerPolicy:"no-referrer",
+    opaqueOrigin:true,csp:true
+  }, "Uiverse HTML must stay in a restrictive opaque-origin sandbox");
+  const isolatedCard = page.frameLocator('iframe[data-html-stage-preview]').locator(".card");
+  await expect(isolatedCard).toBeVisible();
+  await expect(isolatedCard).toHaveCSS("background-color", "rgb(18, 52, 86)");
+  await page.locator('iframe[data-html-stage-preview]').evaluate(node => node.remove());
+  report.scenarios.push({ editor:"Uiverse HTML/CSS isolated rendering",status:"passed",
+    liveStyles:true,opaqueOrigin:true,scriptsBlocked:true,externalAssetsBlocked:true });
   await page.getByRole("button", { name: "Biblioteca de recursos", exact: true }).click();
   const libraryFrame = page.frameLocator('iframe[title="Biblioteca de recursos de NagWeb"]');
   await libraryFrame.locator('[data-resource-id="smoke:icon"]').click();
