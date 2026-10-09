@@ -87,7 +87,11 @@ export function applyUiverseCssColorValues(resource, values, html) {
   const candidates = inferUiverseCssColorProps(mainHtml(resource));
   for (const prop of candidates) {
     const chosen = Object.hasOwn(values || {}, prop.id) ? values[prop.id] : prop.defaultValue;
-    replacements.set(prop.defaultValue, canonical(chosen) || prop.defaultValue);
+    const nextColor = canonical(chosen);
+    // Default, unchanged and invalid inputs must preserve the source bytes.
+    if (nextColor && nextColor !== prop.defaultValue) {
+      replacements.set(prop.defaultValue, nextColor);
+    }
   }
   if (!replacements.size) return html;
   return html.replace(STYLE_BLOCK, (original, start, body, end) => {
