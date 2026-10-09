@@ -40,7 +40,10 @@ function createCamera(){
   var out=[];
   (Array.isArray(input)?input:[]).filter(function(k){return k&&Number.isFinite(+k.at);}).slice(0,128).sort(function(a,b){return +a.at-+b.at;}).forEach(function(k){
    var frame={at:Math.round(Math.max(0,Math.min(100,+k.at))*10)/10,x:number(k.x),y:number(k.y),z:number(k.z)};
-   if(typeof k.targetId==='string'&&k.targetId)frame.targetId=k.targetId;
+   if(typeof k.targetId==='string'&&k.targetId){
+    frame.targetId=k.targetId;
+    ['X','Y','Z'].forEach(function(axis){var key='focusOffset'+axis;if(k[key]!==null&&k[key]!==''&&Number.isFinite(+k[key]))frame[key]=number(k[key]);});
+   }
    if(k.tension!==undefined&&k.tension!==null&&k.tension!=='')frame.tension=curveTension(k.tension);
    ['in','out'].forEach(function(side){var p=handlePrefix(side);if(k[p+'Free']){frame[p+'Free']=true;frame[p+'DX']=number(k[p+'DX']);frame[p+'DY']=number(k[p+'DY']);frame[p+'DZ']=number(k[p+'DZ']);}});
    if(['linear','smooth','cinematic','ease-in','ease-out','ease-in-out'].indexOf(k.ease)>=0)frame.ease=k.ease;
@@ -97,8 +100,14 @@ function createCamera(){
    number(t.z+motion.z);
   return {x:number((t.x-50)/100*width+motion.x),y:number((t.y-50)/100*height+motion.y),z:z};
  }
+ function resolveLookFrame(c,f,p,model,ease,size,compiled){
+  if(!f||!f.targetId)return f;
+  var target=elementTarget(c,f.targetId,p,model,ease,size,compiled);
+  if(!target)return f;
+  return Object.assign({},f,{x:number(target.x+number(f.focusOffsetX)),y:number(target.y+number(f.focusOffsetY)),z:number(target.z+number(f.focusOffsetZ))});
+ }
  function resolvedLookFrames(c,p,model,ease,size,compiled){
-  return lookFrames(c).map(function(f){if(!f.targetId)return f;var t=elementTarget(c,f.targetId,p,model,ease,size,compiled);return t?Object.assign({},f,t):f;});
+  return lookFrames(c).map(function(f){return resolveLookFrame(c,f,p,model,ease,size,compiled);});
  }
  function lookTarget(c,p,model,ease,size,compiled){return pointAt(resolvedLookFrames(c,p,model,ease,size,compiled),p,model,ease,c&&c.lookPathMode==='smooth'?'smooth':'linear');}
  function lookAngles(position,target){
@@ -326,7 +335,7 @@ function createCamera(){
   paint.contains=function(n){return inside(world,n);};
   return paint;
  }
- return {config:config,compile:compile,pose:pose,pathSamples:pathSamples,lookSamples:lookSamples,lookTarget:lookTarget,lookAngles:lookAngles,forwardTarget:forwardTarget,defaultLookFrames:defaultLookFrames,normalizeLook:normalizeLook,lookFrames:lookFrames,targetEligible:targetEligible,elementTarget:elementTarget,curveTension:curveTension,tangentHandle:tangentHandle,tensionFromHandle:tensionFromHandle,lookTangentHandle:lookTangentHandle,lookTensionFromHandle:lookTensionFromHandle,handleFree:handleFree,setHandleMode:setHandleMode,setFreeHandle:setFreeHandle,setLookHandleMode:setLookHandleMode,setLookFreeHandle:setLookFreeHandle,nearestPathAt:nearestPathAt,viewportScale:viewportScale,scalePose:scalePose,attach:attach,threeWorldPoint:threeWorldPoint,threeCameraState:threeCameraState,applyThreeCamera:applyThreeCamera,bindThreeCamera:bindThreeCamera,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial,copyFrame:copyFrame,holdFrame:holdFrame,preset:preset};
+ return {config:config,compile:compile,pose:pose,pathSamples:pathSamples,lookSamples:lookSamples,lookTarget:lookTarget,resolveLookFrame:resolveLookFrame,lookAngles:lookAngles,forwardTarget:forwardTarget,defaultLookFrames:defaultLookFrames,normalizeLook:normalizeLook,lookFrames:lookFrames,targetEligible:targetEligible,elementTarget:elementTarget,curveTension:curveTension,tangentHandle:tangentHandle,tensionFromHandle:tensionFromHandle,lookTangentHandle:lookTangentHandle,lookTensionFromHandle:lookTensionFromHandle,handleFree:handleFree,setHandleMode:setHandleMode,setFreeHandle:setFreeHandle,setLookHandleMode:setLookHandleMode,setLookFreeHandle:setLookFreeHandle,nearestPathAt:nearestPathAt,viewportScale:viewportScale,scalePose:scalePose,attach:attach,threeWorldPoint:threeWorldPoint,threeCameraState:threeCameraState,applyThreeCamera:applyThreeCamera,bindThreeCamera:bindThreeCamera,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial,copyFrame:copyFrame,holdFrame:holdFrame,preset:preset};
 }
 window.NAGWEB_CREATE_SCROLL_CAMERA=createCamera;
 window.NAGWEB_SCROLL_CAMERA=createCamera();
@@ -356,7 +365,7 @@ function previewReferenceSize(s){
  return {width:width,height:height};
 }
 function resolvedLookKeys(s,cfg,list,size){
- return list.map(function(k){if(!k.targetId)return k;var v=C.elementTarget(cfg,k.targetId,k.at/100,window.NAGWEB_STORY_MODEL,s.sdEase,size);return v?Object.assign({},k,v):k;});
+ return list.map(function(k){return C.resolveLookFrame(cfg,k,k.at/100,window.NAGWEB_STORY_MODEL,s.sdEase,size);});
 }
 function mapCurrent(s,pct){
  var reduced=typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
@@ -1712,6 +1721,7 @@ function cameraAimAtSelectedObject(s,pct){
   if(index<0&&looks.length>=128)return 'limit';
   if(index>=0&&looks[index].targetId===item.id)return 'unchanged';
   var next=Object.assign({at:at,ease:s.sdEase||'cinematic'},index>=0?looks[index]:null,{targetId:item.id,x:target.x,y:target.y,z:target.z});
+  delete next.focusOffsetX;delete next.focusOffsetY;delete next.focusOffsetZ;
   snapshot();
   if(index>=0)looks[index]=next;else looks.push(next);
   persistLook(s,looks,at);
