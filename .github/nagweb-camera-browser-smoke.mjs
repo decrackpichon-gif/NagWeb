@@ -1698,6 +1698,56 @@ export async function runCameraBrowserSmoke(page){
   await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',0));
   console.log('Camera objects: animated free-canvas anchors, three planes, read-only visibility toggle OK');
 
+  // Micro-etapa 50: diagrammatic bounds and type icons on all three planes.
+  const originalSceneItems=await page.evaluate(()=>JSON.stringify(sec().elements));
+  await page.evaluate(()=>{
+   const scene=sec();
+   scene.elements.push(
+    mkEl('image',{id:'camera-guide-photo',name:'Foto de ejemplo',x:30,y:40,w:25,h:20,sdCameraDepth:-200}),
+    mkEl('container',{id:'camera-guide-container',name:'Grupo de ejemplo',x:70,y:60,w:30,h:25,sdCameraDepth:250})
+   );
+   renderPane();
+  });
+  const inspectFootprints=()=>page.evaluate(()=>{
+   const map=document.querySelector('[data-camera-map]');
+   const read=id=>{
+    const group=map?.querySelector('[data-camera-scene-object-id="'+id+'"]');
+    const rect=group?.querySelector('[data-camera-scene-object-footprint]');
+    return {role:group?.getAttribute('data-camera-scene-object-role'),
+     width:rect?+rect.getAttribute('width'):null,height:rect?+rect.getAttribute('height'):null,
+     dash:rect?.getAttribute('stroke-dasharray'),label:group?.querySelector('text')?.textContent||''};
+   };
+   return {plane:map?.dataset.plane,head:read('camera-target-el'),photo:read('camera-guide-photo'),
+    container:read('camera-guide-container'),interactive:map?.querySelector('[data-camera-scene-objects]')?.getAttribute('pointer-events'),
+    explanation:document.querySelector('[data-camera-scene-objects-info]')?.textContent||'',
+    count:map?.querySelectorAll('[data-camera-scene-object]').length,
+    frames:JSON.stringify(sec().sdCameraFrames),undo:history.length};
+  });
+  await page.select('[data-camera-map-plane]','front');
+  const frontDiagram=await inspectFootprints();
+  assert.equal(frontDiagram.count,3,'Scene object footprints include text, image and container');
+  assert.deepEqual([frontDiagram.head.role,frontDiagram.photo.role,frontDiagram.container.role],['text','image','container'],'Visible guides distinguish object types');
+  assert.ok(frontDiagram.head.width>0&&frontDiagram.photo.width>0&&frontDiagram.container.width>0,'Front projection gives editable objects schematic horizontal spans');
+  assert.ok(frontDiagram.photo.height>0&&frontDiagram.container.height>0,'Front projection includes authored element heights');
+  assert.equal(frontDiagram.container.dash,'1.5 1','Container bounds use a distinct dotted outline');
+  assert.equal(frontDiagram.interactive,'none','All footprint silhouettes remain noninteractive');
+  assert.ok(frontDiagram.explanation.includes('sin escala animada')&&frontDiagram.explanation.includes('perspectiva'),'Footprint limitations are explained');
+  await page.select('[data-camera-map-plane]','top');
+  const topDiagram=await inspectFootprints();
+  assert.ok(topDiagram.photo.width>topDiagram.photo.height,'Top projection uses the image width and a thin depth guide');
+  await page.select('[data-camera-map-plane]','side');
+  const sideDiagram=await inspectFootprints();
+  assert.ok(sideDiagram.photo.height>sideDiagram.photo.width,'Lateral projection uses the image height and a thin depth guide');
+  assert.equal(sideDiagram.frames,frontDiagram.frames,'Changing guide projections never edits camera');
+  assert.equal(sideDiagram.undo,frontDiagram.undo,'Viewing object silhouettes creates no undo snapshots');
+  await page.evaluate(original=>{
+   sec().elements=JSON.parse(original);renderPane();
+  },originalSceneItems);
+  await page.select('[data-camera-map-plane]','top');
+  assert.equal(await page.$eval('[data-camera-scene-object]',elements=>elements.length),1,'Temporary type examples are removed after the footprint test');
+  console.log('Camera scene footprints: typed text/image/container guides and schematic sizes on top/front/side OK');
+
+
   await page.click('[data-camera-look-jump="0"]');
   await page.waitForFunction(()=>document.querySelector('[data-camera-look-target]')?.dataset.cameraLookAt==='0');
   await page.select('[data-camera-look-target]','camera-target-el');
