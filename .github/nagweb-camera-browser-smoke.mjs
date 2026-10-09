@@ -1445,6 +1445,31 @@ export async function runCameraBrowserSmoke(page){
   assert.ok(!runtime.childRaw.includes('perspective('),'Nested child must reuse shared camera perspective');
   assert.equal(runtime.perspective,'1000px');
 
+  // Microetapa 53: optional Three.js bridge follows the Director's own camera samples.
+  const bridgeRuntime=await page.evaluate(()=>{
+   const f=document.querySelector('#camera-browser-export'),w=f.contentWindow,d=f.contentDocument,
+    api=w.__NAG_SCROLL_DIRECTOR['camera-browser-scene'],
+    stage=d.querySelector('.sc[data-id="camera-browser-scene"] .nw-sd-stage'),events=[];
+   stage.addEventListener('nagweb:spatial-camera',event=>events.push(event.detail));
+   api.set(.25);api.set(.5);
+   const state=events[events.length-1]?.three||null,count=events.length;
+   api.set(.5);
+   const stableCount=events.length;
+   api.set(0);
+   const reset=events[events.length-1]?.three||null;
+   return {events:events.length,count,stableCount,state,reset,height:stage.clientHeight,width:stage.clientWidth};
+  });
+  assert.ok(bridgeRuntime.count>=2,'Three renderer receives the Director camera samples');
+  assert.equal(bridgeRuntime.stableCount,bridgeRuntime.count,'Unchanged pose is not resent to 3D renderers');
+  assert.ok(bridgeRuntime.state,'Stage emits camera state for a 3D renderer');
+  assert.ok(Math.abs(bridgeRuntime.state.position.x-225)<.01&&Math.abs(bridgeRuntime.state.position.y+125)<.01&&Math.abs(bridgeRuntime.state.position.z+100)<.01,'Three world uses right-handed Y-up coordinates');
+  assert.ok(Math.abs(bridgeRuntime.state.aspect-bridgeRuntime.width/bridgeRuntime.height)<.001,'Three camera aspect matches stage');
+  assert.ok(Math.abs(bridgeRuntime.state.fovDegrees-2*Math.atan(bridgeRuntime.height/(2*1000))*180/Math.PI)<.001,'Three field of view matches CSS camera perspective');
+  assert.ok(Math.abs(bridgeRuntime.state.rollRadians+5*Math.PI/180)<.001,'Three camera roll preserves authored roll');
+  assert.ok(Math.abs(bridgeRuntime.reset.position.x)<.001&&Math.abs(bridgeRuntime.reset.position.y)<.001,'Returning to zero updates Three renderer');
+  console.log('Camera Three bridge: same Director tick, Y-up axes, projection and roll OK');
+
+
   // Resize the same paused export to a narrow viewport. The camera should adapt
   // spatial movement and shared perspective, while preserving authored angles and
   // nested child depth that is not a camera layer.
