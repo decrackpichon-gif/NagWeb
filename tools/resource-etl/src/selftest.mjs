@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
 import { runInNewContext } from "node:vm";
+import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { buildPublicResourceBrowser } from "./preview/build-public-site.mjs";
 import {
   flattenAmbientCgDownloads,
   selectAmbientCgDownload
@@ -1560,3 +1564,20 @@ assert.equal(buildResourceApplyEnvelope(editableSpinKit, {
   values: { color: "#ee4488" }
 }).descriptor.payload.html, editableSpinKit.artifacts[0].content,
   "Legacy CSS variable HTML resources are not wrapped unexpectedly");
+
+const publicPreviewDir = await mkdtemp(path.join(tmpdir(), "nagweb-pages-preview-"));
+try {
+  const site = await buildPublicResourceBrowser({ outputDir: publicPreviewDir });
+  assert.equal(site.entrypoint, "resource-browser/index.html");
+  assert.match(await readFile(path.join(publicPreviewDir, "index.html"), "utf8"),
+    /url=\.\/resource-browser\//);
+  assert.match(await readFile(path.join(publicPreviewDir, "resource-browser", "index.html"), "utf8"),
+    /Biblioteca de recursos/);
+  assert.ok((await stat(path.join(publicPreviewDir, "resource-browser", "app.mjs"))).isFile());
+  assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "persistent-vault-client.mjs"))).isFile());
+  assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "html-css-customization.mjs"))).isFile());
+  assert.ok((await stat(path.join(publicPreviewDir, "resource-browser", "vendor", "lottie_light.min.js"))).isFile());
+  assert.ok((await stat(path.join(publicPreviewDir, ".nojekyll"))).isFile());
+} finally {
+  await rm(publicPreviewDir, { recursive: true, force: true });
+}

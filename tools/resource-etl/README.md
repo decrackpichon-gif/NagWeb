@@ -801,3 +801,33 @@ La Biblioteca Visual sólo habilita **Aplicar en NagWeb** cuando fue abierta des
 El editor principal todavía no escucha este protocolo. Esa conexión se hará en una rama de integración separada para no poner en riesgo MotionLab ni el resto de NagWeb.
 
 Además, `runtime/instance.mjs` dejó de depender de `node:crypto`, por lo que los insert adapters ya pueden ejecutarse tanto en Node como en navegador.
+
+## Vista pública independiente (preparación para GitHub Pages)
+
+Para generar una copia estática de la Biblioteca Visual con el código y reproductor
+necesarios, sin Vercel, sin Node en el navegador y sin modificar `main`:
+
+```bash
+npm run preview:public
+```
+
+Se genera `pages-preview/` con `index.html`, `resource-browser/`, `src/` y
+`.nojekyll`. Esta copia lee el catálogo real desde la rama pública
+`resource-vault-data`, así que el código del catálogo no se duplica en el
+repositorio de la aplicación.
+
+**Importante:** generar esta carpeta NO publica nada en Internet ni habilita
+GitHub Pages. Para publicar manualmente, copiar el contenido generado a una
+rama de publicación independiente (`gh-pages`) y configurar **Settings → Pages
+→ Build and deployment → Deploy from a branch → gh-pages / (root)**.
+Hacer esa actualización solamente cuando se quiera publicar una nueva
+versión. No se activa ningún despliegue automático de Vercel y se conserva
+la rama de trabajo `feat/resource-etl-v1`.
+
+URL prevista cuando Pages esté habilitado:
+`https://decrackpichon-gif.github.io/NagWeb/resource-browser/`.
+**No compartirla como funcional hasta comprobar que está publicada.**
+
+Limitaciones actuales: las vistas previas cubren sólo las familias compatibles.
+El botón de inserción requiere abrir la biblioteca desde un editor conectado;
+la edición posterior en el lienzo principal todavía está pendiente.

@@ -16,7 +16,8 @@
     "uiverse:batch": "node src/uiverse-batch-cli.mjs",
     "vault:restore": "node src/snapshot/restore-persistent-vault.mjs",
     "vault:client:smoke": "node src/persistent-vault-client-smoke.mjs",
-    "vault:browser": "node src/resource-browser-server.mjs --open"
+    "vault:browser": "node src/resource-browser-server.mjs --open",
+    "preview:public": "node src/preview/build-public-site.mjs --out=pages-preview"
   },
   "devDependencies": {
     "@tailwindcss/browser": "4.3.3",
