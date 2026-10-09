@@ -687,6 +687,14 @@ export async function runCameraBrowserSmoke(page){
      regions:regions.map(n=>({which:n.dataset.cameraOverviewFovExclusive,percent:+n.dataset.cameraOverviewExclusivePercent,
       d:n.getAttribute('d'),rule:n.getAttribute('fill-rule'),pointer:n.getAttribute('pointer-events')}))};
    });
+   const focusState=()=>page.evaluate(()=>{
+    const select=document.querySelector('[data-camera-overview-compare-focus]');
+    const regions=Array.from(document.querySelectorAll('[data-camera-overview-fov-exclusive]'));
+    const shared=document.querySelector('[data-camera-overview-fov-overlap]');
+    return {value:select?.value||'',disabled:!!select?.disabled,
+     areas:regions.map(n=>({which:n.dataset.cameraOverviewFovExclusive,opacity:+n.getAttribute('fill-opacity'),stroke:n.getAttribute('stroke')})),
+     sharedOpacity:shared?+shared.getAttribute('fill-opacity'):null,sharedWidth:shared?+shared.getAttribute('stroke-width'):null};
+   });
    const overlapState=()=>page.evaluate(()=>{
    const result=document.querySelector('[data-camera-overview-overlap-summary]'),poly=document.querySelector('[data-camera-overview-fov-overlap]');
    const parse=poly?.getAttribute('points')?.split(' ').map(p=>p.split(',').map(Number))||[];
@@ -712,6 +720,13 @@ export async function runCameraBrowserSmoke(page){
    assert.deepEqual(exclusive.regions.map(r=>r.which),['a','b']);
    assert.ok(exclusive.regions.every(r=>Math.abs(r.percent)<.01&&r.rule==='evenodd'&&r.pointer==='none'&&!r.d.includes('NaN')),'Identical cones: zero exclusive area and finite non-interactive paths');
    assert.ok(exclusive.summary.includes('Solo A:')&&exclusive.summary.includes('Solo B:'),'A/B exclusive coverage is explained');
+   await page.select('[data-camera-overview-compare-focus]','shared');
+   let focus=await focusState();
+   assert.equal(focus.value,'shared','Shared-region focus is selected');
+   assert.equal(focus.sharedOpacity,.76,'Shared region is emphasized in the minimap');
+   assert.equal(focus.sharedWidth,1.65,'Shared outline becomes easier to see');
+   assert.ok(focus.areas.every(r=>r.opacity===.05),'Nonfocused exclusive areas become unobtrusive');
+   await page.select('[data-camera-overview-compare-focus]','all');
   await page.click('[data-camera-overview-compare-fov-toggle]');
   cov=await overlapState();
   assert.equal(cov.polygon,false,'Hiding cones also hides purple overlap visualization');
@@ -745,6 +760,28 @@ export async function runCameraBrowserSmoke(page){
    exclusive=await exclusiveState();
    assert.equal(exclusive.regions.length,2,'Separate cones render two distinct exclusive areas');
    assert.ok(exclusive.regions.every(r=>Math.abs(r.percent-100)<.01&&r.rule==='evenodd'&&r.pointer==='none'),'Disjoint cones: 100% exclusive of their own projected areas');
+   await page.select('[data-camera-overview-compare-focus]','a');
+   focus=await focusState();
+   assert.equal(focus.value,'a','Exclusive A focus is selected');
+   assert.equal(focus.areas.find(r=>r.which==='a').opacity,.65,'A is emphasized');
+   assert.equal(focus.areas.find(r=>r.which==='b').opacity,.05,'B is dimmed');
+   assert.equal(focus.areas.find(r=>r.which==='a').stroke,'#22d3ee','Focused A has a visible boundary');
+   await page.select('[data-camera-overview-compare-focus]','b');
+   focus=await focusState();
+   assert.equal(focus.value,'b','Exclusive B focus is selected');
+   assert.equal(focus.areas.find(r=>r.which==='b').opacity,.65,'B is emphasized');
+   assert.equal(focus.areas.find(r=>r.which==='a').opacity,.05,'A is dimmed');
+   await page.select('[data-camera-map-plane]','front');
+   focus=await focusState();
+   assert.equal(focus.value,'b','Focus persists across projection changes');
+   assert.equal(focus.disabled,true,'Focus cannot claim reliable areas in edge-on view');
+   await page.select('[data-camera-map-plane]','top');
+   focus=await focusState();
+   assert.equal(focus.value,'b','Focus is restored on evaluable projections');
+   assert.equal(focus.disabled,false,'Focus becomes available again');
+   await page.select('[data-camera-overview-compare-focus]','all');
+   focus=await focusState();
+   assert.ok(focus.areas.every(r=>r.opacity===.29),'Default view restores balanced area emphasis');
   await page.evaluate(saved=>{
    const sc=sec();sc.sdCameraOrientationMode=saved.orientation;
    sc.sdCameraFrames=JSON.parse(saved.camera);renderPane();
@@ -758,7 +795,7 @@ export async function runCameraBrowserSmoke(page){
    assert.equal(exclusive.enabled,false,'Exclusive overlay can be disabled again');
    assert.equal(exclusive.regions.length,0,'Hiding exclusive areas preserves existing cone visualization');
    assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'Coverage calculations and UI do not add undo snapshots');
-  console.log('Camera minimap FOV overlap: 100% shared, separate cones, edge-on unavailable, toggle, restore and no scene edits OK');
+  console.log('Camera minimap FOV overlap: 100% shared, separate cones, edge-on unavailable, toggle, focus on A/B/shared, projection persistence, restore and no scene edits OK');
 
 
 
