@@ -582,3 +582,40 @@ const fallback=C.lookTarget(fallbackCfg,.5,M,'linear',{width:1000,height:800},ta
 assert.equal(fallback.x,0);assert.equal(fallback.z,1000,'Deleted target falls back to stored XYZ');
 assert.deepEqual(JSON.parse(JSON.stringify(C.pose(targetCfg,.5,M,'linear',true,targetCompiled,{width:1000,height:800}))),{x:0,y:0,z:0,rotateX:0,rotateY:0,rotate:0});
 console.log('Camera element target: free-layout eligibility, responsive coordinates, Director XYZ following, fallback and reduced motion OK');
+
+
+// Spatial look-at targets: anchored Three.js models share the Director's camera space.
+// They are eligible for aiming/inspection, but never inherit the HTML world transform.
+const spatialScene={...targetScene,id:'spatial-target',sdPerspective:1000,elements:[
+ {id:'glb',type:'shape3d',shape:'model',modelId:'example',anchor:true,x:75,y:40,w:20,h:20,offZ:3,
+  sdKeyframes:[{at:0,x:0,y:0,z:0,ease:'linear'},{at:100,x:100,y:40,z:80}]},
+ {id:'shape',type:'shape3d',anchor:true,x:30,y:50,offZ:0},
+ {id:'unanchored',type:'shape3d',anchor:false,x:50,y:50},
+ {id:'fixed3d',type:'shape3d',anchor:true,fixed:true,x:50,y:50},
+ {id:'nested3d',type:'shape3d',anchor:true,parent:'shape',x:50,y:50},
+ {id:'light',type:'light3d',x:50,y:50}
+ ],sdCameraLookFrames:[{at:0,targetId:'glb',x:0,y:0,z:900},{at:100,targetId:'glb',x:0,y:0,z:900}]};
+const spatialCfg=C.config(spatialScene),spatialCompiled=C.compile(spatialCfg,M,'linear');
+assert.deepEqual(Array.from(spatialCfg.targets,x=>x.id),['glb','shape']);
+assert.equal(C.targetEligible(spatialScene.elements[0],spatialScene),true);
+for(const element of spatialScene.elements.slice(2))assert.equal(C.targetEligible(element,spatialScene),false,'Only anchored, eligible shape3d can be selected');
+assert.equal(C.targetEligible(spatialScene.elements[0],{...spatialScene,layout:'stack'}),false);
+assert.equal(C.layerEligible(spatialScene.elements[0],spatialScene),false,'WebGL model must not receive duplicate CSS camera transform');
+assert.ok(!spatialCfg.layers.some(x=>x.id==='glb'),'WebGL model stays out of CSS layers');
+assert.equal(spatialCfg.spatialPerspective,1000);
+const glbUnits=800/(12*Math.tan(25*Math.PI/180)),start3D=C.elementTarget(spatialCfg,'glb',0,M,'linear',{width:1000,height:800},spatialCompiled);
+assert.ok(Math.abs(start3D.x-250)<1e-10&&Math.abs(start3D.y+80)<1e-10);
+assert.ok(Math.abs(start3D.z-(1000-3*glbUnits))<1e-9,'GLB look target uses spatial holder depth and offZ');
+const moving3D=C.elementTarget(spatialCfg,'glb',.5,M,'linear',{width:1000,height:800},spatialCompiled);
+assert.ok(Math.abs(moving3D.x-300)<1e-10&&Math.abs(moving3D.y+60)<1e-10&&Math.abs(moving3D.z-(960-3*glbUnits))<1e-9,'Three +Z motion becomes -Z camera-space offset');
+const simple3D=C.elementTarget(spatialCfg,'shape',0,M,'linear',{width:1000,height:800},spatialCompiled);
+assert.equal(simple3D.z,1000,'Shape without 3D depth offset sits one focal length forward');
+const threePoint=C.threeWorldPoint(moving3D,1);
+assert.ok(Math.abs(threePoint.z-(-1000+3*glbUnits+40))<1e-9,'Aim point maps to the exact WebGL holder Z');
+const aimed3D=C.pose(spatialCfg,.5,M,'linear',false,spatialCompiled,{width:1000,height:800});
+const expected3D=C.lookAngles({x:0,y:0,z:0},moving3D);
+assert.ok(Math.abs(aimed3D.rotateX-expected3D.rotateX)<1e-9&&Math.abs(aimed3D.rotateY-expected3D.rotateY)<1e-9,'Look-at follows animated GLB center');
+const spatialMissing={...spatialCfg,targets:[]};
+assert.equal(C.lookTarget(spatialMissing,.5,M,'linear',{width:1000,height:800},spatialCompiled).z,900,'Removed GLB returns to authored fallback XYZ');
+assert.equal(JSON.stringify(spatialScene.elements),JSON.stringify(spatialScene.elements.slice()),'Camera target evaluation is read-only');
+console.log('Camera 3D targets: GLB/shape eligibility, spatial depth, animated XYZ, WebGL parity, CSS exclusion and fallback OK');
