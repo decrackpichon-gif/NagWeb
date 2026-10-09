@@ -46,6 +46,7 @@ export type EditableBinding =
   | { type: "css-type-border-declaration"; property: string; originalValue: number }
   | { type: "css-timing-declaration"; property: string; role: "duration" | "delay"; originalValue: number }
   | { type: "css-multi-timing"; property: string; role: "duration" | "delay"; trackIndex: number; originalValue: number }
+  | { type: "css-bezier-coordinate"; property: string; curveIndex: number; coordinate: number; originalCurve: string }
   | { type: "text-content"; target?: string }
   | {
       type: "transform";

@@ -63,6 +63,11 @@ import {
   isSupportedUiverseCssMultiTiming
 } from "./runtime/uiverse-multi-timing.mjs";
 import {
+  inferUiverseCssBezierProps,
+  applyUiverseCssBezierValues,
+  isSupportedUiverseCssBezier
+} from "./runtime/uiverse-bezier.mjs";
+import {
   inferUiverseCssColorProps,
   effectiveUiverseEditableProps,
   applyUiverseCssColorValues
@@ -1612,6 +1617,7 @@ try {
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-type-borders.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-timing.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-multi-timing.mjs"))).isFile());
+  assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-bezier.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "resource-browser", "vendor", "lottie_light.min.js"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, ".nojekyll"))).isFile());
   await assert.rejects(stat(path.join(publicPreviewDir, "src", "cli.mjs")),
@@ -2267,3 +2273,114 @@ assert.equal(inferUiverseCssMultiTimingProps(
   '<style>'+Array.from({length:5},(_,i)=>
     '.x'+i+'{animation-delay:'+i+'s,'+(i+1)+'s}').join('')+'</style>').length,8,
   "Additional controls are capped to avoid overwhelming customization UI");
+
+
+const bezierHtml = '<style>' +
+  '.dual{animation:spin 1s cubic-bezier(.2,.5,.8,1), ' +
+  'fade 2s cubic-bezier(.1,-.3,.9,1.2);' +
+  'transition-timing-function:cubic-bezier(.25,.1,.25,1)}' +
+  '.dual:hover{animation:spin 1s cubic-bezier(.2,.5,.8,1), ' +
+  'fade 2s cubic-bezier(.1,-.3,.9,1.2)}' +
+  '/* .comment{animation:spin 1s cubic-bezier(.4,.4,.4,.4)} */' +
+  '.label:before{content:"animation:spin cubic-bezier(.5,.5,.5,.5)"}' +
+  '.invalid{animation:spin 1s cubic-bezier(1.2,0,.1,1);' +
+  'transition:opacity .2s cubic-bezier(.2,.3,var(--y),1)}' +
+  '</style><button data-easing="cubic-bezier(.2,.5,.8,1)">Probar</button>';
+const bezierProps=inferUiverseCssBezierProps(bezierHtml);
+assert.equal(bezierProps.length,12,
+  "Three real cubic-bezier curves expose all four coordinates");
+assert.deepEqual(bezierProps.map(p=>p.id),
+  Array.from({length:12},(_,i)=>"uiverseBezier"+(i+1)));
+assert.deepEqual(bezierProps.slice(0,4).map(p=>[
+  p.binding.property,p.binding.curveIndex,p.binding.coordinate,p.defaultValue
+]),[
+  ["animation",0,0,0.2],["animation",0,1,0.5],
+  ["animation",0,2,0.8],["animation",0,3,1]
+]);
+assert.deepEqual(bezierProps.slice(4,8).map(p=>[
+  p.binding.curveIndex,p.defaultValue
+]),[[1,0.1],[1,-0.3],[1,0.9],[1,1.2]],
+  "Each track retains independent Bézier control points");
+assert.deepEqual(bezierProps.slice(8).map(p=>p.binding.property),
+  Array(4).fill("transition-timing-function"),
+  "Dedicated easing CSS properties are also supported");
+assert.deepEqual(bezierProps.slice(0,4).map(p=>p.constraints.min),
+  [0,-2,0,-2],"Bezier X values must be 0..1, Y may exceed that range");
+assert.deepEqual(bezierProps.slice(0,4).map(p=>p.constraints.max),
+  [1,2,1,2]);
+const originalBezierResource={
+  ...persistedUiverse,
+  artifacts:[{...persistedUiverse.artifacts[0],content:bezierHtml}]
+};
+assert.deepEqual(describeEditableControls(originalBezierResource).map(p=>p.id)
+  .filter(id=>id.startsWith("uiverseBezier")),
+  bezierProps.map(p=>p.id),
+  "Previously saved resources gain CSS easing controls without reimporting");
+assert.equal(isSupportedUiverseCssBezier(originalBezierResource,bezierProps[4]),true);
+assert.equal(isSupportedUiverseCssBezier(originalBezierResource,{
+  ...bezierProps[4],binding:{...bezierProps[4].binding,coordinate:9}
+}),false,"Invalid metadata cannot expose arbitrary CSS controls");
+assert.equal(applyUiverseCssBezierValues(originalBezierResource,{},bezierHtml),
+  bezierHtml,"Unchanged easing preserves source code byte-for-byte");
+const bezierEdited=buildResourceApplyEnvelope(originalBezierResource,{
+  values:{
+    uiverseBezier1:0.4,uiverseBezier2:0.75,
+    uiverseBezier5:0.3,uiverseBezier6:-0.6,
+    uiverseBezier9:0.35,uiverseBezier12:0.8
+  }
+});
+assert.match(bezierEdited.descriptor.payload.html,
+  /spin 1s cubic-bezier\(0.4,0.75,.8,1\)/,
+  "First animation curve changes only selected values");
+assert.match(bezierEdited.descriptor.payload.html,
+  /fade 2s cubic-bezier\(0.3,-0.6,.9,1.2\)/,
+  "Second animation curve remains independent");
+assert.match(bezierEdited.descriptor.payload.html,
+  /transition-timing-function:cubic-bezier\(0.35,.1,.25,0.8\)/);
+assert.match(bezierEdited.descriptor.payload.html,
+  /\.dual:hover\{animation:spin 1s cubic-bezier\(0.4,0.75,.8,1\), /,
+  "Equivalent CSS rules consistently receive the same changes");
+assert.match(bezierEdited.descriptor.payload.html,
+  /\/\* \.comment\{animation:spin 1s cubic-bezier\(.4,.4,.4,.4\)\} \*\//);
+assert.match(bezierEdited.descriptor.payload.html,
+  /content:"animation:spin cubic-bezier\(.5,.5,.5,.5\)"/);
+assert.match(bezierEdited.descriptor.payload.html,
+  /animation:spin 1s cubic-bezier\(1.2,0,.1,1\)/);
+assert.match(bezierEdited.descriptor.payload.html,
+  /transition:opacity .2s cubic-bezier\(.2,.3,var\(--y\),1\)/);
+assert.match(bezierEdited.descriptor.payload.html,
+  /data-easing="cubic-bezier\(.2,.5,.8,1\)"/);
+assert.equal(bezierEdited.descriptor.instance.values.uiverseBezier6,-0.6);
+assert.deepEqual(bezierEdited.resource.editableProps.filter(p=>
+  p.id.startsWith("uiverseBezier")).map(p=>p.id),bezierProps.map(p=>p.id),
+  "Editable easing curve metadata survives the insert descriptor");
+assert.equal(originalBezierResource.artifacts[0].content,bezierHtml,
+  "Source resource remains immutable");
+assert.equal(applyUiverseCssBezierValues(originalBezierResource,{
+  uiverseBezier1:-0.2,uiverseBezier2:3,uiverseBezier5:"0.5;display:none",
+  uiverseBezier6:Infinity,uiverseBezier9:0.3333,uiverseBezier12:null
+},bezierHtml),bezierHtml,
+  "Malformed, unsafe, out-of-bounds and off-step easing values are rejected");
+const importedBezier=transformUiverseComponent({
+  repository:"https://github.com/uiverse-io/galaxy",commit:"test",
+  item:{metadata:{category:"Buttons",author:"designer",slug:"bezier"},
+    content:bezierHtml,entry:{path:"Buttons/designer_bezier.html",sha:"b"}}
+});
+assert.deepEqual(importedBezier.editableProps.filter(p=>
+  p.id.startsWith("uiverseBezier")).map(p=>p.id),bezierProps.map(p=>p.id),
+  "Fresh imports persist only genuine Bézier controls");
+assert.deepEqual(inferUiverseCssBezierProps(
+  '<style>.invalid{animation:spin 1s cubic-bezier(1.1,0,.2,1);' +
+  'transition:opacity .3s cubic-bezier(.1,0,var(--x),1);' +
+  'animation-timing-function:steps(4,end)}</style>'),[],
+  "Invalid coordinates, variables and other timing functions are skipped");
+const combinedAnimation=buildResourceApplyEnvelope(persistedLayered,{
+  values:{uiverseTrack3:1.25,uiverseBezier1:0.4,uiverseBezier2:0.75}
+});
+assert.match(combinedAnimation.descriptor.payload.html,
+  /fade 1250ms cubic-bezier\(0.4,0.75,0,1\) -100ms both/,
+  "Changing duration and Bézier curve together preserves track behavior");
+assert.equal(inferUiverseCssBezierProps(
+  '<style>'+Array.from({length:5},(_,i)=>
+    '.c'+i+'{animation:move 1s cubic-bezier('+i/10+',.2,.8,1)}').join('')+
+  '</style>').length,12,"Limit Bezier sliders to three source curves");

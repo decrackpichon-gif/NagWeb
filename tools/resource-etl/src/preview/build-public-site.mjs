@@ -18,6 +18,7 @@ const PUBLIC_MODULES = Object.freeze([
   "runtime/uiverse-type-borders.mjs",
   "runtime/uiverse-timing.mjs",
   "runtime/uiverse-multi-timing.mjs",
+  "runtime/uiverse-bezier.mjs",
   "runtime/resource-apply-bridge.mjs",
   "runtime/insert-adapters.mjs",
   "preview/lottie-browser-preview.mjs",
