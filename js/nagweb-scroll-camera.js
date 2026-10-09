@@ -1648,6 +1648,7 @@ function spatialMap(s,list,k){
     '<div style="opacity:.7;font-size:10px">Contornos orientativos según ancho/alto del Lienzo libre, sin escala animada, perspectiva, giro ni oclusiones. No se pueden arrastrar todavía.</div>':
    '<div style="opacity:.7">'+(s.layout!=='free'?'Las guías de objetos están disponibles en Lienzo libre.':'No hay objetos compatibles para mostrar en esta escena.')+'</div>')+
   '</div>';
+ html+=mapObjectInfoHtml(s,objectPlan,progress(s));
  html+='<label style="display:inline-flex;align-items:center;gap:6px;margin:6px 0;font-size:12px"><input type="checkbox" data-camera-map-fov-toggle aria-label="Mostrar campo de visión aproximado"'+(mapFovVisible[s.id]!==false?' checked':'')+(plane==='side'?' disabled title="El campo de visión queda de perfil en la vista lateral."':'')+'> Mostrar campo de visión</label>';
  html+='<div data-camera-map-pair style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0">'+mapKeyframeNavigation(list,k.at,'camera')+(lk?mapKeyframeNavigation(looks,lk.at,'look'):'')+'</div>';
  if(lk)html+='<p class="hint gh">◆ y ● se navegan por separado; la vista previa sigue el último punto elegido.</p>';
@@ -1804,6 +1805,7 @@ C.paint=function(pct){
   var spec=mapSpecFromNode(map),v=mapCurrent(s,pct),p=C.mapPoint(v,spec),dot=map.querySelector('[data-camera-position]'),label=pane.querySelector('[data-camera-position-label]');
   if(dot){dot.setAttribute('cx',p.x);dot.setAttribute('cy',p.y);}if(label)label.textContent=mapLabel(v,pct);
   mapObjectPaint(map,s,spec,pct);
+  mapObjectInfoPaint(pane,s,pct);
   var cfg=C.config(s),lookDot=map.querySelector('[data-camera-look-position]'),look=cfg&&cfg.orientationMode==='lookAt'?C.lookTarget(cfg,pct/100,window.NAGWEB_STORY_MODEL,s.sdEase,previewReferenceSize(s)):null;
   if(lookDot&&look){var lp=C.mapPoint(look,spec);lookDot.setAttribute('cx',lp.x);lookDot.setAttribute('cy',lp.y);}
   var overviewNode=map.querySelector('[data-camera-overview]');
@@ -2164,6 +2166,7 @@ if(pane){
   var lookCurveHandle=ev.target.closest('[data-camera-look-tension-handle]');if(lookCurveHandle){if(lookCurveHandle.dataset.cameraLookHandleFree==='true')lookFreeHandleDrag(ev,lookCurveHandle);else lookTensionDrag(ev,lookCurveHandle);return;}
   var lookSpatial=ev.target.closest('[data-camera-look-map-point]');if(lookSpatial){lookSpatialDrag(ev,lookSpatial);return;}
   var spatial=ev.target.closest('[data-camera-map-point]');if(spatial){spatialDrag(ev,spatial);return;}
+  if(ev.target.closest('[data-camera-scene-object-pick]')){ev.stopPropagation();return;}
   var mapDot=ev.target.closest('[data-camera-look-map-dot],[data-camera-map-dot]'),spatialMapNode=ev.target.closest('[data-camera-map]');
   if(mapDot&&spatialMapNode&&pickSpatial(sec(),spatialMapNode,ev.clientX,ev.clientY)){ev.preventDefault();ev.stopPropagation();return;}
   if(spatialMapNode&&pickSpatial(sec(),spatialMapNode,ev.clientX,ev.clientY)){ev.preventDefault();ev.stopPropagation();return;}
@@ -2233,9 +2236,17 @@ if(pane){
   if(retime(s,from,to)){var next=pane.querySelector('[data-camera-jump="'+to+'"]');if(next)next.focus();}
  });
  pane.addEventListener('click',function(ev){
-  var button=ev.target.closest('[data-camera-edit-current],[data-camera-easy-move],[data-camera-overview-compare-alternate],[data-camera-overview-compare-jump],[data-camera-overview-event-step],[data-camera-overview-toggle],[data-camera-map-pan],[data-camera-map-zoom],[data-camera-map-step],[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
+  var button=ev.target.closest('[data-camera-scene-object-pick],[data-camera-edit-current],[data-camera-easy-move],[data-camera-overview-compare-alternate],[data-camera-overview-compare-jump],[data-camera-overview-event-step],[data-camera-overview-toggle],[data-camera-map-pan],[data-camera-map-zoom],[data-camera-map-step],[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
   if(button===suppressedClick){suppressedClick=null;return;}
   var s=sec(),cfg=C.config(s);if(!cfg)return;var list=keys(s);
+  if(button.dataset.cameraSceneObjectPick!==undefined){
+   var plan=mapObjectPlans[s.id],idx=+button.dataset.cameraSceneObjectPick;
+   if(!plan||mapObjectVisible[s.id]===false||!Number.isInteger(idx)||idx<0||idx>=plan.entries.length)return;
+   mapObjectSelected[s.id]=plan.entries[idx].id;
+   renderPane();
+   var field=pane.querySelector('[data-camera-object-select]');if(field)field.focus({preventScroll:true});
+   return;
+  }
   if(button.dataset.cameraEditCurrent!==undefined){
    var outcome=cameraCreateAtCurrent(s,list,progress(s));
    if(outcome==='created'||outcome==='selected'){
@@ -2336,6 +2347,13 @@ if(pane){
  });
  pane.addEventListener('change',function(ev){
   var input=ev.target;
+  if(input.dataset.cameraObjectSelect!==undefined){
+   var scene=sec(),plan=mapObjectPlans[scene.id],idx=+input.value;
+   mapObjectSelected[scene.id]=input.value!==''&&plan&&Number.isInteger(idx)&&idx>=0&&idx<plan.entries.length?plan.entries[idx].id:null;
+   renderPane();
+   var field=pane.querySelector('[data-camera-object-select]');if(field)field.focus({preventScroll:true});
+   return;
+  }
   if(input.dataset.cameraEasyStep!==undefined){
    cameraEasyStep[sec().id]=input.value==='100'?100:25;
    return;
@@ -2407,6 +2425,7 @@ if(pane){
   if(input.dataset.cameraSceneObjectsToggle!==undefined){
     var scene=sec();if(!C.config(scene))return;
     mapObjectVisible[scene.id]=!!input.checked;
+    if(!input.checked)mapObjectSelected[scene.id]=null;
     renderPane();
     var control=pane.querySelector('[data-camera-scene-objects-toggle]');
     if(control)control.focus({preventScroll:true});
