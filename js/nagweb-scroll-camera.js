@@ -301,6 +301,45 @@ function mapCurrent(s,pct){
  return C.pose(C.config(s),pct/100,window.NAGWEB_STORY_MODEL,s.sdEase,reduced,undefined,previewReferenceSize(s));
 }
 // Read-only guides reuse the same free-canvas target evaluation as "Mirar elemento".
+// Diagrammatic scene guides use authored w/h but never impersonate rendered bounds.
+function mapObjectRole(type){
+ var t=String(type||'').toLowerCase();
+ if(t==='container')return 'container';
+ if(/^(img|image|photo|picture|gallery|video|svg)$/.test(t))return 'image';
+ if(/^(heading|text|paragraph|richtext|title|subtitle|label)$/.test(t))return 'text';
+ return 'other';
+}
+function mapObjectDimensions(e,size){
+ var w=Number(e&&e.w),h=Number(e&&e.h);
+ return {width:Number.isFinite(w)&&w>0?Math.min(400,w)/100*size.width:null,
+         height:Number.isFinite(h)&&h>0?Math.min(400,h)/100*size.height:null};
+}
+function mapObjectFootprint(entry,spec){
+ if(!entry||!spec||!(spec.range>0))return null;
+ var scale=50/spec.range,
+     width=Number.isFinite(entry.width)?Math.abs(entry.width)*scale:null,
+     height=Number.isFinite(entry.height)?Math.abs(entry.height)*scale:null,
+     side=spec.xAxis==='z',top=spec.axis==='z',
+     horizontal=side?null:width,vertical=top?null:height;
+ if(horizontal===null&&vertical===null)return null;
+ // Elements live on thin Z layers; their thickness is a visual marker, not a 3D volume.
+ var thickness=Math.max(1.3,Math.min(3.2,8*scale));
+ return {width:Math.max(1.3,Math.min(32,horizontal===null?thickness:horizontal)),
+         height:Math.max(1.3,Math.min(27,vertical===null?thickness:vertical)),
+         top:top,side:side};
+}
+function mapObjectShapeHtml(entry,spec){
+ var box=mapObjectFootprint(entry,spec),role=entry.role||'other',
+     stroke=role==='container'?'#c4b5fd':role==='image'?'#fbbf24':role==='text'?'#93c5fd':'#5eead4',
+     fill=role==='container'?'#a78bfa':role==='image'?'#f59e0b':role==='text'?'#60a5fa':'#2dd4bf',
+     glyph=role==='text'?'T':role==='image'?'▧':role==='container'?'□':'•';
+ if(!box)return '<circle data-camera-scene-object-symbol r="2.4" stroke="'+stroke+'" stroke-width=".9" fill="'+fill+'" fill-opacity=".22"/>'+
+  '<text x="0" y=".9" font-size="2.7" fill="'+stroke+'" text-anchor="middle">'+glyph+'</text>';
+ return '<rect data-camera-scene-object-footprint data-camera-scene-object-width="'+box.width+'" data-camera-scene-object-height="'+box.height+'" x="'+(-box.width/2)+'" y="'+(-box.height/2)+'" width="'+box.width+'" height="'+box.height+'" rx="'+(role==='container'?'1':'.5')+'" stroke="'+stroke+'" stroke-width="'+(role==='container'?'1':'.65')+'" stroke-dasharray="'+(role==='container'?'1.5 1':'none')+'" fill="'+fill+'" fill-opacity="'+(role==='container'?'.08':'.19')+'"/>'+
+  (!box.top&&!box.side?
+   '<text data-camera-scene-object-symbol x="0" y=".8" font-size="3.1" text-anchor="middle" fill="'+stroke+'">'+glyph+'</text>':
+   '<circle data-camera-scene-object-symbol cx="0" cy="0" r=".75" fill="'+stroke+'"/>');
+}
 function mapObjectPlan(s,cfg,size){
  if(!cfg||s.layout!=='free'||!window.NAGWEB_STORY_MODEL)return null;
  var model=window.NAGWEB_STORY_MODEL,raw=Object.create(null),tracks=Object.create(null);
@@ -310,7 +349,8 @@ function mapObjectPlan(s,cfg,size){
   var source=raw[String(t.id)];if(!source)return;
   try{
    tracks[t.id]=model.compile(t.motion||{id:t.id});
-   entries.push({id:t.id,label:targetLabel(source),kind:source.type||'elemento'});
+   var dims=mapObjectDimensions(source,size);
+   entries.push({id:t.id,label:targetLabel(source),kind:source.type||'elemento',role:mapObjectRole(source.type),width:dims.width,height:dims.height});
   }catch(_){}
  });
  return {cfg:cfg,size:size,entries:entries,compiled:{targetTracks:tracks},total:(cfg.targets||[]).length};
@@ -332,8 +372,7 @@ function mapObjectMarkersHtml(s,plan,spec,pct){
   var at=C.mapPoint(v,spec);
   var label=row.item.label; // targetLabel has already escaped untrusted text.
   return '<g data-camera-scene-object="'+i+'" data-camera-scene-object-id="'+safeLabel(row.item.id)+'" data-camera-scene-object-kind="'+safeLabel(row.item.kind)+'" transform="translate('+at.x+' '+at.y+')">'+
-   '<circle r="2.1" fill="#60a5fa" fill-opacity=".22" stroke="#60a5fa" stroke-width=".7"/>'+
-   '<circle r=".65" fill="#93c5fd"/>'+
+   mapObjectShapeHtml(row.item,spec)+
    (i<8?'<text x="2.8" y="-2.1" font-size="2.65" fill="currentColor" stroke="var(--bg,#1c1e23)" stroke-width=".5" paint-order="stroke">'+(i+1)+' · '+label+'</text>':'')+
    '</g>';
  }).join('')+'</g>';
@@ -1563,7 +1602,8 @@ function spatialMap(s,list,k){
  html+='<div data-camera-scene-objects-info style="font-size:11px;margin:5px 0">'+
   (objectPlan&&objectPlan.total?
    '<label style="display:inline-flex;gap:6px;align-items:center"><input type="checkbox" data-camera-scene-objects-toggle'+(mapObjectVisible[s.id]===false?'':' checked')+'> Mostrar objetos de la escena ('+objectPlan.entries.length+(objectPlan.total>objectPlan.entries.length?' de '+objectPlan.total:'')+')</label>'+
-   '<div style="opacity:.7;font-size:10px">Puntos guía en su posición animada y profundidad; no muestran tamaños ni oclusiones reales. No se pueden arrastrar todavía.</div>':
+   '<div data-camera-scene-objects-legend style="font-size:10px;opacity:.85;margin-top:3px">T Texto · ▧ Imagen · □ Contenedor · • Otro</div>'+
+    '<div style="opacity:.7;font-size:10px">Contornos orientativos según ancho/alto del Lienzo libre, sin escala animada, perspectiva, giro ni oclusiones. No se pueden arrastrar todavía.</div>':
    '<div style="opacity:.7">'+(s.layout!=='free'?'Las guías de objetos están disponibles en Lienzo libre.':'No hay objetos compatibles para mostrar en esta escena.')+'</div>')+
   '</div>';
  html+='<label style="display:inline-flex;align-items:center;gap:6px;margin:6px 0;font-size:12px"><input type="checkbox" data-camera-map-fov-toggle aria-label="Mostrar campo de visión aproximado"'+(mapFovVisible[s.id]!==false?' checked':'')+(plane==='side'?' disabled title="El campo de visión queda de perfil en la vista lateral."':'')+'> Mostrar campo de visión</label>';
