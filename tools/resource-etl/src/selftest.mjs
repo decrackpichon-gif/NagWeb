@@ -38,6 +38,11 @@ import { buildInsertDescriptor } from "./runtime/insert-adapters.mjs";
 import { describeCssEditableControls, describeEditableControls } from "./runtime/editable-controls.mjs";
 import { htmlCssPropertyStyle } from "./runtime/html-css-customization.mjs";
 import {
+  inferUiverseCssColorProps,
+  effectiveUiverseEditableProps,
+  applyUiverseCssColorValues
+} from "./runtime/uiverse-colors.mjs";
+import {
   NAGWEB_RESOURCE_APPLY_PROTOCOL,
   NAGWEB_RESOURCE_APPLY_RESULT_TYPE,
   buildResourceApplyEnvelope,
@@ -1576,6 +1581,7 @@ try {
   assert.ok((await stat(path.join(publicPreviewDir, "resource-browser", "app.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "persistent-vault-client.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "html-css-customization.mjs"))).isFile());
+  assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-colors.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "resource-browser", "vendor", "lottie_light.min.js"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, ".nojekyll"))).isFile());
   await assert.rejects(stat(path.join(publicPreviewDir, "src", "cli.mjs")),
@@ -1596,3 +1602,103 @@ try {
 } finally {
   await rm(publicPreviewDir, { recursive: true, force: true });
 }
+
+const vividUiverseHtml = '<style>' +
+  '.button{color:#fff;background:#112233;border:1px solid #aBc;' +
+  'box-shadow:0 0 4px #112233;outline:1px solid #abc;' +
+  'width:100px;transform:translateX(20px)}' +
+  '.button:hover{background:linear-gradient(#112233,#ffcc00)}' +
+  '/* color: #eeeeee; */' +
+  '.icon{fill:#fff;stroke:#ffcc00}' +
+  '.image{background:url(https://example.test/#aabbcc)}' +
+  '</style><button class="button" data-palette="#112233">Color</button>';
+const inferredPalette = inferUiverseCssColorProps(vividUiverseHtml);
+assert.deepEqual(inferredPalette.map(prop => prop.defaultValue),
+  ["#ffffff", "#112233", "#aabbcc", "#ffcc00"],
+  "Only actual CSS color declarations become controls; comments and URLs do not");
+assert.deepEqual(inferredPalette.map(prop => prop.id),
+  ["uiverseColor1", "uiverseColor2", "uiverseColor3", "uiverseColor4"]);
+const vividUiverse = transformUiverseComponent({
+  repository: "https://github.com/uiverse-io/galaxy", commit: "test-commit",
+  item: {
+    metadata: { category: "Buttons", author: "tester", slug: "vivid" },
+    content: vividUiverseHtml, entry: { path: "Buttons/tester_vivid.html", sha: "def" }
+  }
+});
+assert.deepEqual(describeEditableControls(vividUiverse).map(prop => prop.id),
+  ["opacity", "scale", "uiverseColor1", "uiverseColor2",
+    "uiverseColor3", "uiverseColor4"]);
+assert.equal(effectiveUiverseEditableProps(vividUiverse).length, 6,
+  "Palette is not duplicated when already saved in metadata");
+const persistedUiverse = {
+  ...vividUiverse, editableProps: vividUiverse.editableProps.slice(0, 2)
+};
+assert.deepEqual(describeEditableControls(persistedUiverse).map(prop => prop.id),
+  ["opacity", "scale", "uiverseColor1", "uiverseColor2",
+    "uiverseColor3", "uiverseColor4"],
+  "Old persistent Uiverse resources can be customized without re-import");
+const paletteValues = {
+  uiverseColor1: "#1122ee",
+  uiverseColor2: "#eeddcc",
+  uiverseColor3: "#aabb11",
+  uiverseColor4: "#ff2233",
+  opacity: 0.7
+};
+const vividDescriptor = buildResourceApplyEnvelope(persistedUiverse, {
+  values: paletteValues
+}).descriptor;
+assert.equal(vividDescriptor.kind, "html");
+assert.match(vividDescriptor.payload.html, /color:#1122ee;background:#eeddcc/);
+assert.match(vividDescriptor.payload.html, /border:1px solid #aabb11/);
+assert.match(vividDescriptor.payload.html, /box-shadow:0 0 4px #eeddcc/);
+assert.match(vividDescriptor.payload.html,
+  /linear-gradient\(#eeddcc,#ff2233\)/);
+assert.match(vividDescriptor.payload.html, /data-palette="#112233"/,
+  "HTML attributes are left untouched");
+assert.match(vividDescriptor.payload.html, /width:100px;transform:translateX\(20px\)/);
+assert.match(vividDescriptor.payload.html, /\/\* color: #eeeeee; \*\//);
+assert.match(vividDescriptor.payload.html, /^<div data-nagweb-custom-style="1" style="opacity:0\.7;scale:1">/);
+assert.equal(vividDescriptor.instance.values.uiverseColor3, "#aabb11");
+assert.equal(vividUiverse.artifacts[0].content, vividUiverseHtml,
+  "Original resource remains unchanged");
+const invalidPalette = applyUiverseCssColorValues(
+  persistedUiverse,
+  { uiverseColor1: "red;position:fixed", uiverseColor2: "#fff;url(x)" },
+  vividUiverseHtml
+);
+assert.match(invalidPalette, /color:#fff;background:#112233/,
+  "Invalid color values always use the original CSS colors");
+assert.deepEqual(inferUiverseCssColorProps(
+  '<style>.a{width:42px;opacity:.5;background:transparent;}</style>'),
+  [], "No fabricated controls when no real hex colors exist");
+assert.deepEqual(inferUiverseCssColorProps(
+  '<style>.a{background-image:url(https://example.test/#123456);' +
+  'background:linear-gradient(#ffeedd,#aabbcc)}</style>').map(p=>p.defaultValue),
+  ["#ffeedd","#aabbcc"], "Ignore URL tokens while editing genuine gradients");
+
+assert.deepEqual(buildResourceApplyEnvelope(persistedUiverse).resource.editableProps
+  .map(prop => prop.id).slice(-4),
+  ["uiverseColor1", "uiverseColor2", "uiverseColor3", "uiverseColor4"],
+  "Dynamic palette survives apply envelope even with an old resource snapshot");
+assert.equal(buildResourceApplyEnvelope(persistedUiverse).descriptor.instance.values.uiverseColor1,
+  "#ffffff", "New controls also supply their default values to inserted instance");
+const unchangedComment = '<style>.a{color:#abcdef;/* color:#abcdef; */' +
+  'background:#abcdef}</style>';
+const recoloredComment = applyUiverseCssColorValues(
+  persistedUiverse,
+  { uiverseColor1: "#123123" },
+  unchangedComment
+);
+assert.equal(recoloredComment, unchangedComment,
+  "A token from a different resource is not allowed to recolor another resource");
+const matchingCommentResource = {
+  ...persistedUiverse,
+  artifacts: [{...persistedUiverse.artifacts[0], content: unchangedComment}]
+};
+const recoloredMatchingComment = applyUiverseCssColorValues(
+  matchingCommentResource,
+  { uiverseColor1: "#123123" },
+  unchangedComment
+);
+assert.match(recoloredMatchingComment, /color:#123123;\/\* color:#abcdef; \*\//,
+  "Recolor CSS declarations without touching commented examples");

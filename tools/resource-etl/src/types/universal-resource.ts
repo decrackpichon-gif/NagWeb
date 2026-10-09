@@ -40,6 +40,7 @@ export type EditableBinding =
   | { type: "component-prop"; prop: string }
   | { type: "css-variable"; variable: string }
   | { type: "css-property"; property: string; selector?: string }
+  | { type: "css-color-token"; token: string }
   | { type: "text-content"; target?: string }
   | {
       type: "transform";

@@ -1,3 +1,5 @@
+import { applyUiverseCssColorValues } from "./uiverse-colors.mjs";
+
 // Safely translate explicit, supported HTML styling props into visible edits.
 // This is a small allowlist, not arbitrary CSS code supplied by a resource.
 const HTML_STYLE_PROPS = Object.freeze({
@@ -46,6 +48,7 @@ export function htmlCssPropertyStyle(resource, values = {}) {
 }
 
 export function htmlWithCustomStyle(resource, values, html) {
+  html = applyUiverseCssColorValues(resource, values, html);
   const css = htmlCssPropertyStyle(resource, values);
   if (!css || !html) return html || "";
   // Inline style on the actual HTML wrapper survives the insert pipeline.

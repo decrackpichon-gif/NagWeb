@@ -1,4 +1,5 @@
 import { buildInsertDescriptor } from "./insert-adapters.mjs";
+import { effectiveUiverseEditableProps } from "./uiverse-colors.mjs";
 
 export const NAGWEB_RESOURCE_APPLY_PROTOCOL = "nagweb-resource-apply/1.0";
 export const NAGWEB_RESOURCE_APPLY_TYPE = "nagweb:resource-apply";
@@ -56,7 +57,7 @@ export function buildResourceApplyEnvelope(
       sourceExternalId: resource.source?.externalId,
       sourceCommit: resource.source?.commit,
       license: clone(resource.license),
-      editableProps: clone(resource.editableProps || []),
+      editableProps: clone(effectiveUiverseEditableProps(resource)),
       capabilities: clone(resource.capabilities || [])
     },
     descriptor

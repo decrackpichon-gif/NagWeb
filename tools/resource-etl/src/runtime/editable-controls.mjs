@@ -1,4 +1,8 @@
 import { isSupportedHtmlCssProperty } from "./html-css-customization.mjs";
+import {
+  effectiveUiverseEditableProps,
+  isSupportedUiverseCssColor
+} from "./uiverse-colors.mjs";
 
 // Build safe metadata-driven controls for pre-insert customization.
 export function describeEditableControls(resource) {
@@ -15,7 +19,7 @@ export function describeEditableControls(resource) {
   const controls = [];
   const seen = new Set();
 
-  for (const prop of resource.editableProps || []) {
+  for (const prop of effectiveUiverseEditableProps(resource)) {
     const id = prop?.id;
     if (
       typeof id !== "string" ||
@@ -26,7 +30,8 @@ export function describeEditableControls(resource) {
     const validBinding = renderer === "nagweb-html-tailwind"
       ? (prop.binding?.type === "css-variable" &&
         /^--[a-z][a-z0-9-]*$/i.test(prop.binding?.variable || "")) ||
-        isSupportedHtmlCssProperty(prop)
+        isSupportedHtmlCssProperty(prop) ||
+        isSupportedUiverseCssColor(resource, prop)
       : renderer === "nagweb-svg"
         ? ["size", "stroke", "strokeWidth"].includes(id) &&
           prop.binding?.type === "runtime" &&

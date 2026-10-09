@@ -3,6 +3,7 @@ import {
   selectArtifact
 } from "./instance.mjs";
 import { htmlWithCustomStyle } from "./html-css-customization.mjs";
+import { effectiveUiverseEditableProps } from "./uiverse-colors.mjs";
 
 function cssVariableValues(resource, instance) {
   const output = {};
@@ -36,7 +37,10 @@ function parseJsonArtifact(artifact) {
 }
 
 export function buildInsertDescriptor(resource, options = {}) {
-  const instance = createResourceInstance(resource, options);
+  const enrichedResource = resource?.source?.provider === "uiverse"
+    ? { ...resource, editableProps: effectiveUiverseEditableProps(resource) }
+    : resource;
+  const instance = createResourceInstance(enrichedResource, options);
   const renderer = resource.runtime?.renderer || resource.runtime?.type;
 
   if (renderer === "nagweb-svg") {
