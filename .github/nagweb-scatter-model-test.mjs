@@ -47,4 +47,21 @@ for(const direction of ['cw','ccw'])for(const ringTravel of [-100,0,100]){
  assert.deepEqual(plain(scope.window.NAGWEB_CREATE_STREAM_MODEL().layout(1280,720,{...cfg,...c},.317,8,1.6)),plain(pose(.317,c)));
 }
 console.log('Scatter Dial path customization: '+pathComparisons+' independent planes, clockwise/counterclockwise, upward/centered/downward travel, scatter paths preserved, loop/easings/scroll/exported factory OK');
+const waypoints=Array.from({length:5},(_,slot)=>Array.from({length:3},(_,step)=>({x:12+slot*13+step*3,y:18+step*25+slot*2,size:20+slot*2+step*7})));
+assert.equal(m.scatterPath(null),null);assert.equal(m.scatterPath({x:10}),null);assert.equal(m.scatterPath([{x:Infinity,y:'20',size:NaN}]),null);
+assert.deepEqual(plain(m.scatterPath([{x:-10,y:200,size:999,extra:'ignored'},{size:-4},null,{x:42}])),[{x:0,y:100,size:150},{size:5},{}]);
+const rawPaths=plain(waypoints),normalized=m.config({...cfg,scatterPaths:rawPaths});normalized.scatterPaths[0][0].x=99;assert.equal(rawPaths[0][0].x,12);assert.equal(m.config({...cfg,scatterPaths:Array(20).fill(rawPaths[0])}).scatterPaths.length,5);assert.equal(m.config({...cfg,scatterPaths:[null,{},[]]}).scatterPaths,undefined);
+let waypointComparisons=0;
+for(const [w,h] of [[1280,720],[390,844]])for(const scatterSize of [15,30,50])for(const step of [0,1,2])for(const closing of [false,true]){
+ const clock=closing?532-step*30:step*30,c={...cfg,scatterPaths:waypoints,scatterSize,frameRatio:'auto',padding:12},cards=pose(clock/532,c,8,w,h),pad=Math.min(w,h)*.12;
+ for(let slot=0;slot<5;slot++){const tile=cards[slot].instances[0],point=waypoints[slot][step];assert.ok(tile);near(tile.center.x,pad+point.x/100*(w-2*pad));near(tile.center.y,pad+point.y/100*(h-2*pad));near(tile.cardScale,point.size/30*scatterSize/100);waypointComparisons++;}
+}
+for(const p of [.18,.22,.38,.51,.72,.81])assert.deepEqual(plain(pose(p,{scatterPaths:waypoints})),plain(pose(p)),'Per-image paths leave the ring unchanged');
+for(const p of [0,.025,.056,.089,.12,.15]){const a=pose(p,{scatterPaths:waypoints}),b=pose((1-p)%1,{scatterPaths:waypoints});for(let slot=0;slot<8;slot++){assert.equal(a[slot].instances.length,b[slot].instances.length);for(let i=0;i<a[slot].instances.length;i++){const x=a[slot].instances[i],y=b[slot].instances[i];near(x.center.x,y.center.x);near(x.center.y,y.center.y);near(x.cardScale,y.cardScale);assert.equal(x.depth,y.depth);}}}
+for(const p of [.03,.09,.14,.91,.96]){
+ const base=pose(p),edited=pose(p,{scatterPaths:[waypoints[0]]});for(let slot=1;slot<8;slot++)assert.deepEqual(plain(edited[slot]),plain(base[slot]),'Only the customized image changes');
+ const wide=pose(p,{scatterPaths:waypoints,frameRatio:'auto'}),scaled=pose(p,{scatterPaths:waypoints,frameRatio:'auto'},8,2560,1440);for(let slot=0;slot<5;slot++){near(scaled[slot].instances[0].center.x,wide[slot].instances[0].center.x*2);near(scaled[slot].instances[0].center.y,wide[slot].instances[0].center.y*2);}
+}
+assert.deepEqual(plain(scope.window.NAGWEB_CREATE_STREAM_MODEL().layout(1280,720,{...cfg,scatterPaths:waypoints},.09,8,1.6)),plain(pose(.09,{scatterPaths:waypoints})));
+console.log('Scatter Dial per-image paths: '+waypointComparisons+' independent waypoint poses, bounded sparse overrides/immutable config, original defaults, other images and ring preserved, coherent reverse/responsive/exported factory OK');
 console.log('Scatter Dial: independent HAR oracle ('+comparisons+' planes), five scatter paths and all-source ring/four ticks/bottom descent/return, 12 easings/custom curve/scaled corners/stable textures/inverse picking, 5–12 sources/extremes/mobile/scroll/exported factory OK');
