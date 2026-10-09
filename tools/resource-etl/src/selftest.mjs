@@ -2432,7 +2432,7 @@ assert.equal(isSupportedUiverseCssEasing(storedPresetResource,{
 assert.equal(isSupportedUiverseCssEasing(storedPresetResource,{
   ...detectedEasings[1],constraints:{options:[
     {value:"not-css",label:"Invalid"},...detectedEasings[1].constraints.options]
-  ]}
+  }
 }),false,"Only verified preset choices are exposed");
 assert.equal(applyUiverseCssEasingValues(storedPresetResource,{},
   presetEasingCss),presetEasingCss,
