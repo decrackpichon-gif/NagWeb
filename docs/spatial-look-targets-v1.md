@@ -1,0 +1,30 @@
+# Objetivos de mirada para modelos 3D anclados
+
+## Alcance
+
+La cámara del Director de Scroll puede seleccionar objetos `shape3d` con anclaje activo (`anchor !== false`) como objetivos en **Mirar hacia** y en el inspector del mapa. Incluye formas nativas y modelos GLB que comparten ese tipo. El botón «Apuntar cámara a este objeto acá» usa la lógica existente: enlaza el objetivo en el instante actual; si ese instante ya tiene un keyframe, lo actualiza; si falta, crea uno. Las acciones siguen siendo reversibles con Deshacer.
+
+En el mapa, los objetos 3D se identifican con la marca ⬡. El contorno dibujado representa el tamaño del **ancla**, no los vértices, la oclusión ni la silueta real del GLB. El objetivo apunta al **pivote del ancla**, no a la parte más visible de la malla.
+
+## Conversión espacial
+
+La cámara CSS y el adaptador Three.js usan convenciones Z opuestas:
+
+- El adaptador coloca el holder WebGL en `z3 = -perspective + offZ × (height/(12 tan 25°)) + directorZ`, en unidades equivalentes a CSS px. En la dirección vertical, Y de Three invierte el signo de Y del diseño.
+- El punto de mirada del Director usa `cameraZ = perspective - offZ × (height/(12 tan 25°)) - directorZ`; X/Y proceden del ancla en porcentaje, alrededor del centro de la stage, más el movimiento de los keyframes del Director.
+- La conversión depende del tamaño de referencia calculado por el runtime. Los cambios de escala responsive continúan siendo responsabilidad del puente de cámara existente.
+- El tipo `shape3d` **no** entra en `layers` ni en el contenedor CSS de cámara. Sólo se hace elegible como objetivo, evitando una segunda transformación.
+
+Las coordenadas se evalúan con `NAGWEB_STORY_MODEL` en el mismo porcentaje del Director, sin crear otro reloj.
+
+## Casos protegidos
+
+Se excluyen los 3D sin ancla, anidados, fijos, modales, instancias MotionLab y escenas fuera del Lienzo libre; `light3d` sigue excluido. Los objetivos tradicionales de HTML mantienen su profundidad y animación anteriores. Si el modelo deja de existir, la trayectoria vuelve al XYZ guardado en el objetivo.
+
+## Verificación y límites
+
+Se agregaron casos para elegibilidad y exclusión CSS, Z real del renderizador (con offZ), XYZ animados, conversión a coordenadas Three.js, interpolación de mirada y recuperación de XYZ. El smoke de navegador comprueba que un 3D se vea en el mapa, pueda elegirse, vinculase en un keyframe y deshacerse.
+
+Esta etapa **no** agrega detección del centro geométrico real o dinámico del GLB, seguimiento de huesos o morphs, oclusión HTML/WebGL ni selección de puntos dentro de una malla. La distancia del inspector hasta el 3D se refiere al pivote del ancla. Las pruebas nuevas están añadidas al repositorio, pero requieren correr la suite Chromium en un entorno con dependencias y fixture real para dar por validada la experiencia de punta a punta.
+
+No se despliega en Vercel ni se integra a `main`.
