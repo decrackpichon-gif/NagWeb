@@ -371,7 +371,7 @@ function mapObjectMarkersHtml(s,plan,spec,pct){
   var v=row.point;if(!v)return '';
   var at=C.mapPoint(v,spec);
   var label=row.item.label; // targetLabel has already escaped untrusted text.
-  return '<g data-camera-scene-object="'+i+'" data-camera-scene-object-id="'+safeLabel(row.item.id)+'" data-camera-scene-object-kind="'+safeLabel(row.item.kind)+'" transform="translate('+at.x+' '+at.y+')">'+
+  return '<g data-camera-scene-object="'+i+'" data-camera-scene-object-id="'+safeLabel(row.item.id)+'" data-camera-scene-object-kind="'+safeLabel(row.item.kind)+'" data-camera-scene-object-role="'+row.item.role+'" transform="translate('+at.x+' '+at.y+')">'+
    mapObjectShapeHtml(row.item,spec)+
    (i<8?'<text x="2.8" y="-2.1" font-size="2.65" fill="currentColor" stroke="var(--bg,#1c1e23)" stroke-width=".5" paint-order="stroke">'+(i+1)+' · '+label+'</text>':'')+
    '</g>';
