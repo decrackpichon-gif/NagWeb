@@ -1191,3 +1191,22 @@ Las texturas mantienen tamaño estable; el alejamiento escala también las esqui
 Verificación local: 61 suites de modelo, comparación independiente con 45.741 planos del HAR, 60 presets anteriores / 360 poses sin cambios, renderizador con operaciones finitas y lienzos reutilizados de hasta 2.048 píxeles. Navegador: curvas personalizada y elástica, apertura/pared/cierre, lienzos ancho y vertical, transparencia de tarjeta e imagen, superposiciones, huecos, esquinas escaladas, selección y sombras; controles y límites 3–30; encuadre/orden, borradores, Biblioteca, guardado/reapertura, grupos y escenas, redimensionado proporcional, scroll real, exportación, reproducción por tiempo, historial, móvil, movimiento reducido y carga múltiple real. Catálogo, búsqueda por nombre y búsqueda móvil por «abanico» incluyen el nuevo preset.
 
 Continúa exclusivamente en `internal-motion-lab`, sin integrar ramas paralelas ni realizar otro despliegue Vercel. Próximo preset del HAR: Scatter Dial.
+
+
+## Scatter Dial: dispersión, anillo que desciende y giro por pasos
+
+Fan Shuffle completó las 52 suites de navegador en `49f53a2fe1619688d98aa3f41e26b0e287003665`. Se incorpora `scatter-dial` del HAR original de Animos y el catálogo llega a 67 composiciones. Ocho imágenes iniciales, rango 5–12 y ciclo de 18 segundos. Tamaño de imágenes dispersas 15–50% (30 inicial), tamaño de imágenes en el anillo 15–80% (30), radio del anillo 15–60% (36), margen del recorrido 0–20% (6), esquinas y controles compartidos de proporción, encuadre, fondo, sombra, tiempo/scroll y ritmo. Incluye doce curvas de movimiento; la curva personalizada inicial conserva `0.84,0,0.16,1`.
+
+La animación conserva los 532 intervalos originales: tres trayectorias de dispersión de 30 intervalos para las primeras cinco fuentes, anillo entre 90 y 442 y regreso por las mismas trayectorias en sentido inverso. El anillo usa todas las fuentes, permanece con las imágenes derechas, se abre desde el centro, desciende hasta el borde inferior del contenido, avanza cuatro pasos y regresa al centro. Se mantienen los cambios de escala 1 / 0,66, las ventanas de apertura y cierre, el giro inicial y el retorno angular originales. Cambiar el orden determina cuáles son las primeras cinco imágenes dispersas; la ayuda del editor lo explica.
+
+Las texturas mantienen dimensiones estables y las esquinas físicas se escalan con cada imagen. Se reutilizan las superficies planas del renderizador existente, con selección inversa, recorte por lienzo, transparencia de la fuente aplicada una sola vez, encuadre individual y sombras opcionales no seleccionables. Los valores iniciales mantienen las posiciones originales; no se incorpora otro dueño del progreso.
+
+Verificación local: 62 suites de modelo, comparación independiente con 36.327 planos del HAR y 61 presets anteriores / 366 poses sin cambios. Ejecución de renderizador con operaciones finitas y lienzos reutilizados de hasta 2.048 píxeles. Navegador: dispersión/anillo/descenso/pasos/regreso, curva personalizada y elástica, ancho y vertical, fuentes opacas y transparentes, ocho tarjetas superpuestas al entrar en el anillo, huecos, esquinas escaladas, selección, sombras y cero lienzos nuevos tras el calentamiento; controles y límites 5–12, encuadre/orden, borrador aislado, Biblioteca, guardado/reapertura, grupos y escenas, redimensionado proporcional, scroll real, exportación, reproducción por tiempo, historial, móvil, movimiento reducido y carga múltiple real. Catálogo y búsqueda pasan localmente.
+
+### Catálogo del HAR cubierto y siguiente trabajo
+
+La revisión del bundle identifica 64 presets del HAR y confirma que sus 64 identificadores están presentes en el catálogo de Motion Lab. Las tres entradas adicionales son `soft-orbit`, `card-bloom` e `iso-focus-sequence`. Esta comprobación cierra la lista de incorporaciones pendiente; no declara terminado todo Motion Lab.
+
+El siguiente trabajo prioriza opciones reales de personalización de los recursos existentes. Próxima micro-etapa: sentido de giro y altura del descenso en Scatter Dial, manteniendo los valores iniciales del HAR. Después, posiciones y tamaños por imagen en las trayectorias dispersas y revisión de otras variantes útiles. Mantener pruebas de guardado/exportación y compatibilidad con el mismo modelo de progreso.
+
+Continúa exclusivamente en `internal-motion-lab`, sin integrar ramas paralelas ni realizar otro despliegue Vercel.
