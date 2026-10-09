@@ -848,6 +848,9 @@ assert.match(lottiePreviewDocument, /connect-src 'none'/);
 assert.match(lottiePreviewDocument, /lottie_light\.min\.js/);
 assert.match(lottiePreviewDocument, /id="seek" min="0" max="100"/);
 assert.match(lottiePreviewDocument, /id="restart">Reiniciar/);
+assert.match(lottiePreviewDocument, /id="previous" aria-label="Retroceder un fotograma"/);
+assert.match(lottiePreviewDocument, /id="next" aria-label="Avanzar un fotograma"/);
+assert.match(lottiePreviewDocument, /id="frame" aria-live="off"/);
 assert.match(lottiePreviewDocument, /id="progress" for="seek"/);
 assert.equal(buildLottieBrowserPreview(lottieEditableResource, {}, {
   playerUrl: "javascript:alert(1)"
@@ -1144,6 +1147,15 @@ const fakePlayButton = {
 const fakeRestartButton = {
   addEventListener(type, handler) { fakeUiActions["restart:" + type] = handler; }
 };
+const fakePreviousButton = {
+  disabled: false,
+  addEventListener(type, handler) { fakeUiActions["previous:" + type] = handler; }
+};
+const fakeNextButton = {
+  disabled: false,
+  addEventListener(type, handler) { fakeUiActions["next:" + type] = handler; }
+};
+const fakeFrameOutput = { textContent: "" };
 const fakeSeekControl = {
   value: "0",
   addEventListener(type, handler) { fakeUiActions["seek:" + type] = handler; }
@@ -1182,6 +1194,9 @@ runInNewContext(lottieRuntimeScript, {
       if (id === "status") return fakeStatus;
       if (id === "play") return fakePlayButton;
       if (id === "restart") return fakeRestartButton;
+      if (id === "previous") return fakePreviousButton;
+      if (id === "next") return fakeNextButton;
+      if (id === "frame") return fakeFrameOutput;
       if (id === "seek") return fakeSeekControl;
       if (id === "progress") return fakeProgressOutput;
       return {};
@@ -1254,3 +1269,40 @@ assert.equal(lottieCalls.length, scrubCallsBeforeInvalid, "Invalid scrub input i
 fakeLottieInstance.currentFrame = 1000;
 fakeLottieEvents.enterFrame();
 assert.equal(fakeProgressOutput.textContent, "100%", "Progress clamps into range");
+
+assert.equal(typeof fakeUiActions["previous:click"], "function");
+assert.equal(typeof fakeUiActions["next:click"], "function");
+assert.equal(typeof fakeUiActions["seek:keydown"], "function");
+fakeLottieInstance.currentFrame = 4.7;
+fakeLottieInstance.pause();
+fakeUiActions["previous:click"]();
+assert.equal(fakeLottieInstance.currentFrame, 4,
+  "Previous button snaps fractional playback to previous integer frame");
+assert.equal(fakeFrameOutput.textContent, "5/12 fot.");
+assert.equal(fakeLottieInstance.isPaused, true, "Frame stepping pauses playback");
+fakeUiActions["next:click"]();
+assert.equal(fakeLottieInstance.currentFrame, 5);
+assert.equal(fakeFrameOutput.textContent, "6/12 fot.");
+let prevented = 0;
+fakeUiActions["seek:keydown"]({
+  key: "ArrowRight", preventDefault() { prevented++; }
+});
+assert.equal(fakeLottieInstance.currentFrame, 6);
+fakeUiActions["seek:keydown"]({
+  key: "ArrowLeft", preventDefault() { prevented++; }
+});
+assert.equal(fakeLottieInstance.currentFrame, 5);
+assert.equal(prevented, 2);
+fakeUiActions["seek:keydown"]({
+  key: "ArrowUp", preventDefault() { prevented++; }
+});
+assert.equal(prevented, 2, "Other keys keep native behavior");
+fakeLottieInstance.currentFrame = 0;
+fakeUiActions["previous:click"]();
+assert.equal(fakeLottieInstance.currentFrame, 0, "Frame stepping clamps at start");
+assert.equal(fakePreviousButton.disabled, true);
+fakeLottieInstance.currentFrame = 11;
+fakeUiActions["next:click"]();
+assert.equal(fakeLottieInstance.currentFrame, 11, "Frame stepping clamps at last frame");
+assert.equal(fakeNextButton.disabled, true);
+assert.equal(fakeFrameOutput.textContent, "12/12 fot.");
