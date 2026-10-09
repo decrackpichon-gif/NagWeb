@@ -851,6 +851,7 @@ assert.match(lottiePreviewDocument, /id="restart">Reiniciar/);
 assert.match(lottiePreviewDocument, /id="previous" aria-label="Retroceder un fotograma"/);
 assert.match(lottiePreviewDocument, /id="next" aria-label="Avanzar un fotograma"/);
 assert.match(lottiePreviewDocument, /id="frame" aria-live="off"/);
+assert.match(lottiePreviewDocument, /id="time" aria-label="Tiempo transcurrido y duración total/);
 assert.match(lottiePreviewDocument, /id="progress" for="seek"/);
 assert.equal(buildLottieBrowserPreview(lottieEditableResource, {}, {
   playerUrl: "javascript:alert(1)"
@@ -1161,6 +1162,7 @@ const fakeSeekControl = {
   addEventListener(type, handler) { fakeUiActions["seek:" + type] = handler; }
 };
 const fakeProgressOutput = { textContent: "0%" };
+const fakeTimeOutput = { textContent: "0:00.00 / 0:00.00" };
 const fakeLottieEvents = {};
 const fakeStatus = { textContent: "" };
 const fakeLottieInstance = {
@@ -1199,6 +1201,7 @@ runInNewContext(lottieRuntimeScript, {
       if (id === "frame") return fakeFrameOutput;
       if (id === "seek") return fakeSeekControl;
       if (id === "progress") return fakeProgressOutput;
+      if (id === "time") return fakeTimeOutput;
       return {};
     }
   },
@@ -1247,11 +1250,13 @@ fakeLottieInstance.currentFrame = 3;
 fakeLottieEvents.enterFrame();
 assert.equal(Number(fakeSeekControl.value), 25);
 assert.equal(fakeProgressOutput.textContent, "25%");
+assert.equal(fakeTimeOutput.textContent, "0:00.10 / 0:00.40");
 fakeSeekControl.value = "75";
 fakeUiActions["seek:input"]();
 assert.equal(fakeLottieInstance.isPaused, true, "Scrubbing paused animation keeps it paused");
 assert.equal(fakeLottieInstance.currentFrame, 9);
 assert.equal(fakeProgressOutput.textContent, "75%");
+assert.equal(fakeTimeOutput.textContent, "0:00.30 / 0:00.40");
 assert.deepEqual(lottieCalls.at(-1), ["seek", 9, true]);
 fakeLottieInstance.play();
 fakeSeekControl.value = "50";
@@ -1262,6 +1267,7 @@ fakeUiActions["restart:click"]();
 assert.equal(fakeLottieInstance.currentFrame, 0);
 assert.equal(fakeLottieInstance.isPaused, false, "Restart keeps playback mode");
 assert.equal(fakeProgressOutput.textContent, "0%");
+assert.equal(fakeTimeOutput.textContent, "0:00.00 / 0:00.40");
 const scrubCallsBeforeInvalid = lottieCalls.length;
 fakeSeekControl.value = "not-a-number";
 fakeUiActions["seek:input"]();
@@ -1269,6 +1275,7 @@ assert.equal(lottieCalls.length, scrubCallsBeforeInvalid, "Invalid scrub input i
 fakeLottieInstance.currentFrame = 1000;
 fakeLottieEvents.enterFrame();
 assert.equal(fakeProgressOutput.textContent, "100%", "Progress clamps into range");
+assert.equal(fakeTimeOutput.textContent, "0:00.40 / 0:00.40");
 
 assert.equal(typeof fakeUiActions["previous:click"], "function");
 assert.equal(typeof fakeUiActions["next:click"], "function");
@@ -1306,3 +1313,11 @@ fakeUiActions["next:click"]();
 assert.equal(fakeLottieInstance.currentFrame, 11, "Frame stepping clamps at last frame");
 assert.equal(fakeNextButton.disabled, true);
 assert.equal(fakeFrameOutput.textContent, "12/12 fot.");
+assert.equal(fakeTimeOutput.textContent, "0:00.37 / 0:00.40");
+// The displayed clock follows source frames, not playback speed.
+sendLottie(lottieParent, lottieEditableResource.id,
+  { speed: 1.5, loop: false, autoplay: false });
+assert.equal(fakeTimeOutput.textContent, "0:00.37 / 0:00.40");
+fakeLottieEvents.complete();
+assert.equal(fakeTimeOutput.textContent, "0:00.40 / 0:00.40",
+  "End event shows exact total duration");

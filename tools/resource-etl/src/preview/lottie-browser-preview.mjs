@@ -62,16 +62,18 @@ export function buildLottieBrowserPreview(resource, values = {}, { playerUrl } =
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' ${origin}; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; worker-src 'none'">
 <style>
 html,body{width:100%;height:100%;margin:0;background:#f4f5f7;font-family:system-ui}
-main{width:100%;height:calc(100% - 102px);display:grid;place-items:center}
+main{width:100%;height:calc(100% - 126px);display:grid;place-items:center}
 #animation{width:min(90%,340px);height:min(90%,340px);display:grid;place-items:center}
 #status{position:absolute;top:10px;left:12px;font-size:11px;color:#69717c}
-#transport{position:absolute;bottom:0;left:0;right:0;min-height:92px;box-sizing:border-box;padding:8px 12px;display:grid;grid-template-columns:repeat(4,auto) minmax(0,1fr) auto;grid-template-areas:"play restart prev next spacer frame" "seek seek seek seek seek progress";align-items:center;gap:7px;background:#fff;border-top:1px solid #dce1e7}
+#transport{position:absolute;bottom:0;left:0;right:0;min-height:116px;box-sizing:border-box;padding:8px 12px;display:grid;grid-template-columns:repeat(4,auto) minmax(0,1fr) auto;grid-template-areas:"play restart prev next spacer frame" "seek seek seek seek seek progress" "time time time time time time";align-items:center;gap:7px;background:#fff;border-top:1px solid #dce1e7}
 #transport button{border:1px solid #c3c8d0;background:#fff;color:#111;border-radius:8px;padding:7px 10px;cursor:pointer}
 #transport button:disabled{opacity:.45;cursor:not-allowed}
 #play{grid-area:play}#restart{grid-area:restart}#previous{grid-area:prev}#next{grid-area:next}
 #seek{grid-area:seek;width:100%;min-width:0;accent-color:#5178b6;cursor:pointer}
 #progress{grid-area:progress;min-width:35px;text-align:right;font:12px ui-monospace,monospace;color:#48576b}
 #frame{grid-area:frame;min-width:65px;text-align:right;font:11px ui-monospace,monospace;color:#48576b}
+#time{grid-area:time;justify-self:center;font:12px ui-monospace,monospace;color:#48576b;font-variant-numeric:tabular-nums}
+#time::before{content:"Tiempo de animación (1×) · ";color:#69717c}
 @media(max-width:430px){#transport{gap:5px;padding:7px}#transport button{padding:6px;font-size:11px}#frame{font-size:10px}}
 </style></head><body>
 <main><div id="animation" role="img" aria-label="Vista previa de animación Lottie"></div></main>
@@ -84,6 +86,7 @@ main{width:100%;height:calc(100% - 102px);display:grid;place-items:center}
   <output id="frame" aria-live="off">1/1 fot.</output>
   <input type="range" id="seek" min="0" max="100" step="0.1" value="0" aria-label="Posición de la animación; flechas para avanzar de a un fotograma">
   <output id="progress" for="seek">0%</output>
+  <output id="time" aria-label="Tiempo transcurrido y duración total de la animación a velocidad original">0:00.00 / 0:00.00</output>
 </div>
 <script src="${safePlayerUrl}"></script>
 <script>
@@ -95,9 +98,11 @@ const next = document.getElementById("next");
 const frame = document.getElementById("frame");
 const seek = document.getElementById("seek");
 const progress = document.getElementById("progress");
+const time = document.getElementById("time");
 try {
   if (!window.lottie?.loadAnimation) throw new Error("El reproductor local no está disponible");
   const animationData = ${animationData};
+  const frameRate = Number(animationData.fr);
   const prefersReducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const previewResourceId = ${escapedResourceId};
   const instance = window.lottie.loadAnimation({
@@ -115,11 +120,26 @@ try {
   const sync = () => {
     play.textContent = instance.isPaused ? "Reproducir" : "Pausar";
   };
+  const formatTime = (seconds) => {
+    if (!Number.isFinite(seconds) || seconds < 0) return "0:00.00";
+    const centiseconds = Math.round(seconds * 100);
+    const minutes = Math.floor(centiseconds / 6000);
+    const remaining = centiseconds % 6000;
+    const wholeSeconds = String(Math.floor(remaining / 100)).padStart(2, "0");
+    const hundredths = String(remaining % 100).padStart(2, "0");
+    return minutes + ":" + wholeSeconds + "." + hundredths;
+  };
   const showProgress = (percentage) => {
     if (!Number.isFinite(percentage)) return;
     const value = Math.max(0, Math.min(100, percentage));
     seek.value = String(Math.round(value * 10) / 10);
     progress.textContent = Math.round(value) + "%";
+    const total = Number(instance.totalFrames);
+    if (Number.isFinite(total) && total > 0 && frameRate > 0) {
+      const duration = total / frameRate;
+      time.textContent = formatTime(duration * value / 100) +
+        " / " + formatTime(duration);
+    }
   };
   const frameCount = () => {
     const total = Number(instance.totalFrames);
