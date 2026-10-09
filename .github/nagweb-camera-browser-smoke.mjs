@@ -157,7 +157,72 @@ export async function runCameraBrowserSmoke(page){
   await page.select('[data-camera-easy-step]','25');
     console.log('Camera browser: both planes, every zoom level, pan + drag coordinate parity and undo OK');
   console.log('Camera easy movement: X/Y/Z pad, short/long steps, undo, focus, other frames unchanged OK');
-  // Minimap regression: click, drag, cancellation, precision keyboard and no camera edits.
+  // Micro-etapa 47: timeline cursor and drag map work together; no silent edits of nearby keyframes.
+  const currentEditState=()=>page.evaluate(()=>{
+   const box=document.querySelector('[data-camera-current-edit]');
+   return {time:box?.querySelector('[data-camera-current-time]')?.textContent||'',
+    status:box?.querySelector('[data-camera-current-state]')?.textContent||'',
+    action:box?.querySelector('[data-camera-edit-current]')?.textContent||'',
+    selected:document.querySelector('[data-camera-map-point]')?.dataset.cameraMapPoint||'',
+    frames:JSON.stringify(sec().sdCameraFrames),looks:JSON.stringify(sec().sdCameraLookFrames),
+    mapOpen:!!document.querySelector('[data-camera-map-box]')?.open,history:history.length,
+    exactFrame:+document.querySelector('[data-camera-head]')?.style.left.replace('%','')};
+  });
+  let editing=await currentEditState();
+  assert.equal(editing.time,'50%','Cursor begins at the selected frame');
+  assert.ok(editing.status.includes('guardado')&&editing.action.includes('Seleccionar'),'Existing frame is marked, not offered as a duplicate');
+  const currentBaseline={...editing};
+  await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',.42));
+  await page.waitForFunction(()=>document.querySelector('[data-camera-current-time]')?.textContent==='42%');
+  editing=await currentEditState();
+  assert.ok(editing.action.includes('Crear encuadre acá')&&editing.status.includes('interpolada'),'Scrubbing between frames offers explicit creation');
+  assert.equal(editing.selected,'50','Scrubbing alone must not change the selected keyframe');
+  assert.equal(editing.frames,currentBaseline.frames,'Scrubbing alone must not author coordinates');
+  assert.equal(editing.history,currentBaseline.history,'Scrubbing does not add undo snapshots');
+  const interpolated=await page.evaluate(()=>{
+   const s=sec(),cfg=NAGWEB_SCROLL_CAMERA.config(s);
+   return NAGWEB_SCROLL_CAMERA.pose(cfg,.42,NAGWEB_STORY_MODEL,s.sdEase,false,undefined,{width:1000,height:1000});
+  });
+  await page.click('[data-camera-edit-current]');
+  editing=await currentEditState();
+  assert.equal(editing.selected,'42','Create-now selects the frame at the precise scrub position');
+  assert.equal(editing.time,'42%','Time label remains at the newly authored keyframe');
+  assert.ok(editing.action.includes('Seleccionar')&&editing.mapOpen,'New camera frame is immediately editable in the map');
+  assert.equal(JSON.parse(editing.frames).length,JSON.parse(currentBaseline.frames).length+1,'Create-now adds exactly one keyframe');
+  const fortyTwo=JSON.parse(editing.frames).find(k=>k.at===42);
+  assert.ok(fortyTwo&&Math.hypot(fortyTwo.x-interpolated.x,fortyTwo.y-interpolated.y,fortyTwo.z-interpolated.z)<.01,'New frame preserves interpolated XYZ to avoid a positional jump');
+  assert.deepEqual(JSON.parse(editing.frames).filter(k=>k.at!==42),JSON.parse(currentBaseline.frames),'Creating at cursor preserves other keyframes');
+  assert.equal(editing.history,currentBaseline.history+1,'Create-now records one undo snapshot');
+  assert.ok(await page.$('[data-camera-jump="42"]'),'Timeline gets the matching draggable keyframe marker');
+  const nowMap=await page.$eval('[data-camera-map-point="42"]',el=>{
+   const r=el.getBoundingClientRect(),map=el.closest('[data-camera-map]'),m=map.getBoundingClientRect();
+   return {x:r.left+r.width/2,y:r.top+r.height/2,width:m.width,range:+map.dataset.range};
+  });
+  await page.mouse.move(nowMap.x,nowMap.y);
+  await page.mouse.down();
+  await page.mouse.move(nowMap.x+12,nowMap.y+8,{steps:4});
+  await page.mouse.up();
+  const dragFrames=await page.evaluate(()=>JSON.parse(JSON.stringify(sec().sdCameraFrames)));
+  const moved=dragFrames.find(k=>k.at===42);
+  assert.ok(Math.abs(moved.x-fortyTwo.x-24*nowMap.range/nowMap.width)<1.1,'New keyframe responds immediately to mouse drag in X');
+  assert.deepEqual(dragFrames.filter(k=>k.at!==42),JSON.parse(currentBaseline.frames),'Dragging newly created keyframe preserves other frames');
+  await page.evaluate(()=>undo());
+  await page.evaluate(()=>undo());
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),currentBaseline.frames,'Two undo operations restore camera after creation plus drag');
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraLookFrames)),currentBaseline.looks,'Editing camera at cursor never modifies look targets');
+  await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',.5));
+  await page.waitForFunction(()=>document.querySelector('[data-camera-current-time]')?.textContent==='50%');
+  const beforeSelect=await currentEditState();
+  await page.click('[data-camera-edit-current]');
+  editing=await currentEditState();
+  assert.equal(editing.selected,'50','Existing frame action selects the exact keyframe');
+  assert.equal(editing.frames,currentBaseline.frames,'Existing frame action never creates a duplicate');
+  assert.equal(editing.history,beforeSelect.history,'Selecting an existing frame does not add undo history');
+  await page.select('[data-camera-map-plane]','front');
+  assert.ok((await currentEditState()).action.includes('Seleccionar'),'Current moment action persists on the frontal map');
+  await page.select('[data-camera-map-plane]','top');
+  assert.equal(await page.$eval('[data-camera-field="x"],[data-camera-field="y"],[data-camera-field="z"]',nodes=>nodes.length),3,'All three manual XYZ coordinate inputs remain available');
+    // Minimap regression: click, drag, cancellation, precision keyboard and no camera edits.
   await page.click('[data-camera-overview-toggle]');
   assert.ok(await page.$('[data-camera-overview]'),'Overview toggle should show minimap at 100%');
 
