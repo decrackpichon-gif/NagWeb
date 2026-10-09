@@ -107,7 +107,49 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
   var hit=ray.ray.intersectPlane(new T.Plane(new T.Vector3(0,0,1),-origin.z),new T.Vector3());
   return hit?row.rig.worldToLocal(hit):null;
  }
- return{connect:connect,owns:owns,render:render,destroy:destroy,view:view,lightPoint:lightPoint};
+ function anchorPoint(g,x,y){
+  var v=view(g),h=g.userData.holder;if(!v||!h||!v.rect.width||!v.rect.height||!Number.isFinite(x)||!Number.isFinite(y))return null;
+  v.camera.updateMatrixWorld(true);h.updateWorldMatrix(true,false);
+  var origin=h.getWorldPosition(new T.Vector3()),ray=new T.Raycaster();
+  ray.setFromCamera(new T.Vector2((x-v.rect.left)/v.rect.width*2-1,1-(y-v.rect.top)/v.rect.height*2),v.camera);
+  var hit=ray.ray.intersectPlane(new T.Plane(new T.Vector3(0,0,1),-origin.z),new T.Vector3());
+  if(!hit)return null;var z=hit.clone().project(v.camera).z;
+  return Number.isFinite(z)&&z>=-1&&z<=1?hit:null;
+ }
+ function visible(n){for(var p=n;p;p=p.parent)if(!p.visible)return false;return true;}
+ function materialVisible(m){return !!m&&(Array.isArray(m)?m.some(materialVisible):m.visible&&m.opacity>0);}
+ function pick(candidates,x,y,legacyCamera){
+  var W=renderer.domElement.clientWidth,H=renderer.domElement.clientHeight,best=null;
+  if(!Number.isFinite(x)||!Number.isFinite(y)||x<0||y<0||x>=W||y>=H)return null;
+  var ray=new T.Raycaster(),box=new T.Box3(),part=new T.Box3(),sphere=new T.Sphere(),center=new T.Vector3(),edge=new T.Vector3(),right=new T.Vector3();
+  function choose(g,layer,exact,distance,depth){
+   if(!best||layer>best.layer||(layer===best.layer&&(exact&&!best.exact||exact===best.exact&&(distance<best.distance||distance===best.distance&&depth<best.depth))))best={g:g,layer:layer,exact:exact,distance:distance,depth:depth};
+  }
+  candidates.forEach(function(g){
+   if(!visible(g))return;
+   var layer=rows.findIndex(function(row){return row.objects.indexOf(g)>=0;}),row=rows[layer];
+   if(row&&(!row.state||!row.stage.isConnected))return;
+   var cam=row?row.camera:legacyCamera,r=row?row.stage.getBoundingClientRect():{left:0,top:0,width:W,height:H};
+   // These are the same screen/stage bounds used by the render scissor.
+   if(!cam||!r.width||!r.height||x<r.left||y<r.top||x>=r.left+r.width||y>=r.top+r.height)return;
+   cam.updateMatrixWorld(true);g.updateWorldMatrix(true,true);
+   ray.setFromCamera(new T.Vector2((x-r.left)/r.width*2-1,1-(y-r.top)/r.height*2),cam);
+   var hit=ray.intersectObject(g,true).find(function(hit){
+    var m=hit.object.material;if(Array.isArray(m))m=m[hit.face?hit.face.materialIndex:0];
+    var z=hit.point.clone().project(cam).z;return visible(hit.object)&&materialVisible(m)&&z>=-1&&z<=1;
+   });
+   if(hit){choose(g,layer,true,hit.distance,hit.distance);return;}
+   // Preserve the generous target for ring holes and point clouds when no surface is hit.
+   box.makeEmpty();g.traverse(function(n){if(!n.geometry||!visible(n)||!materialVisible(n.material))return;if(!n.geometry.boundingBox)n.geometry.computeBoundingBox();if(n.geometry.boundingBox)box.union(part.copy(n.geometry.boundingBox).applyMatrix4(n.matrixWorld));});
+   if(box.isEmpty())return;box.getBoundingSphere(sphere);center.copy(sphere.center).project(cam);
+   if(!Number.isFinite(center.x)||!Number.isFinite(center.y)||center.z<-1||center.z>1)return;
+   right.set(1,0,0).applyQuaternion(cam.quaternion);edge.copy(sphere.center).addScaledVector(right,sphere.radius).project(cam);
+   var sx=r.left+(center.x*.5+.5)*r.width,sy=r.top+(-center.y*.5+.5)*r.height,rad=Math.abs((edge.x-center.x)*.5*r.width)*.85,d=Math.hypot(x-sx,y-sy);
+   if(d<=rad)choose(g,layer,false,d,sphere.center.distanceTo(cam.position));
+  });
+  return best?best.g:null;
+ }
+ return{connect:connect,owns:owns,render:render,destroy:destroy,view:view,lightPoint:lightPoint,anchorPoint:anchorPoint,pick:pick};
 }
 window.NAGWEB_CREATE_SPATIAL_RENDERER=createSpatialRenderer;
 })();

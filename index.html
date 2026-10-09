@@ -15482,7 +15482,7 @@ function generateSite(p, edit, external, mobileView){
     outline:1.5px dashed rgba(120,180,255,.75);outline-offset:0;border-radius:10px}
   .sc .el.obj-anchor.sc-sel,.sc.free .el.obj-anchor.sc-sel{outline:1.5px solid #FFD34A}
   .sc-proxy-light{border-color:rgba(255,211,74,.85);border-radius:50%}
-  .sc-proxy.sc-sel{border-style:solid;border-color:#FFD34A}
+  .sc-proxy.sc-sel{border-style:solid;border-color:#FFD34A;z-index:43}
   .sc-h{position:absolute;width:13px;height:13px;background:#5B8CFF;border:2px solid #fff;border-radius:4px;z-index:44}
   .sc-h.br{right:-7px;bottom:-7px;cursor:nwse-resize}
   .sc-h.rot{left:50%;top:-26px;margin-left:-6px;border-radius:50%;background:#FFD34A;cursor:grab}
@@ -16882,7 +16882,7 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
      cae sobre un objeto giratorio, lo tomamos nosotros. */
   var spinStep = null;
   if(DRAGGABLE.length && !EDIT){
-    var dragTarget = null, dragLX = 0, dragLY = 0, dragLT = 0, dragAvg = 16;
+    var dragTarget = null, dragPointer = null, dragLX = 0, dragLY = 0, dragLT = 0, dragAvg = 16;
     DRAGGABLE.forEach(function(g){ g.userData.spinVX = 0; g.userData.spinVY = 0; });
     function dragParams(g){
       var o = g.userData.o;
@@ -16910,41 +16910,22 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
     };
     /* se agarra el objeto si el puntero cae dentro de su silueta aproximada
        (así también funciona con formas con agujeros, anillos o nubes de puntos) */
-    var _pb = new THREE.Box3(), _ps = new THREE.Sphere(), _pc = new THREE.Vector3(), _pe = new THREE.Vector3(), _pr = new THREE.Vector3();
     function pickDraggable(cx, cy){
-      camera.updateMatrixWorld();
-      _pr.set(1, 0, 0).applyQuaternion(camera.quaternion);
-      var best = null, bestD = Infinity, W = window.innerWidth, H = window.innerHeight;
-      DRAGGABLE.forEach(function(g){
-        if(!g.visible || (g.userData.holder && !g.userData.holder.visible)) return;
-        _pb.setFromObject(g); if(_pb.isEmpty()) return;
-        _pb.getBoundingSphere(_ps);
-        var spatialView = spatial3D.view(g), pickCamera = spatialView ? spatialView.camera : camera;
-        var pickRect = spatialView ? spatialView.rect : {left:0,top:0,width:W,height:H};
-        pickCamera.updateMatrixWorld();
-        _pr.set(1, 0, 0).applyQuaternion(pickCamera.quaternion);
-        _pc.copy(_ps.center).project(pickCamera);
-        if(_pc.z > 1) return;
-        _pe.copy(_ps.center).addScaledVector(_pr, _ps.radius).project(pickCamera);
-        var sx = pickRect.left + (_pc.x * .5 + .5) * pickRect.width, sy = pickRect.top + (-_pc.y * .5 + .5) * pickRect.height;
-        var rad = Math.abs((_pe.x - _pc.x) * .5 * pickRect.width) * .85;
-        var d = Math.hypot(cx - sx, cy - sy);
-        if(d <= rad && d < bestD){ bestD = d; best = g; }
-      });
-      return best;
+      return spatial3D.pick(DRAGGABLE, cx, cy, camera);
     }
     function overInteractive(t){ return t && t.closest && t.closest('a,button,input,textarea,select,[data-magnetic]'); }
-    window.addEventListener('pointerdown', function(ev){
-      if(overInteractive(ev.target)) return;
+    function spinDown(ev){
+      if(ev.button !== 0 || dragTarget || overInteractive(ev.target)) return;
       var hit = pickDraggable(ev.clientX, ev.clientY);
       if(!hit) return;
-      dragTarget = hit; dragLX = ev.clientX; dragLY = ev.clientY; dragLT = performance.now();
+      dragTarget = hit; dragPointer = ev.pointerId; dragLX = ev.clientX; dragLY = ev.clientY; dragLT = performance.now();
       hit.userData.spinVX = 0; hit.userData.spinVY = 0; dragAvg = 16;
       ev.preventDefault();
       if(!CURSOR) document.documentElement.style.cursor = 'grabbing';
-    }, { passive:false });
-    window.addEventListener('pointermove', function(ev){
+    }
+    function spinMove(ev){
       if(dragTarget){
+        if(ev.pointerId !== dragPointer) return;
         var pr = dragParams(dragTarget), now = performance.now(), dt = Math.max(now - dragLT, 1);
         var ry = pr.axis === 'x' ? 0 : (ev.clientX - dragLX) * pr.sens;
         var rx = pr.axis === 'y' ? 0 : (ev.clientY - dragLY) * pr.sens;
@@ -16961,18 +16942,27 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
       if(!CURSOR && ev.pointerType === 'mouse'){
         document.documentElement.style.cursor = (!overInteractive(ev.target) && pickDraggable(ev.clientX, ev.clientY)) ? 'grab' : '';
       }
-    });
-    function endDrag(){
-      if(!dragTarget) return;
+    }
+    function endDrag(ev){
+      if(!dragTarget || (ev && ev.pointerId !== dragPointer)) return;
       /* si lo mantuviste quieto un momento antes de soltar, no sale disparado */
       if(performance.now() - dragLT > Math.max(90, dragAvg * 3)){ dragTarget.userData.spinVX = 0; dragTarget.userData.spinVY = 0; }
-      if(dragParams(dragTarget).inertia <= 0){ dragTarget.userData.spinVX = 0; dragTarget.userData.spinVY = 0; }
-      dragTarget = null;
+      if(!ev || ev.type === 'pointercancel' || dragParams(dragTarget).inertia <= 0){ dragTarget.userData.spinVX = 0; dragTarget.userData.spinVY = 0; }
+      dragTarget = null; dragPointer = null;
       lastSpin = performance.now();
       if(!CURSOR) document.documentElement.style.cursor = '';
     }
-    window.addEventListener('pointerup', endDrag);
-    window.addEventListener('pointercancel', endDrag);
+    function blurSpin(){endDrag();DRAGGABLE.forEach(function(g){g.userData.spinVX=0;g.userData.spinVY=0;});}
+    function hideSpin(ev){
+      blurSpin();
+      if(ev.persisted) return;
+      window.removeEventListener('pointerdown',spinDown);window.removeEventListener('pointermove',spinMove);
+      window.removeEventListener('pointerup',endDrag);window.removeEventListener('pointercancel',endDrag);
+      window.removeEventListener('blur',blurSpin);window.removeEventListener('pagehide',hideSpin);spinStep=null;
+    }
+    window.addEventListener('pointerdown',spinDown,{passive:false});window.addEventListener('pointermove',spinMove);
+    window.addEventListener('pointerup',endDrag);window.addEventListener('pointercancel',endDrag);
+    window.addEventListener('blur',blurSpin);window.addEventListener('pagehide',hideSpin);
   }
 
   /* ===================== render ===================== */
@@ -17138,6 +17128,9 @@ ${edit ? `
       var relTo = node.classList.contains('obj-anchor') ? node.parentElement
         : ((node.parentElement && node.parentElement.closest('.container-box')) || node.closest('.sc') || node.closest('.sc-fixed-layer'));
       var rect = relTo.getBoundingClientRect();
+      var anchorObject = objects.find(function(g){return g.userData.anchorEl === node && spatial3D.owns(g);});
+      var anchorStart = anchorObject ? spatial3D.anchorPoint(anchorObject,ev.clientX,ev.clientY) : null;
+      if(anchorObject && !anchorStart) return;
       var x0 = parseFloat(node.dataset.x), y0 = parseFloat(node.dataset.y);
       var w0 = parseFloat(node.dataset.w), r0 = parseFloat(node.dataset.rot) || 0;
       var sx = ev.clientX, sy = ev.clientY;
@@ -17148,6 +17141,11 @@ ${edit ? `
 
       function move(e){
         var dx = (e.clientX - sx) / rect.width * 100, dy = (e.clientY - sy) / rect.height * 100;
+        if(anchorObject&&e.pointerId!==ev.pointerId)return;
+        if(anchorStart){
+          var point = spatial3D.anchorPoint(anchorObject,e.clientX,e.clientY);if(!point)return;
+          dx = (point.x-anchorStart.x)/relTo.clientWidth*100;dy = -(point.y-anchorStart.y)/relTo.clientHeight*100;
+        }
         if(handle === 'move'){
           if(!free){ showTip(inAutoLayout(node) ? 'Está en un auto layout: se acomoda solo. Cambiá el orden arrastrándolo en la lista de elementos (columna derecha).'
                                                 : 'Esta sección usa la disposición apilada. Cambiala a "lienzo libre" en Sección, o metela dentro de un contenedor.'); return; }
@@ -17171,25 +17169,41 @@ ${edit ? `
           showTip('rotación ' + out.rot + '°');
         }
       }
-      function up(){
+      function finishAnchor(){up();}
+      function up(e){
+        if(anchorObject&&e&&e.pointerId!==ev.pointerId)return;
         window.removeEventListener('pointermove', move);
         window.removeEventListener('pointerup', up);
+        window.removeEventListener('pointercancel', up);window.removeEventListener('blur',finishAnchor);
         hideTip();
         post({ type:'change', id:id, x:out.x, y:out.y, w:out.w, rot:out.rot, h:out.h, ratio:out.ratio });
       }
       window.addEventListener('pointermove', move);
       window.addEventListener('pointerup', up);
+      if(anchorObject){window.addEventListener('pointercancel',up);window.addEventListener('blur',finishAnchor);}
     }
 
     /* --- objetos 3D y luces: se manipulan con un recuadro flotante --- */
-    objects.filter(function(g){ return !g.userData.holder; }).concat(lightObjs).forEach(function(g){
+    objects.concat(lightObjs).forEach(function(g){
       var isLight = g.userData.o.type === 'light3d';
       var node = document.createElement('div');
       node.className = 'sc-proxy' + (isLight ? ' sc-proxy-light' : '');
+      node.dataset.id = g.userData.o.id;
+      var anchor = g.userData.holder ? g.userData.anchorEl : null;
+      if(anchor){node.style.display='none';node.style.boxSizing='border-box';}
       document.body.appendChild(node);
-      proxies.push({ id:g.userData.o.id, node:node, g:g });
+      proxies.push({ id:g.userData.o.id, node:node, g:g, anchor:anchor, anchorVisibility:anchor?anchor.style.visibility:'' });
 
       node.addEventListener('pointerdown', function(ev){
+        if(anchor){
+          if(ev.button!==0||!spatial3D.owns(g))return;
+          var handle=(ev.target.dataset&&ev.target.dataset.handle)||'move';
+          var picked=handle==='move'?spatial3D.pick(objects.filter(function(q){return spatial3D.owns(q);}),ev.clientX,ev.clientY,camera):null;
+          var target=picked?picked.userData.anchorEl:anchor;
+          if(ev.shiftKey){ev.preventDefault();ev.stopPropagation();post({type:'select',id:target.dataset.id,add:true});return;}
+          if(target.classList.contains('sc-locked')){ev.preventDefault();ev.stopPropagation();post({type:'select',id:target.dataset.id});select(target.dataset.id);return;}
+          grab(ev,target,handle);return;
+        }
         ev.preventDefault();
         var o = g.userData.o;
         if(ev.shiftKey){ post({ type:'select', id:o.id, add:true }); return; }
@@ -17243,12 +17257,34 @@ ${edit ? `
       });
     });
 
-    var v3 = new THREE.Vector3();
+    var v3 = new THREE.Vector3(),proxyBox=new THREE.Box3(),proxyPoint=new THREE.Vector3();
+    function anchorProxyBounds(g,v){
+      if(!g.visible||!g.userData.holder.visible)return null;
+      proxyBox.setFromObject(g);if(proxyBox.isEmpty())return null;
+      var left=Infinity,top=Infinity,right=-Infinity,bottom=-Infinity;
+      [proxyBox.min.x,proxyBox.max.x].forEach(function(x){[proxyBox.min.y,proxyBox.max.y].forEach(function(y){[proxyBox.min.z,proxyBox.max.z].forEach(function(z){
+        proxyPoint.set(x,y,z).project(v.camera);
+        if(!Number.isFinite(proxyPoint.x)||!Number.isFinite(proxyPoint.y)||proxyPoint.z<-1||proxyPoint.z>1)return;
+        var px=v.rect.left+(proxyPoint.x*.5+.5)*v.rect.width,py=v.rect.top+(-proxyPoint.y*.5+.5)*v.rect.height;
+        left=Math.min(left,px);right=Math.max(right,px);top=Math.min(top,py);bottom=Math.max(bottom,py);
+      });});});
+      left=Math.max(0,v.rect.left,left);right=Math.min(window.innerWidth,v.rect.left+v.rect.width,right);
+      top=Math.max(0,v.rect.top,top);bottom=Math.min(window.innerHeight,v.rect.top+v.rect.height,bottom);
+      return right>left&&bottom>top?{left:left,top:top,width:right-left,height:bottom-top}:null;
+    }
     syncProxies = function(){
       var h = window.innerHeight, w = window.innerWidth;
       proxies.forEach(function(pr){
         var g = pr.g;
         var spatialView = spatial3D.view(g), proxyCamera = spatialView ? spatialView.camera : camera;
+        if(pr.anchor){
+          var active=spatial3D.owns(g)&&!!spatialView;
+          pr.anchor.style.visibility=active?'hidden':pr.anchorVisibility;
+          var bounds=active?anchorProxyBounds(g,spatialView):null;
+          pr.node.style.display=bounds?'block':'none';
+          if(bounds){pr.node.style.left=bounds.left+'px';pr.node.style.top=bounds.top+'px';pr.node.style.width=bounds.width+'px';pr.node.style.height=bounds.height+'px';}
+          return;
+        }
         var proxyRect = spatialView ? spatialView.rect : {left:0,top:0,width:w,height:h};
         if(spatialView && spatialView.object) spatialView.object.getWorldPosition(v3);else v3.copy(g.position);
         v3.project(proxyCamera);
@@ -17546,8 +17582,9 @@ ${edit ? `
     /* --- menú contextual, zoom con Ctrl + rueda, reglas, enlaces --- */
     document.addEventListener('contextmenu', function(ev){
       ev.preventDefault();
-      var n = ev.target.closest && ev.target.closest('.el[data-id]');
-      post({ type:'ctx', x:ev.clientX, y:ev.clientY, id: n ? n.dataset.id : '' });
+      var n = ev.target.closest && ev.target.closest('.el[data-id],.sc-proxy[data-id]');
+      var pr = proxies.find(function(p){return p.node===n;}),picked=pr&&pr.anchor?spatial3D.pick(objects.filter(function(g){return spatial3D.owns(g);}),ev.clientX,ev.clientY,camera):null;
+      post({ type:'ctx', x:ev.clientX, y:ev.clientY, id:picked?picked.userData.o.id:(n?n.dataset.id:'') });
     });
     window.addEventListener('wheel', function(ev){
       if(ev.ctrlKey || ev.metaKey){ ev.preventDefault(); post({ type:'zoomwheel', dy:ev.deltaY }); }
