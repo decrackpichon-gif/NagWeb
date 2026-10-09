@@ -200,25 +200,25 @@ function createCamera(){
  function tensionFromList(list,at,spec,point,side){
   side=side==='in'?'in':'out';var i=list.findIndex(function(k){return k.at===at;});
   if(i<0||list.length<3||!spec||!point||side==='out'&&i>=list.length-1||side==='in'&&i<=0||handleFree(list[i],side))return null;
-  var owner=tangentOwner(list,i,side),key=list[i],start=list[owner],end=list[owner+1],axis=spec.axis==='y'?'y':'z';
+  var owner=tangentOwner(list,i,side),key=list[i],start=list[owner],end=list[owner+1],axis=spec.axis,horizontal=spec.xAxis||'x';
   if(start.x===end.x&&start.y===end.y&&start.z===end.z)return null;
   var a=list[Math.max(0,owner-1)],d=list[Math.min(list.length-1,owner+2)],sign=side==='in'?-1:1;
-  var vx=side==='in'?d.x-start.x:end.x-a.x,vy=side==='in'?d[axis]-start[axis]:end[axis]-a[axis];
+  var vx=side==='in'?d[horizontal]-start[horizontal]:end[horizontal]-a[horizontal],vy=side==='in'?d[axis]-start[axis]:end[axis]-a[axis];
   var bx=vx/6*sign,by=vy/6*sign,den=bx*bx+by*by;
   if(den<.000001)return null;
-  var px=(+point.x||0)-key.x,py=(+point[axis]||0)-key[axis],scale=(px*bx+py*by)/den;
+  var px=(+point[horizontal]||0)-key[horizontal],py=(+point[axis]||0)-key[axis],scale=(px*bx+py*by)/den;
   scale=Math.max(0,Math.min(2,scale));
   return curveTension(Math.round((1-scale)*100));
  }
  function tensionFromHandle(input,at,spec,point,side){return tensionFromList(normalize(input),at,spec,point,side);}
  function lookTensionFromHandle(input,at,spec,point,side){return tensionFromList(normalizeLook(input),at,spec,point,side);}
  function mapSpec(list,plane){
-  var axis=plane==='front'?'y':'z',range=500;
-  list.forEach(function(k){range=Math.max(range,Math.abs(number(k.x))*1.2,Math.abs(number(k[axis]))*1.2);});
-  return {axis:axis,sign:axis==='z'?-1:1,range:range};
+  var horizontal=plane==='side'?'z':'x',axis=plane==='top'?'z':'y',range=500;
+  list.forEach(function(k){range=Math.max(range,Math.abs(number(k[horizontal]))*1.2,Math.abs(number(k[axis]))*1.2);});
+  return {xAxis:horizontal,axis:axis,sign:axis==='z'?-1:1,range:range};
  }
- function mapPoint(k,spec){return {x:50+(number(k.x)-number(spec.originX))/spec.range*50,y:50+(number(k[spec.axis])-number(spec.originAxis))/spec.range*50*spec.sign};}
- function moveSpatial(k,spec,dx,dy){var copy=Object.assign({},k);copy.x=number(Math.round(k.x+dx*spec.range*2));copy[spec.axis]=number(Math.round(k[spec.axis]+dy*spec.range*2*spec.sign));return copy;}
+ function mapPoint(k,spec){return {x:50+(number(k[spec.xAxis||'x'])-number(spec.originX))/spec.range*50,y:50+(number(k[spec.axis])-number(spec.originAxis))/spec.range*50*spec.sign};}
+ function moveSpatial(k,spec,dx,dy){var copy=Object.assign({},k),horizontal=spec.xAxis||'x';copy[horizontal]=number(Math.round(k[horizontal]+dx*spec.range*2));copy[spec.axis]=number(Math.round(k[spec.axis]+dy*spec.range*2*spec.sign));return copy;}
  function nearestPathAt(samples,spec,point,scale){
   if(!Array.isArray(samples)||samples.length<2||!spec||!point)return null;
   var sx=scale&&Number.isFinite(+scale.x)&&+scale.x>0?+scale.x:1,sy=scale&&Number.isFinite(+scale.y)&&+scale.y>0?+scale.y:1,best=null;
@@ -332,8 +332,8 @@ function mapZoomStep(current,direction){
  return levels[Math.max(0,Math.min(levels.length-1,index+(direction<0?-1:1)))];
 }
 function mapSpecFromNode(map){
- var front=map.dataset.plane==='front';
- return {range:+map.dataset.range||500,axis:front?'y':'z',sign:front?1:-1,originX:+map.dataset.originX||0,originAxis:+map.dataset.originAxis||0};
+ var plane=map.dataset.plane,side=plane==='side',top=plane!=='side'&&plane!=='front';
+ return {range:+map.dataset.range||500,xAxis:side?'z':'x',axis:top?'z':'y',sign:top?-1:1,originX:+map.dataset.originX||0,originAxis:+map.dataset.originAxis||0};
 }
 function mapPanStep(previous,direction,increment,limit){
  var x=previous&&Number.isFinite(+previous.x)?+previous.x:0,y=previous&&Number.isFinite(+previous.y)?+previous.y:0;
@@ -348,7 +348,7 @@ function mapPanStep(previous,direction,increment,limit){
 }
 function mapPanOrigin(spec,frame,pan){
  var x=pan&&Number.isFinite(+pan.x)?+pan.x:0,y=pan&&Number.isFinite(+pan.y)?+pan.y:0;
- spec.originX=frame.x+x*2*spec.range;
+ spec.originX=frame[spec.xAxis||'x']+x*2*spec.range;
  spec.originAxis=frame[spec.axis]+y*2*spec.range/spec.sign;
  return spec;
 }
@@ -460,16 +460,17 @@ function mapGridSvg(spec){
   out+='<line x1="0" y1="'+py+'" x2="100" y2="'+py+'" stroke="currentColor" opacity="'+(j===0?'.43':'.13')+'" stroke-width="'+(j===0?'.65':'.35')+'"/>';
   if(py>8&&py<92)out+='<text x="2" y="'+(py-1)+'" font-size="2.7" fill="currentColor" opacity=".66">'+av+'</text>';
  }
- return out+'<text x="2" y="5" font-size="3.3" font-weight="bold" fill="currentColor" opacity=".85">X / '+spec.axis.toUpperCase()+'</text></g>';
+ return out+'<text x="2" y="5" font-size="3.3" font-weight="bold" fill="currentColor" opacity=".85">'+(spec.xAxis||'x').toUpperCase()+' / '+spec.axis.toUpperCase()+'</text></g>';
 }
 function mapPanToTarget(camera,target,spec){
  if(!camera||!target||!spec||!spec.range)return {x:0,y:0};
- return {x:Math.max(-1,Math.min(1,(target.x-camera.x)/(2*spec.range))),y:Math.max(-1,Math.min(1,(target[spec.axis]-camera[spec.axis])*spec.sign/(2*spec.range)))};
+ return {x:Math.max(-1,Math.min(1,(target[spec.xAxis||'x']-camera[spec.xAxis||'x'])/(2*spec.range))),y:Math.max(-1,Math.min(1,(target[spec.axis]-camera[spec.axis])*spec.sign/(2*spec.range)))};
 }
 function mapOverviewViewport(visible,overview){
  if(!visible||!overview||!Number.isFinite(+visible.range)||!Number.isFinite(+overview.range))return {x:0,y:0,width:100,height:100};
  var cx=Number.isFinite(+visible.originX)?+visible.originX:0,cy=Number.isFinite(+visible.originAxis)?+visible.originAxis:0;
- var center=C.mapPoint({x:cx,y:cy,z:cy},overview),half=50*visible.range/overview.range;
+ var centerAt={x:0,y:0,z:0};centerAt[visible.xAxis||'x']=cx;centerAt[visible.axis]=cy;
+ var center=C.mapPoint(centerAt,overview),half=50*visible.range/overview.range;
  var x=Math.max(0,center.x-half),y=Math.max(0,center.y-half),right=Math.min(100,center.x+half),bottom=Math.min(100,center.y+half);
  return {x:Math.min(100,x),y:Math.min(100,y),width:Math.max(0,right-x),height:Math.max(0,bottom-y)};
 }
@@ -477,7 +478,7 @@ function mapOverviewWorldAt(spec,x,y){
  if(!spec||!Number.isFinite(+spec.range)||+spec.range<=0)return null;
  var u=Math.max(0,Math.min(1,+x)),v=Math.max(0,Math.min(1,+y));
  if(!Number.isFinite(u)||!Number.isFinite(v))return null;
- var out={x:(Number(spec.originX)||0)+(u*2-1)*spec.range};
+ var out={};out[spec.xAxis||'x']=(Number(spec.originX)||0)+(u*2-1)*spec.range;
  out[spec.axis]=(Number(spec.originAxis)||0)+(v*2-1)*spec.range/spec.sign;
  return out;
 }
@@ -773,6 +774,7 @@ function mapOverviewUnionParts(areaA,areaB,shared){
 }
 function mapOverviewCompareFovOverlap(frames,spec,size,perspective){
  if(!frames||!frames.a||!frames.b)return {state:'unavailable',reason:'Faltan encuadres A/B'};
+ if(spec&&spec.xAxis==='z')return {state:'unavailable',reason:'Vista lateral: proyección del cono de visión no evaluable'};
  var shapeA=mapOverviewPolygonFromFov(mapFieldOfViewPose(frames.a.pose,spec,size,perspective));
  var shapeB=mapOverviewPolygonFromFov(mapFieldOfViewPose(frames.b.pose,spec,size,perspective));
  if(shapeA.length<3||shapeB.length<3)return {state:'unavailable',reason:'Uno de los conos está de perfil en esta proyección'};
@@ -1195,7 +1197,7 @@ function mapOverviewJump(s,overview,x,y){
  var range=overview.range/zoom;
  if(!Number.isFinite(range)||range<=0)return false;
  mapPan[s.id]={
-  x:Math.max(-zoom,Math.min(zoom,(world.x-camera.x)/(2*range))),
+  x:Math.max(-zoom,Math.min(zoom,(world[overview.xAxis||'x']-camera[overview.xAxis||'x'])/(2*range))),
   y:Math.max(-zoom,Math.min(zoom,(world[overview.axis]-camera[overview.axis])*overview.sign/(2*range)))
  };
  renderPane();
@@ -1231,7 +1233,7 @@ function startMapOverviewDrag(ev,overview,s){
  var startPan=mapPan[s.id]||{x:0,y:0},startZoom=mapZoom[s.id]||1,done=false,travel=0;
  var viewport=overview.querySelector('[data-camera-overview-viewport]'),world=mapOverviewWorldAt(spec,point.x,point.y);
  if(!world)return;
- var startCenter={x:world.x,y:world[spec.axis]};
+ var startCenter={x:world[spec.xAxis||'x'],y:world[spec.axis]};
  ev.preventDefault();ev.stopPropagation();
  overview.focus({preventScroll:true});
  overview.setPointerCapture(ev.pointerId);
@@ -1356,6 +1358,7 @@ function updateMapHeading(map,s,list,looks,spec,at){
 }
 function mapFieldOfViewPose(v,spec,size,perspective){
  if(!v||!spec||!size||!['x','y','z','rotateX','rotateY'].every(function(k){return Number.isFinite(+v[k]);}))return null;
+ if(spec.xAxis==='z')return null; // Y/Z edge-on projection does not show a reliable FOV area.
  var dimension=spec.axis==='z'?+size.width:+size.height;
  if(!Number.isFinite(dimension)||dimension<=0)return null;
  var depth=Number.isFinite(+perspective)&&+perspective>0?+perspective:1000;
