@@ -229,6 +229,46 @@ function createCamera(){
   }
   return best;
  }
+ // Three.js requires its own view matrix; CSS transforms on the canvas are insufficient.
+ // Both renderers take the same Director camera pose, with no new animation clock.
+ var threeCameraStates=typeof WeakMap==='function'?new WeakMap():null;
+ function threeWorldPoint(point,scale){
+  if(!point||!['x','y','z'].every(function(a){return Number.isFinite(+point[a]);}))return null;
+  var f=Number.isFinite(+scale)&&+scale>0?+scale:1;
+  return {x:+point.x*f,y:-point.y*f,z:-point.z*f};
+ }
+ function threeCameraState(pose,viewport,perspective,scale){
+  if(!pose)return null;
+  var pos=threeWorldPoint(pose,scale),target=threeWorldPoint(forwardTarget(pose,1000),scale);
+  if(!pos||!target)return null;
+  var f=Number.isFinite(+scale)&&+scale>0?+scale:1,
+      width=viewport&&+viewport.width,height=viewport&&+viewport.height,depth=+perspective*f,
+      valid=Number.isFinite(width)&&width>0&&Number.isFinite(height)&&height>0&&Number.isFinite(depth)&&depth>0;
+  return {position:pos,target:target,rollRadians:-angle(pose.rotate)*Math.PI/180,
+   aspect:valid?width/height:null,
+   fovDegrees:valid?Math.max(1,Math.min(175,2*Math.atan(height/(2*depth))*180/Math.PI)):null,
+   cssPerspective:valid?depth:null,scale:f};
+ }
+ function applyThreeCamera(camera,state){
+  if(!camera||!state||!camera.position||typeof camera.position.set!=='function'||typeof camera.lookAt!=='function')return false;
+  camera.position.set(state.position.x,state.position.y,state.position.z);
+  camera.lookAt(state.target.x,state.target.y,state.target.z);
+  if(typeof camera.rotateZ==='function'&&state.rollRadians)camera.rotateZ(state.rollRadians);
+  var changed=false;
+  if(state.fovDegrees!==null&&'fov' in camera&&camera.fov!==state.fovDegrees){camera.fov=state.fovDegrees;changed=true;}
+  if(state.aspect!==null&&'aspect' in camera&&camera.aspect!==state.aspect){camera.aspect=state.aspect;changed=true;}
+  if(changed&&typeof camera.updateProjectionMatrix==='function')camera.updateProjectionMatrix();
+  if(typeof camera.updateMatrixWorld==='function')camera.updateMatrixWorld();
+  return true;
+ }
+ function bindThreeCamera(stage,camera){
+  if(!stage||typeof stage.addEventListener!=='function')return function(){};
+  var update=function(event){if(event&&event.detail&&event.detail.three)applyThreeCamera(camera,event.detail.three);};
+  stage.addEventListener('nagweb:spatial-camera',update);
+  var lastState=threeCameraStates&&threeCameraStates.get(stage);
+  if(lastState)applyThreeCamera(camera,lastState);
+  return function(){if(typeof stage.removeEventListener==='function')stage.removeEventListener('nagweb:spatial-camera',update);};
+ }
  function attach(stage,c,perspective){
   if(!c)return null;
   var world=Array.from(stage.children).find(function(n){return n.classList.contains('inner');});
@@ -250,21 +290,31 @@ function createCamera(){
   stage.style.perspective=perspective+'px';stage.style.perspectiveOrigin='50% 50%';
   world.style.transformStyle='preserve-3d';world.setAttribute('data-nw-camera-world','');
   containers.forEach(function(id){var n=find(world,id);if(n&&n.style)n.style.transformStyle='preserve-3d';});
-  var animation=null,last='';
+  var animation=null,last='',lastScale=null;
   function paint(v,scale){
-   stage.style.perspective=(perspective*(Number.isFinite(+scale)&&+scale>0?+scale:1))+'px';
+   var factor=Number.isFinite(+scale)&&+scale>0?+scale:1;
+   stage.style.perspective=(perspective*factor)+'px';
    // Camera translation is the inverse world translation. Positive Z travels forward.
    var value=transform(v);
-   if(value===last)return;last=value;
-   if(!v.x&&!v.y&&!v.z&&!v.rotateX&&!v.rotateY&&!v.rotate){if(animation)animation.cancel();animation=null;return;}
-   var frames=[{transform:value},{transform:value}];
-   if(animation)animation.effect.setKeyframes(frames);
-   else{animation=world.animate(frames,{duration:1,fill:'both',composite:'add'});animation.pause();animation.currentTime=0;}
+   if(value===last&&factor===lastScale)return;
+   last=value;lastScale=factor;
+   if(!v.x&&!v.y&&!v.z&&!v.rotateX&&!v.rotateY){
+    if(animation)animation.cancel();animation=null;
+   }else{
+    var frames=[{transform:value},{transform:value}];
+    if(animation)animation.effect.setKeyframes(frames);
+    else{animation=world.animate(frames,{duration:1,fill:'both',composite:'add'});animation.pause();animation.currentTime=0;}
+   }
+   var state=threeCameraState(v,{width:stage.clientWidth,height:stage.clientHeight},perspective,factor);
+   if(threeCameraStates&&state)threeCameraStates.set(stage,state);
+   if(typeof CustomEvent==='function'&&typeof stage.dispatchEvent==='function'){
+    try{stage.dispatchEvent(new CustomEvent('nagweb:spatial-camera',{bubbles:true,detail:{pose:Object.assign({},v),three:state}}));}catch(_){}
+   }
   }
   paint.contains=function(n){return inside(world,n);};
   return paint;
  }
- return {config:config,compile:compile,pose:pose,pathSamples:pathSamples,lookSamples:lookSamples,lookTarget:lookTarget,lookAngles:lookAngles,forwardTarget:forwardTarget,defaultLookFrames:defaultLookFrames,normalizeLook:normalizeLook,lookFrames:lookFrames,targetEligible:targetEligible,elementTarget:elementTarget,curveTension:curveTension,tangentHandle:tangentHandle,tensionFromHandle:tensionFromHandle,lookTangentHandle:lookTangentHandle,lookTensionFromHandle:lookTensionFromHandle,handleFree:handleFree,setHandleMode:setHandleMode,setFreeHandle:setFreeHandle,setLookHandleMode:setLookHandleMode,setLookFreeHandle:setLookFreeHandle,nearestPathAt:nearestPathAt,viewportScale:viewportScale,scalePose:scalePose,attach:attach,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial,copyFrame:copyFrame,holdFrame:holdFrame,preset:preset};
+ return {config:config,compile:compile,pose:pose,pathSamples:pathSamples,lookSamples:lookSamples,lookTarget:lookTarget,lookAngles:lookAngles,forwardTarget:forwardTarget,defaultLookFrames:defaultLookFrames,normalizeLook:normalizeLook,lookFrames:lookFrames,targetEligible:targetEligible,elementTarget:elementTarget,curveTension:curveTension,tangentHandle:tangentHandle,tensionFromHandle:tensionFromHandle,lookTangentHandle:lookTangentHandle,lookTensionFromHandle:lookTensionFromHandle,handleFree:handleFree,setHandleMode:setHandleMode,setFreeHandle:setFreeHandle,setLookHandleMode:setLookHandleMode,setLookFreeHandle:setLookFreeHandle,nearestPathAt:nearestPathAt,viewportScale:viewportScale,scalePose:scalePose,attach:attach,threeWorldPoint:threeWorldPoint,threeCameraState:threeCameraState,applyThreeCamera:applyThreeCamera,bindThreeCamera:bindThreeCamera,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial,copyFrame:copyFrame,holdFrame:holdFrame,preset:preset};
 }
 window.NAGWEB_CREATE_SCROLL_CAMERA=createCamera;
 window.NAGWEB_SCROLL_CAMERA=createCamera();
