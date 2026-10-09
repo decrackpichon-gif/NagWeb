@@ -805,6 +805,29 @@ function mapOverviewCompareOverlapSvg(overlap){
  if(!overlap||overlap.state!=='shared'||!overlap.points||overlap.points.length<3)return '';
  return '<polygon data-camera-overview-fov-overlap data-camera-overview-overlap-a="'+overlap.percentA+'" data-camera-overview-overlap-b="'+overlap.percentB+'" points="'+overlap.points.map(function(p){return p.x+','+p.y;}).join(' ')+'" fill="#a78bfa" fill-opacity="'+(focus==='all'?'.34':focus==='shared'?'.76':'.07')+'" stroke="#a78bfa" stroke-width="'+(focus==='shared'?'1.65':'.9')+'" stroke-dasharray="'+(focus==='shared'?'none':'1.6 1')+'" pointer-events="none"><title>Área compartida · '+mapOverviewCompareCoverageLabel(overlap.percentA)+'% del cono A · '+mapOverviewCompareCoverageLabel(overlap.percentB)+'% del cono B (proyección 2D)</title></polygon>';
 }
+// Context uses both denominators explicitly: selected cone vs projected A∪B.
+function mapOverviewCompareFocusDetail(overlap,focus){
+ if(!overlap||!overlap.union||(overlap.state!=='shared'&&overlap.state!=='none')||focus==='all')return null;
+ var item=focus==='a'?{label:'Solo A',color:'#22d3ee',own:overlap.exclusiveA,total:overlap.union.a,source:'A',other:'B'}:
+   focus==='b'?{label:'Solo B',color:'#f472b6',own:overlap.exclusiveB,total:overlap.union.b,source:'B',other:'A'}:null;
+ if(item){
+  return {key:focus,label:item.label,color:item.color,text:
+   mapOverviewCompareCoverageLabel(item.own)+'% del encuadre '+item.source+' · '+
+   mapOverviewCompareCoverageLabel(item.total)+'% del área combinada. '+
+   (item.own<=1e-8?'Sin área exclusiva en esta proyección.':'Región de '+item.source+' que no se superpone con '+item.other+'.')};
+ }
+ if(focus==='shared')return {key:'shared',label:'Compartida',color:'#a78bfa',text:
+  mapOverviewCompareCoverageLabel(overlap.percentA)+'% del encuadre A · '+
+  mapOverviewCompareCoverageLabel(overlap.percentB)+'% del encuadre B · '+
+  mapOverviewCompareCoverageLabel(overlap.union.shared)+'% del área combinada. '+
+  (overlap.state==='none'?'No existe zona compartida en esta proyección.':'Región donde coinciden ambas proyecciones.')};
+ return null;
+}
+function mapOverviewCompareFocusDetailHtml(overlap,focus){
+ var detail=mapOverviewCompareFocusDetail(overlap,focus);if(!detail)return '';
+ return '<div data-camera-overview-focus-detail data-camera-overview-focus-kind="'+detail.key+'" role="status" aria-live="polite" style="margin-top:5px;padding-top:4px;border-top:1px solid var(--border,#5555);line-height:1.5">'+
+  '<span style="color:'+detail.color+';font-weight:600">'+detail.label+': </span>'+detail.text+'</div>';
+}
 function mapOverviewCompareUnionHtml(overlap){
  if(!overlap||!overlap.union||(overlap.state!=='shared'&&overlap.state!=='none'))return '';
  var focus=mapOverviewCompareExclusiveVisible[sec().id]===true?mapOverviewCompareFocusMode():'all';
@@ -821,7 +844,8 @@ function mapOverviewCompareUnionHtml(overlap){
   }).join('')+'</div>'+
   '<div data-camera-overview-union-legend style="display:flex;gap:7px;flex-wrap:wrap">'+
   parts.map(function(part){return '<span style="color:'+part.color+'">'+part.label+' '+mapOverviewCompareCoverageLabel(part.value)+'%</span>';}).join('')+'</div>'+
-  '<div style="opacity:.7">Base: A∪B = 100% de la superficie proyectada conjunta. Distinto de los porcentajes calculados sobre cada cono.</div></div>';
+  '<div style="opacity:.7">Base: A∪B = 100% de la superficie proyectada conjunta. Distinto de los porcentajes calculados sobre cada cono.</div>'+ 
+  (mapOverviewCompareExclusiveVisible[sec().id]===true?mapOverviewCompareFocusDetailHtml(overlap,focus):'')+'</div>';
 }
 function mapOverviewCompareOverlapHtml(overlap,visible){
  var showExclusive=mapOverviewCompareExclusiveVisible[sec().id]===true;
