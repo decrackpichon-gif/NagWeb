@@ -1702,3 +1702,53 @@ const recoloredMatchingComment = applyUiverseCssColorValues(
 );
 assert.match(recoloredMatchingComment, /color:#123123;\/\* color:#abcdef; \*\//,
   "Recolor CSS declarations without touching commented examples");
+
+const mixedRgbHtml = '<style>' +
+  '.badge{color:rgb(12, 34, 56);background-color:rgba(255, 0, 128, 0.25);' +
+  'border:1px solid rgb(12,34,56);box-shadow:0 0 3px rgba(12,34,56,.5)}' +
+  '.other{background:linear-gradient(90deg, rgb(22, 44, 66), rgba(255,0,128,1))}' +
+  '/*color:rgb(99,88,77);*/' +
+  '.unsafe{background:url(https://x.test/rgb(15,23,45));color:rgb(999,2,3)}' +
+  '</style><span data-color="rgb(12, 34, 56)">Hola</span>';
+const parsedRgbColors = inferUiverseCssColorProps(mixedRgbHtml);
+assert.deepEqual(parsedRgbColors.map(p => p.defaultValue),
+  ["#0c2238", "#ff0080", "#162c42"],
+  "Standard RGB and RGBA tokens share editable swatches by RGB channel values");
+const existingRgbResource = {
+  ...persistedUiverse,
+  artifacts: [{...persistedUiverse.artifacts[0], content:mixedRgbHtml}]
+};
+assert.deepEqual(describeEditableControls(existingRgbResource).map(p => p.id),
+  ["opacity", "scale", "uiverseColor1", "uiverseColor2", "uiverseColor3"],
+  "Old saved Uiverse resources with RGB colors gain the color controls");
+assert.equal(applyUiverseCssColorValues(existingRgbResource, {},
+  mixedRgbHtml), mixedRgbHtml,
+  "Unchanged RGB and RGBA values remain byte-identical");
+const rgbCustom = buildResourceApplyEnvelope(existingRgbResource, {
+  values: { uiverseColor1:"#aa7733", uiverseColor2:"#50a020" }
+});
+assert.match(rgbCustom.descriptor.payload.html, /color:rgb\(170, 119, 51\)/,
+  "Changed rgb() color keeps RGB functional syntax");
+assert.match(rgbCustom.descriptor.payload.html,
+  /background-color:rgba\(80, 160, 32, 0\.25\)/,
+  "Changed rgba() color keeps its original alpha channel");
+assert.match(rgbCustom.descriptor.payload.html,
+  /box-shadow:0 0 3px rgba\(170, 119, 51, \.5\)/,
+  "Another rgba() using the same hue shares the control and preserves alpha");
+assert.match(rgbCustom.descriptor.payload.html,
+  /linear-gradient\(90deg, rgb\(22, 44, 66\), rgba\(80, 160, 32, 1\)\)/,
+  "Gradient channels and alpha are preserved");
+assert.match(rgbCustom.descriptor.payload.html, /\/\*color:rgb\(99,88,77\);\*\//);
+assert.match(rgbCustom.descriptor.payload.html, /data-color="rgb\(12, 34, 56\)"/,
+  "HTML attributes must not be touched");
+assert.match(rgbCustom.descriptor.payload.html, /color:rgb\(999,2,3\)/,
+  "Invalid RGB colors are never offered or overwritten");
+assert.equal(buildResourceApplyEnvelope(existingRgbResource).resource.editableProps.length,
+  5, "The editor receives the inferred RGB options in its insertion envelope");
+assert.equal(applyUiverseCssColorValues(existingRgbResource,
+  { uiverseColor1:"rgb(255,0,0)", uiverseColor2:"red; position:fixed" },
+  mixedRgbHtml), mixedRgbHtml, "Only valid hex picker input may recolor RGB CSS");
+assert.deepEqual(inferUiverseCssColorProps(
+  '<style>.a{color:rgb(300,20,20);background:rgba(1,2,3,1.5);' +
+  'border-color:rgb(1 2 3);stroke:rgba(1,2,3)}' +
+  '</style>'), [], "Reject invalid and unsupported RGB syntaxes");

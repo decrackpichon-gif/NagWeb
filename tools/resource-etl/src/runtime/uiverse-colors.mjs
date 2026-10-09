@@ -1,8 +1,9 @@
-// Infer only hexadecimal colors used in actual CSS color declarations.
+// Infer hexadecimal, rgb() and rgba() colors from real CSS declarations.
 // Operates on the component's own <style> tags, never on arbitrary markup.
 const STYLE_BLOCK = /(<style\b[^>]*>)([\s\S]*?)(<\/style\s*>)/gi;
 const DECLARATION = /([a-z][a-z0-9-]*)\s*:\s*([^;{}]+)(?=;|\})/gi;
-const HEX = /#[a-f\d]{6}(?![a-f\d])|#[a-f\d]{3}(?![a-f\d])/gi;
+const COLOR_TOKEN = /#[a-f\d]{6}(?![a-f\d])|#[a-f\d]{3}(?![a-f\d])|\brgba?\([^()]*\)/gi;
+const COMMA_RGB = /^(rgba?)\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*(\d+(?:\.\d+)?|\.\d+))?\s*\)$/i;
 const ACCEPTED_PROPERTY = /^(?:color|background(?:-color|-image)?|border(?:-(?:top|bottom|left|right))?(?:-color)?|outline(?:-color)?|(?:box|text)-shadow|fill|stroke|text-decoration-color|caret-color)$/i;
 const MAX_COLORS = 6;
 
@@ -13,6 +14,32 @@ function canonical(token) {
     return "#" + [...token.slice(1)].map(char => char + char).join("").toLowerCase();
   }
   return null;
+}
+
+function rgbComponents(token) {
+  const match = typeof token === "string" ? COMMA_RGB.exec(token) : null;
+  if (!match) return null;
+  const hasAlpha = match[5] !== undefined;
+  if ((match[1].toLowerCase() === "rgba") !== hasAlpha) return null;
+  const channels = match.slice(2, 5).map(Number);
+  if (!channels.every(channel => Number.isInteger(channel) && channel >= 0 &&
+    channel <= 255)) return null;
+  if (hasAlpha && !(Number(match[5]) >= 0 && Number(match[5]) <= 1)) return null;
+  const color = "#" + channels.map(n => n.toString(16).padStart(2, "0")).join("");
+  return { color, channels, alpha: hasAlpha ? match[5] : null };
+}
+
+function colorFromCssToken(token) {
+  return canonical(token) || rgbComponents(token)?.color || null;
+}
+
+function substituteCssColorToken(token, hex) {
+  const rgb = rgbComponents(token);
+  if (!rgb) return canonical(token) ? hex : token;
+  const channels = [1, 3, 5].map(index => parseInt(hex.slice(index, index + 2), 16));
+  return rgb.alpha === null
+    ? "rgb(" + channels.join(", ") + ")"
+    : "rgba(" + channels.join(", ") + ", " + rgb.alpha + ")";
 }
 
 function styleDeclarations(css, inspect) {
@@ -31,8 +58,8 @@ export function inferUiverseCssColorProps(html) {
   const found = new Set();
   for (const style of String(html || "").matchAll(STYLE_BLOCK)) {
     styleDeclarations(style[2], (_property, value) => {
-      for (const token of value.matchAll(HEX)) {
-        const color = canonical(token[0]);
+      for (const token of value.matchAll(COLOR_TOKEN)) {
+        const color = colorFromCssToken(token[0]);
         if (color && found.size < MAX_COLORS) found.add(color);
       }
     });
@@ -101,7 +128,10 @@ export function applyUiverseCssColorValues(resource, values, html) {
       (full, property, value) => {
       if (!property || !ACCEPTED_PROPERTY.test(property) ||
           /url\s*\(/i.test(value)) return full;
-      const next = value.replace(HEX, token => replacements.get(canonical(token)) || token);
+      const next = value.replace(COLOR_TOKEN, token => {
+        const replacement = replacements.get(colorFromCssToken(token));
+        return replacement ? substituteCssColorToken(token, replacement) : token;
+      });
       return full.replace(value, next);
     });
     return start + changed + end;
