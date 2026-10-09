@@ -37,11 +37,11 @@ Con **Mirar hacia** y un objetivo `shape3d` anclado seleccionado, el panel de c�
 
 - X positivo: mirar más a la derecha.
 - Y negativo: mirar más arriba.
-- Z positivo: punto más próximo a la cámara en la convención de cámara del Director.
+- Z positivo: aumenta la coordenada Z del enfoque; no significa necesariamente acercarse a la cámara.
 
 Cada keyframe de mirada puede conservar un desplazamiento distinto, con interpolación a través de la trayectoria de mirada existente. El punto ajustado sigue el movimiento de los keyframes del modelo y se refleja en el mapa. Los tres valores están limitados a ±4000 px, se normalizan y forman parte del mismo historial de Deshacer. Los proyectos antiguos sin desplazamientos no cambian.
 
-Al elegir otro objetivo se restablecen los desplazamientos a cero para evitar arrastrar el ajuste de un modelo ajeno. Al pasar de un modelo a **Punto XYZ**, el sistema guarda el punto ajustado efectivo del instante seleccionado y elimina el vínculo: no salta otra vez al pivote.
+Al editar el enfoque, su posición absoluta actual también queda guardada como respaldo XYZ si el modelo desaparece. Al elegir otro objetivo se restablecen los desplazamientos a cero para evitar arrastrar el ajuste de un modelo ajeno. Al pasar de un modelo a **Punto XYZ**, el sistema guarda el punto ajustado efectivo del instante seleccionado y elimina el vínculo: no salta otra vez al pivote.
 
 Se agregaron pruebas de modelo y smoke de navegador para offsets XYZ, interpolación, conservación de proyectos antiguos, cambio de mirada, edición sin tocar el GLB, desvinculación sin salto y Deshacer. El código y los tests fueron revisados sintácticamente; el smoke completo en Chromium queda pendiente de ejecución.
 
