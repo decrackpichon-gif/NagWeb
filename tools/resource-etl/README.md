@@ -894,3 +894,29 @@ El CI ejecuta la prueba en Linux y Windows, además de las pruebas existentes,
 y guarda capturas e informe JSON durante siete días. Para instalar el navegador:
 `npx playwright install --with-deps chromium`. Los resultados quedan en
 `browser-smoke-results/`, excluido de Git.
+
+## Micro-etapa 48: inserción SVG en el editor real
+
+La barra de NagWeb incluye **Biblioteca de recursos**. Se abre dentro del editor
+y conserva la búsqueda y los valores al volver a abrirla. **Aplicar en NagWeb**
+convierte un ícono SVG de trazo en un vector nativo editable, lo selecciona y
+confirma cuando quedó guardado. Usa el mismo historial y guardado del editor;
+el resultado sobrevive a recargas y se incluye en la exportación del sitio.
+El ícono se inserta en la raíz de la escena actual, con el tamaño elegido en
+píxeles convertido a las medidas del lienzo de escritorio y móvil.
+
+Este primer receptor admite geometría monocroma: path, circle, ellipse, rect,
+line, polyline, polygon y grupos sin transformaciones. Rechaza otros recursos,
+rellenos, trazos diferentes por figura, transformaciones y atributos activos
+antes de tocar el historial. Sólo recibe pedidos del iframe de la biblioteca
+abierta, del mismo origen; repetir un pedido devuelve la misma confirmación.
+El vector conserva identificación, proveedor, licencia, commit de origen y
+valores elegidos. La biblioteca necesita abrirse desde un servidor HTTP(S).
+
+`npm run test:browser` también abre el **index.html real de NagWeb**, inserta un
+SVG personalizado y verifica selección, tamaño y trazo visibles, guardado,
+deshacer/rehacer, recarga y markup exportado. Comprueba rechazo de geometría no
+admitida, mensajes de otro emisor, recursos CSS y duplicados. GSAP 3.12.5 y
+Three.js r128 se sirven desde las dependencias de prueba; el Vault usa datos
+locales y las fuentes decorativas se omiten. El editor ejecuta sus scripts
+reales, sin reemplazar su inserción ni su modelo. Captura: `editor-inserted.png`.

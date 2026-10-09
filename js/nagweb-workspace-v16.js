@@ -148,3 +148,7 @@ variantObserver.observe(document.body,{childList:true,subtree:true});
 window.NAGWEB_WORKSPACE16_API={version:'1.7',state:function(){return JSON.parse(JSON.stringify(st))},rightWidth:function(){return rightWidth}};
 console.info('[NagWeb] workspace v1.7: paneles plegables + inspector y variantes ajustables');
 })();
+
+import('./nagweb-resource-library.mjs').catch(function(error){
+ console.error('[NagWeb] No se pudo abrir la biblioteca de recursos:',error);
+});

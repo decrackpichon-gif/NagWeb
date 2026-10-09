@@ -6,6 +6,9 @@ on:
       - feat/resource-etl-v1
     paths:
       - "tools/resource-etl/**"
+      - "js/nagweb-resource-library.mjs"
+      - "js/nagweb-workspace-v16.js"
+      - "index.html"
       - ".github/workflows/resource-etl-ci.yml"
   workflow_dispatch:
 

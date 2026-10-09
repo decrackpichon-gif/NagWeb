@@ -5,6 +5,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { gzipSync } from "node:zlib";
 import { createHash } from "node:crypto";
+import { createRequire } from "node:module";
 import { transformUiverseComponent } from "./light-transformers.mjs";
 import { describeEditableControls } from "./runtime/editable-controls.mjs";
 
@@ -14,6 +15,13 @@ const { chromium } = await import(process.env.NAGWEB_PLAYWRIGHT_MODULE
 const { expect } = await import(process.env.NAGWEB_PLAYWRIGHT_MODULE
   ? new URL("./test.mjs", pathToFileURL(process.env.NAGWEB_PLAYWRIGHT_MODULE)).href : "playwright/test");
 const root = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
+const repo = path.resolve(root, "../..");
+const require = createRequire(import.meta.url);
+const gsapRoot = process.env.NAGWEB_GSAP_ROOT || path.dirname(require.resolve("gsap/package.json"));
+const gsapFiles = new Map(await Promise.all(["gsap.min.js", "ScrollTrigger.min.js"].map(async name =>
+  [name, await readFile(path.join(gsapRoot, "dist", name))])));
+const threeRoot = process.env.NAGWEB_THREE_ROOT || path.dirname(require.resolve("three/package.json"));
+const threeScript = await readFile(path.join(threeRoot, "build", "three.min.js"));
 const output = path.resolve(process.argv.find(arg => arg.startsWith("--out="))?.slice(6) || "browser-smoke-results");
 await mkdir(output, { recursive: true });
 const icon = {
@@ -70,9 +78,11 @@ const server = http.createServer(async (request, response) => {
     const url = new URL(request.url, "http://localhost");
     if (url.pathname === "/host") { response.setHeader("Content-Type", "text/html; charset=utf-8"); response.end(host); return; }
     if (url.pathname === "/favicon.ico") { response.writeHead(204); response.end(); return; }
-    const relative = decodeURIComponent(url.pathname.slice(1));
-    const file = path.resolve(root, relative.endsWith("/") ? relative + "index.html" : relative);
-    if (!file.startsWith(root + path.sep)) { response.writeHead(403); response.end(); return; }
+    const isEditor = url.pathname.startsWith("/editor/");
+    const base = isEditor ? repo : root;
+    const relative = decodeURIComponent(url.pathname.slice(isEditor ? 8 : 1));
+    const file = path.resolve(base, relative.endsWith("/") || !relative ? relative + "index.html" : relative);
+    if (!file.startsWith(base + path.sep)) { response.writeHead(403); response.end(); return; }
     response.setHeader("Content-Type", ({ ".html": "text/html", ".mjs": "text/javascript", ".js": "text/javascript", ".css": "text/css" })[path.extname(file)] + "; charset=utf-8");
     response.end(await readFile(file));
   } catch { response.writeHead(404); response.end("Not found"); }
@@ -177,8 +187,123 @@ try {
     report.scenarios.push({ width, status: "passed", applies: await page.evaluate(() => window.received.length) });
     await context.close();
   }
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  const page = await context.newPage();
+  currentPage = page;
+  page.on("pageerror", error => report.errors.push(`Editor: ${error.message}`));
+  page.on("console", message => { if (message.type() === "error") report.errors.push(`Editor: ${message.text()}`); });
+  await context.route("**/*", async route => {
+    const url = new URL(route.request().url());
+    if (url.hostname === "127.0.0.1") return route.continue();
+    const vault = url.origin === "https://raw.githubusercontent.com" ? fixtures.get(url.pathname.split("/").at(-1)) : null;
+    if (vault) return route.fulfill({ contentType: "application/octet-stream", headers: { "access-control-allow-origin": "*" }, body: vault });
+    const script = url.origin === "https://cdnjs.cloudflare.com" && /^\/ajax\/libs\/gsap\/3\.12\.5\//.test(url.pathname)
+      ? gsapFiles.get(url.pathname.split("/").at(-1)) : null;
+    if (script) return route.fulfill({ contentType: "text/javascript", body: script });
+    if (url.href === "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js") return route.fulfill({ contentType: "text/javascript", body: threeScript });
+    // Fonts are decorative; the editor and canvas run their real scripts offline.
+    if (url.origin === "https://fonts.googleapis.com") return route.fulfill({ contentType: "text/css", body: "" });
+    report.errors.push(`Unexpected editor request: ${url.origin}${url.pathname}`);
+    return route.abort();
+  });
+  await page.addInitScript(() => {
+    if (window !== window.top) return;
+    if (!localStorage.getItem("scrollcraft.proyecto.v3")) localStorage.setItem("scrollcraft.proyecto.v3", JSON.stringify({
+      title: "Prueba biblioteca", font: "grotesk", assets: { images: [], models: [] },
+      pages: [{ id: "test-page", name: "Prueba", slug: "prueba", sections: [{ id: "test-scene", name: "Escena de prueba", layout: "free", height: 100, bg: "#ffffff", fg: "#111111", elements: [] }] }]
+    }));
+  });
+  await page.goto(`http://127.0.0.1:${server.address().port}/editor/`);
+  await page.getByRole("button", { name: "Biblioteca de recursos", exact: true }).click();
+  const libraryFrame = page.frameLocator('iframe[title="Biblioteca de recursos de NagWeb"]');
+  await libraryFrame.locator('[data-resource-id="smoke:icon"]').click();
+  const sizeGroup = libraryFrame.locator('details[data-category="size"]');
+  if (!await sizeGroup.evaluate(n => n.open)) await sizeGroup.locator("summary").click();
+  const sizeInput = libraryFrame.getByLabel("Tamaño", { exact: true });
+  await sizeInput.focus();
+  await sizeInput.press("Home");
+  for (let i = 16; i < 40; i++) await sizeInput.press("ArrowRight");
+  await libraryFrame.getByLabel("Color", { exact: true }).fill("#abcdef");
+  // Record and resend the actual protocol message to exercise source checks and deduplication.
+  await page.evaluate(() => {
+    window.resourceMessages = [];
+    window.addEventListener("message", event => { if (event.data?.type === "nagweb:resource-apply") window.resourceMessages.push(event.data); });
+  });
+  await libraryFrame.getByRole("button", { name: "Aplicar en NagWeb", exact: true }).click();
+  await expect(libraryFrame.locator('[data-apply-status]')).toContainText("Ícono insertado y guardado");
+  const inserted = await page.evaluate(() => ({ element: structuredClone(sec().elements[0]), selection: [...selection], saved: JSON.parse(localStorage.getItem(STORE_KEY)), width: designWpx(sec().elements[0], sec()) }));
+  assert.equal(inserted.element.type, "vector");
+  assert.equal(inserted.element.d, "M4 4L20 20");
+  assert.equal(inserted.element.stroke, "#abcdef");
+  assert.equal(inserted.element.strokeWidth, 2);
+  assert.equal(inserted.element.nwResource.id, icon.id);
+  assert.equal(inserted.element.nwResource.license.verified, true);
+  assert.equal(inserted.saved.pages[0].sections[0].elements[0].id, inserted.element.id);
+  assert.deepEqual(inserted.selection, [inserted.element.id]);
+  assert.equal(inserted.width, 40);
+  const envelope = await page.evaluate(() => window.resourceMessages[0]);
+  const conversion = await page.evaluate(async message => {
+    const { svgElementProps } = await import("/editor/tools/resource-etl/src/runtime/nagweb-svg-element.mjs");
+    const convert = svg => svgElementProps({ ...message, descriptor: { ...message.descriptor, payload: { ...message.descriptor.payload, svg } } });
+    const props = convert('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4"/><ellipse cx="12" cy="12" rx="4" ry="2"/><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="1" y1="2" x2="3" y2="4"/><polyline points="1,2 3,4 5,6"/><polygon points="1 2 3 4 5 6"/></svg>');
+    const invalid = ['<script/>', '<path d="M0 0L24 24" onclick="alert(1)"/>', '<path d="M0 0L24 24" transform="translate(2)"/>', '<foreignObject/>'];
+    const rejected = invalid.every(inner => { try { convert(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">${inner}</svg>`); return false; } catch { return true; } });
+    return { d: props.d, rejected };
+  }, envelope);
+  assert.match(conversion.d, /A2 2 0 0 1/);
+  assert.match(conversion.d, /M1 2L3 4/);
+  assert.equal(conversion.rejected, true);
+  const browserChild = page.frames().find(frame => frame.url().includes("/resource-browser/"));
+  await browserChild.evaluate(message => parent.postMessage(message, location.origin), envelope);
+  await page.waitForTimeout(150);
+  assert.equal(await page.evaluate(() => sec().elements.length), 1, "A repeated request must not insert twice");
+  const rejected = { ...envelope, requestId: "unsafe-svg", descriptor: { ...envelope.descriptor, payload: { ...envelope.descriptor.payload, svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><script>alert(1)</script></svg>' } } };
+  const historyBefore = await page.evaluate(() => history.length);
+  await browserChild.evaluate(message => parent.postMessage(message, location.origin), rejected);
+  await page.waitForTimeout(150);
+  assert.equal(await page.evaluate(() => sec().elements.length), 1);
+  assert.equal(await page.evaluate(() => history.length), historyBefore, "Rejected geometry must not change undo history");
+  await page.evaluate(message => window.postMessage({ ...message, requestId: "wrong-source" }, location.origin), envelope);
+  await page.waitForTimeout(150);
+  assert.equal(await page.evaluate(() => sec().elements.length), 1, "Only the library iframe can apply resources");
+  await libraryFrame.getByRole("button", { name: "Cerrar", exact: true }).click();
+  await libraryFrame.locator(`[data-resource-id="${css.id}"]`).click();
+  await libraryFrame.getByRole("button", { name: "Aplicar en NagWeb", exact: true }).click();
+  await expect(libraryFrame.locator('[data-apply-status]')).toContainText("Esta etapa permite insertar íconos SVG de trazo");
+  assert.equal(await page.evaluate(() => sec().elements.length), 1, "Unsupported resources must not mutate the editor");
+  await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
+  const svg = page.frameLocator("#preview").locator(`[data-id="${inserted.element.id}"] svg`);
+  await expect(svg).toBeVisible();
+  await expect(svg.locator('path[stroke]')).toHaveAttribute("stroke", "#abcdef");
+  assert.ok(Math.abs(await svg.evaluate(n => n.getBoundingClientRect().width) - 40) < 1, "Canvas renders the chosen pixel size");
+  assert.equal(await page.getByRole("button", { name: "Biblioteca de recursos", exact: true }).evaluate(n => document.activeElement === n), true);
+  await page.locator("#btn-undo").click();
+  assert.equal(await page.evaluate(() => sec().elements.length), 0);
+  await page.locator("#btn-redo").click();
+  assert.equal(await page.evaluate(() => sec().elements[0].nwResource.id), icon.id);
+  const exported = await page.evaluate(() => generateSite(flattenPage(page()), false, true, false));
+  assert.ok(exported.includes('stroke="#abcdef"') && exported.includes('M4 4L20 20'), "Published markup retains customized SVG geometry");
+  await page.reload();
+  assert.equal(await page.evaluate(() => sec().elements[0].nwResource.id), icon.id);
+  await expect(page.frameLocator("#preview").locator(`[data-id="${inserted.element.id}"] svg`)).toBeVisible();
+  await page.screenshot({ path: path.join(output, "editor-inserted.png"), fullPage: true });
+  await page.locator("#btn-view-mob").click();
+  await page.getByRole("button", { name: "Biblioteca de recursos", exact: true }).click();
+  await libraryFrame.locator('[data-resource-id="smoke:icon"]').click();
+  await libraryFrame.getByRole("button", { name: "Aplicar en NagWeb", exact: true }).click();
+  await expect(libraryFrame.locator('[data-apply-status]')).toContainText("Ícono insertado y guardado");
+  const mobileId = await page.evaluate(() => selection[0]);
+  await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
+  const mobileSvg = page.frameLocator("#preview").locator(`[data-id="${mobileId}"] svg`);
+  await expect(mobileSvg).toBeVisible();
+  assert.ok(Math.abs(await mobileSvg.evaluate(n => n.getBoundingClientRect().width) - 24) < 1);
+  await page.locator("#btn-view-desk").click();
+  await expect(mobileSvg).toBeVisible();
+  assert.ok(Math.abs(await mobileSvg.evaluate(n => n.getBoundingClientRect().width) - 24) < 1, "Insertion from mobile keeps the chosen size on desktop too");
+  report.scenarios.push({ editor: "NagWeb real", status: "passed", insert: "vector", saved: true, undoRedo: true, reload: true, export: true, mobileInsert: true, deduplicated: true, invalidSourceRejected: true });
+  await context.close();
   assert.deepEqual(report.errors, [], "Browser must not emit uncaught errors or external requests");
-  console.log("Resource Browser Chromium smoke: search, edits, reset, focus, preview and confirmed Apply OK (desktop + mobile).");
+  console.log("Resource Browser Chromium smoke: panel desktop/mobile + real NagWeb vector insert, save, undo/redo, reload, export and rejected inputs OK.");
 } catch (error) {
   report.errors.push(error.stack || String(error));
   if (currentPage && !currentPage.isClosed()) {
