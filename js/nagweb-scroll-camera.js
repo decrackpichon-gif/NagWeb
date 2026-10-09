@@ -213,7 +213,7 @@ function createCamera(){
  function tensionFromHandle(input,at,spec,point,side){return tensionFromList(normalize(input),at,spec,point,side);}
  function lookTensionFromHandle(input,at,spec,point,side){return tensionFromList(normalizeLook(input),at,spec,point,side);}
  function mapSpec(list,plane){
-  var horizontal=plane==='side'?'z':'x',axis=plane==='top'?'z':'y',range=500;
+  var horizontal=plane==='side'?'z':'x',axis=plane==='front'||plane==='side'?'y':'z',range=500;
   list.forEach(function(k){range=Math.max(range,Math.abs(number(k[horizontal]))*1.2,Math.abs(number(k[axis]))*1.2);});
   return {xAxis:horizontal,axis:axis,sign:axis==='z'?-1:1,range:range};
  }
