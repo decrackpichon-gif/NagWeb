@@ -1928,6 +1928,35 @@ export async function runCameraBrowserSmoke(page){
   const aimed3D=await page.evaluate(()=>({target:sec().sdCameraLookFrames.find(k=>k.at===0)?.targetId,history:history.length}));
   assert.equal(aimed3D.target,'camera-glb-look-target','Aim action links GLB to current look key');
   assert.equal(aimed3D.history,aim3DBefore.history+1,'GLB aim creates one undo step');
+  // Adjust 3D look focus without altering the GLB, then unlink without losing the chosen point.
+  const focalStart=await page.evaluate(()=>{
+   const s=sec(),cfg=NAGWEB_SCROLL_CAMERA.config(s),size={width:1000,height:800};
+   return {looks:JSON.stringify(s.sdCameraLookFrames),objects:JSON.stringify(s.elements),undo:history.length,
+    focus:NAGWEB_SCROLL_CAMERA.lookTarget(cfg,0,NAGWEB_STORY_MODEL,s.sdEase,size)};
+  });
+  assert.equal(await page.$eval('[data-camera-look-focus-offset]',nodes=>nodes.length),3,'3D-linked targets expose three numeric focus offsets');
+  await page.$eval('[data-camera-look-focus-offset="y"]',el=>{el.value='-80';el.dispatchEvent(new Event('change',{bubbles:true}));});
+  const focalAdjusted=await page.evaluate(()=>{
+   const s=sec(),cfg=NAGWEB_SCROLL_CAMERA.config(s),size={width:1000,height:800};
+   return {frame:s.sdCameraLookFrames.find(k=>k.at===0),look:NAGWEB_SCROLL_CAMERA.lookTarget(cfg,0,NAGWEB_STORY_MODEL,s.sdEase,size),
+    objects:JSON.stringify(s.elements),undo:history.length};
+  });
+  assert.equal(focalAdjusted.frame.focusOffsetY,-80,'Focus Y is stored on look key, not the model');
+  assert.ok(Math.abs(focalAdjusted.look.y-focalStart.focus.y+80)<.001,'Camera focus shifts 80 px upward');
+  assert.equal(focalAdjusted.objects,focalStart.objects,'Focus adjustment does not edit GLB geometry or anchor');
+  assert.equal(focalAdjusted.undo,focalStart.undo+1,'Changing focus creates one Undo snapshot');
+  await page.select('[data-camera-look-target]','');
+  const unlinked=await page.evaluate(()=>{
+   const s=sec(),frame=s.sdCameraLookFrames.find(k=>k.at===0);
+   return {frame,undo:history.length};
+  });
+  assert.equal(unlinked.frame.targetId,undefined,'Unlinking switches to a standalone XYZ point');
+  assert.equal(unlinked.frame.focusOffsetY,undefined,'Unlinking clears focus offsets');
+  assert.ok(Math.abs(unlinked.frame.y-focalAdjusted.look.y)<.001,'Unlinking freezes the actual displaced focus point');
+  await page.evaluate(()=>undo());
+  assert.equal(await page.evaluate(()=>sec().sdCameraLookFrames.find(k=>k.at===0)?.focusOffsetY),-80,'Undo unlink restores the linked focus');
+  await page.evaluate(()=>undo());
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraLookFrames)),focalStart.looks,'Undo focus restores original model aim');
   await page.evaluate(()=>undo());
   assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraLookFrames)),aim3DBefore.looks,'GLB look targeting supports Undo');
   await page.evaluate(original=>{sec().elements=JSON.parse(original);renderPane();},old3DElements);
