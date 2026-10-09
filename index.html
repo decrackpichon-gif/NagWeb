@@ -16498,13 +16498,6 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
     h.rotation.z = camera.rotation.z;
   }
 
-  var spatial3D = (${window.NAGWEB_CREATE_SPATIAL_RENDERER.toString()})(THREE, renderer, scene, objects);
-  function connectSpatial3D(ev){
-    spatial3D.connect(ev.detail.camera, ev.detail.stages);
-  }
-  window.addEventListener('nagweb:spatial-ready', connectSpatial3D);
-  window.addEventListener('pagehide', function(ev){ if(!ev.persisted){ spatial3D.destroy(); window.removeEventListener('nagweb:spatial-ready', connectSpatial3D); } });
-
   var DRAGGABLE = objects.filter(function(g){ return g.userData.o.dragRotate; });
 
   function buildLight(o){
@@ -16520,6 +16513,8 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
   var lightObjs = LIGHTS.map(function(o){
     var lt = buildLight(o);
     lt.userData.o = o;
+    lt.userData.sectionId = SECS[o.sec].id;
+    lt.userData.sectionOffsetY = -o.sec * SPACING;
     lt.userData.baseX = o.offX;
     lt.userData.baseY = -o.sec * SPACING + o.offY;
     lt.userData.baseZ = o.offZ;
@@ -16527,6 +16522,13 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
     scene.add(lt);
     return lt;
   });
+
+  var spatial3D = (${window.NAGWEB_CREATE_SPATIAL_RENDERER.toString()})(THREE, renderer, scene, objects, scene.children.filter(function(n){return n.isLight;}));
+  function connectSpatial3D(ev){
+    spatial3D.connect(ev.detail.camera, ev.detail.stages);
+  }
+  window.addEventListener('nagweb:spatial-ready', connectSpatial3D);
+  window.addEventListener('pagehide', function(ev){ if(!ev.persisted){ spatial3D.destroy(); window.removeEventListener('nagweb:spatial-ready', connectSpatial3D); } });
 
   /* la cámara viaja de sección en sección, siguiendo el camino que definiste
      (las transiciones que salen de una galería horizontal ya las maneja
@@ -17008,11 +17010,11 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
         }
       }
     });
-    if(EDIT) syncProxies();
     spatial3D.render(function(){
       if(composer) composer.render();
       else renderer.render(scene, camera);
     });
+    if(EDIT) syncProxies();
   }
 
   window.addEventListener('resize', function(){
@@ -17205,6 +17207,9 @@ ${edit ? `
 
         var sx = ev.clientX, sy = ev.clientY;
         var ox = o.offX, oy = o.offY, sc0 = o.scale || 1, in0 = o.intensity || 1;
+        var spatialLight = isLight ? spatial3D.view(g) : null;
+        var lightStart = spatialLight ? spatial3D.lightPoint(g, sx, sy) : null;
+        if(spatialLight && !lightStart) return;
         var dist = camera.position.z - g.position.z;
         var visH = 2 * Math.tan(25 * Math.PI / 180) * Math.max(dist, .5);
         var perPx = visH / window.innerHeight;
@@ -17222,11 +17227,16 @@ ${edit ? `
               showTip('tamaño ' + out.scale.toFixed(2) + '×');
             }
           } else {
-            out.offX = ox + (e.clientX - sx) * perPx;
-            out.offY = oy - (e.clientY - sy) * perPx;
+            if(lightStart){
+              var point = spatial3D.lightPoint(g, e.clientX, e.clientY);if(!point) return;
+              out.offX = ox + point.x - lightStart.x;out.offY = oy + point.y - lightStart.y;
+            }else{
+              out.offX = ox + (e.clientX - sx) * perPx;
+              out.offY = oy - (e.clientY - sy) * perPx;
+            }
             if(SNAP){ out.offX = Math.round(out.offX * 4) / 4; out.offY = Math.round(out.offY * 4) / 4; }
-            g.userData.baseX = out.offX; g.userData.baseY = -o.sec * 7 + out.offY;
-            g.position.x = out.offX;
+            g.userData.baseX = out.offX; g.userData.baseY = -o.sec * SPACING + out.offY;
+            g.position.x = out.offX;if(isLight) g.position.y = g.userData.baseY;
             showTip('x ' + out.offX.toFixed(2) + '  ·  y ' + out.offY.toFixed(2));
           }
         }
@@ -17247,12 +17257,15 @@ ${edit ? `
       var h = window.innerHeight, w = window.innerWidth;
       proxies.forEach(function(pr){
         var g = pr.g;
-        v3.copy(g.position).project(camera);
-        var px = (v3.x * .5 + .5) * w, py = (-v3.y * .5 + .5) * h;
+        var spatialView = spatial3D.view(g), proxyCamera = spatialView ? spatialView.camera : camera;
+        var proxyRect = spatialView ? spatialView.rect : {left:0,top:0,width:w,height:h};
+        if(spatialView && spatialView.object) spatialView.object.getWorldPosition(v3);else v3.copy(g.position);
+        v3.project(proxyCamera);
+        var px = proxyRect.left + (v3.x * .5 + .5) * proxyRect.width, py = proxyRect.top + (-v3.y * .5 + .5) * proxyRect.height;
         var dist = Math.max(camera.position.z - g.position.z, .5);
         var visH = 2 * Math.tan(25 * Math.PI / 180) * dist;
-        var size = Math.max(46, (3.4 * g.scale.x / visH) * h);
-        var vis = v3.z < 1 && py > -size && py < h + size;
+        var size = spatialView ? 46 : Math.max(46, (3.4 * g.scale.x / visH) * h);
+        var vis = v3.z >= -1 && v3.z < 1 && py > -size && py < h + size && (!spatialView || (proxyRect.bottom > 0 && proxyRect.top < h));
         pr.node.style.display = vis ? 'block' : 'none';
         pr.node.style.width = size + 'px';
         pr.node.style.height = size + 'px';
