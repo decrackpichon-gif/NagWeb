@@ -874,11 +874,18 @@ function mapOverviewCompareFovSvg(frames,spec,size,perspective,visible,overlap){
  return out+'</g>';
 }
 // Compare the same camera snapshots in both orthographic map projections.
+// Meter widths stay mathematically proportional; a separate hairline marks sub-1% coverage.
+function mapOverviewComparePlaneMeterHtml(plane,value,color){
+ var valid=value!==null&&Number.isFinite(value),amount=valid?Math.min(100,Math.max(0,value)):0,tiny=valid&&amount>0&&amount<1;
+ return '<div data-camera-overview-plane-meter="'+plane+'" data-camera-overview-plane-meter-status="'+(valid?(tiny?'tiny':'measured'):'unavailable')+'" aria-hidden="true" style="position:relative;height:7px;margin-top:3px;border-radius:3px;background:var(--border,#6666);overflow:visible;pointer-events:none">'+
+  (valid?'<span data-camera-overview-plane-fill="'+plane+'" data-camera-overview-plane-fill-value="'+amount+'" style="display:block;width:'+amount+'%;height:100%;border-radius:3px;background:'+color+'"></span>':'')+
+  (tiny?'<span data-camera-overview-plane-tiny="'+plane+'" style="position:absolute;left:0;top:-2px;width:2px;height:11px;border-radius:1px;background:'+color+';box-shadow:0 0 0 1px var(--bg,#1c1e23)"></span>':'')+'</div>';
+}
 function mapOverviewComparePlanesHtml(planes,currentPlane){
  if(!planes||!planes.top||!planes.front)return '';
  var focus=mapOverviewCompareExclusiveVisible[sec().id]===true?mapOverviewCompareFocusMode():'all';
  var key=focus==='a'?'a':focus==='b'?'b':'shared';
- var label=key==='a'?'Solo A':key==='b'?'Solo B':'En común';
+ var label=key==='a'?'Solo A':key==='b'?'Solo B':'En común',color=key==='a'?'#22d3ee':key==='b'?'#f472b6':'#a78bfa';
  function percentage(overlap){
   return overlap&&(overlap.state==='shared'||overlap.state==='none')&&overlap.union&&Number.isFinite(overlap.union[key])?overlap.union[key]:null;
  }
@@ -886,13 +893,18 @@ function mapOverviewComparePlanesHtml(planes,currentPlane){
  var views=[['top','X/Z · superior',top],['front','X/Y · frontal',front]];
  var cells=views.map(function(entry){
   var active=entry[0]===currentPlane,value=entry[2];
-  return '<span data-camera-overview-plane="'+entry[0]+'" data-camera-overview-plane-current="'+(active?'true':'false')+'" data-camera-overview-plane-value="'+(value===null?'':value)+'" style="display:inline-flex;gap:4px;align-items:baseline;'+(active?'font-weight:700;':'opacity:.72;')+'">'+(active?'● ':'')+entry[1]+': '+(value===null?'No evaluable':mapOverviewCompareCoverageLabel(value)+'%')+'</span>';
+  return '<div style="flex:1 1 125px;min-width:0">'+
+   '<span data-camera-overview-plane="'+entry[0]+'" data-camera-overview-plane-current="'+(active?'true':'false')+'" data-camera-overview-plane-value="'+(value===null?'':value)+'" style="display:block;'+(active?'font-weight:700;':'opacity:.75;')+'">'+(active?'● ':'')+entry[1]+': '+(value===null?'No evaluable':mapOverviewCompareCoverageLabel(value)+'%')+'</span>'+
+   mapOverviewComparePlaneMeterHtml(entry[0],value,color)+'</div>';
  }).join('');
- var difference=top!==null&&front!==null?'<div data-camera-overview-plane-delta data-camera-overview-plane-delta-value="'+(front-top)+'">X/Y − X/Z: '+mapOverviewSignedMetric(front-top)+' puntos porcentuales</div>':
+ var delta=front!==null&&top!==null?front-top:null;
+ var interpretation=delta===null?'':Math.abs(delta)<.1?' · Variación menor a 0,1 punto':delta>0?' · Mayor proporción en X/Y':' · Mayor proporción en X/Z';
+ var difference=delta!==null?'<div data-camera-overview-plane-delta data-camera-overview-plane-delta-value="'+delta+'">X/Y − X/Z: '+mapOverviewSignedMetric(delta)+' puntos porcentuales'+interpretation+'</div>':
   '<div data-camera-overview-plane-delta-unavailable style="opacity:.72">Sin diferencia calculable: una proyección no permite medir el área.</div>';
  return '<div data-camera-overview-plane-comparison data-camera-overview-plane-region="'+key+'" style="margin-top:5px;padding-top:5px;border-top:1px solid var(--border,#5555);font-size:10px;line-height:1.5">'+
   '<div style="font-weight:600">'+label+' · comparación de planos</div>'+
-  '<div style="display:flex;flex-wrap:wrap;gap:3px 10px">'+cells+'</div>'+difference+
+  '<div style="display:flex;flex-wrap:wrap;gap:5px 10px">'+cells+'</div>'+difference+
+  ((top!==null&&top>0&&top<1)||(front!==null&&front>0&&front<1)?'<div data-camera-overview-plane-tiny-note style="opacity:.8">Marca vertical: cobertura menor al 1%, resaltada para verla (no a escala).</div>':'')+
   '<div style="opacity:.72">Porcentaje del área combinada A∪B en cada proyección 2D. No compara volumen, oclusión ni visibilidad 3D.</div></div>';
 }
 function mapOverviewCompareFovHtml(size,perspective,visible,overlap,planes,currentPlane){
