@@ -1943,6 +1943,13 @@ export async function runCameraBrowserSmoke(page){
   });
   assert.equal(focalAdjusted.frame.focusOffsetY,-80,'Focus Y is stored on look key, not the model');
   assert.ok(Math.abs(focalAdjusted.look.y-focalStart.focus.y+80)<.001,'Camera focus shifts 80 px upward');
+  assert.ok(Math.abs(focalAdjusted.frame.y-focalAdjusted.look.y)<.001,'The keyframe caches the focused XYZ as a fallback');
+  const lostModelFocus=await page.evaluate(()=>{
+   const s=sec(),cfg=NAGWEB_SCROLL_CAMERA.config(s),size={width:1000,height:800};
+   cfg.targets=cfg.targets.filter(t=>t.id!=='camera-glb-look-target');
+   return NAGWEB_SCROLL_CAMERA.lookTarget(cfg,0,NAGWEB_STORY_MODEL,s.sdEase,size);
+  });
+  assert.ok(Math.abs(lostModelFocus.y-focalAdjusted.look.y)<.001,'Deleting model would retain adjusted focus position');
   assert.equal(focalAdjusted.objects,focalStart.objects,'Focus adjustment does not edit GLB geometry or anchor');
   assert.equal(focalAdjusted.undo,focalStart.undo+1,'Changing focus creates one Undo snapshot');
   await page.select('[data-camera-look-target]','');
