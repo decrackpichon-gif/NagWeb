@@ -268,7 +268,7 @@ function createCamera(){
 }
 window.NAGWEB_CREATE_SCROLL_CAMERA=createCamera;
 window.NAGWEB_SCROLL_CAMERA=createCamera();
-var presetChoices=Object.create(null),holdDurations=Object.create(null),mapOpen=Object.create(null),mapPlanes=Object.create(null),mapFovVisible=Object.create(null),mapZoom=Object.create(null),mapPan=Object.create(null),mapWheelCarry=Object.create(null),mapOverviewVisible=Object.create(null),mapOverviewPickHistory=Object.create(null),mapOverviewSamples=Object.create(null),mapOverviewDetected=Object.create(null),mapOverviewMetrics=Object.create(null),mapOverviewMetricsOpen=Object.create(null),mapOverviewPaceVisible=Object.create(null),mapOverviewComparison=Object.create(null),mapOverviewComparePreview=Object.create(null),mapOverviewCompareFovVisible=Object.create(null),mapOverviewCompareExclusiveVisible=Object.create(null),mapOverviewCompareFocus=Object.create(null),mapOverviewTechnicalOpen=Object.create(null),mapOverviewEventFilter=Object.create(null),mapOverviewEventChosen=Object.create(null),mapPickHistory=Object.create(null),suppressedClick=null,selected=Object.create(null),lookSelected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
+var presetChoices=Object.create(null),holdDurations=Object.create(null),cameraEasyStep=Object.create(null),mapOpen=Object.create(null),mapPlanes=Object.create(null),mapFovVisible=Object.create(null),mapZoom=Object.create(null),mapPan=Object.create(null),mapWheelCarry=Object.create(null),mapOverviewVisible=Object.create(null),mapOverviewPickHistory=Object.create(null),mapOverviewSamples=Object.create(null),mapOverviewDetected=Object.create(null),mapOverviewMetrics=Object.create(null),mapOverviewMetricsOpen=Object.create(null),mapOverviewPaceVisible=Object.create(null),mapOverviewComparison=Object.create(null),mapOverviewComparePreview=Object.create(null),mapOverviewCompareFovVisible=Object.create(null),mapOverviewCompareExclusiveVisible=Object.create(null),mapOverviewCompareFocus=Object.create(null),mapOverviewTechnicalOpen=Object.create(null),mapOverviewEventFilter=Object.create(null),mapOverviewEventChosen=Object.create(null),mapPickHistory=Object.create(null),suppressedClick=null,selected=Object.create(null),lookSelected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
 function safeLabel(v){return String(v==null?'':v).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,42).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];});}
 function targetLabel(e){var label=safeLabel(e&&((e.name||e.text||e.label)||e.type));return label||'Elemento';}
 function keys(s){return C.frames(C.config(s),s.sdEase);}
@@ -1441,6 +1441,37 @@ function mapDraw(map,list,spec,s,lookList){
  var overlapGroup=map.querySelector('[data-camera-map-overlaps]');
  if(overlapGroup)overlapGroup.innerHTML=mapOverlapBadges(list,cfg&&cfg.orientationMode==='lookAt'?resolved:[],spec);
 }
+// Beginner controls follow scene X/Y/Z; they never change the map's pan/zoom.
+function cameraEasyMoveHtml(s,k){
+ var step=cameraEasyStep[s.id]===100?100:25;
+ function button(dir,glyph,label){
+  return '<button type="button" class="btn tiny" data-camera-easy-move="'+dir+'" aria-label="'+label+'" title="'+label+'" style="min-height:31px;min-width:38px;font-size:15px">'+glyph+'</button>';
+ }
+ var spacer='<span aria-hidden="true"></span>';
+ return '<div data-camera-easy-controls role="group" aria-label="Mover el encuadre seleccionado" style="margin:9px 4px;padding:8px;border:1px solid var(--border,var(--line));border-radius:6px">'+
+  '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:5px">'+
+  '<strong style="font-size:12px">Mover cámara · encuadre '+k.at+'%</strong>'+
+  '<label style="font-size:11px">Paso <select class="csel" data-camera-easy-step aria-label="Distancia por toque" style="font-size:11px">'+
+  '<option value="25"'+(step===25?' selected':'')+'>Corto · 25 px</option><option value="100"'+(step===100?' selected':'')+'>Largo · 100 px</option></select></label></div>'+
+  '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:7px">'+
+   '<div><div style="font-size:10px;margin-bottom:4px">En pantalla (X/Y)</div><div style="display:grid;grid-template-columns:repeat(3,minmax(38px,1fr));gap:3px;width:137px">'+
+     spacer+button('up','↑','Subir cámara')+spacer+
+     button('left','←','Mover cámara a la izquierda')+'<span aria-hidden="true" style="text-align:center;align-self:center;font-size:12px">◆</span>'+button('right','→','Mover cámara a la derecha')+
+     spacer+button('down','↓','Bajar cámara')+spacer+'</div></div>'+
+   '<div style="display:flex;flex-direction:column;gap:5px"><div style="font-size:10px">Profundidad (Z)</div>'+
+    button('forward','Adelante','Adelantar cámara en Z')+
+    button('back','Atrás','Retroceder cámara en Z')+'</div></div>'+
+  '<div style="font-size:10px;opacity:.78;margin-top:6px">Las flechas mueven la cámara vista de frente; Adelante/Atrás modifican Z. No mueven el mapa. Cada toque se puede deshacer.</div>'+
+ '</div>';
+}
+function cameraEasyOffset(frame,direction,step){
+ var axes={left:['x',-1],right:['x',1],up:['y',-1],down:['y',1],forward:['z',1],back:['z',-1]};
+ var motion=axes[direction];if(!frame||!motion||![25,100].includes(step))return null;
+ var axis=motion[0],value=+frame[axis];if(!Number.isFinite(value))return null;
+ var next=Object.assign({},frame);
+ next[axis]=Math.max(-4000,Math.min(4000,value+motion[1]*step));
+ return next;
+}
 function spatialMap(s,list,k){
  var plane=mapPlanes[s.id]||'top',cfg=C.config(s),looks=cfg&&cfg.orientationMode==='lookAt'?lookKeys(s):[],lk=looks.length?chooseLook(s,looks):null,size=previewReferenceSize(s),resolvedLooks=resolvedLookKeys(s,cfg,looks,size),tangents=cfg&&cfg.pathMode==='smooth'?list.flatMap(function(f){return[C.tangentHandle(list,f.at,'in'),C.tangentHandle(list,f.at,'out')];}).filter(Boolean):[],lookTangents=cfg&&cfg.lookPathMode==='smooth'?resolvedLooks.flatMap(function(f){return[C.lookTangentHandle(resolvedLooks,f.at,'in'),C.lookTangentHandle(resolvedLooks,f.at,'out')];}).filter(Boolean):[],zoom=mapZoom[s.id]||1,spec=C.mapSpec(list.concat(resolvedLooks,tangents,lookTangents),plane);
  spec.range/=zoom;
@@ -1561,6 +1592,7 @@ C.panel=function(s){
  html+='</div><input type="range" aria-label="Recorrer cámara" data-camera-seek min="0" max="100" step="0.1" value="'+progress(s)+'" style="width:100%;margin:4px 0"><div style="display:flex;justify-content:space-between;font-size:10px"><span>0%</span><span>50%</span><span>100%</span></div></div><button type="button" class="btn tiny" data-camera-add>Agregar encuadre aquí</button>';
  html+='<p class="hint gh">Clic en la pista: recorrer · Arrastrar punto: mover encuadre. Flechas: 1%; Shift: 10%. Escape cancela el arrastre.</p>';
  function field(label,key,value,min,max,step){return cRow(label,'<input class="cnum" type="number" aria-label="'+label+'" data-camera-field="'+key+'" data-camera-at="'+k.at+'" value="'+value+'" min="'+min+'" max="'+max+'" step="'+step+'">');}
+ html+=cameraEasyMoveHtml(s,k);
  html+='<details><summary style="cursor:pointer;margin:8px 0">Pausas y recorridos rápidos</summary><button type="button" class="btn tiny" data-camera-copy>Copiar encuadre al momento actual</button><p class="hint gh">Copiá este encuadre en el porcentaje elegido con la barra de progreso.</p>';
  html+=cRow('Permanencia (%)','<input class="cnum" type="number" data-camera-hold-duration aria-label="Duración de la permanencia" min="0.1" max="100" step="1" value="'+(holdDurations[s.id]||10)+'">')+'<button type="button" class="btn tiny" data-camera-hold>Mantener este encuadre</button>';
  html+=cRow('Recorrido','<select class="csel" data-camera-preset-choice aria-label="Recorrido de cámara">'+[['approach','Acercamiento con pausa'],['lateral','Viaje lateral'],['rise','Ascenso y descanso'],['tour','Visita con profundidad']].map(function(p){return '<option value="'+p[0]+'"'+((presetChoices[s.id]||'approach')===p[0]?' selected':'')+'>'+p[1]+'</option>';}).join('')+'</select>')+'<button type="button" class="btn tiny" data-camera-preset>Aplicar recorrido</button><p class="hint gh">Reemplaza los encuadres de cámara. Podés recuperarlos con Deshacer. Los elementos conservan su diseño y sus animaciones.</p></details>';
@@ -2027,9 +2059,17 @@ if(pane){
   if(retime(s,from,to)){var next=pane.querySelector('[data-camera-jump="'+to+'"]');if(next)next.focus();}
  });
  pane.addEventListener('click',function(ev){
-  var button=ev.target.closest('[data-camera-overview-compare-alternate],[data-camera-overview-compare-jump],[data-camera-overview-event-step],[data-camera-overview-toggle],[data-camera-map-pan],[data-camera-map-zoom],[data-camera-map-step],[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
+  var button=ev.target.closest('[data-camera-easy-move],[data-camera-overview-compare-alternate],[data-camera-overview-compare-jump],[data-camera-overview-event-step],[data-camera-overview-toggle],[data-camera-map-pan],[data-camera-map-zoom],[data-camera-map-step],[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
   if(button===suppressedClick){suppressedClick=null;return;}
   var s=sec(),cfg=C.config(s);if(!cfg)return;var list=keys(s);
+  if(button.dataset.cameraEasyMove!==undefined){
+   var key=choose(s,list),step=cameraEasyStep[s.id]===100?100:25,next=cameraEasyOffset(key,button.dataset.cameraEasyMove,step);
+   if(!next)return;
+   if(!spatialCommit(s,key,next)){toast('La cámara ya está en el límite de ese movimiento.');return;}
+   var fresh=pane.querySelector('[data-camera-easy-move="'+button.dataset.cameraEasyMove+'"]');
+   if(fresh)fresh.focus({preventScroll:true});
+   return;
+  }
   if(button.dataset.cameraOverviewCompareAlternate!==undefined){
    var target=mapOverviewCompareAlternate(mapOverviewMetrics[s.id],mapOverviewComparison[s.id],progress(s),mapOverviewComparePreview[s.id]);
    if(mapOverviewCompareGo(s,mapOverviewMetrics[s.id],mapOverviewComparison[s.id],target))button.focus({preventScroll:true});
@@ -2121,6 +2161,10 @@ if(pane){
  });
  pane.addEventListener('change',function(ev){
   var input=ev.target;
+  if(input.dataset.cameraEasyStep!==undefined){
+   cameraEasyStep[sec().id]=input.value==='100'?100:25;
+   return;
+  }
   if(input.dataset.cameraOverviewCompareFocus!==undefined){
     var focusScene=sec();if(!C.config(focusScene))return;
     mapOverviewCompareFocus[focusScene.id]=['a','b','shared'].indexOf(input.value)>=0?input.value:'all';
