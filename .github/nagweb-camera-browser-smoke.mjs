@@ -616,6 +616,44 @@ export async function runCameraBrowserSmoke(page){
   assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),motionNavigationInitial.frames,'A/B camera snapshots never modify camera frames');
   assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraLookFrames)),motionNavigationInitial.looks,'A/B camera snapshots never modify look frames');
   assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'A/B snapshots do not add undo snapshots');
+  // Micro-etapa 45: technical diagnostics remain accessible without crowding normal camera controls.
+  const technicalState=()=>page.evaluate(()=>{
+   const details=document.querySelector('[data-camera-overview-technical]'),summary=details?.querySelector('summary');
+   const hidden=details?.querySelector('[data-camera-overview-snapshot-info="a"]');
+   const positions=document.querySelector('[data-camera-overview-snapshot-delta]');
+   const orientation=document.querySelector('[data-camera-overview-plane-orientation]');
+   const cmpA=document.querySelector('[data-camera-overview-compare-a]');
+   const coneToggle=document.querySelector('[data-camera-overview-compare-fov-toggle]');
+   return {exists:!!details,open:!!details?.open,label:summary?.textContent||'',
+    poseHidden:!!hidden&&!hidden.getClientRects().length,
+    hasNumbers:!!positions&&!!orientation,
+    controlsVisible:!!cmpA?.getClientRects().length&&!!coneToggle?.getClientRects().length,
+    count:document.querySelectorAll('[data-camera-overview-technical]').length,
+    scene:JSON.stringify(sec().sdCameraFrames),looks:JSON.stringify(sec().sdCameraLookFrames),undo:history.length};
+  });
+  let technical=await technicalState();
+  assert.ok(technical.exists&&!technical.open,'Advanced diagnostics start collapsed');
+  assert.ok(technical.poseHidden&&technical.hasNumbers,'XYZ and rotation readouts remain in DOM but do not occupy vertical space');
+  assert.ok(technical.controlsVisible,'A/B comparison and FOV controls remain usable without opening advanced details');
+  assert.equal(technical.count,1,'Only one technical disclosure exists');
+  assert.ok(technical.label.includes('Detalles técnicos')&&technical.label.includes('XYZ'),'Disclosure label describes its purpose');
+  await page.click('[data-camera-overview-technical] > summary');
+  technical=await technicalState();
+  assert.ok(technical.open&&!technical.poseHidden,'Opening advanced details reveals numeric camera readings');
+  await page.select('[data-camera-map-plane]','front');
+  technical=await technicalState();
+  assert.ok(technical.open&&!technical.poseHidden,'Advanced disclosure stays open across plane changes');
+  await page.select('[data-camera-map-plane]','top');
+  await page.click('[data-camera-overview-technical] > summary');
+  technical=await technicalState();
+  assert.ok(!technical.open&&technical.poseHidden,'Closing advanced details hides readings again');
+  await page.evaluate(()=>renderPane());
+  technical=await technicalState();
+  assert.ok(!technical.open&&technical.controlsVisible,'Closed state persists across pane rerenders');
+  assert.equal(technical.scene,motionNavigationInitial.frames,'Disclosure does not alter camera frames');
+  assert.equal(technical.looks,motionNavigationInitial.looks,'Disclosure does not alter target frames');
+  assert.equal(technical.undo,motionNavigationInitial.historyCount,'Disclosure does not add undo snapshots');
+  console.log('Camera diagnostics progressive disclosure: compact controls, optional XYZ/rotations, focus, plane persistence, no edits OK');
   console.log('Camera minimap pose comparison: camera XYZ, orientations, lookAt/manual, top/front, no edits OK');
 
   // Micro-etapa 36: project consistent A/B FOV cones using the existing main map's perspective.
