@@ -393,6 +393,10 @@ function mapObjectInfoHtml(s,plan,pct){
   '<div data-camera-object-xyz style="font-size:11px;margin-top:3px">'+data.xyz+'</div>'+
   '<div data-camera-object-distance style="font-size:11px;margin-top:3px">'+data.distance+'</div>'+
   '<div data-camera-object-offset style="font-size:10px;opacity:.8;margin-top:3px">'+data.offset+'</div>'+
+  '<button class="btn tiny" type="button" data-camera-aim-at-object style="margin-top:6px">Apuntar cámara a este objeto acá</button>'+
+  '<div style="font-size:10px;opacity:.75;margin-top:4px">'+
+   (s.sdCameraOrientationMode==='lookAt'?'En Mirar hacia, vincula el objetivo de este momento al objeto. Si el objeto se mueve, la mirada puede seguirlo.':'Con ángulos manuales, ajusta la mirada en este instante; no cambia el modo de orientación.')+
+   ' Crea un punto en la línea de tiempo solo si hace falta. Podés deshacerlo.</div>'+
   '<div style="font-size:10px;opacity:.7;margin-top:4px">Distancia entre posiciones XYZ. No indica si el objeto es visible en cámara.</div></div>';
 }
 function mapObjectInfoPaint(pane,s,pct){
@@ -1628,6 +1632,37 @@ function cameraCreateAtCurrent(s,list,pct){
  snapshot();list.push(Object.assign({at:at,ease:s.sdEase||'cinematic'},v));persist(s,list,at);
  return 'created';
 }
+// Single intentional action at the Director's current progress; no silent mode switching.
+function cameraAimAtSelectedObject(s,pct){
+ if(sec()!==s)return 'invalid';
+ var cfg=C.config(s),plan=mapObjectPlans[s.id],item=mapObjectSelection(s,plan);
+ if(!cfg||!item||mapObjectVisible[s.id]===false)return 'invalid';
+ var at=cameraCurrentMoment(s,pct,keys(s)).at,size=previewReferenceSize(s),p=at/100;
+ var target=C.elementTarget(cfg,item.id,p,window.NAGWEB_STORY_MODEL,s.sdEase,size);
+ if(!target||!['x','y','z'].every(function(k){return Number.isFinite(+target[k]);}))return 'invalid';
+ var camera=C.pose(cfg,p,window.NAGWEB_STORY_MODEL,s.sdEase,false,undefined,size),angle=C.lookAngles(camera,target);
+ if(!angle)return 'coincident';
+ if(cfg.orientationMode==='lookAt'){
+  var looks=lookKeys(s);
+  if(!looks.length)looks=C.defaultLookFrames(Object.assign({},cfg,{orientationMode:'manual'}),window.NAGWEB_STORY_MODEL,s.sdEase,1000);
+  var index=looks.findIndex(function(k){return k.at===at;});
+  if(index<0&&looks.length>=128)return 'limit';
+  if(index>=0&&looks[index].targetId===item.id)return 'unchanged';
+  var next=Object.assign({at:at,ease:s.sdEase||'cinematic'},index>=0?looks[index]:null,{targetId:item.id,x:target.x,y:target.y,z:target.z});
+  snapshot();
+  if(index>=0)looks[index]=next;else looks.push(next);
+  persistLook(s,looks,at);
+  return 'linked';
+ }
+ var frames=keys(s),idx=frames.findIndex(function(k){return k.at===at;});
+ if(idx<0&&frames.length>=128)return 'limit';
+ if(idx>=0&&Math.abs(frames[idx].rotateX-angle.rotateX)<.000001&&Math.abs(frames[idx].rotateY-angle.rotateY)<.000001)return 'unchanged';
+ var updated=Object.assign({at:at,ease:s.sdEase||'cinematic'},idx>=0?frames[idx]:camera,{rotateX:angle.rotateX,rotateY:angle.rotateY});
+ snapshot();
+ if(idx>=0)frames[idx]=updated;else frames.push(updated);
+ persist(s,frames,at);
+ return 'aimed';
+}
 function spatialMap(s,list,k){
  var objectPlan=mapObjectPlan(s,C.config(s),previewReferenceSize(s));
  mapObjectPlans[s.id]=objectPlan;
@@ -2236,9 +2271,21 @@ if(pane){
   if(retime(s,from,to)){var next=pane.querySelector('[data-camera-jump="'+to+'"]');if(next)next.focus();}
  });
  pane.addEventListener('click',function(ev){
-  var button=ev.target.closest('[data-camera-scene-object-pick],[data-camera-edit-current],[data-camera-easy-move],[data-camera-overview-compare-alternate],[data-camera-overview-compare-jump],[data-camera-overview-event-step],[data-camera-overview-toggle],[data-camera-map-pan],[data-camera-map-zoom],[data-camera-map-step],[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
+  var button=ev.target.closest('[data-camera-aim-at-object],[data-camera-scene-object-pick],[data-camera-edit-current],[data-camera-easy-move],[data-camera-overview-compare-alternate],[data-camera-overview-compare-jump],[data-camera-overview-event-step],[data-camera-overview-toggle],[data-camera-map-pan],[data-camera-map-zoom],[data-camera-map-step],[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
   if(button===suppressedClick){suppressedClick=null;return;}
   var s=sec(),cfg=C.config(s);if(!cfg)return;var list=keys(s);
+  if(button.dataset.cameraAimAtObject!==undefined){
+   var mode=cameraAimAtSelectedObject(s,progress(s));
+   if(mode==='limit')toast('Se alcanzó el máximo de 128 puntos en este recorrido.');
+   else if(mode==='coincident')toast('La cámara ya está en la misma posición que el objeto.');
+   else if(mode==='invalid')toast('Elegí un objeto válido antes de apuntar la cámara.');
+   else if(mode==='unchanged')toast('La cámara ya apunta a este objeto en ese momento.');
+   else{
+    toast(mode==='linked'?'Objetivo vinculado en este momento.':'Cámara orientada hacia el objeto en este momento.');
+    var aim=pane.querySelector('[data-camera-aim-at-object]');if(aim)aim.focus({preventScroll:true});
+   }
+   return;
+  }
   if(button.dataset.cameraSceneObjectPick!==undefined){
    var plan=mapObjectPlans[s.id],idx=+button.dataset.cameraSceneObjectPick;
    if(!plan||mapObjectVisible[s.id]===false||!Number.isInteger(idx)||idx<0||idx>=plan.entries.length)return;
