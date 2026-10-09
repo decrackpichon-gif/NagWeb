@@ -306,6 +306,7 @@ function renderEditableControls(resource, { preserveGroups = false } = {}) {
     .map(group => [group.dataset.category, group.open]));
   el.customizeControls.replaceChildren();
   const controls = describeEditableControls(resource);
+  const syncControls = new Map();
   const overview = document.createElement("p");
   overview.className = "customize-overview";
   overview.setAttribute("role", "status");
@@ -317,9 +318,22 @@ function renderEditableControls(resource, { preserveGroups = false } = {}) {
     section.open = preserveGroups && previousGroups.has(group.id)
       ? previousGroups.get(group.id) : index === 0;
     const summary = document.createElement("summary");
+    const reset = document.createElement("button");
+    reset.type = "button";
+    reset.className = "secondary reset-category";
+    reset.textContent = `Restaurar ${group.label.toLowerCase()}`;
+    reset.addEventListener("click", () => {
+      if (selectedResource !== resource || el.customize.hidden || reset.disabled) return;
+      for (const control of group.controls) {
+        selectedValues[control.id] = control.defaultValue;
+        syncControls.get(control.id)();
+      }
+      updateSummary();
+      redrawEditablePreview();
+    });
     section.appendChild(summary);
     el.customizeControls.appendChild(section);
-    return { ...group, section, summary };
+    return { ...group, section, summary, reset };
   });
   const updateSummary = () => {
     const changed = countChangedControls(controls, selectedValues);
@@ -327,6 +341,7 @@ function renderEditableControls(resource, { preserveGroups = false } = {}) {
     for (const group of groups) {
       const count = countChangedControls(group.controls, selectedValues);
       group.summary.textContent = `${group.label} (${group.controls.length}) · ${count} modificados`;
+      group.reset.disabled = count === 0;
     }
     el.resetCustomize.disabled = changed === 0;
   };
@@ -390,6 +405,12 @@ function renderEditableControls(resource, { preserveGroups = false } = {}) {
     output.textContent = format(selectedValues[control.id]);
 
     const controlElement = control.kind === "select" ? row.querySelector("select") : input;
+    syncControls.set(control.id, () => {
+      const value = selectedValues[control.id];
+      if (control.kind === "toggle") controlElement.checked = value;
+      else controlElement.value = String(value);
+      output.textContent = format(value);
+    });
     controlElement.addEventListener("change", () => {
       if (selectedResource !== resource || el.customize.hidden) return;
       const value = control.kind === "color" || control.kind === "select"
@@ -431,6 +452,7 @@ function renderEditableControls(resource, { preserveGroups = false } = {}) {
     field.append(label, row);
     groups.find(group => group.controls.includes(control)).section.appendChild(field);
   }
+  for (const group of groups) group.section.appendChild(group.reset);
   updateSummary();
   el.customize.hidden = controls.length === 0;
 }

@@ -846,3 +846,12 @@ originales y conserva las secciones abiertas dentro del recurso actual; abrir
 otro recurso reinicia la organización. No se agregan propiedades editables.
 La prueba offline incluye agrupación y eventos de personalización, conservación
 de valores, contadores y restauración, y se ejecuta en CI Linux y Windows.
+
+## Micro-etapa 44: restauración por categoría
+
+Cada categoría incluye un botón para restaurar solo sus valores originales.
+Se habilita cuando esa categoría tiene cambios y actualiza los controles,
+contadores y vista previa sin reconstruir el panel. Conserva los cambios de
+las demás categorías, las secciones abiertas, el foco y el desplazamiento.
+La restauración global sigue disponible. Las pruebas offline verifican el
+aislamiento entre categorías, tipos de controles, estados y eventos obsoletos.

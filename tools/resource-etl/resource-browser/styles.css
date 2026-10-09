@@ -118,6 +118,9 @@ pre{white-space:pre-wrap;word-break:break-word;background:#090b0e;border:1px sol
 .customize .color-row,.customize .size-row,.customize .select-row{flex-wrap:wrap}
 .customize output{overflow-wrap:anywhere}
 .customize .reset-control:disabled{opacity:.5;cursor:default}
+.customize .reset-category{margin:4px 12px 12px;max-width:calc(100% - 24px);font-size:12px;white-space:normal;text-align:left}
+.customize .reset-category:disabled{opacity:.5;cursor:default}
+.customize .reset-category:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 .preview-panel .preview-replay{align-self:flex-start;margin-top:10px}
 .preview-panel .preview-replay[hidden]{display:none}
