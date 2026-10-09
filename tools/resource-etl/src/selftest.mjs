@@ -852,6 +852,7 @@ assert.match(lottiePreviewDocument, /id="previous" aria-label="Retroceder un fot
 assert.match(lottiePreviewDocument, /id="next" aria-label="Avanzar un fotograma"/);
 assert.match(lottiePreviewDocument, /id="frame" aria-live="off"/);
 assert.match(lottiePreviewDocument, /id="time" aria-label="Tiempo transcurrido y duración total/);
+assert.match(lottiePreviewDocument, /id="frame-jump" type="number" min="1" step="1"/);
 assert.match(lottiePreviewDocument, /id="progress" for="seek"/);
 assert.equal(buildLottieBrowserPreview(lottieEditableResource, {}, {
   playerUrl: "javascript:alert(1)"
@@ -1163,6 +1164,10 @@ const fakeSeekControl = {
 };
 const fakeProgressOutput = { textContent: "0%" };
 const fakeTimeOutput = { textContent: "0:00.00 / 0:00.00" };
+const fakeFrameJump = {
+  value: "1", max: "",
+  addEventListener(type, handler) { fakeUiActions["frame-jump:" + type] = handler; }
+};
 const fakeLottieEvents = {};
 const fakeStatus = { textContent: "" };
 const fakeLottieInstance = {
@@ -1192,6 +1197,7 @@ runInNewContext(lottieRuntimeScript, {
     }
   },
   document: {
+    activeElement: null,
     getElementById(id) {
       if (id === "status") return fakeStatus;
       if (id === "play") return fakePlayButton;
@@ -1202,6 +1208,7 @@ runInNewContext(lottieRuntimeScript, {
       if (id === "seek") return fakeSeekControl;
       if (id === "progress") return fakeProgressOutput;
       if (id === "time") return fakeTimeOutput;
+      if (id === "frame-jump") return fakeFrameJump;
       return {};
     }
   },
@@ -1321,3 +1328,23 @@ assert.equal(fakeTimeOutput.textContent, "0:00.37 / 0:00.40");
 fakeLottieEvents.complete();
 assert.equal(fakeTimeOutput.textContent, "0:00.40 / 0:00.40",
   "End event shows exact total duration");
+
+assert.equal(typeof fakeUiActions["frame-jump:change"], "function");
+assert.equal(fakeFrameJump.max, "12");
+fakeFrameJump.value = "7";
+fakeUiActions["frame-jump:change"]();
+assert.equal(fakeLottieInstance.currentFrame, 6);
+assert.equal(fakeLottieInstance.isPaused, true);
+assert.equal(fakeFrameOutput.textContent, "7/12 fot.");
+assert.equal(fakeTimeOutput.textContent, "0:00.20 / 0:00.40");
+for (const invalid of ["", "0", "13", "2.5", "NaN", "999999999999999999999", "1e2"]) {
+  const before = lottieCalls.length;
+  fakeFrameJump.value = invalid;
+  fakeUiActions["frame-jump:change"]();
+  assert.equal(lottieCalls.length, before, "Invalid frame rejected: " + invalid);
+  assert.equal(fakeFrameJump.value, "7");
+}
+fakeFrameJump.value = "12";
+fakeUiActions["frame-jump:change"]();
+assert.equal(fakeLottieInstance.currentFrame, 11);
+assert.equal(fakeFrameOutput.textContent, "12/12 fot.");

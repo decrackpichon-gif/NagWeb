@@ -65,14 +65,16 @@ html,body{width:100%;height:100%;margin:0;background:#f4f5f7;font-family:system-
 main{width:100%;height:calc(100% - 126px);display:grid;place-items:center}
 #animation{width:min(90%,340px);height:min(90%,340px);display:grid;place-items:center}
 #status{position:absolute;top:10px;left:12px;font-size:11px;color:#69717c}
-#transport{position:absolute;bottom:0;left:0;right:0;min-height:116px;box-sizing:border-box;padding:8px 12px;display:grid;grid-template-columns:repeat(4,auto) minmax(0,1fr) auto;grid-template-areas:"play restart prev next spacer frame" "seek seek seek seek seek progress" "time time time time time time";align-items:center;gap:7px;background:#fff;border-top:1px solid #dce1e7}
+#transport{position:absolute;bottom:0;left:0;right:0;min-height:116px;box-sizing:border-box;padding:8px 12px;display:grid;grid-template-columns:repeat(4,auto) minmax(0,1fr) auto;grid-template-areas:"play restart prev next spacer frame" "seek seek seek seek seek progress" "jump jump jump time time time";align-items:center;gap:7px;background:#fff;border-top:1px solid #dce1e7}
 #transport button{border:1px solid #c3c8d0;background:#fff;color:#111;border-radius:8px;padding:7px 10px;cursor:pointer}
 #transport button:disabled{opacity:.45;cursor:not-allowed}
 #play{grid-area:play}#restart{grid-area:restart}#previous{grid-area:prev}#next{grid-area:next}
 #seek{grid-area:seek;width:100%;min-width:0;accent-color:#5178b6;cursor:pointer}
 #progress{grid-area:progress;min-width:35px;text-align:right;font:12px ui-monospace,monospace;color:#48576b}
 #frame{grid-area:frame;min-width:65px;text-align:right;font:11px ui-monospace,monospace;color:#48576b}
-#time{grid-area:time;justify-self:center;font:12px ui-monospace,monospace;color:#48576b;font-variant-numeric:tabular-nums}
+#jump{grid-area:jump;display:flex;align-items:center;gap:5px;color:#48576b;font-size:11px;white-space:nowrap}
+#frame-jump{width:72px;min-width:0;padding:4px 6px;border:1px solid #c3c8d0;border-radius:6px;font:12px ui-monospace,monospace}
+#time{grid-area:time;justify-self:end;font:12px ui-monospace,monospace;color:#48576b;font-variant-numeric:tabular-nums}
 #time::before{content:"Tiempo de animación (1×) · ";color:#69717c}
 @media(max-width:430px){#transport{gap:5px;padding:7px}#transport button{padding:6px;font-size:11px}#frame{font-size:10px}}
 </style></head><body>
@@ -86,6 +88,7 @@ main{width:100%;height:calc(100% - 126px);display:grid;place-items:center}
   <output id="frame" aria-live="off">1/1 fot.</output>
   <input type="range" id="seek" min="0" max="100" step="0.1" value="0" aria-label="Posición de la animación; flechas para avanzar de a un fotograma">
   <output id="progress" for="seek">0%</output>
+  <label id="jump" for="frame-jump">Ir al fotograma <input id="frame-jump" type="number" min="1" step="1" value="1" aria-label="Número exacto de fotograma"></label>
   <output id="time" aria-label="Tiempo transcurrido y duración total de la animación a velocidad original">0:00.00 / 0:00.00</output>
 </div>
 <script src="${safePlayerUrl}"></script>
@@ -99,6 +102,7 @@ const frame = document.getElementById("frame");
 const seek = document.getElementById("seek");
 const progress = document.getElementById("progress");
 const time = document.getElementById("time");
+const frameJump = document.getElementById("frame-jump");
 try {
   if (!window.lottie?.loadAnimation) throw new Error("El reproductor local no está disponible");
   const animationData = ${animationData};
@@ -151,6 +155,8 @@ try {
     if (!count || !Number.isFinite(current)) return;
     const index = Math.max(0, Math.min(count - 1, Math.floor(current)));
     frame.textContent = (index + 1) + "/" + count + " fot.";
+    frameJump.max = String(count);
+    if (document.activeElement !== frameJump) frameJump.value = String(index + 1);
     previous.disabled = index === 0;
     next.disabled = index === count - 1;
   };
@@ -218,6 +224,21 @@ try {
   });
   previous.addEventListener("click", () => stepFrame(-1));
   next.addEventListener("click", () => stepFrame(1));
+  frameJump.addEventListener("change", () => {
+    const count = frameCount();
+    const text = frameJump.value.trim();
+    const index = Number(text);
+    if (!count || !/^[0-9]+$/.test(text) ||
+        !Number.isSafeInteger(index) || index < 1 || index > count) {
+      frameJump.value = String(
+        Math.max(1, Math.min(count || 1, Math.floor(Number(instance.currentFrame) || 0) + 1))
+      );
+      return;
+    }
+    instance.goToAndStop(index - 1, true);
+    syncFrame();
+    sync();
+  });
   restart.addEventListener("click", () => seekTo(0));
   window.addEventListener("message", (event) => {
     if (event.source !== window.parent) return;
@@ -260,6 +281,7 @@ try {
   previous.disabled = true;
   next.disabled = true;
   seek.disabled = true;
+  frameJump.disabled = true;
 }
 </script></body></html>`;
 }
