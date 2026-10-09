@@ -7,12 +7,18 @@ function createCamera(){
  function curveTension(v){var n=Number.isFinite(+v)?Math.max(-100,Math.min(100,+v)):0;return Object.is(n,-0)?0:n;}
  function handlePrefix(side){return side==='in'?'curveIn':'curveOut';}
  function handleFree(k,side){return !!(k&&k[handlePrefix(side)+'Free']);}
- function targetEligible(e,s){return !!e&&!!s&&s.layout==='free'&&layerEligible(e,s)&&Number.isFinite(+e.x)&&Number.isFinite(+e.y);}
+ // Anchored shape3d is a look target, but never a CSS camera layer.
+ function spatialTargetEligible(e){return !!e&&e.type==='shape3d'&&e.anchor!==false&&!e.parent&&!e.fixed&&!e.modal&&!e.nwMotionInstance;}
+ function targetEligible(e,s){return !!e&&!!s&&s.layout==='free'&&(layerEligible(e,s)||spatialTargetEligible(e))&&Number.isFinite(+e.x)&&Number.isFinite(+e.y);}
  function targetMotion(e){return {id:e.id,sdKeyframesEnabled:e.sdKeyframesEnabled,sdKeyframes:Array.isArray(e.sdKeyframes)?e.sdKeyframes:[],sdStart:e.sdStart,sdEnd:e.sdEnd,sdSpan:e.sdSpan,sdEnter:e.sdEnter,sdExit:e.sdExit,sdMoveX:e.sdMoveX,sdMoveY:e.sdMoveY,sdRotate:e.sdRotate,sdScale:e.sdScale};}
- function targetConfig(e){return {id:String(e.id),x:+e.x,y:+e.y,z:number(e.sdCameraDepth),motion:targetMotion(e)};}
+ function targetConfig(e){
+  var target={id:String(e.id),x:+e.x,y:+e.y,z:number(e.sdCameraDepth),motion:targetMotion(e)};
+  if(e.type==='shape3d'){target.kind='shape3d';target.offZ=Number.isFinite(+e.offZ)?+e.offZ:0;}
+  return target;
+ }
  function config(s){
   if(!s.sdCameraEnabled||!s.sdEnabled||s.nwMotionSource==='time'||s.layout==='horizontal')return null;
-  return {pathMode:s.sdCameraPathMode==='smooth'?'smooth':'linear',orientationMode:s.sdCameraOrientationMode==='lookAt'?'lookAt':'manual',lookPathMode:s.sdCameraLookPathMode==='smooth'?'smooth':'linear',lookFrames:normalizeLook(s.sdCameraLookFrames),targets:(s.elements||[]).filter(function(e){return targetEligible(e,s);}).map(targetConfig),responsive:!!s.sdCameraResponsive,referenceWidth:Math.max(320,Math.min(2400,Number.isFinite(+s.sdCameraReferenceWidth)&&+s.sdCameraReferenceWidth>0?+s.sdCameraReferenceWidth:1000)),containers:(s.elements||[]).filter(function(e){return e.type==='container'&&layerEligible(e,s);}).map(function(e){return e.id;}),layers:(s.elements||[]).filter(function(e){return layerEligible(e,s);}).map(function(e){return {id:e.id,z:number(e.sdCameraDepth)};}),frames:normalize(s.sdCameraFrames),start:{x:number(s.sdCameraStartX),y:number(s.sdCameraStartY),z:number(s.sdCameraStartZ)},end:{x:number(s.sdCameraEndX),y:number(s.sdCameraEndY),z:number(s.sdCameraEndZ)}};
+  return {pathMode:s.sdCameraPathMode==='smooth'?'smooth':'linear',orientationMode:s.sdCameraOrientationMode==='lookAt'?'lookAt':'manual',lookPathMode:s.sdCameraLookPathMode==='smooth'?'smooth':'linear',lookFrames:normalizeLook(s.sdCameraLookFrames),targets:(s.elements||[]).filter(function(e){return targetEligible(e,s);}).map(targetConfig),responsive:!!s.sdCameraResponsive,referenceWidth:Math.max(320,Math.min(2400,Number.isFinite(+s.sdCameraReferenceWidth)&&+s.sdCameraReferenceWidth>0?+s.sdCameraReferenceWidth:1000)),spatialPerspective:Math.max(1,Number.isFinite(+s.sdPerspective)&&+s.sdPerspective>0?+s.sdPerspective:1000),containers:(s.elements||[]).filter(function(e){return e.type==='container'&&layerEligible(e,s);}).map(function(e){return e.id;}),layers:(s.elements||[]).filter(function(e){return layerEligible(e,s);}).map(function(e){return {id:e.id,z:number(e.sdCameraDepth)};}),frames:normalize(s.sdCameraFrames),start:{x:number(s.sdCameraStartX),y:number(s.sdCameraStartY),z:number(s.sdCameraStartZ)},end:{x:number(s.sdCameraEndX),y:number(s.sdCameraEndY),z:number(s.sdCameraEndZ)}};
  }
  function layerEligible(e,s){return !!e&&!e.parent&&!e.fixed&&!e.modal&&!e.nwMotionInstance&&['shape3d','light3d','spacer'].indexOf(e.type)<0&&(e.type!=='container'||!!s&&(s.layout==='free'||s.layout==='stack'));}
  function layer(c,id){return c&&(c.layers||[]).find(function(l){return l.id===id;})||null;}
@@ -84,7 +90,12 @@ function createCamera(){
   var height=size&&Number.isFinite(+size.height)&&+size.height>0?+size.height:width;
   var track=compiled&&compiled.targetTracks&&compiled.targetTracks[id]||model.compile(t.motion||{id:t.id});
   var motion=model.evaluate(track,p,ease,false);
-  return {x:number((t.x-50)/100*width+motion.x),y:number((t.y-50)/100*height+motion.y),z:number(t.z+motion.z)};
+  // Spatial holder Three Z = -perspective + offZ*(height/(12*tan(25deg))) + motion.z.
+  // Camera Z increases forward, i.e. opposite to Three's world Z.
+  var z=t.kind==='shape3d'?
+   number((c.spatialPerspective||1000)-t.offZ*(height/(12*Math.tan(25*Math.PI/180)))-motion.z):
+   number(t.z+motion.z);
+  return {x:number((t.x-50)/100*width+motion.x),y:number((t.y-50)/100*height+motion.y),z:z};
  }
  function resolvedLookFrames(c,p,model,ease,size,compiled){
   return lookFrames(c).map(function(f){if(!f.targetId)return f;var t=elementTarget(c,f.targetId,p,model,ease,size,compiled);return t?Object.assign({},f,t):f;});
@@ -356,6 +367,7 @@ function mapCurrent(s,pct){
 function mapObjectRole(type){
  var t=String(type||'').toLowerCase();
  if(t==='container')return 'container';
+ if(t==='shape3d')return '3d';
  if(/^(img|image|photo|picture|gallery|video|svg)$/.test(t))return 'image';
  if(/^(heading|text|paragraph|richtext|title|subtitle|label)$/.test(t))return 'text';
  return 'other';
@@ -381,9 +393,9 @@ function mapObjectFootprint(entry,spec){
 }
 function mapObjectShapeHtml(entry,spec){
  var box=mapObjectFootprint(entry,spec),role=entry.role||'other',
-     stroke=role==='container'?'#c4b5fd':role==='image'?'#fbbf24':role==='text'?'#93c5fd':'#5eead4',
-     fill=role==='container'?'#a78bfa':role==='image'?'#f59e0b':role==='text'?'#60a5fa':'#2dd4bf',
-     glyph=role==='text'?'T':role==='image'?'▧':role==='container'?'□':'•';
+     stroke=role==='container'?'#c4b5fd':role==='image'?'#fbbf24':role==='text'?'#93c5fd':role==='3d'?'#f0abfc':'#5eead4',
+     fill=role==='container'?'#a78bfa':role==='image'?'#f59e0b':role==='text'?'#60a5fa':role==='3d'?'#d946ef':'#2dd4bf',
+     glyph=role==='text'?'T':role==='image'?'▧':role==='container'?'□':role==='3d'?'⬡':'•';
  if(!box)return '<circle data-camera-scene-object-symbol r="2.4" stroke="'+stroke+'" stroke-width=".9" fill="'+fill+'" fill-opacity=".22"/>'+
   '<text x="0" y=".9" font-size="2.7" fill="'+stroke+'" text-anchor="middle">'+glyph+'</text>';
  return '<rect data-camera-scene-object-footprint data-camera-scene-object-width="'+box.width+'" data-camera-scene-object-height="'+box.height+'" x="'+(-box.width/2)+'" y="'+(-box.height/2)+'" width="'+box.width+'" height="'+box.height+'" rx="'+(role==='container'?'1':'.5')+'" stroke="'+stroke+'" stroke-width="'+(role==='container'?'1':'.65')+'" stroke-dasharray="'+(role==='container'?'1.5 1':'none')+'" fill="'+fill+'" fill-opacity="'+(role==='container'?'.08':'.19')+'"/>'+
@@ -1730,8 +1742,8 @@ function spatialMap(s,list,k){
  html+='<div data-camera-scene-objects-info style="font-size:11px;margin:5px 0">'+
   (objectPlan&&objectPlan.total?
    '<label style="display:inline-flex;gap:6px;align-items:center"><input type="checkbox" data-camera-scene-objects-toggle'+(mapObjectVisible[s.id]===false?'':' checked')+'> Mostrar objetos de la escena ('+objectPlan.entries.length+(objectPlan.total>objectPlan.entries.length?' de '+objectPlan.total:'')+')</label>'+
-   '<div data-camera-scene-objects-legend style="font-size:10px;opacity:.85;margin-top:3px">T Texto · ▧ Imagen · □ Contenedor · • Otro</div>'+
-    '<div style="opacity:.7;font-size:10px">Contornos orientativos según ancho/alto del Lienzo libre, sin escala animada, perspectiva, giro ni oclusiones. No se pueden arrastrar todavía.</div>':
+   '<div data-camera-scene-objects-legend style="font-size:10px;opacity:.85;margin-top:3px">T Texto · ▧ Imagen · □ Contenedor · ⬡ 3D · • Otro</div>'+
+    '<div style="opacity:.7;font-size:10px">Contornos orientativos según ancho/alto del Lienzo libre, sin escala animada, perspectiva, giro ni oclusiones. En 3D representan el ancla, no la geometría del modelo. No se pueden arrastrar todavía.</div>':
    '<div style="opacity:.7">'+(s.layout!=='free'?'Las guías de objetos están disponibles en Lienzo libre.':'No hay objetos compatibles para mostrar en esta escena.')+'</div>')+
   '</div>';
  html+=mapObjectInfoHtml(s,objectPlan,progress(s));
