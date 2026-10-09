@@ -2,6 +2,7 @@ import {
   createResourceInstance,
   selectArtifact
 } from "./instance.mjs";
+import { htmlWithCustomStyle } from "./html-css-customization.mjs";
 
 function cssVariableValues(resource, instance) {
   const output = {};
@@ -62,7 +63,7 @@ export function buildInsertDescriptor(resource, options = {}) {
       resourceId: resource.id,
       instance,
       payload: {
-        html: artifact?.content || "",
+        html: htmlWithCustomStyle(resource, instance.values, artifact?.content),
         dependencies: resource.runtime?.registryDependencies || [],
         theme: instance.values.theme || "light",
         cssVariables: {

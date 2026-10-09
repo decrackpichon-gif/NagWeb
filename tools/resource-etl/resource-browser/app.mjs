@@ -3,6 +3,7 @@ import {
 } from "../src/runtime/persistent-vault-client.mjs";
 import { defaultEditableValues } from "../src/runtime/instance.mjs";
 import { describeEditableControls } from "../src/runtime/editable-controls.mjs";
+import { htmlWithCustomStyle } from "../src/runtime/html-css-customization.mjs";
 import { buildLottieBrowserPreview } from "../src/preview/lottie-browser-preview.mjs";
 import { buildCssShakeBrowserPreview } from "../src/preview/csshake-browser-preview.mjs";
 import { buildMagicCssBrowserPreview } from "../src/preview/magiccss-browser-preview.mjs";
@@ -194,7 +195,7 @@ async function previewDoc(resource, values = {}) {
   if (renderer === "nagweb-html-tailwind" && provider !== "hyperui") {
     const artifact = mainArtifact(resource);
     if (!artifact?.content) return null;
-    return `<!doctype html><meta name="viewport" content="width=device-width"><style>html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#f4f5f7}.root{display:grid;place-items:center;min-width:100%;min-height:100%;}</style><div class="root" style="${cssVarStyle(resource, values)}">${artifact.content}</div>`;
+    return `<!doctype html><meta name="viewport" content="width=device-width"><style>html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#f4f5f7}.root{display:grid;place-items:center;min-width:100%;min-height:100%;}</style><div class="root" style="${cssVarStyle(resource, values)}">${htmlWithCustomStyle(resource, values, artifact.content)}</div>`;
   }
 
   if (renderer === "nagweb-css-inline-effect") {

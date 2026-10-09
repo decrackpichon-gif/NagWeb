@@ -17,6 +17,7 @@ import {
 import {
   transformLucideIcon,
   transformMagicUiComponent,
+  transformUiverseComponent,
   transformSpinKitLoader,
   transformMagicCssEffect
 } from "./light-transformers.mjs";
@@ -31,6 +32,7 @@ import {
 } from "./runtime/instance.mjs";
 import { buildInsertDescriptor } from "./runtime/insert-adapters.mjs";
 import { describeCssEditableControls, describeEditableControls } from "./runtime/editable-controls.mjs";
+import { htmlCssPropertyStyle } from "./runtime/html-css-customization.mjs";
 import {
   NAGWEB_RESOURCE_APPLY_PROTOCOL,
   NAGWEB_RESOURCE_APPLY_RESULT_TYPE,
@@ -1508,3 +1510,53 @@ assert.equal(fakeMarkList.items.length, 7);
 // Editing preview-only markers must never add fields to NagWeb Apply values.
 assert.deepEqual(editedLottieEnvelope.descriptor.payload.speed, 2);
 assert.equal(editedLottieEnvelope.descriptor.payload.loop, false);
+
+const editableUiverse = transformUiverseComponent({
+  repository: "https://github.com/uiverse-io/galaxy",
+  commit: "test-commit",
+  item: {
+    metadata: { category: "Buttons", author: "test-author", slug: "sample-button" },
+    content: '<style>.sample-button{color:red}</style><button class="sample-button">Hola</button>',
+    entry: { path: "Buttons/test-author_sample-button.html", sha: "abc" }
+  }
+});
+assert.equal(editableUiverse.source.provider, "uiverse");
+assert.deepEqual(describeEditableControls(editableUiverse).map(p => p.id),
+  ["opacity", "scale"], "Uiverse gets two functional customization controls");
+assert.equal(htmlCssPropertyStyle(editableUiverse, { opacity: 0.65, scale: 1.4 }),
+  "opacity:0.65;scale:1.4");
+const tailoredUiverse = buildResourceApplyEnvelope(editableUiverse, {
+  values: { opacity: 0.65, scale: 1.4 }
+});
+assert.equal(tailoredUiverse.descriptor.kind, "html");
+assert.match(tailoredUiverse.descriptor.payload.html,
+  /^<div data-nagweb-custom-style="1" style="opacity:0\.65;scale:1\.4">/);
+assert.match(tailoredUiverse.descriptor.payload.html, /<button class="sample-button">Hola<\/button><\/div>$/);
+assert.deepEqual({
+  opacity: tailoredUiverse.descriptor.instance.values.opacity,
+  scale: tailoredUiverse.descriptor.instance.values.scale
+}, { opacity: 0.65, scale: 1.4 });
+assert.equal(htmlCssPropertyStyle(editableUiverse, {
+  opacity: "0;position:absolute", scale: Infinity
+}), "opacity:1;scale:1", "Invalid styles cannot inject CSS");
+assert.equal(htmlCssPropertyStyle({
+  ...editableUiverse,
+  editableProps: [
+    { ...editableUiverse.editableProps[0],
+      binding: { type: "css-property", property: "background-image" } },
+    { ...editableUiverse.editableProps[1],
+      constraints: { min: 0, max: 999, step: 0.05 } }
+  ]
+}, { opacity: 0.2, scale: 5 }), "",
+"Unapproved property metadata cannot become an editable CSS style");
+assert.deepEqual(describeEditableControls({
+  ...editableUiverse, editableProps: [{
+    ...editableUiverse.editableProps[0],
+    binding: { type: "css-property", property: "background-image" }
+  }]
+}), [], "Unsupported CSS property does not surface as a fake control");
+assert.equal(htmlCssPropertyStyle(editableSpinKit, { color: "#ee4488" }), "");
+assert.equal(buildResourceApplyEnvelope(editableSpinKit, {
+  values: { color: "#ee4488" }
+}).descriptor.payload.html, editableSpinKit.artifacts[0].content,
+  "Legacy CSS variable HTML resources are not wrapped unexpectedly");

@@ -1510,6 +1510,18 @@ export function transformUiverseComponent({ repository, commit, item }) {
         constraints: { min: 0, max: 1, step: 0.01 },
         responsive: true,
         animatable: true
+      },
+      {
+        id: "scale",
+        label: "Escala",
+        group: "Apariencia",
+        valueType: "number",
+        control: "slider",
+        defaultValue: 1,
+        binding: { type: "css-property", property: "scale" },
+        constraints: { min: 0.5, max: 2, step: 0.05 },
+        responsive: true,
+        animatable: true
       }
     ],
     compatibility: {

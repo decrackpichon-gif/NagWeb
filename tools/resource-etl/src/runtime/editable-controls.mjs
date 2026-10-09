@@ -1,3 +1,5 @@
+import { isSupportedHtmlCssProperty } from "./html-css-customization.mjs";
+
 // Build safe metadata-driven controls for pre-insert customization.
 export function describeEditableControls(resource) {
   const renderer = resource?.runtime?.renderer;
@@ -22,8 +24,9 @@ export function describeEditableControls(resource) {
     ) continue;
 
     const validBinding = renderer === "nagweb-html-tailwind"
-      ? prop.binding?.type === "css-variable" &&
-        /^--[a-z][a-z0-9-]*$/i.test(prop.binding?.variable || "")
+      ? (prop.binding?.type === "css-variable" &&
+        /^--[a-z][a-z0-9-]*$/i.test(prop.binding?.variable || "")) ||
+        isSupportedHtmlCssProperty(prop)
       : renderer === "nagweb-svg"
         ? ["size", "stroke", "strokeWidth"].includes(id) &&
           prop.binding?.type === "runtime" &&
