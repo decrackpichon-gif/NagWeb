@@ -28,3 +28,21 @@ Se agregaron casos para elegibilidad y exclusión CSS, Z real del renderizador (
 Esta etapa **no** agrega detección del centro geométrico real o dinámico del GLB, seguimiento de huesos o morphs, oclusión HTML/WebGL ni selección de puntos dentro de una malla. La distancia del inspector hasta el 3D se refiere al pivote del ancla. Las pruebas nuevas están añadidas al repositorio, pero requieren correr la suite Chromium en un entorno con dependencias y fixture real para dar por validada la experiencia de punta a punta.
 
 No se despliega en Vercel ni se integra a `main`.
+
+## Punto de enfoque ajustable en un objetivo 3D
+
+El modelo puede tener un pivote técnico que no coincida con el lugar al que conviene mirar (por ejemplo, el torso de un personaje en vez del rostro).
+
+Con **Mirar hacia** y un objetivo `shape3d` anclado seleccionado, el panel de cámara ofrece **Enfoque X/Y/Z (px)**. Son desplazamientos del punto de mirada relativos al pivote del modelo, sin trasladar ni modificar su geometría:
+
+- X positivo: mirar más a la derecha.
+- Y negativo: mirar más arriba.
+- Z positivo: punto más próximo a la cámara en la convención de cámara del Director.
+
+Cada keyframe de mirada puede conservar un desplazamiento distinto, con interpolación a través de la trayectoria de mirada existente. El punto ajustado sigue el movimiento de los keyframes del modelo y se refleja en el mapa. Los tres valores están limitados a ±4000 px, se normalizan y forman parte del mismo historial de Deshacer. Los proyectos antiguos sin desplazamientos no cambian.
+
+Al elegir otro objetivo se restablecen los desplazamientos a cero para evitar arrastrar el ajuste de un modelo ajeno. Al pasar de un modelo a **Punto XYZ**, el sistema guarda el punto ajustado efectivo del instante seleccionado y elimina el vínculo: no salta otra vez al pivote.
+
+Se agregaron pruebas de modelo y smoke de navegador para offsets XYZ, interpolación, conservación de proyectos antiguos, cambio de mirada, edición sin tocar el GLB, desvinculación sin salto y Deshacer. El código y los tests fueron revisados sintácticamente; el smoke completo en Chromium queda pendiente de ejecución.
+
+El ajuste desplaza el **punto de mirada** en el sistema de coordenadas de la escena, no rota ese offset según los huesos o la orientación local de una malla animada. Para seguir la cara de un personaje con animaciones esqueléticas habría que añadir un ancla por hueso o por nodo GLB.
