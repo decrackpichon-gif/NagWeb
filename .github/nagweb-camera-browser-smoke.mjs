@@ -73,7 +73,39 @@ export async function runCameraBrowserSmoke(page){
     assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),originalFrames,'Undo restores zoomed/panned point edit');
    }
   }
+  // Micro-etapa 48: lateral Z/Y map and existing camera gestures share correct world axes.
+  await page.select('[data-camera-map-plane]','side');
+  await page.$eval('[data-camera-map]',node=>node.scrollIntoView({block:'center'}));
+  assert.equal(await page.$eval('[data-camera-map-grid] text:last-child',el=>el.textContent),'Z / Y','Lateral grid shows Z on horizontal and Y on vertical');
+  assert.equal(await page.$eval('[data-camera-map-fov-toggle]',el=>el.disabled),true,'Lateral view disables the edge-on projected FOV shape');
+  assert.equal(await page.$eval('[data-camera-fov-guide]',el=>el.style.display),'none','Lateral map does not invent a field-of-view area');
+  for(const zoom of [1,1.5,3]){
+   await page.click('[data-camera-map-zoom="0"]');
+   const steps=zoom===1?0:zoom===1.5?2:4;
+   for(let i=0;i<steps;i++)await page.click('[data-camera-map-zoom="1"]');
+   if(zoom>1)await page.click('[data-camera-map-pan="right"]');
+   await page.$eval('[data-camera-map]',el=>el.scrollIntoView({block:'center'}));
+   const before=await page.evaluate(()=>{
+    const node=document.querySelector('[data-camera-map-point="50"]'),rect=node.getBoundingClientRect();
+    const map=document.querySelector('[data-camera-map]'),mr=map.getBoundingClientRect();
+    return {x:rect.left+rect.width/2,y:rect.top+rect.height/2,width:mr.width,height:mr.height,range:+map.dataset.range,
+     key:{...sec().sdCameraFrames.find(k=>k.at===50)},history:history.length};
+   });
+   await page.mouse.move(before.x,before.y);await page.mouse.down();
+   await page.mouse.move(before.x+12,before.y+8,{steps:4});await page.mouse.up();
+   const after=await page.evaluate(()=>({key:sec().sdCameraFrames.find(k=>k.at===50),history:history.length}));
+   assert.ok(Math.abs(after.key.z-before.key.z-24*before.range/before.width)<1.1,'Lateral drag shifts Z at zoom '+zoom);
+   assert.ok(Math.abs(after.key.y-before.key.y-16*before.range/before.height)<1.1,'Lateral drag shifts Y at zoom '+zoom);
+   assert.equal(after.key.x,before.key.x,'Lateral drag never changes hidden X at zoom '+zoom);
+   assert.equal(after.history,before.history+1,'Lateral drag records one undo at zoom '+zoom);
+   await page.evaluate(()=>undo());
+   assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),originalFrames,'Lateral drag undo restores the original 3D frames');
+  }
+  await page.click('[data-camera-map-zoom="0"]');
   await page.select('[data-camera-map-plane]','top');
+  assert.equal(await page.$eval('[data-camera-map-fov-toggle]',el=>el.disabled),false,'Leaving side view re-enables top-view FOV control');
+  console.log('Camera lateral Z/Y: correct drag axes at three zoom levels, undo, and FOV disabled only in side view OK');
+    await page.select('[data-camera-map-plane]','top');
   await page.click('[data-camera-map-zoom="0"]');
   await page.focus('[data-camera-map]');
   await page.$eval('[data-camera-map]',n=>n.scrollIntoView({block:'center'}));
