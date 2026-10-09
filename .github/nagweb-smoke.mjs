@@ -49,13 +49,15 @@ import './nagweb-parallax-totem-model-test.mjs';
 import './nagweb-vortex-model-test.mjs';
 import './nagweb-globe-model-test.mjs';
 import './nagweb-orbit-globe-model-test.mjs';
+import './nagweb-marquee-model-test.mjs';
+import {runMotionMarqueeSmoke} from './nagweb-motion-marquee-smoke.mjs';
 import {runMotionOrbitGlobeSmoke} from './nagweb-motion-orbit-globe-smoke.mjs';
 import {runMotionGlobeSmoke} from './nagweb-motion-globe-smoke.mjs';
 import {runMotionParallaxTotemSmoke} from './nagweb-motion-parallax-totem-smoke.mjs';
 import {runMotionVortexSmoke} from './nagweb-motion-vortex-smoke.mjs';
 import {runMotionTotemWallSmoke} from './nagweb-motion-totem-wall-smoke.mjs';
 import {runMotionSphereCascadeSmoke} from './nagweb-motion-sphere-cascade-smoke.mjs';
-if(['sphere-wall','sphere-cascade','totem-wall','parallax-totem','vortex-spin','sphere-globe','orbit-globe'].includes(process.env.NAGWEB_SMOKE_SUITE))await import('./nagweb-sphere-renderer-test.mjs');
+if(['sphere-wall','sphere-cascade','totem-wall','parallax-totem','vortex-spin','sphere-globe','orbit-globe','mosaic-marquee'].includes(process.env.NAGWEB_SMOKE_SUITE))await import('./nagweb-sphere-renderer-test.mjs');
 import {runMotionSphereSmoke} from './nagweb-motion-sphere-smoke.mjs';
 import './nagweb-focus-slider-model-test.mjs';
 import {runMotionFocusSliderSmoke} from './nagweb-motion-focus-slider-smoke.mjs';
@@ -139,7 +141,7 @@ import {runMotionIsoOrbitSmoke} from './nagweb-motion-iso-orbit-smoke.mjs';
 import {runMotionBatchImagesSmoke} from './nagweb-motion-batch-images-smoke.mjs';
 
 const suite=process.env.NAGWEB_SMOKE_SUITE||'all';
-if(!['all','procedural','editor','diagonal','grid','zoom','drop','shift','spiral','film','totem','peel','burst','photo','wheel','spin','bottom','cover','cover-vertical','ring','ring-vertical','trail','dance','deck','showcase','split','wipe','stripe','mosaic','hero','flip','orbit-carousel','column-drift','spotlight','focus-orbit','focus-slider','sphere-wall','sphere-cascade','totem-wall','parallax-totem','vortex-spin','sphere-globe','orbit-globe'].includes(suite))throw new Error('Unknown NagWeb smoke suite: '+suite);
+if(!['all','procedural','editor','diagonal','grid','zoom','drop','shift','spiral','film','totem','peel','burst','photo','wheel','spin','bottom','cover','cover-vertical','ring','ring-vertical','trail','dance','deck','showcase','split','wipe','stripe','mosaic','hero','flip','orbit-carousel','column-drift','spotlight','focus-orbit','focus-slider','sphere-wall','sphere-cascade','totem-wall','parallax-totem','vortex-spin','sphere-globe','orbit-globe','mosaic-marquee'].includes(suite))throw new Error('Unknown NagWeb smoke suite: '+suite);
 
 const feedbackSource=fs.readFileSync(new URL('../js/nagweb-feedback-v16.js',import.meta.url),'utf8');
 const directorSource=fs.readFileSync(new URL('../js/nagweb-scroll-director-v16.js',import.meta.url),'utf8');
@@ -400,6 +402,7 @@ if(suite==='all'||suite==='sphere-wall'){await runMotionSphereSmoke(page);await 
 if(suite==='all'||suite==='sphere-cascade'){await runMotionSphereCascadeSmoke(page);await runMotionStreamPlacementSmoke(page,'sphere-cascade');await runMotionBatchImagesSmoke(page,['sphere-cascade']);}
 if(suite==='all'||suite==='totem-wall'){await runMotionTotemWallSmoke(page);await runMotionStreamPlacementSmoke(page,'totem-wall');await runMotionBatchImagesSmoke(page,['totem-wall']);}
 if(suite==='all'||suite==='parallax-totem'){await runMotionParallaxTotemSmoke(page);await runMotionStreamPlacementSmoke(page,'parallax-totem');await runMotionBatchImagesSmoke(page,['parallax-totem']);}
+if(suite==='all'||suite==='mosaic-marquee'){await runMotionMarqueeSmoke(page);await runMotionStreamPlacementSmoke(page,'mosaic-marquee');await runMotionBatchImagesSmoke(page,['mosaic-marquee']);}
 if(suite==='all'||suite==='orbit-globe'){await runMotionOrbitGlobeSmoke(page);await runMotionStreamPlacementSmoke(page,'orbit-globe');await runMotionBatchImagesSmoke(page,['orbit-globe']);}
 if(suite==='all'||suite==='sphere-globe'){await runMotionGlobeSmoke(page);await runMotionStreamPlacementSmoke(page,'sphere-globe');await runMotionBatchImagesSmoke(page,['sphere-globe']);}
 if(suite==='all'||suite==='vortex-spin'){await runMotionVortexSmoke(page);await runMotionStreamPlacementSmoke(page,'vortex-spin');await runMotionBatchImagesSmoke(page,['vortex-spin']);}
