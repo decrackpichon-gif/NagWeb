@@ -58,6 +58,11 @@ import {
   isSupportedUiverseCssTiming
 } from "./runtime/uiverse-timing.mjs";
 import {
+  inferUiverseCssMultiTimingProps,
+  applyUiverseCssMultiTimingValues,
+  isSupportedUiverseCssMultiTiming
+} from "./runtime/uiverse-multi-timing.mjs";
+import {
   inferUiverseCssColorProps,
   effectiveUiverseEditableProps,
   applyUiverseCssColorValues
@@ -1606,6 +1611,7 @@ try {
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-spacing.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-type-borders.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-timing.mjs"))).isFile());
+  assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-multi-timing.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "resource-browser", "vendor", "lottie_light.min.js"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, ".nojekyll"))).isFile());
   await assert.rejects(stat(path.join(publicPreviewDir, "src", "cli.mjs")),
@@ -2139,3 +2145,125 @@ assert.equal(inferUiverseCssTimingProps(
   '<style>'+Array.from({length:11},(_v,i)=>
     '.t'+i+'{animation-delay:'+i+'s}').join('')+'</style>').length,8,
   "Limit the number of controls on heavily animated components");
+
+
+const layeredAnimationCss='<style>' +
+  '.layered{animation:spin 1s ease .2s infinite, ' +
+  'fade 600ms cubic-bezier(.2,.4,0,1) -100ms both;' +
+  'transition:opacity 250ms ease, transform .8s steps(4,end) 300ms}' +
+  '/* .comment{animation:ghost 1s,fade 2s} */' +
+  '.after:before{content:"animation:ghost 1s,fade 3s";}' +
+  '.skip{animation:spin 1s, fade var(--speed);' +
+  'transition:opacity 1s,transform calc(.3s + .2s)}' +
+  '</style><div data-anim="animation:ghost 1s,fade 2s"></div>';
+const multiProperties=inferUiverseCssMultiTimingProps(layeredAnimationCss);
+assert.deepEqual(multiProperties.map(p=>
+  [p.binding.property,p.binding.trackIndex,p.binding.role,p.defaultValue]),[
+  ["animation",0,"duration",1],
+  ["animation",0,"delay",0.2],
+  ["animation",1,"duration",0.6],
+  ["animation",1,"delay",-0.1],
+  ["transition",0,"duration",0.25],
+  ["transition",1,"duration",0.8],
+  ["transition",1,"delay",0.3]
+], "Two-track CSS timings are detected independently, even with nested easing commas");
+assert.deepEqual(multiProperties.map(p=>p.id),
+  ["uiverseTrack1","uiverseTrack2","uiverseTrack3","uiverseTrack4",
+    "uiverseTrack5","uiverseTrack6","uiverseTrack7"]);
+const persistedLayered={
+  ...persistedUiverse,
+  artifacts:[{...persistedUiverse.artifacts[0],content:layeredAnimationCss}]
+};
+assert.deepEqual(describeEditableControls(persistedLayered).map(p=>p.id)
+  .filter(id=>id.startsWith("uiverseTrack")),
+  multiProperties.map(p=>p.id),
+  "Previously saved Uiverse resources automatically gain multi-track controls");
+assert.equal(isSupportedUiverseCssMultiTiming(persistedLayered,multiProperties[3]),true);
+assert.equal(isSupportedUiverseCssMultiTiming(persistedLayered,{
+  ...multiProperties[3],
+  binding:{...multiProperties[3].binding,trackIndex:20}
+}),false,"Forged track metadata cannot provide fake controls");
+assert.equal(applyUiverseCssMultiTimingValues(persistedLayered,{},layeredAnimationCss),
+  layeredAnimationCss,"Unchanged multi-track CSS retains exact source bytes");
+const updatedLayered=buildResourceApplyEnvelope(persistedLayered,{
+  values:{
+    uiverseTrack1:2,
+    uiverseTrack2:0.5,
+    uiverseTrack3:0.9,
+    uiverseTrack4:-0.25,
+    uiverseTrack5:0.4,
+    uiverseTrack6:1.25,
+    uiverseTrack7:0.75
+  }
+});
+assert.match(updatedLayered.descriptor.payload.html,
+  /animation:spin 2s ease 0.5s infinite, fade 900ms cubic-bezier\(.2,.4,0,1\) -250ms both/);
+assert.match(updatedLayered.descriptor.payload.html,
+  /transition:opacity 400ms ease, transform 1.25s steps\(4,end\) 750ms/);
+assert.match(updatedLayered.descriptor.payload.html,
+  /\/\* \.comment\{animation:ghost 1s,fade 2s\} \*\//);
+assert.match(updatedLayered.descriptor.payload.html,
+  /content:"animation:ghost 1s,fade 3s"/);
+assert.match(updatedLayered.descriptor.payload.html,
+  /animation:spin 1s, fade var\(--speed\)/);
+assert.match(updatedLayered.descriptor.payload.html,
+  /transition:opacity 1s,transform calc\(.3s \+ .2s\)/);
+assert.match(updatedLayered.descriptor.payload.html,
+  /data-anim="animation:ghost 1s,fade 2s"/);
+assert.equal(updatedLayered.descriptor.instance.values.uiverseTrack3,0.9);
+assert.deepEqual(updatedLayered.resource.editableProps
+  .filter(p=>p.id.startsWith("uiverseTrack")).map(p=>p.id),
+  multiProperties.map(p=>p.id),
+  "Apply envelope preserves each track's own editable metadata");
+assert.equal(persistedLayered.artifacts[0].content,layeredAnimationCss,
+  "Customization does not mutate the original stored resource");
+assert.equal(applyUiverseCssMultiTimingValues(persistedLayered,{
+  uiverseTrack1:100,uiverseTrack2:-20,uiverseTrack3:"0.6s",
+  uiverseTrack4:Infinity,uiverseTrack5:0.124,uiverseTrack6:NaN,
+  uiverseTrack7:null
+},layeredAnimationCss),layeredAnimationCss,
+  "Out-of-range, invalid and out-of-step values leave source unchanged");
+const reimportLayered=transformUiverseComponent({
+  repository:"https://github.com/uiverse-io/galaxy",commit:"test",
+  item:{metadata:{category:"Buttons",author:"designer",slug:"layered"},
+    content:layeredAnimationCss,entry:{path:"Buttons/designer_layered.html",sha:"a"}}
+});
+assert.deepEqual(reimportLayered.editableProps
+  .filter(p=>p.id.startsWith("uiverseTrack")).map(p=>p.id),
+  multiProperties.map(p=>p.id),
+  "New imports persist the same multi-track editable controls");
+
+const longhandTracks='<style>.list{' +
+  'animation-duration:1s,500ms;animation-delay:0s,-250ms;' +
+  'transition-duration:250ms,1s;transition-delay:0s,200ms' +
+  '}</style>';
+const longhandMulti=inferUiverseCssMultiTimingProps(longhandTracks);
+assert.deepEqual(longhandMulti.map(p=>
+  [p.binding.property,p.binding.trackIndex,p.binding.role,p.defaultValue]),[
+  ["animation-duration",0,"duration",1],["animation-duration",1,"duration",0.5],
+  ["animation-delay",0,"delay",0],["animation-delay",1,"delay",-0.25],
+  ["transition-duration",0,"duration",0.25],["transition-duration",1,"duration",1],
+  ["transition-delay",0,"delay",0],["transition-delay",1,"delay",0.2]
+],"Comma-separated duration and delay longhand lists get one control per track");
+const longhandResource={
+  ...persistedUiverse,artifacts:[{...persistedUiverse.artifacts[0],content:longhandTracks}]
+};
+const longhandResult=applyUiverseCssMultiTimingValues(longhandResource,{
+  uiverseTrack1:1.5,uiverseTrack2:0.75,
+  uiverseTrack3:0.2,uiverseTrack4:-0.5,
+  uiverseTrack5:0.4,uiverseTrack6:1.25,
+  uiverseTrack7:0.3,uiverseTrack8:0.45
+},longhandTracks);
+assert.match(longhandResult,/animation-duration:1.5s,750ms/);
+assert.match(longhandResult,/animation-delay:0.2s,-500ms/);
+assert.match(longhandResult,/transition-duration:400ms,1.25s/);
+assert.match(longhandResult,/transition-delay:0.3s,450ms/);
+assert.deepEqual(inferUiverseCssMultiTimingProps(
+  '<style>.bad{animation:spin 1s,fade var(--speed);' +
+  'transition:opacity 1s,transform calc(2s + .2s);' +
+  'animation-duration:1s,calc(2s);transition-delay:300ms}</style>'),[],
+  "Unsupported tracks fail closed, and lone timings remain with prior parser");
+assert.equal(inferUiverseCssMultiTimingProps(
+  '<style>'+Array.from({length:5},(_,i)=>
+    '.x'+i+'{animation-delay:'+i+'s,'+(i+1)+'s}').join('')+'</style>').length,8,
+  "Additional controls are capped to avoid overwhelming customization UI");

@@ -2,6 +2,7 @@ import { inferUiverseCssDimensionProps } from "./uiverse-dimensions.mjs";
 import { inferUiverseCssSpacingProps } from "./uiverse-spacing.mjs";
 import { inferUiverseCssTypeBorderProps } from "./uiverse-type-borders.mjs";
 import { inferUiverseCssTimingProps } from "./uiverse-timing.mjs";
+import { inferUiverseCssMultiTimingProps } from "./uiverse-multi-timing.mjs";
 
 // Infer hexadecimal, rgb() and rgba() colors from real CSS declarations.
 // Operates on the component's own <style> tags, never on arbitrary markup.
@@ -105,7 +106,8 @@ export function effectiveUiverseEditableProps(resource) {
     ...inferUiverseCssDimensionProps(mainHtml(resource)),
     ...inferUiverseCssSpacingProps(mainHtml(resource)),
     ...inferUiverseCssTypeBorderProps(mainHtml(resource)),
-    ...inferUiverseCssTimingProps(mainHtml(resource))
+    ...inferUiverseCssTimingProps(mainHtml(resource)),
+    ...inferUiverseCssMultiTimingProps(mainHtml(resource))
   ].filter(prop => !seen.has(prop.id))];
 }
 
