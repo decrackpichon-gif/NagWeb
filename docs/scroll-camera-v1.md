@@ -575,3 +575,11 @@ de prueba se guardan en `work/` y no se versionan.
   hardware móvil. Los GLB con animaciones siguen el comportamiento anterior.
 - Esta etapa no despliega en Vercel ni modifica main. `vercel.json` mantiene
   deshabilitados los despliegues de `feat/scroll-camera-v1`.
+
+## Actualización: iluminación espacial
+
+La micro-etapa siguiente integra presets y luces personalizadas con las mismas
+unidades y cámara de cada stage, y corrige sus controles de edición. Los límites
+sobre luces de la primera etapa quedan reemplazados por el alcance documentado
+en [Luces de escenas espaciales v1](spatial-lights-v1.md). Las limitaciones de
+bloom, objetos sin ancla y oclusión DOM/WebGL continúan vigentes.
