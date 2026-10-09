@@ -1210,3 +1210,13 @@ La revisión del bundle identifica 64 presets del HAR y confirma que sus 64 iden
 El siguiente trabajo prioriza opciones reales de personalización de los recursos existentes. Próxima micro-etapa: sentido de giro y altura del descenso en Scatter Dial, manteniendo los valores iniciales del HAR. Después, posiciones y tamaños por imagen en las trayectorias dispersas y revisión de otras variantes útiles. Mantener pruebas de guardado/exportación y compatibilidad con el mismo modelo de progreso.
 
 Continúa exclusivamente en `internal-motion-lab`, sin integrar ramas paralelas ni realizar otro despliegue Vercel.
+
+## Scatter Dial: sentido de giro y recorrido vertical personalizables
+
+Se añaden dos ajustes al recurso existente, sin cambiar el catálogo de 67 composiciones. El sentido de giro permite horario (`cw`, inicial) o antihorario (`ccw`). El recorrido vertical del anillo (`ringTravel`) va de −100 a 100%, en pasos de 5: −100 lleva su centro al borde superior del contenido, 0 lo mantiene centrado y 100 conserva el descenso original hasta el borde inferior. Los valores intermedios reducen el recorrido. Ambos ajustes conservan las ventanas de apertura, cuatro pasos, retorno, escalas y orden de superposición; las trayectorias de las cinco imágenes dispersas no cambian.
+
+La dirección invierte únicamente la rotación del anillo: sus posiciones iniciales y las imágenes derechas se mantienen. El desplazamiento sigue la envolvente temporal existente y vuelve al centro antes del cierre. Se reutiliza el mismo modelo de progreso, geometría y renderizador; los proyectos anteriores reciben los valores iniciales al normalizar su configuración.
+
+Verificación: 62 suites de modelo, renderizador con operaciones finitas y texturas reutilizadas; los 63 presets procedurales / 378 poses iniciales coinciden exactamente con el commit anterior. La comparación independiente conserva los 36.327 planos originales del HAR y añade 5.272 planos para giro inverso y recorridos hacia arriba, centrados, parciales y hacia abajo, con 5–12 imágenes y lienzos ancho/vertical. Se verifican también cierre del ciclo, trayectorias dispersas intactas, curvas, scroll y fábrica exportada. Navegador: controles y límites, píxeles transparentes y selección con giro inverso/recorrido personalizado; Biblioteca, grupo, guardado y reapertura, geometría exportada según sus propias dimensiones, tiempo, historial, móvil y movimiento reducido. Continúa exclusivamente en `internal-motion-lab`, sin despliegue Vercel.
+
+Próxima micro-etapa: personalizar posiciones y tamaños de las imágenes en las tres etapas dispersas, conservando un regreso coherente y los valores originales como punto de partida.
