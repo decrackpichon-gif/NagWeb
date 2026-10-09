@@ -69,6 +69,20 @@ let pendingApplyId = null;
 let pendingApplyResourceId = null;
 let pendingApplyTimer = null;
 const applyTarget = resolveResourceApplyTarget();
+const editParams = new URLSearchParams(location.search);
+const editResourceId = applyTarget ? editParams.get("editResource") : null;
+const editSession = editResourceId ? editParams.get("editSession") : null;
+let editInitialValues = {};
+if (editSession) {
+  try {
+    const values = JSON.parse(editParams.get("editValues") || "{}");
+    if (Number.isFinite(values.size) && values.size >= 4 && values.size <= 512 &&
+        /^#[a-f\d]{6}$/i.test(values.stroke) && Number.isFinite(values.strokeWidth) && values.strokeWidth >= .25 && values.strokeWidth <= 8) {
+      editInitialValues = { size: values.size, stroke: values.stroke, strokeWidth: values.strokeWidth };
+    }
+  } catch { /* Invalid initial values must not enable an edit. */ }
+  el.apply.textContent = "Guardar cambios en el ícono";
+}
 
 if (applyTarget) {
   el.apply.disabled = false;
@@ -265,6 +279,10 @@ el.preview.addEventListener("load", () => {
 
 function updateApplyReadiness(resource) {
   el.apply.disabled = true;
+  if (editResourceId && (!editSession || resource?.id !== editResourceId || !Object.keys(editInitialValues).length)) {
+    el.applyStatus.textContent = "Volvé a abrir la personalización desde el ícono seleccionado en NagWeb.";
+    return;
+  }
 
   if (!resource?.id) {
     el.applyStatus.textContent = "Recurso no disponible para insertar.";
@@ -534,7 +552,7 @@ function renderEditableControls(resource, { preserveGroups = false } = {}) {
 
 async function openDetail(id) {
   selectedResource = null;
-  selectedValues = {};
+  selectedValues = id === editResourceId ? { ...editInitialValues } : {};
   el.customize.hidden = true;
   el.customizeControls.replaceChildren();
   el.apply.disabled = true;
@@ -748,6 +766,7 @@ el.apply.addEventListener("click", () => {
     const envelope = buildResourceApplyEnvelope(selectedResource, {
       values: { ...selectedValues }
     });
+    if (editSession) envelope.editSession = editSession;
     const id = sendResourceApplyEnvelope(envelope, applyTarget);
 
     clearTimeout(pendingApplyTimer);
@@ -791,6 +810,7 @@ el.copyCode.addEventListener("click", async () => {
 
 try {
   await refreshIndex();
+  if (editResourceId) await openDetail(editResourceId);
 } catch (error) {
   console.error(error);
   el.status.textContent = `No pude cargar la biblioteca: ${error?.message || error}`;

@@ -920,3 +920,25 @@ admitida, mensajes de otro emisor, recursos CSS y duplicados. GSAP 3.12.5 y
 Three.js r128 se sirven desde las dependencias de prueba; el Vault usa datos
 locales y las fuentes decorativas se omiten. El editor ejecuta sus scripts
 reales, sin reemplazar su inserción ni su modelo. Captura: `editor-inserted.png`.
+
+## Micro-etapa 49: volver a personalizar un ícono
+
+Al seleccionar un vector insertado desde la biblioteca, se habilita
+**Personalizar** (ayuda: «Personalizar ícono seleccionado»). Abre su recurso con tamaño,
+color de trazo y grosor actuales. **Guardar cambios en el ícono** modifica ese
+mismo elemento: conserva ID, geometría, nombre, posición, jerarquía y animación.
+El tamaño y el trazo respetan la vista activa del editor; las medidas de la otra
+vista se conservan. Cerrar sin guardar no cambia el proyecto ni su historial.
+
+Cada apertura identifica una sesión y el elemento original. Pedidos de otra
+sesión, recurso o escena, y elementos eliminados o modificados mientras el panel
+estaba abierto, se rechazan antes de modificar el historial. Si el recurso dejó
+de estar disponible en el Vault, el panel informa el problema y no permite
+guardar. Los cambios usan el guardado y deshacer/rehacer habituales del editor.
+Guardar sin cambios no agrega historial; un fallo de almacenamiento se informa
+sin confirmar como guardados los datos anteriores. Los colores vinculados a la
+paleta se muestran con su color actual y conservan el vínculo si no se cambian.
+La prueba en Chromium verifica cancelación, valores recuperados, actualización
+sin duplicado, conservación de propiedades, deshacer/rehacer y recarga; deja
+`editor-edited.png` junto con el informe del recorrido completo. También prueba
+rechazo de un destino eliminado y detección de un fallo de almacenamiento.
