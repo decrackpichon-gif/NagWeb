@@ -1,8 +1,8 @@
 (function(){
 'use strict';
 // Rendering adapter only: no scroll reader, progress evaluator or animation clock.
-function createSpatialRenderer(T,renderer,scene,objects,lightSources){
- var rows=[],api=null;
+function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
+ var rows=[],api=null;options=options||{};
  lightSources=lightSources||scene.children.filter(function(n){return n.isLight;});
  function units(row){return Math.max(1,row.stage.clientHeight)/(2*6*Math.tan(50*Math.PI/360));}
  function lightRow(light){return rows.find(function(row){return row.lights.some(function(q){return q.source===light;})&&light.userData.sectionId===row.sectionId;});}
@@ -69,16 +69,20 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources){
    renderer.autoClear=false;
    lightSources.forEach(function(light){light.visible=false;});
    rows.forEach(function(row){
-    if(!row.state||!row.stage.isConnected)return;
+    if(!row.state||!row.stage.isConnected){if(row.bloom){row.bloom.dispose();row.bloom=null;}return;}
     var r=row.stage.getBoundingClientRect(),W=renderer.domElement.clientWidth,H=renderer.domElement.clientHeight;
-    if(r.bottom<=0||r.top>=H||r.right<=0||r.left>=W||!r.width||!r.height)return;
+    if(r.bottom<=0||r.top>=H||r.right<=0||r.left>=W||!r.width||!r.height){if(row.bloom){row.bloom.dispose();row.bloom=null;}return;}
     rows.forEach(function(other){other.rig.visible=false;});
     syncLights(row,lightVisible);row.rig.visible=true;
     roots.forEach(function(g){g.visible=false;});
     row.objects.forEach(function(g){place(g,row);visible[objects.indexOf(g)]=g.userData.holder.visible;});
     renderer.setViewport(r.left,H-r.bottom,r.width,r.height);
     renderer.setScissor(Math.max(0,r.left),Math.max(0,H-r.bottom),Math.min(W,r.right)-Math.max(0,r.left),Math.min(H,r.bottom)-Math.max(0,r.top));
-    renderer.setScissorTest(true);renderer.clearDepth();renderer.render(scene,row.camera);
+    renderer.setScissorTest(true);renderer.clearDepth();
+    if(options.bloom&&options.createBloom&&!row.bloomFailed&&!row.bloom){row.bloom=options.createBloom(T,renderer,scene,row.camera,options.strength);if(!row.bloom)row.bloomFailed=true;}
+    if(row.bloom){
+     try{row.bloom.render(r.width,r.height);}catch(_){row.bloom.dispose();row.bloom=null;row.bloomFailed=true;renderer.render(scene,row.camera);}
+    }else renderer.render(scene,row.camera);
    });
   }finally{
    renderer.setScissorTest(false);renderer.setViewport(0,0,renderer.domElement.clientWidth,renderer.domElement.clientHeight);
@@ -88,7 +92,7 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources){
    gizmos.forEach(function(g){g.node.visible=g.visible;});
   }
  }
- function destroy(){rows.forEach(function(row){row.unbind();scene.remove(row.rig);});rows=[];}
+ function destroy(){rows.forEach(function(row){row.unbind();if(row.bloom)row.bloom.dispose();scene.remove(row.rig);});rows=[];}
  function view(g){
   var row=rows.find(function(r){return r.objects.indexOf(g)>=0;})||lightRow(g);
   if(!row||!row.state)return null;
