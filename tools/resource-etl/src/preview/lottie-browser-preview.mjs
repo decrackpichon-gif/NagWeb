@@ -86,7 +86,7 @@ main{width:100%;height:calc(100% - 126px);display:grid;place-items:center}
   <button type="button" id="previous" aria-label="Retroceder un fotograma" title="Fotograma anterior">◀</button>
   <button type="button" id="next" aria-label="Avanzar un fotograma" title="Fotograma siguiente">▶</button>
   <output id="frame" aria-live="off">1/1 fot.</output>
-  <input type="range" id="seek" min="0" max="100" step="0.1" value="0" aria-label="Posición de la animación; flechas para avanzar de a un fotograma">
+  <input type="range" id="seek" min="0" max="0" step="1" value="0" aria-label="Fotograma de la animación; flechas para avanzar de a un fotograma">
   <output id="progress" for="seek">0%</output>
   <label id="jump" for="frame-jump">Ir al fotograma <input id="frame-jump" type="number" min="1" step="1" value="1" aria-label="Número exacto de fotograma"></label>
   <output id="time" aria-label="Tiempo transcurrido y duración total de la animación a velocidad original">0:00.00 / 0:00.00</output>
@@ -136,7 +136,16 @@ try {
   const showProgress = (percentage) => {
     if (!Number.isFinite(percentage)) return;
     const value = Math.max(0, Math.min(100, percentage));
-    seek.value = String(Math.round(value * 10) / 10);
+    // Use integer frames instead of a fixed 0-1000 percentage grid.
+    // Long animations can now be inspected without quantization loss.
+    const totalFrames = Number(instance.totalFrames);
+    const count = Number.isFinite(totalFrames) && totalFrames > 0
+      ? Math.ceil(totalFrames) : 0;
+    const currentFrame = Number(instance.currentFrame);
+    if (count && Number.isFinite(currentFrame)) {
+      seek.max = String(count - 1);
+      seek.value = String(Math.max(0, Math.min(count - 1, Math.floor(currentFrame))));
+    }
     progress.textContent = Math.round(value) + "%";
     const total = Number(instance.totalFrames);
     if (Number.isFinite(total) && total > 0 && frameRate > 0) {
@@ -216,7 +225,16 @@ try {
     syncFrame();
     sync();
   };
-  seek.addEventListener("input", () => seekTo(Number(seek.value)));
+  seek.addEventListener("input", () => {
+    const count = frameCount();
+    const index = Number(seek.value);
+    if (!count || !Number.isSafeInteger(index) || index < 0 || index >= count) return;
+    const wasPlaying = !instance.isPaused;
+    instance.goToAndStop(index, true);
+    if (wasPlaying) instance.play();
+    syncFrame();
+    sync();
+  });
   seek.addEventListener("keydown", (event) => {
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
     event.preventDefault();

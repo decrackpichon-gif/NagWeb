@@ -846,7 +846,7 @@ assert.match(lottiePreviewDocument, /autoplay: false/);
 assert.match(lottiePreviewDocument, /Content-Security-Policy/);
 assert.match(lottiePreviewDocument, /connect-src 'none'/);
 assert.match(lottiePreviewDocument, /lottie_light\.min\.js/);
-assert.match(lottiePreviewDocument, /id="seek" min="0" max="100"/);
+assert.match(lottiePreviewDocument, /id="seek" min="0" max="0" step="1"/);
 assert.match(lottiePreviewDocument, /id="restart">Reiniciar/);
 assert.match(lottiePreviewDocument, /id="previous" aria-label="Retroceder un fotograma"/);
 assert.match(lottiePreviewDocument, /id="next" aria-label="Avanzar un fotograma"/);
@@ -1255,10 +1255,11 @@ assert.equal(typeof fakeUiActions["restart:click"], "function");
 assert.equal(typeof fakeLottieEvents.enterFrame, "function");
 fakeLottieInstance.currentFrame = 3;
 fakeLottieEvents.enterFrame();
-assert.equal(Number(fakeSeekControl.value), 25);
+assert.equal(Number(fakeSeekControl.value), 3);
+assert.equal(fakeSeekControl.max, "11");
 assert.equal(fakeProgressOutput.textContent, "25%");
 assert.equal(fakeTimeOutput.textContent, "0:00.10 / 0:00.40");
-fakeSeekControl.value = "75";
+fakeSeekControl.value = "9";
 fakeUiActions["seek:input"]();
 assert.equal(fakeLottieInstance.isPaused, true, "Scrubbing paused animation keeps it paused");
 assert.equal(fakeLottieInstance.currentFrame, 9);
@@ -1266,7 +1267,7 @@ assert.equal(fakeProgressOutput.textContent, "75%");
 assert.equal(fakeTimeOutput.textContent, "0:00.30 / 0:00.40");
 assert.deepEqual(lottieCalls.at(-1), ["seek", 9, true]);
 fakeLottieInstance.play();
-fakeSeekControl.value = "50";
+fakeSeekControl.value = "6";
 fakeUiActions["seek:input"]();
 assert.equal(fakeLottieInstance.currentFrame, 6);
 assert.equal(fakeLottieInstance.isPaused, false, "Scrubbing playing animation resumes playback");
@@ -1348,3 +1349,28 @@ fakeFrameJump.value = "12";
 fakeUiActions["frame-jump:change"]();
 assert.equal(fakeLottieInstance.currentFrame, 11);
 assert.equal(fakeFrameOutput.textContent, "12/12 fot.");
+
+const originalFrameCount = fakeLottieInstance.totalFrames;
+fakeLottieInstance.totalFrames = 6000;
+fakeLottieInstance.currentFrame = 1234;
+fakeLottieEvents.enterFrame();
+assert.equal(fakeSeekControl.max, "5999", "Range tracks all frames in long animations");
+assert.equal(fakeSeekControl.value, "1234", "Range uses exact source-frame index");
+fakeSeekControl.value = "4321";
+fakeUiActions["seek:input"]();
+assert.equal(fakeLottieInstance.currentFrame, 4321,
+  "Long animation seeks exact frame, with no 0.1-percent rounding");
+assert.equal(fakeFrameOutput.textContent, "4322/6000 fot.");
+assert.equal(fakeLottieInstance.isPaused, true);
+fakeUiActions["seek:keydown"]({
+  key: "ArrowRight", preventDefault() {}
+});
+assert.equal(fakeLottieInstance.currentFrame, 4322,
+  "Arrow navigation remains frame-precise after long seek");
+for (const invalidFrame of ["-1", "6000", "4322.1", "NaN"]) {
+  const before = lottieCalls.length;
+  fakeSeekControl.value = invalidFrame;
+  fakeUiActions["seek:input"]();
+  assert.equal(lottieCalls.length, before, "Invalid seek ignored: " + invalidFrame);
+}
+fakeLottieInstance.totalFrames = originalFrameCount;
