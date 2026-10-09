@@ -811,8 +811,10 @@ necesarios, sin Vercel, sin Node en el navegador y sin modificar `main`:
 npm run preview:public
 ```
 
-Se genera `pages-preview/` con `index.html`, `resource-browser/`, `src/` y
-`.nojekyll`. Esta copia lee el catálogo real desde la rama pública
+Se genera `pages-preview/` con `index.html`, `resource-browser/`, un
+subconjunto mínimo de `src/` (solo los 10 módulos usados por el navegador)
+y `.nojekyll`. No se publican los extractores, las herramientas internas
+de importación ni los tests. Esta copia lee el catálogo real desde la rama pública
 `resource-vault-data`, así que el código del catálogo no se duplica en el
 repositorio de la aplicación.
 

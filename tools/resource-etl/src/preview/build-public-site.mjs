@@ -5,6 +5,20 @@ import { fileURLToPath } from "node:url";
 import { cp, mkdir, writeFile, readFile, stat } from "node:fs/promises";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+// Only browser-reachable modules are published. No importers, CLI, source
+// repositories, test fixtures, runtime secrets, or server files go to Pages.
+const PUBLIC_MODULES = Object.freeze([
+  "runtime/persistent-vault-client.mjs",
+  "runtime/instance.mjs",
+  "runtime/editable-controls.mjs",
+  "runtime/html-css-customization.mjs",
+  "runtime/resource-apply-bridge.mjs",
+  "runtime/insert-adapters.mjs",
+  "preview/lottie-browser-preview.mjs",
+  "preview/csshake-browser-preview.mjs",
+  "preview/magiccss-browser-preview.mjs",
+  "preview/css-playback-controls.mjs"
+]);
 const landingPage = `<!doctype html>
 <html lang="es">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -28,11 +42,12 @@ export async function buildPublicResourceBrowser({ outputDir } = {}) {
   await cp(path.join(root, "resource-browser"), path.join(destination, "resource-browser"), {
     recursive: true, force: true
   });
-  await cp(path.join(root, "src"), path.join(destination, "src"), {
-    recursive: true, force: true,
-    filter: (entry) => !entry.includes("node_modules") &&
-      !entry.endsWith(".env") && !entry.endsWith(".local")
-  });
+  for (const modulePath of PUBLIC_MODULES) {
+    const source = path.join(root, "src", modulePath);
+    const target = path.join(destination, "src", modulePath);
+    await mkdir(path.dirname(target), { recursive: true });
+    await cp(source, target, { force: true });
+  }
   await writeFile(path.join(destination, "index.html"), landingPage);
   await writeFile(path.join(destination, ".nojekyll"), "");
   const browser = await readFile(path.join(destination, "resource-browser", "index.html"), "utf8");

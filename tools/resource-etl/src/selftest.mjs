@@ -1578,6 +1578,21 @@ try {
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "html-css-customization.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "resource-browser", "vendor", "lottie_light.min.js"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, ".nojekyll"))).isFile());
+  await assert.rejects(stat(path.join(publicPreviewDir, "src", "cli.mjs")),
+    "The Pages bundle must not publish the importer CLI");
+  await assert.rejects(stat(path.join(publicPreviewDir, "src", "vault-cli.mjs")),
+    "The Pages bundle must not publish the Vault maintenance tooling");
+  for (const location of ["resource-browser/app.mjs",
+    "src/runtime/resource-apply-bridge.mjs", "src/runtime/editable-controls.mjs",
+    "src/preview/csshake-browser-preview.mjs",
+    "src/preview/magiccss-browser-preview.mjs"]) {
+    const source = await readFile(path.join(publicPreviewDir, location), "utf8");
+    for (const match of source.matchAll(/\\bfrom\\s*["'](\\.[^"']+)["']/g)) {
+      const file = path.resolve(path.dirname(path.join(publicPreviewDir, location)), match[1]);
+      assert.ok((await stat(file)).isFile(),
+        "Public site must include dependency " + match[1] + " of " + location);
+    }
+  }
 } finally {
   await rm(publicPreviewDir, { recursive: true, force: true });
 }
