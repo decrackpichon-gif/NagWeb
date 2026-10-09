@@ -65,28 +65,35 @@ html,body{width:100%;height:100%;margin:0;background:#f4f5f7;font-family:system-
 main{width:100%;height:calc(100% - 126px);display:grid;place-items:center}
 #animation{width:min(90%,340px);height:min(90%,340px);display:grid;place-items:center}
 #status{position:absolute;top:10px;left:12px;font-size:11px;color:#69717c}
-#transport{position:absolute;bottom:0;left:0;right:0;min-height:116px;box-sizing:border-box;padding:8px 12px;display:grid;grid-template-columns:repeat(4,auto) minmax(0,1fr) auto;grid-template-areas:"play restart prev next spacer frame" "seek seek seek seek seek progress" "jump jump jump time time time";align-items:center;gap:7px;background:#fff;border-top:1px solid #dce1e7}
+#transport{position:absolute;bottom:0;left:0;right:0;min-height:116px;box-sizing:border-box;padding:8px 12px;display:grid;grid-template-columns:repeat(6,auto) minmax(0,1fr);grid-template-areas:"play restart back5 prev next forward5 frame" "seek seek seek seek seek seek progress" "jump jump jump time time time time";align-items:center;gap:7px;background:#fff;border-top:1px solid #dce1e7}
 #transport button{border:1px solid #c3c8d0;background:#fff;color:#111;border-radius:8px;padding:7px 10px;cursor:pointer}
 #transport button:disabled{opacity:.45;cursor:not-allowed}
-#play{grid-area:play}#restart{grid-area:restart}#previous{grid-area:prev}#next{grid-area:next}
+#play{grid-area:play}#restart{grid-area:restart}#back5{grid-area:back5}#previous{grid-area:prev}#next{grid-area:next}#forward5{grid-area:forward5}
 #seek{grid-area:seek;width:100%;min-width:0;accent-color:#5178b6;cursor:pointer}
 #progress{grid-area:progress;min-width:35px;text-align:right;font:12px ui-monospace,monospace;color:#48576b}
-#frame{grid-area:frame;min-width:65px;text-align:right;font:11px ui-monospace,monospace;color:#48576b}
+#frame{grid-area:frame;min-width:65px;justify-self:end;text-align:right;font:11px ui-monospace,monospace;color:#48576b}
 #jump{grid-area:jump;display:flex;align-items:center;gap:5px;color:#48576b;font-size:11px;white-space:nowrap}
 #frame-jump{width:72px;min-width:0;padding:4px 6px;border:1px solid #c3c8d0;border-radius:6px;font:12px ui-monospace,monospace}
 #time{grid-area:time;justify-self:end;font:12px ui-monospace,monospace;color:#48576b;font-variant-numeric:tabular-nums}
 #time::before{content:"Tiempo de animación (1×) · ";color:#69717c}
-@media(max-width:430px){#transport{gap:5px;padding:7px}#transport button{padding:6px;font-size:11px}#frame{font-size:10px}}
+@media(max-width:570px){
+  main{height:calc(100% - 156px)}
+  #transport{min-height:146px;padding:7px;gap:5px;grid-template-columns:repeat(4,auto) minmax(0,1fr) auto;grid-template-areas:"play restart prev next frame frame" "back5 back5 forward5 forward5 forward5 forward5" "seek seek seek seek seek progress" "jump jump jump time time time"}
+  #transport button{padding:6px;font-size:11px}
+  #frame{font-size:10px}
+}
 </style></head><body>
 <main><div id="animation" role="img" aria-label="Vista previa de animación Lottie"></div></main>
 <span id="status">Cargando animación…</span>
 <div id="transport" aria-label="Controles de reproducción Lottie">
   <button type="button" id="play">Reproducir</button>
   <button type="button" id="restart">Reiniciar</button>
+  <button type="button" id="back5" aria-label="Retroceder cinco segundos" title="Saltar 5 segundos hacia atrás">−5 s</button>
   <button type="button" id="previous" aria-label="Retroceder un fotograma" title="Fotograma anterior">◀</button>
   <button type="button" id="next" aria-label="Avanzar un fotograma" title="Fotograma siguiente">▶</button>
+  <button type="button" id="forward5" aria-label="Avanzar cinco segundos" title="Saltar 5 segundos hacia adelante">+5 s</button>
   <output id="frame" aria-live="off">1/1 fot.</output>
-  <input type="range" id="seek" min="0" max="0" step="1" value="0" aria-label="Fotograma de la animación; flechas para avanzar de a un fotograma">
+  <input type="range" id="seek" min="0" max="0" step="1" value="0" aria-label="Fotograma de la animación; flechas para fotogramas, Shift más flechas para cinco segundos">
   <output id="progress" for="seek">0%</output>
   <label id="jump" for="frame-jump">Ir al fotograma <input id="frame-jump" type="number" min="1" step="1" value="1" aria-label="Número exacto de fotograma"></label>
   <output id="time" aria-label="Tiempo transcurrido y duración total de la animación a velocidad original">0:00.00 / 0:00.00</output>
@@ -96,6 +103,8 @@ main{width:100%;height:calc(100% - 126px);display:grid;place-items:center}
 const status = document.getElementById("status");
 const play = document.getElementById("play");
 const restart = document.getElementById("restart");
+const back5 = document.getElementById("back5");
+const forward5 = document.getElementById("forward5");
 const previous = document.getElementById("previous");
 const next = document.getElementById("next");
 const frame = document.getElementById("frame");
@@ -168,6 +177,8 @@ try {
     if (document.activeElement !== frameJump) frameJump.value = String(index + 1);
     previous.disabled = index === 0;
     next.disabled = index === count - 1;
+    back5.disabled = index === 0;
+    forward5.disabled = index === count - 1;
   };
   const syncFrame = () => {
     const total = Number(instance.totalFrames);
@@ -225,6 +236,22 @@ try {
     syncFrame();
     sync();
   };
+  const skipSeconds = (direction, seconds = 5) => {
+    const count = frameCount();
+    const current = Number(instance.currentFrame);
+    if (!count || !Number.isFinite(current) || !Number.isFinite(frameRate) ||
+        frameRate <= 0) return;
+    // Frames, not percentages. One jump is approximately five seconds
+    // of animation at original speed, regardless of playback speed.
+    const step = Math.max(1, Math.round(seconds * frameRate));
+    const target = Math.max(0, Math.min(count - 1,
+      Math.floor(current) + direction * step));
+    const wasPlaying = !instance.isPaused;
+    instance.goToAndStop(target, true);
+    if (wasPlaying) instance.play();
+    syncFrame();
+    sync();
+  };
   seek.addEventListener("input", () => {
     const count = frameCount();
     const index = Number(seek.value);
@@ -238,10 +265,14 @@ try {
   seek.addEventListener("keydown", (event) => {
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
     event.preventDefault();
-    stepFrame(event.key === "ArrowLeft" ? -1 : 1);
+    const direction = event.key === "ArrowLeft" ? -1 : 1;
+    if (event.shiftKey) skipSeconds(direction);
+    else stepFrame(direction);
   });
   previous.addEventListener("click", () => stepFrame(-1));
   next.addEventListener("click", () => stepFrame(1));
+  back5.addEventListener("click", () => skipSeconds(-1));
+  forward5.addEventListener("click", () => skipSeconds(1));
   frameJump.addEventListener("change", () => {
     const count = frameCount();
     const text = frameJump.value.trim();
@@ -298,6 +329,8 @@ try {
   restart.disabled = true;
   previous.disabled = true;
   next.disabled = true;
+  back5.disabled = true;
+  forward5.disabled = true;
   seek.disabled = true;
   frameJump.disabled = true;
 }

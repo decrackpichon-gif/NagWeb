@@ -850,6 +850,8 @@ assert.match(lottiePreviewDocument, /id="seek" min="0" max="0" step="1"/);
 assert.match(lottiePreviewDocument, /id="restart">Reiniciar/);
 assert.match(lottiePreviewDocument, /id="previous" aria-label="Retroceder un fotograma"/);
 assert.match(lottiePreviewDocument, /id="next" aria-label="Avanzar un fotograma"/);
+assert.match(lottiePreviewDocument, /id="back5" aria-label="Retroceder cinco segundos"/);
+assert.match(lottiePreviewDocument, /id="forward5" aria-label="Avanzar cinco segundos"/);
 assert.match(lottiePreviewDocument, /id="frame" aria-live="off"/);
 assert.match(lottiePreviewDocument, /id="time" aria-label="Tiempo transcurrido y duración total/);
 assert.match(lottiePreviewDocument, /id="frame-jump" type="number" min="1" step="1"/);
@@ -1157,6 +1159,14 @@ const fakeNextButton = {
   disabled: false,
   addEventListener(type, handler) { fakeUiActions["next:" + type] = handler; }
 };
+const fakeSkipBack = {
+  disabled: false,
+  addEventListener(type, handler) { fakeUiActions["back5:" + type] = handler; }
+};
+const fakeSkipForward = {
+  disabled: false,
+  addEventListener(type, handler) { fakeUiActions["forward5:" + type] = handler; }
+};
 const fakeFrameOutput = { textContent: "" };
 const fakeSeekControl = {
   value: "0",
@@ -1204,6 +1214,8 @@ runInNewContext(lottieRuntimeScript, {
       if (id === "restart") return fakeRestartButton;
       if (id === "previous") return fakePreviousButton;
       if (id === "next") return fakeNextButton;
+      if (id === "back5") return fakeSkipBack;
+      if (id === "forward5") return fakeSkipForward;
       if (id === "frame") return fakeFrameOutput;
       if (id === "seek") return fakeSeekControl;
       if (id === "progress") return fakeProgressOutput;
@@ -1374,3 +1386,40 @@ for (const invalidFrame of ["-1", "6000", "4322.1", "NaN"]) {
   assert.equal(lottieCalls.length, before, "Invalid seek ignored: " + invalidFrame);
 }
 fakeLottieInstance.totalFrames = originalFrameCount;
+
+assert.equal(typeof fakeUiActions["back5:click"], "function");
+assert.equal(typeof fakeUiActions["forward5:click"], "function");
+fakeLottieInstance.totalFrames = 6000;
+fakeLottieInstance.currentFrame = 3000;
+fakeLottieInstance.pause();
+fakeLottieEvents.enterFrame();
+fakeUiActions["forward5:click"]();
+assert.equal(fakeLottieInstance.currentFrame, 3150,
+  "Five-second forward skip uses 150 frames at 30 FPS");
+assert.equal(fakeLottieInstance.isPaused, true, "Skip from pause stays paused");
+assert.equal(fakeFrameOutput.textContent, "3151/6000 fot.");
+fakeUiActions["back5:click"]();
+assert.equal(fakeLottieInstance.currentFrame, 3000);
+fakeLottieInstance.play();
+fakeUiActions["forward5:click"]();
+assert.equal(fakeLottieInstance.currentFrame, 3150);
+assert.equal(fakeLottieInstance.isPaused, false, "Skip while playing resumes");
+let fastSkipPrevented = 0;
+fakeUiActions["seek:keydown"]({
+  key: "ArrowLeft", shiftKey: true,
+  preventDefault() { fastSkipPrevented++; }
+});
+assert.equal(fakeLottieInstance.currentFrame, 3000);
+assert.equal(fakeLottieInstance.isPaused, false);
+assert.equal(fastSkipPrevented, 1);
+fakeLottieInstance.currentFrame = 4;
+fakeUiActions["back5:click"]();
+assert.equal(fakeLottieInstance.currentFrame, 0,
+  "Five-second skip clamps at start");
+assert.equal(fakeSkipBack.disabled, true);
+fakeLottieInstance.currentFrame = 5997;
+fakeUiActions["forward5:click"]();
+assert.equal(fakeLottieInstance.currentFrame, 5999,
+  "Five-second skip clamps at end");
+assert.equal(fakeSkipForward.disabled, true);
+fakeLottieInstance.totalFrames = 12;
