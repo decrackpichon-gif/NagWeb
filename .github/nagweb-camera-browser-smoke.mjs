@@ -112,7 +112,51 @@ export async function runCameraBrowserSmoke(page){
   await page.keyboard.press('ArrowLeft');
   assert.equal(await page.$eval('[data-camera-map-point]',n=>+n.dataset.cameraMapPoint),50);
   assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),originalFrames,'Map shortcuts leave authored coordinates untouched');
-  console.log('Camera browser: both planes, every zoom level, pan + drag coordinate parity and undo OK');
+  // Micro-etapa 46: directional camera pad updates the selected frame, one undo per click.
+  const easyBaseline=await page.evaluate(()=>({
+   frames:JSON.stringify(sec().sdCameraFrames),looks:JSON.stringify(sec().sdCameraLookFrames),
+   label:document.querySelector('[data-camera-easy-controls] strong')?.textContent||'',
+   history:history.length,plane:document.querySelector('[data-camera-map-plane]')?.value,
+   step:document.querySelector('[data-camera-easy-step]')?.value
+  }));
+  assert.ok(easyBaseline.label.includes('encuadre 50%'),'Easy pad names the selected keyframe');
+  assert.equal(easyBaseline.step,'25','Easy pad defaults to precise 25px steps');
+  assert.equal(await page.$eval('[data-camera-easy-move]',els=>els.length),6,'Camera pad has four directions and two depth controls');
+  const nudgeCases=[['left','x',-25],['right','x',25],['up','y',-25],['down','y',25],['forward','z',25],['back','z',-25]];
+  for(const [direction,axis,delta] of nudgeCases){
+   const before=await page.evaluate(()=>JSON.parse(JSON.stringify(sec().sdCameraFrames)));
+   await page.click('[data-camera-easy-move="'+direction+'"]');
+   const state=await page.evaluate(dir=>({
+    frames:JSON.parse(JSON.stringify(sec().sdCameraFrames)),history:history.length,
+    focused:document.activeElement?.dataset.cameraEasyMove===dir,
+    step:document.querySelector('[data-camera-easy-step]')?.value
+   }),direction);
+   const target=before.find(f=>f.at===50),changed=state.frames.find(f=>f.at===50);
+   assert.equal(changed[axis]-target[axis],delta,'Easy '+direction+' moves selected frame along '+axis);
+   assert.ok(['x','y','z'].filter(k=>k!==axis).every(k=>changed[k]===target[k]),'Easy '+direction+' leaves other axes unchanged');
+   assert.deepEqual(state.frames.filter(f=>f.at!==50),before.filter(f=>f.at!==50),'Easy '+direction+' preserves other keyframes');
+   assert.equal(state.history,easyBaseline.history+1,'Easy '+direction+' records one undo snapshot');
+   assert.ok(state.focused&&state.step==='25','Easy '+direction+' restores focus and current step after redraw');
+   await page.evaluate(()=>undo());
+   assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),easyBaseline.frames,'Undo restores '+direction);
+  }
+  await page.select('[data-camera-easy-step]','100');
+  await page.click('[data-camera-easy-move="right"]');
+  const large=await page.evaluate(()=>({
+   selected:sec().sdCameraFrames.find(k=>k.at===50),
+   step:document.querySelector('[data-camera-easy-step]')?.value,
+   focused:document.activeElement?.dataset.cameraEasyMove
+  }));
+  assert.equal(large.selected.x-JSON.parse(easyBaseline.frames).find(k=>k.at===50).x,100,'Large nudge moves exactly 100px');
+  assert.equal(large.step,'100','Large step persists after a click');
+  assert.equal(large.focused,'right','Movement retains focus on that direction');
+  await page.evaluate(()=>undo());
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),easyBaseline.frames,'Undo restores large movement');
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraLookFrames)),easyBaseline.looks,'Camera nudges preserve independent look targets');
+  assert.equal(await page.$eval('[data-camera-map-plane]',n=>n.value),easyBaseline.plane,'Easy controls never switch the spatial map plane');
+  await page.select('[data-camera-easy-step]','25');
+    console.log('Camera browser: both planes, every zoom level, pan + drag coordinate parity and undo OK');
+  console.log('Camera easy movement: X/Y/Z pad, short/long steps, undo, focus, other frames unchanged OK');
   // Minimap regression: click, drag, cancellation, precision keyboard and no camera edits.
   await page.click('[data-camera-overview-toggle]');
   assert.ok(await page.$('[data-camera-overview]'),'Overview toggle should show minimap at 100%');
