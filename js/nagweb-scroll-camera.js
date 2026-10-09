@@ -268,7 +268,7 @@ function createCamera(){
 }
 window.NAGWEB_CREATE_SCROLL_CAMERA=createCamera;
 window.NAGWEB_SCROLL_CAMERA=createCamera();
-var presetChoices=Object.create(null),holdDurations=Object.create(null),cameraEasyStep=Object.create(null),mapOpen=Object.create(null),mapPlanes=Object.create(null),mapFovVisible=Object.create(null),mapObjectVisible=Object.create(null),mapObjectPlans=Object.create(null),mapZoom=Object.create(null),mapPan=Object.create(null),mapWheelCarry=Object.create(null),mapOverviewVisible=Object.create(null),mapOverviewPickHistory=Object.create(null),mapOverviewSamples=Object.create(null),mapOverviewDetected=Object.create(null),mapOverviewMetrics=Object.create(null),mapOverviewMetricsOpen=Object.create(null),mapOverviewPaceVisible=Object.create(null),mapOverviewComparison=Object.create(null),mapOverviewComparePreview=Object.create(null),mapOverviewCompareFovVisible=Object.create(null),mapOverviewCompareExclusiveVisible=Object.create(null),mapOverviewCompareFocus=Object.create(null),mapOverviewTechnicalOpen=Object.create(null),mapOverviewEventFilter=Object.create(null),mapOverviewEventChosen=Object.create(null),mapPickHistory=Object.create(null),suppressedClick=null,selected=Object.create(null),lookSelected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
+var presetChoices=Object.create(null),holdDurations=Object.create(null),cameraEasyStep=Object.create(null),mapOpen=Object.create(null),mapPlanes=Object.create(null),mapFovVisible=Object.create(null),mapObjectVisible=Object.create(null),mapObjectSelected=Object.create(null),mapObjectPlans=Object.create(null),mapZoom=Object.create(null),mapPan=Object.create(null),mapWheelCarry=Object.create(null),mapOverviewVisible=Object.create(null),mapOverviewPickHistory=Object.create(null),mapOverviewSamples=Object.create(null),mapOverviewDetected=Object.create(null),mapOverviewMetrics=Object.create(null),mapOverviewMetricsOpen=Object.create(null),mapOverviewPaceVisible=Object.create(null),mapOverviewComparison=Object.create(null),mapOverviewComparePreview=Object.create(null),mapOverviewCompareFovVisible=Object.create(null),mapOverviewCompareExclusiveVisible=Object.create(null),mapOverviewCompareFocus=Object.create(null),mapOverviewTechnicalOpen=Object.create(null),mapOverviewEventFilter=Object.create(null),mapOverviewEventChosen=Object.create(null),mapPickHistory=Object.create(null),suppressedClick=null,selected=Object.create(null),lookSelected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
 function safeLabel(v){return String(v==null?'':v).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,42).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];});}
 function targetLabel(e){var label=safeLabel(e&&((e.name||e.text||e.label)||e.type));return label||'Elemento';}
 function keys(s){return C.frames(C.config(s),s.sdEase);}
@@ -364,6 +364,46 @@ function mapObjectPositions(s,plan,pct){
   return {item:item,point:v&&[v.x,v.y,v.z].every(Number.isFinite)?v:null};
  });
 }
+function mapObjectDistance(camera,point){
+ if(!camera||!point||!['x','y','z'].every(function(k){return Number.isFinite(+camera[k])&&Number.isFinite(+point[k]);}))return null;
+ var dx=point.x-camera.x,dy=point.y-camera.y,dz=point.z-camera.z;
+ return {dx:dx,dy:dy,dz:dz,distance:Math.hypot(dx,dy,dz)};
+}
+function mapObjectSelection(s,plan){
+ if(!plan||mapObjectVisible[s.id]===false)return null;
+ return plan.entries.find(function(item){return item.id===mapObjectSelected[s.id];})||null;
+}
+function mapObjectInfoValues(s,plan,pct){
+ var item=mapObjectSelection(s,plan),row=item?mapObjectPositions(s,plan,pct).find(function(r){return r.item.id===item.id;}):null;
+ var point=row&&row.point,relative=point?mapObjectDistance(mapCurrent(s,pct),point):null;
+ function round(v){return String(Math.round(v));}
+ return {xyz:point?'Ubicación · X '+round(point.x)+' · Y '+round(point.y)+' · Z '+round(point.z):'Ubicación no disponible.',
+ distance:relative?'Distancia a la cámara: '+round(relative.distance)+' px':'Distancia no disponible.',
+ offset:relative?'Separación por eje · X '+round(relative.dx)+' · Y '+round(relative.dy)+' · Z '+round(relative.dz)+' px':''};
+}
+function mapObjectInfoHtml(s,plan,pct){
+ if(!plan||!plan.entries.length||mapObjectVisible[s.id]===false)return '';
+ var item=mapObjectSelection(s,plan),idx=item?plan.entries.indexOf(item):-1;
+ var html='<div data-camera-object-inspector role="group" aria-label="Información del objeto" style="padding:7px 8px;margin:6px 0;border:1px solid var(--border,var(--line));border-radius:6px">'+
+  '<label style="font-size:11px;font-weight:600">Inspeccionar objeto <select class="csel" data-camera-object-select aria-label="Objeto a inspeccionar" style="max-width:100%;margin-left:4px">'+
+  '<option value="">Elegí uno…</option>'+plan.entries.map(function(e,i){return '<option value="'+i+'"'+(i===idx?' selected':'')+'>'+(i+1)+' · '+e.label+'</option>';}).join('')+'</select></label>';
+ if(!item)return html+'<div style="font-size:10px;opacity:.75;margin-top:4px">Tocá el centro de un objeto en el mapa o elegilo en la lista. Solo lectura.</div></div>';
+ var data=mapObjectInfoValues(s,plan,pct);
+ return html+'<div style="font-size:11px;margin-top:6px">Objeto: <strong>'+item.label+'</strong></div>'+
+  '<div data-camera-object-xyz style="font-size:11px;margin-top:3px">'+data.xyz+'</div>'+
+  '<div data-camera-object-distance style="font-size:11px;margin-top:3px">'+data.distance+'</div>'+
+  '<div data-camera-object-offset style="font-size:10px;opacity:.8;margin-top:3px">'+data.offset+'</div>'+
+  '<div style="font-size:10px;opacity:.7;margin-top:4px">Distancia entre posiciones XYZ. No indica si el objeto es visible en cámara.</div></div>';
+}
+function mapObjectInfoPaint(pane,s,pct){
+ var box=pane&&pane.querySelector('[data-camera-object-inspector]'),plan=mapObjectPlans[s.id];
+ if(!box||!mapObjectSelection(s,plan))return;
+ var value=mapObjectInfoValues(s,plan,pct);
+ [['xyz',value.xyz],['distance',value.distance],['offset',value.offset]].forEach(function(pair){
+  var node=box.querySelector('[data-camera-object-'+pair[0]+']');
+  if(node)node.textContent=pair[1];
+ });
+}
 function mapObjectMarkersHtml(s,plan,spec,pct){
  if(!plan||mapObjectVisible[s.id]===false)return '';
  var rows=mapObjectPositions(s,plan,pct);
@@ -373,6 +413,8 @@ function mapObjectMarkersHtml(s,plan,spec,pct){
   var label=row.item.label; // targetLabel has already escaped untrusted text.
   return '<g data-camera-scene-object="'+i+'" data-camera-scene-object-id="'+safeLabel(row.item.id)+'" data-camera-scene-object-kind="'+safeLabel(row.item.kind)+'" data-camera-scene-object-role="'+row.item.role+'" transform="translate('+at.x+' '+at.y+')">'+
    mapObjectShapeHtml(row.item,spec)+
+   '<circle data-camera-scene-object-active r="4" stroke="#fff" stroke-width=".95" stroke-dasharray="1.3 .8" fill="none" pointer-events="none" style="display:'+(mapObjectSelected[s.id]===row.item.id?'':'none')+'"/>'+
+   '<circle data-camera-scene-object-pick="'+i+'" r="3.1" fill="transparent" pointer-events="all" style="cursor:help"><title>Ver ubicación y distancia de '+label+'</title></circle>'+
    (i<8?'<text x="2.8" y="-2.1" font-size="2.65" fill="currentColor" stroke="var(--bg,#1c1e23)" stroke-width=".5" paint-order="stroke">'+(i+1)+' · '+label+'</text>':'')+
    '</g>';
  }).join('')+'</g>';
