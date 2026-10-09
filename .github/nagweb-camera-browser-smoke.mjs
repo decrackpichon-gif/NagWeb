@@ -715,6 +715,11 @@ export async function runCameraBrowserSmoke(page){
        marker:!!m.querySelector('[data-camera-overview-plane-tiny]')
       })),
       tinyNote:!!root?.querySelector('[data-camera-overview-plane-tiny-note]'),
+      severity:root?.querySelector('[data-camera-overview-plane-severity]')?.dataset.cameraOverviewPlaneSeverityLevel??null,
+      orientation:(()=>{
+       const el=root?.querySelector('[data-camera-overview-plane-orientation]');
+       return el?{dx:+el.dataset.cameraOverviewPlaneRotationX,dy:+el.dataset.cameraOverviewPlaneRotationY,text:el.textContent}:null;
+      })(),
       text:root?.textContent||''};
    });
    const unionState=()=>page.evaluate(()=>{
@@ -758,6 +763,10 @@ export async function runCameraBrowserSmoke(page){
    assert.equal(planes.cells[1].value,'','Edge-on frontal view does not invent coverage');
    assert.ok(planes.unavailable&&planes.text.includes('No evaluable'),'Unavailable plane cannot produce a false delta');
    assert.ok(planes.text.includes('No compara volumen, oclusión ni visibilidad 3D'),'Differences describe only projected geometry');
+   assert.equal(planes.severity,null,'No magnitude classification when one plane is not evaluable');
+   assert.ok(planes.orientation?.text.includes('X/Z refleja la dirección horizontal')&&planes.orientation.text.includes('X/Y, la inclinación'),'Orientational context is visible without causal promises');
+   assert.ok(planes.orientation?.text.includes('no demuestran por sí solos la causa'),'Orientation notes distinguish correlation from causation');
+   assert.ok(Math.abs(planes.orientation.dx)<.01&&Math.abs(planes.orientation.dy)<.01,'Identical A/B poses show zero angular difference');
    assert.deepEqual(planes.meters.map(m=>m.plane),['top','front'],'Two compact coverage meters follow top/front order');
    assert.equal(planes.meters[0].status,'measured','100% area has a measured meter');
    assert.equal(planes.meters[0].width,100,'Full shared top view fills 100% of its track');
@@ -901,6 +910,19 @@ export async function runCameraBrowserSmoke(page){
    assert.ok(planes.delta!==null&&Number.isFinite(+planes.delta),'Both valid projections show a finite difference in percentage points');
    assert.ok(Math.abs(+planes.delta-(+planes.cells[1].value- +planes.cells[0].value))<.000001,'Frontal minus top delta uses matching area denominators');
    assert.ok(planes.text.includes('Mayor proporción en X/Z')||planes.text.includes('Mayor proporción en X/Y')||planes.text.includes('Variación menor a 0,1 punto'),'Plain-language reading matches measurable difference');
+   const expectedSeverity=Math.abs(+planes.delta)<1?'minimal':Math.abs(+planes.delta)<10?'moderate':'marked';
+   assert.equal(planes.severity,expectedSeverity,'Magnitude tier matches measured difference in percentage points');
+   assert.equal(planes.orientation?.dx,0,'Uniform test pitch does not create a difference between A and B');
+   assert.equal(planes.orientation?.dy,0,'Uniform test yaw does not create a difference between A and B');
+   await page.evaluate(()=>{
+    const sc=sec();
+    sc.sdCameraFrames=sc.sdCameraFrames.map((f,i)=>({...f,rotateX:25+i*5,rotateY:30+i*5}));
+    renderPane();
+   });
+   planes=await planesState();
+   assert.ok(Math.abs(planes.orientation?.dx)>1,'Different camera inclinations produce a reported X-axis difference');
+   assert.ok(Math.abs(planes.orientation?.dy)>1,'Different horizontal angles produce a reported Y-axis difference');
+   assert.ok(planes.orientation.text.includes('Giros B − A'),'The panel identifies which pose is subtracted from which');
    await page.select('[data-camera-map-plane]','front');
    planes=await planesState();
    assert.equal(planes.cells[1].current,'true','Switching planes changes the current marker but not measurements');
@@ -924,7 +946,7 @@ export async function runCameraBrowserSmoke(page){
    assert.equal(exclusive.enabled,false,'Exclusive overlay can be disabled again');
    assert.equal(exclusive.regions.length,0,'Hiding exclusive areas preserves existing cone visualization');
    assert.equal(await page.evaluate(()=>history.length),motionNavigationInitial.historyCount,'Coverage calculations and UI do not add undo snapshots');
-  console.log('Camera minimap FOV overlap/union: scaled top/front coverage bars, tiny marker semantics, and unchanged editor frames OK');
+  console.log('Camera minimap FOV overlap/union: coverage severity, A/B rotation context, scaled meters and nondestructive state OK');
 
 
 
