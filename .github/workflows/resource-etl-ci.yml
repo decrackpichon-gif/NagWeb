@@ -20,6 +20,39 @@ env:
   NAGWEB_GITHUB_TOKEN: ${{ github.token }}
 
 jobs:
+  browser-smoke:
+    name: Chromium panel (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install browser driver
+        working-directory: tools/resource-etl
+        run: npm install --no-package-lock --no-audit --no-fund
+      - name: Install Chromium
+        working-directory: tools/resource-etl
+        run: npx playwright install --with-deps chromium
+      - name: Exercise Resource Browser in Chromium
+        working-directory: tools/resource-etl
+        run: npm run test:browser
+      - name: Save browser report and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resource-browser-${{ matrix.os }}
+          path: tools/resource-etl/browser-smoke-results/
+          if-no-files-found: warn
+          retention-days: 7
+
   self-test:
     name: Self test
     runs-on: ubuntu-latest

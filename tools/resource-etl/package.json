@@ -10,6 +10,7 @@
     "ingest": "node src/cli.mjs",
     "dry-run": "node src/cli.mjs --dry-run",
     "test": "node src/selftest.mjs",
+    "test:browser": "node src/resource-browser-smoke.mjs",
     "vault": "node src/vault-cli.mjs",
     "vault:all": "node src/vault-cli.mjs --sources=lucide,shadcn,magicui,motion-primitives,animxyz,threejs,hyperui,uiverse,csshake,magic-css,spinkit,glsl-noise --all",
     "uiverse:inventory": "node src/uiverse-inventory-cli.mjs",
@@ -20,6 +21,7 @@
     "preview:public": "node src/preview/build-public-site.mjs --out=pages-preview"
   },
   "devDependencies": {
+    "playwright": "1.62.1",
     "@tailwindcss/browser": "4.3.3",
     "esbuild": "0.28.2",
     "framer-motion": "14.0.0",

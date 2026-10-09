@@ -58,6 +58,7 @@ input:focus,select:focus{border-color:#68754b;box-shadow:0 0 0 3px #c8f36c15}
 .preview-frame{background:#e9eaed;border-radius:14px;min-height:0;flex:1;overflow:hidden;position:relative}
 .preview-frame iframe{width:100%;height:100%;border:0;background:#fff}
 .preview-fallback{position:absolute;inset:0;display:grid;place-content:center;text-align:center;color:#555;padding:30px;gap:6px}
+.preview-fallback[hidden]{display:none}
 .preview-note{color:var(--muted);font-size:11px;margin:10px 2px 0}
 .resource-detail{padding:20px;overflow:auto}
 .badges{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}

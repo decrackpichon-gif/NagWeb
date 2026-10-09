@@ -878,3 +878,19 @@ se limpia al abrir otro recurso. Restaurar una categoría sigue restaurándola
 completa, incluidos los ajustes ocultos; el botón lo aclara en su ayuda.
 Las pruebas cubren coincidencias, búsquedas sin resultados, ambos filtros,
 conservación de estados, restauración, foco y texto tratado como texto literal.
+
+## Micro-etapa 47: prueba en Chromium
+
+`npm run test:browser` abre la biblioteca real en Chromium contra un Vault de
+prueba local, con gzip y checksums reales, sin pedir recursos externos. Recorre
+búsqueda, filtros, edición con teclado, restauración, foco, vista previa visible
+y aplicación confirmada de SVG y CSS, en anchos de 1280 y 390 px. El receptor es
+un editor de prueba: verifica el mensaje, muestra su contenido y responde por
+el protocolo real; no sustituye una prueba del lienzo principal de NagWeb.
+
+La prueba detectó y corrigió dos problemas: `fetch` recibía un contexto inválido
+en el navegador y el aviso de preview seguía visible pese a su atributo `hidden`.
+El CI ejecuta la prueba en Linux y Windows, además de las pruebas existentes,
+y guarda capturas e informe JSON durante siete días. Para instalar el navegador:
+`npx playwright install --with-deps chromium`. Los resultados quedan en
+`browser-smoke-results/`, excluido de Git.

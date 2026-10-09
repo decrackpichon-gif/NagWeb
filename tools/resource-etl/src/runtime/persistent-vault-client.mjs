@@ -77,7 +77,8 @@ export class NagWebPersistentVaultClient {
     }
 
     this.baseUrl = cleanBaseUrl(baseUrl);
-    this.fetchImpl = fetchImpl;
+    // Native browser fetch cannot receive this client as its `this` value.
+    this.fetchImpl = (...args) => fetchImpl(...args);
     this.manifest = null;
     this.browseIndex = null;
     this.fullLibrary = null;
