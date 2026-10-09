@@ -1834,7 +1834,15 @@ C.panel=function(s){
    if(lk.targetId&&!targetFound)targetOptions+='<option value="'+safeLabel(lk.targetId)+'" selected>Elemento no disponible · usa respaldo XYZ</option>';
    html+=cRow('Objetivo de mirada','<select class="csel" data-camera-look-target data-camera-look-at="'+lk.at+'">'+targetOptions+'</select>');
    if(s.layout!=='free')html+='<p class="hint gh">“Mirar elemento” se habilita primero en Lienzo libre. En otras disposiciones, usá Punto XYZ.</p>';
-   else if(lk.targetId)html+='<p class="hint gh">La cámara sigue el centro del elemento y sus keyframes X/Y/Z del Director. Elegí Punto XYZ para volver a editar el ● a mano.</p>';
+   else if(lk.targetId)html+='<p class="hint gh">La cámara sigue el elemento y sus keyframes X/Y/Z del Director. Elegí Punto XYZ para editar el ● a mano.</p>';
+   var focusedModel=C.config(s).targets.some(function(t){return t.id===lk.targetId&&t.kind==='shape3d';});
+   if(focusedModel){
+    html+='<p class="hint gh">Ajustar punto de enfoque 3D: mueve la mirada respecto del ancla, no el modelo. Y negativo mira más arriba; Z positivo, más cerca de la cámara.</p>';
+    ['X','Y','Z'].forEach(function(axis){
+     var field='focusOffset'+axis,value=Number.isFinite(+lk[field])?+lk[field]:0;
+     html+=cRow('Enfoque '+axis+' (px)','<input type="number" class="cnum" aria-label="Desplazamiento del enfoque 3D '+axis+'" data-camera-look-focus-offset="'+axis.toLowerCase()+'" data-camera-look-at="'+lk.at+'" value="'+value+'" min="-4000" max="4000" step="10">');
+    });
+   }
    function lookField(label,key,value,min,max,step){return cRow(label,'<input class="cnum" type="number" aria-label="'+label+'" data-camera-look-field="'+key+'" data-camera-look-at="'+lk.at+'" value="'+value+'" min="'+min+'" max="'+max+'" step="'+step+'">');}
    html+=lookField('Momento objetivo (%)','at',lk.at,0,100,.1);
    if(!lk.targetId)['x','y','z'].forEach(function(axis){html+=lookField('Objetivo '+axis.toUpperCase(),axis,lk[axis],-4000,4000,25);});
@@ -2588,10 +2596,23 @@ if(pane){
   }
   if(input.dataset.cameraLookTarget!==undefined){
    var ts=sec(),tc=C.config(ts),tl=lookKeys(ts),tk=tl.find(function(k){return k.at===+input.dataset.cameraLookAt;}),tid=input.value;if(!tk||!tc)return;
-   var oldId=tk.targetId||'';if(oldId===tid)return;snapshot();
-   if(tid){var tv=C.elementTarget(tc,tid,tk.at/100,window.NAGWEB_STORY_MODEL,ts.sdEase,previewReferenceSize(ts));tk.targetId=tid;if(tv){tk.x=tv.x;tk.y=tv.y;tk.z=tv.z;}}
-   else delete tk.targetId;
+   var oldId=tk.targetId||'';if(oldId===tid)return;
+   var sz=previewReferenceSize(ts),prev=C.resolveLookFrame(tc,tk,tk.at/100,window.NAGWEB_STORY_MODEL,ts.sdEase,sz);
+   var tv=tid?C.elementTarget(tc,tid,tk.at/100,window.NAGWEB_STORY_MODEL,ts.sdEase,sz):null;
+   if(tid&&!tv){toast('El elemento no se puede usar como objetivo.');renderPane();return;}
+   snapshot();
+   if(tid){tk.targetId=tid;tk.x=tv.x;tk.y=tv.y;tk.z=tv.z;}
+   else{delete tk.targetId;if(prev){tk.x=prev.x;tk.y=prev.y;tk.z=prev.z;}}
+   delete tk.focusOffsetX;delete tk.focusOffsetY;delete tk.focusOffsetZ;
    persistLook(ts,tl,tk.at);return;
+  }
+  if(input.dataset.cameraLookFocusOffset!==undefined){
+   var fs=sec(),fc=C.config(fs),frames=lookKeys(fs),fk=frames.find(function(k){return k.at===+input.dataset.cameraLookAt;}),ax=String(input.dataset.cameraLookFocusOffset||'').toUpperCase(),field='focusOffset'+ax;
+   if(!fk||!fc||!['X','Y','Z'].includes(ax)||!fc.targets.some(function(t){return t.id===fk.targetId&&t.kind==='shape3d';})){renderPane();return;}
+   var raw=Number(input.value);if(input.value===''||!Number.isFinite(raw)){renderPane();return;}
+   var value=Math.max(-4000,Math.min(4000,raw)),previous=Number(fk[field])||0;
+   if(value===previous){input.value=String(value);return;}
+   snapshot();fk[field]=value;persistLook(fs,frames,fk.at);return;
   }
   if(input.dataset.cameraLookHandleMode!==undefined){
    var lhs=sec(),lhList=lookKeys(lhs),lhAt=+input.dataset.cameraLookAt,lhSide=input.dataset.cameraLookHandleSide==='in'?'in':'out',lhKey=lhList.find(function(k){return k.at===lhAt;}),lhFree=input.value==='free';
