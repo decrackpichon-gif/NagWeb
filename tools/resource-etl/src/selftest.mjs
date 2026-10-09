@@ -73,6 +73,11 @@ import {
   isSupportedUiverseCssEasing
 } from "./runtime/uiverse-easing.mjs";
 import {
+  inferUiverseCssPlaybackProps,
+  applyUiverseCssPlaybackValues,
+  isSupportedUiverseCssPlayback
+} from "./runtime/uiverse-playback.mjs";
+import {
   inferUiverseCssColorProps,
   effectiveUiverseEditableProps,
   applyUiverseCssColorValues
@@ -1624,6 +1629,7 @@ try {
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-multi-timing.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-bezier.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-easing.mjs"))).isFile());
+  assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-playback.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "resource-browser", "vendor", "lottie_light.min.js"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, ".nojekyll"))).isFile());
   await assert.rejects(stat(path.join(publicPreviewDir, "src", "cli.mjs")),
@@ -2500,3 +2506,124 @@ assert.equal(inferUiverseCssEasingProps(
       i%2?"ease-in":"ease-out")+';transition-timing-function:linear}').join('')+
   '</style>').length<=8,true,
   "The library caps inferred preset controls per component");
+
+
+const playbackCss='<style>' +
+  '.card{animation:spin 1s ease 0.2s infinite alternate,' +
+  'fade 500ms cubic-bezier(.2,.4,0,1) 2 reverse;' +
+  'animation-iteration-count:1,infinite;' +
+  'animation-direction:normal,alternate-reverse}' +
+  '.card:hover{animation:spin 1s ease 0.2s infinite alternate,' +
+  'fade 500ms cubic-bezier(.2,.4,0,1) 2 reverse}' +
+  '/* .fake{animation:spin 1s infinite reverse} */' +
+  '.title:after{content:"animation:spin 1s infinite alternate"}' +
+  '.skip{animation:spin 1s var(--run) infinite alternate;' +
+  'animation-direction:var(--dir);' +
+  'animation-iteration-count:calc(2 + 1);' +
+  'transition:opacity .3s ease-in}' +
+  '</style><span data-animation="1s infinite alternate">Texto</span>';
+const playbackProps=inferUiverseCssPlaybackProps(playbackCss);
+assert.deepEqual(playbackProps.map(p=>[
+  p.binding.property,p.binding.trackIndex,p.binding.field,p.defaultValue
+]),[
+  ["animation",0,"count","infinite"],["animation",0,"direction","alternate"],
+  ["animation",1,"count","2"],["animation",1,"direction","reverse"],
+  ["animation-iteration-count",0,"count","1"],
+  ["animation-iteration-count",1,"count","infinite"],
+  ["animation-direction",0,"direction","normal"],
+  ["animation-direction",1,"direction","alternate-reverse"]
+],"Repetition and direction recognize actual CSS tracks and existing longhand lists");
+assert.deepEqual(playbackProps.map(p=>p.id),
+  Array.from({length:8},(_,i)=>"uiversePlay"+(i+1)));
+assert.equal(playbackProps[0].constraints.options.some(o=>o.value==="infinite"),true);
+assert.equal(playbackProps[2].constraints.options.some(o=>o.value==="12"),true);
+assert.equal(playbackProps[1].constraints.options.some(o=>o.value==="alternate-reverse"),true);
+const savedPlaybackResource={
+  ...persistedUiverse,
+  artifacts:[{...persistedUiverse.artifacts[0],content:playbackCss}]
+};
+assert.deepEqual(describeEditableControls(savedPlaybackResource)
+  .filter(c=>c.id.startsWith("uiversePlay")).map(c=>c.kind),
+  Array(8).fill("select"),
+  "Previously saved Uiverse components gain playback controls without re-import");
+assert.equal(isSupportedUiverseCssPlayback(savedPlaybackResource,playbackProps[3]),true);
+assert.equal(isSupportedUiverseCssPlayback(savedPlaybackResource,{
+  ...playbackProps[3],binding:{...playbackProps[3].binding,trackIndex:99}
+}),false,"Incorrect track metadata cannot create fake playback controls");
+assert.equal(isSupportedUiverseCssPlayback(savedPlaybackResource,{
+  ...playbackProps[3],constraints:{options:[{value:"bad",label:"Bad"}]}
+}),false,"Unapproved repetition and direction values are rejected");
+assert.equal(applyUiverseCssPlaybackValues(savedPlaybackResource,{},playbackCss),
+  playbackCss,"Default playback options preserve the source code byte-for-byte");
+const editedPlayback=buildResourceApplyEnvelope(savedPlaybackResource,{
+  values:{
+    uiversePlay1:"3",uiversePlay2:"reverse",
+    uiversePlay3:"infinite",uiversePlay4:"alternate-reverse",
+    uiversePlay5:"2",uiversePlay6:"5",
+    uiversePlay7:"alternate",uiversePlay8:"normal"
+  }
+});
+assert.match(editedPlayback.descriptor.payload.html,
+  /animation:spin 1s ease 0.2s 3 reverse,fade 500ms cubic-bezier\(.2,.4,0,1\) infinite alternate-reverse/);
+assert.match(editedPlayback.descriptor.payload.html,
+  /animation-iteration-count:2,5/);
+assert.match(editedPlayback.descriptor.payload.html,
+  /animation-direction:alternate,normal/);
+assert.match(editedPlayback.descriptor.payload.html,
+  /\.card:hover\{animation:spin 1s ease 0.2s 3 reverse,fade 500ms cubic-bezier\(.2,.4,0,1\) infinite alternate-reverse\}/);
+assert.match(editedPlayback.descriptor.payload.html,
+  /\/\* \.fake\{animation:spin 1s infinite reverse\} \*\//);
+assert.match(editedPlayback.descriptor.payload.html,
+  /content:"animation:spin 1s infinite alternate"/);
+assert.match(editedPlayback.descriptor.payload.html,
+  /animation:spin 1s var\(--run\) infinite alternate/);
+assert.match(editedPlayback.descriptor.payload.html,
+  /animation-direction:var\(--dir\)/);
+assert.match(editedPlayback.descriptor.payload.html,
+  /animation-iteration-count:calc\(2 \+ 1\)/);
+assert.match(editedPlayback.descriptor.payload.html,
+  /transition:opacity .3s ease-in/);
+assert.match(editedPlayback.descriptor.payload.html,
+  /data-animation="1s infinite alternate"/);
+assert.equal(editedPlayback.descriptor.instance.values.uiversePlay4,
+  "alternate-reverse","Insert descriptor keeps selected direction");
+assert.deepEqual(editedPlayback.resource.editableProps.filter(p=>
+  p.id.startsWith("uiversePlay")).map(p=>p.id),
+  playbackProps.map(p=>p.id),
+  "Insert descriptor retains playback metadata");
+assert.equal(savedPlaybackResource.artifacts[0].content,playbackCss,
+  "The stored original resource is never modified");
+assert.equal(applyUiverseCssPlaybackValues(savedPlaybackResource,{
+  uiversePlay1:"10;position:fixed",uiversePlay2:"up",
+  uiversePlay3:0,uiversePlay4:null,uiversePlay5:"NaN",
+  uiversePlay6:"99",uiversePlay7:[],uiversePlay8:{value:"normal"}
+},playbackCss),playbackCss,
+  "Invalid, injected, out-of-range and non-string values cannot rewrite CSS");
+const freshlyImportedPlayback=transformUiverseComponent({
+  repository:"https://github.com/uiverse-io/galaxy",commit:"test",
+  item:{metadata:{category:"Buttons",author:"designer",slug:"playback"},
+    content:playbackCss,entry:{path:"Buttons/designer_playback.html",sha:"a"}}
+});
+assert.deepEqual(freshlyImportedPlayback.editableProps.filter(p=>
+  p.id.startsWith("uiversePlay")).map(p=>p.id),
+  playbackProps.map(p=>p.id),
+  "Fresh imports persist genuine playback controls");
+assert.deepEqual(inferUiverseCssPlaybackProps(
+  '<style>.invalid{' +
+  'animation:spin 1s var(--speed) infinite reverse;' +
+  'animation-iteration-count:calc(2 + 1);' +
+  'animation-direction:var(--direction);' +
+  'transition:opacity .3s ease-in}</style>'),[],
+  "Dynamic and transition-only declarations cannot generate playback controls");
+assert.equal(inferUiverseCssPlaybackProps(
+  '<style>'+Array.from({length:9},(_,i)=>
+    '.a'+i+'{animation:spin 1s '+(i+1)+' alternate}').join('')+
+  '</style>').length,8,
+  "At most eight playback selectors appear for a component");
+const playbackAndBezier=buildResourceApplyEnvelope(savedPlaybackResource,{
+  values:{uiversePlay1:"4",uiversePlay4:"alternate",
+    uiverseBezier1:0.4}
+});
+assert.match(playbackAndBezier.descriptor.payload.html,
+  /fade 500ms cubic-bezier\(0.4,.4,0,1\) 2 alternate/,
+  "Playback selectors remain compatible with Bézier point editing");

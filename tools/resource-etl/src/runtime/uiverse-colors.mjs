@@ -5,6 +5,7 @@ import { inferUiverseCssTimingProps } from "./uiverse-timing.mjs";
 import { inferUiverseCssMultiTimingProps } from "./uiverse-multi-timing.mjs";
 import { inferUiverseCssBezierProps } from "./uiverse-bezier.mjs";
 import { inferUiverseCssEasingProps } from "./uiverse-easing.mjs";
+import { inferUiverseCssPlaybackProps } from "./uiverse-playback.mjs";
 
 // Infer hexadecimal, rgb() and rgba() colors from real CSS declarations.
 // Operates on the component's own <style> tags, never on arbitrary markup.
@@ -111,7 +112,8 @@ export function effectiveUiverseEditableProps(resource) {
     ...inferUiverseCssTimingProps(mainHtml(resource)),
     ...inferUiverseCssMultiTimingProps(mainHtml(resource)),
     ...inferUiverseCssBezierProps(mainHtml(resource)),
-    ...inferUiverseCssEasingProps(mainHtml(resource))
+    ...inferUiverseCssEasingProps(mainHtml(resource)),
+    ...inferUiverseCssPlaybackProps(mainHtml(resource))
   ].filter(prop => !seen.has(prop.id))];
 }
 

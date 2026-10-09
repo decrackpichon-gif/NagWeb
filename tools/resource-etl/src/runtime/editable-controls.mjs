@@ -6,6 +6,7 @@ import { isSupportedUiverseCssTiming } from "./uiverse-timing.mjs";
 import { isSupportedUiverseCssMultiTiming } from "./uiverse-multi-timing.mjs";
 import { isSupportedUiverseCssBezier } from "./uiverse-bezier.mjs";
 import { isSupportedUiverseCssEasing } from "./uiverse-easing.mjs";
+import { isSupportedUiverseCssPlayback } from "./uiverse-playback.mjs";
 import {
   effectiveUiverseEditableProps,
   isSupportedUiverseCssColor
@@ -45,7 +46,8 @@ export function describeEditableControls(resource) {
         isSupportedUiverseCssTiming(resource, prop) ||
         isSupportedUiverseCssMultiTiming(resource, prop) ||
         isSupportedUiverseCssBezier(resource, prop) ||
-        isSupportedUiverseCssEasing(resource, prop)
+        isSupportedUiverseCssEasing(resource, prop) ||
+        isSupportedUiverseCssPlayback(resource, prop)
       : renderer === "nagweb-svg"
         ? ["size", "stroke", "strokeWidth"].includes(id) &&
           prop.binding?.type === "runtime" &&
