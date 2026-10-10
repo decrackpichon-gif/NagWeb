@@ -538,14 +538,14 @@ export async function runCameraBrowserSmoke(page){
   assert.deepEqual(paceInitial.look,['fast','pause','fast','fast','normal'],'Look target has independent pace bands');
   assert.ok(paceInitial.legend.includes('Lento')&&paceInitial.legend.includes('Pausa'),'Pace legend explains visual categories');
   assert.equal(paceInitial.summaryOpen,true,'Pace legend appears in expanded diagnostics');
-  await page.click('[data-camera-overview-pace-toggle]');
+  await page.focus('[data-camera-overview-pace-toggle]');await page.keyboard.press('Space');
   await page.waitForFunction(()=>!document.querySelector('[data-camera-overview-pace]'));
   assert.equal(await page.$eval('[data-camera-overview-pace-toggle]',n=>n.checked),false,'Visual rhythm can be disabled without hiding the minimap');
   assert.equal(await page.$eval('[data-camera-overview-metrics]',n=>n.open),true,'Pace toggle keeps diagnostics expanded');
   assert.ok(await page.$('[data-camera-overview-path]'),'Original camera trajectory remains visible with rhythm hidden');
   await page.select('[data-camera-map-plane]','front');
   assert.equal(await page.$eval('[data-camera-overview-pace-toggle]',n=>n.checked),false,'Pace visibility is preserved when changing projection');
-  await page.click('[data-camera-overview-pace-toggle]');
+  await page.focus('[data-camera-overview-pace-toggle]');await page.keyboard.press('Space');
   await page.waitForFunction(()=>document.querySelectorAll('[data-camera-overview-pace]').length===2);
   assert.equal(await page.$$eval('[data-camera-overview-pace-band="pause"]',els=>els.length),2,'Both camera and look display 3D pauses in front view');
   await page.select('[data-camera-map-plane]','top');
@@ -957,7 +957,7 @@ export async function runCameraBrowserSmoke(page){
    let exclusive=await exclusiveState();
    assert.equal(exclusive.enabled,false,'Exclusive regions default off to keep the minimap uncluttered');
    assert.equal(exclusive.regions.length,0);
-   await page.click('[data-camera-overview-compare-exclusive-toggle]');
+   await page.focus('[data-camera-overview-compare-exclusive-toggle]');await page.keyboard.press('Space');
    exclusive=await exclusiveState();
    assert.equal(exclusive.enabled,true,'Exclusive overlay switches on');
    assert.deepEqual(exclusive.regions.map(r=>r.which),['a','b']);
@@ -983,14 +983,14 @@ export async function runCameraBrowserSmoke(page){
    await page.select('[data-camera-overview-compare-focus]','all');
    assert.equal((await focusDetailState()).present,false,'All-regions mode omits redundant contextual text');
    await page.select('[data-camera-overview-compare-focus]','all');
-  await page.click('[data-camera-overview-compare-fov-toggle]');
+  await page.focus('[data-camera-overview-compare-fov-toggle]');await page.keyboard.press('Space');
   cov=await overlapState();
   assert.equal(cov.polygon,false,'Hiding cones also hides purple overlap visualization');
   assert.equal(cov.visibleCones,0);
    assert.equal((await exclusiveState()).regions.length,0,'Hiding cones also hides exclusive areas');
   assert.equal(cov.status,'shared','Hiding geometry retains computed coverage in the diagnostic');
   assert.ok(cov.message.includes('conos ocultos'),'Hidden cones are labeled in diagnostic');
-  await page.click('[data-camera-overview-compare-fov-toggle]');
+  await page.focus('[data-camera-overview-compare-fov-toggle]');await page.keyboard.press('Space');
   cov=await overlapState();
   assert.equal(cov.polygon,true,'Shared region reappears when cones are shown');
   await page.select('[data-camera-map-plane]','front');
@@ -1122,7 +1122,7 @@ export async function runCameraBrowserSmoke(page){
   await page.select('[data-camera-overview-compare-b]',originalOverlapSelection.b);
   assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),motionNavigationInitial.frames,'Overlap visualization does not change authored camera frames');
   assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraLookFrames)),motionNavigationInitial.looks,'Overlap visualization does not change authored look frames');
-  await page.click('[data-camera-overview-compare-exclusive-toggle]');
+  await page.focus('[data-camera-overview-compare-exclusive-toggle]');await page.keyboard.press('Space');
    exclusive=await exclusiveState();
    assert.equal(exclusive.enabled,false,'Exclusive overlay can be disabled again');
    assert.equal(exclusive.regions.length,0,'Hiding exclusive areas preserves existing cone visualization');
@@ -1713,10 +1713,10 @@ export async function runCameraBrowserSmoke(page){
    assert.ok(guide.point&&Number.isFinite(guide.point.x)&&Number.isFinite(guide.point.y),'Position stays finite in '+plane);
   }
   await page.select('[data-camera-map-plane]','top');
-  await page.click('[data-camera-scene-objects-toggle]');
+  await page.focus('[data-camera-scene-objects-toggle]');await page.keyboard.press('Space');
   assert.equal(await page.$$eval('[data-camera-scene-object]',els=>els.length),0,'Object references can be hidden');
   assert.equal(await page.$eval('[data-camera-scene-objects-toggle]',el=>el.checked),false,'Visibility toggle stays disabled');
-  await page.click('[data-camera-scene-objects-toggle]');
+  await page.focus('[data-camera-scene-objects-toggle]');await page.keyboard.press('Space');
   guide=await sceneGuideRead();
   assert.equal(guide.count,1,'Object guides return without new scene edits');
   assert.equal(guide.elements,guideBase.elements,'Toggling guides does not change elements');
@@ -1822,9 +1822,9 @@ export async function runCameraBrowserSmoke(page){
   inspected=await inspectRead();
   assert.equal(inspected.selected,'0','Clicking object centre on spatial map selects it');
   assert.equal(inspected.history,inspectBase.history,'Direct map picking remains read-only');
-  await page.click('[data-camera-scene-objects-toggle]');
+  await page.focus('[data-camera-scene-objects-toggle]');await page.keyboard.press('Space');
   assert.equal(await page.$$eval('[data-camera-object-inspector]',els=>els.length),0,'Hiding objects hides inspection panel');
-  await page.click('[data-camera-scene-objects-toggle]');
+  await page.focus('[data-camera-scene-objects-toggle]');await page.keyboard.press('Space');
   assert.equal((await inspectRead()).selected,'','Hidden object selection is not resurrected');
   await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',0));
   console.log('Camera object inspector: direct map click, dropdown, live XYZ/distance, selection reset and no edits OK');

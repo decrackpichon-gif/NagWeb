@@ -97,3 +97,9 @@ valor no conserva su identidad al serializarse como JSON. La ausencia de
 barra se representa ahora con `null` y se verifica además que el elemento de
 relleno no exista. Se conserva la comprobación del estado «no evaluable»;
 no se cambia el cálculo de cobertura del producto.
+
+Se aplica la misma activación accesible por teclado a los otros checkboxes del
+smoke (ritmos, áreas exclusivas y objetos de la escena), después de verificar
+en el HTML que son inputs nativos. Se agrupa esta corrección del driver para
+evitar resolver cada clic inestable con una nueva ejecución completa. Sus
+aserciones de geometría, selección, visibilidad y datos se conservan.
