@@ -19,6 +19,7 @@ el.previewReplay.addEventListener = (type, handler) => { el.previewReplay[type] 
 const context = {
   el, detailRevision: 0, previewRevision: 0, previewReplayRevision: 0, selectedResource: null, selectedValues: {},
   editResourceId: null, editInitialValues: {}, rememberCategories() {},
+  synchronizeFavorites() {},
   vault: { getResource(id) { const gate = deferred(); resources.set(id, gate); return gate.promise; } },
   previewDoc(resource) { const gate = deferred(); previews.set(resource.id, gate); return gate.promise; },
   renderEditableControls(resource) { rendered.push(resource.id); el.customize.hidden = false; }, updateApplyReadiness() {},
