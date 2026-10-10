@@ -155,3 +155,6 @@ pre{white-space:pre-wrap;word-break:break-word;background:#090b0e;border:1px sol
 .saved-customization p{font-size:12px;line-height:1.5;margin:0;color:var(--muted,#b6b6be)}
 .saved-customization-actions{display:flex;flex-wrap:wrap;gap:6px}
 .saved-customization-actions button{min-width:0;flex:1 1 130px}
+
+/* The recovery undo is transient. Keep it out of the action row when hidden. */
+.saved-customization-actions button[hidden]{display:none}

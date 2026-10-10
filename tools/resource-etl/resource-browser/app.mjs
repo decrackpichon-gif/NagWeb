@@ -38,6 +38,7 @@ const el = {
   savedCustomization: document.querySelector("[data-saved-customization]"),
   saveCustomization: document.querySelector("[data-save-customization]"),
   loadCustomization: document.querySelector("[data-load-customization]"),
+  undoCustomization: document.querySelector("[data-undo-customization]"),
   deleteCustomization: document.querySelector("[data-delete-customization]"),
   savedCustomizationStatus: document.querySelector("[data-saved-customization-status]"),
   clear: document.querySelector("[data-clear]"),
@@ -118,6 +119,8 @@ function flipFavorite(id) {
 synchronizeFavorites();
 
 let selectedValues = {};
+let recoveryUndoValues = null;
+let recoveryUndoResourceId = null;
 let detailRevision = 0;
 let previewRevision = 0;
 const categoryStateKey = "nagweb:resource-browser:categories:v1";
@@ -768,6 +771,7 @@ async function openDetail(id) {
   confirmedApplyValues = null;
   confirmedApplyResourceId = null;
   confirmedApplyMessage = "";
+  clearRecoveryUndo();
   synchronizeFavorites();
   selectedValues = id === editResourceId ? { ...editInitialValues } : {};
   el.customize.hidden = true;
@@ -1007,7 +1011,8 @@ window.addEventListener("message", (event) => {
     event.data.message || "El editor informó un error al aplicar el recurso.";
 });
 
-async function redrawEditablePreview() {
+async function redrawEditablePreview({ retainRecoveryUndo = false } = {}) {
+  if (!retainRecoveryUndo) clearRecoveryUndo();
   synchronizeConfirmedApplyNotice();
   const resource = selectedResource;
   if (!resource || el.customize.hidden || !el.detail.open) return;
@@ -1076,6 +1081,12 @@ el.previewReplay.addEventListener("click", async () => {
   el.previewNote.textContent = "La vista previa volvió a empezar con tus ajustes.";
 });
 
+function clearRecoveryUndo() {
+  recoveryUndoValues = null;
+  recoveryUndoResourceId = null;
+  el.undoCustomization.hidden = true;
+}
+
 function updateSavedCustomizationUi() {
   const resource = selectedResource;
   const controls = resource ? describeEditableControls(resource) : [];
@@ -1104,11 +1115,32 @@ el.loadCustomization.addEventListener("click", () => {
   if (!resource || el.savedCustomization.hidden || el.loadCustomization.disabled) return;
   const saved=readSavedCustomization(presetStorage,resource.id,describeEditableControls(resource));
   if(!saved)return;
-  selectedValues={...defaultEditableValues(resource),...saved};
+  const recovered = {...defaultEditableValues(resource),...saved};
+  if (!hasUnappliedResourceEdits(selectedValues, recovered)) {
+    el.savedCustomizationStatus.textContent = "Los ajustes ya coinciden con la configuración guardada.";
+    return;
+  }
+  recoveryUndoValues = {...selectedValues};
+  recoveryUndoResourceId = resource.id;
+  selectedValues = recovered;
+  el.undoCustomization.hidden = false;
+  renderEditableControls(resource,{preserveGroups:true});
+  redrawEditablePreview({retainRecoveryUndo:true});
+  el.savedCustomizationStatus.textContent =
+    "Configuración recuperada. Si querés volver a tus ajustes anteriores, usá Deshacer recuperación.";
+  el.loadCustomization.focus();
+});
+el.undoCustomization.addEventListener("click", () => {
+  const resource = selectedResource;
+  if (!resource || recoveryUndoResourceId !== resource.id || !recoveryUndoValues ||
+      el.savedCustomization.hidden) return;
+  const previous = recoveryUndoValues;
+  clearRecoveryUndo();
+  selectedValues = {...previous};
   renderEditableControls(resource,{preserveGroups:true});
   redrawEditablePreview();
   el.savedCustomizationStatus.textContent =
-    "Configuración recuperada. Podés seguir editándola o aplicarla en NagWeb.";
+    "Recuperación deshecha. Volvieron tus ajustes anteriores; los guardados siguen disponibles.";
   el.loadCustomization.focus();
 });
 el.deleteCustomization.addEventListener("click", () => {

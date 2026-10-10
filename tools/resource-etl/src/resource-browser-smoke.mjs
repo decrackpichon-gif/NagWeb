@@ -372,6 +372,18 @@ try {
     await expect(frame.getByLabel("Tamaño",{exact:true})).toHaveValue("24");
     await frame.getByRole("button",{name:"Recuperar guardados",exact:true}).click();
     await expect(frame.getByLabel("Tamaño",{exact:true})).toHaveValue("44");
+    // Stage 79: recovery must be reversible without rewriting local storage.
+    const undoRecovery = frame.getByRole("button",{name:"Deshacer recuperación",exact:true});
+    await expect(undoRecovery).toBeVisible();
+    await undoRecovery.click();
+    await expect(frame.getByLabel("Tamaño",{exact:true})).toHaveValue("24");
+    await expect(undoRecovery).toBeHidden();
+    await frame.getByRole("button",{name:"Recuperar guardados",exact:true}).click();
+    await expect(frame.getByLabel("Tamaño",{exact:true})).toHaveValue("44");
+    await setRange("Tamaño",40);
+    await expect(undoRecovery).toBeHidden();
+    await frame.getByRole("button",{name:"Recuperar guardados",exact:true}).click();
+    await expect(frame.getByLabel("Tamaño",{exact:true})).toHaveValue("44");
     await frame.getByRole("button",{name:"Cerrar",exact:true}).click();
     const resourceChild=page.frames().find(child=>child.url().includes("/resource-browser/"));
     await resourceChild.goto(resourceChild.url());
@@ -384,7 +396,8 @@ try {
     await expect(frame.getByLabel("Tamaño",{exact:true})).toHaveValue("44");
     report.scenarios.push({browser:"saved reusable customization",width,status:"passed",
       roundTrip:true,explicitRestore:true,doesNotOverrideInitialSettings:true,
-      reload:true,deleteKeepsCurrentValues:true});
+      reload:true,deleteKeepsCurrentValues:true,undoRecovery:true,
+      invalidatesUndoAfterFurtherEditing:true});
     report.scenarios.push({ width, status: "passed", applies: await page.evaluate(() => window.received.length) });
     await context.close();
   }

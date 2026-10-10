@@ -1237,3 +1237,14 @@ y no se aplica sobre entradas de texto. Los componentes HTML/CSS aislados pueden
 usarse desde el botón Personalizar; sus iframes internos no propagan el doble
 clic al lienzo padre. Se añadió un recorrido de navegador con apertura directa,
 selección, cancelación y comprobación del historial.
+
+## Micro-etapa 79: deshacer recuperación de ajustes
+
+Recuperar una configuración guardada no debe destruir sin posibilidad de vuelta
+los ajustes que el diseñador estaba probando. Ahora aparece **Deshacer recuperación**
+tras recuperar valores distintos, restaurando la versión del panel anterior a
+esa acción sin tocar el guardado local ni el lienzo de NagWeb. El botón se
+oculta al editar otro control, abrir otra ficha o deshacer, para no ofrecer
+una reversión engañosa de cambios hechos después. Si los ajustes ya coinciden,
+la recuperación no modifica el estado. Chromium cubre recuperar, deshacer,
+volver a recuperar y editar después.
