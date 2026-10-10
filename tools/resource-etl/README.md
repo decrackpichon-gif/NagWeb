@@ -996,3 +996,23 @@ protegían la personalización SVG. La prueba real de Chromium verifica edición
 del CSS, conservación de identidad, no duplicación, persistencia, exportación,
 deshacer/rehacer y cancelación. Los recursos React y HTML con dependencias
 todavía no están admitidos.
+
+## Micro-etapa 54: medidas reales al personalizar SVG en grillas y celular
+
+La personalización SVG recupera el ancho calculado por el navegador en el
+lienzo, sin incluir la rotación. Así respeta bordes, márgenes internos,
+separaciones, columnas y sus cambios en celular; el cálculo anterior del modelo
+podía mostrar y guardar otra medida. El nuevo tamaño se convierte a porcentaje
+del espacio real del ícono en la vista activa. El encabezado indica si se está
+editando computadora o celular, y la otra vista conserva sus ajustes.
+
+Si el lienzo todavía se está actualizando o el ícono no tiene una medida visible,
+se pide volver a abrir Personalizar cuando termine de cargar. En disposiciones
+que fuerzan el ancho (masonry u ocupar el espacio sobrante), un cambio de tamaño
+se rechaza antes de modificar el historial; el tamaño se controla desde ese
+contenedor. No se modifican las reglas de distribución del editor.
+
+Chromium reproduce el cálculo incorrecto anterior con una grilla con borde y
+un ícono rotado, y verifica medidas finales de 48 px en computadora y 32 px en
+celular. Comprueba conservación de la otra vista, jerarquía y rotación,
+deshacer/rehacer y recarga. Captura: `editor-mobile-grid.png`.

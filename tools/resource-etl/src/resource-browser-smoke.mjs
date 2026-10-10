@@ -622,6 +622,90 @@ try {
   report.scenarios.push({editor:"NagWeb persistent Uiverse HTML/CSS",status:"passed",
     iframeSandbox:true,save:true,undoRedo:true,reload:true,export:true,
     externalScriptsBlocked:true,invalidPayloadRejected:true});
+  // A bordered grid has different column counts, spacing and padding on mobile.
+  // Use rendered CSS width as the oracle, including a rotated native vector.
+  await page.evaluate(id => {
+    const vector = sec().elements.find(e => e.id === id);
+    const container = mkEl("container", { w: 50, h: 320, x: 50, y: 50,
+      stackDir: "grid", gridCols: 2, stackPad: 24, stackGap: 16,
+      border: "#123456", borderWidth: 4, shadow: false, anim: "none",
+      mobile: { w: 90, gridCols: 1, stackPad: 18, stackGap: 8 } });
+    vector.parent = container.id;
+    vector.w = 20; vector.mobile = { w: 20 }; vector.rot = 30; vector.anim = "none";
+    sec().elements.push(container);
+    selection = [vector.id]; curEl = sec().elements.indexOf(vector); secFocus = false;
+    refresh();
+  }, inserted.element.id);
+  const gridVector = page.frameLocator("#preview").locator(`[data-id="${inserted.element.id}"]`);
+  await expect(gridVector).toHaveAttribute("data-w", "20");
+  await expect(gridVector).toHaveAttribute("data-rot", "30");
+  const renderedWidth = () => gridVector.evaluate(n => Number.parseFloat(getComputedStyle(n).width));
+  const setEditSize = async value => {
+    const group = libraryFrame.locator('details[data-category="size"]');
+    if (!await group.evaluate(n => n.open)) await group.locator("summary").click();
+    const control = libraryFrame.getByLabel("Tamaño", { exact: true });
+    await control.focus(); await control.press("Home");
+    for (let i = 16; i < value; i++) await control.press("ArrowRight");
+  };
+  const openGridEdit = async () => {
+    await page.getByRole("button", { name: "Personalizar ícono seleccionado", exact: true }).click();
+    await expect(libraryFrame.getByRole("button", { name: "Guardar cambios en el ícono", exact: true })).toBeEnabled();
+    const group = libraryFrame.locator('details[data-category="size"]');
+    if (!await group.evaluate(n => n.open)) await group.locator("summary").click();
+  };
+  const desktopGridWidth = Math.round(await renderedWidth());
+  const oldModelWidth = await page.evaluate(id => Math.round(designWpx(sec().elements.find(e => e.id === id), sec())), inserted.element.id);
+  assert.notEqual(oldModelWidth, desktopGridWidth, "Bordered grid fixture must reproduce the previous sizing error");
+  await openGridEdit();
+  await expect(libraryFrame.getByLabel("Tamaño", { exact: true })).toHaveValue(String(desktopGridWidth));
+  await setEditSize(48);
+  await libraryFrame.getByRole("button", { name: "Guardar cambios en el ícono", exact: true }).click();
+  await expect(libraryFrame.locator('[data-apply-status]')).toContainText("Cambios guardados");
+  await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
+  await expect.poll(renderedWidth).toBeCloseTo(48, 1);
+  const desktopState = await page.evaluate(id => ({ w: sec().elements.find(e => e.id === id).w, stroke: sec().elements.find(e => e.id === id).stroke }), inserted.element.id);
+  await page.locator("#btn-view-mob").click();
+  await expect(gridVector).toHaveAttribute("data-w", "20");
+  const mobileGridWidth = Math.round(await renderedWidth());
+  await openGridEdit();
+  await expect(libraryFrame.getByLabel("Tamaño", { exact: true })).toHaveValue(String(mobileGridWidth));
+  await expect(page.getByText("Personalizá el ícono seleccionado · versión celular.", { exact: true })).toBeVisible();
+  await setEditSize(32);
+  await libraryFrame.getByLabel("Color", { exact: true }).fill("#abcdef");
+  await libraryFrame.getByRole("button", { name: "Guardar cambios en el ícono", exact: true }).click();
+  await expect(libraryFrame.locator('[data-apply-status]')).toContainText("Cambios guardados");
+  await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
+  await expect.poll(renderedWidth).toBeCloseTo(32, 1);
+  const mobileState = await page.evaluate(id => structuredClone(sec().elements.find(e => e.id === id)), inserted.element.id);
+  assert.equal(mobileState.w, desktopState.w, "Mobile edit preserves desktop width");
+  assert.equal(mobileState.stroke, desktopState.stroke, "Mobile edit preserves desktop stroke");
+  assert.equal(mobileState.mobile.stroke, "#abcdef");
+  assert.equal(mobileState.rot, 30);
+  await page.screenshot({ path: path.join(output, "editor-mobile-grid.png"), fullPage: true });
+  await page.locator("#btn-undo").click();
+  await expect(gridVector).toHaveAttribute("data-w", "20");
+  await page.locator("#btn-redo").click();
+  await expect.poll(renderedWidth).toBeCloseTo(32, 1);
+  await page.locator("#btn-view-desk").click();
+  await expect.poll(renderedWidth).toBeCloseTo(48, 1);
+  await page.reload();
+  await expect.poll(renderedWidth).toBeCloseTo(48, 1);
+  await page.locator("#btn-view-mob").click();
+  await expect.poll(renderedWidth).toBeCloseTo(32, 1);
+  await page.evaluate(id => {
+    const e = sec().elements.find(e => e.id === id);
+    sec().elements.find(parent => parent.id === e.parent).stackDir = "masonry";
+    selection = [id]; curEl = sec().elements.indexOf(e); secFocus = false; refresh();
+  }, inserted.element.id);
+  await expect(gridVector.locator("..")).toHaveClass(/lay-masonry/);
+  await openGridEdit();
+  await setEditSize(32);
+  const fixedHistory = await page.evaluate(() => history.length);
+  await libraryFrame.getByRole("button", { name: "Guardar cambios en el ícono", exact: true }).click();
+  await expect(libraryFrame.locator('[data-apply-status]')).toContainText("Esta disposición fija el ancho del ícono");
+  assert.equal(await page.evaluate(() => history.length), fixedHistory, "Forced layout widths must not produce a misleading saved size");
+  await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
+  report.scenarios.push({ editor: "SVG in responsive bordered grid", status: "passed", desktopPx: 48, mobilePx: 32, rotationPreserved: true, undoRedo: true, reload: true, forcedWidthRejected: true });
   await context.close();
   assert.deepEqual(report.errors, [], "Browser must not emit uncaught errors or external requests");
   console.log("Resource Browser Chromium smoke: panel desktop/mobile + real NagWeb SVG insertion and editing, save, cancel, undo/redo, reload and rejected inputs OK.");

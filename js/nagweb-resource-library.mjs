@@ -23,6 +23,23 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   editButton.disabled = true;
   let editContext = null;
   let opener = button;
+  const measureVector = element => {
+    const doc = preview.contentDocument;
+    const node = doc && [...doc.querySelectorAll('.el[data-id]')].find(n => n.dataset.id === element.id);
+    const percent = vget(element, "w");
+    if (!node || doc.readyState === "loading" || node.closest('.sc')?.dataset.id !== sec().id ||
+        Math.abs(doc.documentElement.clientWidth - frameW()) > 1 || Number(node.dataset.w) !== percent) {
+      throw new Error("El lienzo se está actualizando. Esperá un momento y volvé a abrir Personalizar.");
+    }
+    const cssWidth = doc.defaultView.getComputedStyle(node).width;
+    const width = Number.parseFloat(cssWidth);
+    if (!cssWidth.endsWith("px") || !node.getClientRects().length || !(width > 0) || !(percent > 0)) {
+      throw new Error("El ícono no tiene un tamaño visible para personalizar.");
+    }
+    // CSS width excludes rotation and uses the actual grid cell, gutters and mobile layout.
+    return { width, baseWidth: width / percent * 100,
+      sizeFixed: node.classList.contains("sc-grow") || node.parentElement.classList.contains("lay-masonry") };
+  };
   const selectedLibraryElement = () => {
     if (selection.length !== 1) return null;
     return sec()?.elements.find(e => e.id === selection[0] && e.nwResource?.id &&
@@ -62,7 +79,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     opener = context ? editButton : button;
     hint.textContent = context?.kind === "uiverse-html"
       ? "Personalizá el componente Uiverse seleccionado sin reemplazarlo."
-      : context ? "Personalizá el ícono seleccionado y guardá los cambios."
+      : context ? `Personalizá el ícono seleccionado · versión ${context.mobile ? "celular" : "computadora"}.`
       : "Insertá íconos SVG o HTML/CSS Uiverse compatibles.";
     const url = new URL("../tools/resource-etl/resource-browser/", import.meta.url);
     url.searchParams.set("hostOrigin", location.origin);
@@ -93,7 +110,10 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     }
     let stroke = resolveColor(vget(element, "stroke"), project.styles);
     if (/^#[a-f\d]{3}$/i.test(stroke)) stroke = "#" + stroke.slice(1).split("").map(c => c+c).join("");
-    const values = { size: Math.round(designWpx(element, sec())), stroke,
+    let geometry;
+    try { geometry = measureVector(element); }
+    catch (error) { toast(error.message); return; }
+    const values = { size: Math.round(geometry.width), stroke,
       strokeWidth: vget(element, "strokeWidth") };
     openLibrary({ session: crypto.randomUUID(), resourceId: element.nwResource.id,
       elementId: element.id, pageId: page().id, sceneId: sec().id, mobile: viewMobile, values,
@@ -146,7 +166,9 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
               element.nwResource.values = structuredClone(values);
             }
           } else {
-            const baseWidth = designWpx({ w: 100, mobile: { w: 100 }, parent: element.parent }, sec());
+            const geometry = size !== editContext.values.size ? measureVector(element) : null;
+            if (geometry?.sizeFixed) throw new Error("Esta disposición fija el ancho del ícono. Cambiá su tamaño desde el contenedor.");
+            const baseWidth = geometry?.baseWidth || 1;
             if (!(baseWidth > 0)) throw new Error("No pude calcular el tamaño del contenedor del ícono.");
             const changed = Object.keys(props.nwResource.values).some(key => props.nwResource.values[key] !== editContext.values[key]);
             if (changed) {
