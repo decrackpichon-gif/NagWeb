@@ -73,7 +73,22 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   await fov.focus();await page.keyboard.press('Space');assert.equal(await cones(),0);
   await page.selectOption('[data-camera-map-plane]','front');assert.equal(await fov.isChecked(),false,'Hidden state survives plane change');
   const final=await read();assert.equal(final.frames,baseline.frames);assert.equal(final.history,baseline.history);
-  assert.deepEqual(errors,[]);console.log('PASS current moment: real editor + Director, create, pointer drag, two Undo, exact selection, no duplicate/history edit and Redo');
+  // Rebuilding a preview retains Director progress: establish zero explicitly
+  // before asserting a moving object's map displacement at the next sample.
+  await page.evaluate(()=>{
+   const s=sec();s.layout='free';s.elements=[mkEl('heading',{id:'guide-regression',text:'Objeto móvil',x:75,y:50,w:20,anim:'none',sdCameraDepth:500,
+    sdKeyframes:[{at:0,x:0,y:0,z:0,ease:'linear'},{at:100,x:100,y:0,z:100,ease:'linear'}]})];
+   NAGWEB_SCROLL_DIRECTOR.scrub(s.id,.5);renderPane();renderPreview();
+  });
+  await page.selectOption('[data-camera-map-plane]','top');
+  const guideX=()=>page.locator('[data-camera-scene-object]').first().evaluate(n=>+n.getAttribute('transform').match(/translate\(([-\d.]+)/)[1]);
+  const retained=await guideX();
+  await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub(sec().id,0));const start=await guideX();
+  await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub(sec().id,.5));const moved=await guideX();
+  assert.ok(moved>start+1,'Object map follows Director from zero to 50%');
+  assert.ok(Math.abs(retained-moved)<.001,'Preview rebuild retains the existing 50% moment');
+  assert.deepEqual(errors,[]);console.log('PASS object guide: retained preview progress and explicit 0→50% Director displacement');
+  console.log('PASS current moment: real editor + Director, create, pointer drag, two Undo, exact selection, no duplicate/history edit and Redo');
   console.log('PASS technical details: native visibility, collapsed height, open/close and pane persistence without authored edits');
   console.log('PASS FOV controls: pointer and keyboard toggles, perspective rerenders, plane persistence and unchanged history');
  }finally{await browser.close();}

@@ -1691,6 +1691,9 @@ export async function runCameraBrowserSmoke(page){
     frames:JSON.stringify(sec().sdCameraFrames),elements:JSON.stringify(sec().elements),undo:history.length};
   });
   await page.select('[data-camera-map-plane]','top');
+  // The previous drag flow retains Director progress across preview rebuilds.
+  // Establish the starting moment before comparing it with the 50% sample.
+  await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',0));
   let guide=await sceneGuideRead();
   assert.equal(guide.count,1,'Free canvas shows one top-level eligible scene element');
   assert.equal(guide.id,'camera-target-el','Guide matches the real scene element');
