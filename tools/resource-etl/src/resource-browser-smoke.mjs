@@ -495,16 +495,19 @@ try {
   assert.equal(await page.evaluate(() => history.length),htmlBefore+1,
     "HTML insertion creates one undo entry");
   const htmlEnvelope = await page.evaluate(() => window.resourceMessages.at(-1));
+  // page.reload() replaced the original library iframe from the SVG tests.
+  const liveBrowserFrame = page.frames().find(f => f.url().includes("/resource-browser/"));
+  assert.ok(liveBrowserFrame, "Uiverse library must remain mounted during HTML insertion");
   const htmlRejected={ ...htmlEnvelope, requestId:"unsafe-html-payload",
     descriptor:{...htmlEnvelope.descriptor,payload:{
       ...htmlEnvelope.descriptor.payload,html:'<script>parent.__injected=true</script>'}}};
-  await browserChild.evaluate(message => parent.postMessage(message,location.origin),htmlRejected);
+  await liveBrowserFrame.evaluate(message => parent.postMessage(message,location.origin),htmlRejected);
   await page.waitForTimeout(150);
   assert.equal(await page.evaluate(() => sec().elements.length),insertedHtml.currentCount,
     "A rejected HTML payload must not mutate editor elements");
   assert.equal(await page.evaluate(() => history.length),htmlBefore+1,
     "Rejected HTML must not create undo history");
-  await browserChild.evaluate(message => parent.postMessage(message,location.origin),htmlEnvelope);
+  await liveBrowserFrame.evaluate(message => parent.postMessage(message,location.origin),htmlEnvelope);
   await page.waitForTimeout(150);
   assert.equal(await page.evaluate(() => sec().elements.length),insertedHtml.currentCount,
     "A duplicated HTML request must not create another element");
