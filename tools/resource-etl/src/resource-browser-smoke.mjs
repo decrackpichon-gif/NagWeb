@@ -558,6 +558,26 @@ try {
   assert.equal(await page.evaluate(() => sec().elements[0].nwResource.id), icon.id);
   await expect(page.frameLocator("#preview").locator(`[data-id="${inserted.element.id}"] svg`)).toBeVisible();
   await page.screenshot({ path: path.join(output, "editor-inserted.png"), fullPage: true });
+  // Canvas shortcut regression: a double-click on an existing SVG must
+  // reopen that exact resource without inserting or mutating another element.
+  const canvasShortcutHistory = await page.evaluate(() => history.length);
+  await page.evaluate(() => { selection = []; curEl = -1; secFocus = false; });
+  await page.frameLocator("#preview").locator(`[data-id="${inserted.element.id}"] svg`)
+    .dispatchEvent("dblclick", { button: 0, bubbles: true });
+  await expect(page.getByRole("dialog", { name: "Biblioteca de recursos", exact: true })).toBeVisible();
+  const resourceFrameUrl = await page.locator('iframe[title="Biblioteca de recursos de NagWeb"]').getAttribute("src");
+  assert.equal(new URL(resourceFrameUrl, "http://localhost").searchParams.get("editResource"), icon.id);
+  assert.equal(await page.evaluate(() => selection[0]), inserted.element.id);
+  await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
+  await page.getByRole("button", { name: "Personalizar ícono seleccionado", exact: true }).focus();
+  await page.keyboard.press("Alt+Enter");
+  await expect(page.getByRole("dialog", { name: "Biblioteca de recursos", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
+  assert.equal(await page.evaluate(() => history.length), canvasShortcutHistory,
+    "Opening and cancelling direct canvas customization never adds undo history");
+  assert.equal(await page.evaluate(() => sec().elements.length), 1);
+  report.scenarios.push({ editor: "direct canvas SVG customization", doubleClick: true,
+    keyboard: "Alt+Enter", preservesUndoHistory: true });
   await page.locator("#btn-view-mob").click();
   await page.getByRole("button", { name: "Biblioteca de recursos", exact: true }).click();
   await libraryFrame.locator('[data-resource-id="smoke:icon"]').click();

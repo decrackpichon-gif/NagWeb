@@ -1222,3 +1222,18 @@ de cambios sin aplicar; si se vuelve exactamente a los valores confirmados,
 recupera el mensaje de éxito. Al abrir otro recurso, el estado se reinicia.
 Chromium verifica la edición posterior, el aviso y su reversión sin enviar
 solicitudes adicionales ni desplegar Vercel.
+
+
+## Bloque 78: personalización directa desde el lienzo
+
+Un recurso SVG insertado desde la Biblioteca ahora se puede abrir para edición
+con doble clic sobre su figura en el lienzo. El editor selecciona el recurso
+original y abre su misma sesión de personalización; no crea una copia ni altera
+el historial al abrir o cancelar. Para recursos compatibles ya seleccionados,
+`Alt+Enter` ofrece acceso por teclado sin depender del botón de la barra.
+Los gestos no reemplazan el doble clic normal de elementos ajenos a la
+Biblioteca. La vinculación se rehace cuando se regenera el iframe del lienzo
+y no se aplica sobre entradas de texto. Los componentes HTML/CSS aislados pueden
+usarse desde el botón Personalizar; sus iframes internos no propagan el doble
+clic al lienzo padre. Se añadió un recorrido de navegador con apertura directa,
+selección, cancelación y comprobación del historial.

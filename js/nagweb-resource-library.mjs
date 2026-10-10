@@ -84,12 +84,11 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     return { desktop, mobile };
   };
   const cardPercent = (size, geometry) => (geometry.padding + Math.sqrt(geometry.padding ** 2 + 4 * geometry.width * size)) / (2 * geometry.width) * 100;
-  const selectedLibraryElement = () => {
-    if (selection.length !== 1) return null;
-    return sec()?.elements.find(e => e.id === selection[0] && e.nwResource?.id &&
-      (e.type === "vector" || (e.type === "embed" && e.mode === "html" &&
-        e.nwResource.kind === "uiverse-html" && e.nwResource.provider === "uiverse"))) || null;
-  };
+  const libraryResourceById = id => sec()?.elements.find(e => e.id === id && e.nwResource?.id &&
+    (e.type === "vector" || (e.type === "embed" && e.mode === "html" &&
+      e.nwResource.kind === "uiverse-html" && e.nwResource.provider === "uiverse"))) || null;
+  const selectedLibraryElement = () =>
+    selection.length === 1 ? libraryResourceById(selection[0]) : null;
   const syncEditButton = () => {
     const element = selectedLibraryElement();
     let ready = Boolean(element);
@@ -179,7 +178,53 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     canvasLoading = true;
     syncEditButton();
   }).observe(preview, { attributes: true, attributeFilter: ["srcdoc"] });
-  preview.addEventListener("load", () => { canvasLoading = false; syncEditButton(); });
+  // Canvas-first editing: the already-inserted resource stays in place.
+  // Bind to each new srcdoc document, not just the original iframe document.
+  const boundCanvasDocuments = new WeakSet();
+  const handleCanvasEditShortcut = event => {
+    if (event.defaultPrevented || event.key !== "Enter" || !event.altKey ||
+        event.ctrlKey || event.metaKey || event.repeat || dialog.open ||
+        event.target?.closest?.('input, textarea, select, [contenteditable], [role="textbox"]')) return;
+    syncEditButton();
+    if (editButton.disabled) return;
+    event.preventDefault();
+    event.stopPropagation();
+    editButton.click();
+  };
+  const bindCanvasResourceEditing = () => {
+    let canvasDoc;
+    try { canvasDoc = preview.contentDocument; }
+    catch { return; }
+    if (!canvasDoc || canvasDoc.readyState === "loading" || boundCanvasDocuments.has(canvasDoc)) return;
+    boundCanvasDocuments.add(canvasDoc);
+    canvasDoc.addEventListener("keydown", handleCanvasEditShortcut, true);
+    canvasDoc.addEventListener("dblclick", event => {
+      if (event.defaultPrevented || event.button !== 0 || dialog.open || canvasLoading) return;
+      const node = event.target?.closest?.(".el[data-id]");
+      if (!node || node.closest(".sc")?.dataset.id !== sec()?.id) return;
+      const resource = libraryResourceById(node.dataset.id);
+      if (!resource) return; // Keep normal double-click behavior for other elements.
+      selection = [resource.id];
+      curEl = sec().elements.indexOf(resource);
+      secFocus = false;
+      syncEditButton();
+      if (editButton.disabled) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      editButton.click();
+    }, true);
+    for (const node of canvasDoc.querySelectorAll(".el[data-id]")) {
+      if (libraryResourceById(node.dataset.id) && !node.hasAttribute("title"))
+        node.title = "Doble clic para personalizar este recurso";
+    }
+  };
+  document.addEventListener("keydown", handleCanvasEditShortcut, true);
+  preview.addEventListener("load", () => {
+    canvasLoading = false;
+    bindCanvasResourceEditing();
+    syncEditButton();
+  });
+  bindCanvasResourceEditing();
   syncEditButton();
   close.addEventListener("click", () => dialog.close());
   dialog.addEventListener("close", () => {
