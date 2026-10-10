@@ -444,9 +444,11 @@ function renderEditableControls(resource, { preserveGroups = false } = {}) {
     button.textContent = label;
     button.addEventListener("click", () => {
       if (selectedResource !== resource || el.customize.hidden) return;
+      const wasFocused = document.activeElement === button;
       for (const group of groups) if (!group.section.hidden) group.section.open = open;
       rememberCategories();
       updateCategoryActions();
+      if (wasFocused && button.disabled) (open ? collapse : expand).focus();
     });
     categoryActions.appendChild(button);
   }
@@ -913,8 +915,10 @@ el.previewReplay.addEventListener("click", async () => {
 el.resetCustomize.addEventListener("click", () => {
   if (!selectedResource || el.customize.hidden) return;
 
+  const wasFocused = document.activeElement === el.resetCustomize;
   selectedValues = defaultEditableValues(selectedResource);
   renderEditableControls(selectedResource, { preserveGroups: true });
+  if (wasFocused) el.customizeControls.querySelector('input[data-search-controls]').focus();
   redrawEditablePreview();
 });
 

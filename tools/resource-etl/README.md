@@ -1111,3 +1111,13 @@ Al restaurar una categoría con el teclado, el foco pasa a su título cuando
 el botón queda deshabilitado. Si los filtros ocultan la categoría, vuelve
 al filtro activo. Se conservan los valores y el estado plegado de los grupos.
 La prueba del panel cubre ambos destinos junto con búsqueda y restauración.
+
+## Bloque 65: foco en acciones del panel
+
+Expandir y plegar todas las categorías llevan el foco al botón opuesto cuando
+la acción enfocada se deshabilita. Restaurar todos los valores devuelve el
+foco a Buscar ajustes. Las acciones sin foco no cambian la posición del teclado.
+La prueba de navegador existente verifica los destinos en escritorio y móvil,
+junto con los filtros, valores y categorías guardadas.
+La medición de ancho HTML toma el elemento y su contenedor en la misma vista
+y espera su renovación; conserva las comprobaciones de límites y persistencia.

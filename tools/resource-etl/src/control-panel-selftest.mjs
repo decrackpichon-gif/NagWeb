@@ -225,6 +225,7 @@ context.renderEditableControls(resource);
 assert.equal(el.customizeControls.querySelectorAll("input").find(input => input.dataset.changedOnly).checked, false);
 assert.ok(el.customizeControls.querySelectorAll("details").every(section => !section.hidden));
 
+
 // Search composes with changed-only filtering and never mutates the resource's values.
 let search = el.customizeControls.querySelectorAll("input").find(input => input.dataset.searchControls);
 let clearSearch = el.customizeControls.querySelectorAll("button").find(button => button.className === "secondary clear-control-search");
@@ -312,3 +313,23 @@ assert.ok(el.customizeControls.querySelectorAll("details").every(section => sect
 context.renderEditableControls(resource);
 assert.equal(el.customizeControls.querySelectorAll("input").find(input => input.dataset.searchControls).value, "");
 assert.ok(el.customizeControls.querySelectorAll("details").every(section => !section.hidden));
+
+// Category actions return keyboard focus to the available opposite action.
+const groupButtons = el.customizeControls.querySelectorAll("button");
+const expandCategories = groupButtons.find(button => button.textContent === "Expandir categorías");
+const collapseCategories = groupButtons.find(button => button.textContent === "Plegar categorías");
+const actionRedraws = redraws;
+const actionValues = { ...values };
+collapseCategories.focus();
+collapseCategories.events.click();
+assert.equal(collapseCategories.disabled, true);
+assert.equal(context.document.activeElement, expandCategories);
+expandCategories.events.click();
+assert.equal(expandCategories.disabled, true);
+assert.equal(context.document.activeElement, collapseCategories);
+const actionSearch = el.customizeControls.querySelectorAll("input").find(input => input.dataset.searchControls);
+actionSearch.focus();
+collapseCategories.events.click();
+assert.equal(context.document.activeElement, actionSearch, "Unfocused actions do not move focus");
+assert.deepEqual(values, actionValues);
+assert.equal(redraws, actionRedraws);

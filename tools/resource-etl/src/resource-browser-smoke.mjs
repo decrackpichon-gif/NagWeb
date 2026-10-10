@@ -160,6 +160,7 @@ try {
     assert.equal(envelope.descriptor.payload.stroke, "#112233");
     assert.equal(await page.locator('#inserted svg').evaluate(node => node.style.width), "40px");
     await frame.getByRole("button", { name: "Restaurar valores originales", exact: true }).click();
+    await expect(search).toBeFocused();
     assert.equal(await changedOnly.isChecked(), true);
     await frame.getByText("No hay ajustes modificados.", { exact: false }).waitFor({ state: "visible" });
     await changedOnly.uncheck();
@@ -206,7 +207,9 @@ try {
     const cssDocBeforeGroups = await frame.locator('[data-preview]').getAttribute("srcdoc");
     await frame.getByRole("button", { name: "Plegar categorías", exact: true }).click();
     await expect(frame.getByRole("button", { name: "Plegar categorías", exact: true })).toBeDisabled();
+    await expect(frame.getByRole("button", { name: "Expandir categorías", exact: true })).toBeFocused();
     await frame.getByRole("button", { name: "Expandir categorías", exact: true }).click();
+    await expect(frame.getByRole("button", { name: "Plegar categorías", exact: true })).toBeFocused();
     assert.equal(await frame.getByLabel(playback.label, { exact: true }).inputValue(), "4");
     assert.equal(await frame.locator('[data-preview]').getAttribute("srcdoc"), cssDocBeforeGroups, "Category actions only change organization");
     await frame.getByRole("button", { name: "Cerrar", exact: true }).click();
@@ -948,13 +951,18 @@ try {
       await expect(embed).toBeVisible();
       const percent = await page.evaluate(id => vget(sec().elements.find(element => element.id === id), "w"), id);
       await expect(embed).toHaveAttribute("data-w", String(percent));
-      const expected = layout === "flow"
-        ? Math.min(mobile ? 260 : 320, await embed.locator("..").evaluate(node => Number.parseFloat(getComputedStyle(node).width)) * .85)
-        : mobile ? 260 : 320;
       await expect.poll(async () => {
-        try { return await embed.evaluate(node => Number.parseFloat(getComputedStyle(node).width)); }
+        try {
+          return await embed.evaluate((node, { layout, mobile }) => {
+            const limit = mobile ? 260 : 320;
+            const expected = layout === "flow"
+              ? Math.min(limit, Number.parseFloat(getComputedStyle(node.parentElement).width) * .85)
+              : limit;
+            return Number.parseFloat(getComputedStyle(node).width) - expected;
+          }, { layout, mobile });
+        }
         catch (error) { if (/Execution context was destroyed|Frame was detached/.test(error.message)) return NaN; throw error; }
-      }).toBeCloseTo(expected, 1);
+      }).toBeCloseTo(0, 1);
       const sandbox = embed.locator('iframe[title="Componente Uiverse aislado"]');
       await expect(sandbox).toHaveAttribute("sandbox", "");
       assert.equal(await sandbox.evaluate(node => node.contentDocument === null), true);
