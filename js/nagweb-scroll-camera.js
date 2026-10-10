@@ -152,9 +152,9 @@ function createCamera(){
  }
  function scalePose(v,scale){return Object.assign({},v,{x:v.x*scale,y:v.y*scale,z:v.z*scale});}
  function transform(v){
-  // Inverse of camera T(x,y,-z) * Rx(pitch) * Ry(yaw) * Rz(roll).
+  // Inverse of camera T(x,y,-z) * Ry(yaw) * Rx(pitch) * Rz(roll).
   var rx=angle(v.rotateX),ry=angle(v.rotateY),rz=angle(v.rotate);
-  return (rz?'rotateZ('+(-rz)+'deg) ':'')+(ry?'rotateY('+(-ry)+'deg) ':'')+(rx?'rotateX('+(-rx)+'deg) ':'')+'translate3d('+(-number(v.x))+'px,'+(-number(v.y))+'px,'+number(v.z)+'px)';
+  return (rz?'rotateZ('+(-rz)+'deg) ':'')+(rx?'rotateX('+(-rx)+'deg) ':'')+(ry?'rotateY('+(-ry)+'deg) ':'')+'translate3d('+(-number(v.x))+'px,'+(-number(v.y))+'px,'+number(v.z)+'px)';
  }
  function copyFrame(input,from,to){
   var list=normalize(input),key=list.find(function(k){return k.at===from;});
@@ -259,12 +259,13 @@ function createCamera(){
  }
  function threeCameraState(pose,viewport,perspective,scale){
   if(!pose)return null;
-  var pos=threeWorldPoint(pose,scale),target=threeWorldPoint(forwardTarget(pose,1000),scale);
-  if(!pos||!target)return null;
-  var f=Number.isFinite(+scale)&&+scale>0?+scale:1,
+  var pos=threeWorldPoint(pose,scale);if(!pos)return null;
+  var f=Number.isFinite(+scale)&&+scale>0?+scale:1,rx=angle(pose.rotateX)*Math.PI/180,ry=angle(pose.rotateY)*Math.PI/180,
+      target={x:pos.x-Math.sin(ry)*Math.cos(rx)*1000*f,y:pos.y-Math.sin(rx)*1000*f,z:pos.z-Math.cos(ry)*Math.cos(rx)*1000*f},
       width=viewport&&+viewport.width,height=viewport&&+viewport.height,depth=+perspective*f,
       valid=Number.isFinite(width)&&width>0&&Number.isFinite(height)&&height>0&&Number.isFinite(depth)&&depth>0;
   return {position:pos,target:target,rollRadians:-angle(pose.rotate)*Math.PI/180,
+   rotationRadians:{x:-rx,y:ry,z:-angle(pose.rotate)*Math.PI/180,order:'YXZ'},
    aspect:valid?width/height:null,
    fovDegrees:valid?Math.max(1,Math.min(175,2*Math.atan(height/(2*depth))*180/Math.PI)):null,
    cssPerspective:valid?depth:null,scale:f};
@@ -272,8 +273,12 @@ function createCamera(){
  function applyThreeCamera(camera,state){
   if(!camera||!state||!camera.position||typeof camera.position.set!=='function'||typeof camera.lookAt!=='function')return false;
   camera.position.set(state.position.x,state.position.y,state.position.z);
-  camera.lookAt(state.target.x,state.target.y,state.target.z);
-  if(typeof camera.rotateZ==='function'&&state.rollRadians)camera.rotateZ(state.rollRadians);
+  if(state.rotationRadians&&camera.rotation&&typeof camera.rotation.set==='function'){
+   var r=state.rotationRadians;camera.rotation.set(r.x,r.y,r.z,r.order);
+  }else{
+   camera.lookAt(state.target.x,state.target.y,state.target.z);
+   if(typeof camera.rotateZ==='function'&&state.rollRadians)camera.rotateZ(state.rollRadians);
+  }
   var changed=false;
   if(state.fovDegrees!==null&&'fov' in camera&&camera.fov!==state.fovDegrees){camera.fov=state.fovDegrees;changed=true;}
   if(state.aspect!==null&&'aspect' in camera&&camera.aspect!==state.aspect){camera.aspect=state.aspect;changed=true;}
@@ -311,22 +316,29 @@ function createCamera(){
   stage.style.perspective=perspective+'px';stage.style.perspectiveOrigin='50% 50%';
   world.style.transformStyle='preserve-3d';world.setAttribute('data-nw-camera-world','');
   containers.forEach(function(id){var n=find(world,id);if(n&&n.style)n.style.transformStyle='preserve-3d';});
-  var animation=null,last='',lastScale=null,lastWidth=null,lastHeight=null;
+  var animation=null,last='',lastScale=null,lastWidth=null,lastHeight=null,lastOrigin='';
   function paint(v,scale){
    var factor=Number.isFinite(+scale)&&+scale>0?+scale:1;
-   stage.style.perspective=(perspective*factor)+'px';
+   var depth=perspective*factor;
+   stage.style.perspective=depth+'px';
+   // CSS's eye is one perspective distance in front of the content plane.
+   // Rotate about that eye, at the stage centre even when .inner is smaller.
+   var origin=(stage.clientWidth>0?stage.clientWidth/2-(world.offsetLeft||0)-(stage.clientLeft||0)+'px':'50%')+' '+(stage.clientHeight>0?stage.clientHeight/2-(world.offsetTop||0)-(stage.clientTop||0)+'px':'50%')+' '+depth+'px';
+   world.style.transformOrigin=origin;
    // Camera translation is the inverse world translation. Positive Z travels forward.
    var value=transform(v);
-   if(value===last&&factor===lastScale&&stage.clientWidth===lastWidth&&stage.clientHeight===lastHeight)return;
-   last=value;lastScale=factor;lastWidth=stage.clientWidth;lastHeight=stage.clientHeight;
-   if(!v.x&&!v.y&&!v.z&&!v.rotateX&&!v.rotateY){
+   if(value===last&&factor===lastScale&&stage.clientWidth===lastWidth&&stage.clientHeight===lastHeight&&origin===lastOrigin)return;
+   last=value;lastScale=factor;lastWidth=stage.clientWidth;lastHeight=stage.clientHeight;lastOrigin=origin;
+   if(!v.x&&!v.y&&!v.z&&!v.rotateX&&!v.rotateY&&!v.rotate){
     if(animation)animation.cancel();animation=null;
    }else{
     var frames=[{transform:value},{transform:value}];
     if(animation)animation.effect.setKeyframes(frames);
     else{animation=world.animate(frames,{duration:1,fill:'both',composite:'add'});animation.pause();animation.currentTime=0;}
    }
-   var state=threeCameraState(v,{width:stage.clientWidth,height:stage.clientHeight},perspective,factor);
+   // The Director has already scaled v for CSS; the public state converter
+   // accepts a reference pose and applies the viewport factor exactly once.
+   var state=threeCameraState(scalePose(v,1/factor),{width:stage.clientWidth,height:stage.clientHeight},perspective,factor);
    if(threeCameraStates&&state)threeCameraStates.set(stage,state);
    if(typeof CustomEvent==='function'&&typeof stage.dispatchEvent==='function'){
     try{stage.dispatchEvent(new CustomEvent('nagweb:spatial-camera',{bubbles:true,detail:{pose:Object.assign({},v),three:state}}));}catch(_){}
