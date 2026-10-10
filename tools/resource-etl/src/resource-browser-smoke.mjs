@@ -310,6 +310,9 @@ try {
       await page.evaluate(() => { window.deferNextResourceApply = true; });
       await frame.getByRole("button", { name: "Aplicar en NagWeb", exact: true }).click();
       await expect(frame.locator("[data-apply-status]")).toContainText("Esperando confirmación");
+      // postMessage delivery is async: wait for the host to hold this exact
+      // acknowledgement before releasing it, rather than racing a no-op.
+      await expect.poll(() => page.evaluate(() => Boolean(window.pendingResourceApply))).toBe(true);
       await frame.getByLabel(playback.label, { exact: true }).selectOption("5");
       assert.equal(await page.evaluate(() => window.received.at(-1).descriptor.instance.values.uiversePlay1), "4");
       await page.evaluate(() => window.replyPendingResourceApply());
