@@ -153,7 +153,7 @@ export async function runCameraBrowserSmoke(page){
   }));
   assert.ok(easyBaseline.label.includes('encuadre 50%'),'Easy pad names the selected keyframe');
   assert.equal(easyBaseline.step,'25','Easy pad defaults to precise 25px steps');
-  assert.equal(await page.$eval('[data-camera-easy-move]',els=>els.length),6,'Camera pad has four directions and two depth controls');
+  assert.equal(await page.$$eval('[data-camera-easy-move]',els=>els.length),6,'Camera pad has four directions and two depth controls');
   const nudgeCases=[['left','x',-25],['right','x',25],['up','y',-25],['down','y',25],['forward','z',25],['back','z',-25]];
   for(const [direction,axis,delta] of nudgeCases){
    const before=await page.evaluate(()=>JSON.parse(JSON.stringify(sec().sdCameraFrames)));
@@ -226,6 +226,7 @@ export async function runCameraBrowserSmoke(page){
   assert.deepEqual(JSON.parse(editing.frames).filter(k=>k.at!==42),JSON.parse(currentBaseline.frames),'Creating at cursor preserves other keyframes');
   assert.equal(editing.history,currentBaseline.history+1,'Create-now records one undo snapshot');
   assert.ok(await page.$('[data-camera-jump="42"]'),'Timeline gets the matching draggable keyframe marker');
+  await page.$eval('[data-camera-map-point="42"]',el=>el.scrollIntoView({block:'center'}));
   const nowMap=await page.$eval('[data-camera-map-point="42"]',el=>{
    const r=el.getBoundingClientRect(),map=el.closest('[data-camera-map]'),m=map.getBoundingClientRect();
    return {x:r.left+r.width/2,y:r.top+r.height/2,width:m.width,range:+map.dataset.range};
@@ -253,7 +254,7 @@ export async function runCameraBrowserSmoke(page){
   await page.select('[data-camera-map-plane]','front');
   assert.ok((await currentEditState()).action.includes('Seleccionar'),'Current moment action persists on the frontal map');
   await page.select('[data-camera-map-plane]','top');
-  assert.equal(await page.$eval('[data-camera-field="x"],[data-camera-field="y"],[data-camera-field="z"]',nodes=>nodes.length),3,'All three manual XYZ coordinate inputs remain available');
+  assert.equal(await page.$$eval('[data-camera-field="x"],[data-camera-field="y"],[data-camera-field="z"]',nodes=>nodes.length),3,'All three manual XYZ coordinate inputs remain available');
     // Minimap regression: click, drag, cancellation, precision keyboard and no camera edits.
   await page.click('[data-camera-overview-toggle]');
   assert.ok(await page.$('[data-camera-overview]'),'Overview toggle should show minimap at 100%');
@@ -1234,7 +1235,7 @@ export async function runCameraBrowserSmoke(page){
   const freeExportError=await page.evaluate(expected=>{
    const f=document.querySelector('#camera-free-export'),w=f.contentWindow,d=f.contentDocument;w.__NAG_SCROLL_DIRECTOR['camera-browser-scene'].set(.75);
    const world=d.querySelector('.sc[data-id="camera-browser-scene"] .inner'),a=world.getAnimations().find(a=>a.playState==='paused'),raw=a?.effect?.getKeyframes?.()[0]?.transform||'none',actual=new w.DOMMatrix(raw);
-   const probe=d.createElement('i');probe.style.transform=(expected.rotate?'rotateZ('+(-expected.rotate)+'deg) ':'')+(expected.rotateY?'rotateY('+(-expected.rotateY)+'deg) ':'')+(expected.rotateX?'rotateX('+(-expected.rotateX)+'deg) ':'')+'translate3d('+(-expected.x)+'px,'+(-expected.y)+'px,'+expected.z+'px)';d.body.append(probe);
+   const probe=d.createElement('i');probe.style.transform=(expected.rotate?'rotateZ('+(-expected.rotate)+'deg) ':'')+(expected.rotateX?'rotateX('+(-expected.rotateX)+'deg) ':'')+(expected.rotateY?'rotateY('+(-expected.rotateY)+'deg) ':'')+'translate3d('+(-expected.x)+'px,'+(-expected.y)+'px,'+expected.z+'px)';d.body.append(probe);
    const target=new w.DOMMatrix(w.getComputedStyle(probe).transform);probe.remove();const keys=['m11','m12','m13','m14','m21','m22','m23','m24','m31','m32','m33','m34','m41','m42','m43','m44'];return Math.max(...keys.map(k=>Math.abs(actual[k]-target[k])));
   },freeDragEnd.pose);
   assert.ok(freeExportError<.001,'Free Bezier handle must serialize into exported runtime');
@@ -1376,7 +1377,7 @@ export async function runCameraBrowserSmoke(page){
   const lookExportError=await page.evaluate(expected=>{
    const f=document.querySelector('#camera-look-export'),w=f.contentWindow,d=f.contentDocument;w.__NAG_SCROLL_DIRECTOR['camera-browser-scene'].set(.75);
    const world=d.querySelector('.sc[data-id="camera-browser-scene"] .inner'),a=world.getAnimations().find(a=>a.playState==='paused'),raw=a?.effect?.getKeyframes?.()[0]?.transform||'none',actual=new w.DOMMatrix(raw);
-   const probe=d.createElement('i');probe.style.transform=(expected.rotate?'rotateZ('+(-expected.rotate)+'deg) ':'')+(expected.rotateY?'rotateY('+(-expected.rotateY)+'deg) ':'')+(expected.rotateX?'rotateX('+(-expected.rotateX)+'deg) ':'')+'translate3d('+(-expected.x)+'px,'+(-expected.y)+'px,'+expected.z+'px)';d.body.append(probe);const target=new w.DOMMatrix(w.getComputedStyle(probe).transform);probe.remove();
+   const probe=d.createElement('i');probe.style.transform=(expected.rotate?'rotateZ('+(-expected.rotate)+'deg) ':'')+(expected.rotateX?'rotateX('+(-expected.rotateX)+'deg) ':'')+(expected.rotateY?'rotateY('+(-expected.rotateY)+'deg) ':'')+'translate3d('+(-expected.x)+'px,'+(-expected.y)+'px,'+expected.z+'px)';d.body.append(probe);const target=new w.DOMMatrix(w.getComputedStyle(probe).transform);probe.remove();
    const keys=['m11','m12','m13','m14','m21','m22','m23','m24','m31','m32','m33','m34','m41','m42','m43','m44'];return Math.max(...keys.map(k=>Math.abs(actual[k]-target[k])));
   },expectedLookPose);
   assert.ok(lookExportError<.001,'Free look-target Bezier must serialize into exported camera orientation');
@@ -1414,14 +1415,14 @@ export async function runCameraBrowserSmoke(page){
    }
    function error(a,b){return Math.max(...entries.map(k=>Math.abs(a[k]-b[k])));}
    w.__NAG_SCROLL_DIRECTOR['camera-browser-scene'].set(.25);
-   const quarterA=matrixFromAnimation(world),quarterE=matrixFromTransform('rotateZ(-2.5deg) rotateY(-10deg) rotateX(-5deg) translate3d(-101.5625px,-76.5625px,56.25px)');
+   const quarterA=matrixFromAnimation(world),quarterE=matrixFromTransform('rotateZ(-2.5deg) rotateX(-5deg) rotateY(-10deg) translate3d(-101.5625px,-76.5625px,56.25px)');
    w.__NAG_SCROLL_DIRECTOR['camera-browser-scene'].set(.5);
    const worldA=matrixFromAnimation(world),groupA=matrixFromAnimation(group),childA=matrixFromAnimation(child);
-   const worldE=matrixFromTransform('rotateZ(-5deg) rotateY(-20deg) rotateX(-10deg) translate3d(-225px,-125px,100px)');
+   const worldE=matrixFromTransform('rotateZ(-5deg) rotateX(-10deg) rotateY(-20deg) translate3d(-225px,-125px,100px)');
    const groupE=matrixFromTransform('translateZ(-300px) rotateX(0deg) rotateY(0deg)');
    const childE=matrixFromTransform('translateZ(50px) rotateX(10deg) rotateY(-15deg)');
    w.__NAG_SCROLL_DIRECTOR['camera-browser-scene'].set(.75);
-   const tensionA=matrixFromAnimation(world),tensionE=matrixFromTransform('rotateZ(-2.5deg) rotateY(-10deg) rotateX(-5deg) translate3d(-312.5px,-12.5px,50px)');
+   const tensionA=matrixFromAnimation(world),tensionE=matrixFromTransform('rotateZ(-2.5deg) rotateX(-5deg) rotateY(-10deg) translate3d(-312.5px,-12.5px,50px)');
    return{
     groupInWorld:group.parentNode===world,
     childInGroup:child.parentNode===group,
@@ -1491,7 +1492,7 @@ export async function runCameraBrowserSmoke(page){
    }
    function error(a,b){return Math.max(...entries.map(k=>Math.abs(a[k]-b[k])));}
    const scale=Math.min(1,stage.clientWidth/1000),worldA=matrixFromAnimation(world),groupA=matrixFromAnimation(group),childA=matrixFromAnimation(child);
-   const worldE=matrixFromTransform('rotateZ(-5deg) rotateY(-20deg) rotateX(-10deg) translate3d('+(-225*scale)+'px,'+(-125*scale)+'px,'+(100*scale)+'px)');
+   const worldE=matrixFromTransform('rotateZ(-5deg) rotateX(-10deg) rotateY(-20deg) translate3d('+(-225*scale)+'px,'+(-125*scale)+'px,'+(100*scale)+'px)');
    const groupE=matrixFromTransform('translateZ('+(-300*scale)+'px) rotateX(0deg) rotateY(0deg)');
    const childE=matrixFromTransform('translateZ(50px) rotateX(10deg) rotateY(-15deg)');
    return{
@@ -1712,7 +1713,7 @@ export async function runCameraBrowserSmoke(page){
   }
   await page.select('[data-camera-map-plane]','top');
   await page.click('[data-camera-scene-objects-toggle]');
-  assert.equal(await page.$eval('[data-camera-scene-object]',els=>els.length),0,'Object references can be hidden');
+  assert.equal(await page.$$eval('[data-camera-scene-object]',els=>els.length),0,'Object references can be hidden');
   assert.equal(await page.$eval('[data-camera-scene-objects-toggle]',el=>el.checked),false,'Visibility toggle stays disabled');
   await page.click('[data-camera-scene-objects-toggle]');
   guide=await sceneGuideRead();
@@ -1769,7 +1770,7 @@ export async function runCameraBrowserSmoke(page){
    sec().elements=JSON.parse(original);renderPane();
   },originalSceneItems);
   await page.select('[data-camera-map-plane]','top');
-  assert.equal(await page.$eval('[data-camera-scene-object]',elements=>elements.length),1,'Temporary type examples are removed after the footprint test');
+  assert.equal(await page.$$eval('[data-camera-scene-object]',elements=>elements.length),1,'Temporary type examples are removed after the footprint test');
   console.log('Camera scene footprints: typed text/image/container guides and schematic sizes on top/front/side OK');
 
   // Micro-etapa 51: inspect an object's actual XYZ and distance to camera without editing anything.
@@ -1821,7 +1822,7 @@ export async function runCameraBrowserSmoke(page){
   assert.equal(inspected.selected,'0','Clicking object centre on spatial map selects it');
   assert.equal(inspected.history,inspectBase.history,'Direct map picking remains read-only');
   await page.click('[data-camera-scene-objects-toggle]');
-  assert.equal(await page.$eval('[data-camera-object-inspector]',els=>els.length),0,'Hiding objects hides inspection panel');
+  assert.equal(await page.$$eval('[data-camera-object-inspector]',els=>els.length),0,'Hiding objects hides inspection panel');
   await page.click('[data-camera-scene-objects-toggle]');
   assert.equal((await inspectRead()).selected,'','Hidden object selection is not resurrected');
   await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',0));
@@ -1942,7 +1943,7 @@ export async function runCameraBrowserSmoke(page){
    return {looks:JSON.stringify(s.sdCameraLookFrames),objects:JSON.stringify(s.elements),undo:history.length,
     focus:NAGWEB_SCROLL_CAMERA.lookTarget(cfg,0,NAGWEB_STORY_MODEL,s.sdEase,size)};
   });
-  assert.equal(await page.$eval('[data-camera-look-focus-offset]',nodes=>nodes.length),3,'3D-linked targets expose three numeric focus offsets');
+  assert.equal(await page.$$eval('[data-camera-look-focus-offset]',nodes=>nodes.length),3,'3D-linked targets expose three numeric focus offsets');
   await page.$eval('[data-camera-look-focus-offset="y"]',el=>{el.value='-80';el.dispatchEvent(new Event('change',{bubbles:true}));});
   const focalAdjusted=await page.evaluate(()=>{
    const s=sec(),cfg=NAGWEB_SCROLL_CAMERA.config(s),size=window.__cameraBrowserFocusSize(s,cfg);

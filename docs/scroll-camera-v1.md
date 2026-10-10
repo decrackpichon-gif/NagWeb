@@ -619,3 +619,12 @@ las pruebas y las diferencias pendientes de proyección CSS/Three quedan en
 [Herencia de contenedores para objetos 3D v1](spatial-hierarchy-v1.md).
 Reemplaza ese límite para contenedores libres admitidos; las instancias de
 movimiento y los contenedores especiales siguen fuera del alcance.
+
+## Actualización: proyección CSS / Three
+
+CSS y Three ahora comparten el ojo y el orden de giro de cámara. Se corrigen
+también el giro exclusivo de horizonte y la escala doble de desplazamientos
+Three en el modo adaptable. Las escenas con rotación cambian su encuadre CSS
+para coincidir con la vista espacial; no se modifican los encuadres guardados.
+Pruebas, compatibilidad y límites en
+[Proyección compartida CSS / Three v1](spatial-projection-v1.md).

@@ -97,3 +97,10 @@ Los fixtures y HTML de prueba quedan en `work/`, sin versionarse.
   los materiales ni deformaciones skeleton/morph. Continúa sin oclusión DOM/WebGL.
 - No se despliega en Vercel ni se integra a main. `vercel.json` conserva
   deshabilitado el despliegue Git de `feat/scroll-camera-v1`.
+
+## Actualización posterior: vista compartida
+
+La diferencia de proyección por giro de cámara queda corregida en
+[Proyección compartida CSS / Three v1](spatial-projection-v1.md).
+La comparación del fixture anidado ahora exige paridad también con cámara
+rotada. Los límites de clipping, filtros y aplanamiento CSS siguen vigentes.

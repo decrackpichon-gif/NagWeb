@@ -72,7 +72,7 @@ console.log('Camera editor: add, isolated edit, retime, collision, deletion, his
 const rotating=C.config({...scene,sdCameraFrames:[{at:0,ease:'linear'},{at:100,x:100,y:40,z:200,rotateX:30,rotateY:60,rotate:360}]});
 const middle=C.pose(rotating,.5,M,'linear');
 assert.deepEqual(JSON.parse(JSON.stringify(middle)),{x:50,y:20,z:100,rotateX:15,rotateY:30,rotate:180});
-assert.equal(C.transform(middle),'rotateZ(-180deg) rotateY(-30deg) rotateX(-15deg) translate3d(-50px,-20px,100px)');
+assert.equal(C.transform(middle),'rotateZ(-180deg) rotateX(-15deg) rotateY(-30deg) translate3d(-50px,-20px,100px)');
 assert.equal(C.pose(rotating,.75,M,'linear').rotate,270,'Full turns must not take the shortest angular path');
 assert.deepEqual(JSON.parse(JSON.stringify(C.pose(rotating,.5,M,'linear',true))),{x:0,y:0,z:0,rotateX:0,rotateY:0,rotate:0});
 assert.equal(C.normalize([{at:0,rotateX:Infinity,rotateY:9999,rotate:-9999}])[0].rotateX,0);
