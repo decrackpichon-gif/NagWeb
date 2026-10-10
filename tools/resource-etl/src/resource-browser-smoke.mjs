@@ -919,6 +919,52 @@ try {
     await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
     report.scenarios.push({ editor: "SVG asynchronous insertion", race, status: "passed", probesRemoved: true, historyPreserved: true });
   }
+  for (const layout of ["free", "flow", "horizontal"]) {
+    await page.evaluate(layout => {
+      Object.assign(sec(), { layout, elements: [], align: "left", mobile: { align: "center" } });
+      selection = []; curEl = -1; secFocus = true; refresh();
+    }, layout);
+    await page.locator(layout === "horizontal" ? "#btn-view-mob" : "#btn-view-desk").click();
+    await page.getByRole("button", { name: "Biblioteca de recursos", exact: true }).click();
+    const iframe = page.locator('iframe[title="Biblioteca de recursos de NagWeb"]');
+    const child = await (await iframe.elementHandle()).contentFrame();
+    await child.waitForURL(await iframe.getAttribute("src"), { waitUntil: "domcontentloaded" });
+    if (await libraryFrame.locator('[data-detail]').evaluate(node => node.open)) {
+      await libraryFrame.getByRole("button", { name: "Cerrar", exact: true }).click();
+    }
+    await libraryFrame.locator(`[data-resource-id="${css.id}"]`).click();
+    const before = await page.evaluate(() => history.length);
+    await libraryFrame.getByRole("button", { name: "Aplicar en NagWeb", exact: true }).click();
+    await expect(libraryFrame.locator('[data-apply-status]')).toContainText("insertado y guardado");
+    const id = await page.evaluate(() => selection[0]);
+    assert.equal(await page.evaluate(() => history.length), before + 1);
+    await expect(page.locator('[data-resource-size-probe]')).toHaveCount(0);
+    await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
+    const embed = page.frameLocator("#preview").locator(`[data-id="${id}"]`);
+    const checkWidth = async mobile => {
+      await page.locator(mobile ? "#btn-view-mob" : "#btn-view-desk").click();
+      await expect(embed).toBeVisible();
+      const percent = await page.evaluate(id => vget(sec().elements.find(element => element.id === id), "w"), id);
+      await expect(embed).toHaveAttribute("data-w", String(percent));
+      const expected = layout === "flow"
+        ? Math.min(mobile ? 260 : 320, await embed.locator("..").evaluate(node => Number.parseFloat(getComputedStyle(node).width)) * .85)
+        : mobile ? 260 : 320;
+      await expect.poll(async () => {
+        try { return await embed.evaluate(node => Number.parseFloat(getComputedStyle(node).width)); }
+        catch (error) { if (/Execution context was destroyed|Frame was detached/.test(error.message)) return NaN; throw error; }
+      }).toBeCloseTo(expected, 1);
+      const sandbox = embed.locator('iframe[title="Componente Uiverse aislado"]');
+      await expect(sandbox).toHaveAttribute("sandbox", "");
+      assert.equal(await sandbox.evaluate(node => node.contentDocument === null), true);
+    };
+    await checkWidth(false);
+    await checkWidth(true);
+    await page.reload();
+    await checkWidth(false);
+    await checkWidth(true);
+    assert.equal(await page.evaluate(id => sec().elements.find(e => e.id === id).nwResource.id, id), css.id);
+    report.scenarios.push({ editor: "Uiverse insertion across native layouts", layout, mobileInsertion: layout === "horizontal", desktopMaxPx: 320, mobileMaxPx: 260, cappedAt85Percent: true, isolated: true, reload: true });
+  }
   await context.close();
   assert.deepEqual(report.errors, [], "Browser must not emit uncaught errors or external requests");
   console.log("Resource Browser Chromium smoke: panel desktop/mobile + real NagWeb SVG insertion and editing, save, cancel, undo/redo, reload and rejected inputs OK.");

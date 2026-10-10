@@ -46,7 +46,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       card: controlsCard ? { width: Number.parseFloat(cardStyle.width) / percent * 100, padding: inset(cardStyle) } : null,
       sizeFixed: node.classList.contains("sc-grow") || node.parentElement.classList.contains("lay-masonry") };
   };
-  const insertionWidths = async props => {
+  const insertionWidths = async (type, props) => {
     if (sec().layout === "free") return { desktop: { width: deskWidth, padding: 0 }, mobile: { width: 390, padding: 0 } };
     // Measure both native layouts without changing the visible canvas or project.
     const measure = mobile => new Promise((resolve, reject) => {
@@ -57,7 +57,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       probe.style.cssText = `position:fixed;left:-10000px;top:0;width:${mobile ? 390 : deskWidth}px;height:1000px;border:0;pointer-events:none`;
       const projectCopy = structuredClone(flattenPage(page()));
       const id = "resource-size-probe";
-      projectCopy.sections = [{ ...structuredClone(sec()), elements: [mkEl("vector", { ...props, id, parent: "", w: 100, mobile: { w: 100 } })] }];
+      projectCopy.sections = [{ ...structuredClone(sec()), elements: [mkEl(type, { ...props, id, parent: "", w: 100, mobile: { w: 100 } })] }];
       let finished = false;
       const finish = (error, width) => { if (finished) return; finished = true; clearTimeout(timer); probe.remove(); error ? reject(error) : resolve(width); };
       const timer = setTimeout(() => finish(new Error("No pude medir la escena. Volvé a intentar aplicar el ícono.")), 10000);
@@ -248,30 +248,29 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
         } else {
           if (message.editSession) throw new Error("Esta sesión de personalización terminó. Volvé a abrir el ícono.");
           // Root placement makes insertion independent of a selected container.
-          if (isUiverseHtml) {
-            element = insertElement("embed", {
+          const nativeProps = isUiverseHtml ? {
               mode: "html", code: isolated.srcdoc, ratio: .75, radius: 0,
               name: String(message.resource.title || "Componente Uiverse").slice(0, 100),
-              w: Math.min(85, size / width * 100),
-              mobile: { w: Math.min(85, 260 / 390 * 100) },
               nwResource: {
                 id: message.resource.id, kind: "uiverse-html",
                 provider: "uiverse", license: message.resource.license,
                 values: structuredClone(message.descriptor.instance.values)
               }
-            }, { parent: "" });
-          } else {
-            const before = JSON.stringify(project);
-            const sceneId = sec().id;
-            const session = librarySession;
-            const widths = await insertionWidths(props);
-            if (!dialog.open || editContext || librarySession !== session || sec().id !== sceneId || deskWidth !== width || JSON.stringify(project) !== before) {
-              throw new Error("La escena cambió durante la inserción. Volvé a aplicar el ícono.");
-            }
-            const percent = base => sec().layout === "horizontal" ? cardPercent(size, base) : size / base.width * 100;
-            element = insertElement("vector", { ...props, w: percent(widths.desktop),
-              mobile: { w: percent(widths.mobile) } }, { parent: "" });
+          } : props;
+          const before = JSON.stringify(project);
+          const sceneId = sec().id;
+          const session = librarySession;
+          const type = isUiverseHtml ? "embed" : "vector";
+          const widths = await insertionWidths(type, nativeProps);
+          if (!dialog.open || editContext || librarySession !== session || sec().id !== sceneId || deskWidth !== width || JSON.stringify(project) !== before) {
+            throw new Error("La escena cambió durante la inserción. Volvé a aplicar el recurso.");
           }
+          const percent = (pixels, base) => {
+            const value = sec().layout === "horizontal" ? cardPercent(pixels, base) : pixels / base.width * 100;
+            return isUiverseHtml ? Math.min(85, value) : value;
+          };
+          element = insertElement(type, { ...nativeProps, w: percent(size, widths.desktop),
+            mobile: { w: percent(isUiverseHtml ? 260 : size, widths.mobile) } }, { parent: "" });
         }
         inserted = true;
         const persisted = JSON.parse(localStorage.getItem(STORE_KEY) || "null");

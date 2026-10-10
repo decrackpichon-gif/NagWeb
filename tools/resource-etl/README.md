@@ -1063,3 +1063,14 @@ La búsqueda y el filtro de modificados siguen funcionando en conjunto; cambiar
 la organización no reinicia la vista previa ni altera los valores seleccionados.
 Chromium comprueba estas operaciones, conservación tras recarga y valores
 iniciales independientes de la preferencia en escritorio y celular.
+
+## Bloque 60: ancho Uiverse según la distribución nativa
+
+La inserción HTML/CSS usa la misma medición nativa de ambas vistas que SVG,
+con el tipo de elemento correcto. Apunta a 320 px en computadora y 260 px en
+celular, con el límite anterior de 85% del ancho disponible. En tarjetas
+horizontales descuenta relleno y borde y considera la doble dependencia de
+porcentajes. El aislamiento del HTML y la protección contra cancelación o
+cambios durante la medición se conservan. La prueba integral verifica anchos,
+un solo paso de historial, marcos temporales eliminados, iframe opaco y
+persistencia tras recarga en las tres distribuciones nativas.
