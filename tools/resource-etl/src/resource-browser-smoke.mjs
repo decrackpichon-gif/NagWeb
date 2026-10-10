@@ -40,7 +40,7 @@ const css = transformUiverseComponent({
   repository: "https://github.com/uiverse-io/galaxy", commit: "offline-smoke",
   item: { metadata: { category: "Buttons", author: "smoke", slug: "animation" },
     entry: { path: "Buttons/smoke_animation.html", sha: "offline" },
-    content: '<style>.card{width:80px;background:#123456;animation:spin 1s 2 alternate}@keyframes spin{to{transform:rotate(360deg)}}</style><button class="card">Prueba</button>' }
+    content: '<style>.card{width:80px;background:#123456;animation:spin 1s 2 alternate}@keyframes spin{to{transform:rotate(360deg)}}</style><button class="card">Prueba</button><input class="email" placeholder="Tu correo">' }
 });
 css.title = "Componente de prueba";
 css.license = { id: "MIT", name: "MIT", verified: true };
@@ -789,6 +789,32 @@ try {
   await page.reload();
   assert.equal(await page.evaluate(id=>sec().elements.find(e=>e.id===id).nwResource.values.uiverseText1,
     insertedHtml.element.id),"Comprar ahora");
+  // Stage 72: edit a real form placeholder without replacing the embed.
+  await page.evaluate(id=>{
+    selection=[id];curEl=sec().elements.findIndex(e=>e.id===id);renderPane();
+  },insertedHtml.element.id);
+  await reopenCustomization(htmlEditButton);
+  const hintInput=editLiveLibrary.getByLabel("Texto de campo 1",{exact:true});
+  const hintGroup=editLiveLibrary.locator('details[data-category="content"]');
+  if(!await hintGroup.evaluate(n=>n.open)) await hintGroup.locator("summary").click();
+  await expect(hintInput).toHaveValue("Tu correo");
+  await hintInput.fill("Ingresá tu email");
+  await htmlSave.click();
+  await expect(editLiveLibrary.locator("[data-apply-status]"))
+    .toContainText("Cambios guardados en el componente Uiverse seleccionado");
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  assert.equal(await page.evaluate(id=>sec().elements.find(e=>e.id===id).nwResource.values.uiverseHint1,
+    insertedHtml.element.id),"Ingresá tu email");
+  await expect(page.frameLocator("#preview")
+    .frameLocator(`[data-id="${insertedHtml.element.id}"] iframe.emb-sand`)
+    .locator("input.email")).toHaveAttribute("placeholder","Ingresá tu email");
+  const hintExport=await page.evaluate(()=>generateSite(flattenPage(page()),false,true,false));
+  assert.match(hintExport,/Ingresá tu email/);
+  await page.reload();
+  assert.equal(await page.evaluate(id=>sec().elements.find(e=>e.id===id).nwResource.values.uiverseHint1,
+    insertedHtml.element.id),"Ingresá tu email");
+  report.scenarios.push({editor:"NagWeb editable Uiverse placeholder",status:"passed",
+    sameEmbed:true,preview:true,export:true,reload:true});
   report.scenarios.push({editor:"NagWeb editable Uiverse text",status:"passed",
     noDuplicate:true,preview:true,export:true,reload:true});
   report.scenarios.push({editor:"NagWeb HTML/CSS re-edit same embed",status:"passed",

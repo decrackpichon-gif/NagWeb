@@ -83,6 +83,10 @@ import {
   inferUiverseTextProps, applyUiverseTextValues, isSupportedUiverseText
 } from "./runtime/uiverse-text.mjs";
 import {
+  inferUiversePlaceholderProps, applyUiversePlaceholderValues,
+  isSupportedUiversePlaceholder
+} from "./runtime/uiverse-placeholder.mjs";
+import {
   inferUiverseCssColorProps,
   effectiveUiverseEditableProps,
   applyUiverseCssColorValues
@@ -1609,7 +1613,8 @@ assert.deepEqual(describeEditableControls({
     ...editableUiverse.editableProps[0],
     binding: { type: "css-property", property: "background-image" }
   }]
-}), ["uiverseText1"], "Unsupported CSS property is rejected while valid text remains editable");
+}).map(p=>p.id), ["uiverseText1"],
+  "Unsupported CSS property is rejected while valid text remains editable");
 assert.equal(htmlCssPropertyStyle(editableSpinKit, { color: "#ee4488" }), "");
 assert.equal(buildResourceApplyEnvelope(editableSpinKit, {
   values: { color: "#ee4488" }
@@ -1637,6 +1642,7 @@ try {
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-easing.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-playback.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-text.mjs"))).isFile());
+  assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-placeholder.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "resource-browser", "vendor", "lottie_light.min.js"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, ".nojekyll"))).isFile());
   await assert.rejects(stat(path.join(publicPreviewDir, "src", "cli.mjs")),
@@ -2694,3 +2700,61 @@ assert.deepEqual(newTextImport.editableProps.filter(p=>p.id.startsWith("uiverseT
   .map(p=>p.id),texts.map(p=>p.id),"Newly imported Uiverse retains label controls");
 assert.equal(textResource.artifacts[0].content,editableTextHtml,
   "Changing labels never mutates the source resource");
+
+
+// Stage 72: editable quoted placeholders in real Uiverse form resources.
+const placeholderHtml='<style>.fake{content:"placeholder=hidden";}</style>'+
+  '<input type="email" placeholder="Correo electrónico" class="field">'+
+  "<textarea placeholder='Tu consulta' rows='3'></textarea>"+
+  '<div data-fake="<input placeholder=\'Falso\'>">No alterar</div>'+
+  '<!-- <input placeholder="Oculto"> -->'+
+  '<script>const fake="<input placeholder=\'Script\'>";</script>';
+const placeholderProps=inferUiversePlaceholderProps(placeholderHtml);
+assert.deepEqual(placeholderProps.map(p=>
+  [p.id,p.binding.tag,p.defaultValue,p.constraints.maxLength]),[
+  ["uiverseHint1","input","Correo electrónico",100],
+  ["uiverseHint2","textarea","Tu consulta",100]
+], "Only true, quoted input and textarea placeholders become editable");
+const placeholderResource={
+  ...persistedUiverse,
+  artifacts:[{...persistedUiverse.artifacts[0],content:placeholderHtml}]
+};
+assert.deepEqual(describeEditableControls(placeholderResource)
+  .filter(p=>p.id.startsWith("uiverseHint")).map(p=>[p.kind,p.maxLength]),
+  [["text",100],["text",100]]);
+assert.ok(isSupportedUiversePlaceholder(placeholderResource,placeholderProps[0]));
+assert.equal(isSupportedUiversePlaceholder(placeholderResource,{
+  ...placeholderProps[0],binding:{...placeholderProps[0].binding,tag:"style"}
+}),false,"An unsupported attribute binding cannot create a fake field");
+assert.equal(applyUiversePlaceholderValues(placeholderResource,{},placeholderHtml),
+  placeholderHtml,"Default text leaves source byte-identical");
+const changedPlaceholders=applyUiversePlaceholderValues(placeholderResource,{
+  uiverseHint1:'Tu correo & "confirmación"',
+  uiverseHint2:"Contanos <todo> & más"
+},placeholderHtml);
+assert.match(changedPlaceholders,/placeholder="Tu correo &amp; &quot;confirmación&quot;"/);
+assert.match(changedPlaceholders,/placeholder='Contanos &lt;todo&gt; &amp; más'/);
+assert.match(changedPlaceholders,/data-fake="<input placeholder='Falso'>"/);
+assert.match(changedPlaceholders,/<!-- <input placeholder="Oculto"> -->/);
+assert.match(changedPlaceholders,/content:"placeholder=hidden"/);
+assert.match(changedPlaceholders,/const fake="<input placeholder='Script'>"/);
+assert.equal(applyUiversePlaceholderValues(placeholderResource,{
+  uiverseHint1:"",uiverseHint2:"x".repeat(101)
+},placeholderHtml),placeholderHtml,"Invalid placeholders preserve original");
+const placeholderEnvelope=buildResourceApplyEnvelope(placeholderResource,{
+  values:{uiverseHint1:"Ingresá tu email",uiverseHint2:"Tu mensaje"}
+});
+assert.equal(placeholderEnvelope.descriptor.instance.values.uiverseHint1,"Ingresá tu email");
+assert.match(placeholderEnvelope.descriptor.payload.html,/placeholder="Ingresá tu email"/);
+assert.deepEqual(placeholderEnvelope.resource.editableProps
+  .filter(p=>p.id.startsWith("uiverseHint")).map(p=>p.id),
+  placeholderProps.map(p=>p.id),"Insert envelope retains editable form fields");
+const importedPlaceholders=transformUiverseComponent({
+  repository:"https://github.com/uiverse-io/galaxy",commit:"test",
+  item:{metadata:{category:"Forms",author:"designer",slug:"edit-form"},
+    content:placeholderHtml,entry:{path:"Forms/designer_form.html",sha:"p"}}
+});
+assert.deepEqual(importedPlaceholders.editableProps
+  .filter(p=>p.id.startsWith("uiverseHint")).map(p=>p.id),
+  placeholderProps.map(p=>p.id),"New imports include placeholder controls");
+assert.equal(placeholderResource.artifacts[0].content,placeholderHtml);

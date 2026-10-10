@@ -1159,3 +1159,15 @@ scripts, atributos y marcado anidado complejo quedan intactos. Los recursos
 persistentes anteriores obtienen esos controles sin volver a importarlos.
 Pruebas unitarias y Chromium del editor comprueban inserción, edición posterior
 y seguridad de valores.
+
+## Bloque 72: personalización de textos de ayuda en formularios
+
+Los campos `input` y `textarea` Uiverse con atributo `placeholder`
+explícito entre comillas permiten modificar su mensaje de ejemplo. Se utiliza
+un analizador de atributos HTML que no confunde otros atributos, comentarios,
+scripts o texto citado con campos reales. Los valores tienen un máximo de
+100 caracteres, se escapan antes de insertarse y nunca alteran el contenido
+HTML original del catálogo. Los controles aparecen en la categoría Contenido,
+funcionan en recursos existentes y nuevos, y se guardan y exportan al
+personalizar componentes que ya están insertados como `embed` aislados.
+Las pruebas incluyen Chromium real y validaciones de atributos y seguridad.

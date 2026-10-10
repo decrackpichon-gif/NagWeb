@@ -7,6 +7,7 @@ import { inferUiverseCssBezierProps } from "./uiverse-bezier.mjs";
 import { inferUiverseCssEasingProps } from "./uiverse-easing.mjs";
 import { inferUiverseCssPlaybackProps } from "./uiverse-playback.mjs";
 import { inferUiverseTextProps } from "./uiverse-text.mjs";
+import { inferUiversePlaceholderProps } from "./uiverse-placeholder.mjs";
 
 // Infer hexadecimal, rgb() and rgba() colors from real CSS declarations.
 // Operates on the component's own <style> tags, never on arbitrary markup.
@@ -115,7 +116,8 @@ export function effectiveUiverseEditableProps(resource) {
     ...inferUiverseCssBezierProps(mainHtml(resource)),
     ...inferUiverseCssEasingProps(mainHtml(resource)),
     ...inferUiverseCssPlaybackProps(mainHtml(resource)),
-    ...inferUiverseTextProps(mainHtml(resource))
+    ...inferUiverseTextProps(mainHtml(resource)),
+    ...inferUiversePlaceholderProps(mainHtml(resource))
   ].filter(prop => !seen.has(prop.id))];
 }
 

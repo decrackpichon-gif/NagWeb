@@ -24,6 +24,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   let editContext = null;
   let librarySession = 0;
   let opener = button;
+  let pendingFocusReturn = null;
   let canvasLoading = false;
   const measureVector = element => {
     const doc = preview.contentDocument;
@@ -97,6 +98,10 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       catch { ready = false; }
     }
     if (editButton.disabled !== !ready) editButton.disabled = !ready;
+    if (pendingFocusReturn && !dialog.open && !pendingFocusReturn.disabled) {
+      pendingFocusReturn.focus();
+      pendingFocusReturn = null;
+    }
     const label = element?.nwResource?.kind === "uiverse-html"
       ? "Personalizar componente Uiverse seleccionado" : "Personalizar ícono seleccionado";
     if (editButton.getAttribute("aria-label") !== label) {
@@ -123,6 +128,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   document.body.append(dialog);
   toolbar.append(button, editButton);
   const openLibrary = context => {
+    pendingFocusReturn = null;
     librarySession++;
     editContext = context;
     opener = context ? editButton : button;
@@ -176,7 +182,12 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   preview.addEventListener("load", () => { canvasLoading = false; syncEditButton(); });
   syncEditButton();
   close.addEventListener("click", () => dialog.close());
-  dialog.addEventListener("close", () => { librarySession++; editContext = null; opener.focus(); });
+  dialog.addEventListener("close", () => {
+    librarySession++;
+    editContext = null;
+    pendingFocusReturn = opener;
+    syncEditButton();
+  });
   const results = new Map();
   const pending = new Set();
   window.addEventListener("message", async event => {

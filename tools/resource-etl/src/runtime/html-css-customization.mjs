@@ -8,6 +8,7 @@ import { applyUiverseCssBezierValues } from "./uiverse-bezier.mjs";
 import { applyUiverseCssEasingValues } from "./uiverse-easing.mjs";
 import { applyUiverseCssPlaybackValues } from "./uiverse-playback.mjs";
 import { applyUiverseTextValues } from "./uiverse-text.mjs";
+import { applyUiversePlaceholderValues } from "./uiverse-placeholder.mjs";
 
 // Safely translate explicit, supported HTML styling props into visible edits.
 // This is a small allowlist, not arbitrary CSS code supplied by a resource.
@@ -67,6 +68,7 @@ export function htmlWithCustomStyle(resource, values, html) {
   html = applyUiverseCssEasingValues(resource, values, html);
   html = applyUiverseCssPlaybackValues(resource, values, html);
   html = applyUiverseTextValues(resource, values, html);
+  html = applyUiversePlaceholderValues(resource, values, html);
   const css = htmlCssPropertyStyle(resource, values);
   if (!css || !html) return html || "";
   // Inline style on the actual HTML wrapper survives the insert pipeline.

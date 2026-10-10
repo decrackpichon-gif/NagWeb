@@ -23,6 +23,7 @@ const PUBLIC_MODULES = Object.freeze([
   "runtime/uiverse-easing.mjs",
   "runtime/uiverse-playback.mjs",
   "runtime/uiverse-text.mjs",
+  "runtime/uiverse-placeholder.mjs",
   "runtime/nagweb-html-sandbox.mjs",
   "runtime/resource-apply-bridge.mjs",
   "runtime/insert-adapters.mjs",

@@ -50,6 +50,7 @@ export type EditableBinding =
   | { type: "css-easing-keyword"; property: string; trackIndex: number; originalValue: string }
   | { type: "css-playback-keyword"; property: string; trackIndex: number; field: "count" | "direction"; originalValue: string }
   | { type: "uiverse-text-label"; tag: string; originalText: string }
+  | { type: "uiverse-placeholder"; tag: "input" | "textarea"; originalText: string }
   | { type: "text-content"; target?: string }
   | {
       type: "transform";

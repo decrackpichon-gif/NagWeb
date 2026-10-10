@@ -8,6 +8,7 @@ import { isSupportedUiverseCssBezier } from "./uiverse-bezier.mjs";
 import { isSupportedUiverseCssEasing } from "./uiverse-easing.mjs";
 import { isSupportedUiverseCssPlayback } from "./uiverse-playback.mjs";
 import { isSupportedUiverseText } from "./uiverse-text.mjs";
+import { isSupportedUiversePlaceholder } from "./uiverse-placeholder.mjs";
 import {
   effectiveUiverseEditableProps,
   isSupportedUiverseCssColor
@@ -49,7 +50,8 @@ export function describeEditableControls(resource) {
         isSupportedUiverseCssBezier(resource, prop) ||
         isSupportedUiverseCssEasing(resource, prop) ||
         isSupportedUiverseCssPlayback(resource, prop) ||
-        isSupportedUiverseText(resource, prop)
+        isSupportedUiverseText(resource, prop) ||
+        isSupportedUiversePlaceholder(resource, prop)
       : renderer === "nagweb-svg"
         ? ["size", "stroke", "strokeWidth"].includes(id) &&
           prop.binding?.type === "runtime" &&
@@ -88,10 +90,13 @@ export function describeEditableControls(resource) {
     }
 
     if (prop.valueType === "string" &&
-        isSupportedUiverseText(resource, prop) &&
+        (isSupportedUiverseText(resource, prop) ||
+          isSupportedUiversePlaceholder(resource, prop)) &&
         typeof prop.defaultValue === "string" &&
-        prop.defaultValue.length >= 1 && prop.defaultValue.length <= 80) {
-      controls.push({ ...base, kind: "text", maxLength: 80 });
+        prop.defaultValue.length >= 1 && prop.defaultValue.length <= 100 &&
+        Number.isInteger(prop.constraints?.maxLength) &&
+        prop.constraints.maxLength >= 1 && prop.constraints.maxLength <= 100) {
+      controls.push({ ...base, kind: "text", maxLength: prop.constraints.maxLength });
       seen.add(id);
       continue;
     }
