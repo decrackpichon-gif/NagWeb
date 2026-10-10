@@ -110,6 +110,18 @@ try {
     });
     await page.goto(`http://127.0.0.1:${server.address().port}/host`);
     const frame = page.frameLocator('iframe[title="Biblioteca de prueba"]');
+    await frame.locator('[data-resource-id="smoke:icon"]').waitFor();
+    await frame.getByLabel("Proveedor", { exact: true }).selectOption("smoke");
+    await frame.getByLabel("Familia", { exact: true }).selectOption("icon");
+    await frame.getByLabel("Tipo", { exact: true }).selectOption("svg");
+    await frame.getByLabel("Buscar", { exact: true }).fill("Ícono");
+    await frame.getByRole("button", { name: "Actualizar índice", exact: true }).click();
+    await expect(frame.locator('[data-status]')).toContainText("Índice verificado");
+    await expect(frame.getByLabel("Proveedor", { exact: true })).toHaveValue("smoke");
+    await expect(frame.getByLabel("Familia", { exact: true })).toHaveValue("icon");
+    await expect(frame.getByLabel("Tipo", { exact: true })).toHaveValue("svg");
+    await expect(frame.getByLabel("Buscar", { exact: true })).toHaveValue("Ícono");
+    await frame.getByRole("button", { name: "Limpiar filtros", exact: true }).click();
     await frame.locator('[data-resource-id="smoke:icon"]').click();
     await expect(frame.locator('[data-preview-replay]')).toBeHidden();
     await frame.locator('[data-customize]').waitFor({ state: "visible" });

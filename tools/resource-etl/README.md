@@ -1130,3 +1130,11 @@ mostrarlo rápidamente. Los errores y recursos inexistentes sí lo ocultan.
 La prueba de cancelar y reabrir espera la devolución del foco al editor antes
 de iniciar otra sesión. Se mantienen las comprobaciones de tamaño, guardado,
 cancelación sin cambios y carga sin datos del recurso anterior.
+
+## Bloque 67: filtros conservados al actualizar el índice
+
+Actualizar índice conserva proveedor, familia, tipo y búsqueda. Sólo vuelve
+a Todos un filtro cuya opción ya no existe en el índice nuevo. Se vuelve a la
+primera página con los filtros vigentes. Las pruebas cubren opciones vigentes
+y retiradas; el recorrido de navegador verifica la actualización real en
+escritorio y móvil antes de continuar con la personalización.

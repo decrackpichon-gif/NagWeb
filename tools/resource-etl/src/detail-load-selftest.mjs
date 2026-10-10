@@ -95,6 +95,34 @@ await previewFailure;
 assert.equal(context.selectedResource.id, "preview-failure");
 assert.equal(el.code.textContent, "preview-failure code");
 assert.equal(el.preview.hidden, true);
+
+// Refresh the real index loader against select elements that clear removed options.
+const makeSelect = value => ({
+  value, options: [{ value: "" }, { value }],
+  remove(index) {
+    if (this.options[index].value === this.value) this.value = "";
+    this.options.splice(index, 1);
+  }
+});
+const refreshEl = {
+  provider: makeSelect("smoke"), family: makeSelect("icon"), kind: makeSelect("svg"),
+  status: {}, total: {}, search: { value: "Ícono" }
+};
+let availableFacets = { providers: [{ value: "smoke" }], families: [{ value: "icon" }], kinds: [{ value: "svg" }] };
+const refreshedFilters = [];
+const refreshContext = {
+  el: refreshEl, offset: 48,
+  vault: { async loadManifest() {}, async loadBrowseIndex() { return { resourceCount: 2 }; }, async facets() { return availableFacets; } },
+  fillSelect(select, items) { select.options.push(...items); },
+  async renderResults() { refreshedFilters.push([refreshEl.provider.value, refreshEl.family.value, refreshEl.kind.value, refreshEl.search.value]); }
+};
+runInNewContext(source.slice(source.indexOf("async function refreshIndex("), source.indexOf('el.search.addEventListener("input"')), refreshContext);
+await refreshContext.refreshIndex();
+assert.deepEqual(refreshedFilters[0], ["smoke", "icon", "svg", "Ícono"]);
+assert.equal(refreshContext.offset, 0);
+availableFacets = { providers: [], families: [{ value: "icon" }], kinds: [{ value: "svg" }] };
+await refreshContext.refreshIndex();
+assert.deepEqual(refreshedFilters[1], ["", "icon", "svg", "Ícono"], "Only unavailable filters are cleared");
 assert.match(el.previewNote.textContent, /renderer unavailable/);
 
 const initial = context.openDetail("initial-vs-edit");

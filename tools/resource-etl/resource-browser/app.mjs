@@ -760,12 +760,17 @@ async function refreshIndex() {
   const index = await vault.loadBrowseIndex({ force: true });
   const facets = await vault.facets();
 
+  const selectedFilters = [el.provider, el.family, el.kind].map(select => select.value);
   for (const select of [el.provider, el.family, el.kind]) {
     while (select.options.length > 1) select.remove(1);
   }
   fillSelect(el.provider, facets.providers);
   fillSelect(el.family, facets.families);
   fillSelect(el.kind, facets.kinds);
+  [el.provider, el.family, el.kind].forEach((select, index) => {
+    const value = selectedFilters[index];
+    select.value = [...select.options].some(option => option.value === value) ? value : "";
+  });
 
   el.total.textContent = `${index.resourceCount.toLocaleString("es-AR")} recursos`;
   el.status.textContent =
