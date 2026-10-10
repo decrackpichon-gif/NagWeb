@@ -2157,28 +2157,64 @@ function lookTensionKey(ev,button){
  if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home'].indexOf(ev.key)<0)return;var s=sec(),list=lookKeys(s),at=+button.dataset.cameraLookTensionHandle,side=button.dataset.cameraLookTensionSide==='in'?'in':'out',i=list.findIndex(function(k){return k.at===at;}),owner=side==='in'?i-1:i,k=list[owner];if(!k)return;
  ev.preventDefault();ev.stopPropagation();var current=k.tension===undefined?0:C.curveTension(k.tension),next=ev.key==='Home'?0:current+((ev.key==='ArrowRight'||ev.key==='ArrowUp')?1:-1)*(ev.shiftKey?20:5);if(lookTensionCommit(s,at,next,side)){var n=document.getElementById('pane').querySelector('[data-camera-look-tension-handle][data-camera-look-tension-side="'+side+'"]');if(n)n.focus();}
 }
+// Editing a linked GLB focus changes only a look key, not the 3D mesh.
+function isSpatialFocus(cfg,key){
+ return !!cfg&&!!key&&!!key.targetId&&(cfg.targets||[]).some(function(t){return t.id===key.targetId&&t.kind==='shape3d';});
+}
+function spatialFocusFromPoint(s,cfg,key,point){
+ if(!isSpatialFocus(cfg,key)||!point)return null;
+ var base=C.elementTarget(cfg,key.targetId,key.at/100,window.NAGWEB_STORY_MODEL,s.sdEase,previewReferenceSize(s));
+ if(!base)return null;
+ var next=Object.assign({},key);
+ ['x','y','z'].forEach(function(axis){
+  var delta=Math.max(-4000,Math.min(4000,(+point[axis]||0)-base[axis]));
+  next['focusOffset'+axis.toUpperCase()]=delta;
+  next[axis]=Math.max(-4000,Math.min(4000,base[axis]+delta));
+ });
+ return next;
+}
 function lookSpatialCommit(s,original,next){
- if(sec()!==s||!C.config(s))return false;
+ if(sec()!==s||!next)return false;
+ var cfg=C.config(s);if(!cfg)return false;
  var list=lookKeys(s),i=list.findIndex(function(k){return k.at===original.at;});
- if(i<0||list[i].x===next.x&&list[i].y===next.y&&list[i].z===next.z)return false;
+ if(i<0)return false;
+ if(isSpatialFocus(cfg,list[i])){
+  if(!['X','Y','Z'].some(function(ax){return (+list[i]['focusOffset'+ax]||0)!==(+next['focusOffset'+ax]||0);}))return false;
+ }else if(list[i].targetId||list[i].x===next.x&&list[i].y===next.y&&list[i].z===next.z)return false;
  snapshot();list[i]=next;persistLook(s,list,next.at);return true;
 }
 function lookSpatialDrag(ev,button){
  var s=sec(),cfg=C.config(s);if(!cfg||cfg.orientationMode!=='lookAt')return;
- var map=button.closest('[data-camera-map]'),r=map.getBoundingClientRect(),looks=lookKeys(s),original=looks.find(function(k){return k.at===+button.dataset.cameraLookMapPoint;});
- if(!original||!r.width||!r.height)return;
- var spec=mapSpecFromNode(map),next=original,done=false,moved=false;
+ var map=button.closest('[data-camera-map]'),r=map&&map.getBoundingClientRect(),looks=lookKeys(s),original=looks.find(function(k){return k.at===+button.dataset.cameraLookMapPoint;});
+ if(!original||!r||!r.width||!r.height)return;
+ var linked=isSpatialFocus(cfg,original);if(original.targetId&&!linked)return;
+ var spec=mapSpecFromNode(map),start=linked?C.resolveLookFrame(cfg,original,original.at/100,window.NAGWEB_STORY_MODEL,s.sdEase,previewReferenceSize(s)):original,next=original,done=false,moved=false;
  ev.preventDefault();button.focus();button.setPointerCapture(ev.pointerId);
- function move(e){if(e.pointerId!==ev.pointerId)return;var rawX=e.clientX-ev.clientX,rawY=e.clientY-ev.clientY;if(Math.hypot(rawX,rawY)>=3)moved=true;var px=rawX,py=rawY;if(e.shiftKey){if(Math.abs(px)>=Math.abs(py))py=0;else px=0;}next=C.moveSpatial(original,spec,px/r.width,py/r.height);var p=C.mapPoint(next,spec);button.style.left=p.x+'%';button.style.top=p.y+'%';mapDraw(map,keys(s),spec,s,looks.map(function(k){return k.at===original.at?next:k;}));}
+ function move(e){
+  if(e.pointerId!==ev.pointerId)return;
+  var dx=e.clientX-ev.clientX,dy=e.clientY-ev.clientY;if(Math.hypot(dx,dy)>=3)moved=true;
+  if(e.shiftKey){if(Math.abs(dx)>=Math.abs(dy))dy=0;else dx=0;}
+  var desired=C.moveSpatial(start,spec,dx/r.width,dy/r.height);
+  next=linked?spatialFocusFromPoint(s,cfg,original,desired):desired;
+  if(!next)return;
+  var point=linked?C.resolveLookFrame(cfg,next,next.at/100,window.NAGWEB_STORY_MODEL,s.sdEase,previewReferenceSize(s)):next,
+    projected=C.mapPoint(point,spec);
+  button.style.left=projected.x+'%';button.style.top=projected.y+'%';
+  mapDraw(map,keys(s),spec,s,looks.map(function(k){return k.at===original.at?next:k;}));
+ }
  function finish(e,cancel){
-  if(done||e.pointerId!=null&&e.pointerId!==ev.pointerId)return;done=true;
-  if(!cancel&&e.clientX!=null)move(e);
+  if(done||e.pointerId!=null&&e.pointerId!==ev.pointerId)return;
+  done=true;if(!cancel&&e.clientX!=null)move(e);
   button.removeEventListener('pointermove',move);button.removeEventListener('pointerup',up);button.removeEventListener('pointercancel',abort);button.removeEventListener('lostpointercapture',abort);button.removeEventListener('keydown',key);
   if(button.hasPointerCapture(ev.pointerId))button.releasePointerCapture(ev.pointerId);
   if(!cancel&&!moved&&e.clientX!=null){pickSpatial(s,map,e.clientX,e.clientY);return;}
-  if(cancel||!lookSpatialCommit(s,original,next)){var p=C.mapPoint(original,spec);button.style.left=p.x+'%';button.style.top=p.y+'%';mapDraw(map,keys(s),spec,s,looks);}
+  if(cancel||!lookSpatialCommit(s,original,next)){
+   var p=C.mapPoint(start,spec);button.style.left=p.x+'%';button.style.top=p.y+'%';
+   mapDraw(map,keys(s),spec,s,looks);
+  }
  }
- function up(e){finish(e,false);}function abort(e){finish(e,true);}function key(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();finish(e,true);}}
+ function up(e){finish(e,false);}function abort(e){finish(e,true);}
+ function key(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();finish(e,true);}}
  button.addEventListener('pointermove',move);button.addEventListener('pointerup',up);button.addEventListener('pointercancel',abort);button.addEventListener('lostpointercapture',abort);button.addEventListener('keydown',key);
 }
 function spatialDrag(ev,button){
@@ -2208,10 +2244,20 @@ function spatialKey(ev,button){
 }
 function lookSpatialKey(ev,button){
  if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].indexOf(ev.key)<0)return;
- var s=sec(),cfg=C.config(s);if(!cfg||cfg.orientationMode!=='lookAt')return;var map=button.closest('[data-camera-map]'),spec=mapSpecFromNode(map);
- var k=lookKeys(s).find(function(k){return k.at===+button.dataset.cameraLookMapPoint;});if(!k)return;
- ev.preventDefault();ev.stopPropagation();var amount=ev.shiftKey?100:25,unit=amount/(spec.range*2),dx=ev.key==='ArrowRight'?unit:ev.key==='ArrowLeft'?-unit:0,dy=ev.key==='ArrowDown'?unit:ev.key==='ArrowUp'?-unit:0;
- if(lookSpatialCommit(s,k,C.moveSpatial(k,spec,dx,dy))){var n=document.getElementById('pane').querySelector('[data-camera-look-map-point]');if(n)n.focus();}
+ var s=sec(),cfg=C.config(s);if(!cfg||cfg.orientationMode!=='lookAt')return;
+ var map=button.closest('[data-camera-map]');if(!map)return;
+ var spec=mapSpecFromNode(map),key=lookKeys(s).find(function(k){return k.at===+button.dataset.cameraLookMapPoint;});
+ if(!key||key.targetId&&!isSpatialFocus(cfg,key))return;
+ ev.preventDefault();ev.stopPropagation();
+ var amount=ev.shiftKey?100:25,unit=amount/(spec.range*2),
+  dx=ev.key==='ArrowRight'?unit:ev.key==='ArrowLeft'?-unit:0,
+  dy=ev.key==='ArrowDown'?unit:ev.key==='ArrowUp'?-unit:0,
+  original=key.targetId?C.resolveLookFrame(cfg,key,key.at/100,window.NAGWEB_STORY_MODEL,s.sdEase,previewReferenceSize(s)):key;
+ var moved=C.moveSpatial(original,spec,dx,dy),next=key.targetId?spatialFocusFromPoint(s,cfg,key,moved):moved;
+ if(lookSpatialCommit(s,key,next)){
+  var control=document.getElementById('pane').querySelector('[data-camera-look-map-point]');
+  if(control)control.focus();
+ }
 }
 var pane=document.getElementById('pane');
 if(pane){
