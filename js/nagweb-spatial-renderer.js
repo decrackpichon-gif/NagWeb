@@ -38,6 +38,10 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
   });
  }
  function owns(g){return rows.some(function(row){return row.objects.indexOf(g)>=0;});}
+ function worldOffset(node,row){
+  var world=node.closest&&node.closest('[data-nw-camera-world]');
+  return {world:world,x:world?(world.offsetLeft||0)+(row.stage.clientLeft||0):0,y:world?(world.offsetTop||0)+(row.stage.clientTop||0):0};
+ }
  function parentSpace(g,row){
   var node=g.userData.anchorEl;
   if(!node.hasAttribute||!node.hasAttribute('data-nw-spatial-parent'))return null;
@@ -68,7 +72,7 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
   });
   // Convert CSS coordinates to Three world coordinates, excluding the camera
   // world itself: bindThreeCamera already supplies that view transformation.
-  var flip=new T.Matrix4().makeScale(1,-1,1),worldMatrix=new T.Matrix4().makeTranslation(-row.stage.clientWidth/2,row.stage.clientHeight/2,-row.state.cssPerspective);
+  var offset=worldOffset(node,row),flip=new T.Matrix4().makeScale(1,-1,1),worldMatrix=new T.Matrix4().makeTranslation(offset.x-row.stage.clientWidth/2,row.stage.clientHeight/2-offset.y,-row.state.cssPerspective);
   worldMatrix.multiply(flip).multiply(matrix).multiply(flip);
   return{opacity:opacity,matrix:worldMatrix};
  }
@@ -91,7 +95,11 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
    g.userData.spatialParent=parent.matrix;return;
   }
   h.matrixAutoUpdate=true;delete g.userData.spatialParent;
-  h.position.set(node.offsetLeft-stage.clientWidth/2+pose.x,stage.clientHeight/2-node.offsetTop-pose.y,-depth+(o.offZ||0)/unit+pose.z);
+  // offsetLeft/Top are relative to .inner's padding edge, not the stage.
+  // Its layout offset and border/scroll remain independent of camera motion.
+  var offset=worldOffset(node,row),host=offset.world;
+  var x=node.offsetLeft+offset.x+(host&&host.clientLeft||0)-(host&&host.scrollLeft||0),y=node.offsetTop+offset.y+(host&&host.clientTop||0)-(host&&host.scrollTop||0);
+  h.position.set(x-stage.clientWidth/2+pose.x,stage.clientHeight/2-y-pose.y,-depth+(o.offZ||0)/unit+pose.z);
   h.scale.setScalar(width/2/g.userData.nativeR*pose.scale/100);
   // CSS y points down; local positive z points toward the viewer. Individual
   // rotate precedes the additive rotateX/rotateY transform (ZXY order).

@@ -49,6 +49,22 @@ const {chromium}=require('playwright');
    const base=await page.evaluate(()=>window.__hierarchySample(0));assert.equal(base[0].parent,'nested');assert.equal(base[1].parent,'nested');assert.ok(base[0].enabled&&base[1].enabled);assert.equal(base[3].enabled,false);assert.ok(base[0].width<120,'anchor width is now relative to its real parent');assert.ok(base.every(g=>g.tweens===0));
    // Browser layout provides an independent reference for the nested centre.
    const alignment=await page.evaluate(()=>{const d=window.__hierarchy,g=d.objects[1],n=g.userData.anchorEl,m=document.createElement('div');m.style.cssText='position:absolute;width:0;height:0;left:'+n.style.left+';top:'+n.style.top+';pointer-events:none';n.parentElement.appendChild(m);const r=m.getBoundingClientRect(),p=window.__hierarchyPoint(1);m.remove();return{dom:[r.left,r.top],three:[p.x,p.y]};});close(alignment.dom[0],alignment.three[0],1);close(alignment.dom[1],alignment.three[1],1);
+   // Actual adapter placement must include an offset/bordered camera world,
+   // for both a root shape and the nested, asynchronously loaded GLB.
+   const layoutAlignment=await page.evaluate(()=>{
+    const d=window.__hierarchy,world=d.objects[1].userData.anchorEl.closest('[data-nw-camera-world]'),saved=world.style.cssText;
+    const root=d.objects[2].userData.anchorEl,rootParent=root.parentElement,rootNext=root.nextSibling;world.appendChild(root);
+    world.style.inset='19px 0 0 27px';world.style.border='4px solid transparent';
+    window.__hierarchySample(0);
+    const results=[1,2].map(i=>{
+     const g=d.objects[i],n=g.userData.anchorEl,parents=[];for(let p=n.parentElement;p&&p!==world;p=p.parentElement)parents.push(p);
+     const styles=parents.map(p=>p.style.cssText);parents.forEach(p=>{p.style.setProperty('overflow','visible');p.style.setProperty('filter','none','important');p.style.transformStyle='preserve-3d';p.style.willChange='transform';});
+     const marker=document.createElement('div');marker.style.cssText='position:absolute;width:0;height:0;left:'+n.offsetLeft+'px;top:'+n.offsetTop+'px';n.parentElement.appendChild(marker);
+     const r=marker.getBoundingClientRect(),p=window.__hierarchyPoint(i);marker.remove();parents.forEach((p,j)=>p.style.cssText=styles[j]);
+     return{dom:[r.left,r.top],three:[p.x,p.y],native:g.userData.nativeR};
+    });world.style.cssText=saved;rootParent.insertBefore(root,rootNext);window.__hierarchySample(0);return results;
+   });
+   layoutAlignment.forEach((q,i)=>{q.dom.forEach((x,j)=>close(x,q.three[j],1));close(q.native,base[i===0?1:2].native);});
    const moved=await page.evaluate(()=>window.__hierarchySample(.6));assert.notDeepEqual(moved[0].pos,base[0].pos);assert.notDeepEqual(moved[1].matrix,base[1].matrix);assert.deepEqual(moved[2].pos,base[2].pos);close(moved[1].native,base[1].native);assert.ok(moved[0].visible&&moved[1].visible);
    // Isolate affine transforms from CSS grouping/flattening. Production clipping,
    // filters and will-change stay untouched; their DOM/WebGL parity is outside v1.

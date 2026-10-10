@@ -19,6 +19,10 @@ const renderer={domElement:{clientWidth:1000,clientHeight:800},autoClear:true,se
 const api={bindThreeCamera(s,cam,fn){cam.fov=2*Math.atan(800/2000)*180/Math.PI;cam.aspect=1.25;cam.updateProjectionMatrix();fn({cssPerspective:1000});return()=>{};}};
 const adapter=c.window.NAGWEB_CREATE_SPATIAL_RENDERER(T,renderer,scene,[g],[]);adapter.connect(api,[stage]);adapter.render(()=>{});
 const close=(a,b)=>assert.ok(Math.abs(a-b)<1e-7,a+' != '+b);h.position.toArray().forEach((x,i)=>close(x,[-257,10,-1000][i]));close(g.userData.spatialOpacity,.1);assert.equal(h.matrixAutoUpdate,false);assert.equal(g.children[0].material,source);
+world.offsetLeft=27;world.offsetTop=19;world.clientLeft=4;world.clientTop=3;world.scrollLeft=7;world.scrollTop=5;
+adapter.render(()=>{});h.position.toArray().forEach((x,i)=>close(x,[-233,-7,-1000][i]));
+world.offsetLeft=0;world.offsetTop=0;world.clientLeft=0;world.clientTop=0;world.scrollLeft=0;world.scrollTop=0;
+adapter.render(()=>{});
 outer.clientLeft=5;outer.clientTop=3;inner.clientLeft=2;inner.clientTop=1;adapter.render(()=>{});h.position.toArray().forEach((x,i)=>close(x,[-261,-4,-1000][i]));
 outer.clientLeft=0;outer.clientTop=0;inner.clientLeft=0;inner.clientTop=0;adapter.render(()=>{});
 inner.scrollLeft=3;inner.scrollTop=7;adapter.render(()=>{});h.position.toArray().forEach((x,i)=>close(x,[-250,16,-1000][i]));inner.scrollLeft=0;inner.scrollTop=0;
