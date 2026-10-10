@@ -23,6 +23,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   editButton.disabled = true;
   let editContext = null;
   let opener = button;
+  let canvasLoading = false;
   const measureVector = element => {
     const doc = preview.contentDocument;
     const node = doc && [...doc.querySelectorAll('.el[data-id]')].find(n => n.dataset.id === element.id);
@@ -48,7 +49,12 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   };
   const syncEditButton = () => {
     const element = selectedLibraryElement();
-    if (editButton.disabled !== !element) editButton.disabled = !element;
+    let ready = Boolean(element);
+    if (element?.type === "vector") {
+      try { if (canvasLoading) ready = false; else measureVector(element); }
+      catch { ready = false; }
+    }
+    if (editButton.disabled !== !ready) editButton.disabled = !ready;
     const label = element?.nwResource?.kind === "uiverse-html"
       ? "Personalizar componente Uiverse seleccionado" : "Personalizar ícono seleccionado";
     if (editButton.getAttribute("aria-label") !== label) {
@@ -120,6 +126,11 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       fingerprint: JSON.stringify(element) });
   });
   new MutationObserver(syncEditButton).observe(document.querySelector("main"), { childList: true, subtree: true });
+  new MutationObserver(() => {
+    canvasLoading = true;
+    syncEditButton();
+  }).observe(preview, { attributes: true, attributeFilter: ["srcdoc"] });
+  preview.addEventListener("load", () => { canvasLoading = false; syncEditButton(); });
   syncEditButton();
   close.addEventListener("click", () => dialog.close());
   dialog.addEventListener("close", () => { editContext = null; opener.focus(); });

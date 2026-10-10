@@ -1006,8 +1006,8 @@ podía mostrar y guardar otra medida. El nuevo tamaño se convierte a porcentaje
 del espacio real del ícono en la vista activa. El encabezado indica si se está
 editando computadora o celular, y la otra vista conserva sus ajustes.
 
-Si el lienzo todavía se está actualizando o el ícono no tiene una medida visible,
-se pide volver a abrir Personalizar cuando termine de cargar. En disposiciones
+Personalizar se habilita cuando el lienzo terminó de cargar y el ícono tiene una
+medida visible; una apertura durante una actualización se rechaza. En disposiciones
 que fuerzan el ancho (masonry u ocupar el espacio sobrante), un cambio de tamaño
 se rechaza antes de modificar el historial; el tamaño se controla desde ese
 contenedor. No se modifican las reglas de distribución del editor.
