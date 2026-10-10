@@ -231,6 +231,7 @@ export class NagWebPersistentVaultClient {
     categories,
     tags,
     capabilities,
+    ids,
     offset = 0,
     limit = 50
   } = {}) {
@@ -242,12 +243,14 @@ export class NagWebPersistentVaultClient {
     const categorySet = asSet(categories);
     const tagSet = asSet(tags);
     const capabilitySet = asSet(capabilities);
+    const idSet = asSet(ids);
     const start = Math.max(0, Number(offset) || 0);
     const pageSize = Math.min(500, Math.max(1, Number(limit) || 50));
 
     const matched = [];
 
     for (const resource of index.resources || []) {
+      if (idSet && !idSet.has(String(resource.id || "").toLowerCase())) continue;
       if (
         providerSet &&
         !providerSet.has(String(resource.provider || "").toLowerCase())

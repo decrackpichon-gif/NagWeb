@@ -10,6 +10,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 const PUBLIC_MODULES = Object.freeze([
   "runtime/persistent-vault-client.mjs",
   "runtime/latest-search.mjs",
+  "runtime/favorites.mjs",
   "runtime/instance.mjs",
   "runtime/editable-controls.mjs",
   "runtime/html-css-customization.mjs",

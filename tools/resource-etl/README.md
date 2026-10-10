@@ -1171,3 +1171,15 @@ HTML original del catálogo. Los controles aparecen en la categoría Contenido,
 funcionan en recursos existentes y nuevos, y se guardan y exportan al
 personalizar componentes que ya están insertados como `embed` aislados.
 Las pruebas incluyen Chromium real y validaciones de atributos y seguridad.
+
+## Bloque 73: favoritos persistentes y búsqueda por favoritos
+
+La Biblioteca permite marcar y quitar favoritos con el botón ★ de cada tarjeta
+o desde la ficha de detalles, y filtrarlos con **Solo favoritos**. El estado
+se conserva en el almacenamiento local del navegador (máximo 200 recursos),
+sin sincronizar ni publicar preferencias. Con el filtro activo, la búsqueda,
+paginación, proveedor, familia y tipo siguen combinándose con los IDs
+favoritos. El buscador consulta el índice liviano; no descarga toda la
+biblioteca para filtrar. Si el navegador impide el guardado, se informa.
+Los controles usan `aria-pressed` y no anidan botones. Pruebas unitarias
+y Chromium verifican persistencia tras recarga, filtros y marcado.

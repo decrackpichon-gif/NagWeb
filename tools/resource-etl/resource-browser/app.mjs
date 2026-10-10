@@ -3,6 +3,7 @@ import {
 } from "../src/runtime/persistent-vault-client.mjs";
 import { defaultEditableValues } from "../src/runtime/instance.mjs";
 import { createLatestSearch } from "../src/runtime/latest-search.mjs";
+import { readFavorites, toggleFavorite, saveFavorites } from "../src/runtime/favorites.mjs";
 import { describeEditableControls } from "../src/runtime/editable-controls.mjs";
 import { groupEditableControls, countChangedControls, matchesControlSearch } from "./control-groups.mjs";
 import { htmlWithCustomStyle } from "../src/runtime/html-css-customization.mjs";
@@ -29,6 +30,9 @@ const el = {
   provider: document.querySelector("[data-provider]"),
   family: document.querySelector("[data-family]"),
   kind: document.querySelector("[data-kind]"),
+  favoriteOnly: document.querySelector("[data-favorite-only]"),
+  favoriteCount: document.querySelector("[data-favorite-count]"),
+  detailFavorite: document.querySelector("[data-detail-favorite]"),
   clear: document.querySelector("[data-clear]"),
   refresh: document.querySelector("[data-refresh]"),
   resultCount: document.querySelector("[data-result-count]"),
@@ -65,7 +69,40 @@ const el = {
 };
 
 let offset = 0;
+let favorites = readFavorites(globalThis.localStorage);
 let selectedResource = null;
+function paintFavoriteButton(button,id) {
+  const chosen = favorites.has(id);
+  button.disabled = !id;
+  button.setAttribute("aria-pressed", String(chosen));
+  const label = chosen ? "Quitar de favoritos" : "Guardar en favoritos";
+  if (button.dataset.favoriteId !== undefined) {
+    button.textContent = chosen ? "★" : "☆";
+    button.setAttribute("aria-label", label);
+    button.title = label;
+  } else {
+    button.textContent = (chosen ? "★ " : "☆ ") + label;
+  }
+}
+function synchronizeFavorites() {
+  el.favoriteCount.textContent = "(" + favorites.size + ")";
+  for (const star of el.grid.querySelectorAll("[data-favorite-id]")) {
+    paintFavoriteButton(star,star.dataset.favoriteId);
+  }
+  paintFavoriteButton(el.detailFavorite,selectedResource?.id || "");
+}
+function flipFavorite(id) {
+  favorites = toggleFavorite(favorites,id);
+  if (!saveFavorites(globalThis.localStorage,favorites))
+    el.status.textContent = "Favoritos guardados en esta sesión; el navegador no permitió persistirlos.";
+  synchronizeFavorites();
+  if (el.favoriteOnly.checked) {
+    offset = 0;
+    void renderResults();
+  }
+}
+synchronizeFavorites();
+
 let selectedValues = {};
 let detailRevision = 0;
 let previewRevision = 0;
@@ -163,6 +200,7 @@ function currentFilters() {
     providers: el.provider.value || undefined,
     families: el.family.value || undefined,
     kinds: el.kind.value || undefined,
+    ids: el.favoriteOnly.checked ? [...favorites] : undefined,
     offset,
     limit: PAGE_SIZE
   };
@@ -188,16 +226,25 @@ const resultSearch = createLatestSearch(
   el.next.disabled = !result.hasMore;
 
   el.grid.innerHTML = result.items.map((item) => `
-    <button type="button" class="resource-card" data-resource-id="${esc(item.id)}">
-      <span class="provider">${esc(item.provider)}</span>
-      <h3>${esc(item.title || item.name || item.id)}</h3>
-      <p>${esc(item.description || item.searchText || item.id)}</p>
-      <span class="card-foot">
-        ${badge(item.family)}
-        ${badge(item.kind)}
-      </span>
-    </button>
+    <div class="resource-tile">
+      <button type="button" class="resource-card" data-resource-id="${esc(item.id)}">
+        <span class="provider">${esc(item.provider)}</span>
+        <h3>${esc(item.title || item.name || item.id)}</h3>
+        <p>${esc(item.description || item.searchText || item.id)}</p>
+        <span class="card-foot">
+          ${badge(item.family)}
+          ${badge(item.kind)}
+        </span>
+      </button>
+      <button type="button" class="favorite-toggle" data-favorite-id="${esc(item.id)}"
+        aria-pressed="${favorites.has(item.id)}"
+        aria-label="${favorites.has(item.id) ? "Quitar de favoritos" : "Guardar en favoritos"}"
+        title="${favorites.has(item.id) ? "Quitar de favoritos" : "Guardar en favoritos"}"
+        >${favorites.has(item.id) ? "★" : "☆"}</button>
+    </div>
   `).join("");
+  el.empty.querySelector("strong").textContent = el.favoriteOnly.checked
+    ? "No hay favoritos con esos filtros." : "No encontré recursos con esos filtros.";
 
   el.empty.hidden = result.total !== 0;
   el.grid.hidden = result.total === 0;
@@ -689,6 +736,7 @@ async function openDetail(id) {
   const isCurrent = () => revision === detailRevision && el.detail.open;
   rememberCategories();
   selectedResource = null;
+  synchronizeFavorites();
   selectedValues = id === editResourceId ? { ...editInitialValues } : {};
   el.customize.hidden = true;
   el.customizeControls.replaceChildren();
@@ -720,6 +768,7 @@ async function openDetail(id) {
   }
   if (!isCurrent()) return;
   selectedResource = resource;
+  synchronizeFavorites();
   if (resource) {
     renderEditableControls(resource);
   }
@@ -831,6 +880,9 @@ el.search.addEventListener("input", () => {
     renderResults();
   }, 120);
 });
+el.favoriteOnly.addEventListener("change", () => {
+  clearTimeout(searchTimer); offset = 0; void renderResults();
+});
 for (const select of [el.provider, el.family, el.kind]) {
   select.addEventListener("change", () => {
     clearTimeout(searchTimer);
@@ -844,6 +896,7 @@ el.clear.addEventListener("click", () => {
   el.provider.value = "";
   el.family.value = "";
   el.kind.value = "";
+  el.favoriteOnly.checked = false;
   offset = 0;
   renderResults();
 });
@@ -859,8 +912,13 @@ el.next.addEventListener("click", () => {
 });
 el.refresh.addEventListener("click", () => { void refreshIndex(); });
 el.grid.addEventListener("click", (event) => {
+  const star = event.target.closest("[data-favorite-id]");
+  if (star) { flipFavorite(star.dataset.favoriteId); return; }
   const card = event.target.closest("[data-resource-id]");
   if (card) openDetail(card.dataset.resourceId);
+});
+el.detailFavorite.addEventListener("click", () => {
+  if (selectedResource?.id) flipFavorite(selectedResource.id);
 });
 el.close.addEventListener("click", () => el.detail.close());
 el.detail.addEventListener("close", rememberCategories);

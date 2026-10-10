@@ -42,6 +42,10 @@
           <select data-kind aria-labelledby="kind-label"><option value="">Todos</option></select>
         </label>
 
+        <label class="favorite-filter">
+          <input type="checkbox" data-favorite-only>
+          <span>Solo favoritos <small data-favorite-count>(0)</small></span>
+        </label>
         <button type="button" class="secondary full" data-clear>Limpiar filtros</button>
 
         <div class="hint-card">
@@ -119,6 +123,7 @@
         </div>
 
         <div class="detail-actions">
+          <button type="button" class="secondary" data-detail-favorite disabled>☆ Guardar en favoritos</button>
           <button type="button" class="secondary" data-copy-id>Copiar ID</button>
           <button type="button" class="secondary" data-copy-code>Copiar código principal</button>
         </div>

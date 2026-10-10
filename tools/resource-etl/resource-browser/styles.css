@@ -138,3 +138,13 @@ pre{white-space:pre-wrap;word-break:break-word;background:#090b0e;border:1px sol
 .text-row input[type="text"] { flex:1 1 160px; min-width:0; border:1px solid #474753; border-radius:7px; padding:9px 11px; background:#191b23; color:#f6f6f7; font:inherit; }
 .text-row input[type="text"]:focus-visible { outline:2px solid #9eabff; outline-offset:2px; }
 .text-row output { font-size:11px; color:#b4b7c4; white-space:nowrap; }
+
+/* Accessible favorites: separate button, never nested inside a card button. */
+.favorite-filter{display:flex!important;flex-direction:row;align-items:center;gap:8px;cursor:pointer}
+.favorite-filter input{width:18px;height:18px;accent-color:var(--accent)}
+.favorite-filter small{color:var(--muted)}
+.resource-tile{position:relative;min-width:0}
+.resource-tile .resource-card{width:100%;height:100%;padding-right:44px}
+.favorite-toggle{position:absolute;top:10px;right:10px;padding:6px 8px;min-width:34px;min-height:34px;background:#111419;color:#e9eac4;border:1px solid var(--line);border-radius:9px;font-size:21px;line-height:1}
+.favorite-toggle[aria-pressed="true"]{color:#e4c66a;border-color:#857145}
+.favorite-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px}

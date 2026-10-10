@@ -111,6 +111,35 @@ try {
     await page.goto(`http://127.0.0.1:${server.address().port}/host`);
     const frame = page.frameLocator('iframe[title="Biblioteca de prueba"]');
     await frame.locator('[data-resource-id="smoke:icon"]').waitFor();
+    // Stage 73: check persistent favorites and filter against the local Vault index.
+    const star=frame.locator('[data-favorite-id="smoke:icon"]');
+    await star.click();
+    await expect(star).toHaveAttribute("aria-pressed","true");
+    await expect(star).toHaveText("★");
+    await frame.locator("[data-favorite-only]").check();
+    await expect(frame.locator('[data-resource-id="smoke:icon"]')).toBeVisible();
+    await expect(frame.locator('[data-resource-id="'+css.id+'"]')).toHaveCount(0);
+    await expect(frame.locator("[data-result-count]")).toContainText("1 resultados");
+    assert.match(await frame.evaluate(()=>localStorage.getItem(
+      "nagweb:resource-browser:favorites:v1")),"smoke:icon");
+    await page.reload();
+    await frame.locator('[data-resource-id="smoke:icon"]').waitFor();
+    await expect(frame.locator('[data-favorite-id="smoke:icon"]')).toHaveAttribute("aria-pressed","true");
+    await frame.locator("[data-favorite-only]").check();
+    await expect(frame.locator('[data-resource-id="smoke:icon"]')).toBeVisible();
+    await frame.locator("[data-favorite-only]").uncheck();
+    await frame.locator('[data-resource-id="smoke:icon"]').click();
+    const detailStar=frame.locator("[data-detail-favorite]");
+    await expect(detailStar).toHaveAttribute("aria-pressed","true");
+    await detailStar.click();
+    await expect(detailStar).toHaveAttribute("aria-pressed","false");
+    await frame.getByRole("button",{name:"Cerrar",exact:true}).click();
+    await expect(frame.locator('[data-favorite-id="smoke:icon"]')).toHaveAttribute("aria-pressed","false");
+    await frame.locator("[data-favorite-only]").check();
+    await expect(frame.locator('[data-resource-id="smoke:icon"]')).toHaveCount(0);
+    await frame.locator("[data-favorite-only]").uncheck();
+    report.scenarios.push({browser:"persistent favorites and filtered resource search",
+      width,status:"passed",persistence:true,detailToggle:true,noFullLibraryFetch:true});
     await expect(frame.getByRole("button", { name: "Página anterior", exact: true })).toBeDisabled();
     await expect(frame.getByRole("button", { name: "Página siguiente", exact: true })).toBeDisabled();
     if (width === 1280) {

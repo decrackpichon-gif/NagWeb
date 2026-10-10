@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import "./control-panel-selftest.mjs";
+import "./favorites-selftest.mjs";
 import "./detail-load-selftest.mjs";
 import { runInNewContext } from "node:vm";
 import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
@@ -1631,6 +1632,7 @@ try {
     /Biblioteca de recursos/);
   assert.ok((await stat(path.join(publicPreviewDir, "resource-browser", "app.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "persistent-vault-client.mjs"))).isFile());
+  assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "favorites.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "html-css-customization.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-colors.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-dimensions.mjs"))).isFile());
