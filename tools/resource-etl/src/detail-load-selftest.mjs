@@ -110,8 +110,11 @@ const refreshEl = {
 };
 let availableFacets = { providers: [{ value: "smoke" }], families: [{ value: "icon" }], kinds: [{ value: "svg" }] };
 const refreshedFilters = [];
+let invalidatedSearches = 0;
 const refreshContext = {
-  el: refreshEl, offset: 48,
+  el: refreshEl, offset: 48, searchTimer: null,
+  clearTimeout() {},
+  resultSearch: { invalidate() { invalidatedSearches++; } },
   vault: { async loadManifest() {}, async loadBrowseIndex() { return { resourceCount: 2 }; }, async facets() { return availableFacets; } },
   fillSelect(select, items) { select.options.push(...items); },
   async renderResults() { refreshedFilters.push([refreshEl.provider.value, refreshEl.family.value, refreshEl.kind.value, refreshEl.search.value]); }
@@ -123,6 +126,7 @@ assert.equal(refreshContext.offset, 0);
 availableFacets = { providers: [], families: [{ value: "icon" }], kinds: [{ value: "svg" }] };
 await refreshContext.refreshIndex();
 assert.deepEqual(refreshedFilters[1], ["", "icon", "svg", "Ícono"], "Only unavailable filters are cleared");
+assert.equal(invalidatedSearches, 2, "Refreshing the index invalidates obsolete searches");
 assert.match(el.previewNote.textContent, /renderer unavailable/);
 
 const initial = context.openDetail("initial-vs-edit");
