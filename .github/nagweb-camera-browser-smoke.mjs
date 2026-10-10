@@ -890,7 +890,8 @@ export async function runCameraBrowserSmoke(page){
       meters:Array.from(root?.querySelectorAll('[data-camera-overview-plane-meter]')||[]).map(m=>({
        plane:m.dataset.cameraOverviewPlaneMeter,status:m.dataset.cameraOverviewPlaneMeterStatus,
        hidden:m.getAttribute('aria-hidden'),pointer:m.style.pointerEvents,
-       width:parseFloat(m.querySelector('[data-camera-overview-plane-fill]')?.style.width||'NaN'),
+       width:m.querySelector('[data-camera-overview-plane-fill]')?parseFloat(m.querySelector('[data-camera-overview-plane-fill]').style.width):null,
+       hasFill:!!m.querySelector('[data-camera-overview-plane-fill]'),
        fill:m.querySelector('[data-camera-overview-plane-fill]')?.style.background||'',
        marker:!!m.querySelector('[data-camera-overview-plane-tiny]')
       })),
@@ -951,7 +952,7 @@ export async function runCameraBrowserSmoke(page){
    assert.equal(planes.meters[0].status,'measured','100% area has a measured meter');
    assert.equal(planes.meters[0].width,100,'Full shared top view fills 100% of its track');
    assert.equal(planes.meters[1].status,'unavailable','Edge-on frontal coverage has an unavailable meter');
-   assert.ok(Number.isNaN(planes.meters[1].width)&&!planes.meters[1].marker,'Invalid projection does not fake a filled bar');
+   assert.ok(planes.meters[1].width===null&&!planes.meters[1].hasFill&&!planes.meters[1].marker,'Invalid projection does not fake a filled bar');
    assert.ok(planes.meters.every(m=>m.hidden==='true'&&m.pointer==='none'),'Meters are decorative and cannot intercept camera editing');
    let exclusive=await exclusiveState();
    assert.equal(exclusive.enabled,false,'Exclusive regions default off to keep the minimap uncluttered');

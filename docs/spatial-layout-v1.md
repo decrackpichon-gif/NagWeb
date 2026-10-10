@@ -90,3 +90,10 @@ activación por teclado para ese checkbox, conservando sus aserciones de conos,
 posición y estado. No se modifica la lógica del control ni se afirma que el
 fallo de clic original sea un error del producto. La ronda local del editor
 pasó sus 25 comprobaciones; falta comprobar el nuevo smoke completo en CI.
+
+El siguiente CI pasó los toggles y llegó a los medidores de cobertura. Su
+referencia usaba `NaN` dentro de un objeto devuelto desde el navegador; ese
+valor no conserva su identidad al serializarse como JSON. La ausencia de
+barra se representa ahora con `null` y se verifica además que el elemento de
+relleno no exista. Se conserva la comprobación del estado «no evaluable»;
+no se cambia el cálculo de cobertura del producto.
