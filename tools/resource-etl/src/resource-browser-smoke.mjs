@@ -120,7 +120,7 @@ try {
     await expect(frame.locator('[data-resource-id="smoke:icon"]')).toBeVisible();
     await expect(frame.locator('[data-resource-id="'+css.id+'"]')).toHaveCount(0);
     await expect(frame.locator("[data-result-count]")).toContainText("1 resultados");
-    assert.match(await frame.evaluate(()=>localStorage.getItem(
+    assert.match(await frame.locator("body").evaluate(()=>localStorage.getItem(
       "nagweb:resource-browser:favorites:v1")),"smoke:icon");
     await page.reload();
     await frame.locator('[data-resource-id="smoke:icon"]').waitFor();
