@@ -144,6 +144,10 @@ let searchTimer = null;
 let pendingApplyId = null;
 let pendingApplyResourceId = null;
 let pendingApplyValues = null;
+// Keep the last editor-confirmed snapshot separate from the live panel values.
+let confirmedApplyValues = null;
+let confirmedApplyResourceId = null;
+let confirmedApplyMessage = "";
 let pendingApplyTimer = null;
 const applyTarget = resolveResourceApplyTarget();
 const editParams = new URLSearchParams(location.search);
@@ -469,6 +473,16 @@ function updateApplyReadiness(resource) {
   el.applyStatus.textContent = "Recurso listo para aplicar en el editor conectado.";
 }
 
+// An acknowledgement describes the values sent to NagWeb, not edits made later.
+// Keep the notice accurate for sliders, text, preset recovery, and resets.
+function synchronizeConfirmedApplyNotice() {
+  if (!confirmedApplyValues || pendingApplyId ||
+      !el.detail.open || selectedResource?.id !== confirmedApplyResourceId) return;
+  el.applyStatus.textContent = hasUnappliedResourceEdits(confirmedApplyValues, selectedValues)
+    ? confirmedApplyMessage + " Hiciste cambios posteriores que todavía no se aplicaron."
+    : confirmedApplyMessage;
+}
+
 function renderEditableControls(resource, { preserveGroups = false } = {}) {
   const previousChangedOnly = el.customizeControls.querySelectorAll("input");
   const changedOnlyWasChecked = [...previousChangedOnly]
@@ -751,6 +765,9 @@ async function openDetail(id) {
   const isCurrent = () => revision === detailRevision && el.detail.open;
   rememberCategories();
   selectedResource = null;
+  confirmedApplyValues = null;
+  confirmedApplyResourceId = null;
+  confirmedApplyMessage = "";
   synchronizeFavorites();
   selectedValues = id === editResourceId ? { ...editInitialValues } : {};
   el.customize.hidden = true;
@@ -973,10 +990,10 @@ window.addEventListener("message", (event) => {
   if (!el.detail.open || selectedResource?.id !== completedResourceId) return;
 
   if (event.data.status === "applied") {
-    const confirmed = event.data.message || "Recurso aplicado en NagWeb.";
-    el.applyStatus.textContent = hasUnappliedResourceEdits(submittedValues, selectedValues)
-      ? confirmed + " Hiciste cambios posteriores que todavía no se aplicaron."
-      : confirmed;
+    confirmedApplyValues = submittedValues;
+    confirmedApplyResourceId = completedResourceId;
+    confirmedApplyMessage = event.data.message || "Recurso aplicado en NagWeb.";
+    synchronizeConfirmedApplyNotice();
     return;
   }
 
@@ -991,6 +1008,7 @@ window.addEventListener("message", (event) => {
 });
 
 async function redrawEditablePreview() {
+  synchronizeConfirmedApplyNotice();
   const resource = selectedResource;
   if (!resource || el.customize.hidden || !el.detail.open) return;
   if (
@@ -1124,6 +1142,10 @@ el.apply.addEventListener("click", () => {
     if (editSession) envelope.editSession = editSession;
     const id = sendResourceApplyEnvelope(envelope, applyTarget);
 
+    // A new request supersedes any previous successful status for this panel.
+    confirmedApplyValues = null;
+    confirmedApplyResourceId = null;
+    confirmedApplyMessage = "";
     clearTimeout(pendingApplyTimer);
     pendingApplyId = id;
     pendingApplyResourceId = selectedResource.id;
