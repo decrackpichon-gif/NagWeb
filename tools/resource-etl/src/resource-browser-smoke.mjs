@@ -793,6 +793,55 @@ try {
   assert.equal(await page.evaluate(() => history.length), fixedHistory, "Forced layout widths must not produce a misleading saved size");
   await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
   report.scenarios.push({ editor: "SVG in responsive bordered grid", status: "passed", desktopPx: 48, mobilePx: 32, rotationPreserved: true, undoRedo: true, reload: true, forcedWidthRejected: true });
+  for (const layout of ["flow", "horizontal"]) {
+    for (const insertMobile of [false, true]) {
+      await page.evaluate(layout => {
+        Object.assign(sec(), { layout, align: "left", valign: "top", mobile: { align: "center" }, elements: [] });
+        selection = []; curEl = -1; secFocus = true; refresh();
+      }, layout);
+      await page.locator(insertMobile ? "#btn-view-mob" : "#btn-view-desk").click();
+      await page.getByRole("button", { name: "Biblioteca de recursos", exact: true }).click();
+      const libraryNode = page.locator('iframe[title="Biblioteca de recursos de NagWeb"]');
+      const libraryChild = await (await libraryNode.elementHandle()).contentFrame();
+      await libraryChild.waitForURL(await libraryNode.getAttribute("src"), { waitUntil: "domcontentloaded" });
+      await libraryFrame.locator('[data-resource-id="smoke:icon"]').click();
+      await setEditSize(44);
+      const historyBeforeInsert = await page.evaluate(() => history.length);
+      await libraryFrame.getByRole("button", { name: "Aplicar en NagWeb", exact: true }).click();
+      await expect(libraryFrame.locator('[data-apply-status]')).toContainText("Ícono insertado y guardado");
+      const id = await page.evaluate(() => selection[0]);
+      assert.equal(await page.evaluate(() => history.length), historyBeforeInsert + 1, "Measuring both layouts adds no extra undo entries");
+      assert.equal(await page.locator('[data-resource-size-probe]').count(), 0, "Measurement frames are removed");
+      await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
+      const vector = page.frameLocator("#preview").locator(`[data-id="${id}"]`);
+      const width = async () => {
+        try { return await vector.evaluate(n => Number.parseFloat(getComputedStyle(n).width)); }
+        catch (error) {
+          if (/Execution context was destroyed|Frame was detached/.test(error.message)) return NaN;
+          throw error;
+        }
+      };
+      await expect.poll(width).toBeCloseTo(44, 1);
+      await page.locator(insertMobile ? "#btn-view-desk" : "#btn-view-mob").click();
+      await expect.poll(width).toBeCloseTo(44, 1);
+      await reopenCustomization(page.getByRole("button", { name: "Personalizar ícono seleccionado", exact: true }));
+      await setEditSize(48);
+      await libraryFrame.getByRole("button", { name: "Guardar cambios en el ícono", exact: true }).click();
+      await expect(libraryFrame.locator('[data-apply-status]')).toContainText("Cambios guardados en el ícono seleccionado");
+      await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
+      await expect.poll(width).toBeCloseTo(48, 1);
+      await page.locator("#btn-undo").click();
+      await expect.poll(width).toBeCloseTo(44, 1);
+      await page.locator("#btn-redo").click();
+      await expect.poll(width).toBeCloseTo(48, 1);
+      await page.reload();
+      await page.locator(insertMobile ? "#btn-view-desk" : "#btn-view-mob").click();
+      await expect.poll(width).toBeCloseTo(48, 1);
+      await page.locator(insertMobile ? "#btn-view-mob" : "#btn-view-desk").click();
+      await expect.poll(width).toBeCloseTo(44, 1);
+      report.scenarios.push({ editor: "SVG insertion across native layouts", layout, insertMobile, initialPx: 44, editedPx: 48, independentViews: true, undoRedo: true, reload: true });
+    }
+  }
   await context.close();
   assert.deepEqual(report.errors, [], "Browser must not emit uncaught errors or external requests");
   console.log("Resource Browser Chromium smoke: panel desktop/mobile + real NagWeb SVG insertion and editing, save, cancel, undo/redo, reload and rejected inputs OK.");

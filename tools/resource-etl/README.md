@@ -1024,3 +1024,20 @@ El smoke del editor real en Chromium agrega pruebas para los componentes Uiverse
 ## Micro-etapa 56: repetir animaciones CSS Uiverse en la vista previa
 
 Los recursos Uiverse que tienen animaciones o transiciones CSS con tiempos detectables ahora ofrecen el control **Volver a reproducir**. El botón reinicia el `iframe` sin permitir scripts, reutiliza los valores seleccionados y conserva todos los controles de personalización. No se muestra para recursos estáticos o íconos SVG, y la nota informa que los efectos de hover se activan con el cursor. Chromium comprueba que la vista previa efectivamente se recarga, sigue mostrando el CSS y no altera los ajustes.
+
+## Bloque 57: tamaño SVG al insertar y editar en escenas apiladas y horizontales
+
+La inserción SVG calcula sus porcentajes para los anchos reales de computadora
+y celular. En escenas apiladas mide ambas distribuciones con el generador nativo
+en marcos temporales sin scripts, sin modificar el proyecto ni el lienzo visible;
+los elimina al terminar o ante error. En escenas horizontales considera que el
+porcentaje cambia tanto el ancho de la tarjeta como el del SVG interior, y
+descuenta el relleno y borde de la tarjeta. Esa
+misma relación se conserva al volver a personalizar la tarjeta que contiene el
+ícono. Las solicitudes repetidas durante una medición no duplican la inserción,
+y un cambio de escena o proyecto mientras se mide se rechaza antes de insertar.
+
+La prueba integral inserta desde ambas vistas en cada distribución y verifica
+44 px iniciales en computadora y celular, edición independiente a 48 px,
+un solo paso de inserción en el historial, limpieza de marcos, deshacer/rehacer
+y recarga. Se ejecuta junto con todos los escenarios anteriores del navegador.

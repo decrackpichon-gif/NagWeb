@@ -38,9 +38,50 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       throw new Error("El ícono no tiene un tamaño visible para personalizar.");
     }
     // CSS width excludes rotation and uses the actual grid cell, gutters and mobile layout.
-    return { width, baseWidth: width / percent * 100,
+    const controlsCard = node.parentElement.matches('.h-card') && node.parentElement.dataset.card === element.id;
+    const cardStyle = controlsCard ? doc.defaultView.getComputedStyle(node.parentElement) : null;
+    const inset = style => ["paddingLeft", "paddingRight", "borderLeftWidth", "borderRightWidth"].reduce((sum, key) => sum + (Number.parseFloat(style[key]) || 0), 0);
+    return { width, baseWidth: width / percent * 100, percent,
+      card: controlsCard ? { width: Number.parseFloat(cardStyle.width) / percent * 100, padding: inset(cardStyle) } : null,
       sizeFixed: node.classList.contains("sc-grow") || node.parentElement.classList.contains("lay-masonry") };
   };
+  const insertionWidths = async props => {
+    if (sec().layout === "free") return { desktop: { width: deskWidth, padding: 0 }, mobile: { width: 390, padding: 0 } };
+    // Measure both native layouts without changing the visible canvas or project.
+    const measure = mobile => new Promise((resolve, reject) => {
+      const probe = document.createElement("iframe");
+      probe.dataset.resourceSizeProbe = "";
+      probe.setAttribute("sandbox", "allow-same-origin");
+      probe.setAttribute("aria-hidden", "true");
+      probe.style.cssText = `position:fixed;left:-10000px;top:0;width:${mobile ? 390 : deskWidth}px;height:1000px;border:0;pointer-events:none`;
+      const projectCopy = structuredClone(flattenPage(page()));
+      const id = "resource-size-probe";
+      projectCopy.sections = [{ ...structuredClone(sec()), elements: [mkEl("vector", { ...props, id, parent: "", w: 100, mobile: { w: 100 } })] }];
+      let finished = false;
+      const finish = (error, width) => { if (finished) return; finished = true; clearTimeout(timer); probe.remove(); error ? reject(error) : resolve(width); };
+      const timer = setTimeout(() => finish(new Error("No pude medir la escena. Volvé a intentar aplicar el ícono.")), 10000);
+      probe.addEventListener("load", async () => {
+        try {
+          await probe.contentDocument.fonts.ready;
+          if (finished) return;
+          const node = probe.contentDocument.querySelector(`[data-id="${id}"]`);
+          if (!node) throw new Error("No pude medir el ícono en esta escena.");
+          const width = Number.parseFloat(probe.contentWindow.getComputedStyle(node).width);
+          if (!(width > 0)) throw new Error("La escena no tiene un ancho disponible para el ícono.");
+          const card = node.parentElement.matches('.h-card') ? probe.contentWindow.getComputedStyle(node.parentElement) : null;
+          const padding = card ? ["paddingLeft", "paddingRight", "borderLeftWidth", "borderRightWidth"].reduce((sum, key) => sum + (Number.parseFloat(card[key]) || 0), 0) : 0;
+          finish(null, { width: card ? Number.parseFloat(card.width) : width, padding });
+        } catch (error) { finish(error); }
+      }, { once: true });
+      try {
+        probe.srcdoc = generateSite(projectCopy, true, false, mobile).replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, "");
+        document.body.append(probe);
+      } catch (error) { finish(error); }
+    });
+    const [desktop, mobile] = await Promise.all([measure(false), measure(true)]);
+    return { desktop, mobile };
+  };
+  const cardPercent = (size, geometry) => (geometry.padding + Math.sqrt(geometry.padding ** 2 + 4 * geometry.width * size)) / (2 * geometry.width) * 100;
   const selectedLibraryElement = () => {
     if (selection.length !== 1) return null;
     return sec()?.elements.find(e => e.id === selection[0] && e.nwResource?.id &&
@@ -135,13 +176,16 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   close.addEventListener("click", () => dialog.close());
   dialog.addEventListener("close", () => { editContext = null; opener.focus(); });
   const results = new Map();
-  window.addEventListener("message", event => {
+  const pending = new Set();
+  window.addEventListener("message", async event => {
     const message = event.data;
     if (!dialog.open || event.origin !== location.origin || event.source !== frame.contentWindow ||
         message?.protocol !== NAGWEB_RESOURCE_APPLY_PROTOCOL || message.type !== NAGWEB_RESOURCE_APPLY_TYPE ||
         typeof message.requestId !== "string" || !message.requestId || message.requestId.length > 128) return;
+    if (pending.has(message.requestId)) return;
     let result = results.get(message.requestId);
     if (!result) {
+      pending.add(message.requestId);
       let inserted = false;
       try {
         const isUiverseHtml = message.descriptor?.kind === "html";
@@ -184,7 +228,8 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
             const changed = Object.keys(props.nwResource.values).some(key => props.nwResource.values[key] !== editContext.values[key]);
             if (changed) {
               snapshot();
-              if (size !== editContext.values.size) vset(element, "w", size / baseWidth * 100);
+              if (size !== editContext.values.size) vset(element, "w", geometry.card
+                ? cardPercent(size, geometry.card) : size / baseWidth * 100);
               if (props.stroke !== editContext.values.stroke) vset(element, "stroke", props.stroke);
               if (props.strokeWidth !== editContext.values.strokeWidth) vset(element, "strokeWidth", props.strokeWidth);
               element.nwResource.values = props.nwResource.values;
@@ -214,8 +259,15 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
               }
             }, { parent: "" });
           } else {
-            element = insertElement("vector", { ...props, w: size / width * 100,
-              mobile: { w: size / 390 * 100 } }, { parent: "" });
+            const before = JSON.stringify(project);
+            const sceneId = sec().id;
+            const widths = await insertionWidths(props);
+            if (!dialog.open || editContext || sec().id !== sceneId || deskWidth !== width || JSON.stringify(project) !== before) {
+              throw new Error("La escena cambió durante la inserción. Volvé a aplicar el ícono.");
+            }
+            const percent = base => sec().layout === "horizontal" ? cardPercent(size, base) : size / base.width * 100;
+            element = insertElement("vector", { ...props, w: percent(widths.desktop),
+              mobile: { w: percent(widths.mobile) } }, { parent: "" });
           }
         }
         inserted = true;
@@ -233,6 +285,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
         result = buildResourceApplyResult(message, { status: inserted ? "error" : "rejected", message: error.message });
       }
       results.set(message.requestId, result);
+      pending.delete(message.requestId);
       if (results.size > 100) results.delete(results.keys().next().value);
     }
     event.source.postMessage(result, event.origin);
