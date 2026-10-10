@@ -1083,3 +1083,14 @@ modificar una ficha cerrada. Los fallos del recurso muestran una opción de
 reabrir; los fallos de vista previa conservan el recurso y su código. Los errores
 de peticiones anteriores también se ignoran. La prueba ejecuta la función real
 con respuestas retenidas y orden invertido, sin esperas temporales ni red.
+
+## Bloque 62: conservar la última vista previa solicitada
+
+La apertura, los ajustes y la reproducción CSS comparten una revisión de vista
+previa. Una respuesta anterior no reemplaza el último ajuste, incluso si se
+cambia un valor y luego se vuelve al original. Los ajustes pendientes tampoco
+escriben sobre fichas cerradas. Si un ajuste termina antes de la vista previa
+inicial, muestra el marco y sus controles correctamente. Las animaciones con
+actualizaciones en vivo conservan su mecanismo de mensajes al cargar el marco.
+La prueba de la función real retiene respuestas y cubre estas carreras junto
+con las cargas de fichas del bloque anterior.

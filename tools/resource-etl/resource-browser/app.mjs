@@ -67,6 +67,7 @@ let offset = 0;
 let selectedResource = null;
 let selectedValues = {};
 let detailRevision = 0;
+let previewRevision = 0;
 const categoryStateKey = "nagweb:resource-browser:categories:v1";
 const categoryStates = new Map();
 try {
@@ -650,6 +651,7 @@ function renderEditableControls(resource, { preserveGroups = false } = {}) {
 
 async function openDetail(id) {
   const revision = ++detailRevision;
+  previewRevision++;
   const isCurrent = () => revision === detailRevision && el.detail.open;
   rememberCategories();
   selectedResource = null;
@@ -707,9 +709,10 @@ async function openDetail(id) {
   el.copyCode.disabled = !artifact?.content;
 
   let doc, previewError;
+  const previewRequest = ++previewRevision;
   try { doc = await previewDoc(resource, selectedValues); }
   catch (error) { previewError = error?.message || String(error); }
-  if (!isCurrent()) return;
+  if (!isCurrent() || previewRequest !== previewRevision) return;
   const isLottie = isLottieLivePreview(resource);
   const isCssShake = isCssShakeLivePreview(resource);
   const isMagicCss = isMagicCssLivePreview(resource);
@@ -832,22 +835,32 @@ window.addEventListener("message", (event) => {
 
 async function redrawEditablePreview() {
   const resource = selectedResource;
-  if (!resource || el.customize.hidden) return;
+  if (!resource || el.customize.hidden || !el.detail.open) return;
   if (
     isLottieLivePreview(resource) ||
     isMagicCssLivePreview(resource) ||
     isCssShakeLivePreview(resource)
   ) {
+    if (el.preview.srcdoc) previewRevision++;
     updateCssLivePreview(resource);
     return;
   }
   const values = { ...selectedValues };
+  const request = ++previewRevision;
   const doc = await previewDoc(resource, values);
   if (
-    doc && selectedResource === resource &&
+    doc && request === previewRevision && el.detail.open && selectedResource === resource &&
     Object.keys(selectedValues).length === Object.keys(values).length &&
     Object.entries(values).every(([id, value]) => selectedValues[id] === value)
   ) {
+    el.preview.setAttribute("sandbox", "");
+    el.preview.hidden = false;
+    el.previewFallback.hidden = true;
+    const animated = hasUiverseCssAnimation(resource);
+    el.previewReplay.hidden = !animated;
+    el.previewNote.textContent = animated
+      ? "Podés volver a reproducir las animaciones CSS. Los efectos Hover se activan al pasar el cursor."
+      : "Preview segura generada desde nuestra copia persistente.";
     el.preview.srcdoc = doc;
   }
 }
@@ -856,9 +869,10 @@ el.previewReplay.addEventListener("click", async () => {
   const resource = selectedResource;
   if (!resource || el.previewReplay.hidden || !el.detail.open) return;
   const values = { ...selectedValues };
+  const request = ++previewRevision;
   const doc = await previewDoc(resource, values);
   if (
-    !doc || selectedResource !== resource || !el.detail.open ||
+    !doc || request !== previewRevision || selectedResource !== resource || !el.detail.open ||
     el.previewReplay.hidden ||
     Object.keys(selectedValues).length !== Object.keys(values).length ||
     !Object.entries(values).every(([id, value]) => selectedValues[id] === value)

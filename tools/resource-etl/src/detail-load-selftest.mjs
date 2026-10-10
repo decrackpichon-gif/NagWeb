@@ -5,6 +5,8 @@ import { runInNewContext } from "node:vm";
 // Run the actual asynchronous detail loader with controllable response order.
 const source = await readFile(new URL("../resource-browser/app.mjs", import.meta.url), "utf8");
 const loader = source.slice(source.indexOf("async function openDetail("), source.indexOf("async function refreshIndex("));
+const redraw = source.slice(source.indexOf("async function redrawEditablePreview("), source.indexOf('el.previewReplay.addEventListener("click"'));
+const replay = source.slice(source.indexOf('el.previewReplay.addEventListener("click"'), source.indexOf('el.resetCustomize.addEventListener("click"'));
 const deferred = () => {
   let resolve, reject;
   const promise = new Promise((yes, no) => { resolve = yes; reject = no; });
@@ -13,17 +15,18 @@ const deferred = () => {
 const resources = new Map(), previews = new Map(), rendered = [];
 const el = Object.fromEntries(["customize", "customizeControls", "apply", "applyStatus", "detailTitle", "detailId", "preview", "previewReplay", "previewFallback", "code", "detailProvider", "detailDescription", "detailLicense", "detailAuthor", "detailControls", "detailArtifacts", "detailBadges", "copyCode", "previewNote"].map(key => [key, { textContent: "", replaceChildren() {}, setAttribute() {} }]));
 el.detail = { open: false, showModal() { this.open = true; } };
+el.previewReplay.addEventListener = (type, handler) => { el.previewReplay[type] = handler; };
 const context = {
-  el, detailRevision: 0, selectedResource: null, selectedValues: {},
+  el, detailRevision: 0, previewRevision: 0, previewReplayRevision: 0, selectedResource: null, selectedValues: {},
   editResourceId: null, editInitialValues: {}, rememberCategories() {},
   vault: { getResource(id) { const gate = deferred(); resources.set(id, gate); return gate.promise; } },
   previewDoc(resource) { const gate = deferred(); previews.set(resource.id, gate); return gate.promise; },
-  renderEditableControls(resource) { rendered.push(resource.id); }, updateApplyReadiness() {},
+  renderEditableControls(resource) { rendered.push(resource.id); el.customize.hidden = false; }, updateApplyReadiness() {},
   mainArtifact: resource => ({ content: resource.id + " code" }), badge: value => value,
   isLottieLivePreview: () => false, isCssShakeLivePreview: () => false,
   isMagicCssLivePreview: () => false, hasUiverseCssAnimation: () => false
 };
-runInNewContext(loader, context);
+runInNewContext(loader + redraw + replay, context);
 const resource = id => ({ id, title: id, runtime: {} });
 const resolveResource = async id => { resources.get(id).resolve(resource(id)); await new Promise(setImmediate); };
 
@@ -81,3 +84,62 @@ assert.equal(context.selectedResource.id, "preview-failure");
 assert.equal(el.code.textContent, "preview-failure code");
 assert.equal(el.preview.hidden, true);
 assert.match(el.previewNote.textContent, /renderer unavailable/);
+
+const initial = context.openDetail("initial-vs-edit");
+await resolveResource("initial-vs-edit");
+const initialGate = previews.get("initial-vs-edit");
+context.selectedValues.size = 40;
+const adjusted = context.redrawEditablePreview();
+previews.get("initial-vs-edit").resolve("adjusted preview");
+await adjusted;
+initialGate.resolve("initial preview");
+await initial;
+assert.equal(el.preview.srcdoc, "adjusted preview", "The initial preview cannot replace a later adjustment");
+assert.equal(el.preview.hidden, false);
+assert.equal(el.previewFallback.hidden, true);
+
+const sameValuesOld = context.redrawEditablePreview();
+const oldGate = previews.get("initial-vs-edit");
+context.selectedValues.size = 48;
+const intermediate = context.redrawEditablePreview();
+const middleGate = previews.get("initial-vs-edit");
+context.selectedValues.size = 40;
+const sameValuesNew = context.redrawEditablePreview();
+previews.get("initial-vs-edit").resolve("latest preview");
+await sameValuesNew;
+middleGate.resolve("intermediate preview");
+await intermediate;
+oldGate.resolve("earlier preview with same values");
+await sameValuesOld;
+assert.equal(el.preview.srcdoc, "latest preview", "Returning to the same values still preserves the latest request");
+
+const closingAdjustment = context.redrawEditablePreview();
+el.detail.open = false;
+previews.get("initial-vs-edit").resolve("closed adjustment");
+await closingAdjustment;
+assert.equal(el.preview.srcdoc, "latest preview");
+el.detail.open = true;
+el.previewReplay.hidden = false;
+const earlierReplay = el.previewReplay.click();
+const earlierReplayGate = previews.get("initial-vs-edit");
+const laterReplay = el.previewReplay.click();
+previews.get("initial-vs-edit").resolve("latest replay");
+await laterReplay;
+const replayed = el.preview.srcdoc;
+earlierReplayGate.resolve("obsolete replay");
+await earlierReplay;
+assert.equal(el.preview.srcdoc, replayed, "An earlier replay cannot restart the preview after a later replay");
+assert.equal(context.previewReplayRevision, 1);
+const replayBeforeLiveChanges = el.previewReplay.click();
+const liveReplayGate = previews.get("initial-vs-edit");
+context.isLottieLivePreview = () => true;
+let liveUpdates = 0;
+context.updateCssLivePreview = () => { liveUpdates++; };
+context.selectedValues.size = 48;
+await context.redrawEditablePreview();
+context.selectedValues.size = 40;
+await context.redrawEditablePreview();
+liveReplayGate.resolve("replay before live changes");
+await replayBeforeLiveChanges;
+assert.equal(el.preview.srcdoc, replayed);
+assert.equal(liveUpdates, 2, "Live controls keep their message updates without reloading the frame");
