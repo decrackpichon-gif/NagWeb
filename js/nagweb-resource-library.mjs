@@ -22,6 +22,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   editButton.dataset.resourceLibraryEdit = "";
   editButton.disabled = true;
   let editContext = null;
+  let librarySession = 0;
   let opener = button;
   let canvasLoading = false;
   const measureVector = element => {
@@ -122,6 +123,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   document.body.append(dialog);
   toolbar.append(button, editButton);
   const openLibrary = context => {
+    librarySession++;
     editContext = context;
     opener = context ? editButton : button;
     hint.textContent = context?.kind === "uiverse-html"
@@ -174,7 +176,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   preview.addEventListener("load", () => { canvasLoading = false; syncEditButton(); });
   syncEditButton();
   close.addEventListener("click", () => dialog.close());
-  dialog.addEventListener("close", () => { editContext = null; opener.focus(); });
+  dialog.addEventListener("close", () => { librarySession++; editContext = null; opener.focus(); });
   const results = new Map();
   const pending = new Set();
   window.addEventListener("message", async event => {
@@ -261,8 +263,9 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
           } else {
             const before = JSON.stringify(project);
             const sceneId = sec().id;
+            const session = librarySession;
             const widths = await insertionWidths(props);
-            if (!dialog.open || editContext || sec().id !== sceneId || deskWidth !== width || JSON.stringify(project) !== before) {
+            if (!dialog.open || editContext || librarySession !== session || sec().id !== sceneId || deskWidth !== width || JSON.stringify(project) !== before) {
               throw new Error("La escena cambió durante la inserción. Volvé a aplicar el ícono.");
             }
             const percent = base => sec().layout === "horizontal" ? cardPercent(size, base) : size / base.width * 100;

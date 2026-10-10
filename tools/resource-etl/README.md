@@ -1041,3 +1041,12 @@ La prueba integral inserta desde ambas vistas en cada distribución y verifica
 44 px iniciales en computadora y celular, edición independiente a 48 px,
 un solo paso de inserción en el historial, limpieza de marcos, deshacer/rehacer
 y recarga. Se ejecuta junto con todos los escenarios anteriores del navegador.
+
+## Bloque 58: cancelar inserciones durante la medición
+
+Cada apertura de la biblioteca tiene una sesión propia. Si se cierra y vuelve a
+abrir mientras se mide un SVG, el pedido anterior se rechaza sin insertar ni
+agregar historial. La prueba integral retiene las mediciones de manera
+determinista y comprueba cancelación con reapertura, cambio de escena durante
+la espera y duplicados enviados mientras el pedido sigue pendiente. Sólo un
+pedido válido inserta una vez; todos los casos eliminan los marcos temporales.

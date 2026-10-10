@@ -842,6 +842,61 @@ try {
       report.scenarios.push({ editor: "SVG insertion across native layouts", layout, insertMobile, initialPx: 44, editedPx: 48, independentViews: true, undoRedo: true, reload: true });
     }
   }
+  for (const race of ["duplicate", "cancel-reopen", "changed-scene"]) {
+    await page.evaluate(() => {
+      if (!window.resourceMessages) {
+        window.resourceMessages = [];
+        window.addEventListener("message", event => { if (event.data?.type === "nagweb:resource-apply") window.resourceMessages.push(event.data); });
+      }
+      Object.assign(sec(), { layout: "flow", elements: [] });
+      selection = []; curEl = -1; secFocus = true; refresh();
+    });
+    await page.locator("#btn-view-desk").click();
+    await page.getByRole("button", { name: "Biblioteca de recursos", exact: true }).click();
+    const iframe = page.locator('iframe[title="Biblioteca de recursos de NagWeb"]');
+    const child = await (await iframe.elementHandle()).contentFrame();
+    await child.waitForURL(await iframe.getAttribute("src"), { waitUntil: "domcontentloaded" });
+    if (await libraryFrame.locator('[data-detail]').evaluate(node => node.open)) {
+      await libraryFrame.getByRole("button", { name: "Cerrar", exact: true }).click();
+    }
+    await libraryFrame.locator('[data-resource-id="smoke:icon"]').click();
+    await page.evaluate(() => {
+      const original = document.createElement;
+      let release;
+      const gate = new Promise(resolve => { release = resolve; });
+      // Hold native measurement load callbacks; avoid timing-dependent sleeps.
+      document.createElement = function(...args) {
+        const node = original.apply(this, args);
+        if (args[0] === "iframe") {
+          const add = node.addEventListener.bind(node);
+          node.addEventListener = (type, listener, options) => add(type,
+            type === "load" ? event => gate.then(() => listener.call(node, event)) : listener, options);
+        }
+        return node;
+      };
+      window.releaseResourceMeasurement = () => { document.createElement = original; release(); };
+    });
+    const before = await page.evaluate(() => history.length);
+    await libraryFrame.getByRole("button", { name: "Aplicar en NagWeb", exact: true }).click();
+    await expect(page.locator('[data-resource-size-probe]')).toHaveCount(2);
+    if (race === "duplicate") {
+      const request = await page.evaluate(() => window.resourceMessages.at(-1));
+      await child.evaluate(message => { parent.postMessage(message, location.origin); parent.postMessage(message, location.origin); }, request);
+    } else if (race === "cancel-reopen") {
+      await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
+      await expect(page.getByRole("dialog", { name: "Biblioteca de recursos", exact: true })).not.toBeVisible();
+      await page.getByRole("button", { name: "Biblioteca de recursos", exact: true }).click();
+    } else {
+      await page.evaluate(() => { sec().bg = "#445566"; refresh(); });
+    }
+    await page.evaluate(() => window.releaseResourceMeasurement());
+    await expect(libraryFrame.locator('[data-apply-status]')).toContainText(race === "duplicate" ? "Ícono insertado y guardado" : "La escena cambió durante la inserción");
+    assert.equal(await page.evaluate(() => sec().elements.length), race === "duplicate" ? 1 : 0);
+    assert.equal(await page.evaluate(() => history.length), before + (race === "duplicate" ? 1 : 0));
+    await expect(page.locator('[data-resource-size-probe]')).toHaveCount(0);
+    await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
+    report.scenarios.push({ editor: "SVG asynchronous insertion", race, status: "passed", probesRemoved: true, historyPreserved: true });
+  }
   await context.close();
   assert.deepEqual(report.errors, [], "Browser must not emit uncaught errors or external requests");
   console.log("Resource Browser Chromium smoke: panel desktop/mobile + real NagWeb SVG insertion and editing, save, cancel, undo/redo, reload and rejected inputs OK.");
