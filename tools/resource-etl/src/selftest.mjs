@@ -1576,7 +1576,8 @@ const editableUiverse = transformUiverseComponent({
 });
 assert.equal(editableUiverse.source.provider, "uiverse");
 assert.deepEqual(describeEditableControls(editableUiverse).map(p => p.id),
-  ["opacity", "scale"], "Uiverse gets two functional customization controls");
+  ["opacity", "scale", "uiverseText1"],
+  "Uiverse gets styling and text customization controls");
 assert.equal(htmlCssPropertyStyle(editableUiverse, { opacity: 0.65, scale: 1.4 }),
   "opacity:0.65;scale:1.4");
 const tailoredUiverse = buildResourceApplyEnvelope(editableUiverse, {
@@ -1682,16 +1683,17 @@ const vividUiverse = transformUiverseComponent({
 assert.deepEqual(describeEditableControls(vividUiverse).map(prop => prop.id),
   ["opacity", "scale", "uiverseColor1", "uiverseColor2",
     "uiverseColor3", "uiverseColor4", "uiverseLength1",
-    "uiverseDetail1"]);
-assert.equal(effectiveUiverseEditableProps(vividUiverse).length, 8,
+    "uiverseDetail1", "uiverseText1"]);
+assert.equal(effectiveUiverseEditableProps(vividUiverse).length, 9,
   "Color and pixel controls are not duplicated when already saved in metadata");
 const persistedUiverse = {
   ...vividUiverse, editableProps: vividUiverse.editableProps.slice(0, 2)
 };
 assert.deepEqual(describeEditableControls(persistedUiverse).map(prop => prop.id),
   ["opacity", "scale", "uiverseColor1", "uiverseColor2",
-    "uiverseColor3", "uiverseColor4", "uiverseLength1", "uiverseDetail1"],
-  "Old Uiverse resources gain color, width and border thickness without re-import");
+    "uiverseColor3", "uiverseColor4", "uiverseLength1", "uiverseDetail1",
+    "uiverseText1"],
+  "Old Uiverse resources gain color, width, border and text without re-import");
 const paletteValues = {
   uiverseColor1: "#1122ee",
   uiverseColor2: "#eeddcc",
@@ -1777,8 +1779,8 @@ const existingRgbResource = {
 };
 assert.deepEqual(describeEditableControls(existingRgbResource).map(p => p.id),
   ["opacity", "scale", "uiverseColor1", "uiverseColor2", "uiverseColor3",
-    "uiverseDetail1"],
-  "Old saved Uiverse with RGB colors also gains its original border thickness");
+    "uiverseDetail1", "uiverseText1"],
+  "Old saved Uiverse with RGB colors also gains its original border and text");
 assert.equal(applyUiverseCssColorValues(existingRgbResource, {},
   mixedRgbHtml), mixedRgbHtml,
   "Unchanged RGB and RGBA values remain byte-identical");
@@ -1802,7 +1804,7 @@ assert.match(rgbCustom.descriptor.payload.html, /data-color="rgb\(12, 34, 56\)"/
 assert.match(rgbCustom.descriptor.payload.html, /color:rgb\(999,2,3\)/,
   "Invalid RGB colors are never offered or overwritten");
 assert.equal(buildResourceApplyEnvelope(existingRgbResource).resource.editableProps.length,
-  6, "The editor receives RGB and original border options in its insertion envelope");
+  7, "The editor receives RGB, original border and text options in its insertion envelope");
 assert.equal(applyUiverseCssColorValues(existingRgbResource,
   { uiverseColor1:"rgb(255,0,0)", uiverseColor2:"red; position:fixed" },
   mixedRgbHtml), mixedRgbHtml, "Only valid hex picker input may recolor RGB CSS");
