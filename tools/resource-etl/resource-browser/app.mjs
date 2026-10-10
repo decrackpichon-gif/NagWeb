@@ -2,6 +2,7 @@ import {
   createNagWebPersistentVaultClient
 } from "../src/runtime/persistent-vault-client.mjs";
 import { defaultEditableValues } from "../src/runtime/instance.mjs";
+import { createLatestSearch } from "../src/runtime/latest-search.mjs";
 import { describeEditableControls } from "../src/runtime/editable-controls.mjs";
 import { groupEditableControls, countChangedControls, matchesControlSearch } from "./control-groups.mjs";
 import { htmlWithCustomStyle } from "../src/runtime/html-css-customization.mjs";
@@ -167,10 +168,11 @@ function currentFilters() {
   };
 }
 
-async function renderResults() {
-  el.grid.setAttribute("aria-busy", "true");
-  const result = await vault.search(currentFilters());
-
+const resultSearch = createLatestSearch(
+  filters => vault.search(filters),
+  {
+    onStart: () => el.grid.setAttribute("aria-busy", "true"),
+    onResult: result => {
   el.resultCount.textContent =
     `${result.total.toLocaleString("es-AR")} resultados`;
   const page = result.total ? Math.floor(result.offset / result.limit) + 1 : 0;
@@ -193,7 +195,15 @@ async function renderResults() {
 
   el.empty.hidden = result.total !== 0;
   el.grid.hidden = result.total === 0;
-  el.grid.removeAttribute("aria-busy");
+    },
+    onError: () => {
+      el.status.textContent = "No se pudieron cargar los resultados. Intentá actualizar el índice.";
+    },
+    onFinish: () => el.grid.removeAttribute("aria-busy")
+  }
+);
+function renderResults() {
+  return resultSearch.run(currentFilters());
 }
 
 function mainArtifact(resource) {
@@ -755,6 +765,8 @@ async function openDetail(id) {
 }
 
 async function refreshIndex() {
+  clearTimeout(searchTimer);
+  resultSearch.invalidate();
   el.status.textContent = "Actualizando índice y verificando checksum…";
   await vault.loadManifest({ force: true });
   const index = await vault.loadBrowseIndex({ force: true });
@@ -780,6 +792,7 @@ async function refreshIndex() {
 }
 
 el.search.addEventListener("input", () => {
+  resultSearch.invalidate();
   clearTimeout(searchTimer);
   searchTimer = setTimeout(() => {
     offset = 0;
@@ -788,11 +801,13 @@ el.search.addEventListener("input", () => {
 });
 for (const select of [el.provider, el.family, el.kind]) {
   select.addEventListener("change", () => {
+    clearTimeout(searchTimer);
     offset = 0;
     renderResults();
   });
 }
 el.clear.addEventListener("click", () => {
+  clearTimeout(searchTimer);
   el.search.value = "";
   el.provider.value = "";
   el.family.value = "";
@@ -801,10 +816,12 @@ el.clear.addEventListener("click", () => {
   renderResults();
 });
 el.prev.addEventListener("click", () => {
+  clearTimeout(searchTimer);
   offset = Math.max(0, offset - PAGE_SIZE);
   renderResults();
 });
 el.next.addEventListener("click", () => {
+  clearTimeout(searchTimer);
   offset += PAGE_SIZE;
   renderResults();
 });
