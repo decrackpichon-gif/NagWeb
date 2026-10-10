@@ -66,6 +66,25 @@ const el = {
 let offset = 0;
 let selectedResource = null;
 let selectedValues = {};
+const categoryStateKey = "nagweb:resource-browser:categories:v1";
+const categoryStates = new Map();
+try {
+  const saved = JSON.parse(sessionStorage.getItem(categoryStateKey) || "[]");
+  if (Array.isArray(saved)) for (const entry of saved.slice(-24)) {
+    if (Array.isArray(entry) && typeof entry[0] === "string" && Array.isArray(entry[1])) {
+      categoryStates.set(entry[0], new Map(entry[1].filter(pair => Array.isArray(pair) && typeof pair[0] === "string" && typeof pair[1] === "boolean")));
+    }
+  }
+} catch { /* Optional organization preferences do not block the library. */ }
+function rememberCategories() {
+  if (!selectedResource || el.customize.hidden) return;
+  const id = selectedResource.id;
+  categoryStates.delete(id);
+  categoryStates.set(id, new Map([...el.customizeControls.querySelectorAll("details")].map(group => [group.dataset.category, group.open])));
+  if (categoryStates.size > 24) categoryStates.delete(categoryStates.keys().next().value);
+  try { sessionStorage.setItem(categoryStateKey, JSON.stringify([...categoryStates].map(([id, groups]) => [id, [...groups]]))); }
+  catch { /* Keep preferences in memory if session storage is unavailable. */ }
+}
 let previewReplayRevision = 0;
 let searchTimer = null;
 let pendingApplyId = null;
@@ -414,12 +433,34 @@ function renderEditableControls(resource, { preserveGroups = false } = {}) {
   const emptyChanges = document.createElement("p");
   emptyChanges.textContent = "No hay ajustes modificados. Desmarcá el filtro para ver todos.";
   el.customizeControls.appendChild(emptyChanges);
+  const categoryActions = document.createElement("div");
+  const expand = document.createElement("button");
+  const collapse = document.createElement("button");
+  for (const [button, label, open] of [[expand, "Expandir categorías", true], [collapse, "Plegar categorías", false]]) {
+    button.type = "button";
+    button.className = "secondary";
+    button.textContent = label;
+    button.addEventListener("click", () => {
+      if (selectedResource !== resource || el.customize.hidden) return;
+      for (const group of groups) if (!group.section.hidden) group.section.open = open;
+      rememberCategories();
+      updateCategoryActions();
+    });
+    categoryActions.appendChild(button);
+  }
+  el.customizeControls.appendChild(categoryActions);
+  const rememberedGroups = categoryStates.get(resource.id);
   const groups = groupEditableControls(controls).map((group, index) => {
     const section = document.createElement("details");
     section.className = "control-group";
     section.dataset.category = group.id;
     section.open = preserveGroups && previousGroups.has(group.id)
-      ? previousGroups.get(group.id) : index === 0;
+      ? previousGroups.get(group.id) : rememberedGroups?.get(group.id) ?? index === 0;
+    section.addEventListener("toggle", () => {
+      if (selectedResource !== resource || el.customize.hidden) return;
+      rememberCategories();
+      updateCategoryActions();
+    });
     const summary = document.createElement("summary");
     const reset = document.createElement("button");
     reset.type = "button";
@@ -439,6 +480,11 @@ function renderEditableControls(resource, { preserveGroups = false } = {}) {
     el.customizeControls.appendChild(section);
     return { ...group, section, summary, reset };
   });
+  const updateCategoryActions = () => {
+    const visible = groups.filter(group => !group.section.hidden);
+    expand.disabled = !visible.some(group => !group.section.open);
+    collapse.disabled = !visible.some(group => group.section.open);
+  };
   const updateSummary = () => {
     const focusedElement = document.activeElement;
     const changed = countChangedControls(controls, selectedValues);
@@ -472,6 +518,7 @@ function renderEditableControls(resource, { preserveGroups = false } = {}) {
           [group.reset, group.summary].includes(focusedElement)) focusTarget.focus();
     }
     el.resetCustomize.disabled = changed === 0;
+    updateCategoryActions();
   };
   changedOnly.addEventListener("change", () => {
     if (selectedResource !== resource || el.customize.hidden) return;
@@ -601,6 +648,7 @@ function renderEditableControls(resource, { preserveGroups = false } = {}) {
 }
 
 async function openDetail(id) {
+  rememberCategories();
   selectedResource = null;
   selectedValues = id === editResourceId ? { ...editInitialValues } : {};
   el.customize.hidden = true;
@@ -729,6 +777,7 @@ el.grid.addEventListener("click", (event) => {
   if (card) openDetail(card.dataset.resourceId);
 });
 el.close.addEventListener("click", () => el.detail.close());
+el.detail.addEventListener("close", rememberCategories);
 window.addEventListener("message", (event) => {
   if (!applyTarget) return;
   if (event.source !== applyTarget.targetWindow) return;

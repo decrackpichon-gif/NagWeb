@@ -203,6 +203,28 @@ try {
     assert.match(cssEnvelope.descriptor.payload.html, /spin 1s 4 alternate/);
     assert.equal(await page.locator('#inserted .card').textContent(), "Prueba");
     assert.equal(await frame.locator('[data-customize]').evaluate(node => node.scrollWidth <= node.clientWidth), true, "Panel must fit its width");
+    const cssDocBeforeGroups = await frame.locator('[data-preview]').getAttribute("srcdoc");
+    await frame.getByRole("button", { name: "Plegar categorías", exact: true }).click();
+    await expect(frame.getByRole("button", { name: "Plegar categorías", exact: true })).toBeDisabled();
+    await frame.getByRole("button", { name: "Expandir categorías", exact: true }).click();
+    assert.equal(await frame.getByLabel(playback.label, { exact: true }).inputValue(), "4");
+    assert.equal(await frame.locator('[data-preview]').getAttribute("srcdoc"), cssDocBeforeGroups, "Category actions only change organization");
+    await frame.getByRole("button", { name: "Cerrar", exact: true }).click();
+    await frame.locator('[data-resource-id="smoke:icon"]').click();
+    await frame.getByRole("button", { name: "Plegar categorías", exact: true }).click();
+    await showCategory("size");
+    await frame.getByRole("button", { name: "Cerrar", exact: true }).click();
+    // A new library document restores organization but still uses fresh values.
+    const browserChild = page.frames().find(child => child.url().includes("/resource-browser/"));
+    await browserChild.goto(browserChild.url());
+    await frame.locator('[data-resource-id="smoke:icon"]').click();
+    assert.equal(await frame.locator('details[data-category="size"]').evaluate(node => node.open), true);
+    assert.equal(await frame.locator('details[data-category="color"]').evaluate(node => node.open), false);
+    assert.equal(await frame.getByLabel("Tamaño", { exact: true }).inputValue(), "24");
+    await expect(frame.getByRole("button", { name: "Expandir categorías", exact: true })).toBeEnabled();
+    await frame.getByRole("button", { name: "Expandir categorías", exact: true }).click();
+    await expect(frame.getByRole("button", { name: "Expandir categorías", exact: true })).toBeDisabled();
+    assert.equal(await frame.locator("[data-customize] details").evaluateAll(groups => groups.every(group => group.open)), true);
     report.scenarios.push({ width, status: "passed", applies: await page.evaluate(() => window.received.length) });
     await context.close();
   }

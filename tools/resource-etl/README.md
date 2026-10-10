@@ -1050,3 +1050,16 @@ agregar historial. La prueba integral retiene las mediciones de manera
 determinista y comprueba cancelación con reapertura, cambio de escena durante
 la espera y duplicados enviados mientras el pedido sigue pendiente. Sólo un
 pedido válido inserta una vez; todos los casos eliminan los marcos temporales.
+
+## Bloque 59: organización del panel durante la sesión
+
+La biblioteca recuerda qué categorías están abiertas para cada recurso,
+incluso al recargar su marco durante la misma sesión. Conserva hasta 24 recursos
+recientes y sigue funcionando en memoria cuando el almacenamiento de sesión
+no está disponible. Esta preferencia no guarda ni reemplaza valores del recurso.
+Los controles **Expandir categorías** y **Plegar categorías** actúan sobre las
+categorías visibles y se deshabilitan cuando ya no queda ninguna por cambiar.
+La búsqueda y el filtro de modificados siguen funcionando en conjunto; cambiar
+la organización no reinicia la vista previa ni altera los valores seleccionados.
+Chromium comprueba estas operaciones, conservación tras recarga y valores
+iniciales independientes de la preferencia en escritorio y celular.
