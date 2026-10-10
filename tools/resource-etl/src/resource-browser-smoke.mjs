@@ -341,9 +341,9 @@ try {
   assert.equal(await page.evaluate(() => sec().elements.length), 1, "Only the library iframe can apply resources");
   await libraryFrame.getByRole("button", { name: "Cerrar", exact: true }).click();
   await libraryFrame.locator(`[data-resource-id="${css.id}"]`).click();
-  await expect(libraryFrame.getByRole("button", { name: "Aplicar en NagWeb", exact: true })).toBeDisabled();
-  await expect(libraryFrame.locator('[data-apply-status]')).toContainText("Este editor admite por ahora insertar íconos SVG de trazo");
-  assert.equal(await page.evaluate(() => sec().elements.length), 1, "Unsupported resources must never reach the insertion handler");
+  await expect(libraryFrame.getByRole("button", { name: "Aplicar en NagWeb", exact: true })).toBeEnabled();
+  await expect(libraryFrame.locator('[data-apply-status]')).toContainText("Recurso listo para aplicar");
+  assert.equal(await page.evaluate(() => sec().elements.length), 1, "Viewing a compatible Uiverse component must not insert it until Apply");
   await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
   const svg = page.frameLocator("#preview").locator(`[data-id="${inserted.element.id}"] svg`);
   await expect(svg).toBeVisible();
@@ -462,6 +462,75 @@ try {
   assert.equal(await page.evaluate(id => sec().elements.find(e => e.id === id).stroke, inserted.element.id), "#123456");
   report.scenarios.push({ editor: "NagWeb edit existing SVG", status: "passed", sameId: true, noDuplicate: true, cancel: true, undoRedo: true, reload: true, placementPreserved: true, noOp: true, deletedTargetRejected: true, failedSaveDetected: true });
   report.scenarios.push({ editor: "NagWeb real", status: "passed", insert: "vector", saved: true, undoRedo: true, reload: true, export: true, mobileInsert: true, deduplicated: true, invalidSourceRejected: true });
+  // Stage 52: use NagWeb's existing embed element, but never direct-inject
+  // Uiverse markup in either edit view or exported website.
+  await page.getByRole("button", { name: "Biblioteca de recursos", exact: true }).click();
+  await libraryFrame.locator(`[data-resource-id="${css.id}"]`).click();
+  await expect(libraryFrame.getByRole("button", { name: "Aplicar en NagWeb", exact: true })).toBeEnabled();
+  const htmlBefore = await page.evaluate(() => history.length);
+  await libraryFrame.getByRole("button", { name: "Aplicar en NagWeb", exact: true }).click();
+  await expect(libraryFrame.locator('[data-apply-status]')).toContainText("Componente HTML/CSS Uiverse insertado y guardado");
+  const insertedHtml = await page.evaluate(() => {
+    const e = sec().elements.find(e => e.nwResource?.kind === "uiverse-html");
+    const saved = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
+    return { element: structuredClone(e), currentCount:sec().elements.length,
+      saved: saved?.pages?.flatMap(p => p.sections).flatMap(s => s.elements).some(x => x.id === e.id) };
+  });
+  assert.equal(insertedHtml.element.type,"embed");
+  assert.equal(insertedHtml.element.mode,"html");
+  assert.equal(insertedHtml.element.nwResource.id,css.id);
+  assert.equal(insertedHtml.element.nwResource.license.verified,true);
+  assert.equal(insertedHtml.saved,true,"Uiverse embed must be persisted");
+  assert.equal(insertedHtml.currentCount,3);
+  assert.ok(insertedHtml.element.w>0 && insertedHtml.element.ratio>0,
+    "Native embed must have editable position and size");
+  assert.ok(insertedHtml.element.mobile.w>0,"Native embed must preserve mobile width");
+  assert.equal(await page.evaluate(() => history.length),htmlBefore+1,
+    "HTML insertion creates one undo entry");
+  const htmlEnvelope = await page.evaluate(() => window.resourceMessages.at(-1));
+  const htmlRejected={ ...htmlEnvelope, requestId:"unsafe-html-payload",
+    descriptor:{...htmlEnvelope.descriptor,payload:{
+      ...htmlEnvelope.descriptor.payload,html:'<script>parent.__injected=true</script>'}}};
+  await browserChild.evaluate(message => parent.postMessage(message,location.origin),htmlRejected);
+  await page.waitForTimeout(150);
+  assert.equal(await page.evaluate(() => sec().elements.length),insertedHtml.currentCount,
+    "A rejected HTML payload must not mutate editor elements");
+  assert.equal(await page.evaluate(() => history.length),htmlBefore+1,
+    "Rejected HTML must not create undo history");
+  await browserChild.evaluate(message => parent.postMessage(message,location.origin),htmlEnvelope);
+  await page.waitForTimeout(150);
+  assert.equal(await page.evaluate(() => sec().elements.length),insertedHtml.currentCount,
+    "A duplicated HTML request must not create another element");
+  await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
+  const isolatedFrame=page.frameLocator("#preview")
+    .locator(`[data-id="${insertedHtml.element.id}"] iframe.emb-sand`);
+  await expect(isolatedFrame).toBeVisible();
+  assert.equal(await isolatedFrame.getAttribute("sandbox"),"",
+    "Uiverse iframe must have no execution or same-origin capabilities");
+  assert.equal(await isolatedFrame.getAttribute("referrerpolicy"),"no-referrer");
+  const nestedCard=page.frameLocator("#preview")
+    .frameLocator(`[data-id="${insertedHtml.element.id}"] iframe.emb-sand`).locator(".card");
+  await expect(nestedCard).toBeVisible();
+  await expect(nestedCard).toHaveCSS("background-color","rgb(18, 52, 86)");
+  const htmlExport=await page.evaluate(() => generateSite(flattenPage(page()),false,true,false));
+  assert.match(htmlExport,/sandbox=""[^>]+srcdoc=/,
+    "Exported Uiverse HTML must remain isolated in a sandboxed iframe");
+  assert.ok(htmlExport.includes("default-src") && htmlExport.includes("script-src"),
+    "Export includes restrictive CSP for Uiverse HTML");
+  assert.equal(await page.frameLocator("#preview")
+    .locator(`[data-id="${insertedHtml.element.id}"] .card`).count(),0,
+    "Uiverse markup must not enter the canvas DOM outside its frame");
+  await page.locator("#btn-undo").click();
+  assert.equal(await page.evaluate(() => sec().elements.some(e=>e.nwResource?.kind==="uiverse-html")),false);
+  await page.locator("#btn-redo").click();
+  assert.equal(await page.evaluate(() => sec().elements.some(e=>e.nwResource?.kind==="uiverse-html")),true);
+  await page.reload();
+  await expect(page.frameLocator("#preview")
+    .frameLocator(`[data-id="${insertedHtml.element.id}"] iframe.emb-sand`).locator(".card")).toBeVisible();
+  assert.equal(await page.evaluate(id=>sec().elements.find(e=>e.id===id)?.nwResource?.id,insertedHtml.element.id),css.id);
+  report.scenarios.push({editor:"NagWeb persistent Uiverse HTML/CSS",status:"passed",
+    iframeSandbox:true,save:true,undoRedo:true,reload:true,export:true,
+    externalScriptsBlocked:true,invalidPayloadRejected:true});
   await context.close();
   assert.deepEqual(report.errors, [], "Browser must not emit uncaught errors or external requests");
   console.log("Resource Browser Chromium smoke: panel desktop/mobile + real NagWeb SVG insertion and editing, save, cancel, undo/redo, reload and rejected inputs OK.");

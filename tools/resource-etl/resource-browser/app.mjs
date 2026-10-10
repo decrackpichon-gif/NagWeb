@@ -8,6 +8,7 @@ import { htmlWithCustomStyle } from "../src/runtime/html-css-customization.mjs";
 import { buildLottieBrowserPreview } from "../src/preview/lottie-browser-preview.mjs";
 import { buildCssShakeBrowserPreview } from "../src/preview/csshake-browser-preview.mjs";
 import { buildMagicCssBrowserPreview } from "../src/preview/magiccss-browser-preview.mjs";
+import { prepareUiverseSandboxHtml } from "../src/runtime/nagweb-html-sandbox.mjs";
 import {
   buildResourceApplyEnvelope,
   resolveResourceApplyTarget,
@@ -73,7 +74,7 @@ const editParams = new URLSearchParams(location.search);
 // Optional UI hint: absent means a generic host with unrestricted adapters.
 const hostKindsText = applyTarget ? editParams.get("hostKinds") : null;
 const hostKinds = hostKindsText === null ? null :
-  new Set(hostKindsText.split(",").filter(kind => /^(?:svg|html|react|threejs|css-inline-effect|css-class-effect|lottie)$/.test(kind)));
+  new Set(hostKindsText.split(",").filter(kind => /^(?:svg|uiverse-html|html|react|threejs|css-inline-effect|css-class-effect|lottie)$/.test(kind)));
 const editResourceId = applyTarget ? editParams.get("editResource") : null;
 const editSession = editResourceId ? editParams.get("editSession") : null;
 let editInitialValues = {};
@@ -315,11 +316,22 @@ function updateApplyReadiness(resource) {
     return;
   }
 
-  if (hostKinds && !hostKinds.has(prepared.descriptor.kind)) {
+  const acceptsUiverseHtml = hostKinds?.has("uiverse-html") &&
+    prepared.descriptor.kind === "html" && resource.source?.provider === "uiverse";
+  if (hostKinds && !hostKinds.has(prepared.descriptor.kind) && !acceptsUiverseHtml) {
     el.applyStatus.textContent = hostKinds.has("svg")
-      ? "Este editor admite por ahora insertar íconos SVG de trazo. Podés explorar y copiar el código de este recurso, pero todavía no aplicarlo al lienzo."
+      ? "Este editor admite SVG y HTML/CSS Uiverse compatibles. Este recurso todavía no se puede insertar, pero podés explorar y copiar su código."
       : "Este editor todavía no admite insertar este tipo de recurso. Podés explorarlo y copiar su código.";
     return;
+  }
+  if (acceptsUiverseHtml) {
+    try {
+      prepareUiverseSandboxHtml(prepared);
+    } catch (error) {
+      el.applyStatus.textContent = "Este componente no se puede insertar de forma segura: " +
+        (error?.message || String(error));
+      return;
+    }
   }
 
   if (pendingApplyId) {

@@ -963,3 +963,19 @@ visualización de CSS, aislamiento de origen, atributos del iframe, restriccione
 de CSP y rechazo de marcado activo o de recursos sin licencia. Es una
 **preparación de integración**: la inserción persistente de HTML/CSS como
 elemento del lienzo principal sigue pendiente y no se anuncia como lista.
+
+## Micro-etapa 52: insertar Uiverse HTML/CSS como elemento nativo aislado
+
+Los componentes Uiverse compatibles sin dependencias ahora pueden insertarse en
+el editor como elementos `embed` del proyecto. Se conservan posición, ancho de
+escritorio y móvil, proporción, identidad del recurso y valores seleccionados.
+El renderizado en el lienzo y en la exportación usa siempre un `iframe`
+con `sandbox=""` y política CSP restrictiva, sin inyectar HTML del recurso
+en el documento padre. El panel reconoce los componentes inseguros/no
+compatibles antes de habilitar Aplicar. El receptor vuelve a validarlos.
+
+Chromium prueba inserción real, persistencia en almacenamiento, aislamiento,
+exportación, deshacer/rehacer, recarga y mensajes duplicados o maliciosos.
+Por ahora la edición posterior mediante el panel de Biblioteca continúa
+reservada a íconos SVG; el componente HTML/CSS sí puede moverse y
+redimensionarse desde el editor como cualquier `embed`.

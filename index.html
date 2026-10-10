@@ -14886,7 +14886,15 @@ function embedInner(e, edit){
   }
   const code = String(e.code || '');
   if(!code.trim()) return edit ? '<div class="emb-ph">Código propio · pegá tu HTML</div>' : '';
-  /* en el editor el código corre aislado, para que un script no rompa el lienzo */
+  /* Recursos Uiverse insertados por la biblioteca nunca se vuelcan al DOM
+     principal. En lienzo Y exportación usan un iframe opaco, sin scripts,
+     con CSP antes del contenido, aun si el proyecto fue editado a mano. */
+  if(e.nwResource && e.nwResource.kind === 'uiverse-html'){
+    const policy = "default-src 'none'; base-uri 'none'; script-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; form-action 'none'";
+    const doc = '<meta http-equiv="Content-Security-Policy" content="' + policy + '">' + code;
+    return '<iframe class="emb-sand" sandbox="" referrerpolicy="no-referrer" loading="lazy" title="Componente Uiverse aislado" srcdoc="' + esc(doc) + '"></iframe>';
+  }
+  /* Los embeds manuales anteriores conservan su comportamiento habitual. */
   if(edit) return '<iframe class="emb-sand" sandbox="allow-scripts" srcdoc="' + esc('<style>html,body{margin:0}</style>' + code) + '"></iframe>';
   return code;
 }

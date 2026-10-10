@@ -1,5 +1,6 @@
 import { NAGWEB_RESOURCE_APPLY_PROTOCOL, NAGWEB_RESOURCE_APPLY_TYPE, buildResourceApplyResult } from "../tools/resource-etl/src/runtime/resource-apply-bridge.mjs";
 import { svgElementProps } from "../tools/resource-etl/src/runtime/nagweb-svg-element.mjs";
+import { prepareUiverseSandboxHtml } from "../tools/resource-etl/src/runtime/nagweb-html-sandbox.mjs";
 
 const toolbar = document.querySelector(".tb-left");
 if (toolbar && !document.querySelector("[data-resource-library-open]")) {
@@ -34,7 +35,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   const header = document.createElement("div");
   header.style.cssText = "height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;gap:12px";
   const hint = document.createElement("span");
-  hint.textContent = "Insertá un ícono SVG de trazo en la escena actual.";
+  hint.textContent = "Insertá íconos SVG o HTML/CSS Uiverse compatibles.";
   const close = document.createElement("button");
   close.type = "button";
   close.className = "btn";
@@ -49,12 +50,12 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   const openLibrary = context => {
     editContext = context;
     opener = context ? editButton : button;
-    hint.textContent = context ? "Personalizá el ícono seleccionado y guardá los cambios." : "Insertá un ícono SVG de trazo en la escena actual.";
+    hint.textContent = context ? "Personalizá el ícono seleccionado y guardá los cambios." : "Insertá íconos SVG o HTML/CSS Uiverse compatibles.";
     const url = new URL("../tools/resource-etl/resource-browser/", import.meta.url);
     url.searchParams.set("hostOrigin", location.origin);
     // Advertise this editor's current native insertion capability.
     // The receiver still validates the actual SVG for each request.
-    url.searchParams.set("hostKinds", "svg");
+    url.searchParams.set("hostKinds", "svg,uiverse-html");
     if (context) {
       url.searchParams.set("editResource", context.resourceId);
       url.searchParams.set("editSession", context.session);
@@ -89,12 +90,15 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     if (!result) {
       let inserted = false;
       try {
-        const props = svgElementProps(message);
-        const size = props.nwResource.values.size;
+        const isUiverseHtml = message.descriptor?.kind === "html";
+        const isolated = isUiverseHtml ? prepareUiverseSandboxHtml(message) : null;
+        const props = isUiverseHtml ? null : svgElementProps(message);
+        const size = isUiverseHtml ? 320 : props.nwResource.values.size;
         const width = deskWidth;
         if (!sec() || !Array.isArray(sec().elements) || !(width > 0)) throw new Error("Seleccioná una escena para insertar el ícono.");
         let element;
         if (editContext) {
+          if (isUiverseHtml) throw new Error("La edición posterior de HTML/CSS todavía no está habilitada.");
           if (message.editSession !== editContext.session || message.resource.id !== editContext.resourceId ||
               page().id !== editContext.pageId || sec().id !== editContext.sceneId || viewMobile !== editContext.mobile) {
             throw new Error("La sesión de personalización ya no corresponde a este ícono.");
@@ -123,8 +127,22 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
         } else {
           if (message.editSession) throw new Error("Esta sesión de personalización terminó. Volvé a abrir el ícono.");
           // Root placement makes insertion independent of a selected container.
-          element = insertElement("vector", { ...props, w: size / width * 100,
-            mobile: { w: size / 390 * 100 } }, { parent: "" });
+          if (isUiverseHtml) {
+            element = insertElement("embed", {
+              mode: "html", code: isolated.srcdoc, ratio: .75, radius: 0,
+              name: String(message.resource.title || "Componente Uiverse").slice(0, 100),
+              w: Math.min(85, size / width * 100),
+              mobile: { w: Math.min(85, 260 / 390 * 100) },
+              nwResource: {
+                id: message.resource.id, kind: "uiverse-html",
+                provider: "uiverse", license: message.resource.license,
+                values: structuredClone(message.descriptor.instance.values)
+              }
+            }, { parent: "" });
+          } else {
+            element = insertElement("vector", { ...props, w: size / width * 100,
+              mobile: { w: size / 390 * 100 } }, { parent: "" });
+          }
         }
         inserted = true;
         const persisted = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
@@ -133,7 +151,9 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
           throw new Error("El ícono está en el lienzo, pero no se pudo guardar. Revisá el almacenamiento del navegador.");
         }
         result = buildResourceApplyResult(message, { status: "applied", message: editContext
-          ? "Cambios guardados en el ícono seleccionado." : "Ícono insertado y guardado en la escena actual." });
+          ? "Cambios guardados en el ícono seleccionado." : isUiverseHtml
+            ? "Componente HTML/CSS Uiverse insertado y guardado en la escena actual."
+            : "Ícono insertado y guardado en la escena actual." });
       } catch (error) {
         result = buildResourceApplyResult(message, { status: inserted ? "error" : "rejected", message: error.message });
       }
