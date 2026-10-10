@@ -2188,6 +2188,13 @@ function lookTensionKey(ev,button){
 function isSpatialFocus(cfg,key){
  return !!cfg&&!!key&&!!key.targetId&&(cfg.targets||[]).some(function(t){return t.id===key.targetId&&t.kind==='shape3d';});
 }
+function spatialFocusMovePoint(point,spec,dx,dy){
+ // Preserve fractional WebGL anchor coordinates: round the displacement, not the anchor.
+ var moved=Object.assign({},point),horizontal=spec.xAxis||'x';
+ moved[horizontal]=(+point[horizontal]||0)+Math.round(dx*spec.range*2);
+ moved[spec.axis]=(+point[spec.axis]||0)+Math.round(dy*spec.range*2*spec.sign);
+ return moved;
+}
 function spatialFocusFromPoint(s,cfg,key,point){
  if(!isSpatialFocus(cfg,key)||!point)return null;
  var base=C.elementTarget(cfg,key.targetId,key.at/100,window.NAGWEB_STORY_MODEL,s.sdEase,previewReferenceSize(s));
@@ -2221,7 +2228,7 @@ function lookSpatialDrag(ev,button){
   if(e.pointerId!==ev.pointerId)return;
   var dx=e.clientX-ev.clientX,dy=e.clientY-ev.clientY;if(Math.hypot(dx,dy)>=3)moved=true;
   if(e.shiftKey){if(Math.abs(dx)>=Math.abs(dy))dy=0;else dx=0;}
-  var desired=C.moveSpatial(start,spec,dx/r.width,dy/r.height);
+  var desired=linked?spatialFocusMovePoint(start,spec,dx/r.width,dy/r.height):C.moveSpatial(start,spec,dx/r.width,dy/r.height);
   next=linked?spatialFocusFromPoint(s,cfg,original,desired):desired;
   if(!next)return;
   var point=linked?C.resolveLookFrame(cfg,next,next.at/100,window.NAGWEB_STORY_MODEL,s.sdEase,previewReferenceSize(s)):next,
@@ -2280,7 +2287,7 @@ function lookSpatialKey(ev,button){
   dx=ev.key==='ArrowRight'?unit:ev.key==='ArrowLeft'?-unit:0,
   dy=ev.key==='ArrowDown'?unit:ev.key==='ArrowUp'?-unit:0,
   original=key.targetId?C.resolveLookFrame(cfg,key,key.at/100,window.NAGWEB_STORY_MODEL,s.sdEase,previewReferenceSize(s)):key;
- var moved=C.moveSpatial(original,spec,dx,dy),next=key.targetId?spatialFocusFromPoint(s,cfg,key,moved):moved;
+ var moved=key.targetId?spatialFocusMovePoint(original,spec,dx,dy):C.moveSpatial(original,spec,dx,dy),next=key.targetId?spatialFocusFromPoint(s,cfg,key,moved):moved;
  if(lookSpatialCommit(s,key,next)){
   var control=document.getElementById('pane').querySelector('[data-camera-look-map-point]');
   if(control)control.focus();
