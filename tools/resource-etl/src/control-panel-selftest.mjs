@@ -59,7 +59,7 @@ const el = {
   customizeControls: new Element("div"), customizeTitle: new Element("strong"),
   customize: { hidden: false }, resetCustomize: new Element("button")
 };
-const resource = { runtime: { renderer: "nagweb-svg" } };
+const resource = { id: "panel-test", runtime: { renderer: "nagweb-svg" } };
 const values = {};
 let redraws = 0;
 const source = await readFile(new URL("../resource-browser/app.mjs", import.meta.url), "utf8");
@@ -67,6 +67,10 @@ const renderer = source.slice(source.indexOf("function renderEditableControls(")
 const context = {
   document: { createElement: tag => new Element(tag) }, el,
   selectedResource: resource, selectedValues: values,
+  categoryStates: new Map(),
+  rememberCategories: () => {
+    context.categoryStates.set(resource.id, new Map(el.customizeControls.querySelectorAll("details").map(group => [group.dataset.category, group.open])));
+  },
   describeEditableControls: () => controls, groupEditableControls, countChangedControls, matchesControlSearch,
   redrawEditablePreview: () => { redraws += 1; }
 };
