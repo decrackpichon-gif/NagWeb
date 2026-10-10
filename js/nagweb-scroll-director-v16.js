@@ -262,6 +262,12 @@ function rt(DATA,createModel,createStreamModel,createCamera){
   stage.style.justifyContent=sec.classList.contains('a-center')?'center':sec.classList.contains('a-right')?'flex-end':'flex-start';
   while(sec.firstChild)stage.appendChild(sec.firstChild);sec.appendChild(stage);
   }
+  // Only validated free-container ancestry is moved. Existing absolute anchor
+  // percentages then refer to their authored parent, not to the whole stage.
+  (cfg.anchors||[]).forEach(function(a){
+   var node=stage.querySelector('.obj-anchor[data-id="'+a.id+'"]'),host=stage.querySelector('.container-box[data-id="'+a.parent+'"]');
+   if(node&&host&&!node.contains(host)){host.appendChild(node);node.setAttribute('data-nw-spatial-parent',a.parent);}
+  });
   var cameraPaint=camera.attach(stage,cfg.camera,cfg.perspective),cameraTrack=cfg.camera?camera.compile(cfg.camera,model,cfg.ease):null;
   if(cameraPaint)spatialStages.push(stage);
   var els=[];
@@ -355,7 +361,20 @@ generateSite=function(p,edit,minify,mobile){
  var secs=(p.sections||[]).filter(function(s){return directed(s)&&s.layout!=='horizontal';});
 
  function streamData(s,c){if(c.template!=='showcase-stream'&&c.template!=='iso-orbit')return{};var id=c.stream&&c.stream.backgroundId,a=(p.assets.images||[]).find(function(a){return a.id===id;});return{stream:c.template==='iso-orbit'?Object.assign({},c.stream,{kind:'iso-orbit'}):c.stream||{},streamScroll:!!s.nwStreamPreviewScroll,streamBackground:a&&a.data||'',streamSlots:(s.elements||[]).filter(function(e){return e.nwStreamSlot&&(c.id?groupOwner(s,e)&&groupOwner(s,e).id===c.id:!groupOwner(s,e));}).map(function(e){return e.id;})};}
- var data=secs.map(function(s){return Object.assign({id:s.id,camera:window.NAGWEB_SCROLL_CAMERA.config(s),time:temporal(s),edit:!!edit,duration:Math.max(.5,Math.min(120,+s.nwMotionDuration||8))*1000,loop:s.nwMotionLoop!==false,depthOrder:s.sdMotionTemplate==='card-tunnel'||s.sdMotionTemplate==='card-bloom',length:Math.max(140,Math.min(900,+s.sdLength||320)),perspective:Math.max(200,Math.min(5000,+s.sdPerspective||1000)),ease:s.sdEase||'cinematic',elements:(s.elements||[]).filter(function(e){return model.eligible(e,s)&&!groupOwner(s,e);}).map(function(e){return model.compile(e);})},streamData(s,{template:s.sdMotionTemplate,stream:s.nwStream}));});
+ function spatialAnchors(s){
+  if(s.layout!=='free'||!window.NAGWEB_SCROLL_CAMERA.config(s))return[];
+  return(s.elements||[]).filter(function(e){
+   if(e.type!=='shape3d'||e.anchor===false||!e.parent||!model.eligible(e,s))return false;
+   var id=e.parent,seen={},depth=0;
+   while(id){
+    var c=(s.elements||[]).find(function(q){return q.id===id;});
+    if(!c||seen[id]||++depth>7||c.type!=='container'||c.stackDir||c.listOf||c.nwMotionInstance||c.fixed||c.modal||c.sticky||c.universal)return false;
+    seen[id]=true;id=c.parent;
+   }
+   return true;
+  }).map(function(e){return{id:e.id,parent:e.parent};});
+ }
+ var data=secs.map(function(s){return Object.assign({id:s.id,anchors:spatialAnchors(s),camera:window.NAGWEB_SCROLL_CAMERA.config(s),time:temporal(s),edit:!!edit,duration:Math.max(.5,Math.min(120,+s.nwMotionDuration||8))*1000,loop:s.nwMotionLoop!==false,depthOrder:s.sdMotionTemplate==='card-tunnel'||s.sdMotionTemplate==='card-bloom',length:Math.max(140,Math.min(900,+s.sdLength||320)),perspective:Math.max(200,Math.min(5000,+s.sdPerspective||1000)),ease:s.sdEase||'cinematic',elements:(s.elements||[]).filter(function(e){return model.eligible(e,s)&&!groupOwner(s,e);}).map(function(e){return model.compile(e);})},streamData(s,{template:s.sdMotionTemplate,stream:s.nwStream}));});
  (p.sections||[]).forEach(function(s){if(s.layout==='horizontal')return;(s.elements||[]).filter(function(g){return g.nwMotionInstance;}).forEach(function(g){var c=g.nwMotionInstance;data.push(Object.assign({id:g.id,group:true,time:c.source!=='scroll',edit:!!edit,duration:Math.max(.5,Math.min(120,+c.duration||8))*1000,loop:c.loop!==false,depthOrder:c.template==='card-tunnel'||c.template==='card-bloom',perspective:Math.max(200,Math.min(5000,+c.perspective||1000)),ease:s.sdEase||'cinematic',elements:(s.elements||[]).filter(function(e){return e!==g&&groupOwner(s,e)===g&&model.eligible(e,s);}).map(function(e){return model.compile(e);})},streamData(s,Object.assign({id:g.id},c))));});});
  if(!data.length)return html;
  html=html.replace('</head>','<style id="nw-scroll-director-css">'+SD_CSS+'</style></head>');
