@@ -2793,7 +2793,7 @@ assert.deepEqual(readSavedCustomization(store,"smoke:icon",presetControls),{},
   "Invalid or injected stored values never become editable CSS or code");
 storeData.set(SAVED_PRESETS_KEY,JSON.stringify([["smoke:icon",{
   size:48,stroke:"#123456",forged:"evil",title:"Saved"
-}]]));
+}],["smoke:other",{size:36}]]));
 assert.deepEqual(readSavedCustomization(store,"smoke:icon",presetControls),{
   size:48,stroke:"#123456",title:"Saved"
 },"Legacy or manipulated storage is always filtered against the live controls");
