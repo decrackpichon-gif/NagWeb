@@ -1,0 +1,39 @@
+name: NagWeb spatial integration
+
+on:
+  push:
+    branches:
+      - feat/scroll-camera-v1
+    paths:
+      - index.html
+      - js/**
+      - tests/**
+      - .github/nagweb-spatial-*
+      - .github/workflows/nagweb-spatial.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nagweb-spatial-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  spatial-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      NAGWEB_TEST_VENDOR_DIR: work/spatial-vendors
+      NAGWEB_BROWSER: /usr/bin/google-chrome
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned test dependencies
+        run: npm install --no-save --ignore-scripts three@0.128.0 gsap@3.12.5 playwright@1.62.1
+      - name: Prepare offline browser fixtures
+        run: node .github/nagweb-spatial-vendors.cjs
+      - name: Run grouped spatial and editor regressions
+        run: node .github/nagweb-spatial-smoke.cjs

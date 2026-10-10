@@ -62,3 +62,18 @@ en los datos de cámara. El CI completo debe volver a comprobarse; no se da
 por aprobado por esta corrección aislada.
 
 No hay despliegue en Vercel ni integración a main.
+
+## CI de las integraciones espaciales
+
+El workflow `nagweb-spatial.yml` ejecuta el comando completo cuando cambia
+código o pruebas de esta rama, con permisos de lectura. Usa dependencias de
+prueba fijadas (Three 0.128.0, GSAP 3.12.5 y Playwright 1.62.1), Chrome del
+runner y fixtures offline preparados desde esos paquetes. Conserva el smoke
+histórico independiente; no oculta su resultado. Cancela ejecuciones antiguas
+de este workflow al llegar un commit nuevo para evitar trabajo duplicado.
+
+La regresión del panel técnico ahora reproduce una apertura y un cambio de
+plano en la misma tarea JavaScript. Antes perdía el estado abierto porque el
+evento nativo `toggle` aún no se había entregado. El editor guarda el estado
+sincrónicamente al activar el resumen, manteniendo apertura/cierre y teclado.
+No modifica datos ni historial de la cámara.
