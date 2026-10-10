@@ -101,6 +101,7 @@ import {
   buildResourceApplyResult,
   isResourceApplyResult,
   isMatchingResourceApplyResult,
+  hasUnappliedResourceEdits,
   installResourceApplyHost
 } from "./runtime/resource-apply-bridge.mjs";
 import { buildStaticPreview } from "./preview/build-preview.mjs";
@@ -2809,3 +2810,11 @@ assert.equal(saveSavedCustomization({
 "Blocked local storage cannot falsely report a successful save");
 assert.equal(readSavedCustomization({getItem:()=>{throw Error("blocked")}},
   "smoke:icon",presetControls),null);
+
+// Stage 76: an async acknowledgement must not claim later changes were saved.
+assert.equal(hasUnappliedResourceEdits({uiversePlay1:"4"}, {uiversePlay1:"4"}), false);
+assert.equal(hasUnappliedResourceEdits({uiversePlay1:"4"}, {uiversePlay1:"5"}), true);
+assert.equal(hasUnappliedResourceEdits({size:24}, {size:24, stroke:"#123456"}), true);
+assert.equal(hasUnappliedResourceEdits({size:24, stroke:"#123456"}, {size:24}), true);
+assert.equal(hasUnappliedResourceEdits({size:24, loop:false}, {size:24, loop:false}), false);
+assert.equal(hasUnappliedResourceEdits(null, {}), false);

@@ -18,7 +18,8 @@ import {
   buildResourceApplyEnvelope,
   resolveResourceApplyTarget,
   sendResourceApplyEnvelope,
-  isMatchingResourceApplyResult
+  isMatchingResourceApplyResult,
+  hasUnappliedResourceEdits
 } from "../src/runtime/resource-apply-bridge.mjs";
 
 const vault = createNagWebPersistentVaultClient();
@@ -142,6 +143,7 @@ let previewReplayRevision = 0;
 let searchTimer = null;
 let pendingApplyId = null;
 let pendingApplyResourceId = null;
+let pendingApplyValues = null;
 let pendingApplyTimer = null;
 const applyTarget = resolveResourceApplyTarget();
 const editParams = new URLSearchParams(location.search);
@@ -959,18 +961,22 @@ window.addEventListener("message", (event) => {
   })) return;
 
   const completedResourceId = pendingApplyResourceId;
+  const submittedValues = pendingApplyValues;
   clearTimeout(pendingApplyTimer);
   pendingApplyTimer = null;
   pendingApplyId = null;
   pendingApplyResourceId = null;
+  pendingApplyValues = null;
   updateApplyReadiness(selectedResource);
 
   // A reply for a previous selection must never appear on another resource.
   if (!el.detail.open || selectedResource?.id !== completedResourceId) return;
 
   if (event.data.status === "applied") {
-    el.applyStatus.textContent =
-      event.data.message || "Recurso aplicado en NagWeb.";
+    const confirmed = event.data.message || "Recurso aplicado en NagWeb.";
+    el.applyStatus.textContent = hasUnappliedResourceEdits(submittedValues, selectedValues)
+      ? confirmed + " Hiciste cambios posteriores que todavía no se aplicaron."
+      : confirmed;
     return;
   }
 
@@ -1111,8 +1117,9 @@ el.apply.addEventListener("click", () => {
   if (!selectedResource || !applyTarget || pendingApplyId || el.apply.disabled) return;
 
   try {
+    const submittedValues = { ...selectedValues };
     const envelope = buildResourceApplyEnvelope(selectedResource, {
-      values: { ...selectedValues }
+      values: submittedValues
     });
     if (editSession) envelope.editSession = editSession;
     const id = sendResourceApplyEnvelope(envelope, applyTarget);
@@ -1120,6 +1127,7 @@ el.apply.addEventListener("click", () => {
     clearTimeout(pendingApplyTimer);
     pendingApplyId = id;
     pendingApplyResourceId = selectedResource.id;
+    pendingApplyValues = submittedValues;
     el.apply.disabled = true;
     el.applyStatus.textContent = "Esperando confirmación del editor…";
 
@@ -1128,6 +1136,7 @@ el.apply.addEventListener("click", () => {
       const timedOutResourceId = pendingApplyResourceId;
       pendingApplyId = null;
       pendingApplyResourceId = null;
+      pendingApplyValues = null;
       pendingApplyTimer = null;
       updateApplyReadiness(selectedResource);
       if (el.detail.open && selectedResource?.id === timedOutResourceId) {

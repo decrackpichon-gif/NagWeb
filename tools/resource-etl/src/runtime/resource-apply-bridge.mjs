@@ -151,6 +151,16 @@ export function isResourceApplyResult(value) {
   );
 }
 
+// The editor acknowledges the submitted snapshot, not subsequent in-panel edits.
+// Only typed scalar resource control values are expected in these dictionaries.
+export function hasUnappliedResourceEdits(submitted = {}, current = {}) {
+  const before = submitted && typeof submitted === "object" ? submitted : {};
+  const after = current && typeof current === "object" ? current : {};
+  const keys = Object.keys(before);
+  return keys.length !== Object.keys(after).length ||
+    keys.some(key => !Object.hasOwn(after, key) || before[key] !== after[key]);
+}
+
 export function isMatchingResourceApplyResult(value, { requestId, resourceId } = {}) {
   return Boolean(
     isResourceApplyResult(value) &&

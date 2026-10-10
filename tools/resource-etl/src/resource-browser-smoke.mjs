@@ -60,10 +60,17 @@ const host = `<!doctype html><meta charset="utf-8"><title>Editor de prueba</titl
 <div id="inserted" hidden></div><script type="module">
 import { buildResourceApplyResult } from '/src/runtime/resource-apply-bridge.mjs';
 window.received = [];
+window.deferNextResourceApply = false;
+window.pendingResourceApply = null;
 const frame = document.createElement('iframe');
 frame.title = 'Biblioteca de prueba';
 frame.src = '/resource-browser/?hostOrigin=' + encodeURIComponent(location.origin);
 document.body.append(frame);
+window.replyPendingResourceApply = () => {
+  if (!window.pendingResourceApply) return;
+  frame.contentWindow.postMessage(window.pendingResourceApply, location.origin);
+  window.pendingResourceApply = null;
+};
 window.addEventListener('message', event => {
   if (event.source !== frame.contentWindow || event.origin !== location.origin || event.data?.type !== 'nagweb:resource-apply') return;
   const message = event.data;
@@ -72,7 +79,15 @@ window.addEventListener('message', event => {
   target.innerHTML = message.descriptor.payload.svg || message.descriptor.payload.html;
   const svg = target.querySelector('svg');
   if (svg) { svg.style.width = message.descriptor.payload.size + 'px'; svg.style.stroke = message.descriptor.payload.stroke; }
-  event.source.postMessage(buildResourceApplyResult(message, { status: 'applied', message: 'Recurso aplicado en el editor de prueba.' }), event.origin);
+  const result = buildResourceApplyResult(message, {
+    status: 'applied', message: 'Recurso aplicado en el editor de prueba.'
+  });
+  if (window.deferNextResourceApply) {
+    window.deferNextResourceApply = false;
+    window.pendingResourceApply = result;
+    return;
+  }
+  event.source.postMessage(result, event.origin);
 });</script>`;
 const server = http.createServer(async (request, response) => {
   try {
@@ -289,6 +304,24 @@ try {
     assert.equal(cssEnvelope.descriptor.instance.values.uiversePlay1, "4");
     assert.match(cssEnvelope.descriptor.payload.html, /spin 1s 4 alternate/);
     assert.equal(await page.locator('#inserted .card').textContent(), "Prueba");
+    if (width === 1280) {
+      // Delay a real host acknowledgement while changing an editable Uiverse
+      // value. The acknowledgement confirms only the original submitted values.
+      await page.evaluate(() => { window.deferNextResourceApply = true; });
+      await frame.getByRole("button", { name: "Aplicar en NagWeb", exact: true }).click();
+      await expect(frame.locator("[data-apply-status]")).toContainText("Esperando confirmación");
+      await frame.getByLabel(playback.label, { exact: true }).selectOption("5");
+      assert.equal(await page.evaluate(() => window.received.at(-1).descriptor.instance.values.uiversePlay1), "4");
+      await page.evaluate(() => window.replyPendingResourceApply());
+      await expect(frame.locator("[data-apply-status]")).toContainText("cambios posteriores que todavía no se aplicaron");
+      await expect(frame.getByRole("button", { name: "Aplicar en NagWeb", exact: true })).toBeEnabled();
+      await frame.getByRole("button", { name: "Aplicar en NagWeb", exact: true }).click();
+      await expect(frame.locator("[data-apply-status]")).toContainText("Recurso aplicado en el editor de prueba.");
+      assert.equal(await page.evaluate(() => window.received.at(-1).descriptor.instance.values.uiversePlay1), "5");
+      await frame.getByLabel(playback.label, { exact: true }).selectOption("4");
+      report.scenarios.push({ browser: "Uiverse delayed confirmation protects later edits",
+        status: "passed", confirmedSnapshot: true, pendingChangesVisible: true, resubmitted: true });
+    }
     assert.equal(await frame.locator('[data-customize]').evaluate(node => node.scrollWidth <= node.clientWidth), true, "Panel must fit its width");
     const cssDocBeforeGroups = await frame.locator('[data-preview]').getAttribute("srcdoc");
     await frame.getByRole("button", { name: "Plegar categorías", exact: true }).click();
