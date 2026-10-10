@@ -381,16 +381,27 @@ try {
     refresh();
   }, inserted.element.id);
   const editButton = page.getByRole("button", { name: "Personalizar ícono seleccionado", exact: true });
+  const reopenCustomization = async button => {
+    const iframe = page.locator('iframe[title="Biblioteca de recursos de NagWeb"]');
+    const previous = await iframe.getAttribute("src");
+    await button.click();
+    await expect(page.getByRole("dialog", { name: "Biblioteca de recursos", exact: true })).toBeVisible();
+    const target = await iframe.getAttribute("src");
+    assert.notEqual(target, previous, "Reopening must create a fresh editing session");
+    // A hidden frame retains the cancelled controls until its new navigation commits.
+    const child = await (await iframe.elementHandle()).contentFrame();
+    await child.waitForURL(target, { waitUntil: "domcontentloaded", timeout: 30000 });
+  };
   await expect(editButton).toBeEnabled();
   const countBeforeEdit = await page.evaluate(() => sec().elements.length);
   const historyBeforeEdit = await page.evaluate(() => history.length);
-  await editButton.click();
+  await reopenCustomization(editButton);
   await expect(libraryFrame.getByLabel("Color", { exact: true })).toHaveValue("#abcdef");
   await libraryFrame.getByLabel("Color", { exact: true }).fill("#123456");
   await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
   assert.equal(await page.evaluate(() => history.length), historyBeforeEdit, "Cancel must not add an undo entry");
   assert.equal(await page.evaluate(id => sec().elements.find(e => e.id === id).stroke, inserted.element.id), "#abcdef");
-  await editButton.click();
+  await reopenCustomization(editButton);
   await expect(libraryFrame.getByLabel("Color", { exact: true })).toHaveValue("#abcdef");
   const editSizeGroup = libraryFrame.locator('details[data-category="size"]');
   if (!await editSizeGroup.evaluate(n => n.open)) await editSizeGroup.locator("summary").click();
@@ -426,7 +437,7 @@ try {
   assert.equal(await page.evaluate(id => sec().elements.find(e => e.id === id).strokeWidth, inserted.element.id), 3);
   await page.screenshot({ path: path.join(output, "editor-edited.png"), fullPage: true });
   await page.evaluate(id => { selection = [id]; curEl = sec().elements.findIndex(e => e.id === id); renderPane(); }, inserted.element.id);
-  await editButton.click();
+  await reopenCustomization(editButton);
   await expect(libraryFrame.getByRole("button", { name: "Guardar cambios en el ícono", exact: true })).toBeEnabled();
   const historyBeforeUnchanged = await page.evaluate(() => history.length);
   await libraryFrame.getByRole("button", { name: "Guardar cambios en el ícono", exact: true }).click();
@@ -443,7 +454,7 @@ try {
   await page.locator("#btn-undo").click();
   assert.equal(await page.evaluate(() => sec().elements.length), countBeforeEdit);
   await page.evaluate(id => { selection = [id]; curEl = sec().elements.findIndex(e => e.id === id); renderPane(); }, inserted.element.id);
-  await editButton.click();
+  await reopenCustomization(editButton);
   await expect(libraryFrame.getByRole("button", { name: "Guardar cambios en el ícono", exact: true })).toBeEnabled();
   await libraryFrame.getByLabel("Color", { exact: true }).fill("#654321");
   await page.evaluate(() => {
@@ -554,7 +565,7 @@ try {
   const originalHtmlCount=await page.evaluate(()=>sec().elements.length);
   const htmlPlayControl=describeEditableControls(css).find(c=>c.id==="uiversePlay1");
   assert.ok(htmlPlayControl,"The HTML fixture needs a real editable animation selector");
-  await htmlEditButton.click();
+  await reopenCustomization(htmlEditButton);
   const editLiveLibrary=page.frameLocator('iframe[title="Biblioteca de recursos de NagWeb"]');
   const htmlSave=editLiveLibrary.getByRole("button",{
     name:"Guardar cambios en el componente",exact:true
@@ -569,7 +580,7 @@ try {
   await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
   assert.equal(await page.evaluate(id=>sec().elements.find(e=>e.id===id).nwResource.values.uiversePlay1,
     insertedHtml.element.id),"2","Cancelling HTML customization must not modify its model");
-  await htmlEditButton.click();
+  await reopenCustomization(htmlEditButton);
   await expect(htmlSave).toBeEnabled();
   const resumedRepetition=editLiveLibrary.getByLabel(htmlPlayControl.label,{exact:true});
   const resumedGroup=editLiveLibrary.locator("details").filter({has:resumedRepetition});
@@ -648,7 +659,7 @@ try {
     for (let i = 16; i < value; i++) await control.press("ArrowRight");
   };
   const openGridEdit = async () => {
-    await page.getByRole("button", { name: "Personalizar ícono seleccionado", exact: true }).click();
+    await reopenCustomization(page.getByRole("button", { name: "Personalizar ícono seleccionado", exact: true }));
     await expect(libraryFrame.getByRole("button", { name: "Guardar cambios en el ícono", exact: true })).toBeEnabled();
     const group = libraryFrame.locator('details[data-category="size"]');
     if (!await group.evaluate(n => n.open)) await group.locator("summary").click();
