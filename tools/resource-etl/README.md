@@ -1074,3 +1074,12 @@ porcentajes. El aislamiento del HTML y la protección contra cancelación o
 cambios durante la medición se conservan. La prueba integral verifica anchos,
 un solo paso de historial, marcos temporales eliminados, iframe opaco y
 persistencia tras recarga en las tres distribuciones nativas.
+
+## Bloque 61: cargas tardías de fichas y vistas previas
+
+Cada apertura de ficha tiene una revisión propia. Una respuesta anterior del
+Vault o del generador de vista previa no puede reemplazar el recurso actual ni
+modificar una ficha cerrada. Los fallos del recurso muestran una opción de
+reabrir; los fallos de vista previa conservan el recurso y su código. Los errores
+de peticiones anteriores también se ignoran. La prueba ejecuta la función real
+con respuestas retenidas y orden invertido, sin esperas temporales ni red.

@@ -66,6 +66,7 @@ const el = {
 let offset = 0;
 let selectedResource = null;
 let selectedValues = {};
+let detailRevision = 0;
 const categoryStateKey = "nagweb:resource-browser:categories:v1";
 const categoryStates = new Map();
 try {
@@ -648,6 +649,8 @@ function renderEditableControls(resource, { preserveGroups = false } = {}) {
 }
 
 async function openDetail(id) {
+  const revision = ++detailRevision;
+  const isCurrent = () => revision === detailRevision && el.detail.open;
   rememberCategories();
   selectedResource = null;
   selectedValues = id === editResourceId ? { ...editInitialValues } : {};
@@ -663,7 +666,17 @@ async function openDetail(id) {
   el.previewFallback.hidden = false;
   el.code.textContent = "";
 
-  const resource = await vault.getResource(id);
+  let resource;
+  try { resource = await vault.getResource(id); }
+  catch (error) {
+    if (!isCurrent()) return;
+    el.detailTitle.textContent = "No pude cargar el recurso";
+    el.applyStatus.textContent = "Cerrá la ficha y volvé a intentar abrirla.";
+    el.preview.hidden = true;
+    el.previewNote.textContent = error?.message || String(error);
+    return;
+  }
+  if (!isCurrent()) return;
   selectedResource = resource;
   if (resource) {
     renderEditableControls(resource);
@@ -693,7 +706,10 @@ async function openDetail(id) {
   el.code.textContent = artifact?.content || JSON.stringify(resource.runtime || {}, null, 2);
   el.copyCode.disabled = !artifact?.content;
 
-  const doc = await previewDoc(resource, selectedValues);
+  let doc, previewError;
+  try { doc = await previewDoc(resource, selectedValues); }
+  catch (error) { previewError = error?.message || String(error); }
+  if (!isCurrent()) return;
   const isLottie = isLottieLivePreview(resource);
   const isCssShake = isCssShakeLivePreview(resource);
   const isMagicCss = isMagicCssLivePreview(resource);
@@ -717,8 +733,9 @@ async function openDetail(id) {
   } else {
     el.preview.hidden = true;
     el.previewFallback.hidden = false;
-    el.previewNote.textContent =
-      "Este tipo requiere el renderer/compilador completo de NagWeb. El recurso y su código sí están guardados.";
+    el.previewNote.textContent = previewError
+      ? "No pude generar la vista previa: " + previewError
+      : "Este tipo requiere el renderer/compilador completo de NagWeb. El recurso y su código sí están guardados.";
   }
 }
 
