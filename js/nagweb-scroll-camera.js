@@ -2444,6 +2444,12 @@ if(pane){
   if(retime(s,from,to)){var next=pane.querySelector('[data-camera-jump="'+to+'"]');if(next)next.focus();}
  });
  pane.addEventListener('click',function(ev){
+  var summary=ev.target.closest('summary'),technical=summary&&summary.parentElement;
+  if(technical&&technical.matches('[data-camera-overview-technical]')){
+   // Native toggle is queued: retain state before a rapid plane-change render.
+   ev.preventDefault();technical.open=!technical.open;
+   mapOverviewTechnicalOpen[sec().id]=technical.open;return;
+  }
   var button=ev.target.closest('[data-camera-aim-at-object],[data-camera-scene-object-pick],[data-camera-edit-current],[data-camera-easy-move],[data-camera-overview-compare-alternate],[data-camera-overview-compare-jump],[data-camera-overview-event-step],[data-camera-overview-toggle],[data-camera-map-pan],[data-camera-map-zoom],[data-camera-map-step],[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
   if(button===suppressedClick){suppressedClick=null;return;}
   var s=sec(),cfg=C.config(s);if(!cfg)return;var list=keys(s);

@@ -54,7 +54,14 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   const technical=page.locator('[data-camera-overview-technical]');
   const visibility=()=>technical.evaluate(n=>({open:n.open,visible:n.querySelector('[data-camera-overview-snapshot-info="a"]').checkVisibility(),height:n.getBoundingClientRect().height}));
   const closed=await visibility();assert.equal(closed.open,false);assert.equal(closed.visible,false);
-  await technical.locator('summary').click();const opened=await visibility();assert.equal(opened.visible,true);assert.ok(opened.height>closed.height);
+  // No task boundary between native activation and the render caused by a
+  // plane change: this reproduces a queued toggle event losing UI state.
+  const rapid=await page.evaluate(()=>{
+   document.querySelector('[data-camera-overview-technical] > summary').click();
+   const plane=document.querySelector('[data-camera-map-plane]');plane.value='front';plane.dispatchEvent(new Event('change',{bubbles:true}));
+   return document.querySelector('[data-camera-overview-technical]').open;
+  });assert.equal(rapid,true,'Open state survives an immediate plane change before the toggle task');
+  const opened=await visibility();assert.equal(opened.visible,true);assert.ok(opened.height>closed.height);
   await page.evaluate(()=>renderPane());assert.equal((await visibility()).visible,true);
   await technical.locator('summary').click();assert.equal((await visibility()).visible,false);
   const final=await read();assert.equal(final.frames,baseline.frames);assert.equal(final.history,baseline.history);
