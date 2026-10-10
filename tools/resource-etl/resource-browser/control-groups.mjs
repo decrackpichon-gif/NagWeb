@@ -37,5 +37,7 @@ export function matchesControlSearch(control, query) {
   const normalize = value => String(value || "").normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
   const needle = normalize(query);
-  return !needle || normalize(control.label).includes(needle) || normalize(control.id).includes(needle);
+  const categoryLabel = CATEGORIES.find(([id]) => id === category(control))?.[1] || "";
+  return !needle || [control.label, control.id, categoryLabel]
+    .some(value => normalize(value).includes(needle));
 }

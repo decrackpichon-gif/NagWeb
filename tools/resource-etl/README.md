@@ -1138,3 +1138,12 @@ a Todos un filtro cuya opción ya no existe en el índice nuevo. Se vuelve a la
 primera página con los filtros vigentes. Las pruebas cubren opciones vigentes
 y retiradas; el recorrido de navegador verifica la actualización real en
 escritorio y móvil antes de continuar con la personalización.
+
+## Bloque 70: buscar categorías y navegar resultados
+
+Buscar ajustes reconoce también categorías como Colores, Animación o Texto y
+apariencia, con o sin tildes. El panel conserva valores y estados de los grupos.
+La biblioteca muestra Buscando recursos y deshabilita la paginación mientras
+carga, para no saltar páginas antes de tener el resultado actual. Las flechas
+tienen nombres y ayudas de Página anterior/siguiente. Las pruebas cubren carga,
+éxito, error, nombres accesibles y búsqueda por categoría en escritorio y móvil.

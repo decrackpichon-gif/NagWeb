@@ -111,6 +111,8 @@ try {
     await page.goto(`http://127.0.0.1:${server.address().port}/host`);
     const frame = page.frameLocator('iframe[title="Biblioteca de prueba"]');
     await frame.locator('[data-resource-id="smoke:icon"]').waitFor();
+    await expect(frame.getByRole("button", { name: "Página anterior", exact: true })).toBeDisabled();
+    await expect(frame.getByRole("button", { name: "Página siguiente", exact: true })).toBeDisabled();
     if (width === 1280) {
       // A corrupt incoming index must not erase the verified cards or block retry.
       const originalIndex = fixtures.get("index.json.gz");
@@ -143,6 +145,10 @@ try {
     await frame.locator('[data-customize]').waitFor({ state: "visible" });
     const search = frame.getByLabel("Buscar ajustes");
     const changedOnly = frame.getByLabel("Mostrar solo ajustes modificados");
+    await search.fill("Colores");
+    await expect(frame.locator('details[data-category="color"]')).toBeVisible();
+    await expect(frame.locator('details[data-category="size"]')).toBeHidden();
+    await frame.getByRole("button", { name: "Limpiar búsqueda", exact: true }).click();
     const showCategory = async category => {
       const group = frame.locator(`details[data-category="${category}"]`);
       if (!await group.evaluate(node => node.open)) await group.locator("summary").click();

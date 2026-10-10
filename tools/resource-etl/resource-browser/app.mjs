@@ -171,7 +171,13 @@ function currentFilters() {
 const resultSearch = createLatestSearch(
   filters => vault.search(filters),
   {
-    onStart: () => el.grid.setAttribute("aria-busy", "true"),
+    onStart: () => {
+      el.grid.setAttribute("aria-busy", "true");
+      el.resultCount.textContent = "Buscando recursos…";
+      el.pageLabel.textContent = "";
+      el.prev.disabled = true;
+      el.next.disabled = true;
+    },
     onResult: result => {
   el.resultCount.textContent =
     `${result.total.toLocaleString("es-AR")} resultados`;
@@ -197,6 +203,7 @@ const resultSearch = createLatestSearch(
   el.grid.hidden = result.total === 0;
     },
     onError: () => {
+      el.resultCount.textContent = "No pude actualizar los resultados.";
       el.status.textContent = "No se pudieron cargar los resultados. Intentá actualizar el índice.";
     },
     onFinish: () => el.grid.removeAttribute("aria-busy")
@@ -423,7 +430,7 @@ function renderEditableControls(resource, { preserveGroups = false } = {}) {
   search.type = "search";
   search.maxLength = 120;
   search.dataset.searchControls = "true";
-  search.placeholder = "Nombre del ajuste";
+  search.placeholder = "Nombre del ajuste o categoría";
   search.value = preserveGroups ? previousSearch : "";
   searchLabel.append(searchText, search);
   el.customizeControls.appendChild(searchLabel);

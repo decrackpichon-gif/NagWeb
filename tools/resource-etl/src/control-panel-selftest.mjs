@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { runInNewContext } from "node:vm";
 import { groupEditableControls, countChangedControls, matchesControlSearch } from "../resource-browser/control-groups.mjs";
+import { createLatestSearch } from "./runtime/latest-search.mjs";
 
 const controls = [
   { id: "stroke", label: "Color", kind: "color", defaultValue: "#aabbcc" },
@@ -28,6 +29,10 @@ assert.equal(matchesControlSearch(controls[3], "direccio\u0301n"), true);
 assert.equal(matchesControlSearch(controls[3], "uiverseplay1"), true);
 assert.equal(matchesControlSearch(controls[0], "   "), true);
 assert.equal(matchesControlSearch(controls[0], "<script>"), false);
+assert.equal(matchesControlSearch(controls[0], "colores"), true);
+assert.equal(matchesControlSearch(controls[2], "animacion"), true);
+assert.equal(matchesControlSearch({ id: "uiverseDetail1", label: "Fuente" }, "texto y apariencia"), true);
+assert.equal(matchesControlSearch(controls[1], "animación"), false);
 
 // Exercise the actual browser renderer and event handlers without a network or DOM dependency.
 class Element {
@@ -333,3 +338,29 @@ collapseCategories.events.click();
 assert.equal(context.document.activeElement, actionSearch, "Unfocused actions do not move focus");
 assert.deepEqual(values, actionValues);
 assert.equal(redraws, actionRedraws);
+
+// Exercise production search presentation through pending, success and failure.
+const searchEl = Object.fromEntries(["grid", "prev", "next", "resultCount", "pageLabel", "empty", "status"].map(key => [key, new Element("div")]));
+let resolveSearch, rejectSearch;
+const searchContext = {
+  el: searchEl, createLatestSearch, currentFilters: () => ({}),
+  vault: { search: () => new Promise((resolve, reject) => { resolveSearch = resolve; rejectSearch = reject; }) }
+};
+runInNewContext(source.slice(source.indexOf("const resultSearch ="), source.indexOf("function mainArtifact(")), searchContext);
+const pendingSearch = searchContext.renderResults();
+assert.equal(searchEl.grid["aria-busy"], "true");
+assert.equal(searchEl.prev.disabled, true);
+assert.equal(searchEl.next.disabled, true);
+assert.match(searchEl.resultCount.textContent, /Buscando/);
+resolveSearch({ total: 100, offset: 48, limit: 48, hasMore: true, items: [] });
+await pendingSearch;
+assert.equal(searchEl.prev.disabled, false);
+assert.equal(searchEl.next.disabled, false);
+assert.equal(searchEl.pageLabel.textContent, "Página 2 de 3");
+assert.equal(searchEl.grid["aria-busy"], undefined);
+const failedSearch = searchContext.renderResults();
+rejectSearch(new Error("offline"));
+await failedSearch;
+assert.match(searchEl.resultCount.textContent, /No pude/);
+assert.equal(searchEl.grid["aria-busy"], undefined);
+assert.equal(searchEl.next.disabled, true);
