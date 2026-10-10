@@ -46,3 +46,27 @@ Al editar el enfoque, su posición absoluta actual también queda guardada como 
 Se agregaron pruebas de modelo y smoke de navegador para offsets XYZ, interpolación, conservación de proyectos antiguos, cambio de mirada, edición sin tocar el GLB, desvinculación sin salto y Deshacer. El código y los tests fueron revisados sintácticamente; el smoke completo en Chromium queda pendiente de ejecución.
 
 El ajuste desplaza el **punto de mirada** en el sistema de coordenadas de la escena, no rota ese offset según los huesos o la orientación local de una malla animada. Para seguir la cara de un personaje con animaciones esqueléticas habría que añadir un ancla por hueso o por nodo GLB.
+
+## Edición visual del punto de enfoque desde el mapa
+
+En **Mirar hacia**, seleccioná un objetivo `shape3d` anclado. El punto `●` del mapa espacial queda habilitado: **arrastralo** para desplazar el enfoque sin desvincular el modelo ni mover su malla. La línea violeta une el **pivote del ancla** con el **punto enfocado**. Esta es una vista por proyecciones, no un selector de caras o polígonos del GLB.
+
+- **De frente (X/Y):** ajusta el enfoque a la derecha/izquierda y arriba/abajo.
+- **Desde arriba (X/Z):** ajusta desplazamiento lateral y profundidad.
+- **De costado (Z/Y):** ajusta profundidad y altura.
+- Mantener **Shift** durante el arrastre restringe el movimiento al eje dominante.
+- Con foco en el `●`, las **flechas** desplazan 25 px; **Shift + flecha**, 100 px.
+- **Escape** cancela el gesto sin guardar.
+- Un arrastre confirmado guarda **un solo Deshacer** al soltar. Los movimientos de previsualización no guardan cambios intermedios.
+
+Los ajustes se guardan como `focusOffsetX/Y/Z` en el **keyframe del objetivo**. La trayectoria de la cámara, el modelo GLB y sus animaciones permanecen intactos. Los objetivos vinculados a elementos HTML normales siguen bloqueados, como antes. La precisión parte del desplazamiento respecto del modelo: no redondeamos su coordenada absoluta, que puede ser decimal en Three.js.
+
+### Comprobación
+
+```sh
+node tests/spatial-focus-map.integration.cjs
+```
+
+Esta prueba aislada, sin paquetes externos, cubre teclado en las tres proyecciones, arrastre, historial, cancelación con Escape, exclusión de HTML vinculado y estabilidad del modelo. También se agregaron casos al smoke de Chromium `.github/nagweb-camera-browser-smoke.mjs` para validar el gesto en navegador real. **El navegador completo todavía no fue ejecutado desde este chat.**
+
+**Límite:** no se elige todavía un vértice/píxel del modelo 3D con raycasting en la vista de perspectiva; se modifica la ubicación del foco proyectada en mapas 2D. Tampoco se incorpora rotación local de offsets con huesos de GLB.
