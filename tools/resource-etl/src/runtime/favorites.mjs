@@ -2,6 +2,13 @@
 // No remote writes or full Vault download are needed.
 export const FAVORITES_KEY="nagweb:resource-browser:favorites:v1";
 export const MAX_FAVORITES=200;
+
+// localStorage can throw SecurityError even while reading the property
+// (for example, when embedded by a restrictive third-party host).
+export function getOptionalStorage(scope=globalThis) {
+  try { return scope.localStorage || null; }
+  catch { return null; }
+}
 const valid=id=>typeof id==="string"&&id.length>0&&id.length<=180&&
   /^[a-zA-Z0-9:._/-]+$/.test(id);
 
@@ -23,7 +30,8 @@ export function toggleFavorite(current,id) {
 
 export function saveFavorites(storage,favorites,key=FAVORITES_KEY) {
   try {
-    storage?.setItem(key,JSON.stringify([...favorites].filter(valid).slice(0,MAX_FAVORITES)));
+    if (typeof storage?.setItem !== "function") return false;
+    storage.setItem(key,JSON.stringify([...favorites].filter(valid).slice(0,MAX_FAVORITES)));
     return true;
   } catch { return false; }
 }

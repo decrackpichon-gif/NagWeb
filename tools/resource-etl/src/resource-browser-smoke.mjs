@@ -140,6 +140,29 @@ try {
     await frame.locator("[data-favorite-only]").uncheck();
     report.scenarios.push({browser:"persistent favorites and filtered resource search",
       width,status:"passed",persistence:true,detailToggle:true,noFullLibraryFetch:true});
+    if (width === 1280) {
+      // A separate tab changes the same saved favorites: existing open tabs
+      // must synchronize buttons, counters and the filtered result list.
+      const sibling = await context.newPage();
+      sibling.on("pageerror", error => report.errors.push(`Favorites second tab: ${error.message}`));
+      await sibling.goto(`http://127.0.0.1:${server.address().port}/resource-browser/`);
+      const otherStar = sibling.locator('[data-favorite-id="smoke:icon"]');
+      await otherStar.waitFor();
+      await otherStar.click();
+      await expect(otherStar).toHaveAttribute("aria-pressed","true");
+      await expect(frame.locator('[data-favorite-id="smoke:icon"]')).toHaveAttribute("aria-pressed","true");
+      await expect(frame.locator("[data-favorite-count]")).toHaveText("(1)");
+      await frame.locator("[data-favorite-only]").check();
+      await expect(frame.locator('[data-resource-id="smoke:icon"]')).toBeVisible();
+      await otherStar.click();
+      await expect(frame.locator('[data-resource-id="smoke:icon"]')).toHaveCount(0);
+      await expect(frame.locator("[data-favorite-count]")).toHaveText("(0)");
+      await frame.locator("[data-favorite-only]").uncheck();
+      await expect(frame.locator('[data-favorite-id="smoke:icon"]')).toHaveAttribute("aria-pressed","false");
+      await sibling.close();
+      report.scenarios.push({browser:"favorites synced across open tabs",
+        status:"passed",star:true,count:true,filteredResults:true});
+    }
     await expect(frame.getByRole("button", { name: "Página anterior", exact: true })).toBeDisabled();
     await expect(frame.getByRole("button", { name: "Página siguiente", exact: true })).toBeDisabled();
     if (width === 1280) {

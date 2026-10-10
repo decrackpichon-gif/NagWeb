@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { FAVORITES_KEY, MAX_FAVORITES, readFavorites, toggleFavorite, saveFavorites } from "./runtime/favorites.mjs";
+import { FAVORITES_KEY, MAX_FAVORITES, getOptionalStorage, readFavorites, toggleFavorite, saveFavorites } from "./runtime/favorites.mjs";
 import { NagWebPersistentVaultClient } from "./runtime/persistent-vault-client.mjs";
 
 const storage = {
@@ -8,6 +8,14 @@ const storage = {
   setItem(key,value) { this.records.set(key,value); }
 };
 assert.deepEqual([...readFavorites(storage)],[]);
+assert.equal(getOptionalStorage({localStorage:storage}),storage);
+assert.equal(getOptionalStorage({get localStorage(){throw Error("SecurityError");}}),null,
+  "A forbidden localStorage getter cannot crash the browser");
+assert.deepEqual([...readFavorites(null)],[]);
+assert.equal(saveFavorites(null,new Set(["smoke:icon"])),false,
+  "Unavailable localStorage must not be reported as persisted");
+assert.equal(saveFavorites({},new Set(["smoke:icon"])),false,
+  "Missing setItem must not be treated as success");
 let favorites=toggleFavorite(readFavorites(storage),"smoke:icon");
 assert.deepEqual([...favorites],["smoke:icon"]);
 assert.equal(saveFavorites(storage,favorites),true);

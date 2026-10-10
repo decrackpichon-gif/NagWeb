@@ -3,7 +3,7 @@ import {
 } from "../src/runtime/persistent-vault-client.mjs";
 import { defaultEditableValues } from "../src/runtime/instance.mjs";
 import { createLatestSearch } from "../src/runtime/latest-search.mjs";
-import { readFavorites, toggleFavorite, saveFavorites } from "../src/runtime/favorites.mjs";
+import { FAVORITES_KEY, MAX_FAVORITES, getOptionalStorage, readFavorites, toggleFavorite, saveFavorites } from "../src/runtime/favorites.mjs";
 import { describeEditableControls } from "../src/runtime/editable-controls.mjs";
 import { groupEditableControls, countChangedControls, matchesControlSearch } from "./control-groups.mjs";
 import { htmlWithCustomStyle } from "../src/runtime/html-css-customization.mjs";
@@ -69,7 +69,8 @@ const el = {
 };
 
 let offset = 0;
-let favorites = readFavorites(globalThis.localStorage);
+const favoriteStorage = getOptionalStorage();
+let favorites = readFavorites(favoriteStorage);
 let selectedResource = null;
 function paintFavoriteButton(button,id) {
   const chosen = favorites.has(id);
@@ -92,8 +93,13 @@ function synchronizeFavorites() {
   paintFavoriteButton(el.detailFavorite,selectedResource?.id || "");
 }
 function flipFavorite(id) {
-  favorites = toggleFavorite(favorites,id);
-  if (!saveFavorites(globalThis.localStorage,favorites))
+  const next = toggleFavorite(favorites,id);
+  if (next.size === favorites.size && !favorites.has(id) && favorites.size >= MAX_FAVORITES) {
+    el.status.textContent = `Alcanzaste el máximo de ${MAX_FAVORITES} favoritos. Quitá uno para agregar otro.`;
+    return;
+  }
+  favorites = next;
+  if (!saveFavorites(favoriteStorage,favorites))
     el.status.textContent = "Favoritos guardados en esta sesión; el navegador no permitió persistirlos.";
   synchronizeFavorites();
   if (el.favoriteOnly.checked) {
@@ -882,6 +888,19 @@ el.search.addEventListener("input", () => {
 });
 el.favoriteOnly.addEventListener("change", () => {
   clearTimeout(searchTimer); offset = 0; void renderResults();
+});
+// Storage events arrive only in other tabs/windows of this same origin.
+// Keep visible stars and the filtered grid consistent without refreshing the Vault.
+window.addEventListener("storage", event => {
+  if (event.key !== FAVORITES_KEY && event.key !== null) return;
+  if (favoriteStorage && event.storageArea !== favoriteStorage) return;
+  favorites = readFavorites(favoriteStorage);
+  synchronizeFavorites();
+  if (el.favoriteOnly.checked) {
+    clearTimeout(searchTimer);
+    offset = 0;
+    void renderResults();
+  }
 });
 for (const select of [el.provider, el.family, el.kind]) {
   select.addEventListener("change", () => {
