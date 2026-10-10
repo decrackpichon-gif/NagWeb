@@ -39,6 +39,8 @@ assert.equal(el.detailProvider.textContent, "");
 assert.equal(el.detailBadges.innerHTML, "");
 assert.equal(el.copyId.disabled, true);
 assert.equal(el.copyCode.disabled, true);
+assert.equal(el.preview.hidden, false, "The blank loading frame retains its layout");
+assert.equal(el.previewFallback.hidden, false, "Loading overlay covers the blank frame");
 await resolveResource("second");
 previews.get("second").resolve("second preview");
 await second;

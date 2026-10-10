@@ -440,6 +440,7 @@ try {
   await expect(libraryFrame.getByLabel("Color", { exact: true })).toHaveValue("#abcdef");
   await libraryFrame.getByLabel("Color", { exact: true }).fill("#123456");
   await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
+  await expect(editButton).toBeFocused();
   assert.equal(await page.evaluate(() => history.length), historyBeforeEdit, "Cancel must not add an undo entry");
   assert.equal(await page.evaluate(id => sec().elements.find(e => e.id === id).stroke, inserted.element.id), "#abcdef");
   await reopenCustomization(editButton);

@@ -671,7 +671,7 @@ async function openDetail(id) {
   el.copyId.disabled = true;
   el.copyCode.disabled = true;
   el.preview.srcdoc = "";
-  el.preview.hidden = true;
+  el.preview.hidden = false;
   el.previewNote.textContent = "Cargando vista previa…";
   el.previewReplay.hidden = true;
   el.previewFallback.hidden = false;
@@ -695,6 +695,7 @@ async function openDetail(id) {
   updateApplyReadiness(resource);
 
   if (!resource) {
+    el.preview.hidden = true;
     el.detailTitle.textContent = "No encontré el recurso";
     el.previewNote.textContent = "No hay una vista previa disponible para este recurso.";
     return;

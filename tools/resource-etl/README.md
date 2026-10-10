@@ -1121,3 +1121,12 @@ La prueba de navegador existente verifica los destinos en escritorio y móvil,
 junto con los filtros, valores y categorías guardadas.
 La medición de ancho HTML toma el elemento y su contenedor en la misma vista
 y espera su renovación; conserva las comprobaciones de límites y persistencia.
+
+## Bloque 66: carga de vista previa y cierre de edición
+
+Durante la carga se conserva el marco vacío debajo del mensaje, para evitar
+que el navegador cree un documento con dimensiones cero al ocultarlo y
+mostrarlo rápidamente. Los errores y recursos inexistentes sí lo ocultan.
+La prueba de cancelar y reabrir espera la devolución del foco al editor antes
+de iniciar otra sesión. Se mantienen las comprobaciones de tamaño, guardado,
+cancelación sin cambios y carga sin datos del recurso anterior.
