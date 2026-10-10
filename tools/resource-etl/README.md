@@ -1147,3 +1147,15 @@ La biblioteca muestra Buscando recursos y deshabilita la paginación mientras
 carga, para no saltar páginas antes de tener el resultado actual. Las flechas
 tienen nombres y ayudas de Página anterior/siguiente. Las pruebas cubren carga,
 éxito, error, nombres accesibles y búsqueda por categoría en escritorio y móvil.
+
+## Bloque 71: edición real del texto de componentes Uiverse
+
+Botones, etiquetas y spans de texto simple ahora exponen campos editables,
+detectados sobre el HTML original. La edición se previsualiza, se guarda en
+el mismo embed de NagWeb, sobrevive recargas y exportación, y nunca ejecuta
+texto como HTML: caracteres especiales se escapan antes de insertar. Hasta
+seis textos distintos de 80 caracteres por recurso; estilos, comentarios,
+scripts, atributos y marcado anidado complejo quedan intactos. Los recursos
+persistentes anteriores obtienen esos controles sin volver a importarlos.
+Pruebas unitarias y Chromium del editor comprueban inserción, edición posterior
+y seguridad de valores.

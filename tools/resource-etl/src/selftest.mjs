@@ -80,6 +80,9 @@ import {
   isSupportedUiverseCssPlayback
 } from "./runtime/uiverse-playback.mjs";
 import {
+  inferUiverseTextProps, applyUiverseTextValues, isSupportedUiverseText
+} from "./runtime/uiverse-text.mjs";
+import {
   inferUiverseCssColorProps,
   effectiveUiverseEditableProps,
   applyUiverseCssColorValues
@@ -1632,6 +1635,7 @@ try {
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-bezier.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-easing.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-playback.mjs"))).isFile());
+  assert.ok((await stat(path.join(publicPreviewDir, "src", "runtime", "uiverse-text.mjs"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, "resource-browser", "vendor", "lottie_light.min.js"))).isFile());
   assert.ok((await stat(path.join(publicPreviewDir, ".nojekyll"))).isFile());
   await assert.rejects(stat(path.join(publicPreviewDir, "src", "cli.mjs")),
@@ -2629,3 +2633,62 @@ const playbackAndBezier=buildResourceApplyEnvelope(savedPlaybackResource,{
 assert.match(playbackAndBezier.descriptor.payload.html,
   /fade 500ms cubic-bezier\(0.4,.4,0,1\) 2 alternate/,
   "Playback selectors remain compatible with Bézier point editing");
+
+
+// Stage 70: real, editable Uiverse button and label text.
+const editableTextHtml='<style>.sample:after{content:"Do not change";}/* <button>Fake</button> */</style>'+
+  '<button class="sample">  Comprar  </button><span>Hola</span>'+
+  '<label for="x">Suscribirse</label><button class="sample">Comprar</button>'+
+  '<button><span>Dentro</span><svg><path d="M0 0"/></svg></button>'+
+  '<!-- <button>Oculto</button> --><script>const example="<button>Script</button>"</script>';
+const texts=inferUiverseTextProps(editableTextHtml);
+assert.deepEqual(texts.map(p=>[p.id,p.binding.tag,p.defaultValue]),[
+  ["uiverseText1","button","Comprar"],["uiverseText2","span","Hola"],
+  ["uiverseText3","label","Suscribirse"],["uiverseText4","span","Dentro"]
+], "Source content and nested text are real selectable labels, not comments or scripts");
+const textResource={
+  ...persistedUiverse,
+  artifacts:[{...persistedUiverse.artifacts[0],content:editableTextHtml}]
+};
+assert.deepEqual(describeEditableControls(textResource).filter(p=>
+  p.id.startsWith("uiverseText")).map(p=>p.kind),Array(4).fill("text"));
+assert.ok(isSupportedUiverseText(textResource,texts[0]));
+assert.equal(isSupportedUiverseText(textResource,{
+  ...texts[0],binding:{...texts[0].binding,originalText:"<script>"}
+}),false);
+assert.equal(applyUiverseTextValues(textResource,{},editableTextHtml),editableTextHtml,
+  "An unchanged source stays byte-for-byte identical");
+const textChanged=applyUiverseTextValues(textResource,{
+  uiverseText1:"Pagar <hoy> & seguir",
+  uiverseText2:"¡Hola, diseñador!",
+  uiverseText3:"Recibí novedades",
+  uiverseText4:"Más información"
+},editableTextHtml);
+assert.match(textChanged,/<button class="sample">  Pagar &lt;hoy&gt; &amp; seguir  <\/button>/);
+assert.match(textChanged,/<button class="sample">Pagar &lt;hoy&gt; &amp; seguir<\/button>/);
+assert.match(textChanged,/<span>¡Hola, diseñador!<\/span>/);
+assert.match(textChanged,/<label for="x">Recibí novedades<\/label>/);
+assert.match(textChanged,/<button><span>Más información<\/span><svg>/);
+assert.match(textChanged,/content:"Do not change"/);
+assert.match(textChanged,/<!-- <button>Oculto<\/button> -->/);
+assert.match(textChanged,/<script>const example="<button>Script<\/button>"<\/script>/);
+const insertedText=buildResourceApplyEnvelope(textResource,{
+  values:{uiverseText1:"Comprar ahora",uiverseText2:"Vení por acá"}
+});
+assert.match(insertedText.descriptor.payload.html,/<button class="sample">  Comprar ahora  <\/button>/);
+assert.equal(insertedText.descriptor.instance.values.uiverseText1,"Comprar ahora");
+assert.deepEqual(insertedText.resource.editableProps.filter(p=>p.id.startsWith("uiverseText"))
+  .map(p=>p.id),texts.map(p=>p.id),"Text metadata survives insertion and later editing");
+assert.equal(applyUiverseTextValues(textResource,{
+  uiverseText1:"",uiverseText2:"   ",uiverseText3:"x".repeat(81),
+  uiverseText4:"a\nb"
+},editableTextHtml),editableTextHtml,"Invalid labels never change source");
+const newTextImport=transformUiverseComponent({
+  repository:"https://github.com/uiverse-io/galaxy",commit:"test",
+  item:{metadata:{category:"Buttons",author:"designer",slug:"editable-text"},
+    content:editableTextHtml,entry:{path:"Buttons/designer_editabletext.html",sha:"a"}}
+});
+assert.deepEqual(newTextImport.editableProps.filter(p=>p.id.startsWith("uiverseText"))
+  .map(p=>p.id),texts.map(p=>p.id),"Newly imported Uiverse retains label controls");
+assert.equal(textResource.artifacts[0].content,editableTextHtml,
+  "Changing labels never mutates the source resource");

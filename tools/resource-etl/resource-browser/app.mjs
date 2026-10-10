@@ -591,6 +591,12 @@ function renderEditableControls(resource, { preserveGroups = false } = {}) {
       row.className = "toggle-row";
       input.type = "checkbox";
       input.checked = selectedValues[control.id];
+    } else if (control.kind === "text") {
+      row.className = "text-row";
+      input.type = "text";
+      input.maxLength = control.maxLength;
+      input.value = String(selectedValues[control.id]);
+      input.autocomplete = "off";
     } else {
       row.className = "select-row";
       const select = document.createElement("select");
@@ -612,7 +618,9 @@ function renderEditableControls(resource, { preserveGroups = false } = {}) {
         ? `${value}${control.unit}`
         : control.kind === "toggle"
           ? value ? "Activado" : "Desactivado"
-          : control.options.find((option) => option.value === value)?.label || value;
+          : control.kind === "text"
+            ? `${String(value).length}/${control.maxLength} caracteres`
+            : control.options.find((option) => option.value === value)?.label || value;
     output.textContent = format(selectedValues[control.id]);
 
     const controlElement = control.kind === "select" ? row.querySelector("select") : input;
@@ -625,7 +633,7 @@ function renderEditableControls(resource, { preserveGroups = false } = {}) {
     });
     controlElement.addEventListener("change", () => {
       if (selectedResource !== resource || el.customize.hidden) return;
-      const value = control.kind === "color" || control.kind === "select"
+      const value = control.kind === "color" || control.kind === "select" || control.kind === "text"
         ? controlElement.value
         : control.kind === "toggle"
           ? controlElement.checked
@@ -636,6 +644,9 @@ function renderEditableControls(resource, { preserveGroups = false } = {}) {
         if (!Number.isFinite(value) || value < control.min || value > control.max) return;
       } else if (control.kind === "select") {
         if (!control.options.some((option) => option.value === value)) return;
+      } else if (control.kind === "text") {
+        if (!value.trim() || value.length > control.maxLength ||
+            /[\x00-\x1f\x7f]/.test(value)) return;
       }
 
       selectedValues[control.id] = value;
@@ -643,13 +654,16 @@ function renderEditableControls(resource, { preserveGroups = false } = {}) {
       updateSummary();
       redrawEditablePreview();
     });
-    if (control.kind === "color" || control.kind === "range") {
+    if (control.kind === "color" || control.kind === "range" || control.kind === "text") {
       controlElement.addEventListener("input", () => {
         if (selectedResource !== resource || el.customize.hidden) return;
-        const value = control.kind === "color" ? controlElement.value
-          : Number(controlElement.value);
+        const value = control.kind === "color" || control.kind === "text"
+          ? controlElement.value : Number(controlElement.value);
         if (control.kind === "color") {
           if (!/^#[0-9a-f]{6}$/i.test(value)) return;
+        } else if (control.kind === "text") {
+          if (!value.trim() || value.length > control.maxLength ||
+              /[\x00-\x1f\x7f]/.test(value)) return;
         } else if (!Number.isFinite(value) ||
           value < control.min || value > control.max) return;
         selectedValues[control.id] = value;

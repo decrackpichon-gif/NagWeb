@@ -132,3 +132,9 @@ pre{white-space:pre-wrap;word-break:break-word;background:#090b0e;border:1px sol
 
 .preview-panel .preview-replay{align-self:flex-start;margin-top:10px}
 .preview-panel .preview-replay[hidden]{display:none}
+
+/* Text labels inferred from safe Uiverse markup. */
+.text-row { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+.text-row input[type="text"] { flex:1 1 160px; min-width:0; border:1px solid #474753; border-radius:7px; padding:9px 11px; background:#191b23; color:#f6f6f7; font:inherit; }
+.text-row input[type="text"]:focus-visible { outline:2px solid #9eabff; outline-offset:2px; }
+.text-row output { font-size:11px; color:#b4b7c4; white-space:nowrap; }

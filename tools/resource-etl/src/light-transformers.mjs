@@ -8,6 +8,7 @@ import { inferUiverseCssMultiTimingProps } from "./runtime/uiverse-multi-timing.
 import { inferUiverseCssBezierProps } from "./runtime/uiverse-bezier.mjs";
 import { inferUiverseCssEasingProps } from "./runtime/uiverse-easing.mjs";
 import { inferUiverseCssPlaybackProps } from "./runtime/uiverse-playback.mjs";
+import { inferUiverseTextProps } from "./runtime/uiverse-text.mjs";
 import { inferUiverseCssColorProps } from "./runtime/uiverse-colors.mjs";
 import { getSourcePolicy } from "./vault/source-policies.mjs";
 
@@ -1540,7 +1541,8 @@ export function transformUiverseComponent({ repository, commit, item }) {
       ...inferUiverseCssMultiTimingProps(content),
       ...inferUiverseCssBezierProps(content),
       ...inferUiverseCssEasingProps(content),
-      ...inferUiverseCssPlaybackProps(content)
+      ...inferUiverseCssPlaybackProps(content),
+      ...inferUiverseTextProps(content)
     ],
     compatibility: {
       nagweb: { supported: true, renderer: "html", tested: false },

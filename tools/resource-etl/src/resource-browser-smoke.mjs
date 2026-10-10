@@ -764,6 +764,33 @@ try {
   await expect(page.getByRole("button", { name: "Personalizar componente Uiverse seleccionado", exact: true })).toBeFocused();
   report.scenarios.push({editor:"NagWeb HTML/CSS re-edit robustness",status:"passed",
     unchangedNoHistory:true,staleSessionRejected:true,storageFailureDetected:true});
+  // Stage 71: edit a real Uiverse button label on an existing HTML embed.
+  await page.evaluate(id=>{
+    selection=[id];curEl=sec().elements.findIndex(e=>e.id===id);renderPane();
+  },insertedHtml.element.id);
+  await reopenCustomization(htmlEditButton);
+  const labelField=editLiveLibrary.getByLabel("Texto del botón 1",{exact:true});
+  const labelGroup=editLiveLibrary.locator('details[data-category="content"]');
+  if (!await labelGroup.evaluate(n=>n.open)) await labelGroup.locator("summary").click();
+  await expect(labelField).toHaveValue("Prueba");
+  await labelField.fill("Comprar ahora");
+  await htmlSave.click();
+  await expect(editLiveLibrary.locator("[data-apply-status]"))
+    .toContainText("Cambios guardados en el componente Uiverse seleccionado");
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  assert.equal(await page.evaluate(id=>sec().elements.find(e=>e.id===id).nwResource.values.uiverseText1,
+    insertedHtml.element.id),"Comprar ahora");
+  await expect(page.frameLocator("#preview")
+    .frameLocator(`[data-id="${insertedHtml.element.id}"] iframe.emb-sand`)
+    .locator("button.card")).toHaveText("Comprar ahora");
+  const labelExport=await page.evaluate(()=>generateSite(flattenPage(page()),false,true,false));
+  assert.match(labelExport,/Comprar ahora/);
+  assert.match(labelExport,/sandbox=""/);
+  await page.reload();
+  assert.equal(await page.evaluate(id=>sec().elements.find(e=>e.id===id).nwResource.values.uiverseText1,
+    insertedHtml.element.id),"Comprar ahora");
+  report.scenarios.push({editor:"NagWeb editable Uiverse text",status:"passed",
+    noDuplicate:true,preview:true,export:true,reload:true});
   report.scenarios.push({editor:"NagWeb HTML/CSS re-edit same embed",status:"passed",
     cancel:true,sameId:true,noDuplicate:true,positionPreserved:true,
     undoRedo:true,reload:true,export:true});

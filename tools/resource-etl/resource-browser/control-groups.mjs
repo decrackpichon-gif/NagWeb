@@ -1,6 +1,7 @@
 // Presentation only: keep the validated controls and their values unchanged.
 const CATEGORIES = [
   ["color", "Colores"],
+  ["content", "Contenido"],
   ["size", "Tamaño"],
   ["spacing", "Espaciado"],
   ["appearance", "Texto y apariencia"],
@@ -10,6 +11,7 @@ const CATEGORIES = [
 
 function category(control) {
   if (control.kind === "color") return "color";
+  if (control.kind === "text" || /^uiverseText\d+$/.test(control.id)) return "content";
   if (/^(?:size|scale)$/.test(control.id) || /^uiverseLength\d+$/.test(control.id)) return "size";
   if (/^uiverseSpace\d+$/.test(control.id)) return "spacing";
   if (/^(?:opacity|strokeWidth)$/.test(control.id) || /^uiverseDetail\d+$/.test(control.id)) return "appearance";

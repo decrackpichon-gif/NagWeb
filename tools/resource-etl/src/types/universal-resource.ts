@@ -49,6 +49,7 @@ export type EditableBinding =
   | { type: "css-bezier-coordinate"; property: string; curveIndex: number; coordinate: number; originalCurve: string }
   | { type: "css-easing-keyword"; property: string; trackIndex: number; originalValue: string }
   | { type: "css-playback-keyword"; property: string; trackIndex: number; field: "count" | "direction"; originalValue: string }
+  | { type: "uiverse-text-label"; tag: string; originalText: string }
   | { type: "text-content"; target?: string }
   | {
       type: "transform";
