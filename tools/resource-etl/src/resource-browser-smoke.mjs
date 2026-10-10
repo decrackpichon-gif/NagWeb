@@ -321,9 +321,20 @@ try {
       await frame.getByRole("button", { name: "Aplicar en NagWeb", exact: true }).click();
       await expect(frame.locator("[data-apply-status]")).toContainText("Recurso aplicado en el editor de prueba.");
       assert.equal(await page.evaluate(() => window.received.at(-1).descriptor.instance.values.uiversePlay1), "5");
+      // Stage 78: later edits must invalidate the previous successful notice,
+      // even when they happen long after a prompt acknowledgement.
       await frame.getByLabel(playback.label, { exact: true }).selectOption("4");
+      await expect(frame.locator("[data-apply-status]")).toContainText(
+        "cambios posteriores que todavía no se aplicaron");
+      await frame.getByLabel(playback.label, { exact: true }).selectOption("5");
+      await expect(frame.locator("[data-apply-status]")).toHaveText(
+        "Recurso aplicado en el editor de prueba.");
+      await frame.getByLabel(playback.label, { exact: true }).selectOption("4");
+      await expect(frame.locator("[data-apply-status]")).toContainText(
+        "cambios posteriores que todavía no se aplicaron");
       report.scenarios.push({ browser: "Uiverse delayed confirmation protects later edits",
-        status: "passed", confirmedSnapshot: true, pendingChangesVisible: true, resubmitted: true });
+        status: "passed", confirmedSnapshot: true, pendingChangesVisible: true,
+        subsequentChangesVisible: true, returningToConfirmedValues: true, resubmitted: true });
     }
     assert.equal(await frame.locator('[data-customize]').evaluate(node => node.scrollWidth <= node.clientWidth), true, "Panel must fit its width");
     const cssDocBeforeGroups = await frame.locator('[data-preview]').getAttribute("srcdoc");
