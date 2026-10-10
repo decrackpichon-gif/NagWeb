@@ -104,3 +104,8 @@ El timing propio de objetos anclados ahora se integra como se documenta en
 [Timing individual de objetos espaciales v1](spatial-timing-v1.md).
 El picking y los marcos proyectados respetan esa visibilidad. Un giro activo
 se cancela si el Director oculta el objeto, y su inercia se detiene.
+
+Las anclas dentro de contenedores libres admitidos usan ahora el plano local
+heredado y porcentajes del padre real, como se documenta en
+[Herencia de contenedores 3D v1](spatial-hierarchy-v1.md). La opacidad de los
+padres también bloquea el picking y oculta sus marcos proyectados.

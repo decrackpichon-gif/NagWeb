@@ -610,3 +610,12 @@ Director, con entrada/salida y keyframes. El alcance y los límites quedan en
 la limitación de timing propio de las etapas anteriores. La herencia de grupos,
 el desenfoque individual y la combinación con transiciones de escena siguen
 pendientes. No se añade otro dueño del progreso.
+
+## Actualización: herencia de contenedores libres
+
+Las formas y GLB anclados dentro de contenedores libres comunes ahora heredan
+su layout, transformación y opacidad, con arrastre local en diseño. El alcance,
+las pruebas y las diferencias pendientes de proyección CSS/Three quedan en
+[Herencia de contenedores para objetos 3D v1](spatial-hierarchy-v1.md).
+Reemplaza ese límite para contenedores libres admitidos; las instancias de
+movimiento y los contenedores especiales siguen fuera del alcance.

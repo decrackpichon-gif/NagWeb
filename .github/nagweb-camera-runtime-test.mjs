@@ -44,7 +44,7 @@ function run(script,stacked=false,absoluteStack=false){
  if(stacked)root.className='sc';
  const callbacks={},mediaCallbacks={},raf=[];
  const motion={matches:false,addEventListener(type,fn){mediaCallbacks[type]=fn;}};
- const context={window:null,document:{hidden:false,querySelector(){return root;},createElement(){return new Node('');},addEventListener(){}},
+ const context={window:null,events:[],dispatchEvent(ev){this.events.push(ev);},document:{hidden:false,querySelector(){return root;},createElement(){return new Node('');},addEventListener(){}},
  matchMedia(){return motion;},performance:{now(){return 0;}},innerHeight:600,
  getComputedStyle(){return {opacity:'1',filter:'none',pointerEvents:'auto'};},
  requestAnimationFrame(fn){raf.push(fn);return raf.length;},addEventListener(type,fn){callbacks[type]=fn;},
@@ -53,6 +53,10 @@ function run(script,stacked=false,absoluteStack=false){
  return {root,world,picture,group,child,callbacks,motion,mediaCallbacks,context,flush(){while(raf.length)raf.shift()(0);},state:context.__NAG_SCROLL_DIRECTOR['camera-scene']};
 }
 const live=run(exportScript(scene));
+const ready=live.context.events.find(e=>e.type==='nagweb:spatial-ready');
+assert.ok(ready,'The runtime announces installed spatial stages');
+assert.equal(ready.detail.stages[0],live.world.parentNode);
+assert.equal(typeof ready.detail.camera.bindThreeCamera,'function');
 assert.equal(live.group.parentNode,live.world,'Export moves free-layout container into camera world');
 assert.equal(live.child.parentNode,live.group);
 live.state.set(.5);

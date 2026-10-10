@@ -90,3 +90,11 @@ visibles cuando están comprobando cámaras/luces y no timing.
   ni rendimiento/hardware móvil.
 - Las escenas sin cámara espacial y los objetos sin ancla conservan la ruta
   histórica. No se despliega en Vercel ni se hace merge a main.
+
+## Actualización posterior
+
+La herencia de layout, transformaciones y opacidad de contenedores libres
+comunes se integra en [Herencia de contenedores 3D v1](spatial-hierarchy-v1.md).
+El límite anterior continúa para instancias de movimiento y contenedores
+especiales. Los objetos 3D de raíz ya pueden ser objetivos de mirada según
+[Objetivos de mirada 3D](spatial-look-targets-v1.md); los anidados siguen excluidos.
