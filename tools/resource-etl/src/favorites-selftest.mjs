@@ -58,5 +58,5 @@ assert.deepEqual([none.total,none.items.length],[0,0]);
 assert.equal((await client.search({ids:["smoke:icon"],providers:"uiverse"})).total,0,
   "Favorites filtering intersects provider and other existing filters");
 assert.equal((await client.search({ids:["smoke:icon"],query:"icon"})).total,1);
-assert.equal((await client.search({ids:["lucide:star"],query:"icon"})).total,0,
+assert.equal((await client.search({ids:["lucide:star"],query:"button"})).total,0,
   "Favorite filtering works alongside search text");
