@@ -106,7 +106,8 @@ const makeSelect = value => ({
 });
 const refreshEl = {
   provider: makeSelect("smoke"), family: makeSelect("icon"), kind: makeSelect("svg"),
-  status: {}, total: {}, search: { value: "Ícono" }
+  status: {}, total: {}, search: { value: "Ícono" },
+  refresh: { disabled: false }, grid: { removeAttribute() {} }
 };
 let availableFacets = { providers: [{ value: "smoke" }], families: [{ value: "icon" }], kinds: [{ value: "svg" }] };
 const refreshedFilters = [];
@@ -115,7 +116,7 @@ const refreshContext = {
   el: refreshEl, offset: 48, searchTimer: null,
   clearTimeout() {},
   resultSearch: { invalidate() { invalidatedSearches++; } },
-  vault: { async loadManifest() {}, async loadBrowseIndex() { return { resourceCount: 2 }; }, async facets() { return availableFacets; } },
+  vault: { async refreshBrowseIndex() { return { resourceCount: 2 }; }, async facets() { return availableFacets; } },
   fillSelect(select, items) { select.options.push(...items); },
   async renderResults() { refreshedFilters.push([refreshEl.provider.value, refreshEl.family.value, refreshEl.kind.value, refreshEl.search.value]); }
 };
@@ -127,6 +128,7 @@ availableFacets = { providers: [], families: [{ value: "icon" }], kinds: [{ valu
 await refreshContext.refreshIndex();
 assert.deepEqual(refreshedFilters[1], ["", "icon", "svg", "Ícono"], "Only unavailable filters are cleared");
 assert.equal(invalidatedSearches, 2, "Refreshing the index invalidates obsolete searches");
+assert.equal(refreshEl.refresh.disabled, false, "The refresh button is re-enabled after successful updates");
 assert.match(el.previewNote.textContent, /renderer unavailable/);
 
 const initial = context.openDetail("initial-vs-edit");

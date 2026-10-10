@@ -124,6 +124,37 @@ export class NagWebPersistentVaultClient {
     return manifest;
   }
 
+  // Commit both cache entries only after checksum and schema verification.
+  // A failed refresh must not mix a new manifest with an old index or library.
+  async refreshBrowseIndex() {
+    const manifest = await this.fetchJson("vault-manifest.json");
+    if (manifest.format !== "nagweb-resource-vault-index" ||
+        !manifest.consolidated?.browseIndexPath) {
+      throw new Error("Invalid NagWeb Vault manifest during refresh.");
+    }
+    const consolidated = manifest.consolidated;
+    const index = await this.loadVerifiedGzipJson(
+      consolidated.browseIndexPath,
+      consolidated.browseIndexSha256
+    );
+    if (index.format !== "nagweb-resource-browse-index" ||
+        index.resourceCount !== consolidated.count) {
+      throw new Error("NagWeb Vault browse index does not match its manifest.");
+    }
+
+    const previous = this.manifest?.consolidated;
+    const libraryChanged = !previous ||
+      previous.sha256 !== consolidated.sha256 ||
+      previous.libraryPath !== consolidated.libraryPath;
+    this.manifest = manifest;
+    this.browseIndex = index;
+    if (libraryChanged) {
+      this.fullLibrary = null;
+      this.resourceById = null;
+    }
+    return index;
+  }
+
   async loadVerifiedGzipJson(relativePath, expectedSha256) {
     const bytes = await this.fetchBytes(relativePath);
 

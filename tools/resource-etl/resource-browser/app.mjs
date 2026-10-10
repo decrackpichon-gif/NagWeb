@@ -765,30 +765,41 @@ async function openDetail(id) {
 }
 
 async function refreshIndex() {
+  if (el.refresh.disabled) return false;
+  el.refresh.disabled = true;
   clearTimeout(searchTimer);
   resultSearch.invalidate();
   el.status.textContent = "Actualizando índice y verificando checksum…";
-  await vault.loadManifest({ force: true });
-  const index = await vault.loadBrowseIndex({ force: true });
-  const facets = await vault.facets();
+  try {
+    const index = await vault.refreshBrowseIndex();
+    const facets = await vault.facets();
 
-  const selectedFilters = [el.provider, el.family, el.kind].map(select => select.value);
-  for (const select of [el.provider, el.family, el.kind]) {
-    while (select.options.length > 1) select.remove(1);
+    const selectedFilters = [el.provider, el.family, el.kind].map(select => select.value);
+    for (const select of [el.provider, el.family, el.kind]) {
+      while (select.options.length > 1) select.remove(1);
+    }
+    fillSelect(el.provider, facets.providers);
+    fillSelect(el.family, facets.families);
+    fillSelect(el.kind, facets.kinds);
+    [el.provider, el.family, el.kind].forEach((select, index) => {
+      const value = selectedFilters[index];
+      select.value = [...select.options].some(option => option.value === value) ? value : "";
+    });
+
+    el.total.textContent = `${index.resourceCount.toLocaleString("es-AR")} recursos`;
+    el.status.textContent =
+      "Índice verificado. El código completo se carga sólo al abrir un recurso.";
+    offset = 0;
+    await renderResults();
+    return true;
+  } catch (error) {
+    el.status.textContent =
+      "No pude actualizar el índice. Se conserva la última versión verificada. Reintentá actualizar.";
+    el.grid.removeAttribute("aria-busy");
+    return false;
+  } finally {
+    el.refresh.disabled = false;
   }
-  fillSelect(el.provider, facets.providers);
-  fillSelect(el.family, facets.families);
-  fillSelect(el.kind, facets.kinds);
-  [el.provider, el.family, el.kind].forEach((select, index) => {
-    const value = selectedFilters[index];
-    select.value = [...select.options].some(option => option.value === value) ? value : "";
-  });
-
-  el.total.textContent = `${index.resourceCount.toLocaleString("es-AR")} recursos`;
-  el.status.textContent =
-    "Índice verificado. El código completo se carga sólo al abrir un recurso.";
-  offset = 0;
-  await renderResults();
 }
 
 el.search.addEventListener("input", () => {
@@ -825,7 +836,7 @@ el.next.addEventListener("click", () => {
   offset += PAGE_SIZE;
   renderResults();
 });
-el.refresh.addEventListener("click", refreshIndex);
+el.refresh.addEventListener("click", () => { void refreshIndex(); });
 el.grid.addEventListener("click", (event) => {
   const card = event.target.closest("[data-resource-id]");
   if (card) openDetail(card.dataset.resourceId);
@@ -995,8 +1006,8 @@ el.copyCode.addEventListener("click", async () => {
 });
 
 try {
-  await refreshIndex();
-  if (editResourceId) await openDetail(editResourceId);
+  const indexReady = await refreshIndex();
+  if (indexReady && editResourceId) await openDetail(editResourceId);
 } catch (error) {
   console.error(error);
   el.status.textContent = `No pude cargar la biblioteca: ${error?.message || error}`;

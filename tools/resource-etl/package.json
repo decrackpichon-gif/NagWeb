@@ -9,7 +9,7 @@
   "scripts": {
     "ingest": "node src/cli.mjs",
     "dry-run": "node src/cli.mjs --dry-run",
-    "test": "node src/selftest.mjs && node src/latest-search-selftest.mjs",
+    "test": "node src/selftest.mjs && node src/latest-search-selftest.mjs && node src/vault-refresh-selftest.mjs",
     "test:browser": "node src/resource-browser-smoke.mjs",
     "vault": "node src/vault-cli.mjs",
     "vault:all": "node src/vault-cli.mjs --sources=lucide,shadcn,magicui,motion-primitives,animxyz,threejs,hyperui,uiverse,csshake,magic-css,spinkit,glsl-noise --all",

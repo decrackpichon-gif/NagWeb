@@ -106,11 +106,27 @@ try {
       if (url.hostname === "127.0.0.1") return route.continue();
       const body = url.origin === "https://raw.githubusercontent.com" ? fixtures.get(url.pathname.split("/").at(-1)) : null;
       if (!body) { report.errors.push(`Unexpected external request: ${url.origin}${url.pathname}`); return route.abort(); }
-      return route.fulfill({ status: 200, contentType: "application/octet-stream", headers: { "access-control-allow-origin": "*" }, body });
+      return route.fulfill({ status: 200, contentType: "application/octet-stream", headers: { "access-control-allow-origin": "*", "cache-control": "no-store" }, body });
     });
     await page.goto(`http://127.0.0.1:${server.address().port}/host`);
     const frame = page.frameLocator('iframe[title="Biblioteca de prueba"]');
     await frame.locator('[data-resource-id="smoke:icon"]').waitFor();
+    if (width === 1280) {
+      // A corrupt incoming index must not erase the verified cards or block retry.
+      const originalIndex = fixtures.get("index.json.gz");
+      fixtures.set("index.json.gz", Buffer.from("not the indexed gzip payload"));
+      try {
+        await frame.getByRole("button", { name: "Actualizar índice", exact: true }).click();
+        await expect(frame.locator("[data-status]")).toContainText("Se conserva la última versión verificada");
+        await expect(frame.locator('[data-resource-id="smoke:icon"]')).toBeVisible();
+        await expect(frame.getByRole("button", { name: "Actualizar índice", exact: true })).toBeEnabled();
+      } finally {
+        fixtures.set("index.json.gz", originalIndex);
+      }
+      await frame.getByRole("button", { name: "Actualizar índice", exact: true }).click();
+      await expect(frame.locator("[data-status]")).toContainText("Índice verificado");
+      report.scenarios.push({ browser: "atomic Vault refresh and recovery", status: "passed" });
+    }
     await frame.getByLabel("Proveedor", { exact: true }).selectOption("smoke");
     await frame.getByLabel("Familia", { exact: true }).selectOption("icon");
     await frame.getByLabel("Tipo", { exact: true }).selectOption("svg");
@@ -252,7 +268,7 @@ try {
     const url = new URL(route.request().url());
     if (url.hostname === "127.0.0.1") return route.continue();
     const vault = url.origin === "https://raw.githubusercontent.com" ? fixtures.get(url.pathname.split("/").at(-1)) : null;
-    if (vault) return route.fulfill({ contentType: "application/octet-stream", headers: { "access-control-allow-origin": "*" }, body: vault });
+    if (vault) return route.fulfill({ contentType: "application/octet-stream", headers: { "access-control-allow-origin": "*", "cache-control": "no-store" }, body: vault });
     const script = url.origin === "https://cdnjs.cloudflare.com" && /^\/ajax\/libs\/gsap\/3\.12\.5\//.test(url.pathname)
       ? gsapFiles.get(url.pathname.split("/").at(-1)) : null;
     if (script) return route.fulfill({ contentType: "text/javascript", body: script });
