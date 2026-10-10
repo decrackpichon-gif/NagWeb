@@ -15926,6 +15926,7 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
   /* ===================== escena ===================== */
   var canvas = document.getElementById('scene');
   var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+  var disposed3D = false, disposedResources = new WeakSet(), retiredMaterials = [];
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.outputEncoding = THREE.sRGBEncoding;
@@ -16267,7 +16268,7 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
      el sitio, pero las superficies metálicas y pulidas lo reflejan. Se arma con
      formas simples (un fondo degradé y paneles de luz tipo softbox), así no hay
      que descargar ninguna imagen HDRI. */
-  var ENV_CACHE = {}, pmrem = null;
+  var ENV_CACHE = {}, envTargets = [], pmrem = null;
   function envGradient(top, mid, bot){
     var g = new THREE.SphereGeometry(50, 48, 24);
     var pos = g.attributes.position, cols = [], ct = new THREE.Color(top), cm = new THREE.Color(mid), cb = new THREE.Color(bot), c = new THREE.Color();
@@ -16316,7 +16317,8 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
       envPanel(sc, 30, 2, 0, -2, -22, '#FFFFFF', 1.2);
     }
     if(!pmrem) pmrem = new THREE.PMREMGenerator(renderer);
-    var tex = pmrem.fromScene(sc, .02).texture;
+    var target = pmrem.fromScene(sc, .02), tex = target.texture;
+    envTargets.push(target);
     sc.traverse(function(n){ if(n.geometry) n.geometry.dispose(); if(n.material) n.material.dispose(); });
     ENV_CACHE[kind] = tex;
     return tex;
@@ -16359,7 +16361,23 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
     return g;
   }
 
+  function disposeResource(resource){
+    if(!resource || !resource.dispose || disposedResources.has(resource)) return;
+    disposedResources.add(resource);resource.dispose();
+  }
+  function disposeMaterial(material){
+    (Array.isArray(material) ? material : [material]).forEach(function(mt){
+      if(!mt) return;
+      Object.keys(mt).forEach(function(key){if(mt[key] && mt[key].isTexture) disposeResource(mt[key]);});
+      disposeResource(mt);
+    });
+  }
+  function disposeTree(root){
+    if(!root) return;
+    root.traverse(function(n){disposeResource(n.geometry);disposeMaterial(n.material);});
+  }
   function fitGLTF(gltf, o, group){
+    if(disposed3D){(gltf.scenes || [gltf.scene]).forEach(disposeTree);return;}
     var root = gltf.scene;
     var box = new THREE.Box3().setFromObject(root);
     var size = box.getSize(new THREE.Vector3()).length() || 1;
@@ -16367,7 +16385,7 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
     root.position.sub(center);
     root.scale.setScalar(3.2 / size);
     if(!o.keepMat){
-      root.traverse(function(n){ if(n.isMesh) n.material = matFor(o); });
+      root.traverse(function(n){ if(n.isMesh){retiredMaterials.push(n.material);n.material = matFor(o);} });
     } else {
       root.traverse(function(n){
         if(!n.isMesh || !n.material) return;
@@ -16387,18 +16405,18 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
   function loadModel(o, group){
     var m = MODELS[o.modelId];
     if(!m){ group.add(new THREE.Mesh(new THREE.IcosahedronGeometry(1.4,0), matFor(o))); return; }
-    var fallback = function(){ group.add(new THREE.Mesh(new THREE.IcosahedronGeometry(1.4,0), matFor(o))); };
+    var fallback = function(){ if(!disposed3D) group.add(new THREE.Mesh(new THREE.IcosahedronGeometry(1.4,0), matFor(o))); };
 
     if(m.url){
       if(m.f === 'obj'){
         fetch(m.url).then(function(r){ return r.text(); })
-          .then(function(txt){ group.add(new THREE.Mesh(parseOBJ(txt), matFor(o))); })
+          .then(function(txt){ if(!disposed3D) group.add(new THREE.Mesh(parseOBJ(txt), matFor(o))); })
           .catch(fallback);
         return;
       }
       if(m.f === 'stl'){
         fetch(m.url).then(function(r){ return r.arrayBuffer(); })
-          .then(function(buf){ group.add(new THREE.Mesh(parseSTL(buf), matFor(o))); })
+          .then(function(buf){ if(!disposed3D) group.add(new THREE.Mesh(parseSTL(buf), matFor(o))); })
           .catch(fallback);
         return;
       }
@@ -16526,10 +16544,19 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
   var createBloom = (${window.NAGWEB_CREATE_SPATIAL_BLOOM.toString()});
   var spatial3D = (${window.NAGWEB_CREATE_SPATIAL_RENDERER.toString()})(THREE, renderer, scene, objects, scene.children.filter(function(n){return n.isLight;}), {bloom:BLOOM,strength:BLOOM_STRENGTH,createBloom:createBloom});
   function connectSpatial3D(ev){
+    if(disposed3D) return;
     spatial3D.connect(ev.detail.camera, ev.detail.stages);
   }
   window.addEventListener('nagweb:spatial-ready', connectSpatial3D);
-  window.addEventListener('pagehide', function(ev){ if(!ev.persisted){ spatial3D.destroy(); if(legacyBloom){legacyBloom.dispose();legacyBloom=null;} window.removeEventListener('nagweb:spatial-ready', connectSpatial3D); } });
+  window.addEventListener('pagehide', function(ev){
+    if(ev.persisted || disposed3D) return;
+    disposed3D=true;gsap.ticker.remove(tick);
+    window.removeEventListener('resize', resize3D);
+    window.removeEventListener('nagweb:spatial-ready', connectSpatial3D);
+    spatial3D.destroy();
+    if(legacyBloom){legacyBloom.dispose();legacyBloom=null;}
+    disposeTree(scene);retiredMaterials.forEach(disposeMaterial);envTargets.forEach(disposeResource);disposeResource(pmrem);renderer.dispose();
+  });
 
   /* la cámara viaja de sección en sección, siguiendo el camino que definiste
      (las transiciones que salen de una galería horizontal ya las maneja
@@ -16972,6 +16999,7 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
   /* ===================== render ===================== */
   var clock = new THREE.Clock();
   function tick(){
+    if(disposed3D) return;
     var t = clock.getElapsedTime();
     camera.updateMatrixWorld();
     objects.forEach(function(g){ if(g.userData.holder && !spatial3D.owns(g)) placeAnchored(g); });
@@ -17003,13 +17031,15 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
     if(EDIT) syncProxies();
   }
 
-  window.addEventListener('resize', function(){
+  function resize3D(){
+    if(disposed3D) return;
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
     // Bloom buffers resize lazily on the next render using current pixel ratio.
     ScrollTrigger.refresh();
-  });
+  }
+  window.addEventListener('resize', resize3D);
 
   /* ===================== modo diseño (no se exporta) ===================== */
   var proxies = [];

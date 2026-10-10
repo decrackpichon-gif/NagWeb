@@ -103,3 +103,23 @@ smoke (ritmos, áreas exclusivas y objetos de la escena), después de verificar
 en el HTML que son inputs nativos. Se agrupa esta corrección del driver para
 evitar resolver cada clic inestable con una nueva ejecución completa. Sus
 aserciones de geometría, selección, visibilidad y datos se conservan.
+
+El smoke completo de cámara pasó en CI sobre `ee9395a`: guías animadas,
+inspector, apuntado manual, GLB, foco vinculado, Undo y exportación. Las
+expectativas del inspector y del apuntado usan el tamaño real normalizado de
+la escena; una prueba del editor cubre ancho 1200 y preview angosto de 600.
+
+El cierre definitivo (`pagehide` sin `persisted`) ahora retira el render del
+ticker GSAP, desconecta cámara y resize, libera bloom, geometrías, materiales,
+texturas, targets de entorno, PMREM y renderer. Los recursos compartidos se
+liberan una sola vez. Las cargas GLB que terminan después del cierre liberan
+su árbol sin agregarlo a la escena; OBJ/STL y fallback tardíos no crean objetos.
+Un `pagehide` persistido conserva los recursos para volver desde la caché del
+navegador. La regresión usa GLTFLoader real con entrega demorada y comprueba
+estos casos tanto en edición como en HTML exportado, incluido un entorno de
+estudio y geometría/material/textura compartidos.
+
+Las solicitudes de red pendientes pueden terminar: se impide que sus resultados
+reactiven el renderizador, pero no se implementa cancelación de red. Estas
+pruebas simulan los eventos de navegación; no sustituyen una prueba de retorno
+desde BFCache en cada navegador ni de memoria en dispositivos móviles.

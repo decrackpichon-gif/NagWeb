@@ -52,6 +52,36 @@ for(const [mode,html] of Object.entries(generated)){
  await page.evaluate(()=>{window.__NAG_SCROLL_DIRECTOR.space.set(0);window.__test3D.tick();});
  await page.screenshot({path:'work/spatial-'+mode+'.png'});
  assert.deepEqual(errors,[]);console.log('PASS '+mode+': resize and reduced motion');
+ const delayed=instrumented.replace('"env":""','"env":"studio"').replaceAll('function(gltf){ fitGLTF(gltf, o, group); }','function(gltf){ window.__lateRoot=gltf.scene;window.__finishGLB=function(){fitGLTF(gltf,o,group);};window.__failGLB=fallback; }');
+ fs.writeFileSync('work/generated-late-'+mode+'.html',delayed);
+ await page.goto('file:///'+path.resolve('work/generated-late-'+mode+'.html').replaceAll('\\','/'));
+ await page.waitForFunction(()=>window.__finishGLB&&window.__test3D.adapter.owns(window.__test3D.objects[0]));
+ const lifecycle=await page.evaluate(()=>{
+  const d=window.__test3D,resources=new Set(),counts={geometry:0,material:0,texture:0,renderer:0,renders:0};
+  const texture=new THREE.Texture();window.__lateRoot.children[0].material.map=texture;
+  window.__lateRoot.add(window.__lateRoot.children[0].clone()); // Shared geometry, material and texture dispose once.
+  function watch(root){root.traverse(n=>{
+   if(n.geometry)resources.add(n.geometry);
+   (Array.isArray(n.material)?n.material:[n.material]).filter(Boolean).forEach(m=>{resources.add(m);Object.values(m).filter(v=>v&&v.isTexture).forEach(t=>resources.add(t));});
+  });}
+  watch(d.scene);watch(window.__lateRoot);
+  resources.forEach(r=>r.addEventListener('dispose',()=>counts[r.isTexture?'texture':r.isMaterial?'material':'geometry']++));
+  const render=d.renderer.render.bind(d.renderer),dispose=d.renderer.dispose.bind(d.renderer);
+  d.renderer.render=function(){counts.renders++;return render(...arguments);};d.renderer.dispose=function(){counts.renderer++;return dispose();};
+  d.tick();const before=counts.renders;
+  window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true}));d.tick();
+  const retained=counts.renders>before&&counts.geometry===0&&counts.renderer===0&&d.adapter.owns(d.objects[0]);
+  window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:false}));const stopped=counts.renders;
+  window.__finishGLB();window.__finishGLB();window.__failGLB();d.tick();window.dispatchEvent(new Event('resize'));
+  window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:false}));
+  return {retained,counts,expected:resources.size,noRender:counts.renders===stopped,children:d.objects[1].children.length,owned:d.adapter.owns(d.objects[0])};
+ });
+ assert.equal(lifecycle.retained,true,'Persisted pagehide retains renderer resources');
+ assert.equal(lifecycle.noRender,true,'Final pagehide stops rendering and resize');
+ assert.equal(lifecycle.counts.renderer,1,'Final disposal is idempotent');
+ assert.equal(lifecycle.counts.geometry+lifecycle.counts.material+lifecycle.counts.texture,lifecycle.expected,'Loaded and late GLB resources dispose once');
+ assert.equal(lifecycle.children,0,'Late GLB never attaches after final pagehide');assert.equal(lifecycle.owned,false);
+ assert.deepEqual(errors,[]);console.log('PASS '+mode+': final teardown, retained page cache and late real GLB disposal');
 }
 }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
