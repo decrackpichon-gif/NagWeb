@@ -723,6 +723,7 @@ try {
   "A failed localStorage write cannot count as a persisted HTML change");
   await page.evaluate(()=>{Storage.prototype.setItem=window.stage55OriginalSetItem;});
   await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  await expect(page.getByRole("button", { name: "Personalizar componente Uiverse seleccionado", exact: true })).toBeFocused();
   report.scenarios.push({editor:"NagWeb HTML/CSS re-edit robustness",status:"passed",
     unchangedNoHistory:true,staleSessionRejected:true,storageFailureDetected:true});
   report.scenarios.push({editor:"NagWeb HTML/CSS re-edit same embed",status:"passed",
@@ -744,6 +745,7 @@ try {
     sec().elements.push(container);
     selection = [vector.id]; curEl = sec().elements.indexOf(vector); secFocus = false;
     refresh();
+    renderPreview();
   }, inserted.element.id);
   const gridVector = page.frameLocator("#preview").locator(`[data-id="${inserted.element.id}"]`);
   await expect(gridVector).toHaveAttribute("data-w", "20");
