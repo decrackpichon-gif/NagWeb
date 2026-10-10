@@ -767,7 +767,7 @@ export async function runCameraBrowserSmoke(page){
    const cmpA=document.querySelector('[data-camera-overview-compare-a]');
    const coneToggle=document.querySelector('[data-camera-overview-compare-fov-toggle]');
    return {exists:!!details,open:!!details?.open,label:summary?.textContent||'',
-    poseHidden:!!hidden&&!hidden.getClientRects().length,
+    poseHidden:!!hidden&&!(hidden.checkVisibility?hidden.checkVisibility():hidden.getClientRects().length),
     hasNumbers:!!positions&&!!orientation,
     controlsVisible:!!cmpA?.getClientRects().length&&!!coneToggle?.getClientRects().length,
     count:document.querySelectorAll('[data-camera-overview-technical]').length,

@@ -1,0 +1,64 @@
+# Origen de layout de anclas espaciales
+
+El renderizador ya componía los contenedores, pero omitía el desplazamiento del
+mundo CSS `.inner` respecto de la stage. Una cámara correctamente sincronizada
+no podía compensar ese error de posición del objeto.
+
+Ahora la colocación incluye ese offset sin usar su rectángulo transformado por
+la cámara. Las anclas directas dentro del mundo incluyen además su borde y
+scroll; las anclas anidadas conservan la composición de sus padres y suman el
+origen del mundo una sola vez. Las anclas directamente en la stage conservan
+su sistema de coordenadas. No se agrega reloj ni evaluador del progreso.
+
+## Verificación
+
+La prueba de herencia ejecuta los sitios realmente generados en diseño,
+exportación, bloom y cámara rotada. Desplaza `.inner` 27/19 px, agrega un borde
+de 4 px y compara la posición proyectada de una forma y un GLB cargado contra
+marcadores CSS independientes. Restaura el fixture después de la comparación.
+También conserva sus comprobaciones de opacidad heredada, planos de edición,
+resize, movimiento reducido y aislamiento. Las integraciones con Three r128
+comprueban border/scroll sin necesitar una segunda fuente de progreso.
+
+Los límites de aplanamiento CSS, clipping y filtros siguen vigentes. No se
+promete paridad para stages con transformaciones CSS externas o bordes propios,
+ni para estructuras fuera de la jerarquía admitida.
+
+Resultado local de la ronda seleccionada: 33 comprobaciones aprobadas en 43 s,
+con Node 24, Chrome/SwiftShader y Three r128. No se repiten luces, timing y bloom
+como grupos independientes: no se cambiaron, y el fixture de herencia sí incluye
+una exportación con bloom.
+
+## Validación agrupada
+
+Se incorpora un único comando para las siete parejas espaciales, el flujo
+acotado del editor, modelo/runtime/foco y sintaxis. Usa las dependencias y
+variables de entorno documentadas en `scroll-camera-v1.md`.
+
+```sh
+node .github/nagweb-spatial-smoke.cjs
+```
+
+Para un bloque que sólo toca colocación, proyección e interacción, se pueden
+seleccionar grupos y evitar repetir pruebas ajenas al cambio:
+
+```sh
+node .github/nagweb-spatial-smoke.cjs renderer hierarchy projection interaction editor
+```
+
+Cada grupo ejecuta integración y navegador; todos terminan con una ronda de
+sintaxis. El comando informa los fallos de todos los grupos y devuelve estado
+de error si alguno falla. No sustituye el smoke completo histórico del editor.
+
+## Diagnósticos del smoke histórico
+
+El [CI de `6a93eb3`](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38021284990) pasó la creación/arrastre/Undo/selección y se detuvo más
+adelante, al comprobar que las lecturas XYZ de un `<details>` cerrado no fueran
+visibles. Se cambia esa referencia visual de `getClientRects()` a
+`checkVisibility()` cuando está disponible: un elemento en contenido omitido
+puede conservar rectángulos sin estar visible. El flujo acotado del editor
+verifica abrir/cerrar, altura ocupada y persistencia de este panel sin cambios
+en los datos de cámara. El CI completo debe volver a comprobarse; no se da
+por aprobado por esta corrección aislada.
+
+No hay despliegue en Vercel ni integración a main.

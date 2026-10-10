@@ -628,3 +628,11 @@ Three en el modo adaptable. Las escenas con rotación cambian su encuadre CSS
 para coincidir con la vista espacial; no se modifican los encuadres guardados.
 Pruebas, compatibilidad y límites en
 [Proyección compartida CSS / Three v1](spatial-projection-v1.md).
+
+## Actualización: origen del mundo CSS y validación agrupada
+
+El renderizador incluye el offset del mundo CSS para las anclas que viven
+en él, conservando bordes/scroll y composición de los padres. La regresión
+cubre forma y GLB reales. Se agrega un comando único de pruebas por grupos
+para evitar repeticiones innecesarias. Alcance y resultados en
+[Origen de layout de anclas espaciales](spatial-layout-v1.md).

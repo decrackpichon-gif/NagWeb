@@ -47,6 +47,18 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   const selected=await read();assert.equal(selected.selected,'50',JSON.stringify({beforeSelect,selected}));assert.equal(selected.frames,baseline.frames);assert.equal(selected.history,beforeSelect.history);
   await page.evaluate(()=>redo());const redone=await read();assert.equal(redone.frames,created.frames,'Selection preserves redo stack');
   await page.evaluate(()=>undo());assert.equal((await read()).frames,baseline.frames);
+  // Native closed details may retain client rects in current Chromium.
+  // Check actual visibility and occupied height, then persistence on rerender.
+  await page.click('[data-camera-overview-toggle]');
+  await page.click('[data-camera-overview-metrics] > summary');
+  const technical=page.locator('[data-camera-overview-technical]');
+  const visibility=()=>technical.evaluate(n=>({open:n.open,visible:n.querySelector('[data-camera-overview-snapshot-info="a"]').checkVisibility(),height:n.getBoundingClientRect().height}));
+  const closed=await visibility();assert.equal(closed.open,false);assert.equal(closed.visible,false);
+  await technical.locator('summary').click();const opened=await visibility();assert.equal(opened.visible,true);assert.ok(opened.height>closed.height);
+  await page.evaluate(()=>renderPane());assert.equal((await visibility()).visible,true);
+  await technical.locator('summary').click();assert.equal((await visibility()).visible,false);
+  const final=await read();assert.equal(final.frames,baseline.frames);assert.equal(final.history,baseline.history);
   assert.deepEqual(errors,[]);console.log('PASS current moment: real editor + Director, create, pointer drag, two Undo, exact selection, no duplicate/history edit and Redo');
+  console.log('PASS technical details: native visibility, collapsed height, open/close and pane persistence without authored edits');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
