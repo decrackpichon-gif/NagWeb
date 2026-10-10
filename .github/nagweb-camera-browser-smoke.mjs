@@ -1960,6 +1960,60 @@ export async function runCameraBrowserSmoke(page){
   assert.ok(Math.abs(lostModelFocus.y-focalAdjusted.look.y)<.001,'Deleting model would retain adjusted focus position');
   assert.equal(focalAdjusted.objects,focalStart.objects,'Focus adjustment does not edit GLB geometry or anchor');
   assert.equal(focalAdjusted.undo,focalStart.undo+1,'Changing focus creates one Undo snapshot');
+
+  // Linked GLB focus can be adjusted visually on the three 2D projections without unlinking.
+  const focusMapRead=()=>page.evaluate(()=>{
+   const s=sec(),frame=s.sdCameraLookFrames.find(k=>k.at===0);
+   return {frame:JSON.parse(JSON.stringify(frame)),undo:history.length,objects:JSON.stringify(s.elements)};
+  });
+  await page.select('[data-camera-map-plane]','front');
+  assert.equal(await page.$eval('[data-camera-look-map-point]',n=>n.dataset.cameraSpatialFocus),'true','Linked GLB look marker is enabled for visual focus editing');
+  assert.equal(await page.$eval('[data-camera-look-map-point]',n=>n.disabled),false,'3D linked marker allows direct drag');
+  assert.ok(await page.$('[data-camera-focus-anchor-line]'),'Map draws a separate anchor-to-focus guide');
+  let visualBefore=await focusMapRead();
+  await page.focus('[data-camera-look-map-point]');
+  await page.keyboard.press('ArrowRight');
+  let visualNext=await focusMapRead();
+  assert.equal(visualNext.frame.targetId,'camera-glb-look-target','Map keyboard retains the live GLB binding');
+  assert.ok(Math.abs(visualNext.frame.focusOffsetX-(visualBefore.frame.focusOffsetX||0)-25)<.01,'Front view ArrowRight nudges focus X by 25 px');
+  assert.equal(visualNext.frame.focusOffsetY,visualBefore.frame.focusOffsetY,'Horizontal nudge preserves Y focus');
+  assert.equal(visualNext.undo,visualBefore.undo+1,'One visual nudge creates exactly one Undo');
+  await page.evaluate(()=>undo());
+  assert.deepEqual((await focusMapRead()).frame,visualBefore.frame,'Undo reverts visual GLB focus nudge');
+  const markerBox=await page.$eval('[data-camera-look-map-point]',n=>{const r=n.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2};});
+  await page.mouse.move(markerBox.x,markerBox.y);
+  await page.mouse.down();
+  await page.mouse.move(markerBox.x+35,markerBox.y-22,{steps:4});
+  await page.mouse.up();
+  visualNext=await focusMapRead();
+  assert.ok((visualNext.frame.focusOffsetX||0)>(visualBefore.frame.focusOffsetX||0),'Dragging selected focus in front view adjusts X');
+  assert.ok((visualNext.frame.focusOffsetY||0)<(visualBefore.frame.focusOffsetY||0),'Dragging selected focus in front view adjusts Y');
+  assert.equal(visualNext.frame.targetId,'camera-glb-look-target','Drag does not detach GLB');
+  assert.equal(visualNext.objects,visualBefore.objects,'Map drag does not edit model geometry');
+  assert.equal(visualNext.undo,visualBefore.undo+1,'Whole map drag creates a single undo');
+  await page.evaluate(()=>undo());
+  assert.deepEqual((await focusMapRead()).frame,visualBefore.frame,'Undo reverts full pointer drag');
+  const cancelledPoint=await page.$eval('[data-camera-look-map-point]',n=>{const r=n.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2};});
+  await page.mouse.move(cancelledPoint.x,cancelledPoint.y);await page.mouse.down();
+  await page.mouse.move(cancelledPoint.x+25,cancelledPoint.y+20,{steps:3});
+  await page.keyboard.press('Escape');await page.mouse.up();
+  assert.deepEqual(await focusMapRead(),visualBefore,'Escape cancels drag without saving or changing model');
+  await page.select('[data-camera-map-plane]','side');
+  await page.focus('[data-camera-look-map-point]');
+  await page.keyboard.press('ArrowRight');
+  visualNext=await focusMapRead();
+  assert.ok(Math.abs((visualNext.frame.focusOffsetZ||0)-(visualBefore.frame.focusOffsetZ||0)-25)<.01,'Lateral view horizontal ArrowRight adjusts Z');
+  await page.evaluate(()=>undo());
+  assert.deepEqual((await focusMapRead()).frame,visualBefore.frame,'Undo restores lateral Z adjustment');
+  await page.select('[data-camera-map-plane]','top');
+  await page.focus('[data-camera-look-map-point]');
+  await page.keyboard.press('ArrowDown');
+  visualNext=await focusMapRead();
+  assert.ok(Math.abs((visualNext.frame.focusOffsetZ||0)-(visualBefore.frame.focusOffsetZ||0)+25)<.01,'Top view ArrowDown adjusts depth Z in negative direction');
+  await page.evaluate(()=>undo());
+  assert.deepEqual((await focusMapRead()).frame,visualBefore.frame,'Top depth adjustment can be undone');
+  console.log('Camera spatial 3D focus map: pointer drag, keyboard in X/Y/Z, Escape cancel, Undo and no model edits OK');
+
   await page.select('[data-camera-look-target]','');
   const unlinked=await page.evaluate(()=>{
    const s=sec(),frame=s.sdCameraLookFrames.find(k=>k.at===0);
