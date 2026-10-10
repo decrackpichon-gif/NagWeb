@@ -1609,7 +1609,7 @@ assert.deepEqual(describeEditableControls({
     ...editableUiverse.editableProps[0],
     binding: { type: "css-property", property: "background-image" }
   }]
-}), [], "Unsupported CSS property does not surface as a fake control");
+}), ["uiverseText1"], "Unsupported CSS property is rejected while valid text remains editable");
 assert.equal(htmlCssPropertyStyle(editableSpinKit, { color: "#ee4488" }), "");
 assert.equal(buildResourceApplyEnvelope(editableSpinKit, {
   values: { color: "#ee4488" }
