@@ -436,7 +436,7 @@ try {
   await page.evaluate(id => { snapshot(); sec().elements = sec().elements.filter(e => e.id !== id); refresh(); }, inserted.element.id);
   const historyBeforeDeletedApply = await page.evaluate(() => history.length);
   await libraryFrame.getByRole("button", { name: "Guardar cambios en el ícono", exact: true }).click();
-  await expect(libraryFrame.locator('[data-apply-status]')).toContainText("El ícono cambió o fue eliminado");
+  await expect(libraryFrame.locator('[data-apply-status]')).toContainText("El recurso cambió o fue eliminado");
   assert.equal(await page.evaluate(() => history.length), historyBeforeDeletedApply);
   assert.equal(await page.evaluate(() => sec().elements.length), countBeforeEdit - 1, "A deleted target must not be recreated by Apply");
   await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
