@@ -77,3 +77,16 @@ plano en la misma tarea JavaScript. Antes perdía el estado abierto porque el
 evento nativo `toggle` aún no se había entregado. El editor guarda el estado
 sincrónicamente al activar el resumen, manteniendo apertura/cierre y teclado.
 No modifica datos ni historial de la cámara.
+
+El [primer CI espacial completo](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38022459387)
+pasó 39 comprobaciones en 96 segundos con Node 22 y Chrome en Ubuntu. Incluye
+las siete parejas espaciales y el flujo acotado del editor.
+
+El smoke histórico ya pasó los diagnósticos; después se detuvo al hacer clic
+en el checkbox de conos de visión. La prueba acotada verifica ahora ese control
+por puntero y teclado después de cambiar perspectiva y renderizar el panel,
+además de persistencia entre planos e historial intacto. El smoke histórico usa
+activación por teclado para ese checkbox, conservando sus aserciones de conos,
+posición y estado. No se modifica la lógica del control ni se afirma que el
+fallo de clic original sea un error del producto. La ronda local del editor
+pasó sus 25 comprobaciones; falta comprobar el nuevo smoke completo en CI.

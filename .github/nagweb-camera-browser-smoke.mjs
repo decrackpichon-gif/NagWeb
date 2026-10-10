@@ -825,13 +825,13 @@ export async function runCameraBrowserSmoke(page){
   const narrowerPerspective=await readComparisonFov();
   assert.ok(Math.abs(narrowerPerspective.shapes[0].angle-fovView.shapes[0].angle)>.1,'Changing perspective recalculates A/B aperture');
   await page.evaluate(value=>{sec().sdPerspective=value;renderPane();},originalPerspective);
-  await page.click('[data-camera-overview-compare-fov-toggle]');
+  await page.focus('[data-camera-overview-compare-fov-toggle]');await page.keyboard.press('Space');
   await page.waitForFunction(()=>document.querySelectorAll('[data-camera-overview-fov]').length===0);
   assert.equal((await readComparisonFov()).checked,false,'Cones are independently hideable without hiding A/B position markers');
   assert.equal(await page.$$eval('[data-camera-overview-pose-camera]',nodes=>nodes.length),2,'Camera positions remain visible with cones disabled');
   await page.select('[data-camera-map-plane]','front');
   assert.equal((await readComparisonFov()).checked,false,'Cones visibility persists across projection changes');
-  await page.click('[data-camera-overview-compare-fov-toggle]');
+  await page.focus('[data-camera-overview-compare-fov-toggle]');await page.keyboard.press('Space');
   assert.equal((await readComparisonFov()).count,0,'Edge-on frustums are not rendered as false polygons in front view');
   const stored3d=await page.evaluate(()=>({mode:sec().sdCameraOrientationMode,frames:JSON.stringify(sec().sdCameraFrames)}));
   await page.evaluate(()=>{

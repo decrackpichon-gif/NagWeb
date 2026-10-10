@@ -64,8 +64,17 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   const opened=await visibility();assert.equal(opened.visible,true);assert.ok(opened.height>closed.height);
   await page.evaluate(()=>renderPane());assert.equal((await visibility()).visible,true);
   await technical.locator('summary').click();assert.equal((await visibility()).visible,false);
+  await page.selectOption('[data-camera-map-plane]','top');
+  const cones=()=>page.locator('[data-camera-overview-fov]').count(),fov=page.locator('[data-camera-overview-compare-fov-toggle]');
+  assert.equal(await fov.isChecked(),true);assert.equal(await cones(),2);
+  await page.evaluate(()=>{const p=sec().sdPerspective;sec().sdPerspective=650;renderPane();sec().sdPerspective=p;renderPane();});
+  await fov.click();assert.equal(await fov.isChecked(),false);assert.equal(await cones(),0,'Pointer hides both FOV cones after perspective rerenders');
+  await fov.focus();await page.keyboard.press('Space');assert.equal(await fov.isChecked(),true);assert.equal(await cones(),2,'Keyboard restores both cones');
+  await fov.focus();await page.keyboard.press('Space');assert.equal(await cones(),0);
+  await page.selectOption('[data-camera-map-plane]','front');assert.equal(await fov.isChecked(),false,'Hidden state survives plane change');
   const final=await read();assert.equal(final.frames,baseline.frames);assert.equal(final.history,baseline.history);
   assert.deepEqual(errors,[]);console.log('PASS current moment: real editor + Director, create, pointer drag, two Undo, exact selection, no duplicate/history edit and Redo');
   console.log('PASS technical details: native visibility, collapsed height, open/close and pane persistence without authored edits');
+  console.log('PASS FOV controls: pointer and keyboard toggles, perspective rerenders, plane persistence and unchanged history');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
