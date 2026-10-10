@@ -23,11 +23,21 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   editButton.disabled = true;
   let editContext = null;
   let opener = button;
-  const selectedIcon = () => selection.length === 1
-    ? sec()?.elements.find(e => e.id === selection[0] && e.type === "vector" && e.nwResource?.id) : null;
+  const selectedLibraryElement = () => {
+    if (selection.length !== 1) return null;
+    return sec()?.elements.find(e => e.id === selection[0] && e.nwResource?.id &&
+      (e.type === "vector" || (e.type === "embed" && e.mode === "html" &&
+        e.nwResource.kind === "uiverse-html" && e.nwResource.provider === "uiverse"))) || null;
+  };
   const syncEditButton = () => {
-    const disabled = !selectedIcon();
-    if (editButton.disabled !== disabled) editButton.disabled = disabled;
+    const element = selectedLibraryElement();
+    if (editButton.disabled !== !element) editButton.disabled = !element;
+    const label = element?.nwResource?.kind === "uiverse-html"
+      ? "Personalizar componente Uiverse seleccionado" : "Personalizar ícono seleccionado";
+    if (editButton.getAttribute("aria-label") !== label) {
+      editButton.setAttribute("aria-label", label);
+      editButton.title = label;
+    }
   };
   const dialog = document.createElement("dialog");
   dialog.setAttribute("aria-label", "Biblioteca de recursos");
@@ -50,7 +60,10 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   const openLibrary = context => {
     editContext = context;
     opener = context ? editButton : button;
-    hint.textContent = context ? "Personalizá el ícono seleccionado y guardá los cambios." : "Insertá íconos SVG o HTML/CSS Uiverse compatibles.";
+    hint.textContent = context?.kind === "uiverse-html"
+      ? "Personalizá el componente Uiverse seleccionado sin reemplazarlo."
+      : context ? "Personalizá el ícono seleccionado y guardá los cambios."
+      : "Insertá íconos SVG o HTML/CSS Uiverse compatibles.";
     const url = new URL("../tools/resource-etl/resource-browser/", import.meta.url);
     url.searchParams.set("hostOrigin", location.origin);
     // Advertise this editor's current native insertion capability.
@@ -59,6 +72,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     if (context) {
       url.searchParams.set("editResource", context.resourceId);
       url.searchParams.set("editSession", context.session);
+      if (context.kind === "uiverse-html") url.searchParams.set("editKind", "uiverse-html");
       url.searchParams.set("editValues", JSON.stringify(context.values));
     }
     if (frame.src !== url.href) frame.src = url.href;
@@ -66,8 +80,17 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   };
   button.addEventListener("click", () => openLibrary(null));
   editButton.addEventListener("click", () => {
-    const element = selectedIcon();
+    const element = selectedLibraryElement();
     if (!element) return;
+    if (element.nwResource.kind === "uiverse-html") {
+      const values = element.nwResource.values;
+      if (!values || typeof values !== "object" || Array.isArray(values)) return;
+      openLibrary({ kind: "uiverse-html", session: crypto.randomUUID(),
+        resourceId: element.nwResource.id, elementId: element.id,
+        pageId: page().id, sceneId: sec().id, mobile: viewMobile,
+        values: structuredClone(values), fingerprint: JSON.stringify(element) });
+      return;
+    }
     let stroke = resolveColor(vget(element, "stroke"), project.styles);
     if (/^#[a-f\d]{3}$/i.test(stroke)) stroke = "#" + stroke.slice(1).split("").map(c => c+c).join("");
     const values = { size: Math.round(designWpx(element, sec())), stroke,
@@ -95,27 +118,44 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
         const props = isUiverseHtml ? null : svgElementProps(message);
         const size = isUiverseHtml ? 320 : props.nwResource.values.size;
         const width = deskWidth;
-        if (!sec() || !Array.isArray(sec().elements) || !(width > 0)) throw new Error("Seleccioná una escena para insertar el ícono.");
+        if (!sec() || !Array.isArray(sec().elements) || !(width > 0)) throw new Error("Seleccioná una escena para insertar el recurso.");
         let element;
         if (editContext) {
-          if (isUiverseHtml) throw new Error("La edición posterior de HTML/CSS todavía no está habilitada.");
+          if (isUiverseHtml !== (editContext.kind === "uiverse-html")) {
+            throw new Error("El tipo de recurso no coincide con la sesión de edición.");
+          }
           if (message.editSession !== editContext.session || message.resource.id !== editContext.resourceId ||
               page().id !== editContext.pageId || sec().id !== editContext.sceneId || viewMobile !== editContext.mobile) {
             throw new Error("La sesión de personalización ya no corresponde a este ícono.");
           }
           element = sec().elements.find(e => e.id === editContext.elementId);
           if (!element || JSON.stringify(element) !== editContext.fingerprint) {
-            throw new Error("El ícono cambió o fue eliminado. Volvé a abrir su personalización.");
+            throw new Error("El recurso cambió o fue eliminado. Volvé a abrir su personalización.");
           }
-          const baseWidth = designWpx({ w: 100, mobile: { w: 100 }, parent: element.parent }, sec());
-          if (!(baseWidth > 0)) throw new Error("No pude calcular el tamaño del contenedor del ícono.");
-          const changed = Object.keys(props.nwResource.values).some(key => props.nwResource.values[key] !== editContext.values[key]);
-          if (changed) {
-            snapshot();
-            if (size !== editContext.values.size) vset(element, "w", size / baseWidth * 100);
-            if (props.stroke !== editContext.values.stroke) vset(element, "stroke", props.stroke);
-            if (props.strokeWidth !== editContext.values.strokeWidth) vset(element, "strokeWidth", props.strokeWidth);
-            element.nwResource.values = props.nwResource.values;
+          if (isUiverseHtml) {
+            if (element.type !== "embed" || element.mode !== "html" ||
+                element.nwResource?.kind !== "uiverse-html") {
+              throw new Error("El elemento seleccionado ya no es un componente Uiverse.");
+            }
+            const values = message.descriptor.instance.values;
+            const keys = new Set([...Object.keys(values), ...Object.keys(editContext.values)]);
+            const changed = [...keys].some(key => values[key] !== editContext.values[key]);
+            if (changed) {
+              snapshot();
+              element.code = isolated.srcdoc;
+              element.nwResource.values = structuredClone(values);
+            }
+          } else {
+            const baseWidth = designWpx({ w: 100, mobile: { w: 100 }, parent: element.parent }, sec());
+            if (!(baseWidth > 0)) throw new Error("No pude calcular el tamaño del contenedor del ícono.");
+            const changed = Object.keys(props.nwResource.values).some(key => props.nwResource.values[key] !== editContext.values[key]);
+            if (changed) {
+              snapshot();
+              if (size !== editContext.values.size) vset(element, "w", size / baseWidth * 100);
+              if (props.stroke !== editContext.values.stroke) vset(element, "stroke", props.stroke);
+              if (props.strokeWidth !== editContext.values.strokeWidth) vset(element, "strokeWidth", props.strokeWidth);
+              element.nwResource.values = props.nwResource.values;
+            }
           }
           selection = [element.id];
           curEl = sec().elements.indexOf(element);
@@ -123,7 +163,8 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
           refresh();
           syncSelectionToFrame();
           editContext.fingerprint = JSON.stringify(element);
-          editContext.values = props.nwResource.values;
+          editContext.values = isUiverseHtml
+            ? structuredClone(message.descriptor.instance.values) : props.nwResource.values;
         } else {
           if (message.editSession) throw new Error("Esta sesión de personalización terminó. Volvé a abrir el ícono.");
           // Root placement makes insertion independent of a selected container.
@@ -151,7 +192,8 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
           throw new Error("El ícono está en el lienzo, pero no se pudo guardar. Revisá el almacenamiento del navegador.");
         }
         result = buildResourceApplyResult(message, { status: "applied", message: editContext
-          ? "Cambios guardados en el ícono seleccionado." : isUiverseHtml
+          ? isUiverseHtml ? "Cambios guardados en el componente Uiverse seleccionado."
+            : "Cambios guardados en el ícono seleccionado." : isUiverseHtml
             ? "Componente HTML/CSS Uiverse insertado y guardado en la escena actual."
             : "Ícono insertado y guardado en la escena actual." });
       } catch (error) {

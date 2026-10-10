@@ -538,6 +538,87 @@ try {
   await expect(page.frameLocator("#preview")
     .frameLocator(`[data-id="${insertedHtml.element.id}"] iframe.emb-sand`).locator(".card")).toBeVisible();
   assert.equal(await page.evaluate(id=>sec().elements.find(e=>e.id===id)?.nwResource?.id,insertedHtml.element.id),css.id);
+  // Stage 53: reopen an existing Uiverse HTML embed for controlled edits.
+  // Cancel first, then save into the original ID without changing placement.
+  await page.evaluate(id => {
+    selection=[id];
+    curEl=sec().elements.findIndex(e=>e.id===id);
+    renderPane();
+  },insertedHtml.element.id);
+  const htmlEditButton=page.getByRole("button",{
+    name:"Personalizar componente Uiverse seleccionado",exact:true
+  });
+  await expect(htmlEditButton).toBeEnabled();
+  const originalHtmlElement=await page.evaluate(id=>structuredClone(
+    sec().elements.find(e=>e.id===id)),insertedHtml.element.id);
+  const originalHtmlCount=await page.evaluate(()=>sec().elements.length);
+  const htmlPlayControl=describeEditableControls(css).find(c=>c.id==="uiversePlay1");
+  assert.ok(htmlPlayControl,"The HTML fixture needs a real editable animation selector");
+  await htmlEditButton.click();
+  const editLiveLibrary=page.frameLocator('iframe[title="Biblioteca de recursos de NagWeb"]');
+  const htmlSave=editLiveLibrary.getByRole("button",{
+    name:"Guardar cambios en el componente",exact:true
+  });
+  await expect(htmlSave).toBeEnabled();
+  const repetition=editLiveLibrary.getByLabel(htmlPlayControl.label,{exact:true});
+  const repetitionGroup=editLiveLibrary.locator("details").filter({has:repetition});
+  if (!await repetitionGroup.evaluate(n=>n.open))
+    await repetitionGroup.locator("summary").click();
+  await expect(repetition).toHaveValue("2");
+  await repetition.selectOption("4");
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  assert.equal(await page.evaluate(id=>sec().elements.find(e=>e.id===id).nwResource.values.uiversePlay1,
+    insertedHtml.element.id),"2","Cancelling HTML customization must not modify its model");
+  await htmlEditButton.click();
+  await expect(htmlSave).toBeEnabled();
+  const resumedRepetition=editLiveLibrary.getByLabel(htmlPlayControl.label,{exact:true});
+  const resumedGroup=editLiveLibrary.locator("details").filter({has:resumedRepetition});
+  if (!await resumedGroup.evaluate(n=>n.open))
+    await resumedGroup.locator("summary").click();
+  await expect(resumedRepetition).toHaveValue("2");
+  await resumedRepetition.selectOption("4");
+  const beforeHtmlEditHistory=await page.evaluate(()=>history.length);
+  await htmlSave.click();
+  await expect(editLiveLibrary.locator("[data-apply-status]"))
+    .toContainText("Cambios guardados en el componente Uiverse seleccionado");
+  const reeditedHtml=await page.evaluate(id=>{
+    const e=sec().elements.find(e=>e.id===id);
+    return {element:structuredClone(e),count:sec().elements.length,
+      stored:JSON.parse(localStorage.getItem(STORE_KEY)).pages[0].sections[0]
+        .elements.find(x=>x.id===id)};
+  },insertedHtml.element.id);
+  assert.equal(reeditedHtml.count,originalHtmlCount,"HTML edit must never duplicate elements");
+  assert.equal(reeditedHtml.element.id,originalHtmlElement.id);
+  assert.equal(reeditedHtml.element.nwResource.values.uiversePlay1,"4");
+  assert.equal(reeditedHtml.stored.nwResource.values.uiversePlay1,"4");
+  assert.match(reeditedHtml.element.code,/spin 1s 4 alternate/,
+    "The saved isolated HTML includes edited CSS");
+  for (const key of ["x","y","w","h","mobile","ratio","parent","name","anim"]) {
+    assert.deepEqual(reeditedHtml.element[key],originalHtmlElement[key],
+      "Re-edit preserves HTML embed placement and property "+key);
+  }
+  assert.equal(await page.evaluate(()=>history.length),beforeHtmlEditHistory+1,
+    "Changing HTML styling creates exactly one undo entry");
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  await expect(page.frameLocator("#preview")
+    .frameLocator(`[data-id="${insertedHtml.element.id}"] iframe.emb-sand`)
+    .locator(".card")).toHaveCSS("animation-iteration-count","4");
+  const htmlEditedExport=await page.evaluate(()=>
+    generateSite(flattenPage(page()),false,true,false));
+  assert.match(htmlEditedExport,/spin 1s 4 alternate/);
+  assert.match(htmlEditedExport,/sandbox=""/,"Edited HTML is still isolated on export");
+  await page.locator("#btn-undo").click();
+  assert.equal(await page.evaluate(id=>sec().elements.find(e=>e.id===id).nwResource.values.uiversePlay1,
+    insertedHtml.element.id),"2");
+  await page.locator("#btn-redo").click();
+  assert.equal(await page.evaluate(id=>sec().elements.find(e=>e.id===id).nwResource.values.uiversePlay1,
+    insertedHtml.element.id),"4");
+  await page.reload();
+  assert.equal(await page.evaluate(id=>sec().elements.find(e=>e.id===id).nwResource.values.uiversePlay1,
+    insertedHtml.element.id),"4");
+  report.scenarios.push({editor:"NagWeb HTML/CSS re-edit same embed",status:"passed",
+    cancel:true,sameId:true,noDuplicate:true,positionPreserved:true,
+    undoRedo:true,reload:true,export:true});
   report.scenarios.push({editor:"NagWeb persistent Uiverse HTML/CSS",status:"passed",
     iframeSandbox:true,save:true,undoRedo:true,reload:true,export:true,
     externalScriptsBlocked:true,invalidPayloadRejected:true});

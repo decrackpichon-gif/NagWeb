@@ -979,3 +979,20 @@ exportación, deshacer/rehacer, recarga y mensajes duplicados o maliciosos.
 Por ahora la edición posterior mediante el panel de Biblioteca continúa
 reservada a íconos SVG; el componente HTML/CSS sí puede moverse y
 redimensionarse desde el editor como cualquier `embed`.
+
+## Micro-etapa 53: re-editar HTML/CSS Uiverse sin duplicar
+
+Un componente Uiverse HTML/CSS ya insertado como `embed` puede seleccionarse
+en el editor y volver a abrirse con **Personalizar**. El panel recupera sus
+ajustes anteriores, permite modificarlos y guarda el HTML/CSS actualizado
+en el **mismo elemento**, manteniendo identificador, posición, dimensiones,
+jerarquía, nombre y animaciones del editor. El `iframe` conserva `sandbox=""`
+y la política CSP tras modificar, recargar o exportar.
+
+Cancelar no modifica el proyecto; guardar sin cambios no agrega un paso al
+historial. Una edición sobre un elemento borrado o alterado mientras el panel
+está abierto se rechaza usando la misma sesión y huella del elemento que ya
+protegían la personalización SVG. La prueba real de Chromium verifica edición
+del CSS, conservación de identidad, no duplicación, persistencia, exportación,
+deshacer/rehacer y cancelación. Los recursos React y HTML con dependencias
+todavía no están admitidos.

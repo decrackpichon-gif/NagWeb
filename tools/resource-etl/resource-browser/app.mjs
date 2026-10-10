@@ -77,16 +77,32 @@ const hostKinds = hostKindsText === null ? null :
   new Set(hostKindsText.split(",").filter(kind => /^(?:svg|uiverse-html|html|react|threejs|css-inline-effect|css-class-effect|lottie)$/.test(kind)));
 const editResourceId = applyTarget ? editParams.get("editResource") : null;
 const editSession = editResourceId ? editParams.get("editSession") : null;
+const editKind = editSession ? editParams.get("editKind") : null;
 let editInitialValues = {};
 if (editSession) {
   try {
-    const values = JSON.parse(editParams.get("editValues") || "{}");
-    if (Number.isFinite(values.size) && values.size >= 4 && values.size <= 512 &&
-        /^#[a-f\d]{6}$/i.test(values.stroke) && Number.isFinite(values.strokeWidth) && values.strokeWidth >= .25 && values.strokeWidth <= 8) {
-      editInitialValues = { size: values.size, stroke: values.stroke, strokeWidth: values.strokeWidth };
+    const encoded = editParams.get("editValues") || "";
+    if (encoded.length > 0 && encoded.length <= 8192) {
+      const values = JSON.parse(encoded);
+      if (editKind === "uiverse-html") {
+        if (values && Object.getPrototypeOf(values) === Object.prototype &&
+            Object.keys(values).length > 0 && Object.keys(values).length <= 128 &&
+            Object.entries(values).every(([key, value]) =>
+              /^[a-zA-Z][a-zA-Z0-9_-]{0,63}$/.test(key) &&
+              (typeof value === "boolean" ||
+                (typeof value === "number" && Number.isFinite(value)) ||
+                (typeof value === "string" && value.length <= 128)))) {
+          editInitialValues = { ...values };
+        }
+      } else if (Number.isFinite(values.size) && values.size >= 4 && values.size <= 512 &&
+          /^#[a-f\d]{6}$/i.test(values.stroke) && Number.isFinite(values.strokeWidth) &&
+          values.strokeWidth >= .25 && values.strokeWidth <= 8) {
+        editInitialValues = { size: values.size, stroke: values.stroke, strokeWidth: values.strokeWidth };
+      }
     }
   } catch { /* Invalid initial values must not enable an edit. */ }
-  el.apply.textContent = "Guardar cambios en el ícono";
+  el.apply.textContent = editKind === "uiverse-html"
+    ? "Guardar cambios en el componente" : "Guardar cambios en el ícono";
 }
 
 if (applyTarget) {
