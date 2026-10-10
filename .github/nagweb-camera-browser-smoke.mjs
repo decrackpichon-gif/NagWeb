@@ -1679,6 +1679,15 @@ export async function runCameraBrowserSmoke(page){
   });
   await page.waitForFunction(()=>document.querySelector('[data-camera-look-jump="0"]')&&document.querySelector('[data-camera-look-target]'));
 
+  await page.waitForFunction(()=>document.querySelector('#preview')?.contentDocument?.querySelector('.sc[data-id="camera-browser-scene"] .nw-sd-stage')?.clientWidth);
+  await page.evaluate(()=>{
+   window.__cameraBrowserFocusSize=(scene,cfg)=>{
+    const stage=document.getElementById('preview')?.contentDocument?.querySelector('.sc[data-id="'+scene.id+'"] .nw-sd-stage');
+    if(!stage?.clientWidth||!stage?.clientHeight)return {width:cfg.referenceWidth,height:cfg.referenceWidth};
+    const scale=NAGWEB_SCROLL_CAMERA.viewportScale(cfg,stage.clientWidth);
+    return {width:stage.clientWidth/scale,height:stage.clientHeight/scale};
+   };
+  });
   // Micro-etapa 49: animated free-canvas objects appear as read-only anchors in the map.
   const sceneGuideRead=()=>page.evaluate(()=>{
    const map=document.querySelector('[data-camera-map]'),group=map?.querySelector('[data-camera-scene-objects]'),
@@ -1801,15 +1810,20 @@ export async function runCameraBrowserSmoke(page){
   await page.select('[data-camera-object-select]','0');
   let inspected=await inspectRead();
   assert.equal(inspected.selected,'0','Object can be selected from accessible dropdown');
-  assert.ok(inspected.xyz.includes('X 250')&&inspected.xyz.includes('Z 500'),'Inspector displays the actual element XYZ');
-  assert.ok(inspected.distance.includes('559 px'),'Inspector computes Euclidean XYZ distance to the camera');
+  const inspectorExpected=await page.evaluate(()=>{
+   const size=window.__cameraBrowserFocusSize(sec(),NAGWEB_SCROLL_CAMERA.config(sec()));
+   const x=size.width*.25;
+   return {x:Math.round(x),nextX:Math.round(x+50),distance:Math.round(Math.hypot(x,500))};
+  });
+  assert.ok(inspected.xyz.includes('X '+inspectorExpected.x)&&inspected.xyz.includes('Z 500'),'Inspector displays the actual element XYZ');
+  assert.ok(inspected.distance.includes(inspectorExpected.distance+' px'),'Inspector computes Euclidean XYZ distance to the camera');
   assert.equal(inspected.hit,'all','Map object centre can be clicked independently of its outline');
   assert.equal(inspected.active,true,'Selected object receives visible highlight');
   await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',.5));
-  await page.waitForFunction(()=>document.querySelector('[data-camera-object-xyz]')?.textContent.includes('X 300'));
+  await page.waitForFunction(x=>document.querySelector('[data-camera-object-xyz]')?.textContent.includes('X '+x),{},inspectorExpected.nextX);
   inspected=await inspectRead();
-  assert.ok(inspected.xyz.includes('X 300')&&inspected.xyz.includes('Z 550'),'Inspector follows object animated X and Z');
-  assert.ok(inspected.distance&&!inspected.distance.includes('559 px'),'Inspector distance follows the current camera and object positions');
+  assert.ok(inspected.xyz.includes('X '+inspectorExpected.nextX)&&inspected.xyz.includes('Z 550'),'Inspector follows object animated X and Z');
+  assert.ok(inspected.distance&&!inspected.distance.includes(inspectorExpected.distance+' px'),'Inspector distance follows the current camera and object positions');
   assert.equal(inspected.history,inspectBase.history,'Scrubbing and inspecting adds no undo snapshot');
   assert.equal(inspected.elements,inspectBase.elements,'Inspection does not edit scene objects');
   assert.equal(inspected.frames,inspectBase.frames,'Inspection does not edit camera keyframes');
@@ -1842,7 +1856,7 @@ export async function runCameraBrowserSmoke(page){
   await page.evaluate(()=>{sec().sdCameraOrientationMode='manual';renderPane();});
   await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',.42));
   const expectedAngle=await page.evaluate(()=>{
-   const s=sec(),cfg=NAGWEB_SCROLL_CAMERA.config(s),size={width:1000,height:1000};
+   const s=sec(),cfg=NAGWEB_SCROLL_CAMERA.config(s),size=window.__cameraBrowserFocusSize(s,cfg);
    const camera=NAGWEB_SCROLL_CAMERA.pose(cfg,.42,NAGWEB_STORY_MODEL,s.sdEase,false,undefined,size);
    const target=NAGWEB_SCROLL_CAMERA.elementTarget(cfg,'camera-target-el',.42,NAGWEB_STORY_MODEL,s.sdEase,size);
    return {camera,angle:NAGWEB_SCROLL_CAMERA.lookAngles(camera,target)};
@@ -1909,7 +1923,7 @@ export async function runCameraBrowserSmoke(page){
   const target3D=await page.evaluate(()=>{
    const s=sec(),cfg=NAGWEB_SCROLL_CAMERA.config(s);
    const stage=document.querySelector('#preview')?.contentDocument?.querySelector('.sc[data-id="camera-browser-scene"] .nw-sd-stage');
-   const size={width:stage?.clientWidth||1000,height:stage?.clientHeight||800};
+   const size=window.__cameraBrowserFocusSize(s,cfg);
    const first=NAGWEB_SCROLL_CAMERA.elementTarget(cfg,'camera-glb-look-target',0,NAGWEB_STORY_MODEL,s.sdEase,size);
    const next=NAGWEB_SCROLL_CAMERA.elementTarget(cfg,'camera-glb-look-target',1,NAGWEB_STORY_MODEL,s.sdEase,size);
    const mark=document.querySelector('[data-camera-scene-object-id="camera-glb-look-target"]');

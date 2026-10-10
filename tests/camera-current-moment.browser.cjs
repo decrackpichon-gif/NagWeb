@@ -87,6 +87,16 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub(sec().id,.5));const moved=await guideX();
   assert.ok(moved>start+1,'Object map follows Director from zero to 50%');
   assert.ok(Math.abs(retained-moved)<.001,'Preview rebuild retains the existing 50% moment');
+  await page.selectOption('[data-camera-object-select]','0');
+  const inspect=()=>page.locator('[data-camera-object-xyz]').textContent();
+  const width=await page.evaluate(()=>document.querySelector('#preview').contentDocument.querySelector('.nw-sd-stage').clientWidth);
+  assert.ok((await inspect()).includes('X '+Math.round(width*.25+50))&&(await inspect()).includes('Z 550'),'Inspector follows actual wide-stage coordinates');
+  await page.evaluate(()=>{document.querySelector('#preview').style.setProperty('width','600px','important');});
+  await page.waitForFunction(()=>document.querySelector('#preview').contentDocument.querySelector('.nw-sd-stage').clientWidth===600);
+  await page.evaluate(()=>renderPane());
+  assert.ok((await inspect()).includes('X 300')&&(await inspect()).includes('Z 550'),'Responsive inspector uses reference coordinates in narrow preview');
+  await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub(sec().id,0));
+  assert.ok((await inspect()).includes('X 250')&&(await inspect()).includes('Z 500'),'Narrow inspector follows Director zero moment');
   assert.deepEqual(errors,[]);console.log('PASS object guide: retained preview progress and explicit 0→50% Director displacement');
   console.log('PASS current moment: real editor + Director, create, pointer drag, two Undo, exact selection, no duplicate/history edit and Redo');
   console.log('PASS technical details: native visibility, collapsed height, open/close and pane persistence without authored edits');
