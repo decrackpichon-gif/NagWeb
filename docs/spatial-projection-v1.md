@@ -85,6 +85,10 @@ de sintaxis. Los fixtures, capturas y paquetes de prueba quedan en `work/`.
 
 ## Límites vigentes
 
+Actualización posterior: el recorrido acotado de crear/arrastrar/Undo/seleccionar/
+Redo pasó en el editor real. Ver [regresión del momento actual](camera-current-moment-v1.md).
+No reproduce el fallo del smoke completo ni lo da por resuelto.
+
 - El smoke completo del editor no quedó aprobado: avanzó por controles del mapa
   y arrastre de un nuevo keyframe, pero se detuvo en la selección del keyframe
   existente después de Undo. Se corrigieron consultas de conteo y visibilidad
