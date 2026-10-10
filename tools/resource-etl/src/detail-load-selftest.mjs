@@ -6,7 +6,7 @@ import { runInNewContext } from "node:vm";
 const source = await readFile(new URL("../resource-browser/app.mjs", import.meta.url), "utf8");
 const loader = source.slice(source.indexOf("async function openDetail("), source.indexOf("async function refreshIndex("));
 const redraw = source.slice(source.indexOf("async function redrawEditablePreview("), source.indexOf('el.previewReplay.addEventListener("click"'));
-const replay = source.slice(source.indexOf('el.previewReplay.addEventListener("click"'), source.indexOf('el.resetCustomize.addEventListener("click"'));
+const replay = source.slice(source.indexOf('el.previewReplay.addEventListener("click"'), source.indexOf("function updateSavedCustomizationUi()"));
 const deferred = () => {
   let resolve, reject;
   const promise = new Promise((yes, no) => { resolve = yes; reject = no; });
@@ -19,7 +19,7 @@ el.previewReplay.addEventListener = (type, handler) => { el.previewReplay[type] 
 const context = {
   el, detailRevision: 0, previewRevision: 0, previewReplayRevision: 0, selectedResource: null, selectedValues: {},
   editResourceId: null, editInitialValues: {}, rememberCategories() {},
-  synchronizeFavorites() {},
+  synchronizeFavorites() {}, updateSavedCustomizationUi() {},
   vault: { getResource(id) { const gate = deferred(); resources.set(id, gate); return gate.promise; } },
   previewDoc(resource) { const gate = deferred(); previews.set(resource.id, gate); return gate.promise; },
   renderEditableControls(resource) { rendered.push(resource.id); el.customize.hidden = false; }, updateApplyReadiness() {},
