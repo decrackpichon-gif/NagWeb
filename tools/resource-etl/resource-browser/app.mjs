@@ -518,6 +518,7 @@ function renderEditableControls(resource, { preserveGroups = false } = {}) {
       group.section.hidden = visible === 0;
       if (group.section.hidden &&
           [group.reset, group.summary].includes(focusedElement)) focusTarget.focus();
+      else if (group.reset.disabled && focusedElement === group.reset) group.summary.focus();
     }
     el.resetCustomize.disabled = changed === 0;
     updateCategoryActions();

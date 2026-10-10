@@ -1104,3 +1104,10 @@ o reproducir muestran un mensaje y mantienen los valores; un nuevo intento
 correcto recupera la vista previa. Los errores anteriores no ocultan una vista
 previa más reciente. La prueba de la función real verifica carga, ausencia,
 fallo, recuperación y conservación de valores en conjunto.
+
+## Bloque 64: foco al restaurar una categoría
+
+Al restaurar una categoría con el teclado, el foco pasa a su título cuando
+el botón queda deshabilitado. Si los filtros ocultan la categoría, vuelve
+al filtro activo. Se conservan los valores y el estado plegado de los grupos.
+La prueba del panel cubre ambos destinos junto con búsqueda y restauración.

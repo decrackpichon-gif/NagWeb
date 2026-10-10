@@ -100,7 +100,10 @@ const animationReset = sections[2].querySelector("button");
 const sizeReset = sections[1].querySelector("button");
 assert.equal(sections[0].querySelector("button").disabled, true);
 assert.equal(animationReset.disabled, false);
+animationReset.focus();
 animationReset.events.click();
+assert.equal(context.document.activeElement, sections[2].querySelector("summary"),
+  "Restoring a visible category preserves keyboard focus on its heading");
 assert.equal(values.loop, true);
 assert.equal(values.uiversePlay1, "normal");
 assert.equal(values.size, 32, "Restoring animation preserves another category's edit");
