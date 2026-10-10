@@ -464,6 +464,13 @@ try {
   report.scenarios.push({ editor: "NagWeb real", status: "passed", insert: "vector", saved: true, undoRedo: true, reload: true, export: true, mobileInsert: true, deduplicated: true, invalidSourceRejected: true });
   // Stage 52: use NagWeb's existing embed element, but never direct-inject
   // Uiverse markup in either edit view or exported website.
+  // The preceding reload replaced window, so subscribe again for this scenario.
+  await page.evaluate(() => {
+    window.resourceMessages = [];
+    window.addEventListener("message", event => {
+      if (event.data?.type === "nagweb:resource-apply") window.resourceMessages.push(event.data);
+    });
+  });
   await page.getByRole("button", { name: "Biblioteca de recursos", exact: true }).click();
   await libraryFrame.locator(`[data-resource-id="${css.id}"]`).click();
   await expect(libraryFrame.getByRole("button", { name: "Aplicar en NagWeb", exact: true })).toBeEnabled();
