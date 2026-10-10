@@ -1094,3 +1094,13 @@ inicial, muestra el marco y sus controles correctamente. Las animaciones con
 actualizaciones en vivo conservan su mecanismo de mensajes al cargar el marco.
 La prueba de la función real retiene respuestas y cubre estas carreras junto
 con las cargas de fichas del bloque anterior.
+
+## Bloque 63: carga sin datos anteriores y recuperación de vista previa
+
+Mientras carga una ficha se limpian los metadatos, etiquetas y vista previa del
+recurso anterior, y se deshabilita copiar hasta tener el recurso actual. Una
+ficha inexistente o fallida no conserva datos de otra. Los errores al ajustar
+o reproducir muestran un mensaje y mantienen los valores; un nuevo intento
+correcto recupera la vista previa. Los errores anteriores no ocultan una vista
+previa más reciente. La prueba de la función real verifica carga, ausencia,
+fallo, recuperación y conservación de valores en conjunto.

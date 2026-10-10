@@ -663,7 +663,13 @@ async function openDetail(id) {
   el.detail.showModal();
   el.detailTitle.textContent = "Cargando recurso…";
   el.detailId.textContent = id;
+  for (const field of [el.detailProvider, el.detailDescription, el.detailLicense, el.detailAuthor, el.detailControls, el.detailArtifacts]) field.textContent = "";
+  el.detailBadges.innerHTML = "";
+  el.copyId.disabled = true;
+  el.copyCode.disabled = true;
   el.preview.srcdoc = "";
+  el.preview.hidden = true;
+  el.previewNote.textContent = "Cargando vista previa…";
   el.previewReplay.hidden = true;
   el.previewFallback.hidden = false;
   el.code.textContent = "";
@@ -687,8 +693,10 @@ async function openDetail(id) {
 
   if (!resource) {
     el.detailTitle.textContent = "No encontré el recurso";
+    el.previewNote.textContent = "No hay una vista previa disponible para este recurso.";
     return;
   }
+  el.copyId.disabled = false;
 
   el.detailProvider.textContent = resource.source?.provider || "";
   el.detailTitle.textContent = resource.title || resource.name || resource.id;
@@ -847,7 +855,16 @@ async function redrawEditablePreview() {
   }
   const values = { ...selectedValues };
   const request = ++previewRevision;
-  const doc = await previewDoc(resource, values);
+  let doc;
+  try { doc = await previewDoc(resource, values); }
+  catch {
+    if (request === previewRevision && el.detail.open && selectedResource === resource) {
+      el.preview.hidden = true;
+      el.previewFallback.hidden = false;
+      el.previewNote.textContent = "No pude actualizar la vista previa. Volvé a intentar cambiar el ajuste.";
+    }
+    return;
+  }
   if (
     doc && request === previewRevision && el.detail.open && selectedResource === resource &&
     Object.keys(selectedValues).length === Object.keys(values).length &&
@@ -870,7 +887,14 @@ el.previewReplay.addEventListener("click", async () => {
   if (!resource || el.previewReplay.hidden || !el.detail.open) return;
   const values = { ...selectedValues };
   const request = ++previewRevision;
-  const doc = await previewDoc(resource, values);
+  let doc;
+  try { doc = await previewDoc(resource, values); }
+  catch {
+    if (request === previewRevision && el.detail.open && selectedResource === resource) {
+      el.previewNote.textContent = "No pude volver a reproducir la vista previa. Volvé a intentar.";
+    }
+    return;
+  }
   if (
     !doc || request !== previewRevision || selectedResource !== resource || !el.detail.open ||
     el.previewReplay.hidden ||
@@ -882,6 +906,7 @@ el.previewReplay.addEventListener("click", async () => {
   // injecting scripts into the sandboxed content or changing Apply values.
   previewReplayRevision += 1;
   el.preview.srcdoc = `${doc}\n<!-- css-preview-replay:${previewReplayRevision} -->`;
+  el.previewNote.textContent = "La vista previa volvió a empezar con tus ajustes.";
 });
 
 el.resetCustomize.addEventListener("click", () => {
