@@ -1016,3 +1016,7 @@ Chromium reproduce el cálculo incorrecto anterior con una grilla con borde y
 un ícono rotado, y verifica medidas finales de 48 px en computadora y 32 px en
 celular. Comprueba conservación de la otra vista, jerarquía y rotación,
 deshacer/rehacer y recarga. Captura: `editor-mobile-grid.png`.
+
+## Micro-etapa 55: robustez de re-edición HTML/CSS
+
+El smoke del editor real en Chromium agrega pruebas para los componentes Uiverse ya insertados: guardar sin cambios no crea historial; si el elemento cambió de posición mientras el panel estaba abierto, la sesión anterior se rechaza sin mutarlo ni agregar un paso de deshacer; si falla localStorage, no se afirma que el HTML haya sido guardado. El receptor usa mensajes de error genéricos para SVG y HTML y el editor sigue conservando el iframe aislado y el historial previo.

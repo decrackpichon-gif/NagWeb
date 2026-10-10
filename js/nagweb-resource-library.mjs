@@ -222,7 +222,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
         const persisted = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
         const savedElement = persisted?.pages?.flatMap(p => p.sections).flatMap(s => s.elements).find(e => e.id === element.id);
         if (!savedElement || JSON.stringify(savedElement) !== JSON.stringify(element)) {
-          throw new Error("El ícono está en el lienzo, pero no se pudo guardar. Revisá el almacenamiento del navegador.");
+          throw new Error("El recurso está en el lienzo, pero no se pudo guardar. Revisá el almacenamiento del navegador.");
         }
         result = buildResourceApplyResult(message, { status: "applied", message: editContext
           ? isUiverseHtml ? "Cambios guardados en el componente Uiverse seleccionado."

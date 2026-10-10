@@ -627,6 +627,66 @@ try {
   await page.reload();
   assert.equal(await page.evaluate(id=>sec().elements.find(e=>e.id===id).nwResource.values.uiversePlay1,
     insertedHtml.element.id),"4");
+  // Stage 55: real-editor HTML edit hardening. A no-op must not create undo
+  // history; a stale editing session must not mutate the selected embed;
+  // failed browser storage must never be acknowledged as saved.
+  await page.evaluate(id => {
+    selection=[id];curEl=sec().elements.findIndex(e=>e.id===id);renderPane();
+  },insertedHtml.element.id);
+  await reopenCustomization(htmlEditButton);
+  await expect(htmlSave).toBeEnabled();
+  const noOpHistory=await page.evaluate(()=>history.length);
+  await htmlSave.click();
+  await expect(editLiveLibrary.locator("[data-apply-status]"))
+    .toContainText("Cambios guardados en el componente Uiverse seleccionado");
+  assert.equal(await page.evaluate(()=>history.length),noOpHistory,
+    "Unchanged Uiverse HTML must not create a new undo entry");
+  await page.evaluate(id => {
+    const element=sec().elements.find(e=>e.id===id);
+    snapshot();element.x=(element.x||0)+11;refresh();
+  },insertedHtml.element.id);
+  const staleHistory=await page.evaluate(()=>history.length);
+  const stalePosition=await page.evaluate(id=>sec().elements.find(e=>e.id===id).x,
+    insertedHtml.element.id);
+  await htmlSave.click();
+  await expect(editLiveLibrary.locator("[data-apply-status]"))
+    .toContainText("El recurso cambió o fue eliminado");
+  assert.equal(await page.evaluate(()=>history.length),staleHistory,
+    "An externally moved HTML component must reject stale editing sessions");
+  assert.equal(await page.evaluate(id=>sec().elements.find(e=>e.id===id).x,
+    insertedHtml.element.id),stalePosition);
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  await page.locator("#btn-undo").click();
+  await page.evaluate(id => {
+    selection=[id];curEl=sec().elements.findIndex(e=>e.id===id);renderPane();
+  },insertedHtml.element.id);
+  await reopenCustomization(htmlEditButton);
+  await expect(htmlSave).toBeEnabled();
+  const storageRepetition=editLiveLibrary.getByLabel(htmlPlayControl.label,{exact:true});
+  const storageGroup=editLiveLibrary.locator("details").filter({has:storageRepetition});
+  if(!await storageGroup.evaluate(n=>n.open))await storageGroup.locator("summary").click();
+  await expect(storageRepetition).toHaveValue("4");
+  await storageRepetition.selectOption("5");
+  await page.evaluate(()=>{
+    window.stage55OriginalSetItem=Storage.prototype.setItem;
+    Storage.prototype.setItem=function(key,value){
+      if(key==="scrollcraft.proyecto.v3")
+        throw new DOMException("Almacenamiento lleno","QuotaExceededError");
+      return window.stage55OriginalSetItem.call(this,key,value);
+    };
+  });
+  await htmlSave.click();
+  await expect(editLiveLibrary.locator("[data-apply-status]"))
+    .toContainText("no se pudo guardar");
+  assert.equal(await page.evaluate(id=>{
+    const saved=JSON.parse(localStorage.getItem(STORE_KEY));
+    return saved.pages[0].sections[0].elements.find(e=>e.id===id)?.nwResource?.values?.uiversePlay1;
+  },insertedHtml.element.id),"4",
+  "A failed localStorage write cannot count as a persisted HTML change");
+  await page.evaluate(()=>{Storage.prototype.setItem=window.stage55OriginalSetItem;});
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  report.scenarios.push({editor:"NagWeb HTML/CSS re-edit robustness",status:"passed",
+    unchangedNoHistory:true,staleSessionRejected:true,storageFailureDetected:true});
   report.scenarios.push({editor:"NagWeb HTML/CSS re-edit same embed",status:"passed",
     cancel:true,sameId:true,noDuplicate:true,positionPreserved:true,
     undoRedo:true,reload:true,export:true});
