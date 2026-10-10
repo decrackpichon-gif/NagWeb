@@ -40,12 +40,16 @@ function validated(controls,values){
   }
   return result;
 }
+// Return null on unreadable or malformed storage. A failed read must never
+// silently turn a subsequent save/delete into a destructive replacement.
 function loadEntries(storage,key){
   try{
-    const raw=storage?.getItem(key)||"";
-    if(raw.length>MAX_BYTES)return [];
-    const entries=JSON.parse(raw||"[]");
-    if(!Array.isArray(entries))return [];
+    if(typeof storage?.getItem!=="function")return null;
+    const raw=storage.getItem(key);
+    if(raw===null||raw==="")return [];
+    if(typeof raw!=="string"||raw.length>MAX_BYTES)return null;
+    const entries=JSON.parse(raw);
+    if(!Array.isArray(entries))return null;
     const map=new Map();
     for(const entry of entries.slice(-MAX_RESOURCES)){
       if(Array.isArray(entry)&&entry.length===2&&validId(entry[0])&&
@@ -54,30 +58,42 @@ function loadEntries(storage,key){
       }
     }
     return [...map];
-  }catch{return [];}
+  }catch{return null;}
 }
 export function readSavedCustomization(storage,id,controls,key=SAVED_PRESETS_KEY){
   if(!validId(id))return null;
-  const entry=loadEntries(storage,key).find(item=>item[0]===id);
+  const entries=loadEntries(storage,key);
+  const entry=entries?.find(item=>item[0]===id);
   return entry?validated(controls,entry[1]):null;
 }
 export function saveSavedCustomization(storage,id,controls,values,key=SAVED_PRESETS_KEY){
   if(!validId(id)||!Array.isArray(controls)||!controls.length)return false;
-  const items=new Map(loadEntries(storage,key));
+  const existing=loadEntries(storage,key);
+  if(!existing||typeof storage?.setItem!=="function")return false;
+  const items=new Map(existing);
   items.delete(id);
   items.set(id,validated(controls,values));
+  // Stay below the same maximum that the reader accepts. Retain the latest
+  // preset and discard oldest entries first, instead of saving unreadable data.
+  const entries=[...items].slice(-MAX_RESOURCES);
+  let serialized=JSON.stringify(entries);
+  while(serialized.length>MAX_BYTES&&entries.length>1){
+    entries.shift();
+    serialized=JSON.stringify(entries);
+  }
+  if(serialized.length>MAX_BYTES)return false;
   try{
-    if(!storage?.setItem)return false;
-    storage.setItem(key,JSON.stringify([...items].slice(-MAX_RESOURCES)));
+    storage.setItem(key,serialized);
     return true;
   }catch{return false;}
 }
 export function deleteSavedCustomization(storage,id,key=SAVED_PRESETS_KEY){
   if(!validId(id))return false;
-  const items=new Map(loadEntries(storage,key));
+  const existing=loadEntries(storage,key);
+  if(!existing||typeof storage?.setItem!=="function")return false;
+  const items=new Map(existing);
   items.delete(id);
   try{
-    if(!storage?.setItem)return false;
     storage.setItem(key,JSON.stringify([...items]));
     return true;
   }catch{return false;}
