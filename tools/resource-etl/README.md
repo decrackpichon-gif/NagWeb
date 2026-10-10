@@ -1197,3 +1197,28 @@ longitud) antes de recuperarse. Se restringe a un máximo de 50 recursos y 96
 campos por recurso. Se preserva el recurso original y no hay escrituras remotas.
 Self-tests y Chromium cubren recuperación tras recarga, aislamiento por recurso,
 valores maliciosos, fallo de almacenamiento y eliminación independiente.
+
+## Micro-etapa 76: proteger ediciones mientras el editor confirma
+
+La Biblioteca conserva una copia de los valores enviados a NagWeb. Si el
+diseñador continúa modificando controles antes de recibir la confirmación,
+el aviso distingue los cambios confirmados de los ajustes todavía pendientes.
+Chromium cubre una respuesta deliberadamente demorada.
+
+## Micro-etapa 77: evitar pérdidas con almacenamiento de configuraciones dañado
+
+La lectura ilegible, bloqueada o malformada de configuraciones locales ya no se
+interpreta como una lista vacía escribible: se cancela guardar o eliminar para
+no sobrescribir otras configuraciones. Se respetan también los límites de
+tamaño de lectura al escribir, descartando primero las entradas más antiguas.
+
+## Micro-etapa 78: indicar cambios hechos después de aplicar
+
+Una confirmación exitosa del editor no implica que los nuevos ajustes estén
+guardados. La Biblioteca compara continuamente el panel con la última versión
+confirmada del recurso mientras esa ficha siga abierta, incluso después de
+recuperar configuraciones o restaurar controles. Si difieren, muestra un aviso
+de cambios sin aplicar; si se vuelve exactamente a los valores confirmados,
+recupera el mensaje de éxito. Al abrir otro recurso, el estado se reinicia.
+Chromium verifica la edición posterior, el aviso y su reversión sin enviar
+solicitudes adicionales ni desplegar Vercel.
