@@ -13,13 +13,13 @@ const deferred = () => {
   return { promise, resolve, reject };
 };
 const resources = new Map(), previews = new Map(), rendered = [];
-const el = Object.fromEntries(["customize", "customizeControls", "apply", "applyStatus", "detailTitle", "detailId", "preview", "previewReplay", "previewFallback", "code", "detailProvider", "detailDescription", "detailLicense", "detailAuthor", "detailControls", "detailArtifacts", "detailBadges", "copyId", "copyCode", "previewNote"].map(key => [key, { textContent: "", replaceChildren() {}, setAttribute() {} }]));
+const el = Object.fromEntries(["customize", "customizeControls", "apply", "applyStatus", "detailTitle", "detailId", "preview", "previewReplay", "previewFallback", "undoCustomization", "code", "detailProvider", "detailDescription", "detailLicense", "detailAuthor", "detailControls", "detailArtifacts", "detailBadges", "copyId", "copyCode", "previewNote"].map(key => [key, { textContent: "", replaceChildren() {}, setAttribute() {} }]));
 el.detail = { open: false, showModal() { this.open = true; } };
 el.previewReplay.addEventListener = (type, handler) => { el.previewReplay[type] = handler; };
 const context = {
   el, detailRevision: 0, previewRevision: 0, previewReplayRevision: 0, selectedResource: null, selectedValues: {},
   editResourceId: null, editInitialValues: {}, rememberCategories() {},
-  synchronizeFavorites() {}, updateSavedCustomizationUi() {},
+  synchronizeFavorites() {}, synchronizeConfirmedApplyNotice() {}, updateSavedCustomizationUi() {},
   vault: { getResource(id) { const gate = deferred(); resources.set(id, gate); return gate.promise; } },
   previewDoc(resource) { const gate = deferred(); previews.set(resource.id, gate); return gate.promise; },
   renderEditableControls(resource) { rendered.push(resource.id); el.customize.hidden = false; }, updateApplyReadiness() {},
@@ -40,6 +40,7 @@ assert.equal(el.detailProvider.textContent, "");
 assert.equal(el.detailBadges.innerHTML, "");
 assert.equal(el.copyId.disabled, true);
 assert.equal(el.copyCode.disabled, true);
+assert.equal(el.undoCustomization.hidden, true, "Switching resources clears transient recovery undo");
 assert.equal(el.preview.hidden, false, "The blank loading frame retains its layout");
 assert.equal(el.previewFallback.hidden, false, "Loading overlay covers the blank frame");
 await resolveResource("second");
