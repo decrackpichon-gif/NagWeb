@@ -111,6 +111,7 @@ try {
     await page.goto(`http://127.0.0.1:${server.address().port}/host`);
     const frame = page.frameLocator('iframe[title="Biblioteca de prueba"]');
     await frame.locator('[data-resource-id="smoke:icon"]').click();
+    await expect(frame.locator('[data-preview-replay]')).toBeHidden();
     await frame.locator('[data-customize]').waitFor({ state: "visible" });
     const search = frame.getByLabel("Buscar ajustes");
     const changedOnly = frame.getByLabel("Mostrar solo ajustes modificados");
@@ -169,6 +170,21 @@ try {
     await frame.getByRole("button", { name: "Cerrar", exact: true }).click();
     await frame.locator(`[data-resource-id="${css.id}"]`).click();
     await frame.locator('[data-customize]').waitFor({ state: "visible" });
+    // Stage 56: replay must restart CSS animations without scripts or touching
+    // resource customization; an SVG has no animation replay control.
+    const cssReplay = frame.locator('[data-preview-replay]');
+    await expect(cssReplay).toBeVisible();
+    await expect(frame.locator('[data-preview-note]'))
+      .toContainText("volver a reproducir las animaciones CSS");
+    const originalUiverseDoc=await frame.locator('[data-preview]').getAttribute("srcdoc");
+    await cssReplay.click();
+    const replayedUiverseDoc=await frame.locator('[data-preview]').getAttribute("srcdoc");
+    assert.notEqual(replayedUiverseDoc,originalUiverseDoc,
+      "Clicking Uiverse Replay navigates the isolated preview iframe");
+    assert.match(replayedUiverseDoc,/css-preview-replay:/);
+    assert.match(replayedUiverseDoc,/animation:spin 1s 2 alternate/,
+      "Replay preserves the current CSS and timing settings");
+    await expect(frame.frameLocator('[data-preview]').locator(".card")).toBeVisible();
     assert.equal(await search.inputValue(), "");
     assert.equal(await changedOnly.isChecked(), false);
     await expect(frame.locator('[data-preview-fallback]')).toBeHidden();

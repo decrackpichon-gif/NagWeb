@@ -1020,3 +1020,7 @@ deshacer/rehacer y recarga. Captura: `editor-mobile-grid.png`.
 ## Micro-etapa 55: robustez de re-edición HTML/CSS
 
 El smoke del editor real en Chromium agrega pruebas para los componentes Uiverse ya insertados: guardar sin cambios no crea historial; si el elemento cambió de posición mientras el panel estaba abierto, la sesión anterior se rechaza sin mutarlo ni agregar un paso de deshacer; si falla localStorage, no se afirma que el HTML haya sido guardado. El receptor usa mensajes de error genéricos para SVG y HTML y el editor sigue conservando el iframe aislado y el historial previo.
+
+## Micro-etapa 56: repetir animaciones CSS Uiverse en la vista previa
+
+Los recursos Uiverse que tienen animaciones o transiciones CSS con tiempos detectables ahora ofrecen el control **Volver a reproducir**. El botón reinicia el `iframe` sin permitir scripts, reutiliza los valores seleccionados y conserva todos los controles de personalización. No se muestra para recursos estáticos o íconos SVG, y la nota informa que los efectos de hover se activan con el cursor. Chromium comprueba que la vista previa efectivamente se recarga, sigue mostrando el CSS y no altera los ajustes.

@@ -5,6 +5,8 @@ import { defaultEditableValues } from "../src/runtime/instance.mjs";
 import { describeEditableControls } from "../src/runtime/editable-controls.mjs";
 import { groupEditableControls, countChangedControls, matchesControlSearch } from "./control-groups.mjs";
 import { htmlWithCustomStyle } from "../src/runtime/html-css-customization.mjs";
+import { inferUiverseCssTimingProps } from "../src/runtime/uiverse-timing.mjs";
+import { inferUiverseCssMultiTimingProps } from "../src/runtime/uiverse-multi-timing.mjs";
 import { buildLottieBrowserPreview } from "../src/preview/lottie-browser-preview.mjs";
 import { buildCssShakeBrowserPreview } from "../src/preview/csshake-browser-preview.mjs";
 import { buildMagicCssBrowserPreview } from "../src/preview/magiccss-browser-preview.mjs";
@@ -257,6 +259,14 @@ function isLottieLivePreview(resource) {
 function isMagicCssLivePreview(resource) {
   return resource?.source?.provider === "magic-css" &&
     resource?.runtime?.renderer === "nagweb-css-inline-effect";
+}
+
+function hasUiverseCssAnimation(resource) {
+  if (resource?.source?.provider !== "uiverse" ||
+      resource?.runtime?.renderer !== "nagweb-html-tailwind") return false;
+  const source = mainArtifact(resource)?.content || "";
+  return inferUiverseCssTimingProps(source).length > 0 ||
+    inferUiverseCssMultiTimingProps(source).length > 0;
 }
 
 function isCssShakeLivePreview(resource) {
@@ -641,7 +651,8 @@ async function openDetail(id) {
   const isMagicCss = isMagicCssLivePreview(resource);
   el.preview.setAttribute("sandbox",
     doc && (isLottie || isMagicCss || isCssShake) ? "allow-scripts" : "");
-  el.previewReplay.hidden = !doc || !(isCssShake || isMagicCss);
+  const uiverseAnimated = hasUiverseCssAnimation(resource);
+  el.previewReplay.hidden = !doc || !(isCssShake || isMagicCss || uiverseAnimated);
   if (doc) {
     el.previewFallback.hidden = true;
     el.preview.hidden = false;
@@ -652,7 +663,9 @@ async function openDetail(id) {
         ? "Compará Hover y Siempre sin reiniciar. La pausa se conserva al cambiar de modo."
         : isMagicCss
           ? "Los ajustes se actualizan sin reiniciar la vista previa; podés pausar y reanudar."
-          : "Preview segura generada desde nuestra copia persistente.";
+          : uiverseAnimated
+            ? "Podés volver a reproducir las animaciones CSS. Los efectos Hover se activan al pasar el cursor."
+            : "Preview segura generada desde nuestra copia persistente.";
   } else {
     el.preview.hidden = true;
     el.previewFallback.hidden = false;
