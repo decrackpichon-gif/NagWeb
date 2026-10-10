@@ -314,6 +314,30 @@ try {
     await frame.getByRole("button", { name: "Expandir categorías", exact: true }).click();
     await expect(frame.getByRole("button", { name: "Expandir categorías", exact: true })).toBeDisabled();
     assert.equal(await frame.locator("[data-customize] details").evaluateAll(groups => groups.every(group => group.open)), true);
+    // Stage 75: presets are explicit, browser-local and not auto-applied.
+    await setRange("Tamaño",44);
+    await frame.getByRole("button",{name:"Guardar configuración",exact:true}).click();
+    await expect(frame.locator("[data-saved-customization-status]"))
+      .toContainText("Configuración guardada");
+    assert.match(await frame.locator("body").evaluate(()=>
+      localStorage.getItem("nagweb:resource-browser:customizations:v1")) ,/"size":44/);
+    await frame.getByRole("button",{name:"Restaurar valores originales",exact:true}).click();
+    await expect(frame.getByLabel("Tamaño",{exact:true})).toHaveValue("24");
+    await frame.getByRole("button",{name:"Recuperar guardados",exact:true}).click();
+    await expect(frame.getByLabel("Tamaño",{exact:true})).toHaveValue("44");
+    await frame.getByRole("button",{name:"Cerrar",exact:true}).click();
+    const resourceChild=page.frames().find(child=>child.url().includes("/resource-browser/"));
+    await resourceChild.goto(resourceChild.url());
+    await frame.locator('[data-resource-id="smoke:icon"]').click();
+    await expect(frame.getByLabel("Tamaño",{exact:true})).toHaveValue("24");
+    await frame.getByRole("button",{name:"Recuperar guardados",exact:true}).click();
+    await expect(frame.getByLabel("Tamaño",{exact:true})).toHaveValue("44");
+    await frame.getByRole("button",{name:"Eliminar guardados",exact:true}).click();
+    await expect(frame.getByRole("button",{name:"Recuperar guardados",exact:true})).toBeDisabled();
+    await expect(frame.getByLabel("Tamaño",{exact:true})).toHaveValue("44");
+    report.scenarios.push({browser:"saved reusable customization",width,status:"passed",
+      roundTrip:true,explicitRestore:true,doesNotOverrideInitialSettings:true,
+      reload:true,deleteKeepsCurrentValues:true});
     report.scenarios.push({ width, status: "passed", applies: await page.evaluate(() => window.received.length) });
     await context.close();
   }

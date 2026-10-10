@@ -5,6 +5,7 @@ import { defaultEditableValues } from "../src/runtime/instance.mjs";
 import { createLatestSearch } from "../src/runtime/latest-search.mjs";
 import { FAVORITES_KEY, MAX_FAVORITES, getOptionalStorage, readFavorites, toggleFavorite, saveFavorites } from "../src/runtime/favorites.mjs";
 import { describeEditableControls } from "../src/runtime/editable-controls.mjs";
+import { readSavedCustomization, saveSavedCustomization, deleteSavedCustomization } from "../src/runtime/saved-customizations.mjs";
 import { groupEditableControls, countChangedControls, matchesControlSearch } from "./control-groups.mjs";
 import { htmlWithCustomStyle } from "../src/runtime/html-css-customization.mjs";
 import { inferUiverseCssTimingProps } from "../src/runtime/uiverse-timing.mjs";
@@ -33,6 +34,11 @@ const el = {
   favoriteOnly: document.querySelector("[data-favorite-only]"),
   favoriteCount: document.querySelector("[data-favorite-count]"),
   detailFavorite: document.querySelector("[data-detail-favorite]"),
+  savedCustomization: document.querySelector("[data-saved-customization]"),
+  saveCustomization: document.querySelector("[data-save-customization]"),
+  loadCustomization: document.querySelector("[data-load-customization]"),
+  deleteCustomization: document.querySelector("[data-delete-customization]"),
+  savedCustomizationStatus: document.querySelector("[data-saved-customization-status]"),
   clear: document.querySelector("[data-clear]"),
   refresh: document.querySelector("[data-refresh]"),
   resultCount: document.querySelector("[data-result-count]"),
@@ -70,6 +76,7 @@ const el = {
 
 let offset = 0;
 const favoriteStorage = getOptionalStorage();
+const presetStorage = getOptionalStorage();
 let favorites = readFavorites(favoriteStorage);
 let selectedResource = null;
 function paintFavoriteButton(button,id) {
@@ -778,6 +785,7 @@ async function openDetail(id) {
   if (resource) {
     renderEditableControls(resource);
   }
+  updateSavedCustomizationUi();
   updateApplyReadiness(resource);
 
   if (!resource) {
@@ -1044,6 +1052,51 @@ el.previewReplay.addEventListener("click", async () => {
   el.previewNote.textContent = "La vista previa volvió a empezar con tus ajustes.";
 });
 
+function updateSavedCustomizationUi() {
+  const resource = selectedResource;
+  const controls = resource ? describeEditableControls(resource) : [];
+  const visible = !!resource && controls.length > 0 && !editSession;
+  el.savedCustomization.hidden = !visible;
+  if (!visible) return;
+  const saved = readSavedCustomization(presetStorage,resource.id,controls);
+  el.loadCustomization.disabled = !saved;
+  el.deleteCustomization.disabled = !saved;
+  el.savedCustomizationStatus.textContent = saved
+    ? "Tenés una configuración guardada en este navegador. Podés recuperarla."
+    : "Todavía no guardaste una configuración para este recurso.";
+}
+el.saveCustomization.addEventListener("click", () => {
+  const resource=selectedResource;
+  if (!resource || el.savedCustomization.hidden) return;
+  const success=saveSavedCustomization(presetStorage,resource.id,
+    describeEditableControls(resource),selectedValues);
+  updateSavedCustomizationUi();
+  el.savedCustomizationStatus.textContent = success
+    ? "Configuración guardada en este navegador. El recurso original no cambió."
+    : "No pude guardar esta configuración. Revisá el almacenamiento del navegador.";
+});
+el.loadCustomization.addEventListener("click", () => {
+  const resource=selectedResource;
+  if (!resource || el.savedCustomization.hidden || el.loadCustomization.disabled) return;
+  const saved=readSavedCustomization(presetStorage,resource.id,describeEditableControls(resource));
+  if(!saved)return;
+  selectedValues={...defaultEditableValues(resource),...saved};
+  renderEditableControls(resource,{preserveGroups:true});
+  redrawEditablePreview();
+  el.savedCustomizationStatus.textContent =
+    "Configuración recuperada. Podés seguir editándola o aplicarla en NagWeb.";
+  el.loadCustomization.focus();
+});
+el.deleteCustomization.addEventListener("click", () => {
+  const resource=selectedResource;
+  if(!resource || el.savedCustomization.hidden || el.deleteCustomization.disabled)return;
+  const ok=deleteSavedCustomization(presetStorage,resource.id);
+  updateSavedCustomizationUi();
+  el.savedCustomizationStatus.textContent=ok
+    ? "Configuración guardada eliminada. Los ajustes actuales no cambiaron."
+    : "No pude eliminar la configuración guardada.";
+  if(ok)el.saveCustomization.focus();
+});
 el.resetCustomize.addEventListener("click", () => {
   if (!selectedResource || el.customize.hidden) return;
 

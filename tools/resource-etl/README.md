@@ -1183,3 +1183,17 @@ favoritos. El buscador consulta el índice liviano; no descarga toda la
 biblioteca para filtrar. Si el navegador impide el guardado, se informa.
 Los controles usan `aria-pressed` y no anidan botones. Pruebas unitarias
 y Chromium verifican persistencia tras recarga, filtros y marcado.
+
+## Micro-etapa 75: guardar y recuperar una personalización por recurso
+
+Se agregó una configuración local reutilizable para cada recurso de la biblioteca.
+**Guardar configuración** conserva ajustes compatibles en el almacenamiento del
+navegador, **Recuperar guardados** los aplica expresamente al panel y su preview,
+y **Eliminar guardados** quita esa copia sin alterar el lienzo ni los valores
+actuales. No se aplica automáticamente al abrir la ficha y no se muestra durante
+la edición de un elemento ya insertado, para evitar sobrescribirlo.
+Los valores se revalidan contra los controles actuales (tipo, límite, opciones y
+longitud) antes de recuperarse. Se restringe a un máximo de 50 recursos y 96
+campos por recurso. Se preserva el recurso original y no hay escrituras remotas.
+Self-tests y Chromium cubren recuperación tras recarga, aislamiento por recurso,
+valores maliciosos, fallo de almacenamiento y eliminación independiente.

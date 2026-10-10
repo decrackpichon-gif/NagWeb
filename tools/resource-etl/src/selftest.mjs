@@ -38,6 +38,8 @@ import {
   defaultEditableValues
 } from "./runtime/instance.mjs";
 import { buildInsertDescriptor } from "./runtime/insert-adapters.mjs";
+import { SAVED_PRESETS_KEY, readSavedCustomization, saveSavedCustomization,
+  deleteSavedCustomization } from "./runtime/saved-customizations.mjs";
 import { describeCssEditableControls, describeEditableControls } from "./runtime/editable-controls.mjs";
 import { htmlCssPropertyStyle } from "./runtime/html-css-customization.mjs";
 import {
@@ -2760,3 +2762,50 @@ assert.deepEqual(importedPlaceholders.editableProps
   .filter(p=>p.id.startsWith("uiverseHint")).map(p=>p.id),
   placeholderProps.map(p=>p.id),"New imports include placeholder controls");
 assert.equal(placeholderResource.artifacts[0].content,placeholderHtml);
+
+
+// Stage 75: browser-local preset round-trip and strict validation.
+const storeData=new Map();
+const store={getItem:k=>storeData.get(k)||null,setItem:(k,v)=>storeData.set(k,v)};
+const presetControls=[
+  {id:"size",kind:"range",min:16,max:64,step:1,defaultValue:24},
+  {id:"stroke",kind:"color",defaultValue:"#112233"},
+  {id:"loop",kind:"toggle",defaultValue:true},
+  {id:"variant",kind:"select",options:[{value:"a"},{value:"b"}],defaultValue:"a"},
+  {id:"title",kind:"text",maxLength:40,defaultValue:"Original"}
+];
+assert.equal(readSavedCustomization(store,"smoke:icon",presetControls),null);
+assert.equal(saveSavedCustomization(store,"smoke:icon",presetControls,{
+  size:40,stroke:"#ABCDEF",loop:false,variant:"b",title:"Versión guardada",
+  forged:"unsafe"
+}),true);
+assert.deepEqual(readSavedCustomization(store,"smoke:icon",presetControls),{
+  size:40,stroke:"#ABCDEF",loop:false,variant:"b",title:"Versión guardada"
+},"Saved presets retain only recognized, typed editable properties");
+assert.equal(saveSavedCustomization(store,"smoke:other",presetControls,{size:36}),true);
+assert.deepEqual(readSavedCustomization(store,"smoke:icon",presetControls).size,40,
+  "Saving another resource cannot overwrite a first preset");
+assert.equal(saveSavedCustomization(store,"smoke:icon",presetControls,{
+  size:999,stroke:"red;background:url(https://host)",loop:"true",
+  variant:"<script>",title:"\u0000invalid"
+}),true);
+assert.deepEqual(readSavedCustomization(store,"smoke:icon",presetControls),{},
+  "Invalid or injected stored values never become editable CSS or code");
+storeData.set(SAVED_PRESETS_KEY,JSON.stringify([["smoke:icon",{
+  size:48,stroke:"#123456",forged:"evil",title:"Saved"
+}]]));
+assert.deepEqual(readSavedCustomization(store,"smoke:icon",presetControls),{
+  size:48,stroke:"#123456",title:"Saved"
+},"Legacy or manipulated storage is always filtered against the live controls");
+assert.deepEqual(readSavedCustomization(store,"smoke:icon",
+  presetControls.filter(p=>p.id!=="stroke")),{size:48,title:"Saved"},
+  "Controls removed from current resource versions cannot be restored");
+assert.equal(deleteSavedCustomization(store,"smoke:icon"),true);
+assert.equal(readSavedCustomization(store,"smoke:icon",presetControls),null);
+assert.deepEqual(readSavedCustomization(store,"smoke:other",presetControls),{size:36});
+assert.equal(saveSavedCustomization({
+  getItem:store.getItem,setItem:()=>{throw new Error("storage blocked")}
+},"smoke:icon",presetControls,{size:40}),false,
+"Blocked local storage cannot falsely report a successful save");
+assert.equal(readSavedCustomization({getItem:()=>{throw Error("blocked")}},
+  "smoke:icon",presetControls),null);

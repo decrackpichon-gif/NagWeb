@@ -11,6 +11,7 @@ const PUBLIC_MODULES = Object.freeze([
   "runtime/persistent-vault-client.mjs",
   "runtime/latest-search.mjs",
   "runtime/favorites.mjs",
+  "runtime/saved-customizations.mjs",
   "runtime/instance.mjs",
   "runtime/editable-controls.mjs",
   "runtime/html-css-customization.mjs",

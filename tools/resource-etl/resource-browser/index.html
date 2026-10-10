@@ -113,6 +113,15 @@
         <div class="customize" data-customize hidden>
           <strong data-customize-title>Personalizar recurso</strong>
           <div data-customize-controls></div>
+          <div class="saved-customization" data-saved-customization hidden>
+            <strong>Mis ajustes guardados</strong>
+            <p data-saved-customization-status role="status"></p>
+            <div class="saved-customization-actions">
+              <button type="button" class="secondary" data-save-customization>Guardar configuración</button>
+              <button type="button" class="secondary" data-load-customization disabled>Recuperar guardados</button>
+              <button type="button" class="secondary" data-delete-customization disabled>Eliminar guardados</button>
+            </div>
+          </div>
           <p>Los ajustes se conservan al insertar. Se muestran en la vista previa cuando el formato lo permite.</p>
           <button type="button" class="secondary reset-control" data-reset-customize>Restaurar valores originales</button>
         </div>
