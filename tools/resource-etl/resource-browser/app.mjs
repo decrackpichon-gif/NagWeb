@@ -343,7 +343,7 @@ async function previewDoc(resource, values = {}) {
   if (renderer === "nagweb-html-tailwind" && provider !== "hyperui") {
     const artifact = mainArtifact(resource);
     if (!artifact?.content) return null;
-    return `<!doctype html><meta name="viewport" content="width=device-width"><style>html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#f4f5f7}.root{display:grid;place-items:center;min-width:100%;min-height:100%;}</style><div class="root" style="${cssVarStyle(resource, values)}">${htmlWithCustomStyle(resource, values, artifact.content)}</div>`;
+    return `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{height:100%;margin:0;width:100%}body{display:grid;grid-template-columns:minmax(0,1fr);place-items:center;background:#f4f5f7}.root{display:grid;grid-template-columns:minmax(0,1fr);place-items:center;width:100%;min-width:0;min-height:100%;box-sizing:border-box}.root>:not(style),.root>[data-nagweb-custom-style]>:not(style){min-inline-size:0;max-inline-size:100%;box-sizing:border-box}</style><div class="root" style="${cssVarStyle(resource, values)}">${htmlWithCustomStyle(resource, values, artifact.content)}</div>`;
   }
 
   if (renderer === "nagweb-css-inline-effect") {

@@ -1260,3 +1260,17 @@ reinicia sus animaciones. La prueba de Chromium recorre todos los anchos
 en escritorio y en pantallas pequeñas y verifica que el srcdoc permanece igual.
 La previsualización simula el ancho del contenedor, no reemplaza probar el
 componente insertado en las disposiciones reales de NagWeb.
+
+## Micro-etapa 81: ancho seguro en componentes Uiverse HTML/CSS
+
+El iframe que NagWeb utiliza al insertar, recargar y exportar componentes
+Uiverse declara ahora su viewport móvil real y utiliza una grilla con
+columnas que pueden reducirse por debajo del tamaño intrínseco del
+contenido. El elemento HTML de primer nivel se limita al ancho real del
+iframe, sin mutar el código fuente ni las propiedades CSS de los recursos.
+Los componentes que deliberadamente contienen interiores grandes pueden
+seguir mostrando desplazamiento interno; no se promete compatibilidad
+responsive universal. La vista previa utiliza una contención equivalente
+para no mostrar un resultado engañoso. Chromium comprueba un botón de
+ancho fijo dentro de un marco muy angosto, lo devuelve a su ancho natural
+y verifica que el sandbox continúa sin privilegios de script ni origen.

@@ -78,8 +78,14 @@ export function prepareUiverseSandboxHtml(envelope, {
   const srcdoc = '<!doctype html><html><head><meta charset="utf-8">' +
     '<meta http-equiv="Content-Security-Policy" content="' + POLICY + '">' +
     '<meta name="referrer" content="no-referrer">' +
-    '<style>html,body{margin:0;min-height:100%;}body{display:grid;place-items:center;' +
-    'overflow:auto;background:transparent;}</style></head><body>' + html +
+    '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+    // Constrain the outermost box without rewriting third-party style rules.
+    // Inner intentionally oversized designs can still scroll in this sandbox.
+    '<style>html,body{margin:0;min-height:100%;width:100%;}' +
+    'body{display:grid;grid-template-columns:minmax(0,1fr);place-items:center;' +
+    'overflow:auto;background:transparent;}' +
+    'body>:not(style){min-inline-size:0;max-inline-size:100%;box-sizing:border-box;}' +
+    '</style></head><body>' + html +
     '</body></html>';
   return { srcdoc, title: safeTitle, policy: POLICY };
 }

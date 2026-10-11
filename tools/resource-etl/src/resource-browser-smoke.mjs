@@ -514,7 +514,18 @@ try {
   const isolatedCard = page.frameLocator('iframe[data-html-stage-preview]').locator(".card");
   await expect(isolatedCard).toBeVisible();
   await expect(isolatedCard).toHaveCSS("background-color", "rgb(18, 52, 86)");
-  await page.locator('iframe[data-html-stage-preview]').evaluate(node => node.remove());
+  // Stage 81: a fixed-width third-party component should fit the frame when
+  // the designer places it in a much narrower responsive slot.
+  const sandboxFrame=page.locator('iframe[data-html-stage-preview]');
+  const sandboxSource=await sandboxFrame.getAttribute("srcdoc");
+  assert.match(sandboxSource,/name="viewport" content="width=device-width,initial-scale=1"/);
+  await sandboxFrame.evaluate(node=>{node.style.width="56px";});
+  await expect(isolatedCard).toHaveCSS("width","56px");
+  await sandboxFrame.evaluate(node=>{node.style.width="180px";});
+  await expect(isolatedCard).toHaveCSS("width","80px");
+  assert.equal(await sandboxFrame.getAttribute("sandbox"),"",
+    "Responsive behavior must not weaken the iframe sandbox");
+  await sandboxFrame.evaluate(node => node.remove());
   report.scenarios.push({ editor:"Uiverse HTML/CSS isolated rendering",status:"passed",
     liveStyles:true,opaqueOrigin:true,scriptsBlocked:true,externalAssetsBlocked:true });
   await page.getByRole("button", { name: "Biblioteca de recursos", exact: true }).click();
