@@ -520,7 +520,13 @@ try {
   const sandboxSource=await sandboxFrame.getAttribute("srcdoc");
   assert.match(sandboxSource,/name="viewport" content="width=device-width,initial-scale=1"/);
   await sandboxFrame.evaluate(node=>{node.style.width="56px";});
-  await expect(isolatedCard).toHaveCSS("width","56px");
+  // Scrollbar width varies between OS/browser environments. Compare against
+  // the actual narrow slot instead of requiring an exact CSS pixel count.
+  await expect.poll(() => isolatedCard.evaluate(node =>
+    node.getBoundingClientRect().width)).toBeLessThan(80);
+  const narrowCardWidth=await isolatedCard.evaluate(node=>node.getBoundingClientRect().width);
+  assert.ok(narrowCardWidth>0 && narrowCardWidth<=56,
+    "The card must fit the narrow sandbox slot, scrollbar included");
   await sandboxFrame.evaluate(node=>{node.style.width="180px";});
   await expect(isolatedCard).toHaveCSS("width","80px");
   assert.equal(await sandboxFrame.getAttribute("sandbox"),"",
