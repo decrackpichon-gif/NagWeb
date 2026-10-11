@@ -88,8 +88,19 @@
 
     <div class="detail-layout">
       <section class="preview-panel">
+        <div class="preview-width-controls">
+          <label for="preview-width-mode">Ancho de prueba</label>
+          <select id="preview-width-mode" data-preview-width>
+            <option value="full">Espacio disponible</option>
+            <option value="320">Celular (320 px)</option>
+            <option value="560">Tablet (560 px)</option>
+          </select>
+          <output data-preview-width-actual aria-live="polite"></output>
+        </div>
         <div class="preview-frame">
-          <iframe data-preview title="Vista previa del recurso" sandbox></iframe>
+          <div class="preview-stage" data-preview-stage>
+            <iframe data-preview title="Vista previa del recurso" sandbox></iframe>
+          </div>
           <div class="preview-fallback" data-preview-fallback hidden>
             <strong>Preview visual no disponible en este modo</strong>
             <span>El código igualmente está guardado en nuestro Vault.</span>

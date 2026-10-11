@@ -1248,3 +1248,15 @@ oculta al editar otro control, abrir otra ficha o deshacer, para no ofrecer
 una reversión engañosa de cambios hechos después. Si los ajustes ya coinciden,
 la recuperación no modifica el estado. Chromium cubre recuperar, deshacer,
 volver a recuperar y editar después.
+
+## Micro-etapa 80: previsualización a ancho de celular y tablet
+
+La ficha visual ahora permite probar el componente en el ancho disponible,
+un marco de celular de hasta 320 px y otro de tablet de hasta 560 px.
+El ancho se limita al espacio realmente disponible y se muestra el valor
+renderizado, sin confundir el tamaño nominal con el real. Cambiar el marco
+no modifica el código, las propiedades, el ancho del elemento insertado ni
+reinicia sus animaciones. La prueba de Chromium recorre todos los anchos
+en escritorio y en pantallas pequeñas y verifica que el srcdoc permanece igual.
+La previsualización simula el ancho del contenedor, no reemplaza probar el
+componente insertado en las disposiciones reales de NagWeb.

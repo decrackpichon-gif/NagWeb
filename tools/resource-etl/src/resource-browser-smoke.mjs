@@ -279,6 +279,25 @@ try {
     await expect(frame.locator('[data-preview-note]'))
       .toContainText("volver a reproducir las animaciones CSS");
     const originalUiverseDoc=await frame.locator('[data-preview]').getAttribute("srcdoc");
+    // Stage 80: the designer can inspect responsive widths without changing
+    // the HTML source, its customization or the running CSS animation.
+    const viewportChoice=frame.getByLabel("Ancho de prueba",{exact:true});
+    const previewStage=frame.locator("[data-preview-stage]");
+    await viewportChoice.selectOption("320");
+    const narrowWidth=await previewStage.evaluate(node=>node.getBoundingClientRect().width);
+    assert.ok(narrowWidth>0 && narrowWidth<=321,
+      "Mobile viewport must fit its panel without overflowing");
+    await expect(frame.locator("[data-preview-width-actual]")).toContainText("px reales");
+    assert.equal(await frame.locator("[data-preview]").getAttribute("srcdoc"),originalUiverseDoc,
+      "Resizing preview must not reload Uiverse animation");
+    await viewportChoice.selectOption("560");
+    const tabletWidth=await previewStage.evaluate(node=>node.getBoundingClientRect().width);
+    assert.ok(tabletWidth>=narrowWidth && tabletWidth<=561);
+    assert.equal(await frame.locator("[data-preview]").getAttribute("srcdoc"),originalUiverseDoc);
+    await viewportChoice.selectOption("full");
+    assert.equal(await frame.locator("[data-preview]").getAttribute("srcdoc"),originalUiverseDoc);
+    report.scenarios.push({browser:"responsive resource preview",width,status:"passed",
+      narrowWidth,tabletWidth,sourceUnchanged:true,animationNotRestarted:true});
     await cssReplay.click();
     const replayedUiverseDoc=await frame.locator('[data-preview]').getAttribute("srcdoc");
     assert.notEqual(replayedUiverseDoc,originalUiverseDoc,

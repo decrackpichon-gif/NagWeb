@@ -60,6 +60,9 @@ const el = {
   detailControls: document.querySelector("[data-detail-controls]"),
   detailArtifacts: document.querySelector("[data-detail-artifacts]"),
   preview: document.querySelector("[data-preview]"),
+  previewStage: document.querySelector("[data-preview-stage]"),
+  previewWidth: document.querySelector("[data-preview-width]"),
+  previewWidthActual: document.querySelector("[data-preview-width-actual]"),
   previewFallback: document.querySelector("[data-preview-fallback]"),
   previewNote: document.querySelector("[data-preview-note]"),
   previewReplay: document.querySelector("[data-preview-replay]"),
@@ -411,6 +414,22 @@ function updateCssLivePreview(resource) {
   el.preview.contentWindow?.postMessage(message, "*");
 }
 
+// Changing the visible viewport does not reload the resource, restart its
+// animation, change customization values or affect the inserted canvas item.
+function updatePreviewViewport() {
+  const choice = el.previewWidth.value;
+  el.previewStage.style.width = choice === "full" ? "100%" : `min(100%, ${Number(choice)}px)`;
+  updatePreviewWidthLabel();
+}
+function updatePreviewWidthLabel() {
+  const actual = Math.round(el.previewStage.getBoundingClientRect().width);
+  el.previewWidthActual.textContent = actual > 0 ? `${actual} px reales` : "";
+}
+el.previewWidth.addEventListener("change", updatePreviewViewport);
+if (typeof ResizeObserver !== "undefined") {
+  new ResizeObserver(updatePreviewWidthLabel).observe(el.previewStage);
+}
+updatePreviewViewport();
 el.preview.addEventListener("load", () => {
   updateCssLivePreview(selectedResource);
 });
