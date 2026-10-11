@@ -23,5 +23,23 @@ for(const p of [.06,.93]){const tiles=pose(p).flatMap(c=>c.instances).sort((a,b)
 assert.ok(pose(.51).some(c=>c.instances.length>1));assert.ok(pose(.25).flatMap(c=>c.instances).some(t=>t.alpha>0&&t.alpha<1));
 for(const p of [.04,.13,.51,.94]){const a=pose(p,{frameRatio:'auto'}),b=pose(p,{frameRatio:'auto'},18,2560,1440);for(let i=0;i<a.length;i++)for(let j=0;j<a[i].instances.length;j++){const x=a[i].instances[j],y=b[i].instances[j];near(y.center.x,x.center.x*2);near(y.center.y,x.center.y*2);near(y.cardScale,x.cardScale);near(y.alpha,x.alpha);}}
 for(const easeBezier of ['0.2,-100000,0.8,100000','0.2,100000,0.8,-100000','Infinity,0,0,1','bad'])for(const p of [.24,.25,.26,.51,.75,.78]){const tiles=pose(p,{easeBezier}).flatMap(c=>c.instances);assert.ok(tiles.length<=8192);for(const t of tiles)assert.ok(t.polygon.every(p=>Number.isFinite(p.x)&&Number.isFinite(p.y)));}
+// User-directed Fan Shuffle source assignment; the default is unchanged.
+const orderedCfg=m.config({...cfg,fanDistribution:'ordered',fanHero:4,fanStart:5});
+assert.equal(orderedCfg.fanDistribution,'ordered');assert.equal(orderedCfg.fanHero,4);assert.equal(orderedCfg.fanStart,5);
+assert.equal(m.config({...cfg,fanDistribution:'invalid',fanHero:Infinity,fanStart:'bad'}).fanDistribution,'original');
+assert.equal(m.config({...cfg,fanHero:-2,fanStart:100}).fanHero,1);
+assert.equal(m.config({...cfg,fanHero:-2,fanStart:100}).fanStart,30);
+for(const [width,height] of [[1280,720],[390,844]]){
+ const deck=m.layout(width,height,orderedCfg,.06,18,1.6).flatMap(c=>c.instances).sort((a,b)=>a.depth-b.depth);
+ assert.equal(deck.at(-1).source,3,'Chosen hero opens fan');
+ const close=m.layout(width,height,orderedCfg,.93,18,1.6).flatMap(c=>c.instances).sort((a,b)=>a.depth-b.depth);
+ assert.equal(close.at(-1).source,3,'Chosen hero closes fan');
+ const wall=m.layout(width,height,orderedCfg,133/529,18,1.6).flatMap(c=>c.instances);
+ assert.equal(wall.find(t=>t.stage==='wall'&&t.row===0&&t.column===0)?.source,3,'Hero source at wall center');
+ assert.equal(wall.find(t=>t.stage==='wall'&&t.row===0&&t.column===1)?.source,5,'Ordered wall follows image list');
+ const shuffled=m.layout(width,height,{...cfg,fanHero:4},133/529,18,1.6).flatMap(c=>c.instances);
+ assert.equal(shuffled.find(t=>t.stage==='wall'&&t.row===0&&t.column===0)?.source,3,'Hero in original arrangement');
+}
+assert.deepEqual(plain(m.layout(1280,720,orderedCfg,.317,18,1.6)),plain(scope.window.NAGWEB_CREATE_STREAM_MODEL().layout(1280,720,orderedCfg,.317,18,1.6)));
 const scroll={start:20,end:80,turns:3};assert.equal(m.phase(.5,{...cfg,...scroll},true),1.5);assert.deepEqual(plain(m.layout(390,844,{...cfg,...scroll},.1,18,1.6,true)),plain(m.layout(390,844,{...cfg,...scroll},.9,18,1.6,true)));assert.deepEqual(plain(scope.window.NAGWEB_CREATE_STREAM_MODEL().layout(1280,720,cfg,.317,18,1.6)),plain(pose(.317)));
 console.log('Fan Shuffle: independent HAR oracle ('+comparisons+' planes), opening/closing fans and four-row wall clock, seeded modulo sources/hero closure, 12 easings/custom curve, scaled corners/stable textures/inverse picking, 3–30 sources/extremes/bounded custom curves/mobile/scroll/exported factory OK');
