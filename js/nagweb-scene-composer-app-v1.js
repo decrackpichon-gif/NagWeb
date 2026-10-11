@@ -4,8 +4,40 @@ var stage=q('stage'),canvas=q('characterCanvas'),leader=q('leader'),field=null,r
 var base=S.createScene({character:{size:360,preset:'character',influenceRadius:170},elements:[{id:'scene-text-1',type:'text',name:'Título',x:85,y:120,width:430,height:150,content:'LA ESCENA\nRESPONDE',style:{fontSize:62,color:'#fff'}},{id:'scene-button-1',type:'button',name:'Botón',x:920,y:625,content:'Explorar'},{id:'scene-shape-1',type:'shape',name:'Forma',x:820,y:145,width:150,height:150,style:{background:'#ff6a4d',borderRadius:999}}]});
 var follower=E.createFollower(leader,{area:stage,preset:'character',renderMode:'none',distanceFromPointer:20,rotateToTarget:true,idle:{enabled:false}});
 function stat(t){q('status').textContent=t}
-function rebuild(){if(field){field.destroy();field=null}if(!renderer)return;field=I.createField({source:()=>({points:renderer.spine}),targets:stage.querySelectorAll('.item[data-reactive="1"]'),radius:view.scene.character.influenceRadius,strength:view.scene.character.influenceStrength,maxPush:88,maxRotate:13,maxScale:.12,spring:.08,damping:.84,sweptBody:true});api.field=field}
-var view=V.create({model:S,stage:stage,layers:q('layers'),canvas:canvas,scene:base,beforeRender:()=>{if(field){field.destroy();field=null}},afterRender:(scene,id)=>{fill(scene,id);q('sceneJson').value=S.serialize(scene);rebuild();stat('V4-C.1 · '+scene.elements.length+' elementos · '+stage.querySelectorAll('.item[data-reactive="1"]').length+' reactivos')},onDragStart:()=>{if(field){field.destroy();field=null}},onDragMove:(scene,id)=>{if(view.selected===id){q('x').value=scene.elements.find(e=>e.id===id).x;q('y').value=scene.elements.find(e=>e.id===id).y}}});
+function syncField(scene){
+  if(!renderer){
+    if(field){field.destroy();field=null;}
+    if(api)api.field=null;
+    return;
+  }
+  var nodes=stage.querySelectorAll('.item[data-reactive="1"]');
+  if(!field){
+    field=I.createField({source:()=>({points:renderer.spine}),targets:nodes,radius:scene.character.influenceRadius,strength:scene.character.influenceStrength,maxPush:88,maxRotate:13,maxScale:.12,spring:.08,damping:.84,sweptBody:true});
+  }else{
+    field.setTargets(nodes);
+    var options=field.options;
+    if(options.radius!==scene.character.influenceRadius||options.strength!==scene.character.influenceStrength){
+      field.setOptions({radius:scene.character.influenceRadius,strength:scene.character.influenceStrength});
+    }
+  }
+  if(api)api.field=field;
+}
+var view=V.create({
+  model:S,stage:stage,layers:q('layers'),canvas:canvas,scene:base,
+  afterRender:(scene,id)=>{
+    fill(scene,id);
+    q('sceneJson').value=S.serialize(scene);
+    syncField(scene);
+    stat('V4-C.1 · '+scene.elements.length+' elementos · '+stage.querySelectorAll('.item[data-reactive="1"]').length+' reactivos');
+  },
+  onDragMove:(scene,id,node)=>{
+    if(field&&node)field.measure(node);
+    if(view.selected===id){
+      var element=scene.elements.find(e=>e.id===id);
+      if(element){q('x').value=element.x;q('y').value=element.y;}
+    }
+  }
+});
 var ids=['name','content','x','y','width','height','rotation','elementScale','zIndex','opacity','color','background','fontSize','borderRadius','reacts','weight','radiusScale','move','reactRotate','reactScale','returnSpeed'],ui={};ids.forEach(id=>ui[id]=q(id));
 function fill(scene,id){var el=scene.elements.find(e=>e.id===id);q('editor').classList.toggle('hidden',!el);q('nothing').classList.toggle('hidden',!!el);if(!el)return;ui.name.value=el.name;ui.content.value=el.content;ui.x.value=el.x;ui.y.value=el.y;ui.width.value=el.width;ui.height.value=el.height;ui.rotation.value=el.rotation;ui.elementScale.value=el.scale;ui.zIndex.value=el.zIndex;ui.opacity.value=el.opacity;ui.color.value=el.style.color;ui.background.value=el.style.background;ui.fontSize.value=el.style.fontSize;ui.borderRadius.value=el.style.borderRadius;ui.reacts.checked=el.interaction.enabled;ui.weight.value=el.interaction.weight;ui.radiusScale.value=el.interaction.radiusScale;ui.move.value=el.interaction.move;ui.reactRotate.value=el.interaction.rotate;ui.reactScale.value=el.interaction.scale;ui.returnSpeed.value=el.interaction.returnSpeed;q('contentField').classList.toggle('hidden',['image','shape','background'].includes(el.type));q('imageField').classList.toggle('hidden',el.type!=='image')}
 function patch(){var id=view.selected;if(!id)return;view.update(id,{name:ui.name.value,content:ui.content.value,x:+ui.x.value,y:+ui.y.value,width:+ui.width.value,height:+ui.height.value,rotation:+ui.rotation.value,scale:+ui.elementScale.value,zIndex:+ui.zIndex.value,opacity:+ui.opacity.value,style:{color:ui.color.value,background:ui.background.value,fontSize:+ui.fontSize.value,borderRadius:+ui.borderRadius.value},interaction:{enabled:ui.reacts.checked,weight:+ui.weight.value,radiusScale:+ui.radiusScale.value,move:+ui.move.value,rotate:+ui.reactRotate.value,scale:+ui.reactScale.value,returnSpeed:+ui.returnSpeed.value}})}
@@ -17,7 +49,7 @@ q('exportScene').onclick=()=>q('sceneJson').value=S.serialize(view.scene);q('app
 function syncChar(){q('characterSize').value=view.scene.character.size;q('characterPreset').value=view.scene.character.preset;q('globalRadius').value=view.scene.character.influenceRadius}
 q('characterSize').oninput=function(){view.setScene(S.setCharacter(view.scene,{size:+this.value}));if(renderer)renderer.setOptions({length:+this.value})};
 q('characterPreset').onchange=function(){view.setScene(S.setCharacter(view.scene,{preset:this.value}));if(renderer)renderer.setOptions({adaptivePreset:this.value})};
-q('globalRadius').oninput=function(){view.setScene(S.setCharacter(view.scene,{influenceRadius:+this.value}));if(field)field.setOptions({radius:+this.value})};
+q('globalRadius').oninput=function(){view.setScene(S.setCharacter(view.scene,{influenceRadius:+this.value}))};
 var fallback='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="360" height="620"><ellipse cx="180" cy="92" rx="58" ry="72" fill="#ffd07a"/><path d="M122 84q58-88 116 0v22H122z" fill="#f6f0e7"/><path d="M102 176q78-52 156 0l34 185q-24 84-112 90-88-6-112-90z" fill="#d93118"/><path d="M145 178q35 44 70 0l16 262h-102z" fill="#ef4a2d"/></svg>');
 async function prep(){stat('Analizando personaje…');var an=await A.analyzeImage(src,{maxDimension:512}),p=A.createProfile(an,{leadEnd:'right',cropPadding:.015}),prepared=await V3.prepareAsset(src,an,{profile:p,paddingRatio:.015});if(renderer)renderer.destroy();renderer=V4.createRenderer({leader:follower,canvas:canvas,area:stage,image:prepared.canvas,length:view.scene.character.size,adaptivePreset:view.scene.character.preset,antiFold:true});api.renderer=renderer;view.render()}
 q('characterFile').onchange=function(){var f=this.files&&this.files[0];if(!f)return;if(srcUrl)URL.revokeObjectURL(srcUrl);srcUrl=URL.createObjectURL(f);src.onload=()=>prep().catch(e=>stat('ERROR · '+e.message));src.src=srcUrl};

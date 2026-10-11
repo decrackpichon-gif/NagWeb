@@ -630,3 +630,11 @@ Cobertura actual:
 - screenshot automático.
 
 El Composer sigue siendo un laboratorio experimental y no se integra todavía al editor principal.
+
+## Scene Composer V1.1 · reconciliación incremental
+
+El laboratorio conserva ahora los nodos de escena por ID entre ediciones y selecciones. En lugar de destruir y recrear el campo de influencia con cada cambio de inspector, se conserva la instancia y su suscripción de frames. `setTargets()` reconcilia los objetos por referencia DOM, actualiza propiedades de reacción sin borrar la velocidad/posición del resorte en targets retenidos y restaura exclusivamente los objetos eliminados o desactivados.
+
+Las mediciones geométricas se limitan a targets nuevos o cuyo cuadro cambió; el arrastre mide el target desplazado, y `ResizeObserver` conserva la cobertura global de redimensionamiento. El cambio de radio/intensidad global actualiza opciones sobre el campo existente. Se mantiene la separación entre V3 estable y V4-C.1 experimental, sin integración al editor principal.
+
+El browser smoke comprueba identidad estable del campo y del nodo tras selección, edición de reacción, alta y desactivación de targets. La comparación visual V3/V4-C.1 con personajes reales continúa pendiente.

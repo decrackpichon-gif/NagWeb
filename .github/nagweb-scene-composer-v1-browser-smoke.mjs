@@ -12,9 +12,35 @@ try{
  let state=await page.evaluate(()=>({scene:NAGWEB_SCENE_COMPOSER.version,influence:NAGWEB_INTERACTION_INFLUENCE.version,v4:NAGWEB_ORGANIC_ADAPTIVE_CURVE.version,count:__NAGWEB_SCENE_COMPOSER__.scene.elements.length,targets:__NAGWEB_SCENE_COMPOSER__.field.targetCount}));
  assert.equal(state.scene,'1.0.0-alpha.1');assert.equal(state.influence,'1.7.0');assert.equal(state.v4,'4.3.1-alpha.1');assert.equal(state.count,3);assert.equal(state.targets,3);
 
+ // Editing/selecting must retain both the target DOM node and the active field instance.
+ let persistent=await page.evaluate(()=>{
+   const api=window.__NAGWEB_SCENE_COMPOSER__;
+   const node=document.querySelector('[data-scene-id="scene-text-1"]');
+   window.__composerTest={field:api.field,node};
+   node.style.translate='13px 7px';
+   api.view.setSelected('scene-text-1');
+   return {field:window.__composerTest.field===api.field,node:window.__composerTest.node===document.querySelector('[data-scene-id="scene-text-1"]'),translate:node.style.translate};
+ });
+ assert.equal(persistent.field,true,'select must keep the influence field instance');
+ assert.equal(persistent.node,true,'select must keep the target node');
+ assert.equal(persistent.translate,'13px 7px','select must not reset inline motion');
+
+ await page.$eval('#weight',el=>{el.value='1.5';el.dispatchEvent(new Event('input',{bubbles:true}));});
+ persistent=await page.evaluate(()=>{
+   const api=window.__NAGWEB_SCENE_COMPOSER__;
+   return {field:window.__composerTest.field===api.field,node:window.__composerTest.node===document.querySelector('[data-scene-id="scene-text-1"]'),weight:api.field.getTargetWeight('scene-text-1')};
+ });
+ assert.equal(persistent.field,true,'editing a target must keep the field');
+ assert.equal(persistent.node,true,'editing a target must keep its node');
+ assert.equal(persistent.weight,1.5,'target attributes must synchronize without recreation');
+
+
  await page.click('.add[data-type="text"]');await new Promise(r=>setTimeout(r,80));
  state=await page.evaluate(()=>({count:__NAGWEB_SCENE_COMPOSER__.scene.elements.length,selected:__NAGWEB_SCENE_COMPOSER__.view.selected,type:__NAGWEB_SCENE_COMPOSER__.scene.elements.find(e=>e.id===__NAGWEB_SCENE_COMPOSER__.view.selected)?.type}));
  assert.equal(state.count,4);assert.equal(state.type,'text');
+ assert.equal(await page.evaluate(()=>window.__composerTest.field===__NAGWEB_SCENE_COMPOSER__.field),true,'adding should keep active influence field');
+ assert.equal(await page.evaluate(()=>window.__composerTest.node===document.querySelector('[data-scene-id="scene-text-1"]')),true,'adding should keep existing DOM targets');
+
 
  await page.$eval('#content',el=>{el.value='Texto del usuario';el.dispatchEvent(new Event('input',{bubbles:true}));});await new Promise(r=>setTimeout(r,80));
  assert.equal(await page.evaluate(()=>__NAGWEB_SCENE_COMPOSER__.scene.elements.find(e=>e.id===__NAGWEB_SCENE_COMPOSER__.view.selected).content),'Texto del usuario');
@@ -30,6 +56,8 @@ try{
  const beforeTargets=await page.evaluate(()=>__NAGWEB_SCENE_COMPOSER__.field.targetCount);
  await page.click('#reacts');await new Promise(r=>setTimeout(r,80));
  assert.equal(await page.evaluate(()=>__NAGWEB_SCENE_COMPOSER__.field.targetCount),beforeTargets-1);
+ assert.equal(await page.evaluate(()=>window.__composerTest.field===__NAGWEB_SCENE_COMPOSER__.field),true,'disabling one target must not reset the field');
+
  await page.click('#reacts');await new Promise(r=>setTimeout(r,80));
 
  const id=await page.evaluate(()=>__NAGWEB_SCENE_COMPOSER__.view.selected);

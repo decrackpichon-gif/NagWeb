@@ -136,38 +136,71 @@
     var media=typeof matchMedia==='function'?matchMedia('(prefers-reduced-motion: reduce)'):null;
     var reduce=o.reducedMotion==='always'||(o.reducedMotion==='respect'&&media&&media.matches);
 
-    function makeRecord(el){
-      var original={translate:el.style.translate,rotate:el.style.rotate,scale:el.style.scale,willChange:el.style.willChange};
-      el.style.willChange='translate, rotate, scale';
+    // Keep target records (and their spring velocity) when the scene is edited.
+    function geometryKey(el){
+      return [el.style.left,el.style.top,el.style.width,el.style.height].join('|');
+    }
+    function syncRecord(t){
+      var el=t.el;
       var rawWeight=el.getAttribute&&el.getAttribute('data-nw-influence-weight');
-      var weight=rawWeight==null?1:clamp(num(rawWeight,1),0,2);
-      var id=el.getAttribute&&el.getAttribute('data-nw-target-id')||null;
-      var returnSpeed=clamp(num(el.getAttribute&&el.getAttribute('data-nw-influence-return'),1),.25,2);
-      var radiusScale=clamp(num(el.getAttribute&&el.getAttribute('data-nw-influence-radius'),1),.25,3);
-      var response=normalizeResponse({
+      t.id=el.getAttribute&&el.getAttribute('data-nw-target-id')||null;
+      t.weight=rawWeight==null?1:clamp(num(rawWeight,1),0,2);
+      t.returnSpeed=clamp(num(el.getAttribute&&el.getAttribute('data-nw-influence-return'),1),.25,2);
+      t.radiusScale=clamp(num(el.getAttribute&&el.getAttribute('data-nw-influence-radius'),1),.25,3);
+      t.response=normalizeResponse({
         move:el.getAttribute&&el.getAttribute('data-nw-influence-move'),
         rotate:el.getAttribute&&el.getAttribute('data-nw-influence-rotate'),
         scale:el.getAttribute&&el.getAttribute('data-nw-influence-scale')
       });
-      return {el:el,id:id,state:newState(),rest:{x:0,y:0,radius:0},weight:weight,response:response,returnSpeed:returnSpeed,radiusScale:radiusScale,original:original};
+    }
+    function makeRecord(el){
+      var original={translate:el.style.translate,rotate:el.style.rotate,scale:el.style.scale,willChange:el.style.willChange};
+      el.style.willChange='translate, rotate, scale';
+      var t={el:el,id:null,state:newState(),rest:{x:0,y:0,radius:0},weight:1,response:null,returnSpeed:1,radiusScale:1,original:original,geometry:geometryKey(el)};
+      syncRecord(t);
+      return t;
     }
     function setTargets(list){
-      targets.forEach(function(t){restore(t);});
-      targets=Array.from(list||[]).filter(Boolean).map(makeRecord);
-      measure();
+      var previous=new Map(targets.map(function(t){return [t.el,t];}));
+      var next=[],seen=new Set(),toMeasure=[];
+      Array.from(list||[]).forEach(function(el){
+        if(!el||seen.has(el))return;
+        seen.add(el);
+        var t=previous.get(el);
+        if(t){
+          previous.delete(el);
+          syncRecord(t);
+          var geometry=geometryKey(el);
+          if(t.geometry!==geometry){t.geometry=geometry;toMeasure.push(t);}
+        }else{
+          t=makeRecord(el);
+          toMeasure.push(t);
+          if(input.__ro)input.__ro.observe(el);
+        }
+        next.push(t);
+      });
+      previous.forEach(function(t){
+        if(input.__ro)input.__ro.unobserve(t.el);
+        restore(t);
+      });
+      targets=next;
+      toMeasure.forEach(measureOne);
     }
     function restore(t){
       t.el.style.translate=t.original.translate;t.el.style.rotate=t.original.rotate;t.el.style.scale=t.original.scale;t.el.style.willChange=t.original.willChange;
       ['--nw-influence-x','--nw-influence-y','--nw-influence-rotation','--nw-influence-scale','--nw-influence-strength'].forEach(function(k){t.el.style.removeProperty(k);});
     }
-    function measure(){
-      targets.forEach(function(t){
-        var tr=t.el.style.translate,rr=t.el.style.rotate,sr=t.el.style.scale;
-        t.el.style.translate=t.original.translate;t.el.style.rotate=t.original.rotate;t.el.style.scale=t.original.scale;
-        var r=t.el.getBoundingClientRect();
-        t.rest.x=r.left+r.width/2;t.rest.y=r.top+r.height/2;t.rest.radius=Math.hypot(r.width,r.height)*0.20;
-        t.el.style.translate=tr;t.el.style.rotate=rr;t.el.style.scale=sr;
-      });
+    function measureOne(t){
+      var tr=t.el.style.translate,rr=t.el.style.rotate,sr=t.el.style.scale;
+      t.el.style.translate=t.original.translate;t.el.style.rotate=t.original.rotate;t.el.style.scale=t.original.scale;
+      var r=t.el.getBoundingClientRect();
+      t.rest.x=r.left+r.width/2;t.rest.y=r.top+r.height/2;t.rest.radius=Math.hypot(r.width,r.height)*0.20;
+      t.el.style.translate=tr;t.el.style.rotate=rr;t.el.style.scale=sr;
+    }
+    function measure(ref){
+      if(ref==null){targets.forEach(measureOne);return;}
+      var hit=targets.find(function(t){return t.el===ref||t.id===ref;});
+      if(hit)measureOne(hit);
     }
     function apply(t){
       var s=t.state;
@@ -261,7 +294,7 @@
         return hit?hit.radiusScale:null;
       },
       setOptions:function(next){o=normalizeOptions(Object.assign({},o,next||{}));previousPath=null;return Object.assign({},o);},
-      setTargets:function(list){if(input.__ro)input.__ro.disconnect();setTargets(list);if(typeof ResizeObserver==='function'){input.__ro=new ResizeObserver(onResize);targets.forEach(function(t){input.__ro.observe(t.el);});}},
+      setTargets:setTargets,
       measure:measure,
       pause:function(){paused=true;},
       resume:function(){paused=false;},
