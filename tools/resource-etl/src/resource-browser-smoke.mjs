@@ -1094,7 +1094,9 @@ try {
   await page.locator("#btn-view-desk").click();
   await expect.poll(renderedWidth).toBeCloseTo(48, 1);
   await page.reload();
-  await expect(gridVector).toHaveAttribute("data-w", "20");
+  // The desktop model stores a recalculated percentage, not the former
+  // mobile 20%. Wait for the regenerated iframe and assert its actual width.
+  await expect(gridVector).toBeVisible();
   await expect.poll(renderedWidth).toBeCloseTo(48, 1);
   await page.locator("#btn-view-mob").click();
   await expect.poll(renderedWidth).toBeCloseTo(32, 1);
