@@ -36,7 +36,8 @@ paint[0]({...pose,x:40,y:20,rotate:5,rotateX:8,rotateY:12},1);adapter.render(()=
 const world=near.userData.holder.getWorldPosition(new T.Vector3()),screen=projected(near,world),hit=adapter.anchorPoint(near,...screen);
 assert.ok(hit.distanceTo(world)<1e-7,'rotated camera unprojects the anchor plane in CSS world units');
 const surface=adapter.surfacePoint('near',...screen,'a');
-assert.ok(surface&&Math.abs(surface.point.x-world.x)<1e-7&&Math.abs(surface.point.y-world.y)<1e-7,'raycast returns the real model surface');
+const surfaceWorld=surface&&new T.Vector3(surface.point.x,surface.point.y,surface.point.z);
+assert.ok(surfaceWorld&&new T.Box3().setFromObject(near).containsPoint(surfaceWorld)&&surfaceWorld.distanceTo(world)>1e-6,'rotated raycast returns a visible box surface, not its pivot');
 assert.equal(surface.scale,1,'focus raycast passes viewport scale to editor');
 assert.equal(c.window.NAGWEB_SPATIAL_SURFACE_PICK('near',...screen,'a').id,'near','preview bridge uses actual spatial adapter');
 assert.equal(adapter.surfacePoint('near',...screen,'b'),null,'raycast is isolated by scene');
