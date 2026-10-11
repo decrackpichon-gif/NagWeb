@@ -70,3 +70,29 @@ node tests/spatial-focus-map.integration.cjs
 Esta prueba aislada, sin paquetes externos, cubre teclado en las tres proyecciones, arrastre, historial, cancelación con Escape, exclusión de HTML vinculado y estabilidad del modelo. También se agregaron casos al smoke de Chromium `.github/nagweb-camera-browser-smoke.mjs` para validar el gesto en navegador real. **El navegador completo todavía no fue ejecutado desde este chat.**
 
 **Límite:** no se elige todavía un vértice/píxel del modelo 3D con raycasting en la vista de perspectiva; se modifica la ubicación del foco proyectada en mapas 2D. Tampoco se incorpora rotación local de offsets con huesos de GLB.
+
+
+## Apuntado directo sobre la superficie de un GLB
+
+En el inspector de objetos de la cámara, un \`shape3d\` anclado admite ahora
+**Elegir punto en vista 3D**. Elegí el objeto, activá esa herramienta y hacé clic
+sobre su superficie en la vista previa del editor. **Escape** cancela.
+Un clic fuera del modelo no guarda nada. El raycast se restringe a la escena y
+al objeto seleccionado, a geometría visible, a la profundidad cercana/lejana
+y al recorte de la vista; a diferencia del picking de arrastre, no simula
+una superficie con esferas aproximadas (los agujeros siguen siendo agujeros).
+
+El punto real de Three se convierte a XYZ del Director, con escala responsive
+e inversión de Y/Z. En **Mirar hacia**, se crea o actualiza un keyframe
+vinculado a ese modelo, con \`focusOffsetX/Y/Z\` y respaldo XYZ. Se mantiene
+Deshacer y la posterior edición en mapas 2D; no se mueve el modelo ni se agrega
+un segundo progreso. Con orientación manual se guarda el giro hacia el punto,
+sin cambiar de modo. La exportación conserva su comportamiento: no habilita
+la herramienta de edición en sitios publicados. Se usa exclusivamente un
+listener temporal en el iframe same-origin de la vista previa.
+
+Límites: no hay oclusión HTML/WebGL entre superficies, selección por huesos
+o deformaciones morph. Los offsets guardados siguen relativos al pivote
+estático del objeto. La regresión de intersección real/recorte y el flujo de
+enfoque/deshacer/cancelación se agregaron a las pruebas de interacción y de
+mapa de enfoque que ya ejecuta el CI espacial agrupado.
