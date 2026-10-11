@@ -294,10 +294,27 @@ try {
     const tabletWidth=await previewStage.evaluate(node=>node.getBoundingClientRect().width);
     assert.ok(tabletWidth>=narrowWidth && tabletWidth<=561);
     assert.equal(await frame.locator("[data-preview]").getAttribute("srcdoc"),originalUiverseDoc);
+    await viewportChoice.selectOption("custom");
+    const customWidth=frame.getByLabel("Ancho personalizado (px)",{exact:true});
+    await expect(customWidth).toBeVisible();
+    await customWidth.fill("240");
+    const customNarrow=await previewStage.evaluate(node=>node.getBoundingClientRect().width);
+    assert.ok(customNarrow>0 && customNarrow<=241,"Custom slot must honor requested narrow width");
+    await customWidth.fill("425");
+    const customWide=await previewStage.evaluate(node=>node.getBoundingClientRect().width);
+    assert.ok(customWide>=customNarrow && customWide<=426,
+      "Custom width must be capped by actual preview panel space");
+    assert.equal(await frame.locator("[data-preview]").getAttribute("srcdoc"),originalUiverseDoc,
+      "Custom width changes must not reload HTML/CSS animations");
+    assert.match(await frame.locator("body").evaluate(()=>
+      sessionStorage.getItem("nagweb:resource-browser:preview-width:v1")),
+      /"mode":"custom","custom":425/);
     await viewportChoice.selectOption("full");
+    await expect(customWidth).toBeHidden();
     assert.equal(await frame.locator("[data-preview]").getAttribute("srcdoc"),originalUiverseDoc);
     report.scenarios.push({browser:"responsive resource preview",width,status:"passed",
-      narrowWidth,tabletWidth,sourceUnchanged:true,animationNotRestarted:true});
+      narrowWidth,tabletWidth,customNarrow,customWide,sourceUnchanged:true,
+      animationNotRestarted:true,tabPreferenceSaved:true});
     await cssReplay.click();
     const replayedUiverseDoc=await frame.locator('[data-preview]').getAttribute("srcdoc");
     assert.notEqual(replayedUiverseDoc,originalUiverseDoc,

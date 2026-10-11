@@ -61,6 +61,9 @@ input:focus,select:focus{border-color:#68754b;box-shadow:0 0 0 3px #c8f36c15}
 .preview-width-controls{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;font-size:12px;color:var(--muted)}
 .preview-width-controls label{color:inherit}
 .preview-width-controls select{width:auto;min-width:0;max-width:100%;flex:1 1 140px}
+.preview-width-controls .preview-custom-width{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.preview-custom-width input{width:78px;max-width:100%;font:12px ui-monospace,monospace}
+.preview-width-controls .preview-custom-width[hidden]{display:none}
 .preview-width-controls output{font:11px ui-monospace,monospace;white-space:nowrap}
 .preview-fallback{position:absolute;inset:0;display:grid;place-content:center;text-align:center;color:#555;padding:30px;gap:6px}
 .preview-fallback[hidden]{display:none}

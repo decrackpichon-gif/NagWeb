@@ -1274,3 +1274,15 @@ responsive universal. La vista previa utiliza una contención equivalente
 para no mostrar un resultado engañoso. Chromium comprueba un botón de
 ancho fijo dentro de un marco muy angosto, lo devuelve a su ancho natural
 y verifica que el sandbox continúa sin privilegios de script ni origen.
+
+## Micro-etapa 82: probar un ancho personalizado
+
+Además de espacio disponible, celular (320 px) y tablet (560 px), el visor
+incorpora **Ancho personalizado** entre 160 y 1200 px. El valor solicitado
+nunca excede el ancho disponible del panel; la interfaz siempre muestra
+el ancho **real** renderizado. El modo y el ancho preferido se conservan
+únicamente durante la sesión de esta pestaña, con lectura defensiva para
+navegadores que bloqueen sessionStorage. No se agregan parámetros a los
+recursos ni se dispara una navegación del iframe al cambiar el ancho. La
+prueba de Chromium verifica tamaños personalizados distintos, persistencia
+local, ausencia de recarga de animación y retorno al modo normal.

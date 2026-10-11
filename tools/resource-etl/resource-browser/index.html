@@ -94,7 +94,12 @@
             <option value="full">Espacio disponible</option>
             <option value="320">Celular (320 px)</option>
             <option value="560">Tablet (560 px)</option>
+            <option value="custom">Ancho personalizado</option>
           </select>
+          <label class="preview-custom-width" data-preview-custom-label for="preview-custom-width" hidden>
+            Ancho personalizado (px)
+            <input id="preview-custom-width" data-preview-custom type="number" min="160" max="1200" step="1" value="420" inputmode="numeric">
+          </label>
           <output data-preview-width-actual aria-live="polite"></output>
         </div>
         <div class="preview-frame">

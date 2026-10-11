@@ -62,6 +62,8 @@ const el = {
   preview: document.querySelector("[data-preview]"),
   previewStage: document.querySelector("[data-preview-stage]"),
   previewWidth: document.querySelector("[data-preview-width]"),
+  previewCustomLabel: document.querySelector("[data-preview-custom-label]"),
+  previewCustom: document.querySelector("[data-preview-custom]"),
   previewWidthActual: document.querySelector("[data-preview-width-actual]"),
   previewFallback: document.querySelector("[data-preview-fallback]"),
   previewNote: document.querySelector("[data-preview-note]"),
@@ -414,18 +416,56 @@ function updateCssLivePreview(resource) {
   el.preview.contentWindow?.postMessage(message, "*");
 }
 
-// Changing the visible viewport does not reload the resource, restart its
-// animation, change customization values or affect the inserted canvas item.
-function updatePreviewViewport() {
-  const choice = el.previewWidth.value;
-  el.previewStage.style.width = choice === "full" ? "100%" : `min(100%, ${Number(choice)}px)`;
-  updatePreviewWidthLabel();
-}
+// Stage 82: a designer can test a particular container width and keep that
+// choice within this tab. Neither viewport selection nor storage changes the
+// resource, the iframe srcdoc, the editor canvas, or its animation playback.
+const previewWidthStorageKey = "nagweb:resource-browser:preview-width:v1";
+let lastValidPreviewWidth = 420;
+const isValidCustomWidth = value =>
+  /^[0-9]{1,4}$/.test(String(value)) &&
+  Number(value) >= 160 && Number(value) <= 1200;
 function updatePreviewWidthLabel() {
   const actual = Math.round(el.previewStage.getBoundingClientRect().width);
   el.previewWidthActual.textContent = actual > 0 ? `${actual} px reales` : "";
 }
+function updatePreviewViewport() {
+  const mode = el.previewWidth.value;
+  el.previewCustomLabel.hidden = mode !== "custom";
+  if (isValidCustomWidth(el.previewCustom.value)) {
+    lastValidPreviewWidth = Number(el.previewCustom.value);
+  }
+  const requested = mode === "custom" ? lastValidPreviewWidth : Number(mode);
+  el.previewStage.style.width = mode === "full"
+    ? "100%" : `min(100%, ${requested}px)`;
+  updatePreviewWidthLabel();
+  try {
+    sessionStorage.setItem(previewWidthStorageKey, JSON.stringify({
+      mode, custom: lastValidPreviewWidth
+    }));
+  } catch { /* Session preferences must not block the resource browser. */ }
+}
+try {
+  const stored = JSON.parse(sessionStorage.getItem(previewWidthStorageKey) || "null");
+  if (stored && ["full", "320", "560", "custom"].includes(stored.mode) &&
+      isValidCustomWidth(stored.custom)) {
+    el.previewWidth.value = stored.mode;
+    el.previewCustom.value = String(stored.custom);
+    lastValidPreviewWidth = Number(stored.custom);
+  }
+} catch { /* Continue with a full-width preview if storage is unreadable. */ }
 el.previewWidth.addEventListener("change", updatePreviewViewport);
+el.previewCustom.addEventListener("input", () => {
+  if (el.previewWidth.value === "custom" &&
+      isValidCustomWidth(el.previewCustom.value)) updatePreviewViewport();
+});
+el.previewCustom.addEventListener("change", () => {
+  const entered = Number(el.previewCustom.value);
+  const rounded = el.previewCustom.value.trim() && Number.isFinite(entered)
+    ? Math.min(1200, Math.max(160, Math.round(entered)))
+    : lastValidPreviewWidth;
+  el.previewCustom.value = String(rounded);
+  updatePreviewViewport();
+});
 if (typeof ResizeObserver !== "undefined") {
   new ResizeObserver(updatePreviewWidthLabel).observe(el.previewStage);
 }
