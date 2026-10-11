@@ -1027,7 +1027,18 @@ try {
   const gridVector = page.frameLocator("#preview").locator(`[data-id="${inserted.element.id}"]`);
   await expect(gridVector).toHaveAttribute("data-w", "20");
   await expect(gridVector).toHaveAttribute("data-rot", "30");
-  const renderedWidth = () => gridVector.evaluate(n => Number.parseFloat(getComputedStyle(n).width));
+  // The preview iframe is regenerated after reload and view switches. A
+  // transient destroyed execution context is not a measured width; poll until
+  // the new document exists, while propagating all non-navigation errors.
+  const renderedWidth = async () => {
+    try {
+      return await gridVector.evaluate(n => Number.parseFloat(getComputedStyle(n).width));
+    } catch (error) {
+      if (/Execution context was destroyed|Frame was detached|Cannot find context/i.test(
+        error?.message || "")) return NaN;
+      throw error;
+    }
+  };
   const setEditSize = async value => {
     const group = libraryFrame.locator('details[data-category="size"]');
     if (!await group.evaluate(n => n.open)) await group.locator("summary").click();
@@ -1077,6 +1088,7 @@ try {
   await page.locator("#btn-view-desk").click();
   await expect.poll(renderedWidth).toBeCloseTo(48, 1);
   await page.reload();
+  await expect(gridVector).toHaveAttribute("data-w", "20");
   await expect.poll(renderedWidth).toBeCloseTo(48, 1);
   await page.locator("#btn-view-mob").click();
   await expect.poll(renderedWidth).toBeCloseTo(32, 1);
