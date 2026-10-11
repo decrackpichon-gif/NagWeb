@@ -206,6 +206,30 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
   return visible(g)&&g.userData.spatialOpacity!==0&&(!row||(pose?pose.opacity:1)*(parent?parent.opacity:1)>=.025&&(pose?pose.scale:100)>0&&(!parent||Math.abs(parent.matrix.determinant())>1e-10));
  }
  function materialVisible(m){return !!m&&(Array.isArray(m)?m.some(materialVisible):m.visible&&m.opacity>0);}
+ // Exact mesh intersection, separate from the generous drag-picking fallback.
+ function surfacePoint(id,x,y,sectionId){
+  if(typeof id!=='string'||!id||!Number.isFinite(x)||!Number.isFinite(y))return null;
+  var best=null,ray=new T.Raycaster();
+  rows.forEach(function(row,layer){
+   if(!row.state||!row.stage.isConnected||sectionId&&row.sectionId!==sectionId)return;
+   var r=row.stage.getBoundingClientRect(),W=renderer.domElement.clientWidth,H=renderer.domElement.clientHeight;
+   if(!r.width||!r.height||x<Math.max(0,r.left)||y<Math.max(0,r.top)||x>=Math.min(W,r.right)||y>=Math.min(H,r.bottom))return;
+   row.camera.updateMatrixWorld(true);
+   ray.setFromCamera(new T.Vector2((x-r.left)/r.width*2-1,1-(y-r.top)/r.height*2),row.camera);
+   row.objects.forEach(function(g){
+    if(String(g.userData.o&&g.userData.o.id)!==id||!interactive(g))return;
+    g.updateWorldMatrix(true,true);
+    var hit=ray.intersectObject(g,true).find(function(h){
+     var m=h.object.material;if(Array.isArray(m))m=m[h.face?h.face.materialIndex:0];
+     var z=h.point.clone().project(row.camera).z;return visible(h.object)&&materialVisible(m)&&z>=-1&&z<=1;
+    });
+    if(hit&&(!best||layer>best.layer||layer===best.layer&&hit.distance<best.distance)){
+     best={layer:layer,distance:hit.distance,point:{x:hit.point.x,y:hit.point.y,z:hit.point.z},scale:row.state.scale};
+    }
+   });
+  });
+  return best&&Number.isFinite(best.scale)&&best.scale>0?{id:id,point:best.point,scale:best.scale}:null;
+ }
  function pick(candidates,x,y,legacyCamera){
   var W=renderer.domElement.clientWidth,H=renderer.domElement.clientHeight,best=null;
   if(!Number.isFinite(x)||!Number.isFinite(y)||x<0||y<0||x>=W||y>=H)return null;
@@ -237,7 +261,10 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
   });
   return best?best.g:null;
  }
- return{connect:connect,owns:owns,render:render,destroy:destroy,view:view,lightPoint:lightPoint,anchorPoint:anchorPoint,pick:pick,interactive:interactive};
+ var adapter={connect:connect,owns:owns,render:render,destroy:destroy,view:view,lightPoint:lightPoint,anchorPoint:anchorPoint,pick:pick,interactive:interactive,surfacePoint:surfacePoint};
+ // Same-origin editor-only request, no automatic pointer listeners in exports.
+ window.NAGWEB_SPATIAL_SURFACE_PICK=function(id,x,y,sectionId){return adapter.surfacePoint(id,x,y,sectionId);};
+ return adapter;
 }
 window.NAGWEB_CREATE_SPATIAL_RENDERER=createSpatialRenderer;
 })();
