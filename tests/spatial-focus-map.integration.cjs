@@ -3,7 +3,12 @@
 // No external dependencies: exercises the real editor event handlers in an isolated DOM.
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const handlers={},pane={addEventListener(type,fn){handlers[type]=fn;},querySelector(){return control;},contains(){return false;}};
-const document={getElementById(id){return id==='pane'?pane:null;}};
+const previewDocument={listeners:{},addEventListener(t,fn){this.listeners[t]=fn;},removeEventListener(t,fn){if(this.listeners[t]===fn)delete this.listeners[t];},querySelector(){return null;}};
+const previewWindow={NAGWEB_SPATIAL_SURFACE_PICK(id,x,y,sectionId){
+ if(id==='glb'&&sectionId==='scene'&&x===330&&y===240)return {id,scale:1,point:{x:120,y:-35,z:-880}};
+ return null;
+}};
+const document={getElementById(id){return id==='pane'?pane:id==='preview'?{contentDocument:previewDocument,contentWindow:previewWindow}:null;}};
 const object={id:'glb',type:'shape3d',anchor:true,x:68,y:45,offZ:2,w:20,h:20,
  sdKeyframes:[{at:0,x:0,y:0,z:0,ease:'linear'},{at:100,x:80,y:20,z:40}]};
 const title={id:'title',type:'heading',x:60,y:35,sdCameraDepth:100};
@@ -69,4 +74,29 @@ assert.equal(JSON.stringify(frame()),htmlBefore,'Linked HTML stays protected');
 assert.equal(undos,afterUndo);
 const htmlPanel=C.panel(scene);
 assert.match(htmlPanel,/disabled title="Desvinculá el elemento/);
-console.log('PASS spatial focus map: linked GLB X/Y/Z, fractional anchor, drag, keyboard, Escape, undo and HTML isolation');
+// Click-to-focus is opt-in; it reuses the same linked-look keyframes.
+scene.sdCameraLookFrames[0]={...scene.sdCameraLookFrames[0],targetId:'glb'};
+C.panel(scene);
+handlers.change({target:{dataset:{cameraObjectSelect:''},value:'0'}});
+const action={dataset:{cameraSurfaceAim:''}};
+const clickSurface=()=>handlers.click({target:{closest(){return action;}}});
+const converted=C.surfaceFocusFromWorld({scale:2,point:{x:240,y:-70,z:-1760}});
+assert.equal(converted.x,120);assert.equal(converted.y,35);assert.equal(converted.z,880);
+assert.equal(C.surfaceFocusFromWorld({scale:0,point:{x:0,y:0,z:0}}),null);
+assert.equal(C.surfaceFocusFromWorld({scale:1,point:{x:NaN,y:0,z:0}}),null);
+const priorModel=JSON.stringify(object),startUndo=undos;
+clickSurface();assert.equal(typeof previewDocument.listeners.pointerdown,'function');
+previewDocument.listeners.pointerdown({button:0,clientX:111,clientY:240});
+assert.equal(undos,startUndo,'missed click must never save an approximate focus');
+previewDocument.listeners.pointerdown({button:0,clientX:330,clientY:240,preventDefault(){},stopImmediatePropagation(){}});
+assert.equal(undos,startUndo+1,'one surface selection creates one Undo operation');
+assert.equal(scene.sdCameraLookFrames[0].targetId,'glb','point stays linked to chosen GLB');
+assert.equal(scene.sdCameraLookFrames[0].x,120,'fallback uses surface X');
+assert.equal(scene.sdCameraLookFrames[0].y,35,'fallback Y converts Three to CSS');
+assert.equal(scene.sdCameraLookFrames[0].z,880,'fallback depth converts Three to CSS');
+assert.equal(JSON.stringify(object),priorModel,'surface focus never modifies model');
+assert.equal(previewDocument.listeners.pointerdown,undefined,'one-shot surface tool releases its listener');
+clickSurface();assert.equal(typeof previewDocument.listeners.keydown,'function');
+previewDocument.listeners.keydown({key:'Escape',preventDefault(){},stopPropagation(){}});
+assert.equal(previewDocument.listeners.pointerdown,undefined,'Escape cancels surface targeting');
+console.log('PASS spatial focus map: model focus, exact surface click, missing geometry, cancel, fallback and Undo');
