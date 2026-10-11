@@ -84,7 +84,8 @@ export function prepareUiverseSandboxHtml(envelope, {
     '<style>html,body{margin:0;min-height:100%;width:100%;}' +
     'body{display:grid;grid-template-columns:minmax(0,1fr);place-items:center;' +
     'overflow:auto;background:transparent;}' +
-    'body>:not(style){min-inline-size:0;max-inline-size:100%;box-sizing:border-box;}' +
+    'body>:not(style),body>[data-nagweb-custom-style]>:not(style)' +
+    '{min-inline-size:0;max-inline-size:100%;box-sizing:border-box;}' +
     '</style></head><body>' + html +
     '</body></html>';
   return { srcdoc, title: safeTitle, policy: POLICY };
