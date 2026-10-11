@@ -610,6 +610,16 @@ try {
   // Canvas shortcut regression: a double-click on an existing SVG must
   // reopen that exact resource without inserting or mutating another element.
   const canvasShortcutHistory = await page.evaluate(() => history.length);
+  // On Windows the canvas SVG can be visible before the outer preview load
+  // handler has cleared its editing readiness guard. Verify readiness first,
+  // then remove selection to test that dblclick selects the SVG itself.
+  await page.evaluate(id => {
+    selection = [id]; curEl = sec().elements.findIndex(e => e.id === id);
+    secFocus = false; renderPane();
+  }, inserted.element.id);
+  await expect(page.getByRole("button", {
+    name: "Personalizar ícono seleccionado", exact: true
+  })).toBeEnabled();
   await page.evaluate(() => { selection = []; curEl = -1; secFocus = false; });
   await page.frameLocator("#preview").locator(`[data-id="${inserted.element.id}"] svg`)
     .dispatchEvent("dblclick", { button: 0, bubbles: true });
