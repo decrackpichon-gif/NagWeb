@@ -1286,7 +1286,13 @@ try {
       }).toBeCloseTo(0, 1);
       const sandbox = embed.locator('iframe[title="Componente Uiverse aislado"]');
       await expect(sandbox).toHaveAttribute("sandbox", "");
-      assert.equal(await sandbox.evaluate(node => node.contentDocument === null), true);
+      await expect.poll(async () => {
+        try { return await sandbox.evaluate(node => node.contentDocument === null); }
+        catch (error) {
+          if (/Execution context was destroyed|Frame was detached|Cannot find context/i.test(error.message)) return false;
+          throw error;
+        }
+      }).toBe(true);
     };
     await checkWidth(false);
     await checkWidth(true);
@@ -1296,6 +1302,82 @@ try {
     assert.equal(await page.evaluate(id => sec().elements.find(e => e.id === id).nwResource.id, id), css.id);
     report.scenarios.push({ editor: "Uiverse insertion across native layouts", layout, mobileInsertion: layout === "horizontal", desktopMaxPx: 320, mobileMaxPx: 260, cappedAt85Percent: true, isolated: true, reload: true });
   }
+  // Stage 83: insert HTML and SVG inside an existing native container.
+  await page.evaluate(() => {
+    const scene=sec();scene.layout="free";scene.elements=[];
+    const panel=mkEl("container",{
+      name:"Contenedor de recursos",x:8,y:10,w:72,h:360,
+      stackDir:"grid",gridCols:2,stackPad:12,stackGap:8,
+      mobile:{w:92,gridCols:1,stackPad:10,stackGap:6}
+    });
+    scene.elements.push(panel);
+    selection=[panel.id];curEl=scene.elements.indexOf(panel);secFocus=false;
+    refresh();window.resourceStage83ParentId=panel.id;
+  });
+  await page.locator("#btn-view-desk").click();
+  await page.getByRole("button",{name:"Biblioteca de recursos",exact:true}).click();
+  const placement=page.getByRole("combobox",{name:"Insertar recurso en",exact:true});
+  await expect(placement).toBeVisible();
+  const parentId=await page.evaluate(()=>window.resourceStage83ParentId);
+  await expect(placement).toHaveValue(parentId);
+  await libraryFrame.locator(`[data-resource-id="${css.id}"]`).click();
+  const nestedHistory=await page.evaluate(()=>history.length);
+  await libraryFrame.getByRole("button",{name:"Aplicar en NagWeb",exact:true}).click();
+  await expect(libraryFrame.locator("[data-apply-status]")).toContainText("insertado y guardado");
+  const htmlChildId=await page.evaluate(()=>selection[0]);
+  assert.equal(await page.evaluate(id=>sec().elements.find(e=>e.id===id)?.parent,htmlChildId),parentId);
+  assert.equal(await page.evaluate(()=>history.length),nestedHistory+1);
+  await expect(page.locator("[data-resource-size-probe]")).toHaveCount(0);
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  const child=page.frameLocator("#preview").locator(`[data-id="${htmlChildId}"]`);
+  const sandbox=child.locator("iframe.emb-sand");
+  await expect(sandbox).toHaveAttribute("sandbox","");
+  for (const mobile of [false,true]) {
+    await page.locator(mobile?"#btn-view-mob":"#btn-view-desk").click();
+    await expect(child).toBeVisible();
+    const dimensions=await child.evaluate(n=>({
+      width:Number.parseFloat(getComputedStyle(n).width),
+      slotWidth:Number.parseFloat(getComputedStyle(n.parentElement).width)
+    }));
+    assert.ok(dimensions.width>0 && dimensions.slotWidth>0 &&
+      dimensions.width<=dimensions.slotWidth+2,"Nested HTML must fit its native slot");
+  }
+  await page.locator("#btn-view-desk").click();
+  await page.evaluate(id=>{selection=[id];curEl=sec().elements.findIndex(e=>e.id===id);renderPane();},htmlChildId);
+  await page.getByRole("button",{name:"Personalizar componente Uiverse seleccionado",exact:true}).click();
+  const custom=page.frameLocator('iframe[title="Biblioteca de recursos de NagWeb"]');
+  const repeat=custom.getByLabel(htmlPlayControl.label,{exact:true});
+  const group=custom.locator("details").filter({has:repeat});
+  if(!await group.evaluate(n=>n.open))await group.locator("summary").click();
+  await repeat.selectOption("3");
+  await custom.getByRole("button",{name:"Guardar cambios en el componente",exact:true}).click();
+  await expect(custom.locator("[data-apply-status]")).toContainText("Cambios guardados");
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  assert.equal(await page.evaluate(id=>sec().elements.find(e=>e.id===id).parent,htmlChildId),parentId);
+  const code=await page.evaluate(()=>generateSite(flattenPage(page()),false,true,false));
+  assert.match(code,/sandbox=""/);
+  assert.match(code,/spin 1s 3 alternate/);
+  await page.reload();
+  assert.equal(await page.evaluate(id=>sec().elements.find(e=>e.id===id).parent,htmlChildId),parentId);
+  await expect(page.frameLocator("#preview").frameLocator(
+    `[data-id="${htmlChildId}"] iframe.emb-sand`).locator(".card")).toBeVisible();
+  await page.evaluate(id=>{selection=[id];curEl=sec().elements.findIndex(e=>e.id===id);renderPane();},parentId);
+  await page.getByRole("button",{name:"Biblioteca de recursos",exact:true}).click();
+  await expect(placement).toHaveValue(parentId);
+  await libraryFrame.locator('[data-resource-id="smoke:icon"]').click();
+  await libraryFrame.getByRole("button",{name:"Aplicar en NagWeb",exact:true}).click();
+  await expect(libraryFrame.locator("[data-apply-status]")).toContainText("insertado y guardado");
+  const vectorId=await page.evaluate(()=>selection[0]);
+  assert.equal(await page.evaluate(id=>sec().elements.find(e=>e.id===id).parent,vectorId),parentId);
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  await expect(page.frameLocator("#preview").locator(`[data-id="${vectorId}"] svg`)).toBeVisible();
+  const parents=await page.evaluate(ids=>{
+    const saved=JSON.parse(localStorage.getItem(STORE_KEY));
+    return ids.map(id=>saved.pages[0].sections[0].elements.find(e=>e.id===id)?.parent);
+  },[htmlChildId,vectorId]);
+  assert.deepEqual(parents,[parentId,parentId]);
+  report.scenarios.push({editor:"native resources nested in selected container",
+    status:"passed",html:true,svg:true,responsive:true,edit:true,export:true,reload:true});
   await context.close();
   assert.deepEqual(report.errors, [], "Browser must not emit uncaught errors or external requests");
   console.log("Resource Browser Chromium smoke: panel desktop/mobile + real NagWeb SVG insertion and editing, save, cancel, undo/redo, reload and rejected inputs OK.");

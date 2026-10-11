@@ -47,8 +47,8 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       card: controlsCard ? { width: Number.parseFloat(cardStyle.width) / percent * 100, padding: inset(cardStyle) } : null,
       sizeFixed: node.classList.contains("sc-grow") || node.parentElement.classList.contains("lay-masonry") };
   };
-  const insertionWidths = async (type, props) => {
-    if (sec().layout === "free") return { desktop: { width: deskWidth, padding: 0 }, mobile: { width: 390, padding: 0 } };
+  const insertionWidths = async (type, props, parentId = "") => {
+    if (sec().layout === "free" && !parentId) return { desktop: { width: deskWidth, padding: 0 }, mobile: { width: 390, padding: 0 } };
     // Measure both native layouts without changing the visible canvas or project.
     const measure = mobile => new Promise((resolve, reject) => {
       const probe = document.createElement("iframe");
@@ -58,7 +58,12 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       probe.style.cssText = `position:fixed;left:-10000px;top:0;width:${mobile ? 390 : deskWidth}px;height:1000px;border:0;pointer-events:none`;
       const projectCopy = structuredClone(flattenPage(page()));
       const id = "resource-size-probe";
-      projectCopy.sections = [{ ...structuredClone(sec()), elements: [mkEl(type, { ...props, id, parent: "", w: 100, mobile: { w: 100 } })] }];
+      // Child width depends on the real hierarchy and sibling allocation.
+      // Clone the scene; never mutate the live editor during measurement.
+      const existing = parentId ? structuredClone(sec().elements) : [];
+      projectCopy.sections = [{ ...structuredClone(sec()), elements: [
+        ...existing, mkEl(type, { ...props, id, parent: parentId, w: 100, mobile: { w: 100 } })
+      ] }];
       let finished = false;
       const finish = (error, width) => { if (finished) return; finished = true; clearTimeout(timer); probe.remove(); error ? reject(error) : resolve(width); };
       const timer = setTimeout(() => finish(new Error("No pude medir la escena. Volvé a intentar aplicar el ícono.")), 10000);
@@ -115,11 +120,18 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   header.style.cssText = "height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;gap:12px";
   const hint = document.createElement("span");
   hint.textContent = "Insertá íconos SVG o HTML/CSS Uiverse compatibles.";
+  const destination = document.createElement("select");
+  destination.setAttribute("aria-label", "Insertar recurso en");
+  destination.title = "Destino de inserción";
+  destination.style.cssText = "flex:0 1 260px;min-width:135px;max-width:32%;background:#23252e;color:#fff;border:1px solid #555;border-radius:6px;padding:6px";
+  destination.append(new Option("Raíz de la escena", ""));
+  destination.hidden = true;
   const close = document.createElement("button");
   close.type = "button";
   close.className = "btn";
   close.textContent = "Volver al editor";
-  header.append(hint, close);
+  hint.style.cssText = "min-width:0;flex:1";
+  header.append(hint, destination, close);
   const frame = document.createElement("iframe");
   frame.title = "Biblioteca de recursos de NagWeb";
   frame.style.cssText = "display:block;width:100%;height:calc(100% - 48px);border:0";
@@ -131,6 +143,15 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     librarySession++;
     editContext = context;
     opener = context ? editButton : button;
+    destination.replaceChildren(new Option("Raíz de la escena", ""));
+    const container = !context && selection.length === 1
+      ? sec()?.elements.find(e => e.id === selection[0] && e.type === "container")
+      : null;
+    if (container) {
+      destination.append(new Option("Dentro de: " + String(container.name || "Contenedor").slice(0, 50), container.id));
+      destination.value = container.id;
+    }
+    destination.hidden = Boolean(context) || !container;
     hint.textContent = context?.kind === "uiverse-html"
       ? "Personalizá el componente Uiverse seleccionado sin reemplazarlo."
       : context ? `Personalizá el ícono seleccionado · versión ${context.mobile ? "celular" : "computadora"}.`
@@ -303,7 +324,14 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
             ? structuredClone(message.descriptor.instance.values) : props.nwResource.values;
         } else {
           if (message.editSession) throw new Error("Esta sesión de personalización terminó. Volvé a abrir el ícono.");
-          // Root placement makes insertion independent of a selected container.
+          // Explicitly place in the selected container or at scene root.
+          const parentId = destination.hidden ? "" : destination.value;
+          const parentElement = parentId
+            ? sec().elements.find(e => e.id === parentId && e.type === "container")
+            : null;
+          if (parentId && !parentElement) {
+            throw new Error("El contenedor elegido ya no existe. Volvé a abrir la Biblioteca.");
+          }
           const nativeProps = isUiverseHtml ? {
               mode: "html", code: isolated.srcdoc, ratio: .75, radius: 0,
               name: String(message.resource.title || "Componente Uiverse").slice(0, 100),
@@ -317,16 +345,18 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
           const sceneId = sec().id;
           const session = librarySession;
           const type = isUiverseHtml ? "embed" : "vector";
-          const widths = await insertionWidths(type, nativeProps);
+          const widths = await insertionWidths(type, nativeProps, parentId);
           if (!dialog.open || editContext || librarySession !== session || sec().id !== sceneId || deskWidth !== width || JSON.stringify(project) !== before) {
             throw new Error("La escena cambió durante la inserción. Volvé a aplicar el recurso.");
           }
           const percent = (pixels, base) => {
-            const value = sec().layout === "horizontal" ? cardPercent(pixels, base) : pixels / base.width * 100;
+            if (!(base?.width > 0)) throw new Error("El contenedor no tiene ancho disponible.");
+            const value = (sec().layout === "horizontal" && !parentId) || base.padding > 0
+              ? cardPercent(pixels, base) : pixels / base.width * 100;
             return isUiverseHtml ? Math.min(85, value) : value;
           };
           element = insertElement(type, { ...nativeProps, w: percent(size, widths.desktop),
-            mobile: { w: percent(isUiverseHtml ? 260 : size, widths.mobile) } }, { parent: "" });
+            mobile: { w: percent(isUiverseHtml ? 260 : size, widths.mobile) } }, { parent: parentId });
         }
         inserted = true;
         const persisted = JSON.parse(localStorage.getItem(STORE_KEY) || "null");

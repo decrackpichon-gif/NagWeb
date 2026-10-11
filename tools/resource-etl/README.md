@@ -1286,3 +1286,19 @@ navegadores que bloqueen sessionStorage. No se agregan parámetros a los
 recursos ni se dispara una navegación del iframe al cambiar el ancho. La
 prueba de Chromium verifica tamaños personalizados distintos, persistencia
 local, ausencia de recarga de animación y retorno al modo normal.
+
+## Bloque 83: inserción nativa dentro de contenedores
+
+Cuando se abre la Biblioteca con un contenedor seleccionado, la barra superior
+ofrece dos destinos: **Dentro de: [contenedor]** (predeterminado en ese caso)
+y **Raíz de la escena**. Una selección arbitraria no anida recursos. Tanto
+íconos SVG como componentes Uiverse HTML/CSS conservan el ID de su contenedor
+como `parent`; sus medidas de escritorio y celular se calculan con la
+misma jerarquía y los mismos hermanos que la escena real, mediante dos
+iframes temporales con un clon del proyecto. La inserción registra un solo
+paso de Deshacer y rechaza una operación obsoleta si el proyecto cambia
+durante la medición. La edición posterior conserva posición, padre y
+seguridad del iframe. La prueba integrada inserta HTML/SVG como hijos de
+una grilla nativa, comprueba móviles, edición, persistencia, exportación y
+recarga. También se robusteció una aserción de iframe al cambiar de vista
+en Windows, sin suprimir errores de render reales.
