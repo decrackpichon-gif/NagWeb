@@ -1320,3 +1320,12 @@ en el sitio exportado.
 
 Esta rama declara en `vercel.json` que no debe generar vistas previas
 automáticas de Vercel; las demás ramas no quedan afectadas por ese archivo.
+
+### Estabilidad del acceso contextual
+
+El acceso del botón se atiende antes de que el editor procese la selección o
+arrastre del elemento: algunos cambios del lienzo reemplazan el nodo entre
+`pointerdown` y `click` y perdían la acción. La apertura HTML utiliza
+directamente el recurso verificado en la escena, sin depender de que el botón
+general de Personalizar esté habilitado para un SVG. Se conserva el acceso
+con teclado y se espera la carga real de la ficha en la prueba del navegador.

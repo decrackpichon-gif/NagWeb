@@ -175,16 +175,25 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     dialog.showModal();
   };
   button.addEventListener("click", () => openLibrary(null));
-  editButton.addEventListener("click", () => {
-    const element = selectedLibraryElement();
-    if (!element) return;
-    if (element.nwResource.kind === "uiverse-html") {
-      const values = element.nwResource.values;
-      if (!values || typeof values !== "object" || Array.isArray(values)) return;
+  const openHtmlCustomization = (element, returnFocus = editButton) => {
+    if (!element || element.type !== "embed" || element.nwResource?.kind !== "uiverse-html" ||
+        dialog.open) return false;
+    const values = element.nwResource.values;
+    if (!values || typeof values !== "object" || Array.isArray(values)) return false;
+    canvasEditOpener = returnFocus;
+    try {
       openLibrary({ kind: "uiverse-html", session: crypto.randomUUID(),
         resourceId: element.nwResource.id, elementId: element.id,
         pageId: page().id, sceneId: sec().id, mobile: viewMobile,
         values: structuredClone(values), fingerprint: JSON.stringify(element) });
+      return true;
+    } finally { canvasEditOpener = null; }
+  };
+  editButton.addEventListener("click", () => {
+    const element = selectedLibraryElement();
+    if (!element) return;
+    if (element.nwResource.kind === "uiverse-html") {
+      openHtmlCustomization(element);
       return;
     }
     let stroke = resolveColor(vget(element, "stroke"), project.styles);
@@ -283,30 +292,42 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       trigger.setAttribute("aria-label", "Personalizar componente desde el lienzo");
       trigger.title = "Personalizar componente";
       trigger.textContent = "✎";
-      trigger.addEventListener("pointerdown", event => event.stopPropagation(), true);
-      trigger.addEventListener("dblclick", event => {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-      }, true);
-      trigger.addEventListener("click", event => {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        // HTML resources do not need vector measurement. A delayed srcdoc
-        // mutation can leave canvasLoading true even after the wrapper renders.
-        if (dialog.open || preview.contentDocument !== canvasDoc ||
-            node.closest(".sc")?.dataset.id !== sec()?.id) return;
-        const current = libraryResourceById(node.dataset.id);
-        if (!current || current.type !== "embed") return;
-        selection = [current.id];
-        curEl = sec().elements.indexOf(current);
-        secFocus = false;
-        syncEditButton();
-        if (editButton.disabled) return;
-        canvasEditOpener = trigger;
-        try { editButton.click(); } finally { canvasEditOpener = null; }
-      }, true);
       node.append(trigger);
     }
+    // The editor may redraw a selected element on pointerdown, before a
+    // button's click event is delivered. Handle activation at capture phase
+    // on the canvas document, before native selection/drag event handlers.
+    const activateHtmlEdit = (event, keyboard) => {
+      const trigger = event.target?.closest?.("[data-nagweb-resource-edit]");
+      if (!trigger || dialog.open) return;
+      if (keyboard && event.key !== "Enter" && event.key !== " ") return;
+      if (!keyboard && event.button !== 0) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (preview.contentDocument !== canvasDoc) return;
+      const current = libraryResourceById(trigger.dataset.nagwebResourceEdit);
+      if (!current || current.type !== "embed") return;
+      selection = [current.id];
+      curEl = sec().elements.indexOf(current);
+      secFocus = false;
+      // Do not use the toolbar button's disabled state: this is an
+      // explicit action on a validated HTML resource, not a vector resize.
+      openHtmlCustomization(current, trigger);
+    };
+    // Window capture runs before editor handlers registered on the document
+    // or individual elements, so a selection redraw cannot swallow the action.
+    canvasDoc.defaultView.addEventListener("pointerdown", event => activateHtmlEdit(event, false), true);
+    canvasDoc.defaultView.addEventListener("keydown", event => activateHtmlEdit(event, true), true);
+    canvasDoc.addEventListener("click", event => {
+      if (!event.target?.closest?.("[data-nagweb-resource-edit]")) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }, true);
+    canvasDoc.addEventListener("dblclick", event => {
+      if (!event.target?.closest?.("[data-nagweb-resource-edit]")) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }, true);
   };
   document.addEventListener("keydown", handleCanvasEditShortcut, true);
   preview.addEventListener("load", () => {

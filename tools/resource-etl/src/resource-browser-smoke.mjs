@@ -1352,14 +1352,19 @@ try {
   await expect(canvasEdit).toHaveCSS("pointer-events","auto");
   const beforeInlineEdit=await page.evaluate(()=>history.length);
   await canvasEdit.click();
+  const contextualDialog=page.getByRole("dialog",{name:"Biblioteca de recursos",exact:true});
+  await expect(contextualDialog).toBeVisible();
+  const browserFrameNode=page.locator('iframe[title="Biblioteca de recursos de NagWeb"]');
+  await expect.poll(async()=>new URL(await browserFrameNode.getAttribute("src")).searchParams.get("editKind")).toBe("uiverse-html");
   const custom=page.frameLocator('iframe[title="Biblioteca de recursos de NagWeb"]');
-  await expect(custom.getByRole("button",{name:"Guardar cambios en el componente",exact:true})).toBeVisible();
+  await custom.getByRole("button",{name:"Guardar cambios en el componente",exact:true}).waitFor({state:"visible",timeout:30000});
   assert.equal(await page.evaluate(()=>history.length),beforeInlineEdit,
     "Opening contextual customization must not create history");
   await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
   await expect(canvasEdit).toBeFocused();
   await canvasEdit.press("Enter");
-  await expect(custom.getByRole("button",{name:"Guardar cambios en el componente",exact:true})).toBeVisible();
+  await expect(contextualDialog).toBeVisible();
+  await custom.getByRole("button",{name:"Guardar cambios en el componente",exact:true}).waitFor({state:"visible",timeout:30000});
   const repeat=custom.getByLabel(htmlPlayControl.label,{exact:true});
   const group=custom.locator("details").filter({has:repeat});
   if(!await group.evaluate(n=>n.open))await group.locator("summary").click();
