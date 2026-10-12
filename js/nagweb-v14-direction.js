@@ -291,7 +291,7 @@ function installCanvasTools(){
     doc.body.appendChild(btn);handles.push(btn);
    }
    if(within<Math.min(r.width*r.height*.03,hr.width*hr.height*.01)){
-    action('Recuperar','Centrar esta pieza que quedó fuera del Hero',0,function(){
+    action('Recuperar','Centrar esta pieza que quedó fuera del Hero',/^layer-[1-5]$/.test(active.getAttribute('data-wpart')||'')?148:0,function(){
      var before=partState(root,active),centerX=(hr.left+hr.right)/2,centerY=(hr.top+hr.bottom)/2;
      var next=Object.assign({},before,{x:before.x+centerX-(r.left+r.right)/2,y:before.y+centerY-(r.top+r.bottom)/2});
      if(commitPart(next.id,next.name,next)){next.responsive=!!next.refW;next.mobileOverride=!!next.mobile;applyPart(active,next,true);}
@@ -307,7 +307,10 @@ function installCanvasTools(){
      levels.push(6); // Texto editorial: el frente también puede pasar por delante de él.
      var next=Object.assign({},before,{orderChanged:true,z:Math.max(-100,Math.min(100,front?Math.max.apply(null,levels)+1:Math.min.apply(null,levels)-1))});
      if(commitPart(next.id,next.name,next)){next.responsive=!!next.refW;next.mobileOverride=!!next.mobile;applyPart(active,next,true);}
-     placeHandles();
+     // En modo aislado la capa está temporalmente al frente. Mostrar el orden real.
+     var all=hero.querySelector('[data-nw-part=""]');
+     if(all)all.dispatchEvent(new doc.defaultView.PointerEvent('pointerdown',{bubbles:true,cancelable:true,button:0,pointerId:98}));
+     else placeHandles();
     }
     action('Al frente','Colocar esta foto delante de las demás',0,function(){reorder(true);});
     action('Al fondo','Colocar esta foto detrás de las demás',74,function(){reorder(false);});
