@@ -258,3 +258,68 @@ assert.equal(undos,beforeKeyboardXYZ+1,'Keyboard nudge saves once');
 toggleXYZ();
 assert.equal(liveOverlay,null,'Closing XYZ toolbar unmounts overlay');
 console.log('PASS camera viewport translation: live XYZ/XY, GLB isolation, lookAt, Escape, Shift, Undo, keyboard, overlay cleanup');
+
+
+// Model-space Z completes existing projected X/Y editing without modifying
+// any keyframe of the camera or the GLB geometry.
+assert.equal(C.objectDepthDrag(1,-100,false),2);
+assert.equal(C.objectDepthDrag(1,-100,true),1.2);
+assert.equal(C.objectDepthDrag(-1,100,false),-2);
+assert.equal(C.objectDepthDrag(99.9,-1000,false),100);
+assert.equal(C.objectDepthDrag(1,NaN,false),null);
+object.offZ=0;
+const depthEvents=[];
+previewWindow.NAGWEB_SPATIAL_SCREEN_POINT=(id,sectionId)=>id==='glb'&&sectionId==='scene'?{x:150,y:160}:null;
+previewWindow.NAGWEB_SPATIAL_PREVIEW_DEPTH=(id,value,sectionId)=>{
+ depthEvents.push({id,value,sectionId});return id==='glb'&&sectionId==='scene';
+};
+previewDocument.createElement=()=>({
+ style:{},listeners:{},parentNode:null,textContent:'',
+ setAttribute(){},addEventListener(t,fn){this.listeners[t]=fn;},
+ removeEventListener(t,fn){if(this.listeners[t]===fn)delete this.listeners[t];},
+ hasPointerCapture(){return !!this.captured;},
+ setPointerCapture(){this.captured=true;},releasePointerCapture(){this.captured=false;}
+});
+const modelStateBefore=JSON.stringify({camera:scene.sdCameraFrames,look:scene.sdCameraLookFrames,model:object.sdKeyframes});
+const depthButton={dataset:{cameraObjectDepth:''}},depthClick=()=>handlers.click({target:{closest(){return depthButton;}}});
+const prevDepthUndo=undos,prevDepthSave=saves;
+C.panel(scene);
+assert.match(C.panel(scene),/data-camera-object-depth/,'Inspector exposes selected 3D depth tool');
+depthClick();
+assert.ok(liveOverlay&&liveOverlay.listeners.pointerdown,'Depth control must mount over the stage');
+assert.equal(liveOverlay.textContent,'↕ Z 0','Handle labels current authored depth');
+assert.match(C.panel(scene),/Cerrar editor de profundidad/);
+const depthHandle=liveOverlay;
+depthHandle.listeners.pointerdown({button:0,pointerId:61,clientY:150,preventDefault(){},stopPropagation(){}});
+previewDocument.listeners.pointermove({pointerId:61,clientY:50,shiftKey:false,preventDefault(){}});
+assert.equal(undos,prevDepthUndo,'Object depth drag must preview without Undo');
+assert.equal(depthEvents.at(-1).value,1,'Upward drag moves the 3D model forward');
+assert.equal(depthHandle.textContent,'↕ Z 1');
+previewDocument.listeners.pointerup({pointerId:61,clientY:50,shiftKey:false,preventDefault(){}});
+assert.equal(object.offZ,1,'Confirmed depth updates only the authored offZ value');
+assert.equal(undos,prevDepthUndo+1,'Confirmed depth creates exactly one Undo entry');
+assert.equal(saves,prevDepthSave+1,'Confirmed depth saves once');
+assert.equal(liveOverlay,null,'Committed tool removes itself');
+assert.equal(JSON.stringify({camera:scene.sdCameraFrames,look:scene.sdCameraLookFrames,model:object.sdKeyframes}),modelStateBefore,'Depth edit leaves timeline and GLB motion unchanged');
+depthClick();
+const duringCancel=liveOverlay;
+duringCancel.listeners.pointerdown({button:0,pointerId:63,clientY:120,preventDefault(){},stopPropagation(){}});
+previewDocument.listeners.pointermove({pointerId:63,clientY:0,shiftKey:false,preventDefault(){}});
+outsideListeners.keydown({key:'Escape',preventDefault(){},stopPropagation(){}});
+assert.equal(object.offZ,1,'Escape cancels unsaved changes');
+assert.equal(undos,prevDepthUndo+1);
+assert.equal(depthEvents.at(-1).value,null,'Cancelled edit clears renderer override');
+assert.equal(liveOverlay,null,'Escape disposes the editor-only depth control');
+depthClick();
+const keyboardHandle=liveOverlay;
+const beforeDepthKeyboard=undos;
+keyboardHandle.listeners.keydown({key:'ArrowUp',shiftKey:true,preventDefault(){},stopPropagation(){}});
+assert.equal(object.offZ,1.02,'Keyboard Shift nudge preserves fine depth precision');
+assert.equal(undos,beforeDepthKeyboard+1,'Keyboard nudge creates one Undo');
+assert.equal(liveOverlay,null);
+depthClick();
+orbitIframe.load();
+assert.equal(liveOverlay,null,'Preview reload disposes 3D gizmo');
+assert.equal(depthEvents.at(-1).value,null,'Preview reload clears temporary depth');
+assert.equal(previewDocument.listeners.pointermove,undefined,'Depth listeners must not leak after reload');
+console.log('PASS object depth gizmo: projected model, live preview, axis units, Undo, keyboard, Escape and cleanup');
