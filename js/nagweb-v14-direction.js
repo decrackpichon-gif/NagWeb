@@ -230,7 +230,17 @@ function commitPart(id,name,p){
  var e=currentWidget(id);if(!e||!name)return false;
  var old=e.wp&&e.wp.__parts&&e.wp.__parts[name]||{};
  var next={x:Math.round((p.x||0)*10)/10,y:Math.round((p.y||0)*10)/10,r:Math.round(p.r||0),s:Math.round((p.s==null?1:p.s)*1000)/1000};
- if(next.x===(+old.x||0)&&next.y===(+old.y||0)&&next.r===(+old.r||0)&&next.s===(old.s==null?1:+old.s))return false;
+ // El Hero conserva la referencia espacial del momento de edición:
+ // así el HTML exportado puede adaptar X/Y sin cambiar la pose original.
+ if(p.refW>0&&p.refH>0&&(next.x||next.y)){
+  next.refW=Math.round(p.refW*10)/10;
+  next.refH=Math.round(p.refH*10)/10;
+ }
+ var same=next.x===(+old.x||0)&&next.y===(+old.y||0)&&next.r===(+old.r||0)&&next.s===(old.s==null?1:+old.s);
+ if(same){
+  // No crear historial solo por modificar la referencia de una pose visual idéntica.
+  if(!next.refW||!old.refW||(Math.abs(next.x/next.refW-old.x/old.refW)<.000001&&Math.abs(next.y/next.refH-old.y/old.refH)<.000001))return false;
+ }
  snapshot();e.wp=e.wp||{};e.wp.__parts=e.wp.__parts||{};e.wp.__parts[name]=next;saveProject();return true;
 }
 function installCanvasTools(){
@@ -289,7 +299,18 @@ function installCanvasTools(){
  }
  function partState(root,n){
   var id=root.dataset.id,e=currentWidget(id),name=n.getAttribute('data-wpart'),p=e&&e.wp&&e.wp.__parts&&e.wp.__parts[name]||{};
-  return {id:id,name:name,e:e,x:+p.x||0,y:+p.y||0,r:+p.r||0,s:p.s==null?1:+p.s};
+  var state={id:id,name:name,e:e,x:+p.x||0,y:+p.y||0,r:+p.r||0,s:p.s==null?1:+p.s};
+  var hero=n.closest('.nw-lh');
+  if(hero){
+   var w=hero.clientWidth,h=hero.clientHeight;
+   if(w>0&&h>0){
+    if(p.refW>0&&p.refH>0){
+     state.x=state.x*w/p.refW;state.y=state.y*h/p.refH;
+    }
+    state.refW=w;state.refH=h;
+   }
+  }
+  return state;
  }
  function applyPart(n,p){
   n.style.setProperty('--nw-tx',p.x+'px');n.style.setProperty('--nw-ty',p.y+'px');n.style.setProperty('--nw-pr',p.r+'deg');n.style.setProperty('--nw-ps',p.s);n.classList.add('nw-part-t');

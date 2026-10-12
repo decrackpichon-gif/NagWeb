@@ -249,6 +249,51 @@ export async function runEditorPartsSmoke(page){
   const storedNeutral=await page.evaluate(()=>JSON.parse(localStorage.getItem(STORE_KEY)).pages[curPage].sections[curSec].elements.find(x=>x.id==='test-hero').wp.__parts['layer-2']);
   assert.deepEqual(storedNeutral,reset.part,'restablecimiento se guarda en el proyecto');
 
+  // La nueva posición Hero tiene referencia de ancho/alto al guardar y responde al resize.
+  await load(8);await select('test-hero');
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,hero=d.querySelector('.nw-lh');
+   hero.style.cssText='width:800px;height:400px;--h:400px;display:block;position:relative';
+   const n=d.querySelector('[data-wpart="layer-2"]');
+   n.style.display='block';
+   const w=d.defaultView,x=200,y=160;
+   n.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:91,button:0,clientX:x,clientY:y}));
+   w.dispatchEvent(new w.PointerEvent('pointermove',{bubbles:true,pointerId:91,button:0,clientX:x+80,clientY:y+40}));
+   w.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true,pointerId:91,button:0,clientX:x+80,clientY:y+40}));
+  });
+  const relative=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-hero');
+   return{p:e.wp.__parts['layer-2'],stored:JSON.parse(localStorage.getItem(STORE_KEY)).pages[curPage].sections[curSec].elements.find(x=>x.id==='test-hero').wp.__parts['layer-2']};
+  });
+  assert.equal(relative.p.refW,800);assert.equal(relative.p.refH,400);
+  assert.equal(relative.p.x,80);assert.equal(relative.p.y,40);
+  assert.deepEqual(relative.stored,relative.p,'guardar referencias del Hero');
+  // El mismo widget exportado debe usar unidades relativas, sin un runtime alternativo.
+  const markupResponsive=await page.evaluate(()=>{
+   const e={__parts:{'layer-2':{x:80,y:40,r:0,s:1,refW:800,refH:400}}};
+   const ctx={edit:false};
+   const html=window.SCW.kinds.layeredhero.markup(e,ctx);
+   const old=window.SCW.kinds.layeredhero.markup({__parts:{'layer-2':{x:80,y:40,r:0,s:1}}},ctx);
+   const css=window.SCW.css.layeredhero;
+   return{html,old,hasContainer:css.includes('container-type:inline-size')};
+  });
+  assert.match(markupResponsive.html,/--nw-tx:10\.00000cqw/,'X relativa a ancho de Hero');
+  assert.match(markupResponsive.html,/--nw-ty:calc\(var\(--h\) \* 0\.100000\)/,'Y relativa a alto de Hero');
+  assert.match(markupResponsive.old,/--nw-tx:80px;--nw-ty:40px/,'posiciones antiguas en píxeles sin migración destructiva');
+  assert.equal(markupResponsive.hasContainer,true,'Hero sirve como contenedor de medida');
+  // Al cambiar el ancho del Hero, los valores de la posición guardada se interpolan por proporción.
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,hero=d.querySelector('.nw-lh');
+   hero.style.width='400px';hero.style.height='200px';hero.style.setProperty('--h','200px');
+   const part=d.querySelector('[data-wpart="layer-2"]');
+   d.__nwCanvasPartAPI.select('test-hero','layer-2');
+   part.dispatchEvent(new d.defaultView.PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:92,button:0,clientX:100,clientY:80}));
+   d.defaultView.dispatchEvent(new d.defaultView.PointerEvent('pointermove',{bubbles:true,pointerId:92,button:0,clientX:100,clientY:80}));
+   d.defaultView.dispatchEvent(new d.defaultView.PointerEvent('pointerup',{bubbles:true,pointerId:92,button:0,clientX:100,clientY:80}));
+  });
+  const unchanged=await page.evaluate(()=>sec().elements.find(x=>x.id==='test-hero').wp.__parts['layer-2']);
+  assert.deepEqual(unchanged,relative.p,'no-ops con otro viewport no reescriben la posición');
+
   console.log('Editor partes: foco, restauración, Escape, Enter e historial OK');
  }finally{
   await page.evaluate(old=>{
