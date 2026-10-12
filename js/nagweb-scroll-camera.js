@@ -2029,7 +2029,7 @@ function toggleViewportTranslate(s){
   snapshot();if(idx>=0)frames[idx]=frame;else frames.push(frame);
   persist(s,frames,at);
  }
- function key(ev){if(ev.key!=='Escape')return;ev.preventDefault();ev.stopPropagation();if(gesture)end(null,true);else{stopViewportTranslate();renderPane();}}
+ function key(ev){if(ev.key!=='Escape')return;ev.preventDefault();ev.stopPropagation();if(gesture)end(null,true);stopViewportTranslate();renderPane();}
  function onLoad(){if(gesture)end(null,true);stopViewportTranslate();renderPane();}
  viewportTranslateArmed={sectionId:s.id,doc:doc,overlay:overlay,iframe:iframe,down:down,nudge:nudge,key:key,onLoad:onLoad,cleanup:function(){
   doc.removeEventListener('pointermove',move,true);doc.removeEventListener('pointerup',up,true);
