@@ -705,3 +705,48 @@ modo Mirar hacia, Deshacer único, teclado, cancelación y
 liberación de eventos/overlay. Pendiente: validación manual visual
 de estos controles en una vista previa real de navegador,
 antes de ampliar el sistema a objetos 3D.
+
+
+## Ajustar la profundidad Z de un objeto 3D desde la escena (11/10/2026)
+
+Los objetos `shape3d` **anclados** y elegibles ya se desplazan
+en X/Y desde su marco de selección proyectado, según
+`docs/spatial-interaction-v1.md`. Esta mejora **no reemplaza** ese
+mecanismo: agrega la edición visual de su posición en profundidad.
+
+Desde **Cámara 3D → Mapa del recorrido → Inspeccionar objeto**,
+seleccionar el modelo o forma 3D y pulsar
+**Ajustar profundidad Z en vista 3D**. Aparece un asa **↕ Z** próxima al
+pivote proyectado de ese objeto en la vista previa real, no en
+coordenadas supuestas del lienzo. Arrastrar hacia arriba aumenta la
+profundidad positiva (acerca el objeto); hacia abajo lo aleja.
+100 px de arrastre representan 1 unidad de la propiedad existente
+`offZ`; mantener **Shift** permite ajuste fino al 20 %. Con el foco
+en el asa, ↑/↓ ajustan 0,1 unidades (Shift: 0,02).
+
+Durante el gesto, el renderizador WebGL aplica un `offZ` **temporal**
+a ese objeto, sin editar los datos del proyecto ni escribir otro
+progreso de scroll. Tanto las anclas directas como los objetos anidados
+en contenedores libres compatibles usan la misma conversión existente
+`offZ / unit`. En la confirmación se guarda `element.offZ` una sola
+vez, con una sola operación de **Deshacer**. **Escape** o
+`pointercancel` restauran el valor anterior sin guardar. El asa se
+desmonta al terminar, al cambiar la selección o al recargar el iframe.
+Las transformaciones X/Y, rotaciones del GLB, keyframes del Director,
+cámara y punto de enfoque permanecen intactos.
+
+El asa se posiciona usando `NAGWEB_SPATIAL_SCREEN_POINT`, que proyecta
+el pivote del holder desde la cámara compartida de Three.js y rechaza
+objetos invisibles, fuera de recorte o de otra sección. La actualización
+temporal usa `NAGWEB_SPATIAL_PREVIEW_DEPTH`: rechaza valores inválidos,
+aisla por sección/ID y se limpia al desconectar el renderer. Son
+funciones puente para la vista previa same-origin del editor, **no**
+activan por sí solas gestos en sitios exportados.
+
+Cobertura: `tests/spatial-focus-map.integration.cjs` valida el panel,
+guardado, Deshacer, Escape, teclas, Shift, limpieza y aislamiento de
+keyframes; `tests/spatial-interaction.integration.cjs` contiene
+aserciones con geometría Three real para pivote proyectado, conversión
+de unidades `offZ`, aislamiento y restauración. Estas últimas pruebas
+y la validación visual Chromium deben confirmarse al ejecutarse en un
+entorno con Three y navegador instalados.
