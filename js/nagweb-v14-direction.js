@@ -235,7 +235,7 @@ function commitPart(id,name,p){
   snapshot();delete e.wp.__partsMobile[name];saveProject();return true;
  }
  var next={x:Math.round((p.x||0)*10)/10,y:Math.round((p.y||0)*10)/10,r:Math.round(p.r||0),s:Math.round((p.s==null?1:p.s)*1000)/1000};
- if(Number.isFinite(+p.z))next.z=Math.max(-100,Math.min(100,Math.round(+p.z)));
+ if((p.orderChanged||old.z!=null)&&Number.isFinite(+p.z))next.z=Math.max(-100,Math.min(100,Math.round(+p.z)));
  // El Hero conserva la referencia espacial del momento de edición:
  // así el HTML exportado puede adaptar X/Y sin cambiar la pose original.
  if(p.refW>0&&p.refH>0&&(next.x||next.y)){
@@ -305,7 +305,7 @@ function installCanvasTools(){
      var before=partState(root,active);
      var levels=others.map(function(n){return partState(root,n).z;});
      levels.push(6); // Texto editorial: el frente también puede pasar por delante de él.
-     var next=Object.assign({},before,{z:Math.max(-100,Math.min(100,front?Math.max.apply(null,levels)+1:Math.min.apply(null,levels)-1))});
+     var next=Object.assign({},before,{orderChanged:true,z:Math.max(-100,Math.min(100,front?Math.max.apply(null,levels)+1:Math.min.apply(null,levels)-1))});
      if(commitPart(next.id,next.name,next)){next.responsive=!!next.refW;next.mobileOverride=!!next.mobile;applyPart(active,next,true);}
      placeHandles();
     }
