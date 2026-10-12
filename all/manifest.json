@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "name": "all",
-  "generatedAt": "2026-10-12T14:51:37.068Z",
+  "generatedAt": "2026-10-12T15:41:12.456Z",
   "resourceCount": 6762,
   "providers": [
     "animxyz",
@@ -32,7 +32,7 @@
     {
       "id": "heroicons",
       "count": 323,
-      "sha256": "8623846a4e5de10a8d6ea0262f3a784863e1446f4e8adea63bc83f6e8dc7565a"
+      "sha256": "34bde9dcc877ae3b40b1293aff9d55ff991c0855a24cc583147e2f8205daa965"
     },
     {
       "id": "threejs-code",
@@ -46,10 +46,10 @@
     }
   ],
   "uncompressedBytes": 37963241,
-  "compressedBytes": 4697839,
-  "compressedSha256": "5c04b57c3bcec4e422244f5525e1018cb8573bb4683c78a53b6ea7189dabed2d",
-  "browseIndexBytes": 367356,
-  "browseIndexSha256": "8d9d321094f5dd8e53035e88a43f25e8ab208735f1b8bad21c706120a7326e47",
+  "compressedBytes": 4697869,
+  "compressedSha256": "d47c6d547ab2381cb45db034300fd5c7d72d55e674ea5a652979100b8186baf1",
+  "browseIndexBytes": 395085,
+  "browseIndexSha256": "d58f2acb8f5525726458a02cf16556020dc93dfe28b2f5508039178e16902fca",
   "files": {
     "library": "library.json.gz",
     "browseIndex": "browse-index.json.gz"
