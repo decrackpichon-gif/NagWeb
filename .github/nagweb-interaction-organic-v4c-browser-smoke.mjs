@@ -114,7 +114,7 @@ try{
         started.push(img.src);
         return new Promise((resolve,reject)=>pending.push({src:img.src,resolve,reject}));
       };
-      const svg=part=>'data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="140" height="200"><rect width="140" height="200" fill="'+part+'"/></svg>');
+      const svg=part=>'data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="140" height="200"><rect x="35" y="16" width="70" height="168" rx="28" fill="'+part+'"/></svg>');
       const first=svg('red'),second=svg('blue');
       api.loadAsset(first);
       await new Promise(r=>setTimeout(r,100));
@@ -131,8 +131,9 @@ try{
       await realImage.decode();
       const analysis=await realAnalyze(realImage,{maxDimension:512});
       secondTask.resolve(analysis);
-      await new Promise(r=>setTimeout(r,200));
-      return {tasks:pending.length,staleIgnored,activeCompleted:api.assetSource===second,version:api.v4c?.version,preview:document.querySelector('#preview').src===second};
+      const deadline=performance.now()+5000;
+      while(api.assetSource!==second&&performance.now()<deadline&&!(document.querySelector('#status')?.textContent||'').startsWith('ERROR'))await new Promise(r=>setTimeout(r,50));
+      return {tasks:pending.length,staleIgnored,activeCompleted:api.assetSource===second,version:api.v4c?.version,preview:document.querySelector('#preview').src===second,error:document.querySelector('#status')?.textContent};
     }finally{prep.analyzeImage=realAnalyze;mesh.prepareAsset=realPrepare;}
   });
   assert.equal(races.tasks,2,'both separate asset jobs should be initiated');
