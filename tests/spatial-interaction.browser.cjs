@@ -98,6 +98,7 @@ const {chromium}=require('playwright');
    close(visualBase.liveScale/visualBase.originalScale,1.4);
    close(visualBase.restoredScale,visualBase.originalScale);
    assert.equal(visualBase.otherUntouched,true);assert.equal(visualBase.currentProgress,.5);
+   await page.evaluate(()=>{const d=window.__pickTest;delete d.objects[1].userData.o.nwSpatialRotateY;d.tick();});
    console.log('PASS edit: real GLB WebGL rotation/scale preview, atomic commit, scene isolation and Director progress');
    console.log('PASS edit: resize uses the same inverse camera projection and persists the expected width');
   const contextPoint=await page.evaluate(()=>window.__pickScreen(1));await page.mouse.click(contextPoint.x,contextPoint.y,{button:'right'});await page.waitForFunction(()=>window.__changes.some(m=>m.type==='ctx'&&m.id==='model'));
