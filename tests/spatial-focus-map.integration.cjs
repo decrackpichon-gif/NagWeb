@@ -270,8 +270,8 @@ assert.equal(C.objectDepthDrag(1,NaN,false),null);
 object.offZ=0;
 const depthEvents=[];
 previewWindow.NAGWEB_SPATIAL_SCREEN_POINT=(id,sectionId)=>id==='glb'&&sectionId==='scene'?{x:150,y:160}:null;
-previewWindow.NAGWEB_SPATIAL_PREVIEW_DEPTH=(id,value,sectionId)=>{
- depthEvents.push({id,value,sectionId});return id==='glb'&&sectionId==='scene';
+previewWindow.NAGWEB_SPATIAL_PREVIEW_DEPTH=(id,value,sectionId,commit)=>{
+ depthEvents.push({id,value,sectionId,commit:!!commit});return id==='glb'&&sectionId==='scene';
 };
 previewDocument.createElement=()=>({
  style:{},listeners:{},parentNode:null,textContent:'',
@@ -297,6 +297,7 @@ assert.equal(depthEvents.at(-1).value,1,'Upward drag moves the 3D model forward'
 assert.equal(depthHandle.textContent,'↕ Z 1');
 previewDocument.listeners.pointerup({pointerId:61,clientY:50,shiftKey:false,preventDefault(){}});
 assert.equal(object.offZ,1,'Confirmed depth updates only the authored offZ value');
+assert.equal(depthEvents.at(-1).commit,true,'Depth is promoted to the iframe source instead of left transient');
 assert.equal(undos,prevDepthUndo+1,'Confirmed depth creates exactly one Undo entry');
 assert.equal(saves,prevDepthSave+1,'Confirmed depth saves once');
 assert.equal(liveOverlay,null,'Committed tool removes itself');
@@ -315,6 +316,7 @@ const keyboardHandle=liveOverlay;
 const beforeDepthKeyboard=undos;
 keyboardHandle.listeners.keydown({key:'ArrowUp',shiftKey:true,preventDefault(){},stopPropagation(){}});
 assert.equal(object.offZ,1.02,'Keyboard Shift nudge preserves fine depth precision');
+assert.equal(depthEvents.at(-1).commit,true,'Keyboard depth nudge promotes confirmed value');
 assert.equal(undos,beforeDepthKeyboard+1,'Keyboard nudge creates one Undo');
 assert.equal(liveOverlay,null);
 depthClick();
