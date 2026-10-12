@@ -93,7 +93,11 @@ function selectWidget(id){
 var partFocus=Object.create(null);
 function syncPartHandles(doc,id,name){
  if(selection.length!==1||selection[0]!==id)return;
- var api=doc.__nwCanvasPartAPI;if(!api)return;
+ var api=doc.__nwCanvasPartAPI;
+ if(!api){
+  doc.addEventListener('nw-canvas-parts-ready',function(){syncPartHandles(doc,id,name);},{once:true});
+  return;
+ }
  if(name)api.select(id,name);else api.clear();
 }
 function restorePartFocus(doc){

@@ -23,7 +23,7 @@ export async function runEditorPartsSmoke(page){
   await page.evaluate(html=>{document.querySelector('#preview').srcdoc=html;},markup(n));
   await page.waitForFunction(n=>{
    const f=document.querySelector('#preview');
-   return f.contentDocument?.body?.dataset.partsRun===String(n)&&f.contentWindow?.__nwFeedback16Editors===1;
+   return f.contentDocument?.body?.dataset.partsRun===String(n)&&f.contentWindow?.__nwFeedback16Editors===1&&!!f.contentDocument?.__nwCanvasPartAPI;
   },{},n);
  }
  async function fire(selector,type='pointerdown'){
@@ -59,7 +59,8 @@ export async function runEditorPartsSmoke(page){
    const d=document.querySelector('#preview').contentDocument;
    return{part:d.querySelector('.nw-wpart-sel')?.getAttribute('data-wpart')||null,handles:d.querySelectorAll('.nw-wpart-h').length};
   });
-  assert.deepEqual(await toolPart(),{part:'layer-2',handles:2},'Hero: un clic en Foto 2 habilita mover, escalar y rotar');
+  const actualHero=await toolPart();
+  assert.deepEqual(actualHero,{part:'layer-2',handles:2},'Hero: un clic en Foto 2 habilita mover, escalar y rotar');
   await select('test-story');await fire('[data-nw-story-ch="2"]');
   assert.deepEqual(await toolPart(),{part:null,handles:0},'cambiar capítulo limpia tiradores anteriores');
   await fire('[data-nw-story-part="media"]');

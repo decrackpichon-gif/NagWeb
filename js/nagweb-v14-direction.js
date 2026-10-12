@@ -336,6 +336,13 @@ function installCanvasTools(){
  doc.defaultView.addEventListener('resize',placeHandles);
  // API exclusiva del iframe de edición; no entra al HTML de publicación.
  doc.__nwCanvasPartAPI={select:selectPart,clear:clear};
+ // Si los selectores de la composición se instalaron antes, recuperar el foco.
+ var selectedPart=doc.querySelector('.nw-part-edit-active[data-wpart]');
+ if(selectedPart){
+  var selectedRoot=selectedPart.closest('.el.wdg[data-id]');
+  if(selectedRoot)selectPart(selectedRoot.dataset.id,selectedPart.getAttribute('data-wpart'));
+ }
+ doc.dispatchEvent(new doc.defaultView.Event('nw-canvas-parts-ready'));
 }
 var preview=document.getElementById('preview');
 if(preview){preview.addEventListener('load',function(){setTimeout(installCanvasTools,40);});setTimeout(installCanvasTools,250);}
