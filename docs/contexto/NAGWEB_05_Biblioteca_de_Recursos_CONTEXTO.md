@@ -93,3 +93,20 @@ Biblioteca offline-first de **recursos abiertos/licenciados** para diseñadores.
 - El importador se incorpora en la rama ETL sin tocar la historia independiente
   de snapshots `resource-vault-data`; materializar ese catálogo es un trabajo
   posterior. No desplegar Vercel.
+
+## Etapa 86: materialización incremental Heroicons (12/10/2026)
+
+- Se incorporó un generador para un paquete persistente Heroicons con SHA-256,
+  licencia MIT y un límite mínimo de íconos válidos. Los contornos que no
+  cumplan el adaptador SVG nativo se registran, no se insertan a la fuerza.
+- Se agregó un workflow de publicación **incremental** en
+  `.github/workflows/resource-heroicons-append.yml`: toma la historia propia
+  de `resource-vault-data`, agrega exclusivamente el nuevo proveedor,
+  recompone índice y biblioteca consolidados, comprueba integridad y hace
+  push normal (sin force, sin merge). El trabajo de código continúa exclusivamente
+  en `feat/resource-etl-v1`.
+- Verificar resultado real del workflow, conteo final de recursos y manifest
+  en GitHub antes de informar que el catálogo persistente se actualizó.
+- Riesgo pendiente: el workflow anterior de reconstrucción completa,
+  `resource-vault-snapshot.yml`, no incluye aún el nuevo proveedor. No
+  ejecutarlo hasta adaptarlo para preservar Heroicons.

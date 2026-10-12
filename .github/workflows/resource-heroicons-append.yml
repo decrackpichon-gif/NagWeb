@@ -1,0 +1,125 @@
+name: Resource Vault Heroicons Append
+
+on:
+  push:
+    branches:
+      - feat/resource-etl-v1
+    paths:
+      - ".github/workflows/resource-heroicons-append.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: resource-vault-snapshot
+  cancel-in-progress: false
+
+jobs:
+  heroicons-append:
+    name: Append Heroicons without rebuilding existing providers
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout the exclusive NAGWEB 05 code branch
+        uses: actions/checkout@v4
+        with:
+          ref: feat/resource-etl-v1
+          fetch-depth: 1
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Verify Heroicons source policy and transformer
+        working-directory: tools/resource-etl
+        run: node src/heroicons-selftest.mjs
+
+      - name: Materialize full licensed Heroicons snapshot
+        working-directory: tools/resource-etl
+        shell: bash
+        run: |
+          node src/snapshot/build-heroicons-snapshot.mjs --out-dir="$RUNNER_TEMP/nagweb-heroicons-snapshot"
+
+      - name: Check out existing independent data history without merging
+        shell: bash
+        run: |
+          git fetch --no-tags --depth=1 origin refs/heads/resource-vault-data:refs/remotes/origin/resource-vault-data
+          git worktree add -b heroicons-data-update "$RUNNER_TEMP/nagweb-vault-data-publish" refs/remotes/origin/resource-vault-data
+          test -s "$RUNNER_TEMP/nagweb-vault-data-publish/vault-manifest.json"
+          test -s "$RUNNER_TEMP/nagweb-vault-data-publish/all/library.json.gz"
+
+      - name: Append only Heroicons and rebuild verified global indexes
+        shell: bash
+        run: |
+          export PUBLISH_DIR="$RUNNER_TEMP/nagweb-vault-data-publish"
+          export SNAPSHOT_DIR="$RUNNER_TEMP/nagweb-heroicons-snapshot"
+          mkdir -p "$PUBLISH_DIR/heroicons"
+          cp "$SNAPSHOT_DIR/library.json.gz" "$PUBLISH_DIR/heroicons/"
+          cp "$SNAPSHOT_DIR/catalog.json" "$PUBLISH_DIR/heroicons/"
+          cp "$SNAPSHOT_DIR/manifest.json" "$PUBLISH_DIR/heroicons/"
+          cp "$SNAPSHOT_DIR/skipped.json" "$PUBLISH_DIR/heroicons/"
+          cp "$SNAPSHOT_DIR/LICENSE" "$PUBLISH_DIR/heroicons/"
+          cp "$SNAPSHOT_DIR/README.md" "$PUBLISH_DIR/heroicons/"
+
+          node tools/resource-etl/src/snapshot/build-global-vault-manifest.mjs --root="$PUBLISH_DIR"
+          node tools/resource-etl/src/snapshot/build-consolidated-vault.mjs --root="$PUBLISH_DIR"
+
+      - name: Validate global resource IDs and checksums before publishing
+        shell: bash
+        run: |
+          node --input-type=module - <<'NODE'
+          import fs from "node:fs";
+          import path from "node:path";
+          import { createHash } from "node:crypto";
+          import { gunzipSync } from "node:zlib";
+          const root=process.env.RUNNER_TEMP + "/nagweb-vault-data-publish";
+          const oldRoot=JSON.parse(fs.readFileSync(root+"/vault-manifest.json","utf8"));
+          const hero=JSON.parse(fs.readFileSync(root+"/heroicons/manifest.json","utf8"));
+          const snap=oldRoot.snapshots.find(s=>s.id==="heroicons");
+          const all=oldRoot.consolidated;
+          if(!snap || snap.count!==hero.resourceCount || hero.resourceCount<250 ||
+             oldRoot.snapshotCount!==5 || all.count!==oldRoot.totalResources) {
+            throw new Error("Heroicons/global manifest counts inconsistent");
+          }
+          for (const id of ["uiverse","lucide","threejs-code","core-code","heroicons"]) {
+            if(!oldRoot.snapshots.some(s=>s.id===id)) throw new Error("Missing original provider: "+id);
+          }
+          const files=[{path:"all/library.json.gz",hash:all.sha256},
+                       {path:"all/browse-index.json.gz",hash:all.browseIndexSha256},
+                       {path:"heroicons/library.json.gz",hash:hero.compressedSha256}];
+          for(const item of files) {
+            const buf=fs.readFileSync(path.join(root,item.path));
+            const got=createHash("sha256").update(buf).digest("hex");
+            if(got!==item.hash) throw new Error("SHA-256 mismatch for "+item.path);
+          }
+          const bundle=JSON.parse(gunzipSync(fs.readFileSync(root+"/all/library.json.gz")).toString("utf8"));
+          const browse=JSON.parse(gunzipSync(fs.readFileSync(root+"/all/browse-index.json.gz")).toString("utf8"));
+          if(bundle.resourceCount!==oldRoot.totalResources || browse.resourceCount!==bundle.resourceCount)
+            throw new Error("Consolidated library/browse resource totals mismatch");
+          const ids=bundle.resources.map(r=>r.id);
+          if(ids.length!==new Set(ids).size) throw new Error("Duplicate IDs in the full Vault");
+          const icons=bundle.resources.filter(r=>r.source?.provider==="heroicons");
+          if(icons.length!==hero.resourceCount ||
+             !icons.every(r=>r.license?.id==="MIT" && r.runtime?.renderer==="nagweb-svg")) {
+            throw new Error("Heroicons permissions or native SVG compatibility failed");
+          }
+          console.log("Validated full catalog",bundle.resourceCount,
+            "Heroicons",icons.length,"existing",bundle.resourceCount-icons.length);
+          NODE
+
+      - name: Safely commit data branch update without force or merge
+        shell: bash
+        run: |
+          PUBLISH_DIR="$RUNNER_TEMP/nagweb-vault-data-publish"
+          git -C "$PUBLISH_DIR" config user.name "github-actions[bot]"
+          git -C "$PUBLISH_DIR" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C "$PUBLISH_DIR" add heroicons vault-manifest.json README.md all
+          if git -C "$PUBLISH_DIR" diff --cached --quiet; then
+            echo "No data changes needed"
+            exit 0
+          fi
+          git -C "$PUBLISH_DIR" commit -m "data: append Heroicons outlines and refresh verified browse index"
+          # Non-fast-forward or concurrent updates fail instead of rewriting history.
+          git -C "$PUBLISH_DIR" push origin HEAD:refs/heads/resource-vault-data

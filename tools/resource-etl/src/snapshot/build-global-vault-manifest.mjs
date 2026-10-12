@@ -1,4 +1,5 @@
 import path from "node:path";
+import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 
 function parseArgs(argv) {
@@ -36,6 +37,12 @@ const snapshots = [
     countKey: "resourceCount"
   },
   {
+    id: "heroicons",
+    title: "Heroicons 24px Outline",
+    dir: path.join(root, "heroicons"),
+    countKey: "resourceCount"
+  },
+  {
     id: "threejs-code",
     title: "Three.js code-only",
     dir: path.join(root, "threejs-code"),
@@ -51,6 +58,8 @@ const snapshots = [
 
 const items = [];
 for (const snapshot of snapshots) {
+  // Backwards-compatible with a data branch that predates Heroicons.
+  if (snapshot.id === "heroicons" && !existsSync(path.join(snapshot.dir, "manifest.json"))) continue;
   const manifest = await readJson(path.join(snapshot.dir, "manifest.json"));
   const count = Number(manifest[snapshot.countKey] || 0);
   items.push({

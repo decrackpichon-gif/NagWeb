@@ -1341,3 +1341,27 @@ Para generar el lote local dentro de `tools/resource-etl`:
 La extracción no modifica por sí misma `resource-vault-data` ni el catálogo
 público. `npm test` cubre transformación y seguridad sin red y CI prueba
 una extracción pequeña real, con previsualización y edición nativa.
+
+## Etapa 86: catálogo persistente de Heroicons, sin rehacer otros proveedores
+
+El script `src/snapshot/build-heroicons-snapshot.mjs` genera el catálogo **completo
+de contornos compatibles** de Heroicons (no sólo la muestra de 25), conserva los
+SVG originales, licencia MIT, metadatos, íconos editables y un reporte de archivos
+descartados por incompatibilidad. Se exige un mínimo de 250 SVG válidos como
+protección contra cambios masivos del repositorio original.
+
+El workflow `.github/workflows/resource-heroicons-append.yml` agrega ese paquete
+de forma incremental a la rama independiente `resource-vault-data`, sin mezclar
+su historia con el código ni volver a descargar los 6439 recursos preexistentes.
+Regenera y verifica `vault-manifest.json`, `all/library.json.gz` y
+`all/browse-index.json.gz`, controla SHA-256 y evita IDs duplicados.
+La actualización usa **push sin force** y se detiene si otra publicación
+modifica la rama durante el proceso. No genera despliegues Vercel.
+Los recursos se vuelven consultables por el cliente persistente cuando GitHub
+completa la actualización y el navegador recarga el índice.
+
+La actualización inicial se dispara una sola vez al incorporar el workflow en
+`feat/resource-etl-v1`. La generación completa antigua de
+`resource-vault-snapshot.yml` todavía reconstruye sólo sus cuatro fuentes
+históricas; si se la ejecuta manualmente en el futuro, será necesario integrarle
+Heroicons para no reemplazar el índice con una versión anterior.

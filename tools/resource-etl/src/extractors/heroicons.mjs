@@ -99,8 +99,19 @@ export async function extractHeroicons({ limit = 25, all = false, concurrency = 
   const items = await mapLimit(selected, Math.max(1, Math.min(12, Number(concurrency) || 8)), async entry => {
     const sourceSvg = await fetchText("https://raw.githubusercontent.com/" + REPO +
       "/" + commit + "/" + entry.path);
-    const svg = normalizeHeroiconOutline(sourceSvg);
-    return { ...entry, sourceSvg, svg };
+    try {
+      const svg = normalizeHeroiconOutline(sourceSvg);
+      return { ...entry, sourceSvg, svg };
+    } catch (error) {
+      // Some upstream SVGs may use markup outside NagWeb's native stroke
+      // model. Do not import them, or abort the safe majority of the catalog.
+      return { ...entry, excluded: String(error?.message || error) };
+    }
   });
-  return { repository: BASE, commit, licenseText, totalAvailable: available, items };
+  const skipped = items.filter(item => item.excluded)
+    .map(({ name, excluded }) => ({ name, reason: excluded }));
+  return {
+    repository: BASE, commit, licenseText, totalAvailable: available,
+    items: items.filter(item => !item.excluded), skipped
+  };
 }
