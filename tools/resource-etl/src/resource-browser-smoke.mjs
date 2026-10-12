@@ -1441,7 +1441,7 @@ try {
   await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
   const heroNative=page.frameLocator("#preview").locator(`[data-id="${heroInserted.element.id}"] svg`);
   await expect(heroNative).toBeVisible();
-  await expect(heroNative.locator("path").first()).toHaveAttribute("stroke","#2468ab");
+  await expect(heroNative.locator("path").first()).toHaveCSS("stroke","rgb(36, 104, 171)");
   await page.evaluate(id=>{selection=[id];curEl=sec().elements.findIndex(e=>e.id===id);secFocus=false;renderPane();},heroInserted.element.id);
   await expect(page.getByRole("button",{name:"Personalizar ícono seleccionado",exact:true})).toBeEnabled();
   await page.getByRole("button",{name:"Personalizar ícono seleccionado",exact:true}).click();
