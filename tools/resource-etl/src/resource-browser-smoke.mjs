@@ -1343,79 +1343,9 @@ try {
       dimensions.width<=dimensions.slotWidth+2,"Nested HTML must fit its native slot");
   }
   await page.locator("#btn-view-desk").click();
-  // Stage 84: editor-owned control on the HTML wrapper, never inside the
-  // sandboxed third-party iframe. Pointer and keyboard both reopen editing.
-  const canvasEdit=page.getByRole("button",{name:"Personalizar componente desde el lienzo"});
-  try {
-    await expect(canvasEdit).toHaveCount(1);
-  } catch (error) {
-    const diagnostic=await page.evaluate(()=>{
-      const frame=document.querySelector("#preview");
-      const doc=frame?.contentDocument;
-      const root=document.querySelector("[data-resource-edit-overlay]");
-      return {
-        overlayExists:!!root, overlayChildCount:root?.children.length,
-        dialogOpen:[...document.querySelectorAll("dialog")].some(d=>d.open),
-        docReady:doc?.readyState,
-        docSize:[doc?.documentElement.clientWidth,doc?.documentElement.clientHeight],
-        iframeSize:[frame?.clientWidth,frame?.clientHeight],
-        iframeBounds:frame?.getBoundingClientRect().toJSON(),
-        section:sec()?.id,
-        htmlModels:sec()?.elements.filter(e=>e.nwResource?.kind==="uiverse-html").map(e=>({id:e.id,type:e.type})),
-        nodes:[...(doc?.querySelectorAll(".el[data-id]")||[])].map(n=>({
-          id:n.dataset.id,section:n.closest(".sc")?.dataset.id,
-          rect:n.getBoundingClientRect().toJSON()
-        })).slice(-7)
-      };
-    });
-    console.log("RESOURCE_HTML_OVERLAY_DIAG "+JSON.stringify(diagnostic));
-    throw error;
-  }
-  await expect(canvasEdit).toBeVisible();
-  // The opaque iframe consumes hover; the editor control stays reachable.
-  await expect(canvasEdit).toHaveCSS("pointer-events","auto");
-  // Host control must exist outside the iframe and point at the child on screen.
-  const alignment=await page.evaluate(id=>{
-    const host=document.querySelector('[data-nagweb-resource-edit="'+id+'"]');
-    const node=preview.contentDocument.querySelector('.el[data-id="'+id+'"]');
-    const a=host.getBoundingClientRect(), b=node.getBoundingClientRect(), p=preview.getBoundingClientRect();
-    return {withinX:a.left>=p.left-2&&a.right<=p.right+2,
-      withinY:a.top>=p.top-2&&a.bottom<=p.bottom+2,
-      notInCanvas:!preview.contentDocument.querySelector("[data-nagweb-resource-edit]"),
-      childVisible:b.width>0&&b.height>0};
-  },htmlChildId);
-  assert.deepEqual(alignment,{withinX:true,withinY:true,notInCanvas:true,childVisible:true});
-  const beforeInlineEdit=await page.evaluate(()=>history.length);
-  try {
-    await canvasEdit.click({timeout:10000});
-  } catch (error) {
-    console.log("RESOURCE_HTML_CLICK_DIAG "+JSON.stringify(await page.evaluate(id=>{
-      const frame=document.querySelector("#preview"), doc=frame?.contentDocument;
-      return {
-        overlayCount:document.querySelector("[data-resource-edit-overlay]")?.children.length,
-        model:!!sec()?.elements.find(e=>e.id===id),
-        scene:sec()?.id, dialogOpen:[...document.querySelectorAll("dialog")].some(d=>d.open),
-        iframeReady:doc?.readyState,
-        iframeHasResource:!!doc?.querySelector('.el[data-id="'+id+'"]'),
-        matchingScene:doc?.querySelector('.el[data-id="'+id+'"]')?.closest(".sc")?.dataset.id,
-        frameBounds:frame?.getBoundingClientRect().toJSON()
-      };
-    },htmlChildId)));
-    throw error;
-  }
-  const contextualDialog=page.getByRole("dialog",{name:"Biblioteca de recursos",exact:true});
-  await expect(contextualDialog).toBeVisible();
-  const browserFrameNode=page.locator('iframe[title="Biblioteca de recursos de NagWeb"]');
-  await expect.poll(async()=>new URL(await browserFrameNode.getAttribute("src")).searchParams.get("editKind")).toBe("uiverse-html");
+  await page.evaluate(id=>{selection=[id];curEl=sec().elements.findIndex(e=>e.id===id);renderPane();},htmlChildId);
+  await page.getByRole("button",{name:"Personalizar componente Uiverse seleccionado",exact:true}).click();
   const custom=page.frameLocator('iframe[title="Biblioteca de recursos de NagWeb"]');
-  await custom.getByRole("button",{name:"Guardar cambios en el componente",exact:true}).waitFor({state:"visible",timeout:30000});
-  assert.equal(await page.evaluate(()=>history.length),beforeInlineEdit,
-    "Opening contextual customization must not create history");
-  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
-  await expect(canvasEdit).toBeFocused();
-  await canvasEdit.press("Enter");
-  await expect(contextualDialog).toBeVisible();
-  await custom.getByRole("button",{name:"Guardar cambios en el componente",exact:true}).waitFor({state:"visible",timeout:30000});
   const repeat=custom.getByLabel(htmlPlayControl.label,{exact:true});
   const group=custom.locator("details").filter({has:repeat});
   if(!await group.evaluate(n=>n.open))await group.locator("summary").click();
@@ -1427,19 +1357,10 @@ try {
   const code=await page.evaluate(()=>generateSite(flattenPage(page()),false,true,false));
   assert.match(code,/sandbox=""/);
   assert.match(code,/spin 1s 3 alternate/);
-  assert.doesNotMatch(code,/data-nagweb-resource-edit/,
-    "Editor-only edit buttons must not appear in the exported site");
   await page.reload();
   assert.equal(await page.evaluate(id=>sec().elements.find(e=>e.id===id).parent,htmlChildId),parentId);
   await expect(page.frameLocator("#preview").frameLocator(
     `[data-id="${htmlChildId}"] iframe.emb-sand`).locator(".card")).toBeVisible();
-  const reloadedEdit=page.locator(
-    `[data-resource-edit-overlay] [data-nagweb-resource-edit="${htmlChildId}"]`);
-  await expect(reloadedEdit).toHaveCount(1);
-  await reloadedEdit.focus();
-  await reloadedEdit.press("Enter");
-  await expect(page.getByRole("dialog",{name:"Biblioteca de recursos"})).toBeVisible();
-  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
   await page.evaluate(id=>{selection=[id];curEl=sec().elements.findIndex(e=>e.id===id);renderPane();},parentId);
   await page.getByRole("button",{name:"Biblioteca de recursos",exact:true}).click();
   await expect(placement).toHaveValue(parentId);
@@ -1456,8 +1377,7 @@ try {
   },[htmlChildId,vectorId]);
   assert.deepEqual(parents,[parentId,parentId]);
   report.scenarios.push({editor:"native resources nested in selected container",
-    status:"passed",html:true,svg:true,responsive:true,edit:true,export:true,reload:true,
-    htmlCanvasEdit:true,keyboard:true,noExportOverlay:true});
+    status:"passed",html:true,svg:true,responsive:true,edit:true,export:true,reload:true});
   await context.close();
   assert.deepEqual(report.errors, [], "Browser must not emit uncaught errors or external requests");
   console.log("Resource Browser Chromium smoke: panel desktop/mobile + real NagWeb SVG insertion and editing, save, cancel, undo/redo, reload and rejected inputs OK.");

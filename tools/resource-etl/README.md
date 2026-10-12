@@ -1303,51 +1303,17 @@ una grilla nativa, comprueba móviles, edición, persistencia, exportación y
 recarga. También se robusteció una aserción de iframe al cambiar de vista
 en Windows, sin suprimir errores de render reales.
 
-## Bloque 84: personalización HTML/CSS contextual sobre el lienzo
+## Estado de continuidad: intento de etapa 84 (12/10/2026)
 
-Los componentes Uiverse HTML/CSS insertados muestran sobre su marco un botón
-de edición propio de NagWeb, visible también cuando el cursor está dentro del
-iframe aislado, que no transmite eventos hover al editor. Funciona en pantallas
-táctiles y también se puede activar con teclado. Permite abrir la ficha original
-sin seleccionar manualmente el elemento desde el panel lateral; después de
-cerrar sin cambios devuelve el foco al control del lienzo, si sigue existiendo.
-El control pertenece únicamente al documento temporal del editor: no modifica
-el iframe opaco de terceros, sus permisos, el código del recurso, la jerarquía
-guardada ni el HTML exportado. Se reconstruye tras recargas del lienzo y
-mantiene el botón Personalizar como alternativa. Chromium comprueba apertura
-con mouse y teclado, ausencia de historial al abrir y ausencia del control
-en el sitio exportado.
+Se probó un acceso contextual directo a la personalización Uiverse HTML/CSS.
+Las pruebas de Chromium detectaron pérdida de eventos en el iframe y luego una
+regresión del acceso por doble clic de SVG. **No se conservó esa implementación
+experimental**: se restauraron el puente con NagWeb y el test de navegador de
+la etapa 83, cuya ejecución de CI había aprobado.
 
-Esta rama declara en `vercel.json` que no debe generar vistas previas
-automáticas de Vercel; las demás ramas no quedan afectadas por ese archivo.
-
-### Estabilidad del acceso contextual
-
-El acceso del botón se atiende antes de que el editor procese la selección o
-arrastre del elemento: algunos cambios del lienzo reemplazan el nodo entre
-`pointerdown` y `click` y perdían la acción. La apertura HTML utiliza
-directamente el recurso verificado en la escena, sin depender de que el botón
-general de Personalizar esté habilitado para un SVG. Se conserva el acceso
-con teclado y se espera la carga real de la ficha en la prueba del navegador.
-
-### Control contextual fuera del iframe del lienzo
-
-El control ✎ de HTML/CSS ahora se dibuja en la interfaz principal de NagWeb,
-superpuesto visualmente al componente mediante su posición real en el lienzo.
-No se inyectan botones ni listeners de activación en el iframe de previsualización,
-cuyos eventos de selección y redibujado pueden interrumpir un clic. La posición
-se vuelve a medir al cambiar la vista, hacer scroll, redimensionar o cargar la
-escena. El control permanece independiente del HTML de terceros y de lo
-exportado, conserva el acceso con mouse y teclado y mantiene el foco al cerrar
-la personalización si el componente sigue disponible.
-
-La superposición HTML no espera la bandera de medición de SVG: una actualización
-tardía de `srcdoc` puede conservarla activa aunque el marco HTML ya sea
-visible. El control sólo se genera cuando el documento y su nodo visual existen
-y la identidad del recurso coincide con la escena actual.
-
-Durante la reconstrucción temporal del `srcdoc` del lienzo, NagWeb conserva
-el botón de personalización asociado al ID de un HTML/CSS que aún pertenece a
-la escena. Sólo elimina el botón cuando el elemento deja de existir o cuando
-la disposición vuelve a renderizarlo fuera de la vista. Así no desaparece
-entre la detección del componente y el clic del diseñador.
+El acceso estable continúa siendo el botón **Personalizar** del editor con el
+recurso HTML/CSS seleccionado; para SVG siguen funcionando el doble clic y
+`Alt+Enter`. No anunciar edición HTML contextual desde el lienzo como una
+función terminada hasta rediseñarla y validarla en Chromium en ambos sistemas.
+La configuración `vercel.json` continúa desactivando las vistas previas
+**únicamente** para `feat/resource-etl-v1`.

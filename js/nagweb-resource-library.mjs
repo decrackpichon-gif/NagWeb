@@ -24,7 +24,6 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   let editContext = null;
   let librarySession = 0;
   let opener = button;
-  let canvasEditOpener = null;
   let pendingFocusReturn = null;
   let canvasLoading = false;
   const measureVector = element => {
@@ -103,12 +102,9 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       catch { ready = false; }
     }
     if (editButton.disabled !== !ready) editButton.disabled = !ready;
-    if (pendingFocusReturn && !dialog.open) {
-      const focusTarget = pendingFocusReturn.isConnected ? pendingFocusReturn : editButton;
-      if (!focusTarget.disabled) {
-        focusTarget.focus();
-        pendingFocusReturn = null;
-      }
+    if (pendingFocusReturn && !dialog.open && !pendingFocusReturn.disabled) {
+      pendingFocusReturn.focus();
+      pendingFocusReturn = null;
     }
     const label = element?.nwResource?.kind === "uiverse-html"
       ? "Personalizar componente Uiverse seleccionado" : "Personalizar ícono seleccionado";
@@ -146,7 +142,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     pendingFocusReturn = null;
     librarySession++;
     editContext = context;
-    opener = context ? (canvasEditOpener || editButton) : button;
+    opener = context ? editButton : button;
     destination.replaceChildren(new Option("Raíz de la escena", ""));
     const container = !context && selection.length === 1
       ? sec()?.elements.find(e => e.id === selection[0] && e.type === "container")
@@ -173,28 +169,18 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     }
     if (frame.src !== url.href) frame.src = url.href;
     dialog.showModal();
-    editOverlay.style.visibility = "hidden";
   };
   button.addEventListener("click", () => openLibrary(null));
-  const openHtmlCustomization = (element, returnFocus = editButton) => {
-    if (!element || element.type !== "embed" || element.nwResource?.kind !== "uiverse-html" ||
-        dialog.open) return false;
-    const values = element.nwResource.values;
-    if (!values || typeof values !== "object" || Array.isArray(values)) return false;
-    canvasEditOpener = returnFocus;
-    try {
-      openLibrary({ kind: "uiverse-html", session: crypto.randomUUID(),
-        resourceId: element.nwResource.id, elementId: element.id,
-        pageId: page().id, sceneId: sec().id, mobile: viewMobile,
-        values: structuredClone(values), fingerprint: JSON.stringify(element) });
-      return true;
-    } finally { canvasEditOpener = null; }
-  };
   editButton.addEventListener("click", () => {
     const element = selectedLibraryElement();
     if (!element) return;
     if (element.nwResource.kind === "uiverse-html") {
-      openHtmlCustomization(element);
+      const values = element.nwResource.values;
+      if (!values || typeof values !== "object" || Array.isArray(values)) return;
+      openLibrary({ kind: "uiverse-html", session: crypto.randomUUID(),
+        resourceId: element.nwResource.id, elementId: element.id,
+        pageId: page().id, sceneId: sec().id, mobile: viewMobile,
+        values: structuredClone(values), fingerprint: JSON.stringify(element) });
       return;
     }
     let stroke = resolveColor(vget(element, "stroke"), project.styles);
@@ -208,107 +194,10 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       elementId: element.id, pageId: page().id, sceneId: sec().id, mobile: viewMobile, values,
       fingerprint: JSON.stringify(element) });
   });
-  // Contextual edit controls live above the canvas in the editor document.
-  // This avoids pointer interception and redraws inside the canvas iframe.
-  const editOverlay = document.createElement("div");
-  editOverlay.dataset.resourceEditOverlay = "";
-  editOverlay.style.cssText = "position:fixed;inset:0;z-index:2147483000;pointer-events:none";
-  document.body.append(editOverlay);
-  const editOverlayButtons = new Map();
-  let overlayQueued = false;
-  const syncHtmlOverlay = () => {
-    overlayQueued = false;
-    let doc;
-    try { doc = preview.contentDocument; } catch { doc = null; }
-    if (dialog.open) { editOverlay.style.visibility = "hidden"; return; }
-    editOverlay.style.visibility = "visible";
-    // HTML controls depend on a rendered wrapper, not on vector measurement.
-    // canvasLoading may remain flagged by a late srcdoc mutation.
-    // A srcdoc redraw can momentarily expose an empty document. Keep the
-    // last editor-owned control while the resource remains in this scene.
-    const modelIds = new Set((sec()?.elements || []).filter(e => e.type === "embed" &&
-      e.mode === "html" && e.nwResource?.kind === "uiverse-html" &&
-      e.nwResource.provider === "uiverse").map(e => e.id));
-    for (const [id, control] of editOverlayButtons) {
-      if (modelIds.has(id)) continue;
-      control.remove();
-      editOverlayButtons.delete(id);
-    }
-    if (!doc || doc.readyState === "loading") return;
-    const frameBounds = preview.getBoundingClientRect();
-    const docWidth = doc.documentElement.clientWidth || preview.clientWidth;
-    const docHeight = doc.documentElement.clientHeight || preview.clientHeight;
-    if (!(docWidth > 0) || !(docHeight > 0) || !(frameBounds.width > 0) ||
-        !(frameBounds.height > 0)) return;
-    const sx = frameBounds.width / docWidth;
-    const sy = frameBounds.height / docHeight;
-    const visible = new Set();
-    let matchedDomResources = 0;
-    for (const node of doc.querySelectorAll(".el[data-id]")) {
-      if (node.closest(".sc")?.dataset.id !== sec()?.id) continue;
-      const resource = libraryResourceById(node.dataset.id);
-      if (resource?.type !== "embed") continue;
-      matchedDomResources++;
-      const rect = node.getBoundingClientRect();
-      if (!(rect.width > 0) || !(rect.height > 0) ||
-          rect.bottom * sy < 0 || rect.top * sy > frameBounds.height ||
-          rect.right * sx < 0 || rect.left * sx > frameBounds.width) continue;
-      const id = resource.id;
-      visible.add(id);
-      let control = editOverlayButtons.get(id);
-      if (!control) {
-        control = document.createElement("button");
-        control.type = "button";
-        control.dataset.nagwebResourceEdit = id;
-        control.setAttribute("aria-label", "Personalizar componente desde el lienzo");
-        control.title = "Personalizar componente";
-        control.textContent = "✎";
-        control.style.cssText = "position:fixed;width:34px;height:34px;padding:0;" +
-          "border:1px solid #b9c2d5;border-radius:8px;background:#202735;color:#fff;" +
-          "box-shadow:0 2px 8px #0005;font:600 19px/1 sans-serif;cursor:pointer;" +
-          "pointer-events:auto;opacity:.94";
-        control.addEventListener("click", () => {
-          const current = libraryResourceById(id);
-          if (dialog.open || !current || current.type !== "embed") return;
-          selection = [current.id];
-          curEl = sec().elements.indexOf(current);
-          secFocus = false;
-          openHtmlCustomization(current, control);
-        });
-        editOverlayButtons.set(id, control);
-        editOverlay.append(control);
-      }
-      const left = Math.max(frameBounds.left + 3,
-        Math.min(frameBounds.right - 37, frameBounds.left + rect.right * sx - 37));
-      const top = Math.max(frameBounds.top + 3,
-        Math.min(frameBounds.bottom - 37, frameBounds.top + rect.top * sy + 4));
-      control.style.left = Math.round(left) + "px";
-      control.style.top = Math.round(top) + "px";
-    }
-    // Do not discard a clickable overlay during a transient srcdoc rebuild.
-    // Once the scene's real HTML nodes are present, hide offscreen controls.
-    if (!matchedDomResources && modelIds.size) return;
-    for (const [id, control] of editOverlayButtons) {
-      if (visible.has(id)) continue;
-      control.remove();
-      editOverlayButtons.delete(id);
-    }
-  };
-  const scheduleHtmlOverlay = () => {
-    if (overlayQueued) return;
-    overlayQueued = true;
-    requestAnimationFrame(syncHtmlOverlay);
-  };
-  window.addEventListener("resize", scheduleHtmlOverlay);
-  window.addEventListener("scroll", scheduleHtmlOverlay, true);
-  new MutationObserver(() => {
-    syncEditButton();
-    scheduleHtmlOverlay();
-  }).observe(document.querySelector("main"), { childList: true, subtree: true });
+  new MutationObserver(syncEditButton).observe(document.querySelector("main"), { childList: true, subtree: true });
   new MutationObserver(() => {
     canvasLoading = true;
     syncEditButton();
-    scheduleHtmlOverlay();
   }).observe(preview, { attributes: true, attributeFilter: ["srcdoc"] });
   // Canvas-first editing: the already-inserted resource stays in place.
   // Bind to each new srcdoc document, not just the original iframe document.
@@ -345,37 +234,25 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       event.stopImmediatePropagation();
       editButton.click();
     }, true);
-    // SVG keeps its native canvas shortcut; HTML edit controls are rendered
-    // by NagWeb above the preview iframe, never inside third-party markup.
     for (const node of canvasDoc.querySelectorAll(".el[data-id]")) {
-      const resource = libraryResourceById(node.dataset.id);
-      if (resource && !node.hasAttribute("title"))
-        node.title = resource.type === "embed"
-          ? "Usá el botón ✎ sobre el componente para personalizarlo"
-          : "Doble clic para personalizar este recurso";
+      if (libraryResourceById(node.dataset.id) && !node.hasAttribute("title"))
+        node.title = "Doble clic para personalizar este recurso";
     }
-    canvasDoc.addEventListener("scroll", scheduleHtmlOverlay, true);
-    canvasDoc.defaultView.addEventListener("resize", scheduleHtmlOverlay);
-    scheduleHtmlOverlay();
   };
   document.addEventListener("keydown", handleCanvasEditShortcut, true);
   preview.addEventListener("load", () => {
     canvasLoading = false;
     bindCanvasResourceEditing();
     syncEditButton();
-    scheduleHtmlOverlay();
   });
   bindCanvasResourceEditing();
   syncEditButton();
-  scheduleHtmlOverlay();
   close.addEventListener("click", () => dialog.close());
   dialog.addEventListener("close", () => {
     librarySession++;
     editContext = null;
     pendingFocusReturn = opener;
-    editOverlay.style.visibility = "visible";
     syncEditButton();
-    scheduleHtmlOverlay();
   });
   const results = new Map();
   const pending = new Set();

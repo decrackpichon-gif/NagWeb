@@ -73,3 +73,11 @@ Biblioteca offline-first de **recursos abiertos/licenciados** para diseñadores.
 - No agregar aquí capturas o HAR con tokens; los originales se mantienen en archivos privados con nombre, nunca como copia indiscriminada al repositorio público.
 - Documento versionado en esta rama. Actualizarlo con decisiones relevantes y nuevos enlaces, sin disparar despliegues manuales innecesarios.
 - Para comenzar un nuevo chat: indicar el identificador del proyecto, esta rama y la ruta de esta ficha en GitHub; pedir lectura del HEAD y documentación técnica. Adjuntar originales solo si son necesarios. El inventario global es opcional.
+## Bloqueo de continuidad del 12/10/2026: etapa 84 no incorporada
+
+- Se ensayó personalizar HTML/CSS Uiverse mediante un control contextual en el lienzo.
+- Fallaron los recorridos integrales de Chromium Linux/Windows durante el intento; se detectó también una regresión de la edición SVG por doble clic.
+- **Decisión:** restaurar el puente editor y las pruebas de navegador del último estado funcional aprobado (etapa 83, commit `620535886697dddbedf98cf2addf164fe250ce1f`). El intento de etapa 84 queda documentado, **no se considera completado**. No reaplicar los parches de los commits experimentales sin rediseño.
+- Para HTML/CSS se mantiene la edición segura mediante el botón Personalizar de NagWeb. Para SVG permanece el doble clic y `Alt+Enter`.
+- `vercel.json` define `git.deploymentEnabled["feat/resource-etl-v1"]=false` para evitar nuevas vistas previas de esta rama. Verificar periódicamente solo cuando cambie la configuración, sin desplegar manualmente.
+- Próxima mejora: escoger otro mecanismo contextual estable que viva completamente en el editor anfitrión y se compruebe por pruebas realistas, sin afectar la captura de eventos del lienzo; o priorizar una mejora independiente de uso real antes de reintentar.
