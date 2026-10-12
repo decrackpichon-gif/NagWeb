@@ -950,3 +950,5 @@ aislada pasa **210 comprobaciones**. En
 `tests/camera-current-moment.browser.cjs` se agregó la verificación
 con el editor real de apertura, selección y campo Z legible, edición
 HTML y Undo. El resultado de CI debe confirmarse por separado.
+
+**CI confirmada** para el último código: [Integración espacial Chromium/WebGL, 39 comprobaciones agrupadas, aprobada](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38280115962) y [smoke de cámara aprobado](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38280115942). El navegador ejecutó y aprobó el acceso «Editar espacio», la lista HTML/3D, el contraste de Z, el cambio HTML y Deshacer. La prueba anterior había detectado una recarga asíncrona del iframe después de Undo; el test ahora espera que concluya antes de iniciar el gesto siguiente. Esto no implica haber validado el preset autónomo ni la oclusión parcial, que siguen pendientes.
