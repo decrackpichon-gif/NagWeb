@@ -451,3 +451,42 @@ assert.equal(previewDocument.listeners.keydown,undefined,'Reload removes stale E
 assert.equal(undos,undoBeforeModes+1,'Mode switches and reload do not change project');
 assert.equal(JSON.stringify(scene.sdCameraLookFrames),staticBefore.look,'Switching tools does not modify lookAt path');
 console.log('PASS 3D editor modes: selection cleanup, preview commit continuity, orbit/surface exclusivity, iframe reload');
+
+
+// Spatial-first workflow: all objects, layer ordering and the SAME authored
+// depth fields used by existing HTML planes and the Three renderer.
+scene.sdCameraOrientationMode='manual';scene.sdCameraEnabled=true;scene.layout='free';
+const layersBefore=JSON.stringify(scene.sdCameraFrames),motionBefore=JSON.stringify(object.sdKeyframes);
+const extraLayers=Array.from({length:20},(_,i)=>({id:'layer-'+i,type:'heading',text:'Plano '+i,x:45+i%6,y:42+i%4,sdCameraDepth:450-i*25}));
+scene.elements.push(...extraLayers);
+const bigMap=C.panel(scene);
+assert.match(bigMap,/Editar espacio 3D · Ver cámara y objetos/,'Spatial view entry is discoverable');
+assert.match(bigMap,/data-camera-layer-list/,'Existing map gains a layered object list');
+assert.match(bigMap,/data-camera-scene-object="21"/,'The object map no longer silently truncates at 16');
+assert.match(bigMap,/data-camera-object-world-z/,'Selected model has a shared world-Z field');
+assert.match(bigMap,/background:#fff!important;color:#171717!important/,'Camera fields always have readable contrast');
+const editSpace={dataset:{cameraSpaceOpen:''}};
+handlers.click({target:{closest(){return editSpace;}}});
+assert.match(C.panel(scene),/data-camera-map-box open/,'Edit space opens the actual map, not a parallel viewport');
+const domLayer={dataset:{cameraLayerPick:'1'}};
+handlers.click({target:{closest(){return domLayer;}}});
+const domPanel=C.panel(scene);
+assert.match(domPanel,/Profundidad del objeto · Z/,'DOM layer can be edited from the spatial inspector');
+const beforeDomUndo=undos,oldDepth=title.sdCameraDepth;
+handlers.change({target:{dataset:{cameraObjectWorldZ:'1'},value:'350'}});
+assert.equal(title.sdCameraDepth,350,'World depth is persisted into existing sdCameraDepth');
+assert.equal(undos,beforeDomUndo+1,'World Z edit adds exactly one undo');
+assert.equal(oldDepth,100);
+const objLayer={dataset:{cameraLayerPick:'0'}};
+handlers.click({target:{closest(){return objLayer;}}});
+const before3DUndo=undos,previousOffZ=object.offZ,shapeMotion=JSON.stringify(object.sdKeyframes);
+handlers.change({target:{dataset:{cameraObjectWorldZRange:'1'},value:'1400'}});
+assert.ok(Math.abs(object.offZ-previousOffZ)>.1,'Three world-Z slider converts to authored offZ');
+assert.equal(undos,before3DUndo+1,'Three depth slider creates one undo');
+assert.equal(JSON.stringify(object.sdKeyframes),shapeMotion,'World Z never edits model keyframes');
+assert.equal(JSON.stringify(scene.sdCameraFrames),layersBefore,'World Z never alters camera waypoints');
+assert.equal(JSON.stringify(object.sdKeyframes),motionBefore);
+scene.layout='stack';
+assert.ok(!C.panel(scene).includes('data-camera-layer-list'),'Map never fabricates 3D coordinates for stack layout');
+scene.layout='free';scene.elements.splice(scene.elements.length-extraLayers.length);
+console.log('PASS spatial editor: 22 visible object guides, discoverable map, DOM/GLB world Z editing, Undo and untouched camera/motion');
