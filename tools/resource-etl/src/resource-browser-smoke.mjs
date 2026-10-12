@@ -1441,7 +1441,13 @@ try {
   await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
   const heroNative=page.frameLocator("#preview").locator(`[data-id="${heroInserted.element.id}"] svg`);
   await expect(heroNative).toBeVisible();
-  await expect(heroNative.locator("path").first()).toHaveCSS("stroke","rgb(36, 104, 171)");
+  // The native vector renderer emits a fill path, then a separate stroke
+  // path. Validate the actual outline, not the intentionally un-stroked fill.
+  const heroStroke=heroNative.locator('path[stroke]');
+  await expect(heroStroke).toHaveCount(1);
+  await expect(heroStroke).toHaveAttribute("stroke","#2468ab");
+  await expect(heroStroke).toHaveAttribute("stroke-width","1.5");
+  await expect(heroStroke).toHaveCSS("stroke","rgb(36, 104, 171)");
   await page.evaluate(id=>{selection=[id];curEl=sec().elements.findIndex(e=>e.id===id);secFocus=false;renderPane();},heroInserted.element.id);
   await expect(page.getByRole("button",{name:"Personalizar ícono seleccionado",exact:true})).toBeEnabled();
   await page.getByRole("button",{name:"Personalizar ícono seleccionado",exact:true}).click();
