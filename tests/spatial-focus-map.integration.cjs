@@ -335,8 +335,8 @@ assert.equal(C.objectBaseTransformDrag(100,'Scale',0,-10000,false),500);
 assert.equal(C.objectBaseTransformDrag(0,'RotateX',0,NaN,false),null);
 assert.equal(C.objectBaseTransformDrag(0,'bad',100,0,false),null);
 const baseEvents=[];
-previewWindow.NAGWEB_SPATIAL_PREVIEW_BASE_TRANSFORM=(id,axis,value,sectionId)=>{
- baseEvents.push({id,axis,value,sectionId});return id==='glb'&&sectionId==='scene';
+previewWindow.NAGWEB_SPATIAL_PREVIEW_BASE_TRANSFORM=(id,axis,value,sectionId,commit)=>{
+ baseEvents.push({id,axis,value,sectionId,commit:!!commit});return id==='glb'&&sectionId==='scene';
 };
 const baseButton={dataset:{cameraObjectTransform:''}},baseClick=()=>handlers.click({target:{closest(){return baseButton;}}});
 const staticBefore={camera:JSON.stringify(scene.sdCameraFrames),look:JSON.stringify(scene.sdCameraLookFrames),motion:JSON.stringify(object.sdKeyframes)};
@@ -414,14 +414,16 @@ previewDocument.listeners.pointermove({pointerId:96,clientX:200,clientY:150,shif
 const previewCommit=baseEvents.at(-1);
 previewDocument.listeners.pointerup({pointerId:96,clientX:200,clientY:150,shiftKey:false,preventDefault(){}});
 assert.equal(object.nwSpatialRotateY,lastBase+30,'Scene editor commits second yaw to authored base');
-assert.equal(baseEvents.at(-1).value,previewCommit.value,'Confirmed pose stays painted until the renderer updates');
+assert.equal(baseEvents.at(-1).value,previewCommit.value,'Committed pose retains its position');
+assert.equal(baseEvents.at(-1).commit,true,'Confirmed pose is promoted into the live renderer rather than left as a temporary override');
 assert.equal(undos,undoBeforeModes+1);
 assert.equal(saves,saveBeforeModes+1);
 baseClick();
 assert.ok(liveOverlay,'Selected 3D object exposes rotation controls');
+const recordedBeforeSelect=baseEvents.length;
 handlers.click({target:{closest(){return {dataset:{cameraSceneObjectPick:'1'}};}}});
 assert.equal(liveOverlay,null,'Selecting HTML from spatial map removes stale 3D gizmo');
-assert.equal(baseEvents.at(-1).value,null,'Changing selection cancels an armed transform');
+assert.equal(baseEvents.length,recordedBeforeSelect,'Selection does not undo a previously confirmed 3D pose');
 assert.equal(undos,undoBeforeModes+1,'Selection change never snapshots a transform');
 handlers.change({target:{dataset:{cameraObjectSelect:''},value:'0'}});
 baseClick();
