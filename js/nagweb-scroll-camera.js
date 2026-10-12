@@ -277,6 +277,11 @@ function createCamera(){
   if(axis==='z')out.z=round(number(start.z)-dy*2*sensitivity);
   return out;
  }
+ function objectDepthDrag(start,dy,precision){
+  if(!Number.isFinite(+start)||!Number.isFinite(dy))return null;
+  var value=Math.max(-100,Math.min(100,+start-dy*(precision?.002:.01)));
+  return Math.round(value*100)/100;
+ }
  function threeCameraState(pose,viewport,perspective,scale){
   if(!pose)return null;
   var pos=threeWorldPoint(pose,scale);if(!pos)return null;
@@ -375,11 +380,11 @@ function createCamera(){
   paint.contains=function(n){return inside(world,n);};
   return paint;
  }
- return {config:config,compile:compile,pose:pose,pathSamples:pathSamples,lookSamples:lookSamples,lookTarget:lookTarget,resolveLookFrame:resolveLookFrame,lookAngles:lookAngles,forwardTarget:forwardTarget,defaultLookFrames:defaultLookFrames,normalizeLook:normalizeLook,lookFrames:lookFrames,targetEligible:targetEligible,elementTarget:elementTarget,curveTension:curveTension,tangentHandle:tangentHandle,tensionFromHandle:tensionFromHandle,lookTangentHandle:lookTangentHandle,lookTensionFromHandle:lookTensionFromHandle,handleFree:handleFree,setHandleMode:setHandleMode,setFreeHandle:setFreeHandle,setLookHandleMode:setLookHandleMode,setLookFreeHandle:setLookFreeHandle,nearestPathAt:nearestPathAt,viewportScale:viewportScale,scalePose:scalePose,attach:attach,threeWorldPoint:threeWorldPoint,surfaceFocusFromWorld:surfaceFocusFromWorld,threeCameraState:threeCameraState,orbitPose:orbitPose,translatePose:translatePose,applyThreeCamera:applyThreeCamera,bindThreeCamera:bindThreeCamera,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial,copyFrame:copyFrame,holdFrame:holdFrame,preset:preset};
+ return {config:config,compile:compile,pose:pose,pathSamples:pathSamples,lookSamples:lookSamples,lookTarget:lookTarget,resolveLookFrame:resolveLookFrame,lookAngles:lookAngles,forwardTarget:forwardTarget,defaultLookFrames:defaultLookFrames,normalizeLook:normalizeLook,lookFrames:lookFrames,targetEligible:targetEligible,elementTarget:elementTarget,curveTension:curveTension,tangentHandle:tangentHandle,tensionFromHandle:tensionFromHandle,lookTangentHandle:lookTangentHandle,lookTensionFromHandle:lookTensionFromHandle,handleFree:handleFree,setHandleMode:setHandleMode,setFreeHandle:setFreeHandle,setLookHandleMode:setLookHandleMode,setLookFreeHandle:setLookFreeHandle,nearestPathAt:nearestPathAt,viewportScale:viewportScale,scalePose:scalePose,attach:attach,threeWorldPoint:threeWorldPoint,surfaceFocusFromWorld:surfaceFocusFromWorld,threeCameraState:threeCameraState,orbitPose:orbitPose,translatePose:translatePose,objectDepthDrag:objectDepthDrag,applyThreeCamera:applyThreeCamera,bindThreeCamera:bindThreeCamera,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial,copyFrame:copyFrame,holdFrame:holdFrame,preset:preset};
 }
 window.NAGWEB_CREATE_SCROLL_CAMERA=createCamera;
 window.NAGWEB_SCROLL_CAMERA=createCamera();
-var presetChoices=Object.create(null),holdDurations=Object.create(null),cameraEasyStep=Object.create(null),mapOpen=Object.create(null),mapPlanes=Object.create(null),mapFovVisible=Object.create(null),mapObjectVisible=Object.create(null),mapObjectSelected=Object.create(null),mapObjectPlans=Object.create(null),mapZoom=Object.create(null),mapPan=Object.create(null),mapWheelCarry=Object.create(null),mapOverviewVisible=Object.create(null),mapOverviewPickHistory=Object.create(null),mapOverviewSamples=Object.create(null),mapOverviewDetected=Object.create(null),mapOverviewMetrics=Object.create(null),mapOverviewMetricsOpen=Object.create(null),mapOverviewPaceVisible=Object.create(null),mapOverviewComparison=Object.create(null),mapOverviewComparePreview=Object.create(null),mapOverviewCompareFovVisible=Object.create(null),mapOverviewCompareExclusiveVisible=Object.create(null),mapOverviewCompareFocus=Object.create(null),mapOverviewTechnicalOpen=Object.create(null),mapOverviewEventFilter=Object.create(null),mapOverviewEventChosen=Object.create(null),mapPickHistory=Object.create(null),surfaceAimArmed=null,viewportOrbitArmed=null,viewportTranslateArmed=null,suppressedClick=null,selected=Object.create(null),lookSelected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
+var presetChoices=Object.create(null),holdDurations=Object.create(null),cameraEasyStep=Object.create(null),mapOpen=Object.create(null),mapPlanes=Object.create(null),mapFovVisible=Object.create(null),mapObjectVisible=Object.create(null),mapObjectSelected=Object.create(null),mapObjectPlans=Object.create(null),mapZoom=Object.create(null),mapPan=Object.create(null),mapWheelCarry=Object.create(null),mapOverviewVisible=Object.create(null),mapOverviewPickHistory=Object.create(null),mapOverviewSamples=Object.create(null),mapOverviewDetected=Object.create(null),mapOverviewMetrics=Object.create(null),mapOverviewMetricsOpen=Object.create(null),mapOverviewPaceVisible=Object.create(null),mapOverviewComparison=Object.create(null),mapOverviewComparePreview=Object.create(null),mapOverviewCompareFovVisible=Object.create(null),mapOverviewCompareExclusiveVisible=Object.create(null),mapOverviewCompareFocus=Object.create(null),mapOverviewTechnicalOpen=Object.create(null),mapOverviewEventFilter=Object.create(null),mapOverviewEventChosen=Object.create(null),mapPickHistory=Object.create(null),surfaceAimArmed=null,viewportOrbitArmed=null,viewportTranslateArmed=null,objectDepthArmed=null,suppressedClick=null,selected=Object.create(null),lookSelected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
 function safeLabel(v){return String(v==null?'':v).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,42).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];});}
 function targetLabel(e){var label=safeLabel(e&&((e.name||e.text||e.label)||e.type));return label||'Elemento';}
 function keys(s){return C.frames(C.config(s),s.sdEase);}
@@ -506,6 +511,7 @@ function mapObjectInfoHtml(s,plan,pct){
   '<div data-camera-object-distance style="font-size:11px;margin-top:3px">'+data.distance+'</div>'+
   '<div data-camera-object-offset style="font-size:10px;opacity:.8;margin-top:3px">'+data.offset+'</div>'+
   '<button class="btn tiny" type="button" data-camera-aim-at-object style="margin-top:6px">Apuntar cámara a este objeto acá</button>'+
+  (item.kind==='shape3d'?'<button class="btn tiny" type="button" data-camera-object-depth style="margin:6px 0 0 6px">'+(objectDepthArmed&&objectDepthArmed.sectionId===s.id&&objectDepthArmed.id===item.id?'Cerrar editor de profundidad':'Ajustar profundidad Z en vista 3D')+'</button>':'')+
   (item.kind==='shape3d'?'<button class="btn tiny" type="button" data-camera-surface-aim style="margin:6px 0 0 6px">'+(surfaceAimArmed&&surfaceAimArmed.sectionId===s.id&&surfaceAimArmed.id===item.id?'Cancelar elección 3D':'Elegir punto en vista 3D')+'</button><p class="hint gh" data-camera-surface-hint>'+(surfaceAimArmed&&surfaceAimArmed.sectionId===s.id&&surfaceAimArmed.id===item.id?'Hacé clic sobre la superficie del modelo en la vista previa. Escape cancela.':'Elegí un punto real sobre el modelo; no su centro aproximado.')+'</p>':'')+
   '<div style="font-size:10px;opacity:.75;margin-top:4px">'+
    (s.sdCameraOrientationMode==='lookAt'?'En Mirar hacia, vincula el objetivo de este momento al objeto. Si el objeto se mueve, la mirada puede seguirlo.':'Con ángulos manuales, ajusta la mirada en este instante; no cambia el modo de orientación.')+
@@ -1820,6 +1826,7 @@ function clearSurfaceAim(){
  if(a&&a.doc){a.doc.removeEventListener('pointerdown',a.down,true);a.doc.removeEventListener('keydown',a.key,true);}
 }
 function toggleSurfaceAim(s){
+ if(objectDepthArmed)stopObjectDepth(false);
  if(viewportTranslateArmed)stopViewportTranslate();
  var plan=mapObjectPlans[s.id],item=mapObjectSelection(s,plan);
  if(surfaceAimArmed){var same=surfaceAimArmed.sectionId===s.id&&item&&surfaceAimArmed.id===item.id;clearSurfaceAim();if(same){renderPane();return 'cancelled';}}
@@ -1857,6 +1864,7 @@ function stopViewportOrbit(){
  if(a.cleanup)a.cleanup();
 }
 function toggleViewportOrbit(s){
+ if(objectDepthArmed)stopObjectDepth(false);
  if(viewportTranslateArmed)stopViewportTranslate();
  if(viewportOrbitArmed){var same=viewportOrbitArmed.sectionId===s.id;stopViewportOrbit();if(same){renderPane();return 'cancelled';}}
  var cfg=C.config(s);
@@ -1929,6 +1937,101 @@ function toggleViewportOrbit(s){
 }
 // One-shot spatial camera translation. Controls live in the preview's stage,
 // outside the transformed CSS world and outside the exported interaction flow.
+// The 3D object already has an X/Y projected drag frame in the editor.
+ // This tool complements it with editable *authored* depth (offZ).
+function stopObjectDepth(commit){
+ var a=objectDepthArmed;objectDepthArmed=null;
+ if(!a)return;
+ a.handle.removeEventListener('pointerdown',a.down);
+ a.handle.removeEventListener('keydown',a.keyHandle);
+ a.doc.removeEventListener('keydown',a.key,true);
+ document.removeEventListener('keydown',a.key,true);
+ a.iframe.removeEventListener('load',a.onLoad);
+ if(a.cleanup)a.cleanup();
+ if(!commit)try{a.win.NAGWEB_SPATIAL_PREVIEW_DEPTH(a.id,null,a.sectionId);}catch(_){}
+ if(a.handle.parentNode)a.handle.parentNode.removeChild(a.handle);
+}
+function toggleObjectDepth(s){
+ var item=mapObjectSelection(s,mapObjectPlans[s.id]);
+ if(objectDepthArmed){var same=objectDepthArmed.sectionId===s.id&&item&&objectDepthArmed.id===item.id;stopObjectDepth(false);if(same){renderPane();return 'cancelled';}}
+ if(!item||item.kind!=='shape3d'||!C.config(s))return 'invalid';
+ var model=(s.elements||[]).find(function(e){return e.id===item.id&&e.type==='shape3d'&&e.anchor!==false;});
+ if(!model)return 'invalid';
+ if(viewportTranslateArmed)stopViewportTranslate();
+ if(viewportOrbitArmed)stopViewportOrbit();
+ if(surfaceAimArmed)clearSurfaceAim();
+ var iframe=document.getElementById('preview'),win=iframe&&iframe.contentWindow,doc=iframe&&iframe.contentDocument;
+ if(!win||!doc||typeof win.NAGWEB_SPATIAL_PREVIEW_DEPTH!=='function'||typeof win.NAGWEB_SPATIAL_SCREEN_POINT!=='function')return 'unavailable';
+ var section=Array.from(doc.querySelectorAll('.sc[data-id]')).find(function(el){return el.getAttribute('data-id')===s.id;});
+ var stage=section&&section.querySelector('.nw-sd-stage'),pt=win.NAGWEB_SPATIAL_SCREEN_POINT(item.id,s.id);
+ if(!stage||!pt||!Number.isFinite(pt.x)||!Number.isFinite(pt.y))return 'invisible';
+ var handle=doc.createElement('button');
+ handle.type='button';handle.setAttribute('data-nw-object-depth-handle','');handle.setAttribute('aria-label','Mover profundidad del objeto 3D, eje Z');
+ handle.style.cssText='position:absolute;z-index:2147483001;left:'+Math.max(4,Math.min(stage.clientWidth-94,pt.x+14))+'px;top:'+Math.max(4,Math.min(stage.clientHeight-40,pt.y-14))+'px;min-width:86px;padding:7px 9px;border:2px solid #8b5cf6;border-radius:9px;background:#161124;color:#fff;box-shadow:0 3px 14px #0008;cursor:ns-resize;touch-action:none;font:600 11px/1.4 system-ui,sans-serif;pointer-events:auto;';
+ function original(){var n=+model.offZ;return Number.isFinite(n)?n:0;}
+ function label(n){handle.textContent='↕ Z '+Math.round(n*100)/100;}
+ label(original());stage.appendChild(handle);
+ var gesture=null;
+ function changed(next,prev){return Number.isFinite(next)&&Math.abs(next-prev)>1e-7;}
+ function save(next){
+  if(sec()!==s||mapObjectSelected[s.id]!==item.id||!C.config(s)||!changed(next,original()))return false;
+  snapshot();model.offZ=next;saveProject();schedulePreview();renderPane();return true;
+ }
+ function move(ev){
+  var g=gesture;if(!g||ev.pointerId!==g.pointerId)return;
+  var next=C.objectDepthDrag(g.start,ev.clientY-g.y,ev.shiftKey);
+  if(next===null)return;
+  if(!win.NAGWEB_SPATIAL_PREVIEW_DEPTH(item.id,next,s.id))return;
+  g.next=next;label(next);ev.preventDefault();
+ }
+ function finish(ev,cancel){
+  if(!gesture||ev&&ev.pointerId!==undefined&&ev.pointerId!==gesture.pointerId)return;
+  var g=gesture;gesture=null;
+  doc.removeEventListener('pointermove',move,true);
+  doc.removeEventListener('pointerup',up,true);
+  doc.removeEventListener('pointercancel',abort,true);
+  doc.removeEventListener('lostpointercapture',abort,true);
+  try{if(handle.hasPointerCapture&&handle.hasPointerCapture(g.pointerId))handle.releasePointerCapture(g.pointerId);}catch(_){}
+  // Remove the override on cancel; on commit the generated preview is replaced.
+  var commit=!cancel&&changed(g.next,g.start)&&sec()===s&&mapObjectSelected[s.id]===item.id;
+  stopObjectDepth(commit);
+  if(commit)save(g.next);else renderPane();
+ }
+ function up(ev){move(ev);finish(ev,false);}
+ function abort(ev){finish(ev,true);}
+ function down(ev){
+  if(gesture||ev.button!==0)return;
+  if(sec()!==s||mapObjectSelected[s.id]!==item.id){stopObjectDepth(false);renderPane();return;}
+  gesture={pointerId:ev.pointerId,y:ev.clientY,start:original(),next:original()};
+  try{handle.setPointerCapture(ev.pointerId);}catch(_){}
+  ev.preventDefault();ev.stopPropagation();
+  doc.addEventListener('pointermove',move,true);doc.addEventListener('pointerup',up,true);
+  doc.addEventListener('pointercancel',abort,true);doc.addEventListener('lostpointercapture',abort,true);
+ }
+ function keyHandle(ev){
+  if(!['ArrowUp','ArrowDown'].includes(ev.key)||gesture)return;
+  ev.preventDefault();ev.stopPropagation();
+  var value=C.objectDepthDrag(original(),ev.key==='ArrowUp'?-10:10,ev.shiftKey);
+  if(!changed(value,original()))return;
+  if(!win.NAGWEB_SPATIAL_PREVIEW_DEPTH(item.id,value,s.id))return;
+  stopObjectDepth(true);save(value);
+ }
+ function key(ev){
+  if(ev.key!=='Escape')return;
+  ev.preventDefault();ev.stopPropagation();
+  if(gesture)finish(null,true);else{stopObjectDepth(false);renderPane();}
+ }
+ function onLoad(){stopObjectDepth(false);renderPane();}
+ objectDepthArmed={sectionId:s.id,id:item.id,doc:doc,win:win,iframe:iframe,handle:handle,down:down,key:key,keyHandle:keyHandle,onLoad:onLoad,cleanup:function(){
+  doc.removeEventListener('pointermove',move,true);doc.removeEventListener('pointerup',up,true);
+  doc.removeEventListener('pointercancel',abort,true);doc.removeEventListener('lostpointercapture',abort,true);
+  gesture=null;
+ }};
+ handle.addEventListener('pointerdown',down);handle.addEventListener('keydown',keyHandle);
+ doc.addEventListener('keydown',key,true);document.addEventListener('keydown',key,true);
+ iframe.addEventListener('load',onLoad);
+ renderPane();return 'armed';
+}
 function stopViewportTranslate(){
  var a=viewportTranslateArmed;viewportTranslateArmed=null;
  if(!a)return;
@@ -1941,6 +2044,7 @@ function stopViewportTranslate(){
  if(a.overlay.parentNode)a.overlay.parentNode.removeChild(a.overlay);
 }
 function toggleViewportTranslate(s){
+ if(objectDepthArmed)stopObjectDepth(false);
  if(viewportTranslateArmed){var same=viewportTranslateArmed.sectionId===s.id;stopViewportTranslate();if(same){renderPane();return 'cancelled';}}
  if(viewportOrbitArmed)stopViewportOrbit();
  if(surfaceAimArmed)clearSurfaceAim();
@@ -2733,9 +2837,16 @@ if(pane){
    ev.preventDefault();technical.open=!technical.open;
    mapOverviewTechnicalOpen[sec().id]=technical.open;return;
   }
-  var button=ev.target.closest('[data-camera-viewport-translate],[data-camera-viewport-orbit],[data-camera-surface-aim],[data-camera-aim-at-object],[data-camera-scene-object-pick],[data-camera-edit-current],[data-camera-easy-move],[data-camera-overview-compare-alternate],[data-camera-overview-compare-jump],[data-camera-overview-event-step],[data-camera-overview-toggle],[data-camera-map-pan],[data-camera-map-zoom],[data-camera-map-step],[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
+  var button=ev.target.closest('[data-camera-object-depth],[data-camera-viewport-translate],[data-camera-viewport-orbit],[data-camera-surface-aim],[data-camera-aim-at-object],[data-camera-scene-object-pick],[data-camera-edit-current],[data-camera-easy-move],[data-camera-overview-compare-alternate],[data-camera-overview-compare-jump],[data-camera-overview-event-step],[data-camera-overview-toggle],[data-camera-map-pan],[data-camera-map-zoom],[data-camera-map-step],[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
   if(button===suppressedClick){suppressedClick=null;return;}
   var s=sec(),cfg=C.config(s);if(!cfg)return;var list=keys(s);
+  if(button.dataset.cameraObjectDepth!==undefined){
+   var mode=toggleObjectDepth(s);
+   if(mode==='invalid')toast('Seleccioná un objeto 3D anclado del inspector.');
+   else if(mode==='unavailable')toast('El renderizador espacial de la vista previa todavía no está listo.');
+   else if(mode==='invisible')toast('El modelo debe estar visible en la vista previa para editar su profundidad.');
+   return;
+  }
   if(button.dataset.cameraViewportTranslate!==undefined){
    var state=toggleViewportTranslate(s);
    if(state==='invalid')toast('Activá la cámara 3D antes de editar la posición.');
@@ -2875,6 +2986,7 @@ if(pane){
  pane.addEventListener('change',function(ev){
   var input=ev.target;
   if(input.dataset.cameraObjectSelect!==undefined){
+   if(objectDepthArmed)stopObjectDepth(false);
    var scene=sec(),plan=mapObjectPlans[scene.id],idx=+input.value;
    mapObjectSelected[scene.id]=input.value!==''&&plan&&Number.isInteger(idx)&&idx>=0&&idx<plan.entries.length?plan.entries[idx].id:null;
    renderPane();
