@@ -2331,6 +2331,8 @@ function spatialMap(s,list,k){
   '</div>';
  html+=mapObjectLayerListHtml(s,objectPlan,progress(s));
   html+=mapObjectInfoHtml(s,objectPlan,progress(s));
+  html+='<details data-camera-depth-tutorial style="margin:7px 0"><summary style="cursor:pointer;font-size:11px">¿Cómo hago que la cámara atraviese textos e imágenes?</summary>'+
+   '<p class="hint gh" style="font-size:11px">En Lienzo libre, poné por ejemplo Texto 1 en Z −300, Foto en Z 200 y Texto 2 en Z 700. Ubicalos aproximadamente en el centro X/Y. Mové la cámara desde Z −900 hasta Z 1300 usando los encuadres de 0% y 100%. Al avanzar por scroll, la perspectiva acerca cada plano y después lo deja atrás. Son valores de ejemplo: no cambian tu escena automáticamente.</p></details>';
  if(lk&&isSpatialFocus(cfg,lk))html+='<p class="hint gh" data-camera-spatial-focus-help>● Enfoque 3D: arrastralo sobre el mapa para ajustar dónde mira la cámara respecto del modelo. Cambiá entre vistas superior, frontal y lateral para controlar X/Y/Z. Shift limita el arrastre a un eje; flechas: 25 px, con Shift: 100 px. El modelo no se mueve.</p>';
  html+='<label style="display:inline-flex;align-items:center;gap:6px;margin:6px 0;font-size:12px"><input type="checkbox" data-camera-map-fov-toggle aria-label="Mostrar campo de visión aproximado"'+(mapFovVisible[s.id]!==false?' checked':'')+(plane==='side'?' disabled title="El campo de visión queda de perfil en la vista lateral."':'')+'> Mostrar campo de visión</label>';
  html+='<div data-camera-map-pair style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0">'+mapKeyframeNavigation(list,k.at,'camera')+(lk?mapKeyframeNavigation(looks,lk.at,'look'):'')+'</div>';
