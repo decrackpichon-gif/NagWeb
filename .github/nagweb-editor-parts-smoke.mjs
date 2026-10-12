@@ -8,7 +8,8 @@ export async function runEditorPartsSmoke(page){
  }));
  const markup=n=>'<!doctype html><html><body data-parts-run="'+n+'">'+
   '<div class="el wdg" data-id="test-hero"><section class="nw-lh">'+
-  '<button data-nw-part="">Todos</button><button data-nw-part="layer-2">Foto 2</button>'+
+  '<button data-nw-part="">Todos</button><button data-nw-part="layer-1">Foto 1</button><button data-nw-part="layer-2">Foto 2</button>'+
+  '<div data-wpart="layer-1" style="width:200px;height:120px">Fondo</div>'+ 
   '<div data-wpart="layer-2" style="width:160px;height:96px">Imagen</div>'+
   '<p data-wpart="text-extra-0" data-nw-listobj="texts" data-nw-row="0" data-nw-key="text">Texto original</p></section></div>'+
   '<div class="el wdg" data-id="test-story"><section class="nw-story">'+
@@ -174,11 +175,12 @@ export async function runEditorPartsSmoke(page){
   const afterCancel=await page.evaluate(()=>{
    const d=document.querySelector('#preview').contentDocument,n=d.querySelector('[data-wpart="layer-2"]');
    return{part:sec().elements.find(e=>e.id==='test-hero').wp.__parts['layer-2'],
-    undo:history.length,liveX:parseFloat(n.style.getPropertyValue('--nw-tx'))};
+    undo:history.length,liveX:n.style.getPropertyValue('--nw-tx'),liveY:n.style.getPropertyValue('--nw-ty')};
   });
   assert.deepEqual(afterCancel.part,afterRotate.part,'cancelar no modifica el modelo');
   assert.equal(afterCancel.undo,afterRotate.undo,'cancelar no crea Deshacer');
-  assert.equal(afterCancel.liveX,afterRotate.part.x,'cancelar restituye el elemento visible');
+  assert.equal(afterCancel.liveX,(afterRotate.part.x/afterRotate.part.refW*100).toFixed(5)+'cqw','cancelar restituye X proporcional');
+  assert.equal(afterCancel.liveY,'calc(var(--h) * '+(afterRotate.part.y/afterRotate.part.refH).toFixed(6)+')','cancelar restituye Y proporcional');
   const savedPart=await page.evaluate(()=>JSON.parse(localStorage.getItem(STORE_KEY)).pages[curPage].sections[curSec].elements.find(e=>e.id==='test-hero')?.wp.__parts['layer-2']);
   assert.deepEqual(savedPart,afterRotate.part,'las transformaciones persisten');
   await page.click('#btn-undo');
@@ -299,6 +301,70 @@ export async function runEditorPartsSmoke(page){
   });
   const unchanged=await page.evaluate(()=>sec().elements.find(x=>x.id==='test-hero').wp.__parts['layer-2']);
   assert.deepEqual(unchanged,relative.p,'no-ops con otro viewport no reescriben la posición');
+
+  // Editar en un Hero estrecho crea un override móvil, sin tocar escritorio.
+  await load(9);await select('test-hero');
+  await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-hero');
+   e.wp.__parts={'layer-1':{x:70,y:30,r:5,s:1.1,refW:800,refH:400}};
+   delete e.wp.__partsMobile;
+   const d=document.querySelector('#preview').contentDocument;
+   const style=d.createElement('style');style.textContent=window.SCW.css.layeredhero;d.head.appendChild(style);
+   const hero=d.querySelector('.nw-lh');hero.style.cssText='position:relative;display:block;width:400px;height:200px;--h:200px';
+   const part=d.querySelector('[data-wpart="layer-1"]');
+   part.style.setProperty('--nw-tx','8.75000cqw');
+   part.style.setProperty('--nw-ty','calc(var(--h) * 0.075000)');
+   part.style.setProperty('--nw-pr','5deg');part.style.setProperty('--nw-ps','1.1');
+  });
+  await fire('[data-nw-part="layer-1"]');
+  const desktopBefore=await page.evaluate(()=>JSON.parse(JSON.stringify(sec().elements.find(x=>x.id==='test-hero').wp.__parts)));
+  const mobileBefore=await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,p=d.querySelector('[data-wpart="layer-1"]');
+   return d.defaultView.getComputedStyle(p).translate;
+  });
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,w=d.defaultView,p=d.querySelector('[data-wpart="layer-1"]');
+   const x=130,y=95;
+   p.dispatchEvent(new w.PointerEvent('pointerdown',{pointerId:111,button:0,bubbles:true,cancelable:true,clientX:x,clientY:y}));
+   w.dispatchEvent(new w.PointerEvent('pointermove',{pointerId:111,bubbles:true,clientX:x+24,clientY:y+10}));
+   w.dispatchEvent(new w.PointerEvent('pointerup',{pointerId:111,bubbles:true,clientX:x+24,clientY:y+10}));
+  });
+  const afterMobile=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-hero'),d=document.querySelector('#preview').contentDocument,p=d.querySelector('[data-wpart="layer-1"]');
+   return{desktop:e.wp.__parts,mobile:e.wp.__partsMobile,inline:p.style.getPropertyValue('--nw-mx'),
+    visual:d.defaultView.getComputedStyle(p).translate,reset:!!d.querySelector('.nw-wpart-reset')};
+  });
+  assert.deepEqual(afterMobile.desktop,desktopBefore,'editar móvil no altera pose de escritorio');
+  assert.equal(afterMobile.mobile['layer-1'].refW,400);
+  assert.equal(afterMobile.mobile['layer-1'].refH,200);
+  assert.equal(afterMobile.mobile['layer-1'].x,59);
+  assert.equal(afterMobile.mobile['layer-1'].y,25);
+  assert.match(afterMobile.inline,/cqw$/,'ajuste móvil relativo');
+  assert.notEqual(afterMobile.visual,mobileBefore,'la capa cambia visualmente en móvil');
+  assert.equal(afterMobile.reset,true,'aparece opción para volver a escritorio');
+  const outputMobile=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-hero').wp;
+   return window.SCW.kinds.layeredhero.markup(Object.assign({},e,{__parts:e.__parts,__partsMobile:e.__partsMobile}),{edit:false});
+  });
+  assert.match(outputMobile,/--nw-tx:8\.75000cqw/,'export conserva escritorio');
+  assert.match(outputMobile,/--nw-mx:14\.75000cqw/,'export conserva móvil independiente');
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument;
+   d.querySelector('.nw-wpart-reset').click();
+  });
+  const afterMobileReset=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-hero'),d=document.querySelector('#preview').contentDocument,p=d.querySelector('[data-wpart="layer-1"]');
+   return{desktop:e.wp.__parts,mobile:e.wp.__partsMobile||{},inline:p.style.getPropertyValue('--nw-mx'),
+    reset:!!d.querySelector('.nw-wpart-reset')};
+  });
+  assert.deepEqual(afterMobileReset.desktop,desktopBefore,'restablecer móvil conserva escritorio');
+  assert.equal(afterMobileReset.mobile['layer-1'],undefined,'restablecer elimina solo versión móvil');
+  assert.equal(afterMobileReset.inline,'','restablecer quita la variable móvil');
+  assert.equal(afterMobileReset.reset,false,'ya no muestra restablecimiento móvil');
+  await page.click('#btn-undo');
+  assert.ok(await page.evaluate(()=>sec().elements.find(x=>x.id==='test-hero').wp.__partsMobile?.['layer-1']));
+  await page.click('#btn-redo');
+  assert.equal(await page.evaluate(()=>sec().elements.find(x=>x.id==='test-hero').wp.__partsMobile?.['layer-1']),undefined);
 
   console.log('Editor partes: foco, restauración, Escape, Enter e historial OK');
  }finally{
