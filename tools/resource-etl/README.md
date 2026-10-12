@@ -1441,3 +1441,20 @@ publica con push normal, nunca con force y sin modificar `main` ni Vercel.
 El navegador de Chromium prueba la miniatura real de Cámara con trazado
 y círculo; los tests unitarios rechazan SVG inseguros. **Una publicación
 no se considera terminada hasta verificar su workflow y el índice remoto.**
+
+### Etapa 89: verificación de publicación y sincronización de Chromium
+
+El workflow [Resource Vault Lucide Thumbnail Index](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38279036340)
+terminó **success** y confirmó **1860 miniaturas Lucide de 1870**,
+con fallback de texto/ficha para 10 geometrías incompatibles. Se preservaron
+los cinco paquetes originales, sus sumas SHA-256 y los 6762 recursos.
+Commit en rama de datos:
+`30199f6f5dd29931dfd082c62984aae07f5a751e`.
+
+El recorrido de Chromium espera explícitamente el evento `load` del
+lienzo luego de modificar y llamar a `refresh()`, ya que el editor
+programa su renderizado de `iframe#preview` con 480 ms de debounce.
+Hacer clic sobre Personalizar mientras se reemplaza el documento causa
+una condición de carrera; el test ahora valida el estado terminado del
+lienzo antes de editar. Esto no cambia el funcionamiento ni el retraso
+real del editor, sólo sincroniza correctamente la prueba.

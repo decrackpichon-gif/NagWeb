@@ -165,3 +165,17 @@ Biblioteca offline-first de **recursos abiertos/licenciados** para diseñadores.
   filtros/búsqueda de proveedor e inserción editable preexistente.
 - Confirmar la ejecución y el nuevo commit de `resource-vault-data` antes
   de dar por publicada la miniatura; no ejecutar Vercel ni hacer merge.
+
+### Publicación Lucide verificada (12/10/2026)
+
+- Workflow de índice: **success** en
+  https://github.com/decrackpichon-gif/NagWeb/actions/runs/38279036340 .
+- HEAD de datos:
+  `30199f6f5dd29931dfd082c62984aae07f5a751e`.
+- Cobertura real: **1860/1870 Lucide** con miniatura visual segura;
+  los 10 restantes preservan su ficha. Continúan los **323 Heroicons**
+  y **6762 recursos** consolidados sin cambios en los archivos originales.
+- Diagnóstico de Chromium: el test intentaba abrir la personalización
+  inmediatamente después de `refresh()`, pero la vista previa se
+  regenera con 480 ms de debounce. El test se sincroniza con el evento
+  de carga del iframe para no introducir falsos errores intermitentes.

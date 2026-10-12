@@ -722,11 +722,25 @@ try {
   await expect(mobileSvg).toBeVisible();
   assert.ok(Math.abs(await mobileSvg.evaluate(n => n.getBoundingClientRect().width) - 24) < 1, "Insertion from mobile keeps the chosen size on desktop too");
   // Reopen an existing vector, cancel safely, then edit it without replacing it.
-  await page.evaluate(id => {
+  await page.evaluate(async id => {
+    // refresh() debounces the iframe render for 480ms. Waiting only for an
+    // enabled toolbar button can click during the document swap, before the
+    // current vector's actual dimensions can be measured. Follow the iframe
+    // load event after scheduling the refresh, as a real editor interaction
+    // needs its selected vector to be ready.
+    const loaded = new Promise((resolve,reject) => {
+      const watchdog = setTimeout(() => reject(new Error(
+        "The editor preview did not finish rendering after refreshing the SVG")), 12000);
+      preview.addEventListener("load", () => {
+        clearTimeout(watchdog);
+        resolve();
+      }, {once:true});
+    });
     const e = sec().elements.find(e => e.id === id);
     e.x = 17; e.y = 25; e.name = "Nombre propio"; e.anim = "fade";
     selection = [e.id]; curEl = sec().elements.indexOf(e); secFocus = false;
     refresh();
+    await loaded;
   }, inserted.element.id);
   const editButton = page.getByRole("button", { name: "Personalizar ícono seleccionado", exact: true });
   const reopenCustomization = async button => {
