@@ -104,3 +104,7 @@ El laboratorio A/B expone inversión de triángulos, casi colapsos y área míni
 ### Scene Composer V1.2 · manipulación directa en lienzo
 
 El constructor experimental admite redimensionamiento y rotación con tiradores de mouse sin depender de campos numéricos; el inspector conserva la sincronización. `Shift` permite mantener proporción en resize y ángulos de 15° en rotación. La casilla de bloqueo impide arrastrar/transformar accidentalmente un objeto. Estas transformaciones continúan guardándose en el JSON existente, sin cambiar su esquema ni tocar la rama estable. Siguiente criterio: validar la ergonomía en una escena real y estudiar controles de zoom para lienzos grandes.
+
+### Scene Composer V1.3 · navegación y separación de coordenadas
+
+Se agregó navegación visual al constructor experimental: zoom 25–250 %, encajar, volver a 100 %, zoom con Ctrl/Cmd+rueda y paneo Espacio+drag o mouse central. El stage conserva las unidades del JSON, mientras una capa de medición inversa evita descoordinar puntero, renderer y alcance de influencia. Se comprueba automáticamente zoom sin mutación del documento, gestos a escala y estabilidad de instancia. La prioridad de validación humana será calidad del zoom/paneo y reacción del personaje con `ponjita.png`; pedir esa prueba sólo cuando se disponga de un kit probado.

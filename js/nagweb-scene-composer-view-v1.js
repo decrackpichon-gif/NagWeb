@@ -92,7 +92,7 @@ function create(input){
   }
   function move(e){
     if(!drag)return;
-    var dx=e.clientX-drag.sx,dy=e.clientY-drag.sy,patch={};
+    var zoom=Math.max(.1,Number(input.getZoom&&input.getZoom())||1),dx=(e.clientX-drag.sx)/zoom,dy=(e.clientY-drag.sy)/zoom,patch={};
     if(drag.mode==='move'){
       patch.x=Math.round(drag.x+dx);patch.y=Math.round(drag.y+dy);
     }else if(drag.mode==='resize'){
@@ -138,5 +138,5 @@ function create(input){
     duplicate:id=>{var old=new Set(scene.elements.map(e=>e.id));scene=S.duplicateElement(scene,id);selected=scene.elements.find(e=>!old.has(e.id)).id;render()}
   };
 }
-root.NAGWEB_SCENE_COMPOSER_VIEW={version:'1.2.0-alpha.1',create:create};
+root.NAGWEB_SCENE_COMPOSER_VIEW={version:'1.3.0-alpha.1',create:create};
 })(typeof window!=='undefined'?window:globalThis);

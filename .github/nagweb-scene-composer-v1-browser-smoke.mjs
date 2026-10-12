@@ -112,6 +112,42 @@ try{
  await page.click('#exportScene');const json=await page.$eval('#sceneJson',el=>el.value);assert.ok(json.includes('nagweb-scene-composer'));
  await page.click('#applyScene');await new Promise(r=>setTimeout(r,80));assert.equal(await page.evaluate(()=>__NAGWEB_SCENE_COMPOSER__.scene.elements.length),5);
 
+
+ // Viewport transforms are presentation only: scene coordinates and schema remain stable.
+ const viewportStart=await page.evaluate(()=>({json:NAGWEB_SCENE_COMPOSER.serialize(__NAGWEB_SCENE_COMPOSER__.scene),field:__NAGWEB_SCENE_COMPOSER__.field,zoom:__NAGWEB_SCENE_COMPOSER__.zoom}));
+ assert.equal(viewportStart.zoom,1);
+ await page.click('#zoomOut');
+ const firstZoom=await page.evaluate(()=>({zoom:__NAGWEB_SCENE_COMPOSER__.zoom,stageWidth:document.querySelector('#stage').getBoundingClientRect().width,spaceWidth:document.querySelector('#stageSpace').getBoundingClientRect().width,json:NAGWEB_SCENE_COMPOSER.serialize(__NAGWEB_SCENE_COMPOSER__.scene),fieldStable:__NAGWEB_SCENE_COMPOSER__.field===__composerTest.field}));
+ assert.equal(firstZoom.zoom,.75);
+ assert.ok(Math.abs(firstZoom.stageWidth-900)<1);
+ assert.ok(Math.abs(firstZoom.spaceWidth-firstZoom.stageWidth)<1);
+ assert.equal(firstZoom.json,viewportStart.json,'zoom should not mutate the scene JSON');
+ assert.equal(firstZoom.fieldStable,true,'zoom should preserve influence physics instance');
+ // A 75 px cursor movement at 75% zoom translates to approximately 100 scene units.
+ const zoomId=await page.evaluate(()=>__NAGWEB_SCENE_COMPOSER__.view.selected);
+ const zoomBefore=await page.evaluate(id=>{const el=__NAGWEB_SCENE_COMPOSER__.scene.elements.find(x=>x.id===id);return {x:el.x,y:el.y};},zoomId);
+ const zoomRect=await page.$eval('.item.sel',el=>{const r=el.getBoundingClientRect();return {x:r.x+20,y:r.y+20};});
+ await page.mouse.move(zoomRect.x,zoomRect.y);await page.mouse.down();
+ await page.mouse.move(zoomRect.x+75,zoomRect.y+37.5,{steps:7});await page.mouse.up();
+ const zoomAfter=await page.evaluate(id=>{const el=__NAGWEB_SCENE_COMPOSER__.scene.elements.find(x=>x.id===id);return {x:el.x,y:el.y};},zoomId);
+ assert.ok(Math.abs(zoomAfter.x-zoomBefore.x-100)<=3,'drag must compensate viewport zoom');
+ assert.ok(Math.abs(zoomAfter.y-zoomBefore.y-50)<=3,'vertical drag must compensate viewport zoom');
+ await page.click('#zoomActual');
+ await page.click('#zoomIn');
+ const beforePan=await page.evaluate(()=>({scroll:document.querySelector('#work').scrollLeft,selected:__NAGWEB_SCENE_COMPOSER__.view.selected}));
+ const canvasBox=await page.$eval('#work',el=>{const r=el.getBoundingClientRect();return {x:r.left+650,y:r.top+390};});
+ await page.keyboard.down('Space');
+ await page.mouse.move(canvasBox.x,canvasBox.y);await page.mouse.down();
+ await page.mouse.move(canvasBox.x-140,canvasBox.y,{steps:7});await page.mouse.up();
+ await page.keyboard.up('Space');
+ const afterPan=await page.evaluate(()=>({scroll:document.querySelector('#work').scrollLeft,selected:__NAGWEB_SCENE_COMPOSER__.view.selected}));
+ assert.ok(afterPan.scroll>beforePan.scroll+75,'holding Space and dragging pans viewport');
+ assert.equal(afterPan.selected,beforePan.selected,'panning must not change selection');
+ await page.click('#zoomFit');
+ assert.ok(await page.evaluate(()=>__NAGWEB_SCENE_COMPOSER__.zoom<1),'fit scales the 1200px stage to visible workspace');
+ await page.click('#zoomActual');
+ assert.equal(await page.evaluate(()=>__NAGWEB_SCENE_COMPOSER__.zoom),1);
+
  const stage=await page.$eval('#stage',el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y}});
  await page.mouse.move(stage.x+300,stage.y+200,{steps:8});await new Promise(r=>setTimeout(r,500));
  const moved=await page.$$eval('.item[data-reactive="1"]',els=>els.some(el=>el.style.translate&&el.style.translate!=='0.00px 0.00px'));
