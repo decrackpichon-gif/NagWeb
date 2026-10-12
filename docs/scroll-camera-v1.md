@@ -892,3 +892,61 @@ La ejecución posterior aprobó toda la suite.
 Alcance no comprobado: interacción táctil en hardware físico,
 dispositivos móviles reales y ergonomía con modelos GLB complejos.
 No hubo despliegue a Vercel ni merge de ramas.
+
+
+## Editar espacio 3D · Cámara y objetos en un mismo mapa (12/10/2026)
+
+Primer avance tras analizar la grabación de uso real del 12/10/2026.
+**No se creó un editor/renderer paralelo**, y el Director 0→1 conserva el
+control exclusivo de la animación.
+
+- En el panel de Cámara 3D aparece el acceso inmediato
+  **«◈ Editar espacio 3D · Ver cámara y objetos»**, que abre el mapa del
+  recorrido dentro de la escena y muestra sus objetos. No es una
+  ventana independiente ni una aplicación nueva.
+- En **Lienzo libre**, «Mapa del recorrido · Cámara y objetos» ya no
+  descarta silenciosamente los elementos posteriores al número 16.
+  Se conservan sus marcadores y hay una lista de capas desplazable,
+  con etiquetas, tipos (texto, imagen, contenedor, modelo 3D) y Z
+  ordenada para identificar qué está más adelante en el mundo.
+  El mapa etiqueta directamente un subconjunto acotado a 48 para
+  reducir la superposición; la lista mantiene todos los objetos
+  elegibles. Hacer clic en una capa sincroniza su inspector y los
+  controles existentes de modelado.
+- El inspector incorpora **«Profundidad del objeto · Z»**,
+  con deslizador y número accesible. Usa la coordenada Z actual que
+  calcula el puente de cámara para el porcentaje de scroll que se está
+  inspeccionando. Para texto e imágenes, modifica únicamente
+  `sdCameraDepth`; para `shape3d` anclado, convierte el desplazamiento
+  del mundo a la unidad existente `offZ`. Respeta los topes de cada
+  campo, crea una única entrada de Deshacer por cambio confirmado y
+  conserva los keyframes animados. No duplica ni migra el modelo de
+  datos, no altera el recorrido de cámara y no instala un segundo reloj.
+- Se forzó contraste legible (texto oscuro / fondo blanco) en los
+  campos numéricos propios del inspector de cámara, incluso si el
+  tema actual utiliza estilos globales que heredan gris claro.
+- Incluye una breve ayuda desplegable para hacer un recorrido
+  **texto → foto → texto**: ejemplo Z −300, 200, 700 y camera Z
+  −900 → 1300, con los elementos centrados X/Y. Es orientativa y
+  **no altera ni genera escenas automáticamente**.
+
+**Límites explícitos:** el mapa usa los mismos objetivos de posición
+XYZ ya disponibles, por lo que requiere «Lienzo libre» y sólo dibuja
+las huellas aproximadas, no los contornos finales ni la oclusión.
+En otras disposiciones se muestra una indicación para elegir
+Lienzo libre en vez de inventar posiciones. Aún no hay drag
+directo de planos HTML sobre el mapa; el desplazamiento de
+profundidad se edita mediante deslizador/campo, mientras que
+los modelos 3D conservan sus propias asas en la vista previa.
+La perspectiva y oclusión HTML/WebGL avanzadas, la validación visual
+de atravesar un plano y el preset autónomo de tres capas siguen
+pendientes.
+
+**Pruebas:** `tests/spatial-focus-map.integration.cjs` comprueba
+una escena con **22 objetos** (sin el tope histórico de 16),
+acceso al mapa, selección desde la lista, cambios de profundidad
+de HTML y GLB, Deshacer y no alteración de keyframes. La suite
+aislada pasa **210 comprobaciones**. En
+`tests/camera-current-moment.browser.cjs` se agregó la verificación
+con el editor real de apertura, selección y campo Z legible, edición
+HTML y Undo. El resultado de CI debe confirmarse por separado.
