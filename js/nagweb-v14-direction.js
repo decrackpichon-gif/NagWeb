@@ -252,6 +252,16 @@ function installCanvasTools(){
   doc.body.appendChild(s);doc.body.appendChild(rot);handles=[s,rot];
   bindHandle(s,'size');bindHandle(rot,'rot');
  }
+ // La barra de una composición puede seleccionar directamente su parte
+ // sin requerir una segunda pulsación en el lienzo.
+ function selectPart(rootId,partName){
+  if(selection.length!==1||selection[0]!==rootId)return false;
+  var root=Array.prototype.find.call(doc.querySelectorAll('.el.wdg[data-id]'),function(n){return n.dataset.id===rootId;});
+  if(!root)return false;
+  var target=Array.prototype.find.call(root.querySelectorAll('[data-wpart]'),function(n){return n.getAttribute('data-wpart')===partName;});
+  if(!target)return false;
+  clear();active=target;target.classList.add('nw-wpart-sel');placeHandles();return true;
+ }
  function partState(root,n){
   var id=root.dataset.id,e=currentWidget(id),name=n.getAttribute('data-wpart'),p=e&&e.wp&&e.wp.__parts&&e.wp.__parts[name]||{};
   return {id:id,name:name,e:e,x:+p.x||0,y:+p.y||0,r:+p.r||0,s:p.s==null?1:+p.s};
@@ -324,6 +334,8 @@ function installCanvasTools(){
  },true);
  doc.defaultView.addEventListener('scroll',placeHandles);
  doc.defaultView.addEventListener('resize',placeHandles);
+ // API exclusiva del iframe de edición; no entra al HTML de publicación.
+ doc.__nwCanvasPartAPI={select:selectPart,clear:clear};
 }
 var preview=document.getElementById('preview');
 if(preview){preview.addEventListener('load',function(){setTimeout(installCanvasTools,40);});setTimeout(installCanvasTools,250);}

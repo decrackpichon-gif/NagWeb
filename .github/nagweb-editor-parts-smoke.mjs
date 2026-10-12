@@ -54,15 +54,26 @@ export async function runEditorPartsSmoke(page){
    sec().elements.find(e=>e.id==='test-hero').wp={texts:[{text:'Texto original'}]};
   });
   await load(1);await select('test-hero');await fire('[data-nw-part="layer-2"]');
-  await select('test-story');await fire('[data-nw-story-ch="2"]');await fire('[data-nw-story-part="media"]');
+  // La barra y el lienzo seleccionan la MISMA parte: tiradores inmediatos.
+  const toolPart=()=>page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument;
+   return{part:d.querySelector('.nw-wpart-sel')?.getAttribute('data-wpart')||null,handles:d.querySelectorAll('.nw-wpart-h').length};
+  });
+  assert.deepEqual(await toolPart(),{part:'layer-2',handles:2},'Hero: un clic en Foto 2 habilita mover, escalar y rotar');
+  await select('test-story');await fire('[data-nw-story-ch="2"]');
+  assert.deepEqual(await toolPart(),{part:null,handles:0},'cambiar capítulo limpia tiradores anteriores');
+  await fire('[data-nw-story-part="media"]');
+  assert.deepEqual(await toolPart(),{part:'media-2',handles:2},'Historia: el botón Imagen habilita la transformación');
   const expected={hero:'layer-2',chapter:'2',step:'2',media:'media-2',manual:true};
   assert.deepEqual(await inspect(),expected);
   await load(2);
   assert.deepEqual(await inspect(),expected,'reconstruir iframe conserva selección');
+  assert.deepEqual(await toolPart(),{part:'media-2',handles:2},'reconstruir iframe conserva además los tiradores');
   await fire('[data-nw-story-live]');
   await load(3);
   const live=await inspect();
   assert.equal(live.manual,false);assert.equal(live.media,null);assert.equal(live.chapter,'1');
+  assert.deepEqual(await toolPart(),{part:null,handles:0},'Seguir scroll retira los tiradores manuales');
   await select('test-hero');
   const start=await page.evaluate(()=>({
    text:sec().elements.find(e=>e.id==='test-hero').wp.texts[0].text,undo:history.length
