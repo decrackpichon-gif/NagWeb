@@ -237,10 +237,17 @@ function installCanvasTools(){
  var fr=document.getElementById('preview');if(!fr)return;
  var doc;try{doc=fr.contentDocument;}catch(err){return;}if(!doc||!doc.body||doc.__nwCanvasTools)return;doc.__nwCanvasTools=1;
  var style=doc.createElement('style');
- style.textContent='[data-wfield],[data-wlist]{cursor:text}[data-wfield]:hover,[data-wlist]:hover{outline:1px dashed rgba(139,108,255,.75);outline-offset:3px}.nw-wpart-sel{outline:1.5px solid #8C6BFF!important;outline-offset:3px!important}.nw-wpart-h{position:fixed;z-index:2147483000;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid #7C5CFF;box-shadow:0 1px 5px rgba(0,0,0,.3)}.nw-wpart-h.size{cursor:nwse-resize}.nw-wpart-h.rot{cursor:grab;background:#7C5CFF}.nw-canvas-editing{outline:2px solid #8C6BFF!important;outline-offset:2px!important;cursor:text!important}';
+ style.textContent='[data-wfield],[data-wlist]{cursor:text}[data-wfield]:hover,[data-wlist]:hover{outline:1px dashed rgba(139,108,255,.75);outline-offset:3px}.nw-wpart-sel{outline:1.5px solid #8C6BFF!important;outline-offset:3px!important}.nw-wpart-h{position:fixed;z-index:2147483000;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid #7C5CFF;box-shadow:0 1px 5px rgba(0,0,0,.3)}.nw-wpart-h.size{cursor:nwse-resize}.nw-wpart-h.rot{cursor:grab;background:#7C5CFF}.nw-wpart-reset{position:fixed;z-index:2147483002;min-height:23px;border:1px solid #8C6BFF;border-radius:6px;background:#191626;color:#fff;padding:3px 8px;cursor:pointer;font:600 10px/1.2 system-ui;box-shadow:0 3px 10px #0006}.nw-canvas-editing{outline:2px solid #8C6BFF!important;outline-offset:2px!important;cursor:text!important}';
  doc.head.appendChild(style);
- var active=null,handles=[];
+ var active=null,handles=[],keyMove=null;
+ function endNudge(cancel){
+  if(!keyMove)return;
+  var k=keyMove;keyMove=null;
+  if(cancel)applyPart(k.target,k.start);
+  else commitPart(k.current.id,k.current.name,k.current);
+ }
  function clear(){
+  endNudge(false);
   if(active)active.classList.remove('nw-wpart-sel');active=null;
   handles.forEach(function(h){h.remove();});handles=[];
  }
@@ -251,6 +258,24 @@ function installCanvasTools(){
   var rot=doc.createElement('i');rot.className='nw-wpart-h rot';rot.style.left=(r.left+r.width/2-6)+'px';rot.style.top=(r.top-28)+'px';
   doc.body.appendChild(s);doc.body.appendChild(rot);handles=[s,rot];
   bindHandle(s,'size');bindHandle(rot,'rot');
+  var root=active.closest('.el.wdg[data-id]');
+  if(root){
+   var p=partState(root,active);
+   if(p.x||p.y||p.r||Math.abs(p.s-1)>.001){
+    var reset=doc.createElement('button');
+    reset.type='button';reset.className='nw-wpart-reset';reset.textContent='Restablecer';
+    reset.title='Restablecer posición, tamaño y giro de esta pieza';
+    reset.style.left=Math.max(0,r.right-98)+'px';reset.style.top=Math.max(0,r.top-29)+'px';
+    reset.addEventListener('click',function(ev){
+     ev.preventDefault();ev.stopPropagation();endNudge(false);
+     var node=active;if(!node||!node.isConnected)return;
+     var host=node.closest('.el.wdg[data-id]');if(!host)return;
+     var before=partState(host,node),neutral=Object.assign({},before,{x:0,y:0,r:0,s:1});
+     if(commitPart(before.id,before.name,neutral)){applyPart(node,neutral);placeHandles();}
+    });
+    doc.body.appendChild(reset);handles.push(reset);
+   }
+  }
  }
  // La barra de una composición puede seleccionar directamente su parte
  // sin requerir una segunda pulsación en el lienzo.
@@ -317,11 +342,13 @@ function installCanvasTools(){
   n.addEventListener('blur',fin,{once:true});n.addEventListener('keydown',onKey);
  },true);
  doc.addEventListener('pointerdown',function(ev){
-  if(ev.target.closest&&ev.target.closest('.nw-wpart-h,[contenteditable],[data-nw-part],[data-nw-story-ch],[data-nw-story-part],[data-nw-story-live]'))return;
+  if(ev.target.closest&&ev.target.closest('.nw-wpart-h,.nw-wpart-reset,[contenteditable],[data-nw-part],[data-nw-story-ch],[data-nw-story-part],[data-nw-story-live]'))return;
   var n=ev.target.closest&&ev.target.closest('[data-wpart]');if(!n){clear();return;}
   var root=n.closest('.el.wdg[data-id]');if(!root)return;
   if(!(selection.length===1&&selection[0]===root.dataset.id))return;
-  ev.preventDefault();ev.stopPropagation();active=n;doc.querySelectorAll('.nw-wpart-sel').forEach(function(x){x.classList.remove('nw-wpart-sel');});n.classList.add('nw-wpart-sel');placeHandles();
+  ev.preventDefault();ev.stopPropagation();endNudge(false);
+  active=n;doc.querySelectorAll('.nw-wpart-sel').forEach(function(x){x.classList.remove('nw-wpart-sel');});n.classList.add('nw-wpart-sel');placeHandles();
+  doc.dispatchEvent(new doc.defaultView.CustomEvent('nw-canvas-part-selected',{detail:{id:root.dataset.id,part:n.getAttribute('data-wpart')}}));
   var start=partState(root,n),p=Object.assign({},start),sx=ev.clientX,sy=ev.clientY,moved=false;
   function mv(e){if(e.pointerId!==ev.pointerId)return;var dx=e.clientX-sx,dy=e.clientY-sy;if(Math.abs(dx)+Math.abs(dy)>2)moved=true;p.x=start.x+dx;p.y=start.y+dy;applyPart(n,p);placeHandles();}
   function up(e){
@@ -332,6 +359,34 @@ function installCanvasTools(){
   }
   var w=doc.defaultView;w.addEventListener('pointermove',mv);w.addEventListener('pointerup',up);w.addEventListener('pointercancel',up);
  },true);
+ // Ajustes finos con teclado: flechas = 1 px, Mayús + flecha = 10 px.
+ // Mantener una sola entrada de Deshacer mientras la tecla se repite.
+ var arrows={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};
+ doc.addEventListener('keydown',function(ev){
+  var delta=arrows[ev.key];if(!delta||!active||ev.altKey||ev.ctrlKey||ev.metaKey)return;
+  var el=ev.target;
+  if(el&&el.closest&&el.closest('input,textarea,select,[contenteditable]'))return;
+  if(el&&el.closest&&el.closest('button:not([data-nw-part]):not([data-nw-story-part])'))return;
+  var root=active.closest('.el.wdg[data-id]');
+  if(!root||!active.isConnected||selection.length!==1||selection[0]!==root.dataset.id)return;
+  ev.preventDefault();ev.stopPropagation();
+  if(!keyMove||keyMove.target!==active){
+   endNudge(false);
+   var start=partState(root,active);
+   keyMove={target:active,start:start,current:Object.assign({},start)};
+  }
+  var amount=ev.shiftKey?10:1;
+  keyMove.current.x+=delta[0]*amount;
+  keyMove.current.y+=delta[1]*amount;
+  applyPart(active,keyMove.current);placeHandles();
+ },true);
+ doc.addEventListener('keyup',function(ev){
+  if(keyMove&&arrows[ev.key]){ev.preventDefault();ev.stopPropagation();endNudge(false);placeHandles();}
+ },true);
+ doc.addEventListener('keydown',function(ev){
+  if(keyMove&&ev.key==='Escape'){ev.preventDefault();ev.stopPropagation();endNudge(true);placeHandles();}
+ },true);
+ doc.defaultView.addEventListener('blur',function(){endNudge(true);placeHandles();});
  doc.defaultView.addEventListener('scroll',placeHandles);
  doc.defaultView.addEventListener('resize',placeHandles);
  // API exclusiva del iframe de edición; no entra al HTML de publicación.

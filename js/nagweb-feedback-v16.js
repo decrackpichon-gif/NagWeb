@@ -173,6 +173,29 @@ function installEditors(){
    }
   }
  },true);
+ // Elegir una parte directamente en el lienzo también sincroniza su barra.
+ doc.addEventListener('nw-canvas-part-selected',function(ev){
+  var info=ev.detail||{},id=info.id,name=info.part;if(!id||!name)return;
+  var root=Array.prototype.find.call(doc.querySelectorAll('.el.wdg[data-id]'),function(n){return n.dataset.id===id;});
+  if(!root)return;
+  function press(btn){
+   if(btn)btn.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,button:0,pointerId:99}));
+  }
+  var hero=root.querySelector('.nw-lh');
+  if(hero){
+   press(Array.prototype.find.call(hero.querySelectorAll('[data-nw-part]'),function(n){return n.dataset.nwPart===name;}));
+   return;
+  }
+  var story=root.querySelector('.nw-story');
+  if(story){
+   var match=/^(media-|[ktc])([1-3])$/.exec(name);if(!match)return;
+   var chapter=+match[2],kind=match[1]==='media-'?'media':match[1];
+   if(story.__nwStoryChapter!==chapter){
+    press(story.querySelector('[data-nw-story-ch="'+chapter+'"]'));
+   }
+   press(story.querySelector('[data-nw-story-part="'+kind+'"]'));
+  }
+ });
  doc.addEventListener('dblclick',function(ev){
   var n=ev.target.closest&&ev.target.closest('[data-nw-listobj]');if(!n)return;var root=n.closest('.el.wdg[data-id]');if(!root)return;ev.preventDefault();ev.stopPropagation();selectWidget(root.dataset.id);
   n.setAttribute('contenteditable','plaintext-only');n.focus();try{var rg=doc.createRange();rg.selectNodeContents(n);var sl=w.getSelection();sl.removeAllRanges();sl.addRange(rg)}catch(_){}
