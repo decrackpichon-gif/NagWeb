@@ -58,6 +58,17 @@ assert.equal(adapter.previewDepth('far',101,'a'),false,'depth edit caps invalid 
 assert.equal(adapter.previewDepth('near',null,'a'),true);
 adapter.render(()=>{});
 assert.ok(near.userData.holder.getWorldPosition(new T.Vector3()).distanceTo(world)<1e-6,'cancel restores the original 3D pivot');
+assert.equal(adapter.previewDepth('near',2.75,'a'),true);
+adapter.render(()=>{});
+const depthPreviewWorld=near.userData.holder.getWorldPosition(new T.Vector3());
+assert.equal(adapter.previewDepth('near',null,'a',true),false,'Depth commit cannot discard the value');
+assert.equal(adapter.previewDepth('near',2.75,'a',true),true,'Confirm promotes depth to the generated source');
+assert.equal(near.userData.o.offZ,2.75,'Iframe model retains the confirmed depth');
+assert.equal(Object.prototype.hasOwnProperty.call(near.userData,'nwPreviewOffZ'),false,'Confirm removes transient depth override');
+adapter.render(()=>{});
+assert.ok(near.userData.holder.getWorldPosition(new T.Vector3()).distanceTo(depthPreviewWorld)<1e-6,'No frame-to-frame depth jump after confirmation');
+near.userData.o.offZ=2;
+adapter.render(()=>{});
 assert.equal(c.window.NAGWEB_SPATIAL_SCREEN_POINT('near','a').x,projectedPivot.x,'screen projection editor bridge matches adapter');
 // Static base rotation/size is composited with the Director animation,
 // and temporary gizmo values never persist in the model.
