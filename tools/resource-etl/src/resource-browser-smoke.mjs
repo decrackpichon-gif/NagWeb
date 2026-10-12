@@ -1351,7 +1351,31 @@ try {
   // The opaque iframe consumes hover; the editor control stays reachable.
   await expect(canvasEdit).toHaveCSS("pointer-events","auto");
   const beforeInlineEdit=await page.evaluate(()=>history.length);
+  await canvasEdit.evaluate(node=>{
+    const win=node.ownerDocument.defaultView;
+    win.parent.__resource84Trace=[];
+    const capture=event=>{
+      win.parent.__resource84Trace.push({
+        type:event.type, target:event.target?.getAttribute?.("data-nagweb-resource-edit")||"",
+        phase:event.eventPhase, prevented:event.defaultPrevented,
+        detached:!event.target?.isConnected
+      });
+    };
+    win.addEventListener("pointerdown",capture,true);
+    win.addEventListener("click",capture,true);
+    node.addEventListener("pointerdown",capture,true);
+    node.addEventListener("click",capture,true);
+  });
   await canvasEdit.click();
+  const diag84=await page.evaluate(()=>({
+    trace:window.__resource84Trace,
+    selected:selection.slice(),
+    editButton:{disabled:document.querySelector("[data-resource-library-edit]")?.disabled,
+      label:document.querySelector("[data-resource-library-edit]")?.getAttribute("aria-label")},
+    dialog:[...document.querySelectorAll("dialog")].map(d=>({open:d.open,label:d.getAttribute("aria-label")})),
+    frame:document.querySelector('iframe[title="Biblioteca de recursos de NagWeb"]')?.src
+  }));
+  console.log("RESOURCE_84_DIAG "+JSON.stringify(diag84));
   const contextualDialog=page.getByRole("dialog",{name:"Biblioteca de recursos",exact:true});
   await expect(contextualDialog).toBeVisible();
   const browserFrameNode=page.locator('iframe[title="Biblioteca de recursos de NagWeb"]');
