@@ -1380,3 +1380,17 @@ generación, lo recupera de la rama de datos y verifica su SHA-256 contra el
 índice existente. Ante fallos o incongruencias, aborta la publicación en lugar
 de reducir accidentalmente el catálogo. El workflow antiguo sigue regenerando
 sus fuentes originales; la preservación es un complemento compatible.
+
+## Etapa 87: Heroicons en el flujo del editor y edición SVG estable
+
+Los Heroicons presentes en el catálogo persistente usan el renderizador SVG
+nativo de NagWeb, no un iframe o una imagen externa. El navegador de prueba
+ahora incluye un ícono Heroicons real y verifica filtros por proveedor, cambio
+de color, inserción, reapertura de ajustes, guardado, exportación y recarga.
+
+El acceso a personalización de un SVG seleccionado y el doble clic en el
+lienzo pasan a depender de su geometría real (`measureVector`), que valida
+documento, escena y ancho actual. La bandera `canvasLoading` podía seguir
+activa tras mostrar el elemento, especialmente en Windows, e impedir la edición
+aunque el SVG ya estuviera listo. Un documento realmente desactualizado sigue
+siendo rechazado por `measureVector`.

@@ -7,6 +7,8 @@ import { gzipSync } from "node:zlib";
 import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
 import { transformUiverseComponent } from "./light-transformers.mjs";
+import { normalizeHeroiconOutline } from "./extractors/heroicons.mjs";
+import { transformHeroiconOutline } from "./heroicons-transformer.mjs";
 import { describeEditableControls } from "./runtime/editable-controls.mjs";
 import { buildResourceApplyEnvelope } from "./runtime/resource-apply-bridge.mjs";
 
@@ -44,15 +46,24 @@ const css = transformUiverseComponent({
 });
 css.title = "Componente de prueba";
 css.license = { id: "MIT", name: "MIT", verified: true };
-const resources = [icon, css];
+// Genuine Heroicons 24px outline, exercising its native editor integration.
+const heroUpstream = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon">\n  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>\n</svg>';
+const heroicon = transformHeroiconOutline({
+  item: { name:"x-mark",path:"optimized/24/outline/x-mark.svg",
+    sha:"1234567890abcdef1234567890abcdef12345678",
+    sourceSvg:heroUpstream, svg:normalizeHeroiconOutline(heroUpstream) },
+  commit:"1234567890abcdef1234567890abcdef12345678",
+  licenseText:"MIT License\n\nCopyright (c) Tailwind Labs, Inc.\nPermission notice."
+});
+const resources = [icon, css, heroicon];
 const zip = data => gzipSync(JSON.stringify(data));
-const index = zip({ format: "nagweb-resource-browse-index", resourceCount: 2,
+const index = zip({ format: "nagweb-resource-browse-index", resourceCount: resources.length,
   resources: resources.map(r => ({ id: r.id, title: r.title, family: r.family, kind: r.kind, provider: r.source.provider })) });
-const library = zip({ format: "nagweb-resource-vault-bundle", resourceCount: 2, resources });
+const library = zip({ format: "nagweb-resource-vault-bundle", resourceCount: resources.length, resources });
 const sha = bytes => createHash("sha256").update(bytes).digest("hex");
 const fixtures = new Map([
   ["vault-manifest.json", Buffer.from(JSON.stringify({ format: "nagweb-resource-vault-index",
-    consolidated: { count: 2, browseIndexPath: "index.json.gz", browseIndexSha256: sha(index), libraryPath: "library.json.gz", sha256: sha(library) } }))],
+    consolidated: { count: resources.length, browseIndexPath: "index.json.gz", browseIndexSha256: sha(index), libraryPath: "library.json.gz", sha256: sha(library) } }))],
   ["index.json.gz", index], ["library.json.gz", library]
 ]);
 const host = `<!doctype html><meta charset="utf-8"><title>Editor de prueba</title>
@@ -1377,7 +1388,46 @@ try {
   },[htmlChildId,vectorId]);
   assert.deepEqual(parents,[parentId,parentId]);
   report.scenarios.push({editor:"native resources nested in selected container",
-    status:"passed",html:true,svg:true,responsive:true,edit:true,export:true,reload:true});
+    status:"passed",html:true,svg:true,responsive:true,edit:true,export:true});
+
+  // A published Heroicon must be searchable, selectable, editable and
+  // exportable in the real NagWeb editor, not just present in the Vault.
+  await page.getByRole("button",{name:"Biblioteca de recursos",exact:true}).click();
+  await libraryFrame.getByLabel("Proveedor",{exact:true}).selectOption("heroicons");
+  await expect(libraryFrame.locator('[data-resource-id="heroicons:x-mark"]')).toBeVisible();
+  await libraryFrame.locator('[data-resource-id="heroicons:x-mark"]').click();
+  await libraryFrame.getByLabel("Color de trazo",{exact:true}).fill("#2468ab");
+  await libraryFrame.getByRole("button",{name:"Aplicar en NagWeb",exact:true}).click();
+  await expect(libraryFrame.locator("[data-apply-status]")).toContainText("insertado y guardado");
+  const heroInserted=await page.evaluate(()=>({
+    element:structuredClone(sec().elements.find(e=>e.nwResource?.id==="heroicons:x-mark")),
+    selected:[...selection]
+  }));
+  assert.equal(heroInserted.element?.type,"vector");
+  assert.equal(heroInserted.element?.nwResource?.provider,"heroicons");
+  assert.equal(heroInserted.element?.stroke,"#2468ab");
+  assert.deepEqual(heroInserted.selected,[heroInserted.element.id]);
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  const heroNative=page.frameLocator("#preview").locator(`[data-id="${heroInserted.element.id}"] svg`);
+  await expect(heroNative).toBeVisible();
+  await expect(heroNative.locator("path").first()).toHaveAttribute("stroke","#2468ab");
+  await page.evaluate(id=>{selection=[id];curEl=sec().elements.findIndex(e=>e.id===id);secFocus=false;renderPane();},heroInserted.element.id);
+  await expect(page.getByRole("button",{name:"Personalizar ícono seleccionado",exact:true})).toBeEnabled();
+  await page.getByRole("button",{name:"Personalizar ícono seleccionado",exact:true}).click();
+  const heroEditUrl=await page.locator('iframe[title="Biblioteca de recursos de NagWeb"]').getAttribute("src");
+  assert.equal(new URL(heroEditUrl).searchParams.get("editResource"),heroicon.id);
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  const heroExport=await page.evaluate(()=>generateSite(flattenPage(page()),false,true,false));
+  assert.match(heroExport,/M6 18 18 6M6 6l12 12/);
+  assert.match(heroExport,/stroke="#2468ab"/);
+  const persistedHero=await page.evaluate(id=>
+    JSON.parse(localStorage.getItem(STORE_KEY)).pages[0].sections[0].elements.find(e=>e.id===id),heroInserted.element.id);
+  assert.equal(persistedHero?.nwResource?.id,heroicon.id);
+  await page.reload();
+  await expect(page.frameLocator("#preview").locator(`[data-id="${heroInserted.element.id}"] svg`)).toBeVisible();
+  report.scenarios.push({editor:"Heroicons native insert, customize and export",
+    status:"passed",providerFilter:true,edit:true,export:true,persistence:true});
+
   await context.close();
   assert.deepEqual(report.errors, [], "Browser must not emit uncaught errors or external requests");
   console.log("Resource Browser Chromium smoke: panel desktop/mobile + real NagWeb SVG insertion and editing, save, cancel, undo/redo, reload and rejected inputs OK.");

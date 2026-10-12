@@ -98,7 +98,9 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     const element = selectedLibraryElement();
     let ready = Boolean(element);
     if (element?.type === "vector") {
-      try { if (canvasLoading) ready = false; else measureVector(element); }
+      // Real vector geometry, not the delayed outer-frame load flag,
+      // determines whether the selected icon can be edited.
+      try { measureVector(element); }
       catch { ready = false; }
     }
     if (editButton.disabled !== !ready) editButton.disabled = !ready;
@@ -220,7 +222,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     boundCanvasDocuments.add(canvasDoc);
     canvasDoc.addEventListener("keydown", handleCanvasEditShortcut, true);
     canvasDoc.addEventListener("dblclick", event => {
-      if (event.defaultPrevented || event.button !== 0 || dialog.open || canvasLoading) return;
+      if (event.defaultPrevented || event.button !== 0 || dialog.open) return;
       const node = event.target?.closest?.(".el[data-id]");
       if (!node || node.closest(".sc")?.dataset.id !== sec()?.id) return;
       const resource = libraryResourceById(node.dataset.id);
