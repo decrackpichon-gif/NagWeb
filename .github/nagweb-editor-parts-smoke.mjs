@@ -268,6 +268,12 @@ export async function runEditorPartsSmoke(page){
   assert.equal(relative.p.refW,800);assert.equal(relative.p.refH,400);
   assert.equal(relative.p.x,80);assert.equal(relative.p.y,40);
   assert.deepEqual(relative.stored,relative.p,'guardar referencias del Hero');
+  const liveRelativeStyle=await page.evaluate(()=>{
+   const n=document.querySelector('#preview').contentDocument.querySelector('[data-wpart="layer-2"]');
+   return{x:n.style.getPropertyValue('--nw-tx'),y:n.style.getPropertyValue('--nw-ty')};
+  });
+  assert.match(liveRelativeStyle.x,/cqw$/,'la edición viva también conserva X proporcional');
+  assert.match(liveRelativeStyle.y,/^calc\(var\(--h\)/,'la edición viva también conserva Y proporcional');
   // El mismo widget exportado debe usar unidades relativas, sin un runtime alternativo.
   const markupResponsive=await page.evaluate(()=>{
    const e={__parts:{'layer-1':{x:80,y:40,r:0,s:1,refW:800,refH:400}}};

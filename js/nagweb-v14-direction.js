@@ -253,8 +253,8 @@ function installCanvasTools(){
  function endNudge(cancel){
   if(!keyMove)return;
   var k=keyMove;keyMove=null;
-  if(cancel)applyPart(k.target,k.start);
-  else commitPart(k.current.id,k.current.name,k.current);
+  if(cancel)applyPart(k.target,k.start,true);
+  else{if(commitPart(k.current.id,k.current.name,k.current))k.current.responsive=!!k.current.refW;applyPart(k.target,k.current,true);}
  }
  function clear(){
   endNudge(false);
@@ -299,7 +299,7 @@ function installCanvasTools(){
  }
  function partState(root,n){
   var id=root.dataset.id,e=currentWidget(id),name=n.getAttribute('data-wpart'),p=e&&e.wp&&e.wp.__parts&&e.wp.__parts[name]||{};
-  var state={id:id,name:name,e:e,x:+p.x||0,y:+p.y||0,r:+p.r||0,s:p.s==null?1:+p.s};
+  var state={id:id,name:name,e:e,x:+p.x||0,y:+p.y||0,r:+p.r||0,s:p.s==null?1:+p.s,responsive:!!(p.refW>0&&p.refH>0)};
   var hero=n.closest('.nw-lh');
   if(hero){
    var w=hero.clientWidth,h=hero.clientHeight;
@@ -312,8 +312,12 @@ function installCanvasTools(){
   }
   return state;
  }
- function applyPart(n,p){
-  n.style.setProperty('--nw-tx',p.x+'px');n.style.setProperty('--nw-ty',p.y+'px');n.style.setProperty('--nw-pr',p.r+'deg');n.style.setProperty('--nw-ps',p.s);n.classList.add('nw-part-t');
+ function applyPart(n,p,final){
+  var relative=final&&p.responsive&&p.refW>0&&p.refH>0;
+  var x=relative?(p.x/p.refW*100).toFixed(5)+'cqw':p.x+'px';
+  var y=relative?'calc(var(--h) * '+(p.y/p.refH).toFixed(6)+')':p.y+'px';
+  n.style.setProperty('--nw-tx',x);n.style.setProperty('--nw-ty',y);
+  n.style.setProperty('--nw-pr',p.r+'deg');n.style.setProperty('--nw-ps',p.s);n.classList.add('nw-part-t');
  }
  function bindHandle(h,mode){
   h.addEventListener('pointerdown',function(ev){
@@ -335,8 +339,9 @@ function installCanvasTools(){
    function up(e){
     if(e.pointerId!==ev.pointerId)return;
     var w=doc.defaultView;w.removeEventListener('pointermove',mv);w.removeEventListener('pointerup',up);w.removeEventListener('pointercancel',up);
-    if(e.type==='pointercancel'){applyPart(target,start);placeHandles();return;}
-    commitPart(p.id,p.name,p);placeHandles();
+    if(e.type==='pointercancel'){applyPart(target,start,true);placeHandles();return;}
+    if(commitPart(p.id,p.name,p))p.responsive=!!p.refW;
+    applyPart(target,p,true);placeHandles();
    }
    var w=doc.defaultView;w.addEventListener('pointermove',mv);w.addEventListener('pointerup',up);w.addEventListener('pointercancel',up);
   });
@@ -375,8 +380,9 @@ function installCanvasTools(){
   function up(e){
    if(e.pointerId!==ev.pointerId)return;
    var w=doc.defaultView;w.removeEventListener('pointermove',mv);w.removeEventListener('pointerup',up);w.removeEventListener('pointercancel',up);
-   if(e.type==='pointercancel'||!moved){applyPart(n,start);placeHandles();return;}
-   commitPart(p.id,p.name,p);placeHandles();
+   if(e.type==='pointercancel'||!moved){applyPart(n,start,true);placeHandles();return;}
+   if(commitPart(p.id,p.name,p))p.responsive=!!p.refW;
+   applyPart(n,p,true);placeHandles();
   }
   var w=doc.defaultView;w.addEventListener('pointermove',mv);w.addEventListener('pointerup',up);w.addEventListener('pointercancel',up);
  },true);
