@@ -47,7 +47,7 @@ export async function runMotionFanSmoke(page){
    assert.equal(await page.$eval('[data-motion-fan-undo]',n=>n.disabled),true);
    assert.equal(await page.$eval('[data-motion-fan-arrange]',n=>n.getAttribute('aria-pressed')),'true');
    const unchanged=await list();
-   await page.keyboard.press('Escape');assert.deepEqual(await list(),unchanged,'Escape must preserve order');
+   await page.keyboard.press('Escape');await page.waitForFunction(()=>document.querySelector('[data-motion-fan-arrange]').getAttribute('aria-pressed')==='false',{timeout:5000});assert.deepEqual(await list(),unchanged,'Escape must preserve order');
    assert.equal(await page.$eval('[data-motion-fan-arrange]',n=>n.getAttribute('aria-pressed')),'false');
    await change('[data-motion-stream="fanDistribution"]','original');assert.equal(await page.$eval('[data-stream-fan-ordered]',n=>n.hidden),true);
    await change('[data-motion-stream="fanHero"]','1');await change('[data-motion-stream="fanStart"]','1');
