@@ -72,6 +72,15 @@ assert.equal(adapter.previewBaseTransform('near','Scale',1000,'a'),false,'previe
 assert.equal(adapter.previewBaseTransform('near','RotateY',null,'a'),true);
 adapter.render(()=>{});
 assert.ok(Math.abs(near.userData.holder.rotation.y)<1e-9,'cancel restores authored yaw');
+assert.equal(adapter.previewBaseTransform('near','RotateY',null,'a',true),false,'Cannot commit empty rotation');
+assert.equal(adapter.previewBaseTransform('near','RotateY',25,'a'),true);
+assert.equal(adapter.previewBaseTransform('near','RotateY',25,'a',true),true,'Explicit commit atomically promotes an editor preview');
+assert.equal(near.userData.o.nwSpatialRotateY,25,'Committed iframe model stores the new authored value');
+assert.equal(near.userData.nwPreviewBaseTransform,undefined,'Committed transform leaves no active transient overlay');
+adapter.render(()=>{});
+assert.ok(Math.abs(near.userData.holder.rotation.y-25*Math.PI/180)<1e-9,'No one-frame snap follows promoted yaw');
+delete near.userData.o.nwSpatialRotateY;
+adapter.render(()=>{});
 assert.equal(adapter.previewBaseTransform('near','Scale',150,'a'),true);
 adapter.render(()=>{});
 assert.ok(Math.abs(near.userData.holder.scale.x/beforeBaseScale-1.5)<1e-9,'scale multiplies the existing Director size');
