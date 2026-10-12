@@ -38,6 +38,14 @@ Editor **visual y profesional** para construir sitios y narrativas inmersivas co
 - La raíz `.nw-lh` actúa como contenedor de tamaño para unidades `cqw`. Mantener este contrato en edición, guardado, responsive y exportación. El sistema de profundidad/parallax propio del Hero y el Director de Scroll siguen independientes.
 - Los cambios funcionales se introdujeron en `js/nagweb-feedback-v16.js` y `js/nagweb-v14-direction.js`, con regresiones en `.github/nagweb-editor-parts-smoke.mjs`. Confirmar los resultados actuales de CI consultando el HEAD de la rama.
 
+## Decisión de producto: recuperar y ordenar capas superpuestas (12/10/2026)
+
+- En el **Hero por capas**, las fotografías tienen un orden base explícito; «Al frente» y «Al fondo» lo pueden cambiar y persistir mediante `z` en la entrada de `__parts` (escritorio) o `__partsMobile` (móvil). El CSS exportado conserva ambas variantes sin sumar un motor visual nuevo.
+- Al terminar un cambio de orden, el modo de aislamiento de edición vuelve a «Todos» para mostrar el orden real y no la elevación temporal usada para manipular la pieza seleccionada.
+- Si una pieza se desplazó completamente fuera del rectángulo visible del Hero, el Modo Editor ofrece **«Recuperar»** dentro del área visible y calcula el desplazamiento para centrarla. Conserva escala, giro y orden, respetando la variante de pantalla activa.
+- No confundir esta recuperación con la opción **«Restablecer»**: la primera rescata la ubicación sin borrar la composición de la pieza, mientras que la segunda restaura sus transformaciones.
+- Archivos: `js/nagweb-feedback-v16.js`, `js/nagweb-v14-direction.js` y `.github/nagweb-editor-parts-smoke.mjs`. Consultar el CI del HEAD para conocer el estado de validación, no presumir éxito por el commit.
+
 ## Próximas prioridades (revisar con HEAD actual)
 
 - Priorizar la experiencia de lienzo como herramienta de diseño, edición real de elementos anidados y uso de recursos sin degradar su editabilidad.
