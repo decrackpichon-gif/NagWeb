@@ -56,6 +56,53 @@ const snapshots = [
   }
 ];
 
+// Historical full-refresh workflows build the four original sources from
+// scratch. Preserve the separately published Heroicons snapshot rather than
+// silently replacing the persistent catalog with a smaller one. Failure to
+// retrieve or verify an existing fifth snapshot must STOP publication.
+async function preservePublishedHeroicons() {
+  const heroDir = path.join(root, "heroicons");
+  if (existsSync(path.join(heroDir, "manifest.json"))) return;
+  const branch = "https://raw.githubusercontent.com/decrackpichon-gif/NagWeb/resource-vault-data/";
+  const request = async relativePath => {
+    const response = await fetch(branch + relativePath, {
+      headers: { "User-Agent": "NagWeb-Resource-Vault-Snapshot/1.0" },
+      signal: AbortSignal.timeout(30000)
+    });
+    if (!response.ok) throw new Error("Persistent Heroicons preservation failed: HTTP " +
+      response.status + " for " + relativePath);
+    const data = Buffer.from(await response.arrayBuffer());
+    if (data.length > 15 * 1024 * 1024) throw new Error("Heroicons snapshot file exceeds safe limit.");
+    return data;
+  };
+  const remote = JSON.parse((await request("vault-manifest.json")).toString("utf8"));
+  const registered = remote.snapshots?.find(item => item.id === "heroicons");
+  if (!registered) return; // Data branch has not yet gained the optional provider.
+  const data = new Map();
+  for (const file of ["manifest.json", "library.json.gz", "catalog.json",
+                      "LICENSE", "skipped.json", "README.md"]) {
+    data.set(file, await request("heroicons/" + file));
+  }
+  const details = JSON.parse(data.get("manifest.json").toString("utf8"));
+  if (details.resourceCount !== registered.count ||
+      details.compressedSha256 !== registered.sha256 ||
+      !/^[a-f0-9]{64}$/.test(registered.sha256 || "")) {
+    throw new Error("Existing Heroicons snapshot manifest does not match global Vault.");
+  }
+  const { createHash } = await import("node:crypto");
+  const actual = createHash("sha256").update(data.get("library.json.gz")).digest("hex");
+  if (actual !== registered.sha256) {
+    throw new Error("Existing Heroicons snapshot checksum mismatch. Refusing to erase it.");
+  }
+  const { mkdir } = await import("node:fs/promises");
+  await mkdir(heroDir, { recursive: true });
+  for (const [file, bytes] of data) {
+    await writeFile(path.join(heroDir, file), bytes);
+  }
+  console.log("Preserved published Heroicons snapshot:", registered.count);
+}
+await preservePublishedHeroicons();
+
 const items = [];
 for (const snapshot of snapshots) {
   // Backwards-compatible with a data branch that predates Heroicons.

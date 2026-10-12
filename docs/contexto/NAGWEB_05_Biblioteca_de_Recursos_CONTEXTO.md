@@ -110,3 +110,14 @@ Biblioteca offline-first de **recursos abiertos/licenciados** para diseñadores.
 - Riesgo pendiente: el workflow anterior de reconstrucción completa,
   `resource-vault-snapshot.yml`, no incluye aún el nuevo proveedor. No
   ejecutarlo hasta adaptarlo para preservar Heroicons.
+
+### Estado comprobado tras la publicación
+
+- Workflow incremental de Heroicons: **success** (12/10/2026).
+- HEAD publicado en `resource-vault-data`:
+  `ed7104385f27982cb72959160e830c9b4ee65caf`.
+- Catálogo persistente: **6762 recursos**, cinco paquetes; 323 Heroicons.
+  Exclusión registrada: `bold`, contorno incompatible.
+- El builder de manifiestos preserva ahora los Heroicons existentes durante
+  futuras reconstrucciones completas, verificando su suma SHA-256 y
+  deteniendo la operación ante errores. No se hizo despliegue Vercel.

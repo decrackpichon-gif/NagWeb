@@ -1365,3 +1365,18 @@ La actualización inicial se dispara una sola vez al incorporar el workflow en
 `resource-vault-snapshot.yml` todavía reconstruye sólo sus cuatro fuentes
 históricas; si se la ejecuta manualmente en el futuro, será necesario integrarle
 Heroicons para no reemplazar el índice con una versión anterior.
+
+### Publicación completada y preservación ante reconstrucciones
+
+El workflow incremental terminó correctamente y publicó el commit
+`ed7104385f27982cb72959160e830c9b4ee65caf` en `resource-vault-data`,
+con **323 Heroicons válidos de 324** (`bold` descartado por geometría
+no uniforme). El índice completo contiene **6762 recursos en 5 paquetes**.
+
+El generador de manifiestos también conserva el paquete Heroicons ya publicado
+al ejecutarse desde el proceso de reconstrucción completa de los cuatro
+proveedores históricos: si Heroicons no está presente en el directorio de
+generación, lo recupera de la rama de datos y verifica su SHA-256 contra el
+índice existente. Ante fallos o incongruencias, aborta la publicación en lugar
+de reducir accidentalmente el catálogo. El workflow antiguo sigue regenerando
+sus fuentes originales; la preservación es un complemento compatible.
