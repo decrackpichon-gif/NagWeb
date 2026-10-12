@@ -2102,10 +2102,12 @@ function toggleBaseTransform(s){
   doc.removeEventListener('pointercancel',abort,true);doc.removeEventListener('lostpointercapture',abort,true);
   try{if(g.handle.hasPointerCapture&&g.handle.hasPointerCapture(g.pointerId))g.handle.releasePointerCapture(g.pointerId);}catch(_){}
   var commit=!cancel&&Number.isFinite(g.next)&&Math.abs(g.next-g.start)>1e-7&&sec()===s&&mapObjectSelected[s.id]===item.id&&C.config(s);
-  if(!commit)reset();
-  // Keep the last WebGL pose until the scheduled preview replaces the renderer.
-  stopBaseTransform(!!commit);
-  if(commit)write(g.axis,g.next);else renderPane();
+  // Promote to the iframe's in-memory scene atomically before saving
+  // the editor project. This retains the visual pose without a stale override.
+  var accepted=commit&&win.NAGWEB_SPATIAL_PREVIEW_BASE_TRANSFORM(item.id,g.axis,g.next,s.id,true);
+  if(!accepted)reset();
+  stopBaseTransform(!!accepted);
+  if(accepted)write(g.axis,g.next);else renderPane();
  }
  function move(ev){
   var g=gesture;if(!g||ev.pointerId!==g.pointerId)return;
@@ -2133,7 +2135,9 @@ function toggleBaseTransform(s){
   var next=C.objectBaseTransformDrag(current(which),which,dx,dy,ev.shiftKey);
   if(next===null||Math.abs(next-current(which))<1e-7)return;
   if(!win.NAGWEB_SPATIAL_PREVIEW_BASE_TRANSFORM(item.id,which,next,s.id))return;
-  axis=which;baseTransformArmed.axis=axis;stopBaseTransform(true);write(which,next);
+  axis=which;
+  if(!win.NAGWEB_SPATIAL_PREVIEW_BASE_TRANSFORM(item.id,which,next,s.id,true)){reset();return;}
+  baseTransformArmed.axis=axis;stopBaseTransform(true);write(which,next);
  }
  function key(ev){if(ev.key==='Escape'){ev.preventDefault();ev.stopPropagation();stopBaseTransform();renderPane();}}
  function onLoad(){stopBaseTransform();renderPane();}
