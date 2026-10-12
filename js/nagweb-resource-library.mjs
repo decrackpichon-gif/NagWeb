@@ -24,6 +24,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   let editContext = null;
   let librarySession = 0;
   let opener = button;
+  let canvasEditOpener = null;
   let pendingFocusReturn = null;
   let canvasLoading = false;
   const measureVector = element => {
@@ -102,9 +103,12 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       catch { ready = false; }
     }
     if (editButton.disabled !== !ready) editButton.disabled = !ready;
-    if (pendingFocusReturn && !dialog.open && !pendingFocusReturn.disabled) {
-      pendingFocusReturn.focus();
-      pendingFocusReturn = null;
+    if (pendingFocusReturn && !dialog.open) {
+      const focusTarget = pendingFocusReturn.isConnected ? pendingFocusReturn : editButton;
+      if (!focusTarget.disabled) {
+        focusTarget.focus();
+        pendingFocusReturn = null;
+      }
     }
     const label = element?.nwResource?.kind === "uiverse-html"
       ? "Personalizar componente Uiverse seleccionado" : "Personalizar ícono seleccionado";
@@ -142,7 +146,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     pendingFocusReturn = null;
     librarySession++;
     editContext = context;
-    opener = context ? editButton : button;
+    opener = context ? (canvasEditOpener || editButton) : button;
     destination.replaceChildren(new Option("Raíz de la escena", ""));
     const container = !context && selection.length === 1
       ? sec()?.elements.find(e => e.id === selection[0] && e.type === "container")
@@ -234,9 +238,72 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       event.stopImmediatePropagation();
       editButton.click();
     }, true);
+    // HTML/CSS lives inside an opaque, sandboxed iframe. Inner clicks cannot
+    // bubble to NagWeb, so provide an editor-owned affordance on its wrapper.
+    // It is never part of the project model, the embed srcdoc or the export.
+    const editStyles = canvasDoc.createElement("style");
+    editStyles.dataset.nagwebResourceEditUi = "";
+    editStyles.textContent = `
+      .el > [data-nagweb-resource-edit] {
+        position:absolute;top:4px;right:4px;z-index:2147483000;
+        display:grid;place-items:center;width:34px;height:34px;
+        padding:0;border:1px solid #b9c2d5;border-radius:8px;
+        background:#202735;color:#fff;box-shadow:0 2px 8px #0005;
+        font:600 19px/1 sans-serif;cursor:pointer;
+        opacity:0;pointer-events:none;
+      }
+      .el:hover > [data-nagweb-resource-edit],
+      .el:focus-within > [data-nagweb-resource-edit],
+      .el > [data-nagweb-resource-edit]:focus-visible {
+        opacity:1;pointer-events:auto;
+      }
+      .el > [data-nagweb-resource-edit]:focus-visible {
+        outline:3px solid #8dd1ff;outline-offset:2px;
+      }
+      @media (hover:none) {
+        .el > [data-nagweb-resource-edit] { opacity:1;pointer-events:auto; }
+      }
+      @media (prefers-reduced-motion:no-preference) {
+        .el > [data-nagweb-resource-edit] { transition:opacity .15s ease; }
+      }
+    `;
+    canvasDoc.head.append(editStyles);
     for (const node of canvasDoc.querySelectorAll(".el[data-id]")) {
-      if (libraryResourceById(node.dataset.id) && !node.hasAttribute("title"))
-        node.title = "Doble clic para personalizar este recurso";
+      const resource = libraryResourceById(node.dataset.id);
+      if (!resource) continue;
+      if (!node.hasAttribute("title")) node.title = resource.type === "embed"
+        ? "Pasá el cursor y elegí Personalizar para editar este componente"
+        : "Doble clic para personalizar este recurso";
+      if (resource.type !== "embed") continue;
+      if (canvasDoc.defaultView.getComputedStyle(node).position === "static")
+        node.style.position = "relative";
+      const trigger = canvasDoc.createElement("button");
+      trigger.type = "button";
+      trigger.dataset.nagwebResourceEdit = resource.id;
+      trigger.setAttribute("aria-label", "Personalizar componente desde el lienzo");
+      trigger.title = "Personalizar componente";
+      trigger.textContent = "✎";
+      trigger.addEventListener("pointerdown", event => event.stopPropagation(), true);
+      trigger.addEventListener("dblclick", event => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }, true);
+      trigger.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (dialog.open || canvasLoading || preview.contentDocument !== canvasDoc ||
+            node.closest(".sc")?.dataset.id !== sec()?.id) return;
+        const current = libraryResourceById(node.dataset.id);
+        if (!current || current.type !== "embed") return;
+        selection = [current.id];
+        curEl = sec().elements.indexOf(current);
+        secFocus = false;
+        syncEditButton();
+        if (editButton.disabled) return;
+        canvasEditOpener = trigger;
+        try { editButton.click(); } finally { canvasEditOpener = null; }
+      }, true);
+      node.append(trigger);
     }
   };
   document.addEventListener("keydown", handleCanvasEditShortcut, true);

@@ -1343,9 +1343,22 @@ try {
       dimensions.width<=dimensions.slotWidth+2,"Nested HTML must fit its native slot");
   }
   await page.locator("#btn-view-desk").click();
-  await page.evaluate(id=>{selection=[id];curEl=sec().elements.findIndex(e=>e.id===id);renderPane();},htmlChildId);
-  await page.getByRole("button",{name:"Personalizar componente Uiverse seleccionado",exact:true}).click();
+  // Stage 84: editor-owned control on the HTML wrapper, never inside the
+  // sandboxed third-party iframe. Pointer and keyboard both reopen editing.
+  const canvasEdit=child.getByRole("button",{name:"Personalizar componente desde el lienzo"});
+  await expect(canvasEdit).toHaveCount(1);
+  await child.hover();
+  await expect(canvasEdit).toHaveCSS("opacity","1");
+  const beforeInlineEdit=await page.evaluate(()=>history.length);
+  await canvasEdit.click();
   const custom=page.frameLocator('iframe[title="Biblioteca de recursos de NagWeb"]');
+  await expect(custom.getByRole("button",{name:"Guardar cambios en el componente",exact:true})).toBeVisible();
+  assert.equal(await page.evaluate(()=>history.length),beforeInlineEdit,
+    "Opening contextual customization must not create history");
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  await expect(canvasEdit).toBeFocused();
+  await canvasEdit.press("Enter");
+  await expect(custom.getByRole("button",{name:"Guardar cambios en el componente",exact:true})).toBeVisible();
   const repeat=custom.getByLabel(htmlPlayControl.label,{exact:true});
   const group=custom.locator("details").filter({has:repeat});
   if(!await group.evaluate(n=>n.open))await group.locator("summary").click();
@@ -1357,10 +1370,19 @@ try {
   const code=await page.evaluate(()=>generateSite(flattenPage(page()),false,true,false));
   assert.match(code,/sandbox=""/);
   assert.match(code,/spin 1s 3 alternate/);
+  assert.doesNotMatch(code,/data-nagweb-resource-edit/,
+    "Editor-only edit buttons must not appear in the exported site");
   await page.reload();
   assert.equal(await page.evaluate(id=>sec().elements.find(e=>e.id===id).parent,htmlChildId),parentId);
   await expect(page.frameLocator("#preview").frameLocator(
     `[data-id="${htmlChildId}"] iframe.emb-sand`).locator(".card")).toBeVisible();
+  const reloadedEdit=page.frameLocator("#preview").locator(
+    `[data-id="${htmlChildId}"] [data-nagweb-resource-edit]`);
+  await expect(reloadedEdit).toHaveCount(1);
+  await reloadedEdit.focus();
+  await reloadedEdit.press("Enter");
+  await expect(page.getByRole("dialog",{name:"Biblioteca de recursos"})).toBeVisible();
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
   await page.evaluate(id=>{selection=[id];curEl=sec().elements.findIndex(e=>e.id===id);renderPane();},parentId);
   await page.getByRole("button",{name:"Biblioteca de recursos",exact:true}).click();
   await expect(placement).toHaveValue(parentId);
@@ -1377,7 +1399,8 @@ try {
   },[htmlChildId,vectorId]);
   assert.deepEqual(parents,[parentId,parentId]);
   report.scenarios.push({editor:"native resources nested in selected container",
-    status:"passed",html:true,svg:true,responsive:true,edit:true,export:true,reload:true});
+    status:"passed",html:true,svg:true,responsive:true,edit:true,export:true,reload:true,
+    htmlCanvasEdit:true,keyboard:true,noExportOverlay:true});
   await context.close();
   assert.deepEqual(report.errors, [], "Browser must not emit uncaught errors or external requests");
   console.log("Resource Browser Chromium smoke: panel desktop/mobile + real NagWeb SVG insertion and editing, save, cancel, undo/redo, reload and rejected inputs OK.");

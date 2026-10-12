@@ -1302,3 +1302,20 @@ seguridad del iframe. La prueba integrada inserta HTML/SVG como hijos de
 una grilla nativa, comprueba móviles, edición, persistencia, exportación y
 recarga. También se robusteció una aserción de iframe al cambiar de vista
 en Windows, sin suprimir errores de render reales.
+
+## Bloque 84: personalización HTML/CSS contextual sobre el lienzo
+
+Los componentes Uiverse HTML/CSS insertados muestran, al pasar el cursor sobre
+su marco, un botón de edición propio de NagWeb. En pantallas táctiles permanece
+visible y también se puede activar con teclado. Permite abrir la ficha original
+sin seleccionar manualmente el elemento desde el panel lateral; después de
+cerrar sin cambios devuelve el foco al control del lienzo, si sigue existiendo.
+El control pertenece únicamente al documento temporal del editor: no modifica
+el iframe opaco de terceros, sus permisos, el código del recurso, la jerarquía
+guardada ni el HTML exportado. Se reconstruye tras recargas del lienzo y
+mantiene el botón Personalizar como alternativa. Chromium comprueba apertura
+con mouse y teclado, ausencia de historial al abrir y ausencia del control
+en el sitio exportado.
+
+Esta rama declara en `vercel.json` que no debe generar vistas previas
+automáticas de Vercel; las demás ramas no quedan afectadas por ese archivo.
