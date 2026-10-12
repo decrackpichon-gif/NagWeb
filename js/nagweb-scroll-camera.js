@@ -277,6 +277,13 @@ function createCamera(){
   if(axis==='z')out.z=round(number(start.z)-dy*2*sensitivity);
   return out;
  }
+ function objectBaseTransformDrag(start,axis,dx,dy,precision){
+  if(!Number.isFinite(+start)||!Number.isFinite(dx)||!Number.isFinite(dy))return null;
+  var speed=precision?.2:1,delta=axis==='RotateX'?-dy*.6*speed:axis==='RotateY'?dx*.6*speed:axis==='Scale'?-dy*.5*speed:null;
+  if(delta===null)return null;
+  var low=axis==='Scale'?10:-3600,high=axis==='Scale'?500:3600;
+  return Math.round(Math.max(low,Math.min(high,+start+delta))*10)/10;
+ }
  function objectDepthDrag(start,dy,precision){
   if(!Number.isFinite(+start)||!Number.isFinite(dy))return null;
   var value=Math.max(-100,Math.min(100,+start-dy*(precision?.002:.01)));
@@ -380,11 +387,11 @@ function createCamera(){
   paint.contains=function(n){return inside(world,n);};
   return paint;
  }
- return {config:config,compile:compile,pose:pose,pathSamples:pathSamples,lookSamples:lookSamples,lookTarget:lookTarget,resolveLookFrame:resolveLookFrame,lookAngles:lookAngles,forwardTarget:forwardTarget,defaultLookFrames:defaultLookFrames,normalizeLook:normalizeLook,lookFrames:lookFrames,targetEligible:targetEligible,elementTarget:elementTarget,curveTension:curveTension,tangentHandle:tangentHandle,tensionFromHandle:tensionFromHandle,lookTangentHandle:lookTangentHandle,lookTensionFromHandle:lookTensionFromHandle,handleFree:handleFree,setHandleMode:setHandleMode,setFreeHandle:setFreeHandle,setLookHandleMode:setLookHandleMode,setLookFreeHandle:setLookFreeHandle,nearestPathAt:nearestPathAt,viewportScale:viewportScale,scalePose:scalePose,attach:attach,threeWorldPoint:threeWorldPoint,surfaceFocusFromWorld:surfaceFocusFromWorld,threeCameraState:threeCameraState,orbitPose:orbitPose,translatePose:translatePose,objectDepthDrag:objectDepthDrag,applyThreeCamera:applyThreeCamera,bindThreeCamera:bindThreeCamera,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial,copyFrame:copyFrame,holdFrame:holdFrame,preset:preset};
+ return {config:config,compile:compile,pose:pose,pathSamples:pathSamples,lookSamples:lookSamples,lookTarget:lookTarget,resolveLookFrame:resolveLookFrame,lookAngles:lookAngles,forwardTarget:forwardTarget,defaultLookFrames:defaultLookFrames,normalizeLook:normalizeLook,lookFrames:lookFrames,targetEligible:targetEligible,elementTarget:elementTarget,curveTension:curveTension,tangentHandle:tangentHandle,tensionFromHandle:tensionFromHandle,lookTangentHandle:lookTangentHandle,lookTensionFromHandle:lookTensionFromHandle,handleFree:handleFree,setHandleMode:setHandleMode,setFreeHandle:setFreeHandle,setLookHandleMode:setLookHandleMode,setLookFreeHandle:setLookFreeHandle,nearestPathAt:nearestPathAt,viewportScale:viewportScale,scalePose:scalePose,attach:attach,threeWorldPoint:threeWorldPoint,surfaceFocusFromWorld:surfaceFocusFromWorld,threeCameraState:threeCameraState,orbitPose:orbitPose,translatePose:translatePose,objectDepthDrag:objectDepthDrag,objectBaseTransformDrag:objectBaseTransformDrag,applyThreeCamera:applyThreeCamera,bindThreeCamera:bindThreeCamera,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial,copyFrame:copyFrame,holdFrame:holdFrame,preset:preset};
 }
 window.NAGWEB_CREATE_SCROLL_CAMERA=createCamera;
 window.NAGWEB_SCROLL_CAMERA=createCamera();
-var presetChoices=Object.create(null),holdDurations=Object.create(null),cameraEasyStep=Object.create(null),mapOpen=Object.create(null),mapPlanes=Object.create(null),mapFovVisible=Object.create(null),mapObjectVisible=Object.create(null),mapObjectSelected=Object.create(null),mapObjectPlans=Object.create(null),mapZoom=Object.create(null),mapPan=Object.create(null),mapWheelCarry=Object.create(null),mapOverviewVisible=Object.create(null),mapOverviewPickHistory=Object.create(null),mapOverviewSamples=Object.create(null),mapOverviewDetected=Object.create(null),mapOverviewMetrics=Object.create(null),mapOverviewMetricsOpen=Object.create(null),mapOverviewPaceVisible=Object.create(null),mapOverviewComparison=Object.create(null),mapOverviewComparePreview=Object.create(null),mapOverviewCompareFovVisible=Object.create(null),mapOverviewCompareExclusiveVisible=Object.create(null),mapOverviewCompareFocus=Object.create(null),mapOverviewTechnicalOpen=Object.create(null),mapOverviewEventFilter=Object.create(null),mapOverviewEventChosen=Object.create(null),mapPickHistory=Object.create(null),surfaceAimArmed=null,viewportOrbitArmed=null,viewportTranslateArmed=null,objectDepthArmed=null,suppressedClick=null,selected=Object.create(null),lookSelected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
+var presetChoices=Object.create(null),holdDurations=Object.create(null),cameraEasyStep=Object.create(null),mapOpen=Object.create(null),mapPlanes=Object.create(null),mapFovVisible=Object.create(null),mapObjectVisible=Object.create(null),mapObjectSelected=Object.create(null),mapObjectPlans=Object.create(null),mapZoom=Object.create(null),mapPan=Object.create(null),mapWheelCarry=Object.create(null),mapOverviewVisible=Object.create(null),mapOverviewPickHistory=Object.create(null),mapOverviewSamples=Object.create(null),mapOverviewDetected=Object.create(null),mapOverviewMetrics=Object.create(null),mapOverviewMetricsOpen=Object.create(null),mapOverviewPaceVisible=Object.create(null),mapOverviewComparison=Object.create(null),mapOverviewComparePreview=Object.create(null),mapOverviewCompareFovVisible=Object.create(null),mapOverviewCompareExclusiveVisible=Object.create(null),mapOverviewCompareFocus=Object.create(null),mapOverviewTechnicalOpen=Object.create(null),mapOverviewEventFilter=Object.create(null),mapOverviewEventChosen=Object.create(null),mapPickHistory=Object.create(null),surfaceAimArmed=null,viewportOrbitArmed=null,viewportTranslateArmed=null,objectDepthArmed=null,baseTransformArmed=null,suppressedClick=null,selected=Object.create(null),lookSelected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
 function safeLabel(v){return String(v==null?'':v).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,42).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];});}
 function targetLabel(e){var label=safeLabel(e&&((e.name||e.text||e.label)||e.type));return label||'Elemento';}
 function keys(s){return C.frames(C.config(s),s.sdEase);}
@@ -511,6 +518,7 @@ function mapObjectInfoHtml(s,plan,pct){
   '<div data-camera-object-distance style="font-size:11px;margin-top:3px">'+data.distance+'</div>'+
   '<div data-camera-object-offset style="font-size:10px;opacity:.8;margin-top:3px">'+data.offset+'</div>'+
   '<button class="btn tiny" type="button" data-camera-aim-at-object style="margin-top:6px">Apuntar cámara a este objeto acá</button>'+
+  (item.kind==='shape3d'?'<button class="btn tiny" type="button" data-camera-object-transform style="margin:6px 0 0 6px">'+(baseTransformArmed&&baseTransformArmed.sectionId===s.id&&baseTransformArmed.id===item.id?'Cerrar controles de giro/tamaño':'Girar y escalar 3D con mouse')+'</button>':'')+
   (item.kind==='shape3d'?'<button class="btn tiny" type="button" data-camera-object-depth style="margin:6px 0 0 6px">'+(objectDepthArmed&&objectDepthArmed.sectionId===s.id&&objectDepthArmed.id===item.id?'Cerrar editor de profundidad':'Ajustar profundidad Z en vista 3D')+'</button>':'')+
   (item.kind==='shape3d'?'<button class="btn tiny" type="button" data-camera-surface-aim style="margin:6px 0 0 6px">'+(surfaceAimArmed&&surfaceAimArmed.sectionId===s.id&&surfaceAimArmed.id===item.id?'Cancelar elección 3D':'Elegir punto en vista 3D')+'</button><p class="hint gh" data-camera-surface-hint>'+(surfaceAimArmed&&surfaceAimArmed.sectionId===s.id&&surfaceAimArmed.id===item.id?'Hacé clic sobre la superficie del modelo en la vista previa. Escape cancela.':'Elegí un punto real sobre el modelo; no su centro aproximado.')+'</p>':'')+
   '<div style="font-size:10px;opacity:.75;margin-top:4px">'+
@@ -1826,6 +1834,7 @@ function clearSurfaceAim(){
  if(a&&a.doc){a.doc.removeEventListener('pointerdown',a.down,true);a.doc.removeEventListener('keydown',a.key,true);}
 }
 function toggleSurfaceAim(s){
+ if(baseTransformArmed)stopBaseTransform();
  if(objectDepthArmed)stopObjectDepth(false);
  if(viewportTranslateArmed)stopViewportTranslate();
  var plan=mapObjectPlans[s.id],item=mapObjectSelection(s,plan);
@@ -1864,6 +1873,7 @@ function stopViewportOrbit(){
  if(a.cleanup)a.cleanup();
 }
 function toggleViewportOrbit(s){
+ if(baseTransformArmed)stopBaseTransform();
  if(objectDepthArmed)stopObjectDepth(false);
  if(viewportTranslateArmed)stopViewportTranslate();
  if(viewportOrbitArmed){var same=viewportOrbitArmed.sectionId===s.id;stopViewportOrbit();if(same){renderPane();return 'cancelled';}}
@@ -1952,6 +1962,7 @@ function stopObjectDepth(commit){
  if(a.handle.parentNode)a.handle.parentNode.removeChild(a.handle);
 }
 function toggleObjectDepth(s){
+ if(baseTransformArmed)stopBaseTransform();
  var item=mapObjectSelection(s,mapObjectPlans[s.id]);
  if(objectDepthArmed){var same=objectDepthArmed.sectionId===s.id&&item&&objectDepthArmed.id===item.id;stopObjectDepth(false);if(same){renderPane();return 'cancelled';}}
  if(!item||item.kind!=='shape3d'||!C.config(s))return 'invalid';
@@ -2032,6 +2043,109 @@ function toggleObjectDepth(s){
  iframe.addEventListener('load',onLoad);
  renderPane();return 'armed';
 }
+// Manual placement of a 3D object's base rotation/size. The Director's
+// already-evaluated animation pose remains intact and is composed in Three.
+function stopBaseTransform(){
+ var a=baseTransformArmed;baseTransformArmed=null;
+ if(!a)return;
+ a.overlay.removeEventListener('pointerdown',a.down);
+ a.overlay.removeEventListener('keydown',a.nudge);
+ a.doc.removeEventListener('keydown',a.key,true);
+ document.removeEventListener('keydown',a.key,true);
+ a.iframe.removeEventListener('load',a.onLoad);
+ if(a.cleanup)a.cleanup();
+ if(a.axis)try{a.win.NAGWEB_SPATIAL_PREVIEW_BASE_TRANSFORM(a.id,a.axis,null,a.sectionId);}catch(_){}
+ if(a.overlay.parentNode)a.overlay.parentNode.removeChild(a.overlay);
+}
+function toggleBaseTransform(s){
+ var item=mapObjectSelection(s,mapObjectPlans[s.id]);
+ if(baseTransformArmed){var same=baseTransformArmed.sectionId===s.id&&item&&baseTransformArmed.id===item.id;stopBaseTransform();if(same){renderPane();return 'cancelled';}}
+ if(!item||item.kind!=='shape3d'||!C.config(s))return 'invalid';
+ var model=(s.elements||[]).find(function(e){return e.id===item.id&&e.type==='shape3d'&&e.anchor!==false;});
+ if(!model)return 'invalid';
+ if(objectDepthArmed)stopObjectDepth(false);
+ if(viewportTranslateArmed)stopViewportTranslate();
+ if(viewportOrbitArmed)stopViewportOrbit();
+ if(surfaceAimArmed)clearSurfaceAim();
+ var iframe=document.getElementById('preview'),win=iframe&&iframe.contentWindow,doc=iframe&&iframe.contentDocument;
+ if(!win||!doc||typeof win.NAGWEB_SPATIAL_PREVIEW_BASE_TRANSFORM!=='function'||typeof win.NAGWEB_SPATIAL_SCREEN_POINT!=='function')return 'unavailable';
+ var section=Array.from(doc.querySelectorAll('.sc[data-id]')).find(function(el){return el.getAttribute('data-id')===s.id;});
+ var stage=section&&section.querySelector('.nw-sd-stage'),pt=win.NAGWEB_SPATIAL_SCREEN_POINT(item.id,s.id);
+ if(!stage||!pt||!Number.isFinite(pt.x)||!Number.isFinite(pt.y))return 'invisible';
+ var overlay=doc.createElement('div');
+ overlay.setAttribute('data-nw-object-base-controls','');
+ overlay.setAttribute('role','group');
+ overlay.setAttribute('aria-label','Girar y escalar el objeto 3D seleccionado');
+ overlay.style.cssText='position:absolute;z-index:2147483001;left:'+Math.max(4,Math.min(Math.max(4,stage.clientWidth-208),pt.x+16))+'px;top:'+Math.max(4,Math.min(Math.max(4,stage.clientHeight-108),pt.y-18))+'px;min-width:180px;padding:9px;border-radius:9px;background:rgba(20,16,37,.94);color:#fff;box-shadow:0 3px 18px #0009;touch-action:none;pointer-events:auto;font:12px/1.4 system-ui,sans-serif;';
+ overlay.innerHTML='<strong>Transformar objeto 3D</strong><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px">'+
+  '<button type="button" data-nw-base-axis="RotateY" style="cursor:ew-resize;touch-action:none;background:#ffffff18;color:white;border:1px solid #ffffff66;border-radius:6px;padding:7px">↔ Giro Y</button>'+
+  '<button type="button" data-nw-base-axis="RotateX" style="cursor:ns-resize;touch-action:none;background:#ffffff18;color:white;border:1px solid #ffffff66;border-radius:6px;padding:7px">↕ Giro X</button>'+
+  '<button type="button" data-nw-base-axis="Scale" style="cursor:ns-resize;touch-action:none;background:#ffffff18;color:white;border:1px solid #ffffff66;border-radius:6px;padding:7px">⤢ Tamaño</button></div>'+
+  '<small data-nw-base-hint style="display:block;margin-top:5px;opacity:.8">Arrastrá · Shift: precisión · Flechas para ajustar · Escape para salir</small>';
+ stage.appendChild(overlay);
+ var gesture=null,axis=null,fields={RotateX:'nwSpatialRotateX',RotateY:'nwSpatialRotateY',Scale:'nwSpatialScale'};
+ function current(which){var n=model[fields[which]];return n!=null&&n!==''&&Number.isFinite(+n)?+n:which==='Scale'?100:0;}
+ function reset(){if(axis)try{win.NAGWEB_SPATIAL_PREVIEW_BASE_TRANSFORM(item.id,axis,null,s.id);}catch(_){}axis=null;}
+ function write(which,value){
+  if(sec()!==s||mapObjectSelected[s.id]!==item.id||!C.config(s)||!Number.isFinite(value)||Math.abs(value-current(which))<1e-7)return false;
+  snapshot();model[fields[which]]=value;saveProject();schedulePreview();renderPane();return true;
+ }
+ function hint(text){var h=overlay.querySelector&&overlay.querySelector('[data-nw-base-hint]');if(h)h.textContent=text;}
+ function end(ev,cancel){
+  if(!gesture||ev&&ev.pointerId!==undefined&&ev.pointerId!==gesture.pointerId)return;
+  var g=gesture;gesture=null;
+  doc.removeEventListener('pointermove',move,true);doc.removeEventListener('pointerup',up,true);
+  doc.removeEventListener('pointercancel',abort,true);doc.removeEventListener('lostpointercapture',abort,true);
+  try{if(g.handle.hasPointerCapture&&g.handle.hasPointerCapture(g.pointerId))g.handle.releasePointerCapture(g.pointerId);}catch(_){}
+  reset();stopBaseTransform();
+  if(!cancel&&Number.isFinite(g.next)&&Math.abs(g.next-g.start)>1e-7)write(g.axis,g.next);
+  else renderPane();
+ }
+ function move(ev){
+  var g=gesture;if(!g||ev.pointerId!==g.pointerId)return;
+  var value=C.objectBaseTransformDrag(g.start,g.axis,ev.clientX-g.x,ev.clientY-g.y,ev.shiftKey);
+  if(value===null||!win.NAGWEB_SPATIAL_PREVIEW_BASE_TRANSFORM(item.id,g.axis,value,s.id))return;
+  g.next=value;hint(g.axis+': '+value+(g.axis==='Scale'?' %':'°')+' · soltá para guardar');ev.preventDefault();
+ }
+ function up(ev){move(ev);end(ev,false);}
+ function abort(ev){end(ev,true);}
+ function down(ev){
+  var handle=ev.target.closest&&ev.target.closest('[data-nw-base-axis]'),which=handle&&handle.getAttribute('data-nw-base-axis');
+  if(ev.button!==0||gesture||!fields[which])return;
+  if(sec()!==s||mapObjectSelected[s.id]!==item.id){stopBaseTransform();renderPane();return;}
+  axis=which;gesture={pointerId:ev.pointerId,handle:handle,axis:which,x:ev.clientX,y:ev.clientY,start:current(which),next:current(which)};
+  try{handle.setPointerCapture(ev.pointerId);}catch(_){}
+  ev.preventDefault();ev.stopPropagation();
+  doc.addEventListener('pointermove',move,true);doc.addEventListener('pointerup',up,true);
+  doc.addEventListener('pointercancel',abort,true);doc.addEventListener('lostpointercapture',abort,true);
+ }
+ function nudge(ev){
+  var handle=ev.target.closest&&ev.target.closest('[data-nw-base-axis]'),which=handle&&handle.getAttribute('data-nw-base-axis');
+  if(!fields[which]||gesture||!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(ev.key))return;
+  ev.preventDefault();ev.stopPropagation();
+  var dx=ev.key==='ArrowRight'?10:ev.key==='ArrowLeft'?-10:0,dy=ev.key==='ArrowDown'?10:ev.key==='ArrowUp'?-10:0;
+  var next=C.objectBaseTransformDrag(current(which),which,dx,dy,ev.shiftKey);
+  if(next===null||Math.abs(next-current(which))<1e-7)return;
+  if(!win.NAGWEB_SPATIAL_PREVIEW_BASE_TRANSFORM(item.id,which,next,s.id))return;
+  axis=which;reset();stopBaseTransform();write(which,next);
+ }
+ function key(ev){if(ev.key==='Escape'){ev.preventDefault();ev.stopPropagation();stopBaseTransform();renderPane();}}
+ function onLoad(){stopBaseTransform();renderPane();}
+ baseTransformArmed={sectionId:s.id,id:item.id,doc:doc,win:win,iframe:iframe,overlay:overlay,axis:null,down:down,nudge:nudge,key:key,onLoad:onLoad,cleanup:function(){
+  doc.removeEventListener('pointermove',move,true);doc.removeEventListener('pointerup',up,true);
+  doc.removeEventListener('pointercancel',abort,true);doc.removeEventListener('lostpointercapture',abort,true);
+  if(gesture){axis=gesture.axis;gesture=null;reset();}
+ }};
+ // Owner remembers current axis so switching tools or iframe unload clears it.
+ var origDown=down;
+ function downTracked(ev){origDown(ev);if(baseTransformArmed)baseTransformArmed.axis=axis;}
+ function nudgeTracked(ev){nudge(ev);if(baseTransformArmed)baseTransformArmed.axis=axis;}
+ baseTransformArmed.down=downTracked;baseTransformArmed.nudge=nudgeTracked;
+ overlay.addEventListener('pointerdown',downTracked);overlay.addEventListener('keydown',nudgeTracked);
+ doc.addEventListener('keydown',key,true);document.addEventListener('keydown',key,true);
+ iframe.addEventListener('load',onLoad);
+ renderPane();return 'armed';
+}
 function stopViewportTranslate(){
  var a=viewportTranslateArmed;viewportTranslateArmed=null;
  if(!a)return;
@@ -2044,6 +2158,7 @@ function stopViewportTranslate(){
  if(a.overlay.parentNode)a.overlay.parentNode.removeChild(a.overlay);
 }
 function toggleViewportTranslate(s){
+ if(baseTransformArmed)stopBaseTransform();
  if(objectDepthArmed)stopObjectDepth(false);
  if(viewportTranslateArmed){var same=viewportTranslateArmed.sectionId===s.id;stopViewportTranslate();if(same){renderPane();return 'cancelled';}}
  if(viewportOrbitArmed)stopViewportOrbit();
@@ -2837,9 +2952,16 @@ if(pane){
    ev.preventDefault();technical.open=!technical.open;
    mapOverviewTechnicalOpen[sec().id]=technical.open;return;
   }
-  var button=ev.target.closest('[data-camera-object-depth],[data-camera-viewport-translate],[data-camera-viewport-orbit],[data-camera-surface-aim],[data-camera-aim-at-object],[data-camera-scene-object-pick],[data-camera-edit-current],[data-camera-easy-move],[data-camera-overview-compare-alternate],[data-camera-overview-compare-jump],[data-camera-overview-event-step],[data-camera-overview-toggle],[data-camera-map-pan],[data-camera-map-zoom],[data-camera-map-step],[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
+  var button=ev.target.closest('[data-camera-object-transform],[data-camera-object-depth],[data-camera-viewport-translate],[data-camera-viewport-orbit],[data-camera-surface-aim],[data-camera-aim-at-object],[data-camera-scene-object-pick],[data-camera-edit-current],[data-camera-easy-move],[data-camera-overview-compare-alternate],[data-camera-overview-compare-jump],[data-camera-overview-event-step],[data-camera-overview-toggle],[data-camera-map-pan],[data-camera-map-zoom],[data-camera-map-step],[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
   if(button===suppressedClick){suppressedClick=null;return;}
   var s=sec(),cfg=C.config(s);if(!cfg)return;var list=keys(s);
+  if(button.dataset.cameraObjectTransform!==undefined){
+   var state=toggleBaseTransform(s);
+   if(state==='invalid')toast('Elegí un objeto 3D anclado en el inspector.');
+   else if(state==='unavailable')toast('El renderer WebGL todavía no está disponible.');
+   else if(state==='invisible')toast('Mostrá el modelo en la vista previa para transformarlo.');
+   return;
+  }
   if(button.dataset.cameraObjectDepth!==undefined){
    var mode=toggleObjectDepth(s);
    if(mode==='invalid')toast('Seleccioná un objeto 3D anclado del inspector.');
@@ -2986,6 +3108,7 @@ if(pane){
  pane.addEventListener('change',function(ev){
   var input=ev.target;
   if(input.dataset.cameraObjectSelect!==undefined){
+   if(baseTransformArmed)stopBaseTransform();
    if(objectDepthArmed)stopObjectDepth(false);
    var scene=sec(),plan=mapObjectPlans[scene.id],idx=+input.value;
    mapObjectSelected[scene.id]=input.value!==''&&plan&&Number.isInteger(idx)&&idx>=0&&idx<plan.entries.length?plan.entries[idx].id:null;
