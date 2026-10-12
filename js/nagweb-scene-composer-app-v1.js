@@ -30,6 +30,9 @@ var view=V.create({
     syncField(scene);
     stat('V4-C.1 · '+scene.elements.length+' elementos · '+stage.querySelectorAll('.item[data-reactive="1"]').length+' reactivos');
   },
+  onTransformHover:(hovered)=>{if(field){if(hovered)field.pause();else field.resume();}},
+  onDragStart:()=>{if(field)field.pause();},
+  onDragEnd:()=>{if(field){field.measure();field.resume();}},
   onDragMove:(scene,id,node)=>{
     if(field&&node)field.measure(node);
     if(view.selected===id){

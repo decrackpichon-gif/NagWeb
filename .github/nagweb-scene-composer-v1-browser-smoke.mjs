@@ -69,7 +69,9 @@ try{
 
 
  // Mouse handles let users resize/rotate on the canvas without resetting physics.
- const fieldBeforeTransform=await page.evaluate(()=>__NAGWEB_SCENE_COMPOSER__.field);
+ // Keep the character away from the selected item while checking the pointer handles.
+ await page.evaluate(()=>__NAGWEB_SCENE_COMPOSER__.follower.setTarget(1080,710,'area'));
+ await new Promise(r=>setTimeout(r,250));
  const rectBefore=await page.evaluate(id=>{const e=__NAGWEB_SCENE_COMPOSER__.scene.elements.find(x=>x.id===id);return {width:e.width,height:e.height,rotation:e.rotation};},id);
  const resizeRect=await page.$eval('.item.sel .resize-handle',el=>{const r=el.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};});
  await page.mouse.move(resizeRect.x,resizeRect.y);
@@ -78,7 +80,7 @@ try{
  await page.mouse.up();
  await new Promise(r=>setTimeout(r,120));
  const resized=await page.evaluate(id=>{const e=__NAGWEB_SCENE_COMPOSER__.scene.elements.find(x=>x.id===id);return {width:e.width,height:e.height,fieldStable:__NAGWEB_SCENE_COMPOSER__.field===__composerTest.field};},id);
- assert.ok(resized.width>rectBefore.width+60&&resized.height>rectBefore.height+25,'resize handle should change dimensions directly');
+ assert.ok(resized.width>rectBefore.width+60&&resized.height>rectBefore.height+25,'resize handle should change dimensions directly: '+JSON.stringify({before:rectBefore,after:resized,handle:resizeRect}));
  assert.equal(resized.fieldStable,true,'resize must not rebuild influence field');
  assert.equal(await page.$eval('#width',e=>Number(e.value)),resized.width,'inspector width should match pointer resize');
  const rotateRect=await page.$eval('.item.sel .rotate-handle',el=>{const r=el.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};});

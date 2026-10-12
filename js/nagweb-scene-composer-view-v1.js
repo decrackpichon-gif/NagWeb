@@ -32,6 +32,8 @@ function create(input){
       var handle=Array.from(o.children).find(function(c){return c.dataset.handle===mode;});
       if(active){
         if(!handle){handle=document.createElement('button');handle.type='button';handle.className='transform-handle '+mode+'-handle';handle.dataset.handle=mode;handle.setAttribute('aria-label',mode==='resize'?'Cambiar tamaño':'Rotar');o.appendChild(handle);}
+        handle.onpointerenter=function(){if(input.onTransformHover)input.onTransformHover(true);};
+        handle.onpointerleave=function(){if(!drag&&input.onTransformHover)input.onTransformHover(false);};
         handle.onpointerdown=function(e){e.stopPropagation();start(e,el,mode);};
         handle.onclick=function(e){e.stopPropagation();};
       }else if(handle){handle.remove();}
@@ -121,6 +123,7 @@ function create(input){
     removeEventListener('pointerup',end);
     removeEventListener('pointercancel',end);
     drag=null;render();
+    if(input.onDragEnd)input.onDragEnd();
   }
   stage.onpointerdown=e=>{if(e.target===stage||e.target===canvas){selected=null;render();}};
   return {
