@@ -262,6 +262,12 @@ function createCamera(){
   if(!p||!Number.isFinite(f)||f<=0||!['x','y','z'].every(function(k){return Number.isFinite(+p[k]);}))return null;
   return {x:+p.x/f,y:-p.y/f,z:-p.z/f};
  }
+ function orbitPose(start,dx,dy,width,height,shift){
+  if(!start||![dx,dy,width,height].every(function(v){return Number.isFinite(+v);})||width<=0||height<=0)return null;
+  var sx=dx/width,sy=dy/height;
+  if(shift){if(Math.abs(sx)>=Math.abs(sy))sy=0;else sx=0;}
+  return Object.assign({},start,{rotateY:angle((+start.rotateY||0)-sx*180),rotateX:angle((+start.rotateX||0)+sy*120)});
+ }
  function threeCameraState(pose,viewport,perspective,scale){
   if(!pose)return null;
   var pos=threeWorldPoint(pose,scale);if(!pos)return null;
@@ -349,14 +355,22 @@ function createCamera(){
     try{stage.dispatchEvent(new CustomEvent('nagweb:spatial-camera',{bubbles:true,detail:{pose:Object.assign({},v),three:state}}));}catch(_){}
    }
   }
+  // A transient pose for direct manipulation in the same-origin editor preview.
+  // No progress reader or new animation clock; runtime repaint restores the
+  // Director's authoritative pose on cancel and after commit.
+  stage.__nwCameraPreviewPose=function(pose){
+   if(!pose)return false;
+   var scale=viewportScale(c,stage.clientWidth);
+   paint(scalePose(pose,scale),scale);return true;
+  };
   paint.contains=function(n){return inside(world,n);};
   return paint;
  }
- return {config:config,compile:compile,pose:pose,pathSamples:pathSamples,lookSamples:lookSamples,lookTarget:lookTarget,resolveLookFrame:resolveLookFrame,lookAngles:lookAngles,forwardTarget:forwardTarget,defaultLookFrames:defaultLookFrames,normalizeLook:normalizeLook,lookFrames:lookFrames,targetEligible:targetEligible,elementTarget:elementTarget,curveTension:curveTension,tangentHandle:tangentHandle,tensionFromHandle:tensionFromHandle,lookTangentHandle:lookTangentHandle,lookTensionFromHandle:lookTensionFromHandle,handleFree:handleFree,setHandleMode:setHandleMode,setFreeHandle:setFreeHandle,setLookHandleMode:setLookHandleMode,setLookFreeHandle:setLookFreeHandle,nearestPathAt:nearestPathAt,viewportScale:viewportScale,scalePose:scalePose,attach:attach,threeWorldPoint:threeWorldPoint,surfaceFocusFromWorld:surfaceFocusFromWorld,threeCameraState:threeCameraState,applyThreeCamera:applyThreeCamera,bindThreeCamera:bindThreeCamera,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial,copyFrame:copyFrame,holdFrame:holdFrame,preset:preset};
+ return {config:config,compile:compile,pose:pose,pathSamples:pathSamples,lookSamples:lookSamples,lookTarget:lookTarget,resolveLookFrame:resolveLookFrame,lookAngles:lookAngles,forwardTarget:forwardTarget,defaultLookFrames:defaultLookFrames,normalizeLook:normalizeLook,lookFrames:lookFrames,targetEligible:targetEligible,elementTarget:elementTarget,curveTension:curveTension,tangentHandle:tangentHandle,tensionFromHandle:tensionFromHandle,lookTangentHandle:lookTangentHandle,lookTensionFromHandle:lookTensionFromHandle,handleFree:handleFree,setHandleMode:setHandleMode,setFreeHandle:setFreeHandle,setLookHandleMode:setLookHandleMode,setLookFreeHandle:setLookFreeHandle,nearestPathAt:nearestPathAt,viewportScale:viewportScale,scalePose:scalePose,attach:attach,threeWorldPoint:threeWorldPoint,surfaceFocusFromWorld:surfaceFocusFromWorld,threeCameraState:threeCameraState,orbitPose:orbitPose,applyThreeCamera:applyThreeCamera,bindThreeCamera:bindThreeCamera,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial,copyFrame:copyFrame,holdFrame:holdFrame,preset:preset};
 }
 window.NAGWEB_CREATE_SCROLL_CAMERA=createCamera;
 window.NAGWEB_SCROLL_CAMERA=createCamera();
-var presetChoices=Object.create(null),holdDurations=Object.create(null),cameraEasyStep=Object.create(null),mapOpen=Object.create(null),mapPlanes=Object.create(null),mapFovVisible=Object.create(null),mapObjectVisible=Object.create(null),mapObjectSelected=Object.create(null),mapObjectPlans=Object.create(null),mapZoom=Object.create(null),mapPan=Object.create(null),mapWheelCarry=Object.create(null),mapOverviewVisible=Object.create(null),mapOverviewPickHistory=Object.create(null),mapOverviewSamples=Object.create(null),mapOverviewDetected=Object.create(null),mapOverviewMetrics=Object.create(null),mapOverviewMetricsOpen=Object.create(null),mapOverviewPaceVisible=Object.create(null),mapOverviewComparison=Object.create(null),mapOverviewComparePreview=Object.create(null),mapOverviewCompareFovVisible=Object.create(null),mapOverviewCompareExclusiveVisible=Object.create(null),mapOverviewCompareFocus=Object.create(null),mapOverviewTechnicalOpen=Object.create(null),mapOverviewEventFilter=Object.create(null),mapOverviewEventChosen=Object.create(null),mapPickHistory=Object.create(null),surfaceAimArmed=null,suppressedClick=null,selected=Object.create(null),lookSelected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
+var presetChoices=Object.create(null),holdDurations=Object.create(null),cameraEasyStep=Object.create(null),mapOpen=Object.create(null),mapPlanes=Object.create(null),mapFovVisible=Object.create(null),mapObjectVisible=Object.create(null),mapObjectSelected=Object.create(null),mapObjectPlans=Object.create(null),mapZoom=Object.create(null),mapPan=Object.create(null),mapWheelCarry=Object.create(null),mapOverviewVisible=Object.create(null),mapOverviewPickHistory=Object.create(null),mapOverviewSamples=Object.create(null),mapOverviewDetected=Object.create(null),mapOverviewMetrics=Object.create(null),mapOverviewMetricsOpen=Object.create(null),mapOverviewPaceVisible=Object.create(null),mapOverviewComparison=Object.create(null),mapOverviewComparePreview=Object.create(null),mapOverviewCompareFovVisible=Object.create(null),mapOverviewCompareExclusiveVisible=Object.create(null),mapOverviewCompareFocus=Object.create(null),mapOverviewTechnicalOpen=Object.create(null),mapOverviewEventFilter=Object.create(null),mapOverviewEventChosen=Object.create(null),mapPickHistory=Object.create(null),surfaceAimArmed=null,viewportOrbitArmed=null,suppressedClick=null,selected=Object.create(null),lookSelected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
 function safeLabel(v){return String(v==null?'':v).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,42).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];});}
 function targetLabel(e){var label=safeLabel(e&&((e.name||e.text||e.label)||e.type));return label||'Elemento';}
 function keys(s){return C.frames(C.config(s),s.sdEase);}
@@ -1823,6 +1837,85 @@ function toggleSurfaceAim(s){
  doc.addEventListener('pointerdown',down,true);doc.addEventListener('keydown',key,true);
  renderPane();return 'armed';
 }
+function stopViewportOrbit(){
+ var a=viewportOrbitArmed;viewportOrbitArmed=null;
+ if(!a)return;
+ a.doc.removeEventListener('pointerdown',a.down,true);
+ a.doc.removeEventListener('keydown',a.key,true);
+ document.removeEventListener('keydown',a.key,true);
+ if(a.iframe)a.iframe.removeEventListener('load',a.onLoad);
+ if(a.cleanup)a.cleanup();
+}
+function toggleViewportOrbit(s){
+ if(viewportOrbitArmed){var same=viewportOrbitArmed.sectionId===s.id;stopViewportOrbit();if(same){renderPane();return 'cancelled';}}
+ var cfg=C.config(s);
+ if(!cfg||cfg.orientationMode!=='manual')return 'invalid';
+ var iframe=document.getElementById('preview'),win=iframe&&iframe.contentWindow,doc=iframe&&iframe.contentDocument;
+ var section=doc&&Array.from(doc.querySelectorAll('.sc[data-id]')).find(function(el){return el.getAttribute('data-id')===s.id;});
+ var stage=section&&section.querySelector('.nw-sd-stage'),runtime=win&&win.__NAG_SCROLL_DIRECTOR&&win.__NAG_SCROLL_DIRECTOR[s.id];
+ if(!stage||typeof stage.__nwCameraPreviewPose!=='function'||!runtime||typeof runtime.set!=='function')return 'unavailable';
+ var gesture=null;
+ function reset(){if(gesture){try{runtime.set(gesture.pct/100);}catch(_){}gesture=null;}}
+ function move(ev){
+  if(!gesture||ev.pointerId!==gesture.pointerId)return;
+  var next=C.orbitPose(gesture.original,ev.clientX-gesture.x,ev.clientY-gesture.y,gesture.width,gesture.height,ev.shiftKey);
+  if(!next)return;
+  gesture.next=next;
+  stage.__nwCameraPreviewPose(next);
+  ev.preventDefault();
+ }
+ function complete(ev,cancel){
+  if(!gesture||ev&&ev.pointerId!==undefined&&ev.pointerId!==gesture.pointerId)return;
+  var g=gesture;gesture=null;
+  doc.removeEventListener('pointermove',move,true);
+  doc.removeEventListener('pointerup',up,true);
+  doc.removeEventListener('pointercancel',abort,true);
+  doc.removeEventListener('lostpointercapture',abort,true);
+  try{if(stage.hasPointerCapture&&stage.hasPointerCapture(g.pointerId))stage.releasePointerCapture(g.pointerId);}catch(_){}
+  var changed=!cancel&&g.next&&(Math.abs(g.next.rotateX-g.original.rotateX)>1e-7||Math.abs(g.next.rotateY-g.original.rotateY)>1e-7);
+  try{runtime.set(g.pct/100);}catch(_){}
+  stopViewportOrbit();
+  if(changed&&sec()===s&&C.config(s)&&C.config(s).orientationMode==='manual'){
+   var frames=keys(s),index=frames.findIndex(function(k){return k.at===g.at;});
+   if(index<0&&frames.length>=128)toast('Máximo: 128 encuadres de cámara.');
+   else{
+    var nextFrame=Object.assign({at:g.at,ease:s.sdEase||'cinematic'},index>=0?frames[index]:g.original,{rotateX:g.next.rotateX,rotateY:g.next.rotateY});
+    snapshot();if(index>=0)frames[index]=nextFrame;else frames.push(nextFrame);
+    persist(s,frames,g.at);
+    toast('Orientación guardada en el momento '+g.at+'%. Podés deshacerla.');
+   }
+  }
+  renderPane();
+ }
+ function up(ev){move(ev);complete(ev,false);}
+ function abort(ev){complete(ev,true);}
+ function down(ev){
+  if(ev.button!==0||gesture)return;
+  var rect=stage.getBoundingClientRect();
+  if(!rect.width||!rect.height||ev.clientX<rect.left||ev.clientY<rect.top||ev.clientX>=rect.right||ev.clientY>=rect.bottom)return;
+  if(sec()!==s||!C.config(s)||C.config(s).orientationMode!=='manual'){stopViewportOrbit();renderPane();return;}
+  var pct=progress(s),at=cameraCurrentMoment(s,pct,keys(s)).at,original=C.pose(C.config(s),pct/100,window.NAGWEB_STORY_MODEL,s.sdEase,false,undefined,previewReferenceSize(s));
+  gesture={pointerId:ev.pointerId,x:ev.clientX,y:ev.clientY,width:rect.width,height:rect.height,pct:pct,at:at,original:original,next:original};
+  try{runtime.set(pct/100);stage.setPointerCapture(ev.pointerId);}catch(_){}
+  ev.preventDefault();ev.stopImmediatePropagation();
+  doc.addEventListener('pointermove',move,true);
+  doc.addEventListener('pointerup',up,true);
+  doc.addEventListener('pointercancel',abort,true);
+  doc.addEventListener('lostpointercapture',abort,true);
+ }
+ function key(ev){if(ev.key==='Escape'){ev.preventDefault();ev.stopPropagation();complete(null,true);}}
+ function onLoad(){complete(null,true);}
+ viewportOrbitArmed={sectionId:s.id,doc:doc,down:down,key:key,onLoad:onLoad,iframe:iframe,cleanup:function(){
+  doc.removeEventListener('pointermove',move,true);doc.removeEventListener('pointerup',up,true);
+  doc.removeEventListener('pointercancel',abort,true);doc.removeEventListener('lostpointercapture',abort,true);
+  reset();
+ }};
+ doc.addEventListener('pointerdown',down,true);
+ doc.addEventListener('keydown',key,true);
+ document.addEventListener('keydown',key,true);
+ iframe.addEventListener('load',onLoad);
+ renderPane();return 'armed';
+}
 function spatialMap(s,list,k){
  var objectPlan=mapObjectPlan(s,C.config(s),previewReferenceSize(s));
  mapObjectPlans[s.id]=objectPlan;
@@ -1923,6 +2016,7 @@ C.panel=function(s){
  html+=cRow('Trayectoria','<select class="csel" data-camera-path-mode aria-label="Trayectoria de cámara"><option value="linear"'+((s.sdCameraPathMode==='smooth')?'':' selected')+'>Por tramos</option><option value="smooth"'+(s.sdCameraPathMode==='smooth'?' selected':'')+'>Curva suave</option></select>');
  if(s.sdCameraPathMode==='smooth')html+='<p class="hint gh">Los encuadres XYZ se convierten en puntos de una trayectoria continua. Las permanencias con dos posiciones iguales siguen siendo pausas reales.</p>';
  html+=cRow('Orientación','<select class="csel" data-camera-orientation-mode aria-label="Orientación de cámara"><option value="manual"'+(s.sdCameraOrientationMode==='lookAt'?'':' selected')+'>Ángulos manuales</option><option value="lookAt"'+(s.sdCameraOrientationMode==='lookAt'?' selected':'')+'>Mirar hacia</option></select>');
+ if(s.sdCameraOrientationMode!=='lookAt')html+='<div style="margin:7px 0 8px"><button class="btn tiny" type="button" data-camera-viewport-orbit aria-pressed="'+(viewportOrbitArmed&&viewportOrbitArmed.sectionId===s.id?'true':'false')+'">'+(viewportOrbitArmed&&viewportOrbitArmed.sectionId===s.id?'Cancelar orientación en vista 3D':'Orientar cámara con mouse en vista 3D')+'</button><p class="hint gh" data-camera-viewport-orbit-hint>'+(viewportOrbitArmed&&viewportOrbitArmed.sectionId===s.id?'Arrastrá en la vista previa para mirar alrededor. Shift bloquea un eje; Escape cancela. Se guarda al soltar.':'En Ángulos manuales: arrastrá para orientar el encuadre viendo el resultado en tiempo real. No mueve objetos ni altera los demás keyframes.')+'</p></div>';
  if(s.sdCameraOrientationMode==='lookAt'){
   var lookList=lookKeys(s),lk=lookList.length?chooseLook(s,lookList):null;
   html+=cRow('Trayectoria de mirada','<select class="csel" data-camera-look-path-mode aria-label="Trayectoria del objetivo"><option value="linear"'+(s.sdCameraLookPathMode==='smooth'?'':' selected')+'>Por tramos</option><option value="smooth"'+(s.sdCameraLookPathMode==='smooth'?' selected':'')+'>Curva suave</option></select>');
@@ -2513,9 +2607,15 @@ if(pane){
    ev.preventDefault();technical.open=!technical.open;
    mapOverviewTechnicalOpen[sec().id]=technical.open;return;
   }
-  var button=ev.target.closest('[data-camera-surface-aim],[data-camera-aim-at-object],[data-camera-scene-object-pick],[data-camera-edit-current],[data-camera-easy-move],[data-camera-overview-compare-alternate],[data-camera-overview-compare-jump],[data-camera-overview-event-step],[data-camera-overview-toggle],[data-camera-map-pan],[data-camera-map-zoom],[data-camera-map-step],[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
+  var button=ev.target.closest('[data-camera-viewport-orbit],[data-camera-surface-aim],[data-camera-aim-at-object],[data-camera-scene-object-pick],[data-camera-edit-current],[data-camera-easy-move],[data-camera-overview-compare-alternate],[data-camera-overview-compare-jump],[data-camera-overview-event-step],[data-camera-overview-toggle],[data-camera-map-pan],[data-camera-map-zoom],[data-camera-map-step],[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
   if(button===suppressedClick){suppressedClick=null;return;}
   var s=sec(),cfg=C.config(s);if(!cfg)return;var list=keys(s);
+  if(button.dataset.cameraViewportOrbit!==undefined){
+   var state=toggleViewportOrbit(s);
+   if(state==='invalid')toast('Para orientar con el mouse, elegí Ángulos manuales.');
+   if(state==='unavailable')toast('La vista previa de cámara todavía no está lista.');
+   return;
+  }
   if(button.dataset.cameraSurfaceAim!==undefined){
    var mode=toggleSurfaceAim(s);
    if(mode==='unavailable')toast('La vista previa 3D todavía no está lista. Abrila y volvé a intentarlo.');
