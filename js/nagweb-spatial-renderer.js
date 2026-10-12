@@ -289,7 +289,7 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
  // Only the editor explicitly calls this same-origin API for the selected 3D model.
  function previewBaseTransform(id,axis,value,sectionId){
   var bounds={RotateX:[-3600,3600],RotateY:[-3600,3600],Scale:[10,500]};
-  if(typeof id!=='string'||!id||typeof sectionId!=='string'||!sectionId||!bounds[axis]||
+  if(typeof id!=='string'||!id||typeof sectionId!=='string'||!sectionId||!Object.prototype.hasOwnProperty.call(bounds,axis)||
    value!==null&&(!Number.isFinite(value)||value<bounds[axis][0]||value>bounds[axis][1]))return false;
   var matches=[];
   rows.forEach(function(row){
