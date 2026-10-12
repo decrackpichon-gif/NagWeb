@@ -9,7 +9,7 @@ export async function runEditorPartsSmoke(page){
  const markup=n=>'<!doctype html><html><body data-parts-run="'+n+'">'+
   '<div class="el wdg" data-id="test-hero"><section class="nw-lh">'+
   '<button data-nw-part="">Todos</button><button data-nw-part="layer-2">Foto 2</button>'+
-  '<div data-wpart="layer-2">Imagen</div>'+
+  '<div data-wpart="layer-2" style="width:160px;height:96px">Imagen</div>'+
   '<p data-wpart="text-extra-0" data-nw-listobj="texts" data-nw-row="0" data-nw-key="text">Texto original</p></section></div>'+
   '<div class="el wdg" data-id="test-story"><section class="nw-story">'+
   '<button data-nw-story-ch="1" class="on">1</button><button data-nw-story-ch="2">2</button>'+
@@ -95,6 +95,76 @@ export async function runEditorPartsSmoke(page){
   }));
   assert.equal(committed.text,'Texto guardado');assert.equal(committed.stored,committed.text);
   assert.equal(committed.undo,start.undo+1);
+  // Drag, resize y rotate sobre la parte interna existente.
+  clearTimeout(previewTimer);await load(4);await select('test-hero');
+  await page.waitForFunction(()=>document.querySelector('#preview')?.contentDocument?.__nwCanvasTools===1);
+  const undoStart=await page.evaluate(()=>history.length);
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,w=d.defaultView,n=d.querySelector('[data-wpart="layer-2"]');
+   const b=n.getBoundingClientRect(),x=b.left+b.width/2,y=b.top+b.height/2;
+   n.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:41,button:0,clientX:x,clientY:y}));
+   w.dispatchEvent(new w.PointerEvent('pointermove',{bubbles:true,pointerId:41,button:0,clientX:x+34,clientY:y+18}));
+   w.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true,pointerId:41,button:0,clientX:x+34,clientY:y+18}));
+  });
+  const afterDrag=await page.evaluate(()=>({
+   part:sec().elements.find(e=>e.id==='test-hero').wp.__parts?.['layer-2'],undo:history.length
+  }));
+  assert.equal(afterDrag.part.x,34);assert.equal(afterDrag.part.y,18);
+  assert.equal(afterDrag.undo,undoStart+1,'mover una parte crea un historial reversible');
+  const scaleExpected=await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,w=d.defaultView,n=d.querySelector('[data-wpart="layer-2"]');
+   const handle=d.querySelector('.nw-wpart-h.size');if(!handle)throw Error('Tirador de tamaño ausente');
+   const r=n.getBoundingClientRect(),b=handle.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+   const x=b.left+b.width/2,y=b.top+b.height/2,dist=Math.max(12,Math.hypot(x-cx,y-cy));
+   handle.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:42,button:0,clientX:x,clientY:y}));
+   for(const factor of [1.12,1.25,1.4]){
+    w.dispatchEvent(new w.PointerEvent('pointermove',{bubbles:true,pointerId:42,button:0,clientX:cx+(x-cx)*factor,clientY:cy+(y-cy)*factor}));
+   }
+   w.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true,pointerId:42,button:0,clientX:cx+(x-cx)*1.4,clientY:cy+(y-cy)*1.4}));
+   return Math.hypot((x-cx)*1.4,(y-cy)*1.4)/dist;
+  });
+  const afterScale=await page.evaluate(()=>({
+   part:sec().elements.find(e=>e.id==='test-hero').wp.__parts['layer-2'],undo:history.length
+  }));
+  assert.ok(Math.abs(afterScale.part.s-scaleExpected)<.025,'la escala depende del inicio y no multiplica cada evento');
+  assert.equal(afterScale.undo,undoStart+2);
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,w=d.defaultView,n=d.querySelector('[data-wpart="layer-2"]');
+   const handle=d.querySelector('.nw-wpart-h.rot');if(!handle)throw Error('Tirador de giro ausente');
+   const r=n.getBoundingClientRect(),b=handle.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+   const x=b.left+b.width/2,y=b.top+b.height/2,dist=Math.hypot(x-cx,y-cy);
+   const angle=Math.atan2(y-cy,x-cx)+Math.PI/6;
+   handle.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:43,button:0,clientX:x,clientY:y}));
+   w.dispatchEvent(new w.PointerEvent('pointermove',{bubbles:true,pointerId:43,button:0,clientX:cx+dist*Math.cos(angle),clientY:cy+dist*Math.sin(angle)}));
+   w.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true,pointerId:43,button:0,clientX:cx+dist*Math.cos(angle),clientY:cy+dist*Math.sin(angle)}));
+  });
+  const afterRotate=await page.evaluate(()=>({
+   part:sec().elements.find(e=>e.id==='test-hero').wp.__parts['layer-2'],undo:history.length
+  }));
+  assert.ok(Math.abs(afterRotate.part.r-30)<2,'el giro respeta el ángulo inicial');
+  assert.equal(afterRotate.undo,undoStart+3);
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,w=d.defaultView,n=d.querySelector('[data-wpart="layer-2"]');
+   const b=n.getBoundingClientRect(),x=b.left+b.width/2,y=b.top+b.height/2;
+   n.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:44,button:0,clientX:x,clientY:y}));
+   w.dispatchEvent(new w.PointerEvent('pointermove',{bubbles:true,pointerId:44,button:0,clientX:x+60,clientY:y+22}));
+   w.dispatchEvent(new w.PointerEvent('pointercancel',{bubbles:true,pointerId:44,button:0,clientX:x+60,clientY:y+22}));
+  });
+  const afterCancel=await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,n=d.querySelector('[data-wpart="layer-2"]');
+   return{part:sec().elements.find(e=>e.id==='test-hero').wp.__parts['layer-2'],
+    undo:history.length,liveX:parseFloat(n.style.getPropertyValue('--nw-tx'))};
+  });
+  assert.deepEqual(afterCancel.part,afterRotate.part,'cancelar no modifica el modelo');
+  assert.equal(afterCancel.undo,afterRotate.undo,'cancelar no crea Deshacer');
+  assert.equal(afterCancel.liveX,afterRotate.part.x,'cancelar restituye el elemento visible');
+  const savedPart=await page.evaluate(()=>JSON.parse(localStorage.getItem(STORE_KEY)).pages[curPage].sections[curSec].elements.find(e=>e.id==='test-hero')?.wp.__parts['layer-2']);
+  assert.deepEqual(savedPart,afterRotate.part,'las transformaciones persisten');
+  await page.click('#btn-undo');
+  assert.equal(await page.evaluate(()=>sec().elements.find(e=>e.id==='test-hero').wp.__parts['layer-2'].r),0);
+  await page.click('#btn-redo');
+  assert.equal(await page.evaluate(()=>sec().elements.find(e=>e.id==='test-hero').wp.__parts['layer-2'].r),afterRotate.part.r);
+  
   console.log('Editor partes: foco, restauración, Escape, Enter e historial OK');
  }finally{
   await page.evaluate(old=>{
