@@ -222,14 +222,16 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     try { doc = preview.contentDocument; } catch { doc = null; }
     if (dialog.open) { editOverlay.style.visibility = "hidden"; return; }
     editOverlay.style.visibility = "visible";
-    if (canvasLoading || !doc || doc.readyState === "loading") {
+    // HTML controls depend on a rendered wrapper, not on vector measurement.
+    // canvasLoading may remain flagged by a late srcdoc mutation.
+    if (!doc || doc.readyState === "loading") {
       editOverlay.replaceChildren();
       editOverlayButtons.clear();
       return;
     }
     const frameBounds = preview.getBoundingClientRect();
-    const docWidth = doc.documentElement.clientWidth;
-    const docHeight = doc.documentElement.clientHeight;
+    const docWidth = doc.documentElement.clientWidth || preview.clientWidth;
+    const docHeight = doc.documentElement.clientHeight || preview.clientHeight;
     if (!(docWidth > 0) || !(docHeight > 0) || !(frameBounds.width > 0) ||
         !(frameBounds.height > 0)) return;
     const sx = frameBounds.width / docWidth;

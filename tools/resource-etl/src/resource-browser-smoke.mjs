@@ -1346,7 +1346,31 @@ try {
   // Stage 84: editor-owned control on the HTML wrapper, never inside the
   // sandboxed third-party iframe. Pointer and keyboard both reopen editing.
   const canvasEdit=page.getByRole("button",{name:"Personalizar componente desde el lienzo"});
-  await expect(canvasEdit).toHaveCount(1);
+  try {
+    await expect(canvasEdit).toHaveCount(1);
+  } catch (error) {
+    const diagnostic=await page.evaluate(()=>{
+      const frame=document.querySelector("#preview");
+      const doc=frame?.contentDocument;
+      const root=document.querySelector("[data-resource-edit-overlay]");
+      return {
+        overlayExists:!!root, overlayChildCount:root?.children.length,
+        dialogOpen:[...document.querySelectorAll("dialog")].some(d=>d.open),
+        docReady:doc?.readyState,
+        docSize:[doc?.documentElement.clientWidth,doc?.documentElement.clientHeight],
+        iframeSize:[frame?.clientWidth,frame?.clientHeight],
+        iframeBounds:frame?.getBoundingClientRect().toJSON(),
+        section:sec()?.id,
+        htmlModels:sec()?.elements.filter(e=>e.nwResource?.kind==="uiverse-html").map(e=>({id:e.id,type:e.type})),
+        nodes:[...(doc?.querySelectorAll(".el[data-id]")||[])].map(n=>({
+          id:n.dataset.id,section:n.closest(".sc")?.dataset.id,
+          rect:n.getBoundingClientRect().toJSON()
+        })).slice(-7)
+      };
+    });
+    console.log("RESOURCE_HTML_OVERLAY_DIAG "+JSON.stringify(diagnostic));
+    throw error;
+  }
   await expect(canvasEdit).toBeVisible();
   // The opaque iframe consumes hover; the editor control stays reachable.
   await expect(canvasEdit).toHaveCSS("pointer-events","auto");

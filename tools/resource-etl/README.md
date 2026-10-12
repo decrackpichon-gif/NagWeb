@@ -1340,3 +1340,8 @@ se vuelve a medir al cambiar la vista, hacer scroll, redimensionar o cargar la
 escena. El control permanece independiente del HTML de terceros y de lo
 exportado, conserva el acceso con mouse y teclado y mantiene el foco al cerrar
 la personalización si el componente sigue disponible.
+
+La superposición HTML no espera la bandera de medición de SVG: una actualización
+tardía de `srcdoc` puede conservarla activa aunque el marco HTML ya sea
+visible. El control sólo se genera cuando el documento y su nodo visual existen
+y la identidad del recurso coincide con la escena actual.
