@@ -69,3 +69,9 @@ Una herramienta para elegir, **previsualizar y editar animaciones antes de inser
 **Hito:** se incorporó la composición **Grid Dive** en `internal-motion-lab`, commit [749f986](https://github.com/decrackpichon-gif/NagWeb/commit/749f986f9eca53a6715fc38ff395b0d4cda40bc4). El nombre fue corroborado en el catálogo de Animos, pero no se contó con la referencia visual ni con sus controles originales. La animación de NagWeb es provisional e interpretativa y **no debe presentarse como reproducción fiel de Animos**. Sus parámetros específicos son propios. Incluye motor, editor, integración de preview/exportación y pruebas de modelo; smoke de navegador en la ejecución [38188030828](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38188030828), aún sin resultado al documentarlo.
 
 **Próxima animación del catálogo que falta:** Pop Parade; obtener antes su movimiento y controles mediante la fuente original. No mezclar esto con NAGWEB 01, 03, 04 ni 05.
+
+### Pop Parade: implementación de keyframes (11/10/2026)
+
+- Referencia pública: https://animos.app/editor?scrollTo=multiscene incluye «Pop Parade», pero no fue posible comprobar sus movimientos ni los controles internos con las fuentes públicas disponibles. **No afirmar fidelidad visual ni presentar controles propios como originales**.
+- Para no inventar un nuevo motor, se preparó una composición basada en los keyframes del Director existente: 12 carteles reemplazables, entradas por turnos, profundidad y cambios de escala, edición directa y flujo genérico de insertar/guardar/exportar. Se considera una **interpretación provisional** hasta obtener video o inspector real.
+- Mantener como prioridad la incorporación de plantillas verificables de Animos por lotes completos, seguida por personalizaciones propias y animaciones inéditas. No realizar despliegues Vercel ni fusionar ramas automáticamente.
