@@ -162,3 +162,99 @@ assert.equal(locked.rotateX,3,'Shift locks the smaller vertical axis');
 assert.equal(locked.rotateY,-28);
 assert.equal(C.orbitPose({},5,5,0,100,false),null,'Invalid viewport cannot change camera');
 console.log('PASS camera viewport orbit: CSS live pose, commit once, Escape, Shift lock, and preview cleanup');
+
+
+// Direct XYZ viewport translation reuses the Director's camera preview
+// without a second progress evaluator or changes to GLB meshes.
+const xyzOriginal=C.translatePose({x:10,y:20,z:30},'xy',15,-7,1);
+assert.equal(xyzOriginal.x,25);assert.equal(xyzOriginal.y,13);assert.equal(xyzOriginal.z,30);
+assert.equal(C.translatePose({x:10,y:20,z:30},'z',0,-10,1).z,50);
+assert.equal(C.translatePose({x:10,y:20,z:30},'y',99,10,.2).y,22);
+assert.equal(C.translatePose({x:10,y:20,z:30},'x',10,20,1).x,20);
+assert.equal(C.translatePose({x:10,y:20,z:30},'bad',10,20,1),null);
+assert.equal(C.translatePose({x:10,y:20,z:30},'x',Infinity,20,1),null);
+assert.equal(C.translatePose({x:3995,y:20,z:30},'x',100,0,1).x,4000,'Translation clamps to camera bounds');
+const fakeUi={
+ style:{},listeners:{},innerHTML:'',parentNode:null,
+ setAttribute(){},
+ addEventListener(type,fn){this.listeners[type]=fn;},
+ removeEventListener(type,fn){if(this.listeners[type]===fn)delete this.listeners[type];}
+};
+let liveOverlay=null;
+previewDocument.createElement=()=>Object.assign({},fakeUi,{style:{},listeners:{}});
+viewportStage.appendChild=element=>{liveOverlay=element;element.parentNode=viewportStage;};
+viewportStage.removeChild=element=>{assert.equal(liveOverlay,element);liveOverlay=null;element.parentNode=null;};
+scene.sdCameraOrientationMode='lookAt';
+const modelInvariant=JSON.stringify(scene.elements);
+const originalCameraPose=C.pose(C.config(scene),0,window.NAGWEB_STORY_MODEL,scene.sdEase,false);
+C.panel(scene);
+assert.match(C.panel(scene),/data-camera-viewport-translate/,'XYZ tool should work with Mirar hacia');
+const xyzButton={dataset:{cameraViewportTranslate:''}};
+const toggleXYZ=()=>handlers.click({target:{closest(){return xyzButton;}}});
+const axisHandle=axis=>({
+ axis,captured:false,
+ getAttribute(k){return k==='data-nw-camera-axis'?axis:null;},
+ closest(k){return k==='[data-nw-camera-axis]'?this:null;},
+ setPointerCapture(){this.captured=true;},
+ hasPointerCapture(){return this.captured;},
+ releasePointerCapture(){this.captured=false;}
+});
+const downAxis=(handle,pointerId=34,x=100,y=120)=>liveOverlay.listeners.pointerdown({
+ target:handle,button:0,pointerId,clientX:x,clientY:y,
+ preventDefault(){},stopPropagation(){}
+});
+const moveAxis=(id,x,y,shift=false)=>previewDocument.listeners.pointermove({
+ pointerId:id,clientX:x,clientY:y,shiftKey:shift,preventDefault(){}
+});
+const finishAxis=(id,x,y,shift=false)=>previewDocument.listeners.pointerup({
+ pointerId:id,clientX:x,clientY:y,shiftKey:shift,preventDefault(){}
+});
+const beforeXYZ=undos,savedBeforeXYZ=saves,canvasBeforeXYZ=cssFrames.length;
+toggleXYZ();
+assert.ok(liveOverlay&&liveOverlay.innerHTML.includes('data-nw-camera-axis="xy"'),'XYZ overlay must show four axis handles');
+assert.match(C.panel(scene),/Cerrar controles XYZ/);
+const xHandle=axisHandle('x');
+downAxis(xHandle);
+moveAxis(34,220,120);
+assert.equal(undos,beforeXYZ,'Preview moving X must not create Undo before release');
+assert.ok(cssFrames.length>canvasBeforeXYZ,'Live preview updates the camera CSS transform');
+finishAxis(34,220,120);
+assert.equal(undos,beforeXYZ+1,'X drag creates one Undo');
+assert.equal(saves,savedBeforeXYZ+1,'X drag persists once');
+assert.equal(scene.sdCameraFrames[0].x,originalCameraPose.x+120);
+assert.equal(scene.sdCameraFrames[0].y,originalCameraPose.y);
+assert.equal(scene.sdCameraFrames[0].z,originalCameraPose.z);
+assert.equal(JSON.stringify(scene.elements),modelInvariant,'Camera translation never mutates a GLB');
+assert.ok(liveOverlay,'XYZ controls remain available for additional axes');
+assert.equal(xHandle.captured,false,'Pointer capture releases after saving');
+const beforeCancelXYZ=undos;
+downAxis(axisHandle('y'),36,180,120);
+moveAxis(36,180,210);
+outsideListeners.keydown({key:'Escape',preventDefault(){},stopPropagation(){}});
+assert.equal(undos,beforeCancelXYZ,'Escape cancels XYZ drag without history');
+assert.equal(liveOverlay,null,'Escape removes XYZ handles');
+assert.equal(previewDocument.listeners.pointermove,undefined,'Escape unbinds pointer tracking');
+assert.equal(orbitIframe.load,null,'Escape unbinds iframe listener');
+assert.ok(restores>=3,'Director reclaims preview on cancel');
+toggleXYZ();
+downAxis(axisHandle('z'),37,150,150);
+moveAxis(37,150,50,true);
+finishAxis(37,150,50,true);
+assert.equal(scene.sdCameraFrames[0].z,originalCameraPose.z+40,'Z moves forward by 2x drag with Shift 20% precision');
+assert.equal(undos,beforeCancelXYZ+1,'Z move saves once');
+const beforeXY=scene.sdCameraFrames[0];
+const savedXY={x:beforeXY.x,y:beforeXY.y,z:beforeXY.z};
+downAxis(axisHandle('xy'),38,120,120);
+moveAxis(38,160,145);
+finishAxis(38,160,145);
+assert.equal(scene.sdCameraFrames[0].x,savedXY.x+40,'XY drag moves X');
+assert.equal(scene.sdCameraFrames[0].y,savedXY.y+25,'XY drag moves Y');
+assert.equal(scene.sdCameraFrames[0].z,savedXY.z,'XY drag preserves Z');
+const beforeKeyboardXYZ=undos;
+const yKey=axisHandle('y');
+liveOverlay.listeners.keydown({target:yKey,key:'ArrowDown',shiftKey:true,preventDefault(){},stopPropagation(){}});
+assert.equal(scene.sdCameraFrames[0].y,savedXY.y+27,'Accessible keyboard nudge is precision-aware');
+assert.equal(undos,beforeKeyboardXYZ+1,'Keyboard nudge saves once');
+toggleXYZ();
+assert.equal(liveOverlay,null,'Closing XYZ toolbar unmounts overlay');
+console.log('PASS camera viewport translation: live XYZ/XY, GLB isolation, lookAt, Escape, Shift, Undo, keyboard, overlay cleanup');
