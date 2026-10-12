@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0",
+  "provider": "heroicons",
+  "sourceRepository": "https://github.com/tailwindlabs/heroicons",
+  "sourceCommit": "616b7a4dbbf3d011760af8066262cd5c6b3868f3",
+  "generatedAt": "2026-10-12T14:51:35.757Z",
+  "availableOutlines": 324,
+  "skippedOutlines": 1,
+  "resourceCount": 323,
+  "uncompressedBytes": 1697163,
+  "compressedBytes": 100495,
+  "compressedSha256": "8623846a4e5de10a8d6ea0262f3a784863e1446f4e8adea63bc83f6e8dc7565a",
+  "files": {
+    "library": "library.json.gz",
+    "catalog": "catalog.json",
+    "license": "LICENSE",
+    "skipped": "skipped.json"
+  }
+}
