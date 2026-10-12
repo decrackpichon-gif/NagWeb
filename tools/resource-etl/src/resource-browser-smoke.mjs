@@ -1393,6 +1393,10 @@ try {
   // A published Heroicon must be searchable, selectable, editable and
   // exportable in the real NagWeb editor, not just present in the Vault.
   await page.getByRole("button",{name:"Biblioteca de recursos",exact:true}).click();
+  // Reopening preserves the last resource's modal. Dismiss it through the
+  // actual UI before clicking another resource card.
+  if (await libraryFrame.locator("[data-detail]").evaluate(node => node.open))
+    await libraryFrame.getByRole("button",{name:"Cerrar",exact:true}).click();
   await libraryFrame.getByLabel("Proveedor",{exact:true}).selectOption("heroicons");
   await expect(libraryFrame.locator('[data-resource-id="heroicons:x-mark"]')).toBeVisible();
   await libraryFrame.locator('[data-resource-id="heroicons:x-mark"]').click();
