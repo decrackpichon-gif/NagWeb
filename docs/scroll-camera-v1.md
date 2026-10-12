@@ -636,3 +636,34 @@ en él, conservando bordes/scroll y composición de los padres. La regresión
 cubre forma y GLB reales. Se agrega un comando único de pruebas por grupos
 para evitar repeticiones innecesarias. Alcance y resultados en
 [Origen de layout de anclas espaciales](spatial-layout-v1.md).
+
+
+## Orientar la cámara con el mouse en la vista previa (2026-10-11)
+
+En **Ángulos manuales**, el panel **Cámara 3D** incluye
+**Orientar cámara con mouse en vista 3D**. El modo es opcional y no cambia
+la orientación de los proyectos existentes. Una vez activado, arrastrar
+dentro de la escena permite girar la cámara horizontal (yaw) y verticalmente
+(pitch), con respuesta inmediata tanto del mundo CSS como de los objetos
+Three.js. Mantener **Shift** bloquea el eje secundario. Se guarda **un solo
+keyframe del instante actual al soltar**, con una sola entrada de Deshacer.
+**Escape**, cancelación del puntero o salida de la vista previa antes del
+guardado restauran el encuadre anterior sin escribir datos. Escape también
+permite salir del modo antes de iniciar el gesto.
+
+El modo **Mirar hacia** no expone este arrastre: su orientación continúa
+determinada por los puntos de mirada y por el apuntado a objetos 3D, sin
+cambios silenciosos de modo. El giro del horizonte (roll) se edita con su
+campo existente. No se incorpora aquí movimiento XYZ ni manipulación
+volumétrica de objetos.
+
+La vista previa usa temporalmente el método paint existente, que comparte
+la cámara CSS y Three con el evento nagweb:spatial-camera; el Director de
+Scroll continúa siendo el **único** controlador del progreso. El runtime
+restablece la pose original en cancelaciones y después de guardar. No se
+escriben keyframes durante el arrastre ni se instala un reloj adicional.
+
+Regresión integrada en tests/spatial-focus-map.integration.cjs y ejecutada
+por .github/nagweb-spatial-smoke.cjs dentro del grupo editor; cubre
+previsualización CSS, persistencia de un solo cambio, Escape, Shift
+y limpieza de listeners. No se modifica main ni se despliega a Vercel.
