@@ -667,3 +667,41 @@ Regresión integrada en tests/spatial-focus-map.integration.cjs y ejecutada
 por .github/nagweb-spatial-smoke.cjs dentro del grupo editor; cubre
 previsualización CSS, persistencia de un solo cambio, Escape, Shift
 y limpieza de listeners. No se modifica main ni se despliega a Vercel.
+
+
+## Trasladar la cámara XYZ desde la vista previa (11/10/2026)
+
+El panel **Cámara 3D** ofrece **Mover cámara XYZ en vista 3D**.
+Este modo de edición activa un control flotante sobre la escena, fuera del
+mundo transformado: **↔ X**, **↕ Y**, **↕ Z** y **✥ X/Y**.
+Arrastrar cualquier control previsualiza en vivo la posición de la cámara
+en CSS y Three.js, sin tocar el modelo ni crear keyframes intermedios.
+En X, mover a la derecha aumenta X; en Y, bajar aumenta Y;
+en Z, arrastrar hacia arriba avanza en profundidad (Z positiva).
+El plano X/Y permite mover ambos ejes simultáneamente.
+
+**Shift** reduce la sensibilidad al 20 % para ajustar con precisión.
+El control tiene soporte de teclado: las flechas desplazan el eje elegido
+en pasos de 10 px de pantalla (2 px con Shift); cada acción de teclado
+crea una entrada propia de Deshacer. Un único arrastre confirmado crea
+un único keyframe en el porcentaje actual del Director y una única
+entrada de Deshacer. **Escape** o cancelación del puntero restauran la
+pose sin guardar y cierran la herramienta. También se limpia el modo
+cuando la vista previa se recarga o se activa el control de orientación.
+
+La herramienta funciona tanto con **Ángulos manuales** como con
+**Mirar hacia**. En este último caso, la previsualización recalcula el
+ángulo hacia el objetivo de mirada ya existente al mover la cámara,
+pero guarda **solo XYZ**: no sobrescribe keyframes de mirada ni cambia
+el modo. Respeta el escalado responsive y los límites XYZ existentes,
+así como la interpolación determinista del Director 0→1. El modo se
+activa explícitamente en el editor. No instala controles de edición
+en el sitio exportado ni agrega otro motor de progreso.
+
+Cobertura automatizada: `tests/spatial-focus-map.integration.cjs`,
+incluido en el smoke espacial. Se prueban ejes individuales,
+movimiento plano, precisión, límites, actualización visual,
+modo Mirar hacia, Deshacer único, teclado, cancelación y
+liberación de eventos/overlay. Pendiente: validación manual visual
+de estos controles en una vista previa real de navegador,
+antes de ampliar el sistema a objetos 3D.
