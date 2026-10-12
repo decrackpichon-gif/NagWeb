@@ -11,7 +11,14 @@ export async function runMotionParameterKeysSmoke(page){
   await playhead(25);await page.click(diamond);
   assert.equal(await page.$eval(diamond,n=>n.getAttribute('aria-pressed')),'true','diamond created a keyframe');
   assert.equal(await page.$eval('[data-motion-param-count]',n=>n.textContent),'1 pista');
-  assert.equal(await page.$eval('[data-motion-param-seek]',ns=>ns.length),1);
+  assert.equal(await page.$$eval('[data-motion-param-seek]',ns=>ns.length),1);
+  assert.equal(await page.$eval('[data-motion-param-now]',n=>n.textContent),'4s','16-second loop shows authored keyframe at four seconds');
+  assert.ok((await page.$$eval('[data-motion-param-ruler] span',ns=>ns.map(n=>n.textContent))).includes('16s'),'Ruler uses seconds, not percentages');
+  await page.click('[data-motion-duration-preset="10"]');
+  assert.equal(await page.$eval('[data-motion-config="duration"]',n=>n.value),'10');
+  assert.equal(await page.$eval('[data-motion-param-now]',n=>n.textContent),'2.5s','Changing duration relabels the keyframe without shifting it');
+  assert.equal(await page.$eval('[data-motion-duration-preset="10"]',n=>n.getAttribute('aria-pressed')),'true');
+  await page.$eval('[data-motion-config="duration"]',n=>{n.value='16';n.dispatchEvent(new Event('change',{bubbles:true}));});
   await change('[data-motion-stream="diveZoom"]','3.7');
   await page.waitForFunction(()=>document.querySelector('[data-motion-stream="diveZoom"]')?.value==='3.7',{timeout:15000});
   await playhead(50);
