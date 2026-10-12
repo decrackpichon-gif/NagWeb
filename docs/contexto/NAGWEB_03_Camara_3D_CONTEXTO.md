@@ -35,6 +35,7 @@ Cámara espacial narrativa de NagWeb para desplazamientos y encuadres XYZ, orien
 - Comparaciones A/B, análisis de cobertura **proyectada 2D**, no visibilidad volumétrica real 3D.
 - Integración espacial con Three/WebGL, anclajes de objetos 3D, interacción, timing, jerarquías de contenedores y proyección CSS/Three documentadas en la rama.
 - Último commit verificado (`78d0328...`): liberación correcta de renderer y prevención de cargas tardías al terminar la página. Revisión de CI de cámara y espacial registrada como exitosa en la recuperación anterior.
+- Continuidad 11/10/2026: se incorporó la elección de un punto real de superficie en modelos GLB desde la vista previa, enlazado al enfoque del Director. En Ángulos manuales se añadió orientación visual con mouse en la vista previa, actualización CSS/Three durante el arrastre, Shift para bloquear eje, Escape para cancelar y una sola operación de Deshacer al soltar. No reemplaza la manipulación XYZ volumétrica pendiente; Mirar hacia conserva su editor de objetivos propio. Documentación: `docs/spatial-look-targets-v1.md` y `docs/scroll-camera-v1.md`. Las pruebas aisladas del editor pasaron; confirmar CI integrada por separado.
 
 ## Próximas prioridades (revisar con HEAD actual)
 
