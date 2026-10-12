@@ -96,7 +96,7 @@ export async function runEditorPartsSmoke(page){
   assert.equal(committed.text,'Texto guardado');assert.equal(committed.stored,committed.text);
   assert.equal(committed.undo,start.undo+1);
   // Drag, resize y rotate sobre la parte interna existente.
-  clearTimeout(previewTimer);await load(4);await select('test-hero');
+  await page.evaluate(()=>clearTimeout(previewTimer));await load(4);await select('test-hero');
   await page.waitForFunction(()=>document.querySelector('#preview')?.contentDocument?.__nwCanvasTools===1);
   const undoStart=await page.evaluate(()=>history.length);
   await page.evaluate(()=>{
