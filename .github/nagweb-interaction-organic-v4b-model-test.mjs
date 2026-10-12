@@ -85,4 +85,16 @@ assert.equal(V4B.createControls(custom).count,9);
 const noGuard=V4B.antiFoldGuard(folded.map(p=>({...p})),length,0,custom);
 assert.equal(noGuard.conflicts,0);
 
+// Mesh transverse guard is opt-in for V4-B, and alpha-width aware for V4-C.
+const sharpFrames=[{x:0,y:0,angle:0},{x:-10,y:0,angle:1.3},{x:-20,y:-2,angle:1.4},{x:-30,y:-4,angle:1.4}];
+assert.ok(V4B.meshWidthScales(sharpFrames,100,{}).scales.every(x=>x===1));
+const tight=V4B.meshWidthScales(sharpFrames,100,{meshFoldGuard:true,meshVisibleWidths:[1,1,1,1]});
+assert.ok(tight.limitedColumns>0&&tight.minScale<.3);
+assert.ok(-10+50*(-Math.sin(1.3))*tight.scales[1]<0);
+assert.ok(-10-50*(-Math.sin(1.3))*tight.scales[1]<0,'inner row must not reverse longitudinal direction');
+const thin=V4B.meshWidthScales(sharpFrames,100,{meshFoldGuard:true,meshVisibleWidths:[.1,.1,.1,.1]});
+assert.ok(thin.minScale>tight.minScale);
+const straightGuarded=V4B.deformTopology(topo,straight,400,200,0,{...o,length:380,sway:0,meshFoldGuard:true},0);
+assert.deepEqual(Array.from(straightGuarded.positions),Array.from(mesh.positions));
+assert.equal(straightGuarded.meshSafety.limitedColumns,0);
 console.log('NagWeb Organic Weighted Curve V4-B model tests: PASS');

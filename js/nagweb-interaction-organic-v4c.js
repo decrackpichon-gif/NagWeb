@@ -161,7 +161,11 @@
 
   function makeV4BOptions(image,adaptiveInput){
     var o=normalizeOptions(adaptiveInput),profile=analyzeCanvas(image,o),controls=deriveAdaptiveControls(profile,o);
+    var columns=Math.round(clamp(clean(o.columns,38),8,72));
+    var widths=Array.from({length:columns+1},function(_,i){return profileAt(profile,i/columns).width;});
     var base=Object.assign({},adaptiveInput||{},{
+      meshFoldGuard:o.thicknessGuard,
+      meshVisibleWidths:widths,
       controlCount:controls.positions.length,
       controlPositions:controls.positions,
       controlFlex:controls.flex,
@@ -188,7 +192,7 @@
       get adaptiveProfile(){return clone(derived.profile);},
       get adaptiveControls(){return clone(derived.controls);},
       get adaptiveSummary(){return clone(derived.summary);},
-      get spine(){return inner.spine;},get guard(){return inner.guard;},get topology(){return inner.topology;},get textureInfo(){return inner.textureInfo;},get contextLost(){return inner.contextLost;},
+      get spine(){return inner.spine;},get guard(){return inner.guard;},get meshSafety(){return inner.meshSafety;},get topology(){return inner.topology;},get textureInfo(){return inner.textureInfo;},get contextLost(){return inner.contextLost;},
       setOptions:function(next){rederive(next);return this.options;},
       pause:function(){inner.pause();},resume:function(){inner.resume();},measure:function(){inner.measure();},
       destroy:function(){inner.destroy();}

@@ -40,16 +40,24 @@ try{
   const cmp=await page.$eval('#compare',el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height};});
   const before=await page.evaluate(()=>({v3:{...__NAGWEB_V4C_AB__.v3.spine[0]},v4:{...__NAGWEB_V4C_AB__.v4c.spine[0]}}));
   const route=[[.82,.24],[.72,.58],[.55,.78],[.30,.66],[.20,.38],[.44,.18],[.70,.38],[.56,.68],[.34,.42],[.65,.22]];
-  for(const [x,y] of route){await page.mouse.move(cmp.x+cmp.w*x,cmp.y+cmp.h*y,{steps:6});await new Promise(r=>setTimeout(r,90));}
+  let maxV3=0,maxV4=0;
+  for(const [x,y] of route){
+    await page.mouse.move(cmp.x+cmp.w*x,cmp.y+cmp.h*y,{steps:6});
+    await new Promise(r=>setTimeout(r,125));
+    const point=await page.evaluate(()=>({v3:__NAGWEB_V4C_AB__.v3.spine[0],v4:__NAGWEB_V4C_AB__.v4c.spine[0]}));
+    maxV3=Math.max(maxV3,Math.hypot(point.v3.x-before.v3.x,point.v3.y-before.v3.y));
+    maxV4=Math.max(maxV4,Math.hypot(point.v4.x-before.v4.x,point.v4.y-before.v4.y));
+  }
   const after=await page.evaluate(()=>({
-    v3:{...__NAGWEB_V4C_AB__.v3.spine[0]},
-    v4:{...__NAGWEB_V4C_AB__.v4c.spine[0]},
-    guard:__NAGWEB_V4C_AB__.v4c.guard,
-    spine:__NAGWEB_V4C_AB__.v4c.spine
+    meshSafety:__NAGWEB_V4C_AB__.v4c.meshSafety,
+    spine:__NAGWEB_V4C_AB__.v4c.spine,
+    options:__NAGWEB_V4C_AB__.v4c.options
   }));
-  assert.ok(Math.hypot(after.v3.x-before.v3.x,after.v3.y-before.v3.y)>10);
-  assert.ok(Math.hypot(after.v4.x-before.v4.x,after.v4.y-before.v4.y)>10);
+  assert.ok(maxV3>10,'V3 must move during the route');
+  assert.ok(maxV4>10,'V4-C.1 must move during the route');
   assert.ok(after.spine.every(p=>Number.isFinite(p.x)&&Number.isFinite(p.y)));
+  assert.equal(after.options.meshFoldGuard,true);
+  assert.ok(after.meshSafety.minScale>0&&after.meshSafety.minScale<=1);
 
   const charFlex=await page.evaluate(()=>__NAGWEB_V4C_AB__.v4c.adaptiveControls.flex.slice());
   await page.select('#preset','creature');await new Promise(r=>setTimeout(r,130));

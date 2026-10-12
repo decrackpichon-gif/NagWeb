@@ -44,7 +44,9 @@
     var g=app.v4c.guard||{},controls=app.v4c.adaptiveControls;
     current.samples.push({progress:+t.toFixed(4),target:[+target[0].toFixed(4),+target[1].toFixed(4)],v3:a,v4c:b,
       thicknessCapped:controls.details.filter(d=>d.geometryCapped).length,
-      antiFoldConflicts:Number.isFinite(g.conflicts)?g.conflicts:null});
+      antiFoldConflicts:Number.isFinite(g.conflicts)?g.conflicts:null,
+      meshLimitedColumns:app.v4c.meshSafety?.limitedColumns??null,
+      meshMinScale:app.v4c.meshSafety?.minScale??null});
     for(var entry of [a,b])if(!entry.finite)current.invalidSamples++;
     current.maxTurnV3=Math.max(current.maxTurnV3,a.maxTurnDegrees||0);
     current.maxTurnV4C=Math.max(current.maxTurnV4C,b.maxTurnDegrees||0);

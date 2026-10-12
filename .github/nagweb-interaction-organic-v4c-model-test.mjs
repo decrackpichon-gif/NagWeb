@@ -83,4 +83,11 @@ const abruptProfile=V4C.analyzeAlphaData(abrupt.data,abrupt.width,abrupt.height,
 const flatProfile=V4C.analyzeAlphaData(flat.data,flat.width,flat.height,{profileSamples:60,profileSmoothRadius:1});
 assert.ok(abruptProfile.maxGradient>flatProfile.maxGradient+1e-4);
 
+const canvasStub={width:synthetic.width,height:synthetic.height,getContext(){return {getImageData(){return synthetic;}};}};
+const withGuard=V4C.makeV4BOptions(canvasStub,{adaptivePreset:'character',columns:38});
+assert.equal(withGuard.options.meshFoldGuard,true);
+assert.equal(withGuard.options.meshVisibleWidths.length,39);
+assert.ok(withGuard.options.meshVisibleWidths.some(w=>w<.5));
+const withoutGuard=V4C.makeV4BOptions(canvasStub,{adaptivePreset:'character',columns:38,thicknessGuard:false});
+assert.equal(withoutGuard.options.meshFoldGuard,false);
 console.log('NagWeb Organic Adaptive Curve V4-C model tests: PASS');
