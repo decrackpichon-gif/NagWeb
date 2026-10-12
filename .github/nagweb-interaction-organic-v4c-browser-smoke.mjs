@@ -110,7 +110,10 @@ try{
     const realAnalyze=prep.analyzeImage,realPrepare=mesh.prepareAsset;
     let pending=[],started=[];
     try{
-      prep.analyzeImage=function(img){
+      prep.analyzeImage=function(img,opts){
+        // Asset prep performs a second analysis of the rotated canvas.
+        // Only delay the selected Image files, never the internal canvas.
+        if(img instanceof HTMLCanvasElement)return realAnalyze(img,opts);
         started.push(img.src);
         return new Promise((resolve,reject)=>pending.push({src:img.src,resolve,reject}));
       };
@@ -136,7 +139,7 @@ try{
       return {tasks:pending.length,staleIgnored,activeCompleted:api.assetSource===second,version:api.v4c?.version,preview:document.querySelector('#preview').src===second,error:document.querySelector('#status')?.textContent};
     }finally{prep.analyzeImage=realAnalyze;mesh.prepareAsset=realPrepare;}
   });
-  assert.ok(races.tasks>=2,'both separate asset jobs should be initiated even if the browser triggers an extra image analysis');
+  assert.equal(races.tasks,2,'two image analyses are delayed, while internal canvas analysis completes normally');
   assert.equal(races.staleIgnored,true,'obsolete load failure must not replace current renderer');
   assert.equal(races.activeCompleted,true,'current asset should install');
   assert.equal(races.preview,true,'preview should match latest asset');
