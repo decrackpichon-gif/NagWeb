@@ -27,6 +27,14 @@ Editor **visual y profesional** para construir sitios y narrativas inmersivas co
 - Motion Lab se investiga por separado aunque sus antecedentes puedan figurar en `docs/storytelling-engine-v2.md`. No confundir lo implementado históricamente en la rama 01 con el proyecto Motion Lab independiente 02.
 - Feedback de UX original: selección y movimiento internos, Hero por capas, Historia sticky, Cinta cinética, paneles y ventanas flotantes, corrección de keyframes editables por momento.
 
+## Decisión de producto: edición adaptable en el Hero (12/10/2026)
+
+- **NAGWEB 01** usa el motor de transformación de partes ya existente; no introduce otra cámara, timeline ni motor de animaciones.
+- En **Hero por capas**, las piezas reposicionadas a partir de este avance guardan `x/y` en píxeles junto con `refW/refH`, las dimensiones del Hero en el momento de edición. El HTML del sitio usa esas referencias para calcular coordenadas relativas al ancho y alto del Hero. La previsualización también recupera esa geometría durante las transformaciones.
+- **Compatibilidad retroactiva:** `__parts` antiguos sin `refW/refH` siguen usando desplazamientos en píxeles. Los elementos de otros widgets no cambian su modelo de posición.
+- La raíz `.nw-lh` actúa como contenedor de tamaño para unidades `cqw`. Mantener este contrato en edición, guardado, responsive y exportación. El sistema de profundidad/parallax propio del Hero y el Director de Scroll siguen independientes.
+- Los cambios funcionales se introdujeron en `js/nagweb-feedback-v16.js` y `js/nagweb-v14-direction.js`, con regresiones en `.github/nagweb-editor-parts-smoke.mjs`. Confirmar los resultados actuales de CI consultando el HEAD de la rama.
+
 ## Próximas prioridades (revisar con HEAD actual)
 
 - Priorizar la experiencia de lienzo como herramienta de diseño, edición real de elementos anidados y uso de recursos sin degradar su editabilidad.
