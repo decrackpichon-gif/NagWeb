@@ -1903,8 +1903,8 @@ function toggleViewportOrbit(s){
   doc.addEventListener('pointercancel',abort,true);
   doc.addEventListener('lostpointercapture',abort,true);
  }
- function key(ev){if(ev.key==='Escape'){ev.preventDefault();ev.stopPropagation();complete(null,true);}}
- function onLoad(){complete(null,true);}
+ function key(ev){if(ev.key==='Escape'){ev.preventDefault();ev.stopPropagation();if(gesture)complete(null,true);else{stopViewportOrbit();renderPane();}}}
+ function onLoad(){if(gesture)complete(null,true);else{stopViewportOrbit();renderPane();}}
  viewportOrbitArmed={sectionId:s.id,doc:doc,down:down,key:key,onLoad:onLoad,iframe:iframe,cleanup:function(){
   doc.removeEventListener('pointermove',move,true);doc.removeEventListener('pointerup',up,true);
   doc.removeEventListener('pointercancel',abort,true);doc.removeEventListener('lostpointercapture',abort,true);
