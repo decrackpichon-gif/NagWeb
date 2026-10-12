@@ -270,10 +270,10 @@ export async function runEditorPartsSmoke(page){
   assert.deepEqual(relative.stored,relative.p,'guardar referencias del Hero');
   // El mismo widget exportado debe usar unidades relativas, sin un runtime alternativo.
   const markupResponsive=await page.evaluate(()=>{
-   const e={__parts:{'layer-2':{x:80,y:40,r:0,s:1,refW:800,refH:400}}};
+   const e={__parts:{'layer-1':{x:80,y:40,r:0,s:1,refW:800,refH:400}}};
    const ctx={edit:false};
    const html=window.SCW.kinds.layeredhero.markup(e,ctx);
-   const old=window.SCW.kinds.layeredhero.markup({__parts:{'layer-2':{x:80,y:40,r:0,s:1}}},ctx);
+   const old=window.SCW.kinds.layeredhero.markup({__parts:{'layer-1':{x:80,y:40,r:0,s:1}}},ctx);
    const css=window.SCW.css.layeredhero;
    return{html,old,hasContainer:css.includes('container-type:inline-size')};
   });
