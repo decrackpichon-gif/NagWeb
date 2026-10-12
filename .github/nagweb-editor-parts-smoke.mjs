@@ -463,10 +463,13 @@ export async function runEditorPartsSmoke(page){
   const recovered=await page.evaluate(()=>{
    const d=document.querySelector('#preview').contentDocument,hero=d.querySelector('.nw-lh').getBoundingClientRect();
    const box=d.querySelector('[data-wpart="layer-1"]').getBoundingClientRect(),e=sec().elements.find(x=>x.id==='test-hero');
-   return{x:e.wp.__parts['layer-1'].x,visible:Math.min(hero.right,box.right)>Math.max(hero.left,box.left),
+   return{x:e.wp.__parts['layer-1'].x,
+    centerError:Math.hypot((hero.left+hero.right-box.left-box.right)/2,(hero.top+hero.bottom-box.top-box.bottom)/2),
+    visible:Math.min(hero.right,box.right)>Math.max(hero.left,box.left),
     recoverAction:Array.from(d.querySelectorAll('.nw-wpart-action')).some(x=>x.textContent==='Recuperar')};
   });
-  assert.ok(Math.abs(recovered.x)<20,'recuperar aproxima la capa al centro');
+  assert.ok(recovered.x!==1600,'recuperar modifica la posición guardada');
+  assert.ok(recovered.centerError<3,'recuperar centra visualmente sin suponer el tamaño de la capa');
   assert.equal(recovered.visible,true,'vuelve a verse en el lienzo');
   assert.equal(recovered.recoverAction,false,'Recuperar desaparece cuando ya no hace falta');
 
