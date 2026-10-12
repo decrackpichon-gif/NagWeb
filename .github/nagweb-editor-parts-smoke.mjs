@@ -65,6 +65,15 @@ export async function runEditorPartsSmoke(page){
   assert.deepEqual(await toolPart(),{part:null,handles:0},'cambiar capítulo limpia tiradores anteriores');
   await fire('[data-nw-story-part="media"]');
   assert.deepEqual(await toolPart(),{part:'media-2',handles:2},'Historia: el botón Imagen habilita la transformación');
+  // Comprobar la hoja real del widget: las imágenes sticky no pisan el escalado manual.
+  const storyScale=await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument;
+   const css=document.createElement('style');css.textContent=window.SCW.css.scrollstory;d.head.appendChild(css);
+   const media=d.querySelector('[data-wpart="media-2"]');
+   media.style.setProperty('--nw-ps','1.7');media.style.transition='none';media.classList.add('is-active');
+   return parseFloat(d.defaultView.getComputedStyle(media).scale);
+  });
+  assert.ok(Math.abs(storyScale-1.7)<.02,'la imagen sticky respeta el escalado guardado');
   const expected={hero:'layer-2',chapter:'2',step:'2',media:'media-2',manual:true};
   assert.deepEqual(await inspect(),expected);
   await load(2);

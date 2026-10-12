@@ -317,7 +317,7 @@ function installCanvasTools(){
   n.addEventListener('blur',fin,{once:true});n.addEventListener('keydown',onKey);
  },true);
  doc.addEventListener('pointerdown',function(ev){
-  if(ev.target.closest&&ev.target.closest('.nw-wpart-h,[contenteditable]'))return;
+  if(ev.target.closest&&ev.target.closest('.nw-wpart-h,[contenteditable],[data-nw-part],[data-nw-story-ch],[data-nw-story-part],[data-nw-story-live]'))return;
   var n=ev.target.closest&&ev.target.closest('[data-wpart]');if(!n){clear();return;}
   var root=n.closest('.el.wdg[data-id]');if(!root)return;
   if(!(selection.length===1&&selection[0]===root.dataset.id))return;
