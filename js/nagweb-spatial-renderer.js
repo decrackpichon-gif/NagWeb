@@ -76,6 +76,16 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
   worldMatrix.multiply(flip).multiply(matrix).multiply(flip);
   return{opacity:opacity,matrix:worldMatrix};
  }
+ // Static object placement composes with the Director's animated pose.
+ // It is not a new animation track: keyframed rotate/scale still come from Director.
+ function baseSpatialTransform(g){
+  var o=g.userData.o||{},tmp=g.userData.nwPreviewBaseTransform||{};
+  function value(key,fallback,min,max){
+   var v=Object.prototype.hasOwnProperty.call(tmp,key)?tmp[key]:o['nwSpatial'+key];
+   return v!=null&&v!==''&&Number.isFinite(+v)?Math.max(min,Math.min(max,+v)):fallback;
+  }
+  return {rotateX:value('RotateX',0,-3600,3600),rotateY:value('RotateY',0,-3600,3600),scale:value('Scale',100,10,500)};
+ }
  function place(g,row){
   var node=g.userData.anchorEl,h=g.userData.holder,o=g.userData.o,stage=row.stage;
   // Layout coordinates exclude camera transforms; nested anchors use their
@@ -87,12 +97,12 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
   g.userData.spatialOpacity=Math.max(0,Math.min(1,pose.opacity))*(parent?parent.opacity:1);
   h.visible=width>0&&height>0&&g.userData.nativeR>0&&pose.scale>0&&g.userData.spatialOpacity>0&&(!parent||Math.abs(parent.matrix.determinant())>1e-10);
   if(!h.visible)return;
-  var depth=row.state.cssPerspective,unit=1/units(row);
+  var depth=row.state.cssPerspective,unit=1/units(row),base=baseSpatialTransform(g);
   // Editor-only temporary depth: the authored o.offZ stays immutable.
   var offZ=Object.prototype.hasOwnProperty.call(g.userData,'nwPreviewOffZ')?g.userData.nwPreviewOffZ:(o.offZ||0);
   if(parent){
-   var rotation=new T.Quaternion().setFromEuler(new T.Euler(-pose.rotateX*Math.PI/180,pose.rotateY*Math.PI/180,-pose.rotate*Math.PI/180,'ZXY'));
-   var host=node.offsetParent,local=new T.Matrix4().compose(new T.Vector3(node.offsetLeft+(host.clientLeft||0)-(host.scrollLeft||0)+pose.x,-node.offsetTop-(host.clientTop||0)+(host.scrollTop||0)-pose.y,offZ/unit+pose.z),rotation,new T.Vector3(1,1,1).multiplyScalar(width/2/g.userData.nativeR*pose.scale/100));
+   var rotation=new T.Quaternion().setFromEuler(new T.Euler(-(pose.rotateX+base.rotateX)*Math.PI/180,(pose.rotateY+base.rotateY)*Math.PI/180,-pose.rotate*Math.PI/180,'ZXY'));
+   var host=node.offsetParent,local=new T.Matrix4().compose(new T.Vector3(node.offsetLeft+(host.clientLeft||0)-(host.scrollLeft||0)+pose.x,-node.offsetTop-(host.clientTop||0)+(host.scrollTop||0)-pose.y,offZ/unit+pose.z),rotation,new T.Vector3(1,1,1).multiplyScalar(width/2/g.userData.nativeR*pose.scale/100*base.scale/100));
    h.matrixAutoUpdate=false;h.matrix.copy(parent.matrix).multiply(local);h.matrix.decompose(h.position,h.quaternion,h.scale);h.matrixWorldNeedsUpdate=true;
    g.userData.spatialParent=parent.matrix;return;
   }
@@ -102,10 +112,10 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
   var offset=worldOffset(node,row),host=offset.world;
   var x=node.offsetLeft+offset.x+(host&&host.clientLeft||0)-(host&&host.scrollLeft||0),y=node.offsetTop+offset.y+(host&&host.clientTop||0)-(host&&host.scrollTop||0);
   h.position.set(x-stage.clientWidth/2+pose.x,stage.clientHeight/2-y-pose.y,-depth+offZ/unit+pose.z);
-  h.scale.setScalar(width/2/g.userData.nativeR*pose.scale/100);
+  h.scale.setScalar(width/2/g.userData.nativeR*pose.scale/100*base.scale/100);
   // CSS y points down; local positive z points toward the viewer. Individual
   // rotate precedes the additive rotateX/rotateY transform (ZXY order).
-  h.rotation.set(-pose.rotateX*Math.PI/180,pose.rotateY*Math.PI/180,-pose.rotate*Math.PI/180,'ZXY');
+  h.rotation.set(-(pose.rotateX+base.rotateX)*Math.PI/180,(pose.rotateY+base.rotateY)*Math.PI/180,-pose.rotate*Math.PI/180,'ZXY');
  }
  function measure(g){
   // Measure in Group space. A late GLB must not inherit a stale, nonuniform or
@@ -175,7 +185,7 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
    gizmos.forEach(function(g){g.node.visible=g.visible;});
   }
  }
- function destroy(){rows.forEach(function(row){row.unbind();row.objects.forEach(function(g){delete g.userData.nwPreviewOffZ;});if(row.bloom)row.bloom.dispose();row.materials.forEach(function(copies){copies.forEach(function(m){m.dispose();});});row.objects.forEach(function(g){delete g.userData.spatialOpacity;delete g.userData.spatialParent;g.userData.holder.matrixAutoUpdate=true;g.userData.holder.rotation.x=0;g.userData.holder.rotation.y=0;});scene.remove(row.rig);});rows=[];}
+ function destroy(){rows.forEach(function(row){row.unbind();row.objects.forEach(function(g){delete g.userData.nwPreviewOffZ;delete g.userData.nwPreviewBaseTransform;});if(row.bloom)row.bloom.dispose();row.materials.forEach(function(copies){copies.forEach(function(m){m.dispose();});});row.objects.forEach(function(g){delete g.userData.spatialOpacity;delete g.userData.spatialParent;g.userData.holder.matrixAutoUpdate=true;g.userData.holder.rotation.x=0;g.userData.holder.rotation.y=0;});scene.remove(row.rig);});rows=[];}
  function view(g){
   var row=rows.find(function(r){return r.objects.indexOf(g)>=0;})||lightRow(g);
   if(!row||!row.state)return null;
@@ -276,6 +286,24 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
   matching.forEach(function(g){if(value===null)delete g.userData.nwPreviewOffZ;else g.userData.nwPreviewOffZ=value;});
   return true;
  }
+ // Only the editor explicitly calls this same-origin API for the selected 3D model.
+ function previewBaseTransform(id,axis,value,sectionId){
+  var bounds={RotateX:[-3600,3600],RotateY:[-3600,3600],Scale:[10,500]};
+  if(typeof id!=='string'||!id||typeof sectionId!=='string'||!sectionId||!bounds[axis]||
+   value!==null&&(!Number.isFinite(value)||value<bounds[axis][0]||value>bounds[axis][1]))return false;
+  var matches=[];
+  rows.forEach(function(row){
+   if(row.sectionId!==sectionId||!row.stage.isConnected||!row.state)return;
+   row.objects.forEach(function(g){if(g.userData.o&&String(g.userData.o.id)===id)matches.push(g);});
+  });
+  if(!matches.length)return false;
+  matches.forEach(function(g){
+   var tmp=g.userData.nwPreviewBaseTransform||(g.userData.nwPreviewBaseTransform={});
+   if(value===null)delete tmp[axis];else tmp[axis]=value;
+   if(!Object.keys(tmp).length)delete g.userData.nwPreviewBaseTransform;
+  });
+  return true;
+ }
  // 3D pivot projected into the corresponding stage, not a bounding-box guess.
  function screenPoint(id,sectionId){
   if(typeof id!=='string'||!id||typeof sectionId!=='string'||!sectionId)return null;
@@ -292,11 +320,12 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
   }
   return null;
  }
- var adapter={connect:connect,owns:owns,render:render,destroy:destroy,view:view,lightPoint:lightPoint,anchorPoint:anchorPoint,pick:pick,interactive:interactive,surfacePoint:surfacePoint,previewDepth:previewDepth,screenPoint:screenPoint};
+ var adapter={connect:connect,owns:owns,render:render,destroy:destroy,view:view,lightPoint:lightPoint,anchorPoint:anchorPoint,pick:pick,interactive:interactive,surfacePoint:surfacePoint,previewDepth:previewDepth,previewBaseTransform:previewBaseTransform,screenPoint:screenPoint};
  // Same-origin editor-only request, no automatic pointer listeners in exports.
  window.NAGWEB_SPATIAL_SURFACE_PICK=function(id,x,y,sectionId){return adapter.surfacePoint(id,x,y,sectionId);};
  window.NAGWEB_SPATIAL_PREVIEW_DEPTH=function(id,value,sectionId){return adapter.previewDepth(id,value,sectionId);};
  window.NAGWEB_SPATIAL_SCREEN_POINT=function(id,sectionId){return adapter.screenPoint(id,sectionId);};
+ window.NAGWEB_SPATIAL_PREVIEW_BASE_TRANSFORM=function(id,axis,value,sectionId){return adapter.previewBaseTransform(id,axis,value,sectionId);};
  return adapter;
 }
 window.NAGWEB_CREATE_SPATIAL_RENDERER=createSpatialRenderer;
