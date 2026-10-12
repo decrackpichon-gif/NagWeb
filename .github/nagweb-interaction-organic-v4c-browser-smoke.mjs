@@ -87,7 +87,7 @@ try{
   assert.ok(review.samples.every(s=>s.target.length===2&&s.v3.finite&&s.v4c.finite));
   assert.ok(review.samples.some(s=>s.progress>.85),'route must reach its final segment');
   assert.equal(await page.$eval('#abExport',el=>el.disabled),false,'finished run allows JSON export');
-  await page.evaluate(()=>window.__NAGWEB_AB_REVIEW__.start({route:'smooth',durationMs:550}));
+  await page.evaluate(()=>{void window.__NAGWEB_AB_REVIEW__.start({route:'smooth',durationMs:1500});});
   await page.waitForFunction(()=>window.__NAGWEB_AB_REVIEW__.running,{timeout:3000});
   await page.click('#abStop');
   const cancelled=await page.evaluate(()=>window.__NAGWEB_AB_REVIEW__.lastReport);
