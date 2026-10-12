@@ -849,3 +849,46 @@ confirmó CI en este entorno:** faltan el paquete Three.js y los
 fixtures del repositorio en el entorno accesible. La ejecución de
 browser con gestos reales sobre todas las asas sigue siendo la
 verificación prioritaria antes de integrar.
+
+
+## Edición visual integrada comprobada con GitHub Actions (11/10/2026)
+
+El ajuste Z de un objeto `shape3d` conserva ahora su posición visual
+al guardar: `NAGWEB_SPATIAL_PREVIEW_DEPTH(id, value, sectionId, true)`
+promueve `offZ` en la copia temporal del modelo del iframe y elimina
+el override transitorio. Se mantiene la edición real del proyecto con
+un solo historial de Deshacer, y cancelar sigue restaurando el valor
+anterior. Es el mismo contrato de confirmación usado para giro y escala.
+
+La prueba existente `tests/camera-current-moment.browser.cjs` ahora
+abre el editor real y su iframe en **Chromium**, selecciona una forma
+3D WebGL visible, arrastra los controles de **Giro Y y profundidad Z**,
+comprueba el valor guardado, un Deshacer por gesto, **Undo** real, la
+cancelación de escala con **Escape** y que la trayectoria de la
+cámara sigue intacta. Los desplazamientos se cotejan con los eventos
+`clientX/clientY` **dentro del iframe**: su zoom visual puede producir
+distancias diferentes a los píxeles físicos de la ventana principal.
+
+Las pruebas integradas del renderizador también verifican que el valor
+Z confirmado conserve la posición del holder Three sin saltos de
+fotograma ni override residual; otras pruebas con un **GLB cargado
+realmente** ejercitan el puente de cámara, su escala y rotación.
+
+**Verificación real confirmada en GitHub Actions:**
+
+- [Integración espacial aprobada, 39 comprobaciones agrupadas](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38195782867).
+  Su registro incluye `PASS browser 3D gizmos: real pointer yaw/Z, live WebGL, one Undo, Escape and camera isolation`.
+- [Prueba de cámara aprobada](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38195782863).
+- Regresión aislada de `tests/spatial-focus-map.integration.cjs`:
+  **194 aserciones aprobadas** antes de la ejecución integrada.
+
+La primera ejecución de la nueva prueba de navegador detectó que
+el zoom del iframe hacía errónea una expectativa de 30 grados
+por 50 píxeles físicos. El test se corrigió para verificar
+las coordenadas internas recibidas por el editor; **no se
+modificó la sensibilidad de la herramienta para satisfacer el test**.
+La ejecución posterior aprobó toda la suite.
+
+Alcance no comprobado: interacción táctil en hardware físico,
+dispositivos móviles reales y ergonomía con modelos GLB complejos.
+No hubo despliegue a Vercel ni merge de ramas.
