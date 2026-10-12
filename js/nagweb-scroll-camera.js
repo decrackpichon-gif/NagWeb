@@ -469,7 +469,7 @@ function mapObjectPlan(s,cfg,size){
  var model=window.NAGWEB_STORY_MODEL,raw=Object.create(null),tracks=Object.create(null);
  (s.elements||[]).forEach(function(e){if(C.targetEligible(e,s))raw[String(e.id)]=e;});
  var entries=[];
- (cfg.targets||[]).slice(0,16).forEach(function(t){
+ (cfg.targets||[]).forEach(function(t){
   var source=raw[String(t.id)];if(!source)return;
   try{
    tracks[t.id]=model.compile(t.motion||{id:t.id});
@@ -505,6 +505,34 @@ function mapObjectInfoValues(s,plan,pct){
  distance:relative?'Distancia a la cámara: '+round(relative.distance)+' px':'Distancia no disponible.',
  offset:relative?'Separación por eje · X '+round(relative.dx)+' · Y '+round(relative.dy)+' · Z '+round(relative.dz)+' px':''};
 }
+// One world-space depth control for DOM and anchored Three objects.
+function mapObjectDepthEdit(s,item,desired,pct,size){
+ if(!s||!item||!Number.isFinite(desired)||desired<-4000||desired>4000)return null;
+ var e=(s.elements||[]).find(function(row){return String(row.id)===String(item.id);}),cfg=C.config(s);
+ if(!e||!cfg)return null;
+ var world=C.elementTarget(cfg,String(e.id),Math.max(0,Math.min(100,pct))/100,window.NAGWEB_STORY_MODEL,s.sdEase,size);
+ if(!world||!Number.isFinite(world.z))return null;
+ if(e.type==='shape3d'){
+  if(e.anchor===false||!size||!Number.isFinite(size.height)||size.height<=0)return null;
+  var unit=size.height/(12*Math.tan(25*Math.PI/180)),previous=Number.isFinite(+e.offZ)?+e.offZ:0;
+  return {element:e,field:'offZ',value:Math.round(Math.max(-100,Math.min(100,previous-(desired-world.z)/unit))*1000)/1000};
+ }
+ if(!C.layerEligible(e,s))return null;
+ var current=Number.isFinite(+e.sdCameraDepth)?+e.sdCameraDepth:0;
+ return {element:e,field:'sdCameraDepth',value:Math.round(Math.max(-4000,Math.min(4000,current+desired-world.z))*10)/10};
+}
+function mapObjectLayerListHtml(s,plan,pct){
+ if(!plan||!plan.entries.length||mapObjectVisible[s.id]===false)return '';
+ var rows=mapObjectPositions(s,plan,pct).filter(function(row){return !!row.point;}).sort(function(a,b){return b.point.z-a.point.z;});
+ return '<div data-camera-layer-list style="margin:8px 0;border:1px solid var(--line);border-radius:7px;padding:7px">'+
+  '<strong style="font-size:12px">Objetos en profundidad · Z</strong>'+
+  '<div class="hint gh" style="font-size:10px;margin:4px 0">Z mayor = adelante en el espacio. La cámara también puede girar. Elegí un objeto para ajustar su posición.</div>'+
+  '<div style="max-height:160px;overflow:auto;display:grid;gap:3px">'+rows.map(function(row){
+   var index=plan.entries.indexOf(row.item),active=mapObjectSelected[s.id]===row.item.id;
+   var glyph=row.item.role==='text'?'T':row.item.role==='image'?'▧':row.item.role==='3d'?'⬡':row.item.role==='container'?'□':'•';
+   return '<button type="button" class="btn tiny" data-camera-layer-pick="'+index+'" aria-pressed="'+active+'" style="display:flex;align-items:center;justify-content:space-between;gap:5px;text-align:left;'+(active?'outline:2px solid var(--accent);':'')+'"><span>'+glyph+' '+row.item.label+'</span><strong style="white-space:nowrap">Z '+Math.round(row.point.z)+'</strong></button>';
+  }).join('')+'</div></div>';
+}
 function mapObjectInfoHtml(s,plan,pct){
  if(!plan||!plan.entries.length||mapObjectVisible[s.id]===false)return '';
  var item=mapObjectSelection(s,plan),idx=item?plan.entries.indexOf(item):-1;
@@ -513,7 +541,16 @@ function mapObjectInfoHtml(s,plan,pct){
   '<option value="">Elegí uno…</option>'+plan.entries.map(function(e,i){return '<option value="'+i+'"'+(i===idx?' selected':'')+'>'+(i+1)+' · '+e.label+'</option>';}).join('')+'</select></label>';
  if(!item)return html+'<div style="font-size:10px;opacity:.75;margin-top:4px">Tocá el centro de un objeto en el mapa o elegilo en la lista. Solo lectura.</div></div>';
  var data=mapObjectInfoValues(s,plan,pct);
- return html+'<div style="font-size:11px;margin-top:6px">Objeto: <strong>'+item.label+'</strong></div>'+
+ var found=mapObjectPositions(s,plan,pct).find(function(row){return row.item.id===item.id;});
+ var z=found&&found.point&&found.point.z;
+ var editable=Number.isFinite(z)&&!!mapObjectDepthEdit(s,item,Math.max(-4000,Math.min(4000,z)),pct,plan.size);
+ var control=editable?'<div data-camera-depth-editor style="margin:8px 0;padding:8px;border:1px solid var(--accent);border-radius:8px">'+
+  '<label style="display:block;font-weight:600;font-size:12px" for="nw-camera-world-z">Profundidad del objeto · Z</label>'+
+  '<p class="hint gh" style="font-size:10px;margin:3px 0">Deslizá para ponerlo delante o detrás. Conserva los movimientos del Director de scroll.</p>'+
+  '<div style="display:flex;gap:6px;align-items:center"><input id="nw-camera-world-z" type="range" data-camera-object-world-z-range min="-4000" max="4000" step="25" value="'+Math.round(Math.max(-4000,Math.min(4000,z)))+'" style="min-width:0;flex:1" aria-label="Profundidad Z del objeto">'+
+  '<input type="number" class="cnum" data-camera-object-world-z aria-label="Coordenada Z del objeto" min="-4000" max="4000" step="25" value="'+Math.round(Math.max(-4000,Math.min(4000,z)))+'" style="width:84px;background:#fff;color:#171717;border:1px solid #777"></div>'+
+  '<div class="hint gh" style="font-size:10px;margin-top:4px">+ Z: adelante · − Z: atrás. Se mantienen las unidades existentes del objeto.</div></div>':'';
+ return html+control+'<div style="font-size:11px;margin-top:6px">Objeto: <strong>'+item.label+'</strong></div>'+
   '<div data-camera-object-xyz style="font-size:11px;margin-top:3px">'+data.xyz+'</div>'+
   '<div data-camera-object-distance style="font-size:11px;margin-top:3px">'+data.distance+'</div>'+
   '<div data-camera-object-offset style="font-size:10px;opacity:.8;margin-top:3px">'+data.offset+'</div>'+
@@ -546,7 +583,7 @@ function mapObjectMarkersHtml(s,plan,spec,pct){
    mapObjectShapeHtml(row.item,spec)+
    '<circle data-camera-scene-object-active r="4" stroke="#fff" stroke-width=".95" stroke-dasharray="1.3 .8" fill="none" pointer-events="none" style="display:'+(mapObjectSelected[s.id]===row.item.id?'':'none')+'"/>'+
    '<circle data-camera-scene-object-pick="'+i+'" r="3.1" fill="transparent" pointer-events="all" style="cursor:help"><title>Ver ubicación y distancia de '+label+'</title></circle>'+
-   (i<8?'<text x="2.8" y="-2.1" font-size="2.65" fill="currentColor" stroke="var(--bg,#1c1e23)" stroke-width=".5" paint-order="stroke">'+(i+1)+' · '+label+'</text>':'')+
+   (i<48?'<text x="2.8" y="-2.1" font-size="2.65" fill="currentColor" stroke="var(--bg,#1c1e23)" stroke-width=".5" paint-order="stroke">'+(i+1)+' · '+label+'</text>':'')+
    '</g>';
  }).join('')+'</g>';
 }
@@ -2281,7 +2318,7 @@ function spatialMap(s,list,k){
  var point=C.mapPoint(k,spec),tangentIn=cfg&&cfg.pathMode==='smooth'?C.tangentHandle(list,k.at,'in'):null,tangentOut=cfg&&cfg.pathMode==='smooth'?C.tangentHandle(list,k.at,'out'):null,tangentInPoint=tangentIn?C.mapPoint(tangentIn,spec):null,tangentOutPoint=tangentOut?C.mapPoint(tangentOut,spec):null,resolvedLk=lk&&lk.targetId?(C.elementTarget(cfg,lk.targetId,lk.at/100,window.NAGWEB_STORY_MODEL,s.sdEase,size)||lk):lk,lookKeyPoint=resolvedLk?C.mapPoint(resolvedLk,spec):null,lookTangentIn=cfg&&cfg.lookPathMode==='smooth'&&lk?C.lookTangentHandle(resolvedLooks,lk.at,'in'):null,lookTangentOut=cfg&&cfg.lookPathMode==='smooth'&&lk?C.lookTangentHandle(resolvedLooks,lk.at,'out'):null,lookTangentInPoint=lookTangentIn?C.mapPoint(lookTangentIn,spec):null,lookTangentOutPoint=lookTangentOut?C.mapPoint(lookTangentOut,spec):null,current=mapCurrent(s,progress(s)),now=C.mapPoint(current,spec);
  var draw=C.pathSamples(Object.assign({},cfg,{frames:list}),window.NAGWEB_STORY_MODEL,s.sdEase),path=draw.map(function(f){var p=C.mapPoint(f,spec);return p.x+','+p.y;}).join(' ');
  var lookDraw=cfg&&cfg.orientationMode==='lookAt'?C.lookSamples(cfg,window.NAGWEB_STORY_MODEL,s.sdEase,undefined,size):[],lookPath=lookDraw.map(function(f){var p=C.mapPoint(f,spec);return p.x+','+p.y;}).join(' '),lookNow=cfg&&cfg.orientationMode==='lookAt'?C.lookTarget(cfg,progress(s)/100,window.NAGWEB_STORY_MODEL,s.sdEase,size):null,lookPoint=lookNow?C.mapPoint(lookNow,spec):null;
- var html='<details data-camera-map-box'+(mapOpen[s.id]?' open':'')+'><summary style="cursor:pointer;margin:8px 0">Mapa del recorrido</summary>'+cameraCurrentEditHtml(s,progress(s),list)+'<label>Vista <select class="csel" data-camera-map-plane><option value="top"'+(plane==='top'?' selected':'')+'>Desde arriba · X/Z</option><option value="front"'+(plane==='front'?' selected':'')+'>De frente · X/Y</option><option value="side"'+(plane==='side'?' selected':'')+'>De costado · Z/Y</option></select></label>';
+ var html='<details data-camera-map-box'+(mapOpen[s.id]?' open':'')+'><summary style="cursor:pointer;margin:8px 0">Mapa del recorrido · Cámara y objetos</summary>'+cameraCurrentEditHtml(s,progress(s),list)+'<label>Vista <select class="csel" data-camera-map-plane><option value="top"'+(plane==='top'?' selected':'')+'>Desde arriba · X/Z</option><option value="front"'+(plane==='front'?' selected':'')+'>De frente · X/Y</option><option value="side"'+(plane==='side'?' selected':'')+'>De costado · Z/Y</option></select></label>';
  html+='<div style="display:flex;align-items:center;gap:5px;margin:6px 0"><span style="font-size:12px">Zoom</span><button class="btn tiny" type="button" data-camera-map-zoom="-1" aria-label="Alejar mapa"'+(zoom<=.5?' disabled':'')+'>−</button><span data-camera-map-zoom-label style="min-width:38px;text-align:center;font-size:12px">'+Math.round(zoom*100)+'%</span><button class="btn tiny" type="button" data-camera-map-zoom="1" aria-label="Acercar mapa"'+(zoom>=3?' disabled':'')+'>+</button><button class="btn tiny" type="button" data-camera-map-zoom="0" aria-label="Restablecer zoom del mapa"'+(zoom===1?' disabled':'')+'>Ajustar</button></div>';
  html+='<div data-camera-map-pan-controls style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:4px 0"><span style="font-size:12px;margin-right:4px">Desplazar</span><button class="btn tiny" type="button" data-camera-map-pan="left" aria-label="Desplazar vista a la izquierda"'+(zoom<=1?' disabled':'')+'>←</button><button class="btn tiny" type="button" data-camera-map-pan="up" aria-label="Desplazar vista hacia arriba"'+(zoom<=1?' disabled':'')+'>↑</button><button class="btn tiny" type="button" data-camera-map-pan="down" aria-label="Desplazar vista hacia abajo"'+(zoom<=1?' disabled':'')+'>↓</button><button class="btn tiny" type="button" data-camera-map-pan="right" aria-label="Desplazar vista a la derecha"'+(zoom<=1?' disabled':'')+'>→</button><button class="btn tiny" type="button" data-camera-map-pan="center" aria-label="Recentrar vista en el encuadre seleccionado"'+(zoom<=1||!(mapPan[s.id]&&(mapPan[s.id].x||mapPan[s.id].y))?' disabled':'')+'>Centrar ◆</button>'+(lk?'<button class="btn tiny" type="button" data-camera-map-pan="look" aria-label="Centrar vista en el objetivo de mirada seleccionado"'+(zoom<=1?' disabled':'')+'>Centrar ●</button>':'')+'</div>';
  html+='<button class="btn tiny" type="button" data-camera-overview-toggle aria-label="'+((mapOverviewVisible[s.id]===undefined?zoom>1:mapOverviewVisible[s.id])?'Ocultar':'Mostrar')+' vista general del mapa" style="margin:3px 0">'+((mapOverviewVisible[s.id]===undefined?zoom>1:mapOverviewVisible[s.id])?'Ocultar':'Mostrar')+' vista general</button>';
@@ -2292,7 +2329,8 @@ function spatialMap(s,list,k){
     '<div style="opacity:.7;font-size:10px">Contornos orientativos según ancho/alto del Lienzo libre, sin escala animada, perspectiva, giro ni oclusiones. En 3D representan el ancla, no la geometría del modelo. No se pueden arrastrar todavía.</div>':
    '<div style="opacity:.7">'+(s.layout!=='free'?'Las guías de objetos están disponibles en Lienzo libre.':'No hay objetos compatibles para mostrar en esta escena.')+'</div>')+
   '</div>';
- html+=mapObjectInfoHtml(s,objectPlan,progress(s));
+ html+=mapObjectLayerListHtml(s,objectPlan,progress(s));
+  html+=mapObjectInfoHtml(s,objectPlan,progress(s));
  if(lk&&isSpatialFocus(cfg,lk))html+='<p class="hint gh" data-camera-spatial-focus-help>● Enfoque 3D: arrastralo sobre el mapa para ajustar dónde mira la cámara respecto del modelo. Cambiá entre vistas superior, frontal y lateral para controlar X/Y/Z. Shift limita el arrastre a un eje; flechas: 25 px, con Shift: 100 px. El modelo no se mueve.</p>';
  html+='<label style="display:inline-flex;align-items:center;gap:6px;margin:6px 0;font-size:12px"><input type="checkbox" data-camera-map-fov-toggle aria-label="Mostrar campo de visión aproximado"'+(mapFovVisible[s.id]!==false?' checked':'')+(plane==='side'?' disabled title="El campo de visión queda de perfil en la vista lateral."':'')+'> Mostrar campo de visión</label>';
  html+='<div data-camera-map-pair style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0">'+mapKeyframeNavigation(list,k.at,'camera')+(lk?mapKeyframeNavigation(looks,lk.at,'look'):'')+'</div>';
