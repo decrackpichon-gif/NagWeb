@@ -88,9 +88,11 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
   h.visible=width>0&&height>0&&g.userData.nativeR>0&&pose.scale>0&&g.userData.spatialOpacity>0&&(!parent||Math.abs(parent.matrix.determinant())>1e-10);
   if(!h.visible)return;
   var depth=row.state.cssPerspective,unit=1/units(row);
+  // Editor-only temporary depth: the authored o.offZ stays immutable.
+  var offZ=Object.prototype.hasOwnProperty.call(g.userData,'nwPreviewOffZ')?g.userData.nwPreviewOffZ:(o.offZ||0);
   if(parent){
    var rotation=new T.Quaternion().setFromEuler(new T.Euler(-pose.rotateX*Math.PI/180,pose.rotateY*Math.PI/180,-pose.rotate*Math.PI/180,'ZXY'));
-   var host=node.offsetParent,local=new T.Matrix4().compose(new T.Vector3(node.offsetLeft+(host.clientLeft||0)-(host.scrollLeft||0)+pose.x,-node.offsetTop-(host.clientTop||0)+(host.scrollTop||0)-pose.y,(o.offZ||0)/unit+pose.z),rotation,new T.Vector3(1,1,1).multiplyScalar(width/2/g.userData.nativeR*pose.scale/100));
+   var host=node.offsetParent,local=new T.Matrix4().compose(new T.Vector3(node.offsetLeft+(host.clientLeft||0)-(host.scrollLeft||0)+pose.x,-node.offsetTop-(host.clientTop||0)+(host.scrollTop||0)-pose.y,offZ/unit+pose.z),rotation,new T.Vector3(1,1,1).multiplyScalar(width/2/g.userData.nativeR*pose.scale/100));
    h.matrixAutoUpdate=false;h.matrix.copy(parent.matrix).multiply(local);h.matrix.decompose(h.position,h.quaternion,h.scale);h.matrixWorldNeedsUpdate=true;
    g.userData.spatialParent=parent.matrix;return;
   }
@@ -99,7 +101,7 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
   // Its layout offset and border/scroll remain independent of camera motion.
   var offset=worldOffset(node,row),host=offset.world;
   var x=node.offsetLeft+offset.x+(host&&host.clientLeft||0)-(host&&host.scrollLeft||0),y=node.offsetTop+offset.y+(host&&host.clientTop||0)-(host&&host.scrollTop||0);
-  h.position.set(x-stage.clientWidth/2+pose.x,stage.clientHeight/2-y-pose.y,-depth+(o.offZ||0)/unit+pose.z);
+  h.position.set(x-stage.clientWidth/2+pose.x,stage.clientHeight/2-y-pose.y,-depth+offZ/unit+pose.z);
   h.scale.setScalar(width/2/g.userData.nativeR*pose.scale/100);
   // CSS y points down; local positive z points toward the viewer. Individual
   // rotate precedes the additive rotateX/rotateY transform (ZXY order).
@@ -173,7 +175,7 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
    gizmos.forEach(function(g){g.node.visible=g.visible;});
   }
  }
- function destroy(){rows.forEach(function(row){row.unbind();if(row.bloom)row.bloom.dispose();row.materials.forEach(function(copies){copies.forEach(function(m){m.dispose();});});row.objects.forEach(function(g){delete g.userData.spatialOpacity;delete g.userData.spatialParent;g.userData.holder.matrixAutoUpdate=true;g.userData.holder.rotation.x=0;g.userData.holder.rotation.y=0;});scene.remove(row.rig);});rows=[];}
+ function destroy(){rows.forEach(function(row){row.unbind();row.objects.forEach(function(g){delete g.userData.nwPreviewOffZ;});if(row.bloom)row.bloom.dispose();row.materials.forEach(function(copies){copies.forEach(function(m){m.dispose();});});row.objects.forEach(function(g){delete g.userData.spatialOpacity;delete g.userData.spatialParent;g.userData.holder.matrixAutoUpdate=true;g.userData.holder.rotation.x=0;g.userData.holder.rotation.y=0;});scene.remove(row.rig);});rows=[];}
  function view(g){
   var row=rows.find(function(r){return r.objects.indexOf(g)>=0;})||lightRow(g);
   if(!row||!row.state)return null;
@@ -261,9 +263,40 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
   });
   return best?best.g:null;
  }
- var adapter={connect:connect,owns:owns,render:render,destroy:destroy,view:view,lightPoint:lightPoint,anchorPoint:anchorPoint,pick:pick,interactive:interactive,surfacePoint:surfacePoint};
+ // Set/restore the preview override only in the matching stage. No project
+ // writes and no timer: the existing render loop consumes the next value.
+ function previewDepth(id,value,sectionId){
+  if(typeof id!=='string'||!id||typeof sectionId!=='string'||!sectionId||value!==null&&(!Number.isFinite(value)||Math.abs(value)>100))return false;
+  var matching=[];
+  rows.forEach(function(row){
+   if(row.sectionId!==sectionId||!row.stage.isConnected||!row.state)return;
+   row.objects.forEach(function(g){if(g.userData.o&&String(g.userData.o.id)===id)matching.push(g);});
+  });
+  if(!matching.length)return false;
+  matching.forEach(function(g){if(value===null)delete g.userData.nwPreviewOffZ;else g.userData.nwPreviewOffZ=value;});
+  return true;
+ }
+ // 3D pivot projected into the corresponding stage, not a bounding-box guess.
+ function screenPoint(id,sectionId){
+  if(typeof id!=='string'||!id||typeof sectionId!=='string'||!sectionId)return null;
+  for(var i=rows.length-1;i>=0;i--){
+   var row=rows[i];if(row.sectionId!==sectionId||!row.stage.isConnected||!row.state)continue;
+   var r=row.stage.getBoundingClientRect();if(!r.width||!r.height)continue;
+   var g=row.objects.find(function(o){return o.userData.o&&String(o.userData.o.id)===id;});
+   if(!g||!interactive(g)||!g.userData.holder)return null;
+   row.camera.updateMatrixWorld(true);g.userData.holder.updateWorldMatrix(true,false);
+   var pos=g.userData.holder.getWorldPosition(new T.Vector3()).project(row.camera);
+   if(!Number.isFinite(pos.x)||!Number.isFinite(pos.y)||!Number.isFinite(pos.z)||pos.z<-1||pos.z>1)return null;
+   var x=(pos.x*.5+.5)*r.width,y=(-pos.y*.5+.5)*r.height;
+   return x>=0&&y>=0&&x<r.width&&y<r.height?{x:x,y:y}:null;
+  }
+  return null;
+ }
+ var adapter={connect:connect,owns:owns,render:render,destroy:destroy,view:view,lightPoint:lightPoint,anchorPoint:anchorPoint,pick:pick,interactive:interactive,surfacePoint:surfacePoint,previewDepth:previewDepth,screenPoint:screenPoint};
  // Same-origin editor-only request, no automatic pointer listeners in exports.
  window.NAGWEB_SPATIAL_SURFACE_PICK=function(id,x,y,sectionId){return adapter.surfacePoint(id,x,y,sectionId);};
+ window.NAGWEB_SPATIAL_PREVIEW_DEPTH=function(id,value,sectionId){return adapter.previewDepth(id,value,sectionId);};
+ window.NAGWEB_SPATIAL_SCREEN_POINT=function(id,sectionId){return adapter.screenPoint(id,sectionId);};
  return adapter;
 }
 window.NAGWEB_CREATE_SPATIAL_RENDERER=createSpatialRenderer;
