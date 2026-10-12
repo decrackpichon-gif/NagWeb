@@ -2007,10 +2007,12 @@ function toggleObjectDepth(s){
   doc.removeEventListener('pointercancel',abort,true);
   doc.removeEventListener('lostpointercapture',abort,true);
   try{if(handle.hasPointerCapture&&handle.hasPointerCapture(g.pointerId))handle.releasePointerCapture(g.pointerId);}catch(_){}
-  // Remove the override on cancel; on commit the generated preview is replaced.
-  var commit=!cancel&&changed(g.next,g.start)&&sec()===s&&mapObjectSelected[s.id]===item.id;
-  stopObjectDepth(commit);
-  if(commit)save(g.next);else renderPane();
+  // Promote the last previewed depth to the iframe model before saving
+  // the authored scene; never leave a transient offZ override behind.
+  var commit=!cancel&&changed(g.next,g.start)&&sec()===s&&mapObjectSelected[s.id]===item.id&&C.config(s);
+  var accepted=commit&&win.NAGWEB_SPATIAL_PREVIEW_DEPTH(item.id,g.next,s.id,true);
+  stopObjectDepth(!!accepted);
+  if(accepted)save(g.next);else renderPane();
  }
  function up(ev){move(ev);finish(ev,false);}
  function abort(ev){finish(ev,true);}
@@ -2028,7 +2030,7 @@ function toggleObjectDepth(s){
   ev.preventDefault();ev.stopPropagation();
   var value=C.objectDepthDrag(original(),ev.key==='ArrowUp'?-10:10,ev.shiftKey);
   if(!changed(value,original()))return;
-  if(!win.NAGWEB_SPATIAL_PREVIEW_DEPTH(item.id,value,s.id))return;
+  if(!win.NAGWEB_SPATIAL_PREVIEW_DEPTH(item.id,value,s.id,true))return;
   stopObjectDepth(true);save(value);
  }
  function key(ev){
