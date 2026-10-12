@@ -97,6 +97,65 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   assert.ok((await inspect()).includes('X 300')&&(await inspect()).includes('Z 550'),'Responsive inspector uses reference coordinates in narrow preview');
   await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub(sec().id,0));
   assert.ok((await inspect()).includes('X 250')&&(await inspect()).includes('Z 500'),'Narrow inspector follows Director zero moment');
+  // Full browser editor -> same-origin preview -> WebGL holder workflow.
+  // The generated 3D box needs no external model download; the separate
+  // spatial-interaction.browser suite already exercises real loaded GLBs.
+  await page.evaluate(()=>{
+   const s=sec();s.layout='free';s.sdCameraOrientationMode='manual';
+   s.sdCameraFrames=[{at:0,x:0,y:0,z:0,rotateX:0,rotateY:0},{at:100,x:0,y:0,z:0,rotateX:0,rotateY:0}];
+   s.elements=[mkEl('shape3d',{id:'gizmo-real-box',name:'Objeto de prueba',shape:'box',anchor:true,
+    x:50,y:50,w:24,h:24,offZ:0,motion:'still',sdEnter:'none',sdEnd:100})];
+   NAGWEB_SCROLL_DIRECTOR.scrub(s.id,0);renderPane();renderPreview();
+  });
+  await page.waitForFunction(()=>{
+   const w=document.getElementById('preview')?.contentWindow,s=sec();
+   return w&&typeof w.NAGWEB_SPATIAL_SCREEN_POINT==='function'&&w.NAGWEB_SPATIAL_SCREEN_POINT('gizmo-real-box',s.id);
+  },{timeout:20000});
+  await page.selectOption('[data-camera-object-select]','0');
+  const edit3D=()=>page.evaluate(()=>({yaw:sec().elements[0].nwSpatialRotateY||0,
+   depth:sec().elements[0].offZ||0,scale:sec().elements[0].nwSpatialScale||100,
+   camera:JSON.stringify(sec().sdCameraFrames),history:history.length,progress:NAGWEB_SCROLL_DIRECTOR.progress(sec().id)}));
+  const beforeGizmo=await edit3D();
+  await page.click('[data-camera-object-transform]');
+  const yaw=page.frameLocator('#preview').locator('[data-nw-base-axis="RotateY"]');
+  await yaw.waitFor({state:'visible'});
+  const yr=await yaw.boundingBox();assert.ok(yr&&yr.width>0);
+  await page.mouse.move(yr.x+yr.width/2,yr.y+yr.height/2);
+  await page.mouse.down();await page.mouse.move(yr.x+yr.width/2+50,yr.y+yr.height/2,{steps:5});
+  await page.mouse.up();
+  const turned=await edit3D();assert.equal(turned.yaw,30,'Real mouse stores the object yaw');
+  assert.equal(turned.history,beforeGizmo.history+1,'Real gizmo drag creates a single Undo');
+  assert.equal(turned.camera,beforeGizmo.camera,'Gizmo cannot rewrite camera frames');
+  await page.evaluate(()=>undo());
+  assert.equal((await edit3D()).yaw,0,'Undo restores original 3D orientation');
+  await page.waitForFunction(()=>{
+   const w=document.getElementById('preview')?.contentWindow;
+   return w&&w.NAGWEB_SPATIAL_SCREEN_POINT?.('gizmo-real-box',sec().id);
+  });
+  await page.click('[data-camera-object-depth]');
+  const depth=page.frameLocator('#preview').locator('[data-nw-object-depth-handle]');
+  await depth.waitFor({state:'visible'});
+  const dr=await depth.boundingBox();assert.ok(dr&&dr.width>0);
+  await page.mouse.move(dr.x+dr.width/2,dr.y+dr.height/2);
+  await page.mouse.down();await page.mouse.move(dr.x+dr.width/2,dr.y+dr.height/2-70,{steps:5});
+  await page.mouse.up();
+  const closer=await edit3D();assert.equal(closer.depth,.7,'Real mouse adjusts authored Z depth');
+  assert.equal(closer.history,beforeGizmo.history+1,'Undo of yaw followed by Z creates one history entry');
+  await page.evaluate(()=>undo());assert.equal((await edit3D()).depth,0,'Undo restores depth without changing the camera');
+  await page.waitForFunction(()=>{
+   const w=document.getElementById('preview')?.contentWindow;
+   return w&&w.NAGWEB_SPATIAL_SCREEN_POINT?.('gizmo-real-box',sec().id);
+  });
+  await page.click('[data-camera-object-transform]');
+  const scale=page.frameLocator('#preview').locator('[data-nw-base-axis="Scale"]');
+  await scale.waitFor({state:'visible'});
+  const sr=await scale.boundingBox();assert.ok(sr);
+  await page.mouse.move(sr.x+sr.width/2,sr.y+sr.height/2);
+  await page.mouse.down();await page.mouse.move(sr.x+sr.width/2,sr.y+sr.height/2-35,{steps:4});
+  await page.keyboard.press('Escape');
+  assert.equal((await edit3D()).scale,100,'Escape cancels real pointer scale gesture');
+  assert.equal((await edit3D()).history,beforeGizmo.history,'Cancelled scale does not create an Undo');
+  console.log('PASS browser 3D gizmos: real pointer yaw/Z, live WebGL, one Undo, Escape and camera isolation');
   assert.deepEqual(errors,[]);console.log('PASS object guide: retained preview progress and explicit 0→50% Director displacement');
   console.log('PASS current moment: real editor + Director, create, pointer drag, two Undo, exact selection, no duplicate/history edit and Redo');
   console.log('PASS technical details: native visibility, collapsed height, open/close and pane persistence without authored edits');
