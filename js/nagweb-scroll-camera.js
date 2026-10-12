@@ -1831,9 +1831,10 @@ function cameraAimAtSurface(s,id,point,pct){
 }
 function clearSurfaceAim(){
  var a=surfaceAimArmed;surfaceAimArmed=null;
- if(a&&a.doc){a.doc.removeEventListener('pointerdown',a.down,true);a.doc.removeEventListener('keydown',a.key,true);}
+ if(a&&a.doc){a.doc.removeEventListener('pointerdown',a.down,true);a.doc.removeEventListener('keydown',a.key,true);if(a.iframe&&typeof a.iframe.removeEventListener==='function')a.iframe.removeEventListener('load',a.onLoad);}
 }
 function toggleSurfaceAim(s){
+ if(viewportOrbitArmed)stopViewportOrbit();
  if(baseTransformArmed)stopBaseTransform();
  if(objectDepthArmed)stopObjectDepth(false);
  if(viewportTranslateArmed)stopViewportTranslate();
@@ -1859,8 +1860,10 @@ function toggleSurfaceAim(s){
   renderPane();
  }
  function key(ev){if(ev.key==='Escape'){ev.preventDefault();ev.stopPropagation();clearSurfaceAim();renderPane();}}
- surfaceAimArmed={id:item.id,sectionId:s.id,doc:doc,down:down,key:key};
+ function onLoad(){clearSurfaceAim();renderPane();}
+ surfaceAimArmed={id:item.id,sectionId:s.id,doc:doc,iframe:iframe,down:down,key:key,onLoad:onLoad};
  doc.addEventListener('pointerdown',down,true);doc.addEventListener('keydown',key,true);
+ if(iframe&&typeof iframe.addEventListener==='function')iframe.addEventListener('load',onLoad);
  renderPane();return 'armed';
 }
 function stopViewportOrbit(){
@@ -1873,6 +1876,7 @@ function stopViewportOrbit(){
  if(a.cleanup)a.cleanup();
 }
 function toggleViewportOrbit(s){
+ if(surfaceAimArmed)clearSurfaceAim();
  if(baseTransformArmed)stopBaseTransform();
  if(objectDepthArmed)stopObjectDepth(false);
  if(viewportTranslateArmed)stopViewportTranslate();
@@ -2045,7 +2049,7 @@ function toggleObjectDepth(s){
 }
 // Manual placement of a 3D object's base rotation/size. The Director's
 // already-evaluated animation pose remains intact and is composed in Three.
-function stopBaseTransform(){
+function stopBaseTransform(preservePreview){
  var a=baseTransformArmed;baseTransformArmed=null;
  if(!a)return;
  a.overlay.removeEventListener('pointerdown',a.down);
@@ -2054,7 +2058,7 @@ function stopBaseTransform(){
  document.removeEventListener('keydown',a.key,true);
  a.iframe.removeEventListener('load',a.onLoad);
  if(a.cleanup)a.cleanup();
- if(a.axis)try{a.win.NAGWEB_SPATIAL_PREVIEW_BASE_TRANSFORM(a.id,a.axis,null,a.sectionId);}catch(_){}
+ if(!preservePreview&&a.axis)try{a.win.NAGWEB_SPATIAL_PREVIEW_BASE_TRANSFORM(a.id,a.axis,null,a.sectionId);}catch(_){}
  if(a.overlay.parentNode)a.overlay.parentNode.removeChild(a.overlay);
 }
 function toggleBaseTransform(s){
@@ -2097,9 +2101,11 @@ function toggleBaseTransform(s){
   doc.removeEventListener('pointermove',move,true);doc.removeEventListener('pointerup',up,true);
   doc.removeEventListener('pointercancel',abort,true);doc.removeEventListener('lostpointercapture',abort,true);
   try{if(g.handle.hasPointerCapture&&g.handle.hasPointerCapture(g.pointerId))g.handle.releasePointerCapture(g.pointerId);}catch(_){}
-  reset();stopBaseTransform();
-  if(!cancel&&Number.isFinite(g.next)&&Math.abs(g.next-g.start)>1e-7)write(g.axis,g.next);
-  else renderPane();
+  var commit=!cancel&&Number.isFinite(g.next)&&Math.abs(g.next-g.start)>1e-7&&sec()===s&&mapObjectSelected[s.id]===item.id&&C.config(s);
+  if(!commit)reset();
+  // Keep the last WebGL pose until the scheduled preview replaces the renderer.
+  stopBaseTransform(!!commit);
+  if(commit)write(g.axis,g.next);else renderPane();
  }
  function move(ev){
   var g=gesture;if(!g||ev.pointerId!==g.pointerId)return;
@@ -2127,7 +2133,7 @@ function toggleBaseTransform(s){
   var next=C.objectBaseTransformDrag(current(which),which,dx,dy,ev.shiftKey);
   if(next===null||Math.abs(next-current(which))<1e-7)return;
   if(!win.NAGWEB_SPATIAL_PREVIEW_BASE_TRANSFORM(item.id,which,next,s.id))return;
-  axis=which;reset();stopBaseTransform();write(which,next);
+  axis=which;baseTransformArmed.axis=axis;stopBaseTransform(true);write(which,next);
  }
  function key(ev){if(ev.key==='Escape'){ev.preventDefault();ev.stopPropagation();stopBaseTransform();renderPane();}}
  function onLoad(){stopBaseTransform();renderPane();}
@@ -2354,6 +2360,13 @@ function spatialMap(s,list,k){
  return html;
 }
 C.panel=function(s){
+ // Toolbars must never outlive their scene, selected object or active camera.
+ var cfgNow=C.config(s),picked=s&&mapObjectSelected[s.id];
+ if(baseTransformArmed&&(!cfgNow||baseTransformArmed.sectionId!==s.id||baseTransformArmed.id!==picked||!(s.elements||[]).some(function(e){return e.id===picked&&e.type==='shape3d'&&e.anchor!==false;})))stopBaseTransform();
+ if(objectDepthArmed&&(!cfgNow||objectDepthArmed.sectionId!==s.id||objectDepthArmed.id!==picked||!(s.elements||[]).some(function(e){return e.id===picked&&e.type==='shape3d'&&e.anchor!==false;})))stopObjectDepth(false);
+ if(surfaceAimArmed&&(!cfgNow||surfaceAimArmed.sectionId!==s.id||surfaceAimArmed.id!==picked))clearSurfaceAim();
+ if(viewportOrbitArmed&&(!cfgNow||viewportOrbitArmed.sectionId!==s.id||cfgNow.orientationMode!=='manual'))stopViewportOrbit();
+ if(viewportTranslateArmed&&(!cfgNow||viewportTranslateArmed.sectionId!==s.id))stopViewportTranslate();
  var html=cRow('Cámara 3D',cSeg('sec.sdCameraEnabled',!!s.sdCameraEnabled,[['false','Desactivada'],['true','Activada']],'bool'));
  if(!s.sdCameraEnabled||!C.config(s))return html;
  var list=keys(s),k=choose(s,list);
