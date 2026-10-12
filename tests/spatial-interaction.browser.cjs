@@ -71,7 +71,35 @@ const {chromium}=require('playwright');
   const size=await page.evaluate(()=>{const d=window.__pickTest,g=d.objects[1],v=d.adapter.view(g);window.dispatchEvent(new MessageEvent('message',{data:{sc:true,type:'selectionset',ids:['model']}}));const handle=document.querySelector('.sc-proxy[data-id="model"] .sc-h.br'),r=handle.getBoundingClientRect(),sx=r.left+r.width/2,sy=r.top+r.height/2,ray=new THREE.Raycaster();ray.setFromCamera(new THREE.Vector2((sx-v.rect.left)/v.rect.width*2-1,1-(sy-v.rect.top)/v.rect.height*2),v.camera);const p=ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,0,1),-g.userData.holder.position.z),new THREE.Vector3()).add(new THREE.Vector3(50,0,0)).project(v.camera);return{start:{x:sx,y:sy},end:{x:v.rect.left+(p.x+1)*v.rect.width/2,y:v.rect.top+(1-p.y)*v.rect.height/2},scale:g.userData.holder.scale.x,width:+g.userData.anchorEl.dataset.w,delta:100/g.userData.anchorEl.parentElement.clientWidth*100};});
   await page.mouse.move(size.start.x,size.start.y);await page.mouse.down();await page.mouse.move(size.end.x,size.end.y,{steps:5});await page.mouse.up();await page.waitForFunction(()=>window.__changes.some(m=>m.type==='change'&&m.id==='model'));
   const sized=await page.evaluate(()=>{const d=window.__pickTest;d.tick();return{change:window.__changes.filter(m=>m.type==='change'&&m.id==='model').at(-1),scale:d.objects[1].userData.holder.scale.x,progress:window.__NAG_SCROLL_DIRECTOR.space.progress()};});close(sized.change.w,size.width+size.delta);close(sized.scale/size.scale,(size.width+size.delta)/size.width);assert.equal(sized.progress,.5);
-  console.log('PASS edit: resize uses the same inverse camera projection and persists the expected width');
+  // Actual Chromium + WebGL + loaded GLB: transient 3D edits must preserve
+   // their final visual pose without replacing the Director's progress.
+   const visualBase=await page.evaluate(()=>{
+    const d=window.__pickTest,g=d.objects[1],other=d.objects[0],win=window;
+    d.tick();
+    const originalScale=g.userData.holder.scale.x,otherYaw=other.userData.holder.rotation.y;
+    const preview=win.NAGWEB_SPATIAL_PREVIEW_BASE_TRANSFORM('model','RotateY',25,'space');
+    d.tick();const liveYaw=g.userData.holder.rotation.y;
+    const committed=win.NAGWEB_SPATIAL_PREVIEW_BASE_TRANSFORM('model','RotateY',25,'space',true);
+    d.tick();const savedYaw=g.userData.holder.rotation.y;
+    const noTransient=!g.userData.nwPreviewBaseTransform,stored=g.userData.o.nwSpatialRotateY;
+    const wrongScene=win.NAGWEB_SPATIAL_PREVIEW_BASE_TRANSFORM('model','RotateY',50,'wrong');
+    const resize=win.NAGWEB_SPATIAL_PREVIEW_BASE_TRANSFORM('model','Scale',140,'space');
+    d.tick();const liveScale=g.userData.holder.scale.x;
+    const cancel=win.NAGWEB_SPATIAL_PREVIEW_BASE_TRANSFORM('model','Scale',null,'space');
+    d.tick();const restoredScale=g.userData.holder.scale.x;
+    const otherUntouched=other.userData.holder.rotation.y===otherYaw;
+    const currentProgress=win.__NAG_SCROLL_DIRECTOR.space.progress();
+    return{preview,committed,liveYaw,savedYaw,noTransient,stored,wrongScene,resize,liveScale,cancel,restoredScale,otherUntouched,originalScale,currentProgress};
+   });
+   assert.equal(visualBase.preview,true);assert.equal(visualBase.committed,true);
+   close(visualBase.liveYaw,25*Math.PI/180);close(visualBase.savedYaw,visualBase.liveYaw);
+   assert.equal(visualBase.stored,25);assert.equal(visualBase.noTransient,true);
+   assert.equal(visualBase.wrongScene,false);assert.equal(visualBase.resize,true);assert.equal(visualBase.cancel,true);
+   close(visualBase.liveScale/visualBase.originalScale,1.4);
+   close(visualBase.restoredScale,visualBase.originalScale);
+   assert.equal(visualBase.otherUntouched,true);assert.equal(visualBase.currentProgress,.5);
+   console.log('PASS edit: real GLB WebGL rotation/scale preview, atomic commit, scene isolation and Director progress');
+   console.log('PASS edit: resize uses the same inverse camera projection and persists the expected width');
   const contextPoint=await page.evaluate(()=>window.__pickScreen(1));await page.mouse.click(contextPoint.x,contextPoint.y,{button:'right'});await page.waitForFunction(()=>window.__changes.some(m=>m.type==='ctx'&&m.id==='model'));
   const editorCancel=await page.evaluate(()=>{const d=window.__pickTest,g=d.objects[0],proxy=document.querySelector('.sc-proxy[data-id="box"]'),r=proxy.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;
    proxy.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:88,button:0,clientX:x,clientY:y}));const before=g.userData.anchorEl.style.left;window.dispatchEvent(new PointerEvent('pointermove',{pointerId:99,clientX:x+100,clientY:y}));const foreign=g.userData.anchorEl.style.left;window.dispatchEvent(new PointerEvent('pointermove',{pointerId:88,clientX:x+20,clientY:y}));const changed=g.userData.anchorEl.style.left;window.dispatchEvent(new PointerEvent('pointercancel',{pointerId:88}));window.dispatchEvent(new PointerEvent('pointermove',{pointerId:88,clientX:x+100,clientY:y}));d.tick();return{before,foreign,changed,after:g.userData.anchorEl.style.left};});assert.equal(editorCancel.foreign,editorCancel.before);assert.notEqual(editorCancel.changed,editorCancel.before);assert.equal(editorCancel.after,editorCancel.changed);
