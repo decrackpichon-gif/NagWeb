@@ -52,7 +52,7 @@ h1{font-size:18px;margin:0 0 6px}.sub{font-size:11px;line-height:1.45;color:#aaa
     <div class="field">Progreso: <output id="abProgress">0%</output></div>
     <pre id="abMetrics" class="ab-metrics">Cargá un personaje y reproducí un recorrido compartido.</pre>
     <button id="abExport" type="button" disabled>Exportar mediciones JSON</button>
-    <div class="legend">Ambos motores reciben la misma trayectoria normalizada. Las capturas y mediciones ayudan a comparar estabilidad; no sustituyen la evaluación visual.</div>
+    <div class="legend">V3 conserva su referencia visual. V4-C.1 informa también triángulos invertidos, casi colapsados y compresión. Las métricas consideran toda la malla, incluso zonas transparentes: no prueban por sí solas un defecto visible.</div>
   </div>
 
   <div class="group"><div id="status" class="status">Preparando…</div></div>
@@ -88,7 +88,7 @@ h1{font-size:18px;margin:0 0 6px}.sub{font-size:11px;line-height:1.45;color:#aaa
 
   function common(){return {length:+length.value,sway:+sway.value,swayWaves:4,columns:38,rows:12};}
   function v3opts(){return Object.assign({headZoneEnd:.22,torsoZoneEnd:.66,headFlex:.035,torsoFlex:.42,lowerFlex:1,headMaxBend:.065,torsoMaxBend:.16,bodyMaxBend:.30},common());}
-  function v4opts(){return Object.assign({adaptivePreset:preset.value,diagnostic:diagnostic.checked,antiFold:true},common());}
+  function v4opts(){return Object.assign({adaptivePreset:preset.value,diagnostic:diagnostic.checked,meshDiagnostic:true,antiFold:true},common());}
   function outputs(){lengthOut.value=length.value+' px';swayOut.value=sway.value;}
   function report(){
     if(!r3||!r4)return;

@@ -81,8 +81,12 @@ try{
   fs.mkdirSync('/tmp/nagweb-interaction-experimental',{recursive:true});
   await page.click('#abRun');
   await page.waitForFunction(()=>window.__NAGWEB_AB_REVIEW__.running,{timeout:3000});
-  await new Promise(r=>setTimeout(r,700));
-  await page.screenshot({path:'/tmp/nagweb-interaction-experimental/organic-v3-v4c-route-in-progress.png',fullPage:true});
+  await page.waitForFunction(()=>window.__NAGWEB_AB_REVIEW__.progress>=.23,{timeout:11000});
+  await page.screenshot({path:'/tmp/nagweb-interaction-experimental/organic-v3-v4c-frame-25.png',fullPage:true});
+  await page.waitForFunction(()=>window.__NAGWEB_AB_REVIEW__.progress>=.48,{timeout:11000});
+  await page.screenshot({path:'/tmp/nagweb-interaction-experimental/organic-v3-v4c-frame-50.png',fullPage:true});
+  await page.waitForFunction(()=>window.__NAGWEB_AB_REVIEW__.progress>=.73,{timeout:11000});
+  await page.screenshot({path:'/tmp/nagweb-interaction-experimental/organic-v3-v4c-frame-75.png',fullPage:true});
   await page.waitForFunction(()=>!!window.__NAGWEB_AB_REVIEW__.lastReport,{timeout:14000});
   const review=await page.evaluate(()=>window.__NAGWEB_AB_REVIEW__.lastReport);
   assert.equal(review.schema,'nagweb-organic-ab-review');
@@ -94,6 +98,10 @@ try{
   assert.equal(review.invalidSamples,0,'both spines should remain finite during repeated route');
   assert.ok(review.samples.every(s=>s.target.length===2&&s.v3.finite&&s.v4c.finite));
   assert.ok(review.samples.some(s=>s.progress>.85),'route must reach its final segment');
+  assert.ok(review.samples.some(s=>s.meshTriangles?.triangleCount>0),'the actual WebGL mesh must be sampled');
+  assert.ok(review.samples.filter(s=>s.meshTriangles).every(s=>Number.isFinite(s.meshTriangles.minAreaRatio)&&s.meshTriangles.invalidTriangles===0),'geometry metrics must be finite');
+  assert.ok(review.maxInvertedTriangles>=0&&review.maxCollapsedTriangles>=0);
+  fs.writeFileSync('/tmp/nagweb-interaction-experimental/organic-v3-v4c-route-report.json',JSON.stringify(review,null,2));
   assert.equal(await page.$eval('#abExport',el=>el.disabled),false,'finished run allows JSON export');
   await page.evaluate(()=>{void window.__NAGWEB_AB_REVIEW__.start({route:'smooth',durationMs:1500});});
   await page.waitForFunction(()=>window.__NAGWEB_AB_REVIEW__.running,{timeout:3000});

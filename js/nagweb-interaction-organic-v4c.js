@@ -192,7 +192,7 @@
       get adaptiveProfile(){return clone(derived.profile);},
       get adaptiveControls(){return clone(derived.controls);},
       get adaptiveSummary(){return clone(derived.summary);},
-      get spine(){return inner.spine;},get guard(){return inner.guard;},get meshSafety(){return inner.meshSafety;},get topology(){return inner.topology;},get textureInfo(){return inner.textureInfo;},get contextLost(){return inner.contextLost;},
+      get spine(){return inner.spine;},get guard(){return inner.guard;},get meshSafety(){return inner.meshSafety;},get meshDiagnostics(){return inner.meshDiagnostics;},get topology(){return inner.topology;},get textureInfo(){return inner.textureInfo;},get contextLost(){return inner.contextLost;},
       setOptions:function(next){rederive(next);return this.options;},
       pause:function(){inner.pause();},resume:function(){inner.resume();},measure:function(){inner.measure();},
       destroy:function(){inner.destroy();}

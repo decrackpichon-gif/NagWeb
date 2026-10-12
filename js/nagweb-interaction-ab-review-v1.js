@@ -41,12 +41,19 @@
   }
   function sample(current,t,target){
     var a=spineMetrics(app.v3.spine),b=spineMetrics(app.v4c.spine);
-    var g=app.v4c.guard||{},controls=app.v4c.adaptiveControls;
+    var g=app.v4c.guard||{},controls=app.v4c.adaptiveControls,mesh=app.v4c.meshDiagnostics;
     current.samples.push({progress:+t.toFixed(4),target:[+target[0].toFixed(4),+target[1].toFixed(4)],v3:a,v4c:b,
       thicknessCapped:controls.details.filter(d=>d.geometryCapped).length,
       antiFoldConflicts:Number.isFinite(g.conflicts)?g.conflicts:null,
       meshLimitedColumns:app.v4c.meshSafety?.limitedColumns??null,
-      meshMinScale:app.v4c.meshSafety?.minScale??null});
+      meshMinScale:app.v4c.meshSafety?.minScale??null,
+      meshTriangles:mesh?{...mesh}:null});
+    if(mesh){
+      current.maxInvertedTriangles=Math.max(current.maxInvertedTriangles,mesh.invertedTriangles);
+      current.maxCollapsedTriangles=Math.max(current.maxCollapsedTriangles,mesh.collapsedTriangles);
+      current.minTriangleAreaRatio=Math.min(current.minTriangleAreaRatio,mesh.minAreaRatio??Infinity);
+      if(mesh.invertedTriangles||mesh.collapsedTriangles||mesh.invalidTriangles)current.framesWithMeshWarnings++;
+    }
     for(var entry of [a,b])if(!entry.finite)current.invalidSamples++;
     current.maxTurnV3=Math.max(current.maxTurnV3,a.maxTurnDegrees||0);
     current.maxTurnV4C=Math.max(current.maxTurnV4C,b.maxTurnDegrees||0);
@@ -57,7 +64,9 @@
       '\nMuestras: '+current.samples.length+' · geometría inválida: '+current.invalidSamples+
       '\nMáx. giro local V3: '+current.maxTurnV3.toFixed(1)+'°'+
       ' · V4-C.1: '+current.maxTurnV4C.toFixed(1)+'°'+
-      '\nLas métricas son diagnósticas, no una evaluación estética.';
+      '\nMalla V4-C.1: máx '+current.maxInvertedTriangles+' invertidos, '+current.maxCollapsedTriangles+' casi colapsados'+
+      '\nFotogramas muestreados con alertas: '+current.framesWithMeshWarnings+
+      '\nLos valores no equivalen por sí solos a defectos visibles.';
   }
   function finish(cancelled){
     if(!active)return lastReport;
@@ -66,6 +75,7 @@
     current.cancelled=!!cancelled;
     current.finishedAt=new Date().toISOString();
     current.status=cancelled?'interrumpido':'completo';
+    if(!Number.isFinite(current.minTriangleAreaRatio))current.minTriangleAreaRatio=null;
     lastReport=JSON.parse(JSON.stringify(current));
     delete lastReport.raf;delete lastReport.startTime;delete lastReport.resolve;
     run.disabled=false;stopButton.disabled=true;exportButton.disabled=false;
@@ -83,7 +93,9 @@
     var file=byId('file'),fileName=file.files&&file.files[0]?file.files[0].name:'fixture-svg-interno';
     var current={schema:'nagweb-organic-ab-review',version:1,runId:++runCount,route:name,routePoints:routes[name].map(p=>p.slice()),
       asset:fileName,preset:byId('preset').value,durationMs:duration,startedAt:new Date().toISOString(),
-      samples:[],invalidSamples:0,maxTurnV3:0,maxTurnV4C:0,startTime:null,raf:null,resolve:null};
+      samples:[],invalidSamples:0,maxTurnV3:0,maxTurnV4C:0,
+      maxInvertedTriangles:0,maxCollapsedTriangles:0,minTriangleAreaRatio:Infinity,framesWithMeshWarnings:0,
+      startTime:null,raf:null,resolve:null};
     lastReport=null;active=current;run.disabled=true;stopButton.disabled=false;exportButton.disabled=true;
     return new Promise(function(resolve){
       current.resolve=resolve;

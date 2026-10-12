@@ -48,6 +48,7 @@
     meshFoldGuard:false,
     meshSafetyMargin:.86,
     meshVisibleWidths:null,
+    meshDiagnostic:false,
     leadEnd:'right',
     maxDpr:2,
     maxTextureDimension:4096,
@@ -101,6 +102,7 @@
     o.meshFoldGuard=o.meshFoldGuard===true;
     o.meshSafetyMargin=clamp(clean(o.meshSafetyMargin,.86),.4,.95);
     o.meshVisibleWidths=Array.isArray(o.meshVisibleWidths)?o.meshVisibleWidths.map(function(v){return clamp(clean(v,1),0,1);}):null;
+    o.meshDiagnostic=o.meshDiagnostic===true;
     o.leadEnd=o.leadEnd==='left'?'left':'right';
     o.maxDpr=clamp(clean(o.maxDpr,2),1,3);
     o.maxTextureDimension=Math.round(clamp(clean(o.maxTextureDimension,4096),512,8192));
@@ -295,6 +297,27 @@
     return {positions:positions,texcoords:texcoords,indices:new Uint16Array(topology.indices),height:height,frames:frames,meshSafety:meshSafety};
   }
 
+  // Diagnostic only: signed triangle area reveals inversion and near-zero cells
+  // that a valid centerline cannot detect. Disabled by default for runtime cost.
+  function analyzeMeshGeometry(mesh,options){
+    var p=mesh&&mesh.positions,ix=mesh&&mesh.indices;
+    if(!p||!ix)return {triangleCount:0,invertedTriangles:0,collapsedTriangles:0,invalidTriangles:0,minAreaRatio:null};
+    var o=normalizeOptions(options),baseline=Math.max(1e-6,o.length*mesh.height/Math.max(1,o.columns*o.rows));
+    var inverted=0,collapsed=0,invalid=0,minRatio=Infinity;
+    for(var k=0;k<ix.length;k+=3){
+      var a=ix[k]*2,b=ix[k+1]*2,c=ix[k+2]*2;
+      var ax=p[a],ay=p[a+1],bx=p[b],by=p[b+1],cx=p[c],cy=p[c+1];
+      if(![ax,ay,bx,by,cx,cy].every(Number.isFinite)){invalid++;continue;}
+      var signed=(bx-ax)*(cy-ay)-(by-ay)*(cx-ax);
+      var ratio=Math.abs(signed)/baseline;
+      minRatio=Math.min(minRatio,ratio);
+      if(signed>baseline*1e-5)inverted++;
+      if(ratio<.025)collapsed++;
+    }
+    return {triangleCount:ix.length/3,invertedTriangles:inverted,collapsedTriangles:collapsed,
+      invalidTriangles:invalid,minAreaRatio:Number.isFinite(minRatio)?+minRatio.toFixed(5):null};
+  }
+
   function advancePhase(phase,speedRatio,opts,dt){
     var o=normalizeOptions(opts),frame=clamp(clean(dt,16.6667)/16.6667,.25,3);
     return clean(phase,0)+(o.phaseBase+o.phaseSpeed*clamp(clean(speedRatio,0),0,1))*frame;
@@ -323,7 +346,7 @@
     var FS='precision mediump float;uniform sampler2D u_image;varying vec2 v_texcoord;void main(){gl_FragColor=texture2D(u_image,v_texcoord);}';
     var prog=program(gl,VS,FS),posLoc=gl.getAttribLocation(prog,'a_position'),texLoc=gl.getAttribLocation(prog,'a_texcoord'),resLoc=gl.getUniformLocation(prog,'u_resolution'),imgLoc=gl.getUniformLocation(prog,'u_image');
     var posBuffer=gl.createBuffer(),texBuffer=gl.createBuffer(),indexBuffer=gl.createBuffer(),texture=gl.createTexture(),o=normalizeOptions(input),leader=input.leader,area=input.area||canvas.parentElement||document.documentElement,img=input.image;
-    var topology=createTopology(o.columns,o.rows,o.leadEnd),indexCount=topology.indices.length,phase=0,lastHeading=0,destroyed=false,paused=false,contextLost=false,bounds={left:0,top:0,width:1,height:1},dpr=1,lastGuard={conflicts:0,minDistance:Infinity,threshold:0},lastMeshSafety={limitedColumns:0,minScale:1};
+    var topology=createTopology(o.columns,o.rows,o.leadEnd),indexCount=topology.indices.length,phase=0,lastHeading=0,destroyed=false,paused=false,contextLost=false,bounds={left:0,top:0,width:1,height:1},dpr=1,lastGuard={conflicts:0,minDistance:Infinity,threshold:0},lastMeshSafety={limitedColumns:0,minScale:1},lastMeshDiagnostics=null;
     var textureSource=null,textureInfo=null,gpuTextureLimit=Math.max(512,Number(gl.getParameter(gl.MAX_TEXTURE_SIZE))||4096),media=typeof matchMedia==='function'?matchMedia('(prefers-reduced-motion: reduce)'):null;
     function reduced(){return o.reducedMotion==='always'||(o.reducedMotion==='respect'&&media&&media.matches);}
     var speed0=Math.hypot(leader.state.vx||0,leader.state.vy||0);if(speed0>.05)lastHeading=Math.atan2(leader.state.vy,leader.state.vx);
@@ -334,14 +357,14 @@
     function measure(){var r=area.getBoundingClientRect?area.getBoundingClientRect():{left:0,top:0,width:innerWidth,height:innerHeight};bounds={left:r.left||0,top:r.top||0,width:Math.max(1,r.width||innerWidth),height:Math.max(1,r.height||innerHeight)};dpr=Math.min(devicePixelRatio||1,o.maxDpr);var w=Math.max(1,Math.round(bounds.width*dpr)),h=Math.max(1,Math.round(bounds.height*dpr));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;canvas.style.width=bounds.width+'px';canvas.style.height=bounds.height+'px';}gl.viewport(0,0,w,h);}
     function rebuildTopology(){topology=createTopology(o.columns,o.rows,o.leadEnd);indexCount=topology.indices.length;gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,indexBuffer);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(topology.indices),gl.STATIC_DRAW);var tc=new Float32Array(topology.vertices.length*2);for(var i=0;i<topology.vertices.length;i++){tc[i*2]=topology.vertices[i].tx;tc[i*2+1]=topology.vertices[i].ty;}gl.bindBuffer(gl.ARRAY_BUFFER,texBuffer);gl.bufferData(gl.ARRAY_BUFFER,tc,gl.STATIC_DRAW);}
     function ensureSpine(){if(spine.length!==o.spinePoints)spine=createSpine(o.spinePoints,leader.state.x,leader.state.y,lastHeading,o.length);}
-    function render(speedRatio){var ro=reduced()?merge(o,{sway:0}):o,iw=img.width||img.naturalWidth,ih=img.height||img.naturalHeight;if(!iw||!ih)return;var mesh=deformTopology(topology,spine,iw,ih,phase,ro,speedRatio),positions=mesh.positions;lastMeshSafety={limitedColumns:mesh.meshSafety.limitedColumns,minScale:mesh.meshSafety.minScale};for(var i=0;i<positions.length;i+=2){positions[i]-=bounds.left;positions[i+1]-=bounds.top;}gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);gl.useProgram(prog);gl.uniform2f(resLoc,bounds.width,bounds.height);gl.uniform1i(imgLoc,0);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,texture);gl.bindBuffer(gl.ARRAY_BUFFER,posBuffer);gl.bufferData(gl.ARRAY_BUFFER,positions,gl.DYNAMIC_DRAW);gl.enableVertexAttribArray(posLoc);gl.vertexAttribPointer(posLoc,2,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ARRAY_BUFFER,texBuffer);gl.enableVertexAttribArray(texLoc);gl.vertexAttribPointer(texLoc,2,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,indexBuffer);gl.drawElements(gl.TRIANGLES,indexCount,gl.UNSIGNED_SHORT,0);}
+    function render(speedRatio){var ro=reduced()?merge(o,{sway:0}):o,iw=img.width||img.naturalWidth,ih=img.height||img.naturalHeight;if(!iw||!ih)return;var mesh=deformTopology(topology,spine,iw,ih,phase,ro,speedRatio),positions=mesh.positions;lastMeshSafety={limitedColumns:mesh.meshSafety.limitedColumns,minScale:mesh.meshSafety.minScale};lastMeshDiagnostics=o.meshDiagnostic?analyzeMeshGeometry(mesh,o):null;for(var i=0;i<positions.length;i+=2){positions[i]-=bounds.left;positions[i+1]-=bounds.top;}gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);gl.useProgram(prog);gl.uniform2f(resLoc,bounds.width,bounds.height);gl.uniform1i(imgLoc,0);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,texture);gl.bindBuffer(gl.ARRAY_BUFFER,posBuffer);gl.bufferData(gl.ARRAY_BUFFER,positions,gl.DYNAMIC_DRAW);gl.enableVertexAttribArray(posLoc);gl.vertexAttribPointer(posLoc,2,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ARRAY_BUFFER,texBuffer);gl.enableVertexAttribArray(texLoc);gl.vertexAttribPointer(texLoc,2,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,indexBuffer);gl.drawElements(gl.TRIANGLES,indexCount,gl.UNSIGNED_SHORT,0);}
     function frame(now,dt){if(paused||destroyed||contextLost)return;var vx=leader.state.vx||0,vy=leader.state.vy||0,speed=Math.hypot(vx,vy);if(speed>.08)lastHeading=Math.atan2(vy,vx);var max=(leader.options&&leader.options.maxSpeed)||34,ratio=clamp(speed/Math.max(1,max),0,1);ensureSpine();lastGuard=advanceSpine(spine,leader.state,o.length,lastHeading,o);if(!reduced())phase=advancePhase(phase,ratio,o,dt);render(ratio);}
     function onContextLost(ev){if(ev&&ev.preventDefault)ev.preventDefault();contextLost=true;paused=true;if(typeof input.onContextLost==='function')try{input.onContextLost({renderer:'weighted-curve-v4b',reason:'webgl-context-lost'});}catch(_){}}
     function onMeasure(){measure();}
     uploadTexture();gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.disable(gl.DEPTH_TEST);rebuildTopology();measure();updateShadow();canvas.addEventListener('webglcontextlost',onContextLost,false);window.addEventListener('resize',onMeasure,{passive:true});window.addEventListener('scroll',onMeasure,true);var robs=typeof ResizeObserver==='function'?new ResizeObserver(onMeasure):null;if(robs)robs.observe(area);var unsub=engine.subscribeFrame(frame);
 
     return {version:VERSION,renderer:'webgl-weighted-curve-v4b',
-      get options(){return clone(o);},get spine(){return spine.map(function(p){return {x:p.x,y:p.y};});},get controls(){return clone(createControls(o));},get guard(){return clone(lastGuard);},get meshSafety(){return clone(lastMeshSafety);},
+      get options(){return clone(o);},get spine(){return spine.map(function(p){return {x:p.x,y:p.y};});},get controls(){return clone(createControls(o));},get guard(){return clone(lastGuard);},get meshSafety(){return clone(lastMeshSafety);},get meshDiagnostics(){return lastMeshDiagnostics?clone(lastMeshDiagnostics):null;},
       get topology(){return {columns:topology.columns,rows:topology.rows,vertexCount:topology.vertices.length,indexCount:indexCount};},get textureInfo(){return clone(textureInfo);},get contextLost(){return contextLost;},
       setOptions:function(next){var pc=o.columns,pr=o.rows,pl=o.leadEnd,pt=o.maxTextureDimension;o=normalizeOptions(merge(o,next||{}));ensureSpine();limitWeightedBend(spine,o.length,lastHeading,o);if(pc!==o.columns||pr!==o.rows||pl!==o.leadEnd)rebuildTopology();if(pt!==o.maxTextureDimension&&!contextLost)uploadTexture();updateShadow();measure();return clone(o);},
       pause:function(){paused=true;},resume:function(){if(!contextLost)paused=false;},measure:measure,
@@ -349,5 +372,5 @@
     };
   }
 
-  return {version:VERSION,defaults:clone(DEFAULTS),normalizeOptions:normalizeOptions,createControls:createControls,weightsAt:weightsAt,weightedFieldAt:weightedFieldAt,flexAt:flexAt,bendAt:bendAt,createSpine:createSpine,resegmentSpine:resegmentSpine,limitWeightedBend:limitWeightedBend,closestPointsSegments:closestPointsSegments,spineMinSeparation:spineMinSeparation,antiFoldGuard:antiFoldGuard,advanceSpine:advanceSpine,sampleCenterline:sampleCenterline,weightedFrame:weightedFrame,createTopology:createTopology,meshWidthScales:meshWidthScales,deformTopology:deformTopology,advancePhase:advancePhase,fitTextureDimensions:fitTextureDimensions,prepareAsset:prepareAsset,createRenderer:createRenderer};
+  return {version:VERSION,defaults:clone(DEFAULTS),normalizeOptions:normalizeOptions,createControls:createControls,weightsAt:weightsAt,weightedFieldAt:weightedFieldAt,flexAt:flexAt,bendAt:bendAt,createSpine:createSpine,resegmentSpine:resegmentSpine,limitWeightedBend:limitWeightedBend,closestPointsSegments:closestPointsSegments,spineMinSeparation:spineMinSeparation,antiFoldGuard:antiFoldGuard,advanceSpine:advanceSpine,sampleCenterline:sampleCenterline,weightedFrame:weightedFrame,createTopology:createTopology,meshWidthScales:meshWidthScales,deformTopology:deformTopology,analyzeMeshGeometry:analyzeMeshGeometry,advancePhase:advancePhase,fitTextureDimensions:fitTextureDimensions,prepareAsset:prepareAsset,createRenderer:createRenderer};
 });

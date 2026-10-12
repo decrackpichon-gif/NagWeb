@@ -129,6 +129,7 @@ jobs:
           cp js/nagweb-interaction-organic-v4.js /tmp/nagweb-interaction-studio/js/
           cp js/nagweb-interaction-organic-v4b.js /tmp/nagweb-interaction-studio/js/
           cp js/nagweb-interaction-organic-v4c.js /tmp/nagweb-interaction-studio/js/
+          cp js/nagweb-interaction-ab-review-v1.js /tmp/nagweb-interaction-studio/js/
           cp js/nagweb-scene-composer-v1.js /tmp/nagweb-interaction-studio/js/
           cp js/nagweb-scene-composer-view-v1.js /tmp/nagweb-interaction-studio/js/
           cp js/nagweb-scene-composer-app-v1.js /tmp/nagweb-interaction-studio/js/

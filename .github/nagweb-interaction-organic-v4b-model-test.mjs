@@ -97,4 +97,22 @@ assert.ok(thin.minScale>tight.minScale);
 const straightGuarded=V4B.deformTopology(topo,straight,400,200,0,{...o,length:380,sway:0,meshFoldGuard:true},0);
 assert.deepEqual(Array.from(straightGuarded.positions),Array.from(mesh.positions));
 assert.equal(straightGuarded.meshSafety.limitedColumns,0);
+
+// Signed triangle diagnostic is independent of the spline and never changes V4-B output.
+const straightMetrics=V4B.analyzeMeshGeometry(mesh,{...o,length:380,columns:30,rows:10});
+assert.equal(straightMetrics.invalidTriangles,0);
+assert.equal(straightMetrics.invertedTriangles,0);
+assert.equal(straightMetrics.collapsedTriangles,0);
+assert.equal(straightMetrics.triangleCount,topo.indices.length/3);
+assert.ok(straightMetrics.minAreaRatio>.1);
+const deliberatelyInverted={positions:new Float32Array([0,0,10,0,0,10]),indices:new Uint16Array([0,1,2]),height:100};
+const invertedMetrics=V4B.analyzeMeshGeometry(deliberatelyInverted,{columns:1,rows:1,length:10});
+assert.equal(invertedMetrics.invertedTriangles,1);
+assert.equal(invertedMetrics.collapsedTriangles,0);
+const collapsedMetrics=V4B.analyzeMeshGeometry({positions:new Float32Array([0,0,0,0,0,0]),indices:new Uint16Array([0,1,2]),height:100},{columns:1,rows:1,length:10});
+assert.equal(collapsedMetrics.collapsedTriangles,1);
+assert.equal(collapsedMetrics.invertedTriangles,0);
+const invalidMetrics=V4B.analyzeMeshGeometry({positions:new Float32Array([0,0,NaN,0,0,10]),indices:new Uint16Array([0,1,2]),height:100},{columns:1,rows:1,length:10});
+assert.equal(invalidMetrics.invalidTriangles,1);
+assert.equal(V4B.normalizeOptions({}).meshDiagnostic,false);
 console.log('NagWeb Organic Weighted Curve V4-B model tests: PASS');
