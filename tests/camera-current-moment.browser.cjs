@@ -120,10 +120,25 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   const yaw=page.frameLocator('#preview').locator('[data-nw-base-axis="RotateY"]');
   await yaw.waitFor({state:'visible'});
   const yr=await yaw.boundingBox();assert.ok(yr&&yr.width>0);
+  // Physical mouse pixels may be scaled into iframe-local CSS coordinates.
+  // Record the real local pointer delta the editor actually receives.
+  await page.evaluate(()=>{
+   const d=document.getElementById('preview').contentDocument;
+   window.__gizmoProbe={yaw:{}};
+   d.addEventListener('pointerdown',ev=>{
+    if(ev.target.closest&&ev.target.closest('[data-nw-base-axis="RotateY"]'))window.__gizmoProbe.yaw.start=ev.clientX;
+   },true);
+   d.addEventListener('pointermove',ev=>{
+    if(window.__gizmoProbe.yaw.start!==undefined)window.__gizmoProbe.yaw.end=ev.clientX;
+   },true);
+  });
   await page.mouse.move(yr.x+yr.width/2,yr.y+yr.height/2);
   await page.mouse.down();await page.mouse.move(yr.x+yr.width/2+50,yr.y+yr.height/2,{steps:5});
   await page.mouse.up();
-  const turned=await edit3D();assert.equal(turned.yaw,30,'Real mouse stores the object yaw');
+  const turned=await edit3D();
+  const realYawDelta=await page.evaluate(()=>window.__gizmoProbe.yaw.end-window.__gizmoProbe.yaw.start);
+  assert.ok(Number.isFinite(realYawDelta)&&realYawDelta>0,'Real iframe received pointer movement');
+  assert.equal(turned.yaw,Math.round(realYawDelta*.6*10)/10,'Yaw follows measured iframe-local mouse delta');
   assert.equal(turned.history,beforeGizmo.history+1,'Real gizmo drag creates a single Undo');
   assert.equal(turned.camera,beforeGizmo.camera,'Gizmo cannot rewrite camera frames');
   await page.evaluate(()=>undo());
@@ -136,10 +151,23 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   const depth=page.frameLocator('#preview').locator('[data-nw-object-depth-handle]');
   await depth.waitFor({state:'visible'});
   const dr=await depth.boundingBox();assert.ok(dr&&dr.width>0);
+  await page.evaluate(()=>{
+   const d=document.getElementById('preview').contentDocument;
+   window.__gizmoProbe.depth={};
+   d.addEventListener('pointerdown',ev=>{
+    if(ev.target.closest&&ev.target.closest('[data-nw-object-depth-handle]'))window.__gizmoProbe.depth.start=ev.clientY;
+   },true);
+   d.addEventListener('pointermove',ev=>{
+    if(window.__gizmoProbe.depth.start!==undefined)window.__gizmoProbe.depth.end=ev.clientY;
+   },true);
+  });
   await page.mouse.move(dr.x+dr.width/2,dr.y+dr.height/2);
   await page.mouse.down();await page.mouse.move(dr.x+dr.width/2,dr.y+dr.height/2-70,{steps:5});
   await page.mouse.up();
-  const closer=await edit3D();assert.equal(closer.depth,.7,'Real mouse adjusts authored Z depth');
+  const closer=await edit3D();
+  const realDepthDelta=await page.evaluate(()=>window.__gizmoProbe.depth.start-window.__gizmoProbe.depth.end);
+  assert.ok(Number.isFinite(realDepthDelta)&&realDepthDelta>0,'Depth drag reaches actual preview');
+  assert.equal(closer.depth,Math.round(realDepthDelta*.01*100)/100,'Z uses actual iframe-local mouse delta');
   assert.equal(closer.history,beforeGizmo.history+1,'Undo of yaw followed by Z creates one history entry');
   await page.evaluate(()=>undo());assert.equal((await edit3D()).depth,0,'Undo restores depth without changing the camera');
   await page.waitForFunction(()=>{
