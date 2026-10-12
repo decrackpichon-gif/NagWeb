@@ -638,3 +638,12 @@ El laboratorio conserva ahora los nodos de escena por ID entre ediciones y selec
 Las mediciones geométricas se limitan a targets nuevos o cuyo cuadro cambió; el arrastre mide el target desplazado, y `ResizeObserver` conserva la cobertura global de redimensionamiento. El cambio de radio/intensidad global actualiza opciones sobre el campo existente. Se mantiene la separación entre V3 estable y V4-C.1 experimental, sin integración al editor principal.
 
 El browser smoke comprueba identidad estable del campo y del nodo tras selección, edición de reacción, alta y desactivación de targets. La comparación visual V3/V4-C.1 con personajes reales continúa pendiente.
+
+
+## A/B de recorrido compartido · Organic Review V1
+
+Se extiende el laboratorio existente \`experiments/organic-adaptive-curve-v4c.html\` con \`js/nagweb-interaction-ab-review-v1.js\`. Sin introducir un motor nuevo, los seguidores de V3 y V4-C.1 reciben la misma secuencia de objetivos normalizados mediante \`setTarget\`. Hay dos recorridos: giros cerrados/reversas y curvas suaves, con duración de 4,2 u 8 segundos.
+
+La herramienta muestra progreso, permite detener, exporta un JSON con asset/preset, trayectoria y muestras de ambos motores (finitud de puntos, máximo cambio angular local, mínimo largo de segmento, controles limitados por grosor y conflictos anti-fold). El movimiento real se integra con frames del navegador, de modo que dos repeticiones comparten trayectoria y tiempos objetivo, pero **no garantizan igualdad cuadro por cuadro**. Las métricas sirven para detectar señales de riesgo; no demuestran calidad estética ni ausencia de inversión de polígonos.
+
+El browser smoke reproduce un recorrido de giros cerrados con el fixture SVG interno, captura una imagen intermedia y valida que ambas spines produzcan datos finitos. También prueba la cancelación durante un recorrido suave. La evaluación humana con \`ponjita.png\` y otros PNG reales permanece pendiente: el archivo original no está incluido en la rama ni se agrega al repositorio. Se mantienen ambas ramas de Interaction Studio aisladas, sin integrar cambios al editor principal.

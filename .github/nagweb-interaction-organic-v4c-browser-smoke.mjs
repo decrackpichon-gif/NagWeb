@@ -66,6 +66,35 @@ try{
 
   const gl=await page.evaluate(()=>['canvasV3','canvasV4C'].map(id=>{const c=document.getElementById(id),g=c.getContext('webgl')||c.getContext('experimental-webgl');return !!g&&g.getError()===g.NO_ERROR;}));
   assert.deepEqual(gl,[true,true]);
+  // Run the same path on both engines and retain diagnostic samples.
+  const reviewBoot=await page.evaluate(()=>({available:!!window.__NAGWEB_AB_REVIEW__,runCount:window.__NAGWEB_AB_REVIEW__?.runCount||0}));
+  assert.equal(reviewBoot.available,true,'A/B repeatable runner must be available');
+  assert.equal(reviewBoot.runCount,0);
+  fs.mkdirSync('/tmp/nagweb-interaction-experimental',{recursive:true});
+  await page.click('#abRun');
+  await page.waitForFunction(()=>window.__NAGWEB_AB_REVIEW__.running,{timeout:3000});
+  await new Promise(r=>setTimeout(r,700));
+  await page.screenshot({path:'/tmp/nagweb-interaction-experimental/organic-v3-v4c-route-in-progress.png',fullPage:true});
+  await page.waitForFunction(()=>!!window.__NAGWEB_AB_REVIEW__.lastReport,{timeout:14000});
+  const review=await page.evaluate(()=>window.__NAGWEB_AB_REVIEW__.lastReport);
+  assert.equal(review.schema,'nagweb-organic-ab-review');
+  assert.equal(review.status,'completo');
+  assert.equal(review.route,'tight');
+  assert.equal(review.asset,'fixture-svg-interno');
+  assert.equal(review.cancelled,false);
+  assert.ok(review.samples.length>=8,'A/B route should collect enough diagnostic samples');
+  assert.equal(review.invalidSamples,0,'both spines should remain finite during repeated route');
+  assert.ok(review.samples.every(s=>s.target.length===2&&s.v3.finite&&s.v4c.finite));
+  assert.ok(review.samples.some(s=>s.progress>.85),'route must reach its final segment');
+  assert.equal(await page.$eval('#abExport',el=>el.disabled),false,'finished run allows JSON export');
+  await page.evaluate(()=>window.__NAGWEB_AB_REVIEW__.start({route:'smooth',durationMs:550}));
+  await page.waitForFunction(()=>window.__NAGWEB_AB_REVIEW__.running,{timeout:3000});
+  await page.click('#abStop');
+  const cancelled=await page.evaluate(()=>window.__NAGWEB_AB_REVIEW__.lastReport);
+  assert.equal(cancelled.status,'interrumpido');
+  assert.equal(cancelled.cancelled,true);
+  assert.equal(await page.evaluate(()=>window.__NAGWEB_AB_REVIEW__.running),false);
+
   assert.equal(errors.length,0,'V4-C lab should have no page errors: '+errors.join('\n'));
   assert.equal(consoleErrors.length,0,'V4-C lab should have no console errors: '+consoleErrors.join('\n'));
   fs.mkdirSync('/tmp/nagweb-interaction-experimental',{recursive:true});

@@ -10,6 +10,7 @@
 h1{font-size:18px;margin:0 0 6px}.sub{font-size:11px;line-height:1.45;color:#aaa5b4;margin-bottom:14px}.group{padding:12px 0;border-top:1px solid #2b2934}.group h2{font-size:11px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;color:#d0c9da}
 .upload{display:block;padding:10px;border:1px dashed #555061;border-radius:10px;text-align:center;font-size:11px;cursor:pointer}.upload input{display:none}.preview{width:100%;height:120px;object-fit:contain;background:#0c0b10;border:1px solid #2e2d37;border-radius:10px;margin-top:8px}
 .field{margin:10px 0}.field label{display:flex;justify-content:space-between;font-size:10px;color:#bbb6c6;margin-bottom:5px}.field input[type=range],.field select{width:100%}.check{display:flex;gap:8px;align-items:center;font-size:10px;color:#c6c0ce}
+.ab-actions{display:flex;gap:7px}.ab-actions button,#abExport{min-height:30px;padding:6px 8px;border-radius:6px;border:1px solid #575266;background:#292531;color:#eee;cursor:pointer}.ab-actions button:disabled,#abExport:disabled{opacity:.45;cursor:default}.ab-metrics{white-space:pre-wrap;font:10px/1.5 ui-monospace,monospace;color:#b5c5dc}
 .status{font:10px/1.5 ui-monospace,monospace;color:#a9dcb4;white-space:pre-wrap}.legend{font:10px/1.45 ui-monospace,monospace;color:#aaa5b4;margin-top:8px}
 .compare{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#2a2932;min-width:0}.stage{position:relative;overflow:hidden;background:radial-gradient(circle at 50% 42%,#282330 0,#15131a 46%,#0e0d12 100%);min-width:0;min-height:100vh}
 .stage canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.label{position:absolute;z-index:6;left:18px;top:18px;padding:6px 9px;border:1px solid rgba(255,255,255,.2);border-radius:999px;background:rgba(10,9,14,.65);font:700 10px ui-monospace,monospace}
@@ -37,6 +38,21 @@ h1{font-size:18px;margin:0 0 6px}.sub{font-size:11px;line-height:1.45;color:#aaa
     <div class="field"><label>Ondulación <output id="swayOut"></output></label><input id="sway" type="range" min="0" max=".11" step=".002" value=".035"></div>
     <label class="check"><input id="diagnostic" type="checkbox" checked> Mostrar diagnóstico adaptativo</label>
     <div class="legend">barra corta = zona fina · barra larga = zona ancha<br>azul = rígido · amarillo = flexible · rojo = límite de grosor activo</div>
+  </div>
+
+  <div class="group" id="abReview">
+    <h2>Comparación repetible V3 ↔ V4-C.1</h2>
+    <div class="field"><label>Trayectoria</label>
+      <select id="abRoute"><option value="tight">Giros cerrados y reversas</option><option value="smooth">Curvas suaves</option></select>
+    </div>
+    <div class="field"><label>Duración</label>
+      <select id="abDuration"><option value="4200">4,2 segundos</option><option value="8000">8 segundos</option></select>
+    </div>
+    <div class="ab-actions"><button id="abRun" type="button">Reproducir en ambos</button><button id="abStop" type="button" disabled>Detener</button></div>
+    <div class="field">Progreso: <output id="abProgress">0%</output></div>
+    <pre id="abMetrics" class="ab-metrics">Cargá un personaje y reproducí un recorrido compartido.</pre>
+    <button id="abExport" type="button" disabled>Exportar mediciones JSON</button>
+    <div class="legend">Ambos motores reciben la misma trayectoria normalizada. Las capturas y mediciones ayudan a comparar estabilidad; no sustituyen la evaluación visual.</div>
   </div>
 
   <div class="group"><div id="status" class="status">Preparando…</div></div>
@@ -87,6 +103,7 @@ h1{font-size:18px;margin:0 0 6px}.sub{font-size:11px;line-height:1.45;color:#aaa
   [length,sway].forEach(function(x){x.addEventListener('input',sync);});preset.addEventListener('change',sync);diagnostic.addEventListener('change',sync);
 
   function syncTarget(ev){
+    if(window.__NAGWEB_AB_REVIEW__&&window.__NAGWEB_AB_REVIEW__.running)return;
     var r=compare.getBoundingClientRect(),nx=Math.max(0,Math.min(1,(ev.clientX-r.left)/r.width)),ny=Math.max(0,Math.min(1,(ev.clientY-r.top)/r.height));
     f3.setTarget(nx*s3.clientWidth,ny*s3.clientHeight,'area');f4.setTarget(nx*s4.clientWidth,ny*s4.clientHeight,'area');
     cross3.style.left=nx*100+'%';cross3.style.top=ny*100+'%';cross4.style.left=nx*100+'%';cross4.style.top=ny*100+'%';
@@ -133,4 +150,5 @@ h1{font-size:18px;margin:0 0 6px}.sub{font-size:11px;line-height:1.45;color:#aaa
   outputs();drawDiag();source.onload=function(){prepare().catch(fail);};source.src=fallback;
 })();
 </script>
+<script src="../js/nagweb-interaction-ab-review-v1.js"></script>
 </body></html>
