@@ -40,8 +40,13 @@ export async function runMotionFanSmoke(page){
    await page.mouse.move(origin.x,origin.y);await page.mouse.down();await page.mouse.move(destination.x,destination.y,{steps:5});await page.mouse.up();await ready();
    const actual=await list(),expected=beforeDrag.slice();expected.splice(from,1);expected.splice(to,0,first.id);
    assert.deepEqual(actual,expected,'Wall drag moves image in Elements, no duplicates');
-   assert.equal(await page.$eval('[data-motion-fan-arrange]',n=>n.getAttribute('aria-pressed')),'false');
-   await page.click('[data-motion-fan-arrange]');const unchanged=await list();
+   assert.equal(await page.$eval('[data-motion-fan-arrange]',n=>n.getAttribute('aria-pressed')),'true','Continued editing after drag');
+   assert.equal(await page.$eval('[data-motion-fan-undo]',n=>n.disabled),false);
+   await page.click('[data-motion-fan-undo]');await ready();
+   assert.deepEqual(await list(),beforeDrag,'Undo restores the entire previous list');
+   assert.equal(await page.$eval('[data-motion-fan-undo]',n=>n.disabled),true);
+   assert.equal(await page.$eval('[data-motion-fan-arrange]',n=>n.getAttribute('aria-pressed')),'true');
+   const unchanged=await list();
    await page.keyboard.press('Escape');assert.deepEqual(await list(),unchanged,'Escape must preserve order');
    assert.equal(await page.$eval('[data-motion-fan-arrange]',n=>n.getAttribute('aria-pressed')),'false');
    await change('[data-motion-stream="fanDistribution"]','original');assert.equal(await page.$eval('[data-stream-fan-ordered]',n=>n.hidden),true);

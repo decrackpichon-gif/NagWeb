@@ -1268,3 +1268,11 @@ Las opciones `fanDistribution`, `fanStart` y `fanHero` se normalizan solamente e
 ## Fan Shuffle: distribución editable por arrastre
 
 Seleccionando «Seguir orden de imágenes» aparece «Reordenar en el lienzo». El botón pausa la animación en la fase de pared. Arrastrar una tarjeta visible sobre otra mueve su fuente a esa posición en la lista de Elementos; las repeticiones comparten el nuevo orden y los archivos no se duplican. Soltar sin un destino válido no modifica la composición. Escape cancela o termina el modo, incluso desde el inspector. El modo también termina al cambiar momento, controles o reproducción y no se activa con movimiento reducido ni durante cargas. La detección usa las superficies recortadas y el modelo de selección del lienzo. Guardar, reabrir, Biblioteca y exportación comparten el flujo anterior. La suite de Fan Shuffle incluye arrastre nativo, orden esperado, ausencia de duplicados y Escape.
+
+## Fan Shuffle: sesión de reordenamiento continuo y deshacer
+
+La edición de la pared conserva activo «Reordenar en el lienzo» después de soltar una imagen y reconstruir la vista previa. Se puede encadenar otro arrastre sin reactivar el modo; el controlador recupera el instante estable al cargar el nuevo iframe. «Deshacer último movimiento» restaura el orden anterior de las imágenes del borrador. Se invalida ese deshacer al editar manualmente el orden, cambiar configuración o cambiar de composición; no se serializa como parte del proyecto. Escape sigue saliendo del modo, incluso desde el inspector. La prueba de navegador comprueba que un drag no desarma la sesión, que el deshacer restaura el orden de las capas y que Escape sale sin cambios.
+
+### Robustez del pipeline de capturas de prueba
+
+La exportación de capturas con `actions/upload-artifact` es diagnóstica, no debe invalidar un smoke de navegador exitoso cuando GitHub Actions tiene un timeout de almacenamiento. En el workflow, ese **paso de upload** admite fallos (`continue-on-error`), mientras que `Run browser smoke` continúa siendo obligatorio: un fallo de ejecución o aserciones sigue dejando el job en rojo. No afecta a despliegues.
