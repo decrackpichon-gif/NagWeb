@@ -186,6 +186,69 @@ export async function runEditorPartsSmoke(page){
   await page.click('#btn-redo');
   assert.equal(await page.evaluate(()=>sec().elements.find(e=>e.id==='test-hero').wp.__parts['layer-2'].r),afterRotate.part.r);
   
+  // Edición de precisión sin rearmar escenas ni agregar un segundo motor.
+  await load(5);await select('test-hero');
+  await fire('[data-nw-part=""]');
+  await fire('[data-wpart="layer-2"]');
+  const direct=await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument;
+   return{button:d.querySelector('[data-nw-part="layer-2"]')?.classList.contains('on'),
+    selected:d.querySelector('.nw-part-edit-active')?.getAttribute('data-wpart'),handle:d.querySelector('.nw-wpart-sel')?.getAttribute('data-wpart')};
+  });
+  assert.deepEqual(direct,{button:true,selected:'layer-2',handle:'layer-2'},'clic directo sincroniza lienzo y barra del Hero');
+  await load(6);
+  assert.deepEqual(await toolPart(),{part:'layer-2',handles:2},'reconstrucción conserva la selección interna');
+  await select('test-story');await fire('[data-wpart="media-3"]');
+  const directStory=await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,st=d.querySelector('.nw-story');
+   return{chapter:st.__nwStoryChapter,selected:d.querySelector('.nw-story .nw-part-edit-active')?.getAttribute('data-wpart'),
+    button:st.querySelector('[data-nw-story-part="media"]')?.classList.contains('on')};
+  });
+  assert.deepEqual(directStory,{chapter:3,selected:'media-3',button:true},'clic directo también cambia capítulo de Historia sticky');
+  await load(7);await select('test-hero');await fire('[data-nw-part="layer-2"]');
+  const keyBefore=await page.evaluate(()=>{
+   const el=sec().elements.find(x=>x.id==='test-hero');
+   return{part:{...el.wp.__parts['layer-2']},history:history.length};
+  });
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,w=d.defaultView,target=d.querySelector('[data-nw-part="layer-2"]');
+   for(const shift of [true,false])target.dispatchEvent(new w.KeyboardEvent('keydown',{bubbles:true,cancelable:true,key:'ArrowRight',shiftKey:shift}));
+   target.dispatchEvent(new w.KeyboardEvent('keyup',{bubbles:true,cancelable:true,key:'ArrowRight'}));
+  });
+  const nudged=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-hero');
+   return{part:{...e.wp.__parts['layer-2']},history:history.length};
+  });
+  assert.equal(nudged.part.x,keyBefore.part.x+11,'Mayús y flecha realizan movimientos precisos');
+  assert.equal(nudged.part.y,keyBefore.part.y);
+  assert.equal(nudged.history,keyBefore.history+1,'repetición de flecha genera un solo Deshacer');
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,w=d.defaultView,n=d.querySelector('[data-wpart="layer-2"]');
+   n.setAttribute('contenteditable','true');
+   n.dispatchEvent(new w.KeyboardEvent('keydown',{bubbles:true,cancelable:true,key:'ArrowRight'}));
+   n.dispatchEvent(new w.KeyboardEvent('keyup',{bubbles:true,cancelable:true,key:'ArrowRight'}));
+   n.removeAttribute('contenteditable');
+  });
+  assert.equal(await page.evaluate(()=>sec().elements.find(x=>x.id==='test-hero').wp.__parts['layer-2'].x),nudged.part.x,'editar texto no mueve capas');
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,n=d.querySelector('.nw-wpart-reset');
+   if(!n)throw Error('No aparece Restablecer con transformación activa');n.click();
+  });
+  const reset=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-hero');
+   return{part:e.wp.__parts['layer-2'],history:history.length,
+    visibleReset:!!document.querySelector('#preview').contentDocument.querySelector('.nw-wpart-reset')};
+  });
+  assert.deepEqual(reset.part,{x:0,y:0,r:0,s:1},'Restablecer afecta únicamente a la pieza');
+  assert.equal(reset.history,nudged.history+1,'Restablecer genera Deshacer');
+  assert.equal(reset.visibleReset,false,'el botón desaparece al quedar neutral');
+  await page.click('#btn-undo');
+  assert.equal(await page.evaluate(()=>sec().elements.find(x=>x.id==='test-hero').wp.__parts['layer-2'].x),nudged.part.x);
+  await page.click('#btn-redo');
+  assert.equal(await page.evaluate(()=>sec().elements.find(x=>x.id==='test-hero').wp.__parts['layer-2'].x),0);
+  const storedNeutral=await page.evaluate(()=>JSON.parse(localStorage.getItem(STORE_KEY)).pages[curPage].sections[curSec].elements.find(x=>x.id==='test-hero').wp.__parts['layer-2']);
+  assert.deepEqual(storedNeutral,reset.part,'restablecimiento se guarda en el proyecto');
+
   console.log('Editor partes: foco, restauración, Escape, Enter e historial OK');
  }finally{
   await page.evaluate(old=>{
