@@ -10,6 +10,7 @@ import { transformUiverseComponent } from "./light-transformers.mjs";
 import { normalizeHeroiconOutline } from "./extractors/heroicons.mjs";
 import { transformHeroiconOutline } from "./heroicons-transformer.mjs";
 import { browseHeroiconPaths } from "./snapshot/browse-icon-paths.mjs";
+import { browseLucideShapes } from "./snapshot/browse-lucide-shapes.mjs";
 import { describeEditableControls } from "./runtime/editable-controls.mjs";
 import { buildResourceApplyEnvelope } from "./runtime/resource-apply-bridge.mjs";
 
@@ -56,11 +57,24 @@ const heroicon = transformHeroiconOutline({
   commit:"1234567890abcdef1234567890abcdef12345678",
   licenseText:"MIT License\n\nCopyright (c) Tailwind Labs, Inc.\nPermission notice."
 });
-const resources = [icon, css, heroicon];
+// Actual Lucide Camera shape, with a curved path and circle, for the
+// lightweight browse preview. Insertion is already covered by SVG tests.
+const lucideCamera = {
+  ...icon, id: "lucide:camera", title: "Camera",
+  source: { provider: "lucide" },
+  artifacts: [{id:"icon",role:"icon-data",content:
+    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" ' +
+    'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"/>' +
+    '<circle cx="12" cy="13" r="3"/></svg>'}]
+};
+const resources = [icon, css, heroicon, lucideCamera];
 const zip = data => gzipSync(JSON.stringify(data));
 const index = zip({ format: "nagweb-resource-browse-index", resourceCount: resources.length,
   resources: resources.map(r => ({ id: r.id, title: r.title, family: r.family, kind: r.kind, provider: r.source.provider,
-    ...(browseHeroiconPaths(r) ? { previewPaths: browseHeroiconPaths(r) } : {}) })) });
+    ...(browseHeroiconPaths(r) ? { previewPaths: browseHeroiconPaths(r) } : {}),
+    ...(browseLucideShapes(r) ? { previewShapes: browseLucideShapes(r) } : {}) })) });
 const library = zip({ format: "nagweb-resource-vault-bundle", resourceCount: resources.length, resources });
 const sha = bytes => createHash("sha256").update(bytes).digest("hex");
 const fixtures = new Map([
@@ -1471,6 +1485,20 @@ try {
   await expect(page.frameLocator("#preview").locator(`[data-id="${heroInserted.element.id}"] svg`)).toBeVisible();
   report.scenarios.push({editor:"Heroicons native insert, customize and export",
     status:"passed",providerFilter:true,edit:true,export:true,persistence:true});
+
+  // Lucide cards must show the real multi-shape icon from the search index.
+  await page.getByRole("button",{name:"Biblioteca de recursos",exact:true}).click();
+  await libraryFrame.getByLabel("Proveedor",{exact:true}).selectOption("lucide");
+  const cameraCard=libraryFrame.locator('[data-resource-id="lucide:camera"]');
+  await expect(cameraCard).toBeVisible();
+  const lucidePreview=cameraCard.locator("[data-icon-thumbnail] svg");
+  await expect(lucidePreview.locator("path")).toHaveCount(1);
+  await expect(lucidePreview.locator("circle")).toHaveCount(1);
+  await expect(lucidePreview.locator("circle")).toHaveAttribute("r","3");
+  await cameraCard.click();
+  await expect(libraryFrame.locator("[data-detail-title]")).toContainText("Camera");
+  report.scenarios.push({editor:"Lucide visual thumbnails from verified lightweight index",
+    status:"passed",providerFilter:true,realShapes:true,noExternalImages:true});
 
   await context.close();
   assert.deepEqual(report.errors, [], "Browser must not emit uncaught errors or external requests");

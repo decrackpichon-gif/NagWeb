@@ -1,5 +1,6 @@
 import path from "node:path";
 import { browseHeroiconPaths } from "./browse-icon-paths.mjs";
+import { browseLucideShapes } from "./browse-lucide-shapes.mjs";
 import { createHash } from "node:crypto";
 import { gunzipSync, gzipSync } from "node:zlib";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -101,7 +102,10 @@ const browseResources = resources.map((resource) => ({
   // Allows the grid to display the actual shape without downloading 37 MB
   // of source code or fetching files from an external image host.
   ...(browseHeroiconPaths(resource)
-    ? { previewPaths: browseHeroiconPaths(resource) } : {})
+    ? { previewPaths: browseHeroiconPaths(resource) } : {}),
+  // Data-only compact geometry. Preserve provider archives unchanged.
+  ...(browseLucideShapes(resource)
+    ? { previewShapes: browseLucideShapes(resource) } : {})
 }));
 
 const browseIndex = {

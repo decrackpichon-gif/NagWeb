@@ -212,7 +212,38 @@ function badge(value) {
   return `<span class="badge">${esc(value)}</span>`;
 }
 
+function lucideThumbnail(item) {
+  const shapes = item?.provider === "lucide" ? item.previewShapes : null;
+  if (!Array.isArray(shapes) || !shapes.length || shapes.length > 40) return "";
+  const allowed = {
+    path: ["d"], circle: ["cx","cy","r"], ellipse: ["cx","cy","rx","ry"],
+    line: ["x1","y1","x2","y2"], rect: ["x","y","width","height","rx","ry"],
+    polyline: ["points"], polygon: ["points"]
+  };
+  const safe = shapes.every(shape => {
+    if (!Array.isArray(shape) || shape.length !== 2) return false;
+    const [tag,attrs] = shape;
+    if (!Object.hasOwn(allowed,tag) || !attrs || typeof attrs !== "object" ||
+        Array.isArray(attrs) || !Object.keys(attrs).length) return false;
+    return Object.entries(attrs).every(([key,value]) =>
+      allowed[tag].includes(key) && typeof value === "string" && value.length <= 20000 &&
+      (key === "d" ? /^[MmLlHhVvCcSsQqTtAaZz\d\s,.+eE-]+$/.test(value)
+       : key === "points" ? /^[\d\s,.+eE-]+$/.test(value)
+       : /^[+\-\d.eE]+$/.test(value) && Number.isFinite(+value) && Math.abs(+value) <= 100000));
+  });
+  if (!safe) return "";
+  const elements = shapes.map(([tag,attrs]) =>
+    "<" + tag + " " + Object.entries(attrs).map(([key,value]) =>
+      key + '="' + esc(value) + '"').join(" ") + "/>").join("");
+  return '<span class="icon-thumb" data-icon-thumbnail aria-hidden="true">' +
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" ' +
+    'fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round">' +
+    elements + "</svg></span>";
+}
+
 function iconThumbnail(item) {
+  if (item?.provider === "lucide") return lucideThumbnail(item);
   const paths = item?.provider === "heroicons" ? item.previewPaths : null;
   if (!Array.isArray(paths) || !paths.length || paths.length > 30 ||
       paths.some(d => typeof d !== "string" || d.length > 20000 ||

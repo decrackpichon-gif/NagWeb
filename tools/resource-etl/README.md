@@ -1415,3 +1415,29 @@ la instantánea Heroicons y los dos índices consolidados, sin modificar
 el resto de las fuentes. Verifica que las 323 miniaturas sean válidas y
 coincidan con el conteo real antes de escribir en `resource-vault-data`.
 Se conserva el historial mediante push normal, sin merges ni Vercel.
+
+## Etapa 89: miniaturas SVG de Lucide, sin descarga de la biblioteca completa
+
+Además de Heroicons, la grilla muestra las siluetas originales de **Lucide**
+a partir del mismo índice comprimido y firmado con SHA-256. El nuevo
+`browseLucideShapes` transforma únicamente elementos geométricos permitidos
+(`path`, `circle`, `ellipse`, `line`, `rect`, `polyline`, `polygon`)
+en pares de datos: tipo de elemento y coordenadas validadas. Se rechazan
+atributos de eventos, estilos, URLs, scripts, grupos no compatibles y
+elementos externos; una miniatura que no supere la validación se omite,
+sin bloquear la búsqueda ni alterar su recurso original.
+
+La interfaz dibuja el vector resultante a escala, sin solicitar el
+SVG fuente de cada ícono, sin iframes adicionales y sin hosts remotos.
+El renderizador de recursos, sus controles de edición, la persistencia y
+la licencia permanecen intactos.
+
+`.github/workflows/resource-lucide-thumbnails.yml` ejecuta una
+reindexación incremental sobre los archivos comprimidos y verificados
+existentes de `resource-vault-data`. Comprueba que no cambien los cinco
+proveedores, sus hashes, los 6762 recursos ni las miniaturas de Heroicons,
+y que una mayoría importante de los 1870 Lucide tenga geometría segura;
+publica con push normal, nunca con force y sin modificar `main` ni Vercel.
+El navegador de Chromium prueba la miniatura real de Cámara con trazado
+y círculo; los tests unitarios rechazan SVG inseguros. **Una publicación
+no se considera terminada hasta verificar su workflow y el índice remoto.**

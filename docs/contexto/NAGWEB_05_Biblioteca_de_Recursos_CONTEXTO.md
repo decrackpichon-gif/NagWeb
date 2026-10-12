@@ -147,3 +147,21 @@ Biblioteca offline-first de **recursos abiertos/licenciados** para diseñadores.
 - Las instantáneas originales de Uiverse, Lucide, Three.js y Core Code
   conservaron sus cantidades y checksums. Sólo cambiaron los índices
   consolidados y el paquete de Heroicons. No se desplegó Vercel.
+
+## Etapa 89: Lucide con miniaturas visuales ligeras (12/10/2026)
+
+- La Biblioteca extiende la visualización de formas reales desde Heroicons
+  a los íconos Lucide del paquete persistente (1870 en el manifiesto).
+- Sólo se incorporan geometrías permitidas y datos validados al índice
+  comprimido; no se inyecta marcado arbitrario en el navegador. Las formas
+  que usen construcciones SVG no soportadas permanecen listadas con su
+  ficha original, pero sin miniatura.
+- Política: **no reconstruir ni descargar de nuevo los paquetes fuente**
+  para agregar miniaturas. El workflow
+  `.github/workflows/resource-lucide-thumbnails.yml` recomputa los
+  índices desde cinco snapshots verificados y comprueba hashes, conteos,
+  unicidad, cobertura de miniaturas y preservación de Heroicons.
+- Pruebas de navegador: dibujar Cámara con path + circle, conservando
+  filtros/búsqueda de proveedor e inserción editable preexistente.
+- Confirmar la ejecución y el nuevo commit de `resource-vault-data` antes
+  de dar por publicada la miniatura; no ejecutar Vercel ni hacer merge.

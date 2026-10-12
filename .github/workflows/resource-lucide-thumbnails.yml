@@ -1,0 +1,125 @@
+name: Resource Vault Lucide Thumbnail Index
+
+on:
+  push:
+    branches:
+      - feat/resource-etl-v1
+    paths:
+      - ".github/workflows/resource-lucide-thumbnails.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: resource-vault-snapshot
+  cancel-in-progress: false
+
+jobs:
+  refresh-lucide-thumbnails:
+    name: Rebuild safe icon previews without touching provider archives
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout NAGWEB 05 source branch
+        uses: actions/checkout@v4
+        with:
+          ref: feat/resource-etl-v1
+          fetch-depth: 1
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Verify compact Lucide SVG geometry parser
+        working-directory: tools/resource-etl
+        run: node src/browse-lucide-selftest.mjs
+
+      - name: Checkout existing data history, without merging
+        shell: bash
+        run: |
+          git fetch --no-tags --depth=1 origin refs/heads/resource-vault-data:refs/remotes/origin/resource-vault-data
+          git worktree add -b lucide-thumbnail-update "$RUNNER_TEMP/nagweb-lucide-publish" refs/remotes/origin/resource-vault-data
+          cp "$RUNNER_TEMP/nagweb-lucide-publish/vault-manifest.json" "$RUNNER_TEMP/nagweb-lucide-before.json"
+
+      - name: Refresh only consolidated indexes from the same verified archives
+        shell: bash
+        run: |
+          node tools/resource-etl/src/snapshot/build-consolidated-vault.mjs \
+            --root="$RUNNER_TEMP/nagweb-lucide-publish"
+
+      - name: Check every provider is preserved and image data is safe
+        shell: bash
+        run: |
+          node --input-type=module - <<'NODE'
+          import fs from "node:fs";
+          import path from "node:path";
+          import { createHash } from "node:crypto";
+          import { gunzipSync } from "node:zlib";
+          const root=process.env.RUNNER_TEMP+"/nagweb-lucide-publish";
+          const before=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+"/nagweb-lucide-before.json","utf8"));
+          const after=JSON.parse(fs.readFileSync(root+"/vault-manifest.json","utf8"));
+          if (before.totalResources!==6762 || after.totalResources!==before.totalResources ||
+              before.snapshots.length!==5 || after.snapshots.length!==5)
+            throw Error("Data counts changed unexpectedly");
+          for (const old of before.snapshots) {
+            const updated=after.snapshots.find(s=>s.id===old.id);
+            if (!updated || updated.count!==old.count || updated.sha256!==old.sha256)
+              throw Error("Provider changed during index-only refresh: "+old.id);
+          }
+          const sum=buf=>createHash("sha256").update(buf).digest("hex");
+          const indexGz=fs.readFileSync(path.join(root,after.consolidated.browseIndexPath));
+          if (sum(indexGz)!==after.consolidated.browseIndexSha256)
+            throw Error("Browse checksum invalid");
+          const bundleGz=fs.readFileSync(path.join(root,after.consolidated.libraryPath));
+          if (sum(bundleGz)!==after.consolidated.sha256)
+            throw Error("Library checksum invalid");
+          const index=JSON.parse(gunzipSync(indexGz).toString("utf8"));
+          const bundle=JSON.parse(gunzipSync(bundleGz).toString("utf8"));
+          if(index.resourceCount!==6762 || bundle.resourceCount!==6762)
+            throw Error("Resources disappeared");
+          const ids=bundle.resources.map(r=>r.id);
+          if (new Set(ids).size!==ids.length) throw Error("Duplicate resources");
+          const icons=index.resources.filter(r=>r.provider==="lucide");
+          const visible=icons.filter(r=>Array.isArray(r.previewShapes));
+          if(icons.length!==1870 || visible.length<1400)
+            throw Error("Insufficient Lucide thumbnails: "+visible.length+"/"+icons.length);
+          const tags={
+            path:["d"],circle:["cx","cy","r"],ellipse:["cx","cy","rx","ry"],
+            line:["x1","y1","x2","y2"],rect:["x","y","width","height","rx","ry"],
+            polyline:["points"],polygon:["points"]
+          };
+          for(const icon of visible){
+            if(!icon.previewShapes.length || icon.previewShapes.length>40) throw Error("Invalid shape count");
+            for(const [tag,attrs] of icon.previewShapes){
+              if(!tags[tag] || Object.keys(attrs).some(k=>!tags[tag].includes(k))) throw Error("Unsafe geometry tag");
+              for(const [k,v] of Object.entries(attrs)){
+                if(typeof v!=="string" || v.length>20000 ||
+                   !(k==="d" ? /^[MmLlHhVvCcSsQqTtAaZz\d\s,.+eE-]+$/.test(v)
+                    :k==="points" ? /^[\d\s,.+eE-]+$/.test(v)
+                    :/^[+\-\d.eE]+$/.test(v) && Number.isFinite(+v) && Math.abs(+v)<=100000))
+                   throw Error("Unsafe geometry coordinates");
+              }
+            }
+          }
+          const heroes=index.resources.filter(r=>r.provider==="heroicons");
+          if(heroes.length!==323 || heroes.some(r=>!Array.isArray(r.previewPaths)))
+            throw Error("Heroicons previews regressed");
+          console.log("Index validated:",index.resourceCount,"Lucide with thumbnails",
+            visible.length,"of",icons.length,"Heroicons",heroes.length);
+          NODE
+
+      - name: Publish fast-forward without rewriting independent data history
+        shell: bash
+        run: |
+          DIR="$RUNNER_TEMP/nagweb-lucide-publish"
+          git -C "$DIR" config user.name "github-actions[bot]"
+          git -C "$DIR" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C "$DIR" add all vault-manifest.json README.md
+          if git -C "$DIR" diff --cached --quiet; then
+            echo "Index is already current."
+            exit 0
+          fi
+          git -C "$DIR" commit -m "data: add compact Lucide icon previews to verified catalog"
+          git -C "$DIR" push origin HEAD:refs/heads/resource-vault-data
