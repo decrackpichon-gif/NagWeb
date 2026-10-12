@@ -9,6 +9,7 @@ import { createRequire } from "node:module";
 import { transformUiverseComponent } from "./light-transformers.mjs";
 import { normalizeHeroiconOutline } from "./extractors/heroicons.mjs";
 import { transformHeroiconOutline } from "./heroicons-transformer.mjs";
+import { browseHeroiconPaths } from "./snapshot/browse-icon-paths.mjs";
 import { describeEditableControls } from "./runtime/editable-controls.mjs";
 import { buildResourceApplyEnvelope } from "./runtime/resource-apply-bridge.mjs";
 
@@ -58,7 +59,8 @@ const heroicon = transformHeroiconOutline({
 const resources = [icon, css, heroicon];
 const zip = data => gzipSync(JSON.stringify(data));
 const index = zip({ format: "nagweb-resource-browse-index", resourceCount: resources.length,
-  resources: resources.map(r => ({ id: r.id, title: r.title, family: r.family, kind: r.kind, provider: r.source.provider })) });
+  resources: resources.map(r => ({ id: r.id, title: r.title, family: r.family, kind: r.kind, provider: r.source.provider,
+    ...(browseHeroiconPaths(r) ? { previewPaths: browseHeroiconPaths(r) } : {}) })) });
 const library = zip({ format: "nagweb-resource-vault-bundle", resourceCount: resources.length, resources });
 const sha = bytes => createHash("sha256").update(bytes).digest("hex");
 const fixtures = new Map([
@@ -1426,6 +1428,11 @@ try {
     await libraryFrame.getByRole("button",{name:"Cerrar",exact:true}).click();
   await libraryFrame.getByLabel("Proveedor",{exact:true}).selectOption("heroicons");
   await expect(libraryFrame.locator('[data-resource-id="heroicons:x-mark"]')).toBeVisible();
+  // Lightweight browse-index geometry paints a real icon thumbnail without
+  // loading the full source bundle or a remote image.
+  const thumbnail=libraryFrame.locator('[data-resource-id="heroicons:x-mark"] [data-icon-thumbnail] svg');
+  await expect(thumbnail.locator("path")).toHaveCount(1);
+  await expect(thumbnail.locator("path")).toHaveAttribute("d","M6 18 18 6M6 6l12 12");
   await libraryFrame.locator('[data-resource-id="heroicons:x-mark"]').click();
   await libraryFrame.getByLabel("Color de trazo",{exact:true}).fill("#2468ab");
   await libraryFrame.getByRole("button",{name:"Aplicar en NagWeb",exact:true}).click();

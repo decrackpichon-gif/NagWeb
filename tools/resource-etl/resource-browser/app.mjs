@@ -212,6 +212,19 @@ function badge(value) {
   return `<span class="badge">${esc(value)}</span>`;
 }
 
+function iconThumbnail(item) {
+  const paths = item?.provider === "heroicons" ? item.previewPaths : null;
+  if (!Array.isArray(paths) || !paths.length || paths.length > 30 ||
+      paths.some(d => typeof d !== "string" || d.length > 20000 ||
+        !/^[MmLlHhVvCcSsQqTtAaZz\d\s,.+eE-]+$/.test(d))) return "";
+  return '<span class="icon-thumb" data-icon-thumbnail aria-hidden="true">' +
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" ' +
+    'fill="none" stroke="currentColor" stroke-width="1.5" ' +
+    'stroke-linecap="round" stroke-linejoin="round">' +
+    paths.map(d => '<path d="' + esc(d) + '"/>').join("") +
+    '</svg></span>';
+}
+
 function fillSelect(select, items) {
   for (const item of items) {
     const option = document.createElement("option");
@@ -256,6 +269,7 @@ const resultSearch = createLatestSearch(
     <div class="resource-tile">
       <button type="button" class="resource-card" data-resource-id="${esc(item.id)}">
         <span class="provider">${esc(item.provider)}</span>
+        ${iconThumbnail(item)}
         <h3>${esc(item.title || item.name || item.id)}</h3>
         <p>${esc(item.description || item.searchText || item.id)}</p>
         <span class="card-foot">

@@ -1394,3 +1394,24 @@ documento, escena y ancho actual. La bandera `canvasLoading` podía seguir
 activa tras mostrar el elemento, especialmente en Windows, e impedir la edición
 aunque el SVG ya estuviera listo. Un documento realmente desactualizado sigue
 siendo rechazado por `measureVector`.
+
+## Etapa 88: miniaturas reales en el catálogo Heroicons
+
+Las tarjetas de Heroicons incorporan miniaturas vectoriales **fieles al
+recurso original**. El índice de búsqueda solo incluye coordenadas de
+trazados (`previewPaths`) extraídas de `icon.svg` normalizado y
+validadas con una lista estricta de comandos SVG; no contiene scripts,
+elementos externos, estilos arbitrarios ni componentes HTML.
+
+La Biblioteca dibuja los contornos directamente desde el índice ya
+verificado con SHA-256. **No descarga la biblioteca completa para mostrar
+las tarjetas**, no solicita imágenes a otros dominios y conserva intactos
+los filtros, favoritos y personalización posterior. Otros proveedores
+siguen con sus tarjetas habituales.
+
+Al publicar esta etapa, el flujo incremental
+`.github/workflows/resource-heroicons-append.yml` reconstruye únicamente
+la instantánea Heroicons y los dos índices consolidados, sin modificar
+el resto de las fuentes. Verifica que las 323 miniaturas sean válidas y
+coincidan con el conteo real antes de escribir en `resource-vault-data`.
+Se conserva el historial mediante push normal, sin merges ni Vercel.

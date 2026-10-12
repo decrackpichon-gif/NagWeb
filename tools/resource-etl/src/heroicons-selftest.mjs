@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { normalizeHeroiconOutline, selectHeroicons, HEROICONS_FEATURED } from "./extractors/heroicons.mjs";
 import { transformHeroiconOutline } from "./heroicons-transformer.mjs";
+import { browseHeroiconPaths } from "./snapshot/browse-icon-paths.mjs";
 import { buildInsertDescriptor } from "./runtime/insert-adapters.mjs";
 import { buildStaticPreview } from "./preview/build-preview.mjs";
 import { getSourcePolicy } from "./vault/source-policies.mjs";
@@ -34,6 +35,14 @@ for (const malicious of [
 const licenseText="MIT License\n\nCopyright (c) Tailwind Labs, Inc.\nPermission notice.";
 const item={name:"x-mark",path:"optimized/24/outline/x-mark.svg",sha,sourceSvg:upstream,svg:normalized};
 const resource=transformHeroiconOutline({item,commit:sha,licenseText});
+assert.deepEqual(browseHeroiconPaths(resource), ["M6 18 18 6M6 6l12 12"]);
+assert.equal(browseHeroiconPaths({
+  ...resource, source: {provider:"uiverse"}
+}), null);
+assert.equal(browseHeroiconPaths({
+  ...resource, artifacts: resource.artifacts.map(a=>a.role==="icon-data"
+    ? {...a,content:a.content.replace('<path d="','<script>alert(1)</script><path d="')} : a)
+}), null);
 assert.equal(resource.id,"heroicons:x-mark");
 assert.equal(resource.source.provider,"heroicons");
 assert.equal(resource.license.id,"MIT");

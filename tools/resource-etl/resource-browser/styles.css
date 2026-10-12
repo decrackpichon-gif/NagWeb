@@ -43,6 +43,9 @@ input:focus,select:focus{border-color:#68754b;box-shadow:0 0 0 3px #c8f36c15}
 .resource-card{appearance:none;text-align:left;color:inherit;background:var(--panel-2);border:1px solid var(--line);border-radius:14px;padding:14px;min-height:154px;display:flex;flex-direction:column;transition:.15s ease}
 .resource-card:hover{transform:translateY(-2px);border-color:#596348;background:#20252b}
 .resource-card .provider{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent)}
+.resource-card .icon-thumb{width:58px;height:58px;margin-top:12px;display:grid;place-items:center;border:1px solid #353e4d;background:#121922;border-radius:12px;color:#e9eff5}
+.resource-card .icon-thumb svg{width:40px;height:40px;overflow:visible}
+.resource-card:focus-visible .icon-thumb{border-color:var(--accent)}
 .resource-card h3{font-size:16px;line-height:1.15;margin:10px 0 7px}
 .resource-card p{font-size:12px;line-height:1.4;color:var(--muted);margin:0;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .card-foot{margin-top:auto;padding-top:12px;display:flex;gap:6px;flex-wrap:wrap}

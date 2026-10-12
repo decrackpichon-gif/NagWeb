@@ -1,4 +1,5 @@
 import path from "node:path";
+import { browseHeroiconPaths } from "./browse-icon-paths.mjs";
 import { createHash } from "node:crypto";
 import { gunzipSync, gzipSync } from "node:zlib";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -95,7 +96,12 @@ const browseResources = resources.map((resource) => ({
   tags: resource.taxonomy?.tags || [],
   capabilities: resource.capabilities || [],
   searchText: resource.search?.text || "",
-  sourceCommit: resource.source?.commit || null
+  sourceCommit: resource.source?.commit || null,
+  // A few SVG path coordinates per Heroicon, never raw third-party markup.
+  // Allows the grid to display the actual shape without downloading 37 MB
+  // of source code or fetching files from an external image host.
+  ...(browseHeroiconPaths(resource)
+    ? { previewPaths: browseHeroiconPaths(resource) } : {})
 }));
 
 const browseIndex = {

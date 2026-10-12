@@ -105,6 +105,13 @@ jobs:
              !icons.every(r=>r.license?.id==="MIT" && r.runtime?.renderer==="nagweb-svg")) {
             throw new Error("Heroicons permissions or native SVG compatibility failed");
           }
+          const thumbnails=browse.resources.filter(r=>r.provider==="heroicons");
+          if(thumbnails.length!==hero.resourceCount ||
+             thumbnails.some(r=>!Array.isArray(r.previewPaths) || r.previewPaths.length<1 ||
+               r.previewPaths.length>30 || r.previewPaths.some(d=>
+                 typeof d!=="string" || !/^[MmLlHhVvCcSsQqTtAaZz\d\s,.+eE-]+$/.test(d)))) {
+            throw new Error("Heroicons compact thumbnail geometry is missing or unsafe");
+          }
           console.log("Validated full catalog",bundle.resourceCount,
             "Heroicons",icons.length,"existing",bundle.resourceCount-icons.length);
           NODE

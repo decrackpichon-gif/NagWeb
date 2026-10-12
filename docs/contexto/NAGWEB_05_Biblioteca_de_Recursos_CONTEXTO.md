@@ -121,3 +121,17 @@ Biblioteca offline-first de **recursos abiertos/licenciados** para diseñadores.
 - El builder de manifiestos preserva ahora los Heroicons existentes durante
   futuras reconstrucciones completas, verificando su suma SHA-256 y
   deteniendo la operación ante errores. No se hizo despliegue Vercel.
+
+## Etapa 88: vista visual liviana para Heroicons (12/10/2026)
+
+- Decisión de UX: los íconos deben poder verse directamente en la grilla,
+  no solo aparecer como nombres; usar sus trazos originales y no imágenes
+  de un servidor externo, ni descargar los 6762 recursos al abrir la página.
+- Implementación: `snapshot/browse-icon-paths.mjs` extrae únicamente
+  coordenadas válidas de SVG normalizados. El índice consolidado guarda
+  `previewPaths` para Heroicons, y la UI las dibuja como miniaturas
+  inline con `stroke=currentColor` y ancho de 1,5.
+- Pruebas: sanitización unitaria, Chromium con Heroicon en tarjeta,
+  integración persistente y control de checksum de la publicación.
+- La publicación incremental en `resource-vault-data` debe verificarse
+  en GitHub; no asumir que el catálogo cambió solo por actualizar el código.
