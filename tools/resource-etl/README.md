@@ -1329,3 +1329,14 @@ arrastre del elemento: algunos cambios del lienzo reemplazan el nodo entre
 directamente el recurso verificado en la escena, sin depender de que el botón
 general de Personalizar esté habilitado para un SVG. Se conserva el acceso
 con teclado y se espera la carga real de la ficha en la prueba del navegador.
+
+### Control contextual fuera del iframe del lienzo
+
+El control ✎ de HTML/CSS ahora se dibuja en la interfaz principal de NagWeb,
+superpuesto visualmente al componente mediante su posición real en el lienzo.
+No se inyectan botones ni listeners de activación en el iframe de previsualización,
+cuyos eventos de selección y redibujado pueden interrumpir un clic. La posición
+se vuelve a medir al cambiar la vista, hacer scroll, redimensionar o cargar la
+escena. El control permanece independiente del HTML de terceros y de lo
+exportado, conserva el acceso con mouse y teclado y mantiene el foco al cerrar
+la personalización si el componente sigue disponible.

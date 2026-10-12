@@ -173,6 +173,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     }
     if (frame.src !== url.href) frame.src = url.href;
     dialog.showModal();
+    editOverlay.style.visibility = "hidden";
   };
   button.addEventListener("click", () => openLibrary(null));
   const openHtmlCustomization = (element, returnFocus = editButton) => {
@@ -207,10 +208,94 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       elementId: element.id, pageId: page().id, sceneId: sec().id, mobile: viewMobile, values,
       fingerprint: JSON.stringify(element) });
   });
-  new MutationObserver(syncEditButton).observe(document.querySelector("main"), { childList: true, subtree: true });
+  // Contextual edit controls live above the canvas in the editor document.
+  // This avoids pointer interception and redraws inside the canvas iframe.
+  const editOverlay = document.createElement("div");
+  editOverlay.dataset.resourceEditOverlay = "";
+  editOverlay.style.cssText = "position:fixed;inset:0;z-index:2147483000;pointer-events:none";
+  document.body.append(editOverlay);
+  const editOverlayButtons = new Map();
+  let overlayQueued = false;
+  const syncHtmlOverlay = () => {
+    overlayQueued = false;
+    let doc;
+    try { doc = preview.contentDocument; } catch { doc = null; }
+    if (dialog.open) { editOverlay.style.visibility = "hidden"; return; }
+    editOverlay.style.visibility = "visible";
+    if (canvasLoading || !doc || doc.readyState === "loading") {
+      editOverlay.replaceChildren();
+      editOverlayButtons.clear();
+      return;
+    }
+    const frameBounds = preview.getBoundingClientRect();
+    const docWidth = doc.documentElement.clientWidth;
+    const docHeight = doc.documentElement.clientHeight;
+    if (!(docWidth > 0) || !(docHeight > 0) || !(frameBounds.width > 0) ||
+        !(frameBounds.height > 0)) return;
+    const sx = frameBounds.width / docWidth;
+    const sy = frameBounds.height / docHeight;
+    const visible = new Set();
+    for (const node of doc.querySelectorAll(".el[data-id]")) {
+      if (node.closest(".sc")?.dataset.id !== sec()?.id) continue;
+      const resource = libraryResourceById(node.dataset.id);
+      if (resource?.type !== "embed") continue;
+      const rect = node.getBoundingClientRect();
+      if (!(rect.width > 0) || !(rect.height > 0) ||
+          rect.bottom * sy < 0 || rect.top * sy > frameBounds.height ||
+          rect.right * sx < 0 || rect.left * sx > frameBounds.width) continue;
+      const id = resource.id;
+      visible.add(id);
+      let control = editOverlayButtons.get(id);
+      if (!control) {
+        control = document.createElement("button");
+        control.type = "button";
+        control.dataset.nagwebResourceEdit = id;
+        control.setAttribute("aria-label", "Personalizar componente desde el lienzo");
+        control.title = "Personalizar componente";
+        control.textContent = "✎";
+        control.style.cssText = "position:fixed;width:34px;height:34px;padding:0;" +
+          "border:1px solid #b9c2d5;border-radius:8px;background:#202735;color:#fff;" +
+          "box-shadow:0 2px 8px #0005;font:600 19px/1 sans-serif;cursor:pointer;" +
+          "pointer-events:auto;opacity:.94";
+        control.addEventListener("click", () => {
+          const current = libraryResourceById(id);
+          if (dialog.open || !current || current.type !== "embed") return;
+          selection = [current.id];
+          curEl = sec().elements.indexOf(current);
+          secFocus = false;
+          openHtmlCustomization(current, control);
+        });
+        editOverlayButtons.set(id, control);
+        editOverlay.append(control);
+      }
+      const left = Math.max(frameBounds.left + 3,
+        Math.min(frameBounds.right - 37, frameBounds.left + rect.right * sx - 37));
+      const top = Math.max(frameBounds.top + 3,
+        Math.min(frameBounds.bottom - 37, frameBounds.top + rect.top * sy + 4));
+      control.style.left = Math.round(left) + "px";
+      control.style.top = Math.round(top) + "px";
+    }
+    for (const [id, control] of editOverlayButtons) {
+      if (visible.has(id)) continue;
+      control.remove();
+      editOverlayButtons.delete(id);
+    }
+  };
+  const scheduleHtmlOverlay = () => {
+    if (overlayQueued) return;
+    overlayQueued = true;
+    requestAnimationFrame(syncHtmlOverlay);
+  };
+  window.addEventListener("resize", scheduleHtmlOverlay);
+  window.addEventListener("scroll", scheduleHtmlOverlay, true);
+  new MutationObserver(() => {
+    syncEditButton();
+    scheduleHtmlOverlay();
+  }).observe(document.querySelector("main"), { childList: true, subtree: true });
   new MutationObserver(() => {
     canvasLoading = true;
     syncEditButton();
+    scheduleHtmlOverlay();
   }).observe(preview, { attributes: true, attributeFilter: ["srcdoc"] });
   // Canvas-first editing: the already-inserted resource stays in place.
   // Bind to each new srcdoc document, not just the original iframe document.
@@ -247,102 +332,37 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       event.stopImmediatePropagation();
       editButton.click();
     }, true);
-    // HTML/CSS lives inside an opaque, sandboxed iframe. Inner clicks cannot
-    // bubble to NagWeb, so provide an editor-owned affordance on its wrapper.
-    // It is never part of the project model, the embed srcdoc or the export.
-    const editStyles = canvasDoc.createElement("style");
-    editStyles.dataset.nagwebResourceEditUi = "";
-    editStyles.textContent = `
-      .el > [data-nagweb-resource-edit] {
-        position:absolute;top:4px;right:4px;z-index:2147483000;
-        display:grid;place-items:center;width:34px;height:34px;
-        padding:0;border:1px solid #b9c2d5;border-radius:8px;
-        background:#202735;color:#fff;box-shadow:0 2px 8px #0005;
-        font:600 19px/1 sans-serif;cursor:pointer;
-        opacity:.88;pointer-events:auto;
-      }
-      .el:hover > [data-nagweb-resource-edit],
-      .el:focus-within > [data-nagweb-resource-edit],
-      .el > [data-nagweb-resource-edit]:focus-visible {
-        opacity:1;pointer-events:auto;
-      }
-      .el > [data-nagweb-resource-edit]:focus-visible {
-        outline:3px solid #8dd1ff;outline-offset:2px;
-      }
-      @media (hover:none) {
-        .el > [data-nagweb-resource-edit] { opacity:1;pointer-events:auto; }
-      }
-      @media (prefers-reduced-motion:no-preference) {
-        .el > [data-nagweb-resource-edit] { transition:opacity .15s ease; }
-      }
-    `;
-    canvasDoc.head.append(editStyles);
+    // SVG keeps its native canvas shortcut; HTML edit controls are rendered
+    // by NagWeb above the preview iframe, never inside third-party markup.
     for (const node of canvasDoc.querySelectorAll(".el[data-id]")) {
       const resource = libraryResourceById(node.dataset.id);
-      if (!resource) continue;
-      if (!node.hasAttribute("title")) node.title = resource.type === "embed"
-        ? "Usá el botón ✎ para personalizar este componente"
-        : "Doble clic para personalizar este recurso";
-      if (resource.type !== "embed") continue;
-      if (canvasDoc.defaultView.getComputedStyle(node).position === "static")
-        node.style.position = "relative";
-      const trigger = canvasDoc.createElement("button");
-      trigger.type = "button";
-      trigger.dataset.nagwebResourceEdit = resource.id;
-      trigger.setAttribute("aria-label", "Personalizar componente desde el lienzo");
-      trigger.title = "Personalizar componente";
-      trigger.textContent = "✎";
-      node.append(trigger);
+      if (resource && !node.hasAttribute("title"))
+        node.title = resource.type === "embed"
+          ? "Usá el botón ✎ sobre el componente para personalizarlo"
+          : "Doble clic para personalizar este recurso";
     }
-    // The editor may redraw a selected element on pointerdown, before a
-    // button's click event is delivered. Handle activation at capture phase
-    // on the canvas document, before native selection/drag event handlers.
-    const activateHtmlEdit = (event, keyboard) => {
-      const trigger = event.target?.closest?.("[data-nagweb-resource-edit]");
-      if (!trigger || dialog.open) return;
-      if (keyboard && event.key !== "Enter" && event.key !== " ") return;
-      if (!keyboard && event.button !== 0) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      if (preview.contentDocument !== canvasDoc) return;
-      const current = libraryResourceById(trigger.dataset.nagwebResourceEdit);
-      if (!current || current.type !== "embed") return;
-      selection = [current.id];
-      curEl = sec().elements.indexOf(current);
-      secFocus = false;
-      // Do not use the toolbar button's disabled state: this is an
-      // explicit action on a validated HTML resource, not a vector resize.
-      openHtmlCustomization(current, trigger);
-    };
-    // Window capture runs before editor handlers registered on the document
-    // or individual elements, so a selection redraw cannot swallow the action.
-    canvasDoc.defaultView.addEventListener("pointerdown", event => activateHtmlEdit(event, false), true);
-    canvasDoc.defaultView.addEventListener("keydown", event => activateHtmlEdit(event, true), true);
-    canvasDoc.addEventListener("click", event => {
-      if (!event.target?.closest?.("[data-nagweb-resource-edit]")) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-    }, true);
-    canvasDoc.addEventListener("dblclick", event => {
-      if (!event.target?.closest?.("[data-nagweb-resource-edit]")) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-    }, true);
+    canvasDoc.addEventListener("scroll", scheduleHtmlOverlay, true);
+    canvasDoc.defaultView.addEventListener("resize", scheduleHtmlOverlay);
+    scheduleHtmlOverlay();
   };
   document.addEventListener("keydown", handleCanvasEditShortcut, true);
   preview.addEventListener("load", () => {
     canvasLoading = false;
     bindCanvasResourceEditing();
     syncEditButton();
+    scheduleHtmlOverlay();
   });
   bindCanvasResourceEditing();
   syncEditButton();
+  scheduleHtmlOverlay();
   close.addEventListener("click", () => dialog.close());
   dialog.addEventListener("close", () => {
     librarySession++;
     editContext = null;
     pendingFocusReturn = opener;
+    editOverlay.style.visibility = "visible";
     syncEditButton();
+    scheduleHtmlOverlay();
   });
   const results = new Map();
   const pending = new Set();

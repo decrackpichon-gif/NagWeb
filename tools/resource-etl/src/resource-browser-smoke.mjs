@@ -1345,37 +1345,24 @@ try {
   await page.locator("#btn-view-desk").click();
   // Stage 84: editor-owned control on the HTML wrapper, never inside the
   // sandboxed third-party iframe. Pointer and keyboard both reopen editing.
-  const canvasEdit=child.getByRole("button",{name:"Personalizar componente desde el lienzo"});
+  const canvasEdit=page.getByRole("button",{name:"Personalizar componente desde el lienzo"});
   await expect(canvasEdit).toHaveCount(1);
   await expect(canvasEdit).toBeVisible();
   // The opaque iframe consumes hover; the editor control stays reachable.
   await expect(canvasEdit).toHaveCSS("pointer-events","auto");
+  // Host control must exist outside the iframe and point at the child on screen.
+  const alignment=await page.evaluate(id=>{
+    const host=document.querySelector('[data-nagweb-resource-edit="'+id+'"]');
+    const node=preview.contentDocument.querySelector('.el[data-id="'+id+'"]');
+    const a=host.getBoundingClientRect(), b=node.getBoundingClientRect(), p=preview.getBoundingClientRect();
+    return {withinX:a.left>=p.left-2&&a.right<=p.right+2,
+      withinY:a.top>=p.top-2&&a.bottom<=p.bottom+2,
+      notInCanvas:!preview.contentDocument.querySelector("[data-nagweb-resource-edit]"),
+      childVisible:b.width>0&&b.height>0};
+  },htmlChildId);
+  assert.deepEqual(alignment,{withinX:true,withinY:true,notInCanvas:true,childVisible:true});
   const beforeInlineEdit=await page.evaluate(()=>history.length);
-  await canvasEdit.evaluate(node=>{
-    const win=node.ownerDocument.defaultView;
-    win.parent.__resource84Trace=[];
-    const capture=event=>{
-      win.parent.__resource84Trace.push({
-        type:event.type, target:event.target?.getAttribute?.("data-nagweb-resource-edit")||"",
-        phase:event.eventPhase, prevented:event.defaultPrevented,
-        detached:!event.target?.isConnected
-      });
-    };
-    win.addEventListener("pointerdown",capture,true);
-    win.addEventListener("click",capture,true);
-    node.addEventListener("pointerdown",capture,true);
-    node.addEventListener("click",capture,true);
-  });
   await canvasEdit.click();
-  const diag84=await page.evaluate(()=>({
-    trace:window.__resource84Trace,
-    selected:selection.slice(),
-    editButton:{disabled:document.querySelector("[data-resource-library-edit]")?.disabled,
-      label:document.querySelector("[data-resource-library-edit]")?.getAttribute("aria-label")},
-    dialog:[...document.querySelectorAll("dialog")].map(d=>({open:d.open,label:d.getAttribute("aria-label")})),
-    frame:document.querySelector('iframe[title="Biblioteca de recursos de NagWeb"]')?.src
-  }));
-  console.log("RESOURCE_84_DIAG "+JSON.stringify(diag84));
   const contextualDialog=page.getByRole("dialog",{name:"Biblioteca de recursos",exact:true});
   await expect(contextualDialog).toBeVisible();
   const browserFrameNode=page.locator('iframe[title="Biblioteca de recursos de NagWeb"]');
@@ -1406,8 +1393,8 @@ try {
   assert.equal(await page.evaluate(id=>sec().elements.find(e=>e.id===id).parent,htmlChildId),parentId);
   await expect(page.frameLocator("#preview").frameLocator(
     `[data-id="${htmlChildId}"] iframe.emb-sand`).locator(".card")).toBeVisible();
-  const reloadedEdit=page.frameLocator("#preview").locator(
-    `[data-id="${htmlChildId}"] [data-nagweb-resource-edit]`);
+  const reloadedEdit=page.locator(
+    `[data-resource-edit-overlay] [data-nagweb-resource-edit="${htmlChildId}"]`);
   await expect(reloadedEdit).toHaveCount(1);
   await reloadedEdit.focus();
   await reloadedEdit.press("Enter");
