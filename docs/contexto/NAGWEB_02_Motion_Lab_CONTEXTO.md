@@ -75,3 +75,11 @@ Una herramienta para elegir, **previsualizar y editar animaciones antes de inser
 - Referencia pública: https://animos.app/editor?scrollTo=multiscene incluye «Pop Parade», pero no fue posible comprobar sus movimientos ni los controles internos con las fuentes públicas disponibles. **No afirmar fidelidad visual ni presentar controles propios como originales**.
 - Para no inventar un nuevo motor, se preparó una composición basada en los keyframes del Director existente: 12 carteles reemplazables, entradas por turnos, profundidad y cambios de escala, edición directa y flujo genérico de insertar/guardar/exportar. Se considera una **interpretación provisional** hasta obtener video o inspector real.
 - Mantener como prioridad la incorporación de plantillas verificables de Animos por lotes completos, seguida por personalizaciones propias y animaciones inéditas. No realizar despliegues Vercel ni fusionar ramas automáticamente.
+
+
+### 11/10/2026: cobertura nominal completa y keyframes de parámetros
+
+- Se comparó el catálogo público disponible de Animos en https://animos.app/editor?scrollTo=multiscene con `motionTemplates` en `js/nagweb-story-editor.js`. Animos publica **66 nombres** y Motion Lab ya incluye los 66, más 3 escenas iniciales propias. **Esto verifica nombres, no fidelidad de comportamiento**. Grid Dive y Pop Parade todavía se consideran interpretaciones provisionales hasta obtener el vídeo/panel original.
+- El editor de Animos tiene diamantes ◇ junto a deslizadores y colores para animarlos por fotogramas clave. Motion Lab amplía el motor procedural existente para ofrecer ese control compartido a los deslizadores numéricos y colores de fondo, con interpolación normalizada del Director, guardado/exportación sin un reloj alternativo y pruebas de modelo/browser.
+- A partir de aquí, no fingir que se están incorporando «nuevas animaciones de Animos» si ya figuran por nombre. **Siguiente paso sustancial:** auditoría visual de fidelidad a la referencia, corregir diferencias grandes en lotes; luego controles propios y, después, animaciones originales según el orden del usuario.
+- Es importante poder inspeccionar videos/HAR originales; si no están accesibles desde este chat, declarar la limitación sin presentar una recreación propia como idéntica a Animos.

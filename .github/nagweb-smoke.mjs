@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import './nagweb-depth-model-test.mjs';
 import './nagweb-stream-model-test.mjs';
 import './nagweb-grid-dive-model-test.mjs';
+import './nagweb-motion-parameter-keyframes-model-test.mjs';
 import './nagweb-orbit-model-test.mjs';
 import {runStorytellingSmoke} from './nagweb-storytelling-smoke.mjs';
 import {runCompositionSmoke} from './nagweb-composition-smoke.mjs';
@@ -75,6 +76,7 @@ import {runMotionSpreadColumnsSmoke} from './nagweb-motion-spread-columns-smoke.
 import {runMotionSpreadSmoke} from './nagweb-motion-spread-smoke.mjs';
 import {runMotionDepthStackSmoke} from './nagweb-motion-depth-stack-smoke.mjs';
 import {runMotionGridStripSmoke} from './nagweb-motion-grid-strip-smoke.mjs';
+import {runMotionParameterKeysSmoke} from './nagweb-motion-parameter-keyframes-smoke.mjs';
 import {runMotionMarqueeSmoke} from './nagweb-motion-marquee-smoke.mjs';
 import {runMotionOrbitGlobeSmoke} from './nagweb-motion-orbit-globe-smoke.mjs';
 import {runMotionGlobeSmoke} from './nagweb-motion-globe-smoke.mjs';
@@ -437,7 +439,7 @@ if(suite==='all'||suite==='spread-columns'){await runMotionSpreadColumnsSmoke(pa
 if(suite==='all'||suite==='spread-rows'){await runMotionSpreadSmoke(page);await runMotionStreamPlacementSmoke(page,'spread-rows');await runMotionBatchImagesSmoke(page,['spread-rows']);}
 if(suite==='all'||suite==='depth-stack-scroll'){await runMotionDepthStackSmoke(page);await runMotionStreamPlacementSmoke(page,'depth-stack-scroll');await runMotionBatchImagesSmoke(page,['depth-stack-scroll']);}
 if(suite==='all'||suite==='pop-parade')await runMotionPopParadeSmoke(page);
-if(suite==='all'||suite==='grid-dive'){await runMotionStreamPlacementSmoke(page,'grid-dive');await runMotionBatchImagesSmoke(page,['grid-dive']);}
+if(suite==='all'||suite==='grid-dive'){await runMotionStreamPlacementSmoke(page,'grid-dive');await runMotionBatchImagesSmoke(page,['grid-dive']);await runMotionParameterKeysSmoke(page);}
 if(suite==='all'||suite==='grid-zoom-strip'){await runMotionGridStripSmoke(page);await runMotionStreamPlacementSmoke(page,'grid-zoom-strip');await runMotionBatchImagesSmoke(page,['grid-zoom-strip']);}
 if(suite==='all'||suite==='mosaic-marquee'){await runMotionMarqueeSmoke(page);await runMotionStreamPlacementSmoke(page,'mosaic-marquee');await runMotionBatchImagesSmoke(page,['mosaic-marquee']);}
 if(suite==='all'||suite==='orbit-globe'){await runMotionOrbitGlobeSmoke(page);await runMotionStreamPlacementSmoke(page,'orbit-globe');await runMotionBatchImagesSmoke(page,['orbit-globe']);}

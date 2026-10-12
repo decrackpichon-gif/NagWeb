@@ -1284,3 +1284,18 @@ La referencia externa [Animos](https://animos.app/editor?scrollTo=multiscene) in
 La composición introduce una grilla de 12 imágenes (rango 4–24), zoom sucesivo a cada tarjeta y retorno suave entre fases. Usa el único progreso del Director y cierra el loop sin salto; adapta formato horizontal/vertical, conserva reemplazo de imágenes, carga por lotes, orden y encuadre, fondo/transparencia/sombras, reproducción por tiempo o scroll, Biblioteca, inserción, reapertura y exportación. Se agregaron pruebas automáticas geométricas (loop, clipping, matrices y ambos formatos) y smoke browser de colocación/carga. Referencia aún faltante para fidelidad: video o captura de la animación **Grid Dive** seleccionada con su inspector original.
 
 **Prioridades acordadas:** (1) agregar presets existentes de Animos con sus controles originales verificables; (2) sumar opciones de NagWeb únicamente luego; (3) crear animaciones inéditas. Siguiente candidato del catálogo aún no implementado: **Pop Parade**, sin referencia de controles obtenida.
+
+## Fidelidad del catálogo y fotogramas clave de parámetros (11/10/2026)
+
+La lista pública de https://animos.app/editor?scrollTo=multiscene contiene **66 nombres de plantillas** agrupados en nueve familias. Los **66 nombres** aparecen también en el catálogo de Motion Lab, además de tres composiciones originales del editor. **Coincidencia nominal no implica equivalencia de movimiento, controles, render o UX.** En particular, Grid Dive y Pop Parade siguen siendo interpretaciones provisionales, pendientes de comparar con los vídeos y el inspector originales de Animos. Dejar de agregar como «nueva» una plantilla de Animos que ya tiene entrada en la biblioteca.
+
+El editor público de Animos permite pulsar el diamante ◇ junto a un deslizador o un color para crear un fotograma clave del parámetro. Esta funcionalidad fue incorporada en la arquitectura **compartida** de las plantillas procedurales de NagWeb:
+
+- El diamante junto a los controles numéricos y los colores de fondo habilita o quita un momento en la posición actual; ◆ indica que existe.
+- Una vez que una propiedad posee momentos, mover su control escribe o actualiza el valor en el momento actual. Sin momentos, sigue modificando el valor constante del preset.
+- La interpolación entre momentos es lineal y determinista en el progreso existente del Director; los colores interpolan sus canales RGB. El ciclo cierra en el valor base cuando no se define otro momento en 0%.
+- Se conserva la sanitización del modelo, las restricciones de cada deslizador y la compatibilidad de presets antiguos que no tienen `paramKeys`.
+- Los momentos pertenecen a `config.stream.paramKeys`, por lo que sobreviven a la Biblioteca, la inserción, la reapertura y la exportación, sin animador temporal secundario.
+- Se agrega una prueba de modelo para interpolación numérica y RGB, scroll, parámetros inválidos, continuidad y retrocompatibilidad, y una prueba de navegador sobre Grid Dive para crear/editar, color animado, inserción, reapertura y eliminación de momentos.
+
+El mecanismo es genérico para los deslizadores presentes en las plantillas procedurales, no una cadena de personalizaciones individuales de Fan Shuffle. **No sustituye** la auditoría visual pendiente de equivalencia real de cada preset. La siguiente fase debe cotejar referencias originales (HAR/vídeos/inspector) y corregir grupos completos de diferencias, y posteriormente diseñar animaciones inéditas de NagWeb, tal como priorizó el usuario.
