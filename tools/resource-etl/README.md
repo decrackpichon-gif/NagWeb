@@ -1317,3 +1317,27 @@ recurso HTML/CSS seleccionado; para SVG siguen funcionando el doble clic y
 función terminada hasta rediseñarla y validarla en Chromium en ambos sistemas.
 La configuración `vercel.json` continúa desactivando las vistas previas
 **únicamente** para `feat/resource-etl-v1`.
+
+## Etapa 85: Heroicons como recursos editables
+
+Se incorpora una fuente nueva al Code Vault: **Heroicons** de Tailwind Labs,
+licencia MIT (https://github.com/tailwindlabs/heroicons/blob/master/LICENSE).
+La extracción usa únicamente `optimized/24/outline` y adapta sus trazos al
+modelo vectorial nativo de NagWeb, con **tamaño, color y grosor** editables.
+Las variantes rellenas quedan fuera: no se ofrece compatibilidad ficticia.
+Al consultar el origen (11/10/2026) había 324 íconos de contorno de 24 px;
+el inventario se consulta en cada ejecución y puede variar.
+
+El lote inicial `--limit=25` prioriza íconos variados (cámara, calendario,
+corazón, lupa, fotografía, gráficos, etc.) y evita traer sólo flechas por
+orden alfabético. `--all` incorpora todos los originales compatibles.
+Se fija un commit único del repositorio para evitar combinar versiones;
+cada recurso incluye SVG normalizado (`icon.svg`), el original
+(`upstream.svg`) y texto completo de licencia (`LICENSE.txt`). Se conserva
+ruta, hash y commit de origen.
+
+Para generar el lote local dentro de `tools/resource-etl`:
+`node src/vault-cli.mjs --sources=heroicons --limit=25 --out=vault`.
+La extracción no modifica por sí misma `resource-vault-data` ni el catálogo
+público. `npm test` cubre transformación y seguridad sin red y CI prueba
+una extracción pequeña real, con previsualización y edición nativa.

@@ -81,3 +81,15 @@ Biblioteca offline-first de **recursos abiertos/licenciados** para diseñadores.
 - Para HTML/CSS se mantiene la edición segura mediante el botón Personalizar de NagWeb. Para SVG permanece el doble clic y `Alt+Enter`.
 - `vercel.json` define `git.deploymentEnabled["feat/resource-etl-v1"]=false` para evitar nuevas vistas previas de esta rama. Verificar periódicamente solo cuando cambie la configuración, sin desplegar manualmente.
 - Próxima mejora: escoger otro mecanismo contextual estable que viva completamente en el editor anfitrión y se compruebe por pruebas realistas, sin afectar la captura de eventos del lienzo; o priorizar una mejora independiente de uso real antes de reintentar.
+
+## Etapa 85: incorporar Heroicons (12/10/2026)
+
+- Origen verificado: https://github.com/tailwindlabs/heroicons .
+- Licencia: MIT, texto original https://github.com/tailwindlabs/heroicons/blob/master/LICENSE ,
+  copyright © Tailwind Labs, Inc.; conservar texto completo por recurso.
+- En la consulta había 324 SVG de `optimized/24/outline`. Únicamente la
+  familia de contornos de 24 px puede incorporarse como vector nativo
+  editable; excluir sólido/mini de este flujo.
+- El importador se incorpora en la rama ETL sin tocar la historia independiente
+  de snapshots `resource-vault-data`; materializar ese catálogo es un trabajo
+  posterior. No desplegar Vercel.

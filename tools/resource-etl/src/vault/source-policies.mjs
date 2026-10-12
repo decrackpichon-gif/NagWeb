@@ -55,6 +55,14 @@ export const SOURCE_POLICIES = {
     noticeRequired: true,
     notes: "CSS/SCSS animation code may be mirrored. Preserve the MIT notice."
   },
+  heroicons: {
+    mirrorMode: "full",
+    licenseId: "MIT",
+    licenseName: "MIT License",
+    licenseUrl: "https://github.com/tailwindlabs/heroicons/blob/master/LICENSE",
+    noticeRequired: true,
+    notes: "Heroicons © Tailwind Labs, Inc. MIT. Only 24px outlines are accepted as native editable vectors; each resource includes the exact upstream SVG and LICENSE.txt."
+  },
   lucide: {
     mirrorMode: "full",
     licenseId: "ISC",

@@ -78,6 +78,37 @@ jobs:
         working-directory: tools/resource-etl
         run: npm test
 
+      - name: Verify real Heroicons MIT outline ingestion
+        working-directory: tools/resource-etl
+        shell: bash
+        run: |
+          node src/vault-cli.mjs --sources=heroicons --limit=3 --out=ci-vault-heroicons
+          node --input-type=module - <<'NODE'
+          import fs from "node:fs";
+          import path from "node:path";
+          import { buildInsertDescriptor } from "./src/runtime/insert-adapters.mjs";
+          const root="ci-vault-heroicons";
+          const catalog=JSON.parse(fs.readFileSync(path.join(root,"catalog.json"),"utf8"));
+          if(catalog.count!==3 || catalog.resources.some(r=>r.previewStatus!=="ready")) {
+            throw new Error("Expected three previewable Heroicons icons");
+          }
+          if(!catalog.resources.some(r=>r.id==="heroicons:academic-cap")) {
+            throw new Error("Missing curated icon");
+          }
+          for(const entry of catalog.resources) {
+            const resource=JSON.parse(fs.readFileSync(path.join(root,entry.vaultPath),"utf8"));
+            if(resource.license.id!=="MIT" || !resource.license.verified ||
+                !resource.artifacts.some(a=>a.targetPath==="LICENSE.txt")) {
+              throw new Error("Missing Heroicons license");
+            }
+            const descriptor=buildInsertDescriptor(resource,{values:{size:32,stroke:"#123456",strokeWidth:2}});
+            if(descriptor.kind!=="svg" || descriptor.payload.stroke!=="#123456") {
+              throw new Error("Heroicons must use native editable SVG");
+            }
+          }
+          console.log("Heroicons live import and previews OK");
+          NODE
+
       - name: Build small Code Vault over the network
         working-directory: tools/resource-etl
         run: >

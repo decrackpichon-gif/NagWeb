@@ -1,5 +1,7 @@
 import path from "node:path";
 import { extractLucideIcons } from "./extractors/lucide.mjs";
+import { extractHeroicons } from "./extractors/heroicons.mjs";
+import { transformHeroiconOutline } from "./heroicons-transformer.mjs";
 import { extractMagicUiComponents } from "./extractors/magicui.mjs";
 import { extractShadcnComponents } from "./extractors/shadcn.mjs";
 import { extractHyperUiBlocks } from "./extractors/hyperui.mjs";
@@ -56,7 +58,7 @@ function parseArgs(argv) {
 }
 
 function parseSources(value) {
-  return String(value || "lucide,shadcn,magicui,motion-primitives,animxyz,threejs,hyperui,uiverse,csshake,magic-css,spinkit,glsl-noise")
+  return String(value || "lucide,heroicons,shadcn,magicui,motion-primitives,animxyz,threejs,hyperui,uiverse,csshake,magic-css,spinkit,glsl-noise")
     .split(",")
     .map((source) => source.trim().toLowerCase())
     .filter(Boolean);
@@ -70,6 +72,15 @@ function intArg(value, fallback) {
 async function collectSource(source, args) {
   const all = Boolean(args.all);
   const limit = intArg(args.limit, source === "lucide" ? 50 : 25);
+
+  if (source === "heroicons") {
+    assertFullMirrorAllowed("heroicons");
+    const raw = await extractHeroicons({ limit, all });
+    console.log(`[heroicons] ${raw.items.length}/${raw.totalAvailable} native outline icons selected.`);
+    return raw.items.map(item => transformHeroiconOutline({
+      item, commit: raw.commit, licenseText: raw.licenseText
+    }));
+  }
 
   if (source === "lucide") {
     assertFullMirrorAllowed("lucide");
