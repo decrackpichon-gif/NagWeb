@@ -2414,7 +2414,9 @@ C.panel=function(s){
  var html=cRow('Cámara 3D',cSeg('sec.sdCameraEnabled',!!s.sdCameraEnabled,[['false','Desactivada'],['true','Activada']],'bool'));
  if(!s.sdCameraEnabled||!C.config(s))return html;
  var list=keys(s),k=choose(s,list);
- html+='<div data-camera-translate-controls style="margin:7px 0 9px"><button class="btn tiny" type="button" data-camera-viewport-translate aria-pressed="'+(viewportTranslateArmed&&viewportTranslateArmed.sectionId===s.id?'true':'false')+'">'+(viewportTranslateArmed&&viewportTranslateArmed.sectionId===s.id?'Cerrar controles XYZ':'Mover cámara XYZ en vista 3D')+'</button><p class="hint gh">'+(viewportTranslateArmed&&viewportTranslateArmed.sectionId===s.id?'Arrastrá los ejes X, Y o Z del control que aparece sobre la escena. X/Y permite mover en dos ejes. Shift: precisión. Escape: cancelar.':'Desplazá la posición de la cámara con controles de ejes sobre la escena, viendo el resultado antes de guardar.')+'</p></div>';
+ html+='<style>#pane input.cnum[data-camera-field],#pane input.cnum[data-camera-look-field],#pane input.cnum[data-camera-look-focus-offset],#pane input.cnum[data-camera-depth],#pane input.cnum[data-camera-object-world-z],#pane input.cnum[data-camera-handle-vector],#pane input.cnum[data-camera-look-handle-vector]{background:#fff!important;color:#171717!important;caret-color:#171717!important;border:1px solid #777!important}#pane input.cnum[data-camera-field]:focus-visible,#pane input.cnum[data-camera-object-world-z]:focus-visible{outline:2px solid #8b5cf6;outline-offset:1px}</style>'+
+  '<button class="btn" type="button" data-camera-space-open style="display:block;width:100%;margin:9px 0;border:1px solid var(--accent)">◈ Editar espacio 3D · Ver cámara y objetos</button>'+
+  '<div data-camera-translate-controls style="margin:7px 0 9px"><button class="btn tiny" type="button" data-camera-viewport-translate aria-pressed="'+(viewportTranslateArmed&&viewportTranslateArmed.sectionId===s.id?'true':'false')+'">'+(viewportTranslateArmed&&viewportTranslateArmed.sectionId===s.id?'Cerrar controles XYZ':'Mover cámara XYZ en vista 3D')+'</button><p class="hint gh">'+(viewportTranslateArmed&&viewportTranslateArmed.sectionId===s.id?'Arrastrá los ejes X, Y o Z del control que aparece sobre la escena. X/Y permite mover en dos ejes. Shift: precisión. Escape: cancelar.':'Desplazá la posición de la cámara con controles de ejes sobre la escena, viendo el resultado antes de guardar.')+'</p></div>';
  html+=cRow('Trayectoria','<select class="csel" data-camera-path-mode aria-label="Trayectoria de cámara"><option value="linear"'+((s.sdCameraPathMode==='smooth')?'':' selected')+'>Por tramos</option><option value="smooth"'+(s.sdCameraPathMode==='smooth'?' selected':'')+'>Curva suave</option></select>');
  if(s.sdCameraPathMode==='smooth')html+='<p class="hint gh">Los encuadres XYZ se convierten en puntos de una trayectoria continua. Las permanencias con dos posiciones iguales siguen siendo pausas reales.</p>';
  html+=cRow('Orientación','<select class="csel" data-camera-orientation-mode aria-label="Orientación de cámara"><option value="manual"'+(s.sdCameraOrientationMode==='lookAt'?'':' selected')+'>Ángulos manuales</option><option value="lookAt"'+(s.sdCameraOrientationMode==='lookAt'?' selected':'')+'>Mirar hacia</option></select>');
@@ -3009,10 +3011,24 @@ if(pane){
    ev.preventDefault();technical.open=!technical.open;
    mapOverviewTechnicalOpen[sec().id]=technical.open;return;
   }
-  var button=ev.target.closest('[data-camera-object-transform],[data-camera-object-depth],[data-camera-viewport-translate],[data-camera-viewport-orbit],[data-camera-surface-aim],[data-camera-aim-at-object],[data-camera-scene-object-pick],[data-camera-edit-current],[data-camera-easy-move],[data-camera-overview-compare-alternate],[data-camera-overview-compare-jump],[data-camera-overview-event-step],[data-camera-overview-toggle],[data-camera-map-pan],[data-camera-map-zoom],[data-camera-map-step],[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
+  var button=ev.target.closest('[data-camera-space-open],[data-camera-layer-pick],[data-camera-object-transform],[data-camera-object-depth],[data-camera-viewport-translate],[data-camera-viewport-orbit],[data-camera-surface-aim],[data-camera-aim-at-object],[data-camera-scene-object-pick],[data-camera-edit-current],[data-camera-easy-move],[data-camera-overview-compare-alternate],[data-camera-overview-compare-jump],[data-camera-overview-event-step],[data-camera-overview-toggle],[data-camera-map-pan],[data-camera-map-zoom],[data-camera-map-step],[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
   if(button===suppressedClick){suppressedClick=null;return;}
   var s=sec(),cfg=C.config(s);if(!cfg)return;var list=keys(s);
-  if(button.dataset.cameraObjectTransform!==undefined){
+  if(button.dataset.cameraSpaceOpen!==undefined){
+    mapOpen[s.id]=true;mapObjectVisible[s.id]=true;renderPane();
+    var map=pane.querySelector('[data-camera-map-box]');
+    if(map&&map.scrollIntoView)map.scrollIntoView({block:'start',behavior:'smooth'});
+    return;
+   }
+   if(button.dataset.cameraLayerPick!==undefined){
+    var plan=mapObjectPlans[s.id],i=+button.dataset.cameraLayerPick;
+    if(!plan||!Number.isInteger(i)||i<0||i>=plan.entries.length)return;
+    if(baseTransformArmed)stopBaseTransform();
+    if(objectDepthArmed)stopObjectDepth(false);
+    if(surfaceAimArmed)clearSurfaceAim();
+    mapObjectSelected[s.id]=plan.entries[i].id;renderPane();return;
+   }
+   if(button.dataset.cameraObjectTransform!==undefined){
    var state=toggleBaseTransform(s);
    if(state==='invalid')toast('Elegí un objeto 3D anclado en el inspector.');
    else if(state==='unavailable')toast('El renderer WebGL todavía no está disponible.');
@@ -3245,7 +3261,20 @@ if(pane){
    if(input.value!==''&&Number.isInteger(idx)&&idx>=0&&idx<events.length)mapOverviewEventGo(es,events[idx]);
    return;
   }
-  if(input.dataset.cameraSceneObjectsToggle!==undefined){
+  if(input.dataset.cameraObjectWorldZ!==undefined||input.dataset.cameraObjectWorldZRange!==undefined){
+    var zs=sec(),zp=mapObjectPlans[zs.id],zi=mapObjectSelection(zs,zp),wanted=+input.value;
+    if(!zi||input.value===''||!Number.isFinite(wanted)){renderPane();return;}
+    var change=mapObjectDepthEdit(zs,zi,wanted,progress(zs),zp.size);
+    if(!change){renderPane();return;}
+    var old=+change.element[change.field]||0;
+    if(Math.abs(old-change.value)<.00001){renderPane();return;}
+    if(baseTransformArmed)stopBaseTransform();
+    if(objectDepthArmed)stopObjectDepth(false);
+    if(surfaceAimArmed)clearSurfaceAim();
+    snapshot();change.element[change.field]=change.value;saveProject();renderPane();schedulePreview();
+    return;
+   }
+   if(input.dataset.cameraSceneObjectsToggle!==undefined){
     var scene=sec();if(!C.config(scene))return;
     mapObjectVisible[scene.id]=!!input.checked;
     if(!input.checked)mapObjectSelected[scene.id]=null;
