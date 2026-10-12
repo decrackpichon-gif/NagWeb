@@ -116,6 +116,19 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
    depth:sec().elements[0].offZ||0,scale:sec().elements[0].nwSpatialScale||100,
    camera:JSON.stringify(sec().sdCameraFrames),history:history.length,progress:NAGWEB_SCROLL_DIRECTOR.progress(sec().id)}));
   const beforeGizmo=await edit3D();
+  // Undo schedules an iframe refresh: a stale world point can exist before
+  // that refresh starts and then dismiss the next tool on iframe 'load'.
+  async function awaitSettledPreview(){
+   await page.evaluate(()=>new Promise(resolve=>{
+    const frame=document.getElementById('preview');
+    const fallback=setTimeout(resolve,1300);
+    frame.addEventListener('load',()=>{clearTimeout(fallback);setTimeout(resolve,100);},{once:true});
+   }));
+   await page.waitForFunction(()=>{
+    const w=document.getElementById('preview')?.contentWindow;
+    return w&&w.NAGWEB_SPATIAL_SCREEN_POINT?.('gizmo-real-box',sec().id);
+   });
+  }
   await page.click('[data-camera-object-transform]');
   const yaw=page.frameLocator('#preview').locator('[data-nw-base-axis="RotateY"]');
   await yaw.waitFor({state:'visible'});
@@ -143,10 +156,7 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   assert.equal(turned.camera,beforeGizmo.camera,'Gizmo cannot rewrite camera frames');
   await page.evaluate(()=>undo());
   assert.equal((await edit3D()).yaw,0,'Undo restores original 3D orientation');
-  await page.waitForFunction(()=>{
-   const w=document.getElementById('preview')?.contentWindow;
-   return w&&w.NAGWEB_SPATIAL_SCREEN_POINT?.('gizmo-real-box',sec().id);
-  });
+  await awaitSettledPreview();
   await page.click('[data-camera-object-depth]');
   const depth=page.frameLocator('#preview').locator('[data-nw-object-depth-handle]');
   await depth.waitFor({state:'visible'});
@@ -170,10 +180,7 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   assert.equal(closer.depth,Math.round(realDepthDelta*.01*100)/100,'Z uses actual iframe-local mouse delta');
   assert.equal(closer.history,beforeGizmo.history+1,'Undo of yaw followed by Z creates one history entry');
   await page.evaluate(()=>undo());assert.equal((await edit3D()).depth,0,'Undo restores depth without changing the camera');
-  await page.waitForFunction(()=>{
-   const w=document.getElementById('preview')?.contentWindow;
-   return w&&w.NAGWEB_SPATIAL_SCREEN_POINT?.('gizmo-real-box',sec().id);
-  });
+  await awaitSettledPreview();
   await page.click('[data-camera-object-transform]');
   const scale=page.frameLocator('#preview').locator('[data-nw-base-axis="Scale"]');
   await scale.waitFor({state:'visible'});
