@@ -1305,9 +1305,10 @@ en Windows, sin suprimir errores de render reales.
 
 ## Bloque 84: personalización HTML/CSS contextual sobre el lienzo
 
-Los componentes Uiverse HTML/CSS insertados muestran, al pasar el cursor sobre
-su marco, un botón de edición propio de NagWeb. En pantallas táctiles permanece
-visible y también se puede activar con teclado. Permite abrir la ficha original
+Los componentes Uiverse HTML/CSS insertados muestran sobre su marco un botón
+de edición propio de NagWeb, visible también cuando el cursor está dentro del
+iframe aislado, que no transmite eventos hover al editor. Funciona en pantallas
+táctiles y también se puede activar con teclado. Permite abrir la ficha original
 sin seleccionar manualmente el elemento desde el panel lateral; después de
 cerrar sin cambios devuelve el foco al control del lienzo, si sigue existiendo.
 El control pertenece únicamente al documento temporal del editor: no modifica

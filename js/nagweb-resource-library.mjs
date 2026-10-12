@@ -250,7 +250,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
         padding:0;border:1px solid #b9c2d5;border-radius:8px;
         background:#202735;color:#fff;box-shadow:0 2px 8px #0005;
         font:600 19px/1 sans-serif;cursor:pointer;
-        opacity:0;pointer-events:none;
+        opacity:.88;pointer-events:auto;
       }
       .el:hover > [data-nagweb-resource-edit],
       .el:focus-within > [data-nagweb-resource-edit],
@@ -272,7 +272,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       const resource = libraryResourceById(node.dataset.id);
       if (!resource) continue;
       if (!node.hasAttribute("title")) node.title = resource.type === "embed"
-        ? "Pasá el cursor y elegí Personalizar para editar este componente"
+        ? "Usá el botón ✎ para personalizar este componente"
         : "Doble clic para personalizar este recurso";
       if (resource.type !== "embed") continue;
       if (canvasDoc.defaultView.getComputedStyle(node).position === "static")

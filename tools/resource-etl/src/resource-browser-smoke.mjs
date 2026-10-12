@@ -1347,8 +1347,9 @@ try {
   // sandboxed third-party iframe. Pointer and keyboard both reopen editing.
   const canvasEdit=child.getByRole("button",{name:"Personalizar componente desde el lienzo"});
   await expect(canvasEdit).toHaveCount(1);
-  await child.hover();
-  await expect(canvasEdit).toHaveCSS("opacity","1");
+  await expect(canvasEdit).toBeVisible();
+  // The opaque iframe consumes hover; the editor control stays reachable.
+  await expect(canvasEdit).toHaveCSS("pointer-events","auto");
   const beforeInlineEdit=await page.evaluate(()=>history.length);
   await canvasEdit.click();
   const custom=page.frameLocator('iframe[title="Biblioteca de recursos de NagWeb"]');
