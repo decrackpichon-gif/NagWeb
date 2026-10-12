@@ -803,3 +803,49 @@ compatibilidad con objetos anteriores, composición con el tamaño
 animado y aislamiento entre secciones. Las comprobaciones aisladas
 del editor pasaron; las pruebas con Three y el navegador real siguen
 pendientes de ejecución confirmada.
+
+
+## Convivencia y fiabilidad de las herramientas de la vista previa (11/10/2026)
+
+Se revisó el flujo combinado de **orientar cámara**, **elegir un punto real de
+un GLB**, **desplazar cámara XYZ**, **ajustar Z del objeto** y **girar/escalar
+el modelo**. Esta actualización no agrega otro motor de animación ni inventa
+controles de transformación duplicados.
+
+- Los modos de selección de superficie y orientación de cámara se excluyen
+  mutuamente: activar uno desarma los listeners del otro.
+- La elección de un punto de superficie se cancela automáticamente cuando
+  se recarga la vista previa. Ya no quedan listeners colgados de un iframe
+  anterior. El Escape y los clics siguen funcionando como antes.
+- Cambiar el elemento inspeccionado, incluso haciendo clic sobre su símbolo
+  en el mapa, cierra inmediatamente los controles flotantes del objeto
+  anterior. También se limpian al desactivar la cámara, cambiar de escena
+  o volver a renderizar el inspector con una selección incompatible.
+- Confirmar un giro/tamaño deja de provocar un retorno momentáneo a la
+  pose previa. El adaptador de Three.js **promueve de forma atómica**
+  el valor temporal a su **copia en memoria** del objeto del iframe y
+  elimina el override transitorio, mientras el editor guarda el mismo
+  valor en el proyecto y prepara la nueva vista. Un cambio cancelado
+  sigue limpiando el override **sin** modificar el objeto ni generar
+  Deshacer. Esta promoción no escribe datos en la página publicada ni
+  agrega un reloj o una trayectoria independiente.
+
+### Nuevas regresiones
+
+\`tests/spatial-focus-map.integration.cjs\` cubre conjuntamente
+cambio de selección en el mapa, exclusividad de los modos, recarga
+del iframe, cancelación y continuidad visual del valor confirmado.
+En evaluación aislada del JS real de editor + modelo, **192
+comprobaciones pasaron**.
+
+\`tests/spatial-interaction.integration.cjs\` comprueba la promoción
+de la transformación en el holder real de Three sin override
+residual ni salto de rotación. Además,
+\`tests/spatial-interaction.browser.cjs\` incorpora una escena real
+con un GLB mínimo, WebGL, el Director en 50 %, transformación
+temporal/confirmada y limpieza del tamaño. **Estas pruebas de
+Three/Chromium quedaron agregadas, pero no se ejecutaron ni se
+confirmó CI en este entorno:** faltan el paquete Three.js y los
+fixtures del repositorio en el entorno accesible. La ejecución de
+browser con gestos reales sobre todas las asas sigue siendo la
+verificación prioritaria antes de integrar.
