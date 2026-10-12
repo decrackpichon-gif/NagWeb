@@ -287,10 +287,10 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
   return true;
  }
  // Only the editor explicitly calls this same-origin API for the selected 3D model.
- function previewBaseTransform(id,axis,value,sectionId){
+ function previewBaseTransform(id,axis,value,sectionId,commit){
   var bounds={RotateX:[-3600,3600],RotateY:[-3600,3600],Scale:[10,500]};
   if(typeof id!=='string'||!id||typeof sectionId!=='string'||!sectionId||!Object.prototype.hasOwnProperty.call(bounds,axis)||
-   value!==null&&(!Number.isFinite(value)||value<bounds[axis][0]||value>bounds[axis][1]))return false;
+   value!==null&&(!Number.isFinite(value)||value<bounds[axis][0]||value>bounds[axis][1])||commit&&value===null)return false;
   var matches=[];
   rows.forEach(function(row){
    if(row.sectionId!==sectionId||!row.stage.isConnected||!row.state)return;
@@ -299,7 +299,12 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
   if(!matches.length)return false;
   matches.forEach(function(g){
    var tmp=g.userData.nwPreviewBaseTransform||(g.userData.nwPreviewBaseTransform={});
-   if(value===null)delete tmp[axis];else tmp[axis]=value;
+   if(commit){
+    // The iframe's model is independent of the editor's saved project.
+    // Promote the previewed value atomically, preventing a one-frame snap.
+    g.userData.o['nwSpatial'+axis]=value;
+    delete tmp[axis];
+   }else if(value===null)delete tmp[axis];else tmp[axis]=value;
    if(!Object.keys(tmp).length)delete g.userData.nwPreviewBaseTransform;
   });
   return true;
@@ -325,7 +330,7 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
  window.NAGWEB_SPATIAL_SURFACE_PICK=function(id,x,y,sectionId){return adapter.surfacePoint(id,x,y,sectionId);};
  window.NAGWEB_SPATIAL_PREVIEW_DEPTH=function(id,value,sectionId){return adapter.previewDepth(id,value,sectionId);};
  window.NAGWEB_SPATIAL_SCREEN_POINT=function(id,sectionId){return adapter.screenPoint(id,sectionId);};
- window.NAGWEB_SPATIAL_PREVIEW_BASE_TRANSFORM=function(id,axis,value,sectionId){return adapter.previewBaseTransform(id,axis,value,sectionId);};
+ window.NAGWEB_SPATIAL_PREVIEW_BASE_TRANSFORM=function(id,axis,value,sectionId,commit){return adapter.previewBaseTransform(id,axis,value,sectionId,commit);};
  return adapter;
 }
 window.NAGWEB_CREATE_SPATIAL_RENDERER=createSpatialRenderer;
