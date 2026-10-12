@@ -1276,3 +1276,11 @@ La edición de la pared conserva activo «Reordenar en el lienzo» después de s
 ### Robustez del pipeline de capturas de prueba
 
 La exportación de capturas con `actions/upload-artifact` es diagnóstica, no debe invalidar un smoke de navegador exitoso cuando GitHub Actions tiene un timeout de almacenamiento. En el workflow, ese **paso de upload** admite fallos (`continue-on-error`), mientras que `Run browser smoke` continúa siendo obligatorio: un fallo de ejecución o aserciones sigue dejando el job en rojo. No afecta a despliegues.
+
+## Nueva composición: Grid Dive (referencia pública parcial)
+
+La referencia externa [Animos](https://animos.app/editor?scrollTo=multiscene) incorpora Grid Dive en la categoría Multiscene. El catálogo confirma el **nombre**, pero no expone la pose exacta ni sus controles originales. Esta primera implementación es una **interpretación de NagWeb**, no una reproducción visual verificada del preset de Animos. En particular, los controles Columnas (2–5), Separación (0–10 %) y Acercamiento (1,1–4×) **son propios de esta implementación**, sin atribuirlos a Animos.
+
+La composición introduce una grilla de 12 imágenes (rango 4–24), zoom sucesivo a cada tarjeta y retorno suave entre fases. Usa el único progreso del Director y cierra el loop sin salto; adapta formato horizontal/vertical, conserva reemplazo de imágenes, carga por lotes, orden y encuadre, fondo/transparencia/sombras, reproducción por tiempo o scroll, Biblioteca, inserción, reapertura y exportación. Se agregaron pruebas automáticas geométricas (loop, clipping, matrices y ambos formatos) y smoke browser de colocación/carga. Referencia aún faltante para fidelidad: video o captura de la animación **Grid Dive** seleccionada con su inspector original.
+
+**Prioridades acordadas:** (1) agregar presets existentes de Animos con sus controles originales verificables; (2) sumar opciones de NagWeb únicamente luego; (3) crear animaciones inéditas. Siguiente candidato del catálogo aún no implementado: **Pop Parade**, sin referencia de controles obtenida.
