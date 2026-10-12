@@ -275,15 +275,22 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
  }
  // Set/restore the preview override only in the matching stage. No project
  // writes and no timer: the existing render loop consumes the next value.
- function previewDepth(id,value,sectionId){
-  if(typeof id!=='string'||!id||typeof sectionId!=='string'||!sectionId||value!==null&&(!Number.isFinite(value)||Math.abs(value)>100))return false;
+ function previewDepth(id,value,sectionId,commit){
+  if(typeof id!=='string'||!id||typeof sectionId!=='string'||!sectionId||value!==null&&(!Number.isFinite(value)||Math.abs(value)>100)||commit&&value===null)return false;
   var matching=[];
   rows.forEach(function(row){
    if(row.sectionId!==sectionId||!row.stage.isConnected||!row.state)return;
    row.objects.forEach(function(g){if(g.userData.o&&String(g.userData.o.id)===id)matching.push(g);});
   });
   if(!matching.length)return false;
-  matching.forEach(function(g){if(value===null)delete g.userData.nwPreviewOffZ;else g.userData.nwPreviewOffZ=value;});
+  matching.forEach(function(g){
+   if(commit){
+    // The iframe holds a generated copy: promote the confirmed depth in place.
+    // This removes the transient override without a one-frame visual snap.
+    g.userData.o.offZ=value;
+    delete g.userData.nwPreviewOffZ;
+   }else if(value===null)delete g.userData.nwPreviewOffZ;else g.userData.nwPreviewOffZ=value;
+  });
   return true;
  }
  // Only the editor explicitly calls this same-origin API for the selected 3D model.
@@ -328,7 +335,7 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
  var adapter={connect:connect,owns:owns,render:render,destroy:destroy,view:view,lightPoint:lightPoint,anchorPoint:anchorPoint,pick:pick,interactive:interactive,surfacePoint:surfacePoint,previewDepth:previewDepth,previewBaseTransform:previewBaseTransform,screenPoint:screenPoint};
  // Same-origin editor-only request, no automatic pointer listeners in exports.
  window.NAGWEB_SPATIAL_SURFACE_PICK=function(id,x,y,sectionId){return adapter.surfacePoint(id,x,y,sectionId);};
- window.NAGWEB_SPATIAL_PREVIEW_DEPTH=function(id,value,sectionId){return adapter.previewDepth(id,value,sectionId);};
+ window.NAGWEB_SPATIAL_PREVIEW_DEPTH=function(id,value,sectionId,commit){return adapter.previewDepth(id,value,sectionId,commit);};
  window.NAGWEB_SPATIAL_SCREEN_POINT=function(id,sectionId){return adapter.screenPoint(id,sectionId);};
  window.NAGWEB_SPATIAL_PREVIEW_BASE_TRANSFORM=function(id,axis,value,sectionId,commit){return adapter.previewBaseTransform(id,axis,value,sectionId,commit);};
  return adapter;
