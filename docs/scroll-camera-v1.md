@@ -750,3 +750,56 @@ aserciones con geometría Three real para pivote proyectado, conversión
 de unidades `offZ`, aislamiento y restauración. Estas últimas pruebas
 y la validación visual Chromium deben confirmarse al ejecutarse en un
 entorno con Three y navegador instalados.
+
+
+## Giro y tamaño de modelos 3D directamente en la vista previa (11/10/2026)
+
+Los elementos `shape3d` anclados mantienen su movimiento X/Y existente
+en el editor y el nuevo control de profundidad `offZ`. Además, el
+inspector de objetos de **Cámara 3D** incorpora **Girar y escalar 3D
+con mouse**: sobre la escena aparece un control con tres asas:
+
+- **↔ Giro Y:** arrastrar horizontalmente para orientar izquierda/derecha.
+- **↕ Giro X:** arrastrar verticalmente para inclinar arriba/abajo.
+- **⤢ Tamaño:** arrastrar hacia arriba para agrandar o abajo para achicar.
+
+**Shift** reduce la sensibilidad al 20 %. Las flechas ajustan el asa
+enfocada. **Escape**, cancelación del puntero y recarga de la vista
+previa eliminan el cambio temporal sin guardarlo. Cada gesto confirmado
+genera **un solo Deshacer y un solo guardado**. El control queda fuera
+del mundo CSS transformado; se posiciona a partir del pivote realmente
+proyectado por la cámara WebGL compartida.
+
+### Separación entre colocación base y animación
+
+Estas asas modifican tres campos opcionales del objeto:
+`nwSpatialRotateX`, `nwSpatialRotateY` (grados) y
+`nwSpatialScale` (porcentaje, 10–500 %). La ausencia de los campos
+equivale a giro **0°** y escala **100 %**, preservando proyectos
+anteriores.
+
+**No son keyframes nuevos**: representan la colocación *base* del
+modelo, a la que se suma el giro y se multiplica el tamaño que **ya
+evalúa el Director de Scroll**. Así, un modelo puede quedar girado y
+agrandado de manera estática y seguir ejecutando su movimiento
+narrativo existente, sin un segundo reloj o interpolador.
+
+El renderizador aplica la misma composición a objetos anclados
+directamente y a las jerarquías libres admitidas, conservando los
+ángulos ZXY, su escala normalizada y la rotación local interactiva del
+modelo. Durante el gesto se usa una transformación temporal,
+aislada por identificador y sección mediante
+`NAGWEB_SPATIAL_PREVIEW_BASE_TRANSFORM`. La geometría y los datos
+del proyecto no cambian hasta confirmar. La herramienta no instala
+manejadores de mouse en el sitio publicado.
+
+**Pruebas incorporadas:** en
+`tests/spatial-focus-map.integration.cjs`, cancelación, límites,
+precisión, teclas, un solo Deshacer, aislamiento de la cámara y de
+las animaciones del objeto. En
+`tests/spatial-interaction.integration.cjs`, aserciones con
+Three.js real para el giro/escala del holder, restauración,
+compatibilidad con objetos anteriores, composición con el tamaño
+animado y aislamiento entre secciones. Las comprobaciones aisladas
+del editor pasaron; las pruebas con Three y el navegador real siguen
+pendientes de ejecución confirmada.
