@@ -104,3 +104,10 @@ Una herramienta para elegir, **previsualizar y editar animaciones antes de inser
 - «Restaurar ajustes de animación» restablece **de una vez** la configuración visual y los keyframes de parámetros a los defaults reales de la fábrica de cada preset; **no borra** imágenes, textos, orden, encuadres, duración ni modo Tiempo/Scroll. Los cambios continúan siendo borrador hasta insertar/guardar.
 - Una comprobación JavaScript con Showcase Stream confirmó que el reset vuelve a `ringTilt:-28` y `cardRatio:'auto'`, borra keyframes, deja duración 20s y conserva elementos. Hay prueba de navegador añadida a suite `showcase` para formato, restauración, inserción/reapertura y otro preset (Grid Dive), pendiente de GitHub Actions.
 - Prioridad principal intacta: fidelidad real al catálogo de Animos basada en referencias originales, no nuevas ideas secundarias ni nuevos nombres duplicados. Sin merges ni despliegues.
+
+### 12/10/2026: controles de medios verificados y compartidos
+
+- El editor original [Animos](https://animos.app/editor?scrollTo=multiscene) muestra «Clear images» en «Media · 12 slots» y formatos de **tarjeta** Auto, 1:1, 4:3, 3:4, 4:5, 16:9, 9:16. Se implementaron ambos en una sola etapa para composiciones procedurales.
+- Vaciar mantiene todas las posiciones animadas con un solo SVG transparente local de 8×8, marca persistente `nwStreamEmpty`, encuadres, orden, superposiciones, duración, edición e inserción/exportación. Los archivos nuevos sustituyen solo sus posiciones y vuelven a activar su miniatura.
+- Atajos de proporción de **imagen** reutilizan `cardRatio`; no duplican el renderer ni el modelo. Ya existían atajos de proporción del lienzo.
+- CI del commit previo `237352db`: **55/55 pruebas pasadas**, run [38267707174](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38267707174). Nuevo browser smoke para vaciar, cargar dos de 12, reabrir e insertar pendiente de la nueva CI. Las referencias visuales originales de Grid Dive y Pop Parade todavía no están accesibles; evitar afirmar fidelidad.
