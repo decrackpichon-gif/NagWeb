@@ -3,9 +3,9 @@
 Resources: 6762
 Providers: animxyz, csshake, glsl-noise, heroicons, hyperui, lucide, magic-css, magicui, motion-primitives, shadcn, spinkit, threejs, uiverse
 Library compressed bytes: 4697869
-Browse index compressed bytes: 395085
-Library SHA-256: `d47c6d547ab2381cb45db034300fd5c7d72d55e674ea5a652979100b8186baf1`
-Browse index SHA-256: `d58f2acb8f5525726458a02cf16556020dc93dfe28b2f5508039178e16902fca`
+Browse index compressed bytes: 488481
+Library SHA-256: `2b70cf323863c8a0c7cbe1d03c6464e881bbf4aa927ca77e2285366cef82ae28`
+Browse index SHA-256: `24d3a821d16c9785167f20e0e178cc1bf5abceb4df0a212ef36f5adc409e23db`
 
 library.json.gz contains the complete UniversalResource records.
 browse-index.json.gz contains lightweight metadata for fast browsing and search.
