@@ -228,7 +228,12 @@ function commitWidgetList(id,field,row,col,value){
 }
 function commitPart(id,name,p){
  var e=currentWidget(id);if(!e||!name)return false;
- var old=e.wp&&e.wp.__parts&&e.wp.__parts[name]||{};
+ var mobile=!!p.mobile,collection=mobile?'__partsMobile':'__parts';
+ var old=e.wp&&e.wp[collection]&&e.wp[collection][name]||{};
+ if(mobile&&p.clearMobile){
+  if(!e.wp||!e.wp.__partsMobile||!Object.prototype.hasOwnProperty.call(e.wp.__partsMobile,name))return false;
+  snapshot();delete e.wp.__partsMobile[name];saveProject();return true;
+ }
  var next={x:Math.round((p.x||0)*10)/10,y:Math.round((p.y||0)*10)/10,r:Math.round(p.r||0),s:Math.round((p.s==null?1:p.s)*1000)/1000};
  // El Hero conserva la referencia espacial del momento de edición:
  // así el HTML exportado puede adaptar X/Y sin cambiar la pose original.
@@ -241,7 +246,7 @@ function commitPart(id,name,p){
   // No crear historial solo por modificar la referencia de una pose visual idéntica.
   if(!next.refW||!old.refW||(Math.abs(next.x/next.refW-old.x/old.refW)<.000001&&Math.abs(next.y/next.refH-old.y/old.refH)<.000001))return false;
  }
- snapshot();e.wp=e.wp||{};e.wp.__parts=e.wp.__parts||{};e.wp.__parts[name]=next;saveProject();return true;
+ snapshot();e.wp=e.wp||{};e.wp[collection]=e.wp[collection]||{};e.wp[collection][name]=next;saveProject();return true;
 }
 function installCanvasTools(){
  var fr=document.getElementById('preview');if(!fr)return;
@@ -254,7 +259,7 @@ function installCanvasTools(){
   if(!keyMove)return;
   var k=keyMove;keyMove=null;
   if(cancel)applyPart(k.target,k.start,true);
-  else{if(commitPart(k.current.id,k.current.name,k.current))k.current.responsive=!!k.current.refW;applyPart(k.target,k.current,true);}
+  else{if(commitPart(k.current.id,k.current.name,k.current)){k.current.responsive=!!k.current.refW;k.current.mobileOverride=!!k.current.mobile;}applyPart(k.target,k.current,true);}
  }
  function clear(){
   endNudge(false);
@@ -271,9 +276,9 @@ function installCanvasTools(){
   var root=active.closest('.el.wdg[data-id]');
   if(root){
    var p=partState(root,active);
-   if(p.x||p.y||p.r||Math.abs(p.s-1)>.001){
+   if(p.mobile?p.mobileOverride:(p.x||p.y||p.r||Math.abs(p.s-1)>.001)){
     var reset=doc.createElement('button');
-    reset.type='button';reset.className='nw-wpart-reset';reset.textContent='Restablecer';
+    reset.type='button';reset.className='nw-wpart-reset';reset.textContent=p.mobile?'Restablecer móvil':'Restablecer';
     reset.title='Restablecer posición, tamaño y giro de esta pieza';
     reset.style.left=Math.max(0,r.right-98)+'px';reset.style.top=Math.max(0,r.top-29)+'px';
     reset.addEventListener('click',function(ev){
@@ -281,7 +286,11 @@ function installCanvasTools(){
      var node=active;if(!node||!node.isConnected)return;
      var host=node.closest('.el.wdg[data-id]');if(!host)return;
      var before=partState(host,node),neutral=Object.assign({},before,{x:0,y:0,r:0,s:1});
-     if(commitPart(before.id,before.name,neutral)){applyPart(node,neutral);placeHandles();}
+     if(before.mobile){
+      if(commitPart(before.id,before.name,Object.assign({},before,{clearMobile:true}))){
+       neutral.mobileOverride=false;applyPart(node,neutral,true);placeHandles();
+      }
+     }else if(commitPart(before.id,before.name,neutral)){applyPart(node,neutral,true);placeHandles();}
     });
     doc.body.appendChild(reset);handles.push(reset);
    }
@@ -298,26 +307,32 @@ function installCanvasTools(){
   clear();active=target;target.classList.add('nw-wpart-sel');placeHandles();return true;
  }
  function partState(root,n){
-  var id=root.dataset.id,e=currentWidget(id),name=n.getAttribute('data-wpart'),p=e&&e.wp&&e.wp.__parts&&e.wp.__parts[name]||{};
-  var state={id:id,name:name,e:e,x:+p.x||0,y:+p.y||0,r:+p.r||0,s:p.s==null?1:+p.s,responsive:!!(p.refW>0&&p.refH>0)};
-  var hero=n.closest('.nw-lh');
+  var id=root.dataset.id,e=currentWidget(id),name=n.getAttribute('data-wpart');
+  var hero=n.closest('.nw-lh'),mobile=!!(hero&&hero.clientWidth>0&&hero.clientWidth<=600);
+  var fromDesktop=e&&e.wp&&e.wp.__parts&&e.wp.__parts[name]||{};
+  var fromMobile=e&&e.wp&&e.wp.__partsMobile&&e.wp.__partsMobile[name];
+  var p=mobile&&fromMobile?fromMobile:fromDesktop;
+  var state={id:id,name:name,e:e,x:+p.x||0,y:+p.y||0,r:+p.r||0,s:p.s==null?1:+p.s,
+   responsive:!!(p.refW>0&&p.refH>0),mobile:mobile,mobileOverride:!!(mobile&&fromMobile)};
   if(hero){
    var w=hero.clientWidth,h=hero.clientHeight;
    if(w>0&&h>0){
-    if(p.refW>0&&p.refH>0){
-     state.x=state.x*w/p.refW;state.y=state.y*h/p.refH;
-    }
+    if(p.refW>0&&p.refH>0){state.x=state.x*w/p.refW;state.y=state.y*h/p.refH;}
     state.refW=w;state.refH=h;
    }
   }
   return state;
  }
  function applyPart(n,p,final){
+  var names=p.mobile?['--nw-mx','--nw-my','--nw-mr','--nw-ms']:['--nw-tx','--nw-ty','--nw-pr','--nw-ps'];
+  if(final&&p.mobile&&!p.mobileOverride){
+   names.forEach(function(name){n.style.removeProperty(name);});return;
+  }
   var relative=final&&p.responsive&&p.refW>0&&p.refH>0;
   var x=relative?(p.x/p.refW*100).toFixed(5)+'cqw':p.x+'px';
   var y=relative?'calc(var(--h) * '+(p.y/p.refH).toFixed(6)+')':p.y+'px';
-  n.style.setProperty('--nw-tx',x);n.style.setProperty('--nw-ty',y);
-  n.style.setProperty('--nw-pr',p.r+'deg');n.style.setProperty('--nw-ps',p.s);n.classList.add('nw-part-t');
+  n.style.setProperty(names[0],x);n.style.setProperty(names[1],y);
+  n.style.setProperty(names[2],p.r+'deg');n.style.setProperty(names[3],p.s);n.classList.add('nw-part-t');
  }
  function bindHandle(h,mode){
   h.addEventListener('pointerdown',function(ev){
@@ -340,7 +355,7 @@ function installCanvasTools(){
     if(e.pointerId!==ev.pointerId)return;
     var w=doc.defaultView;w.removeEventListener('pointermove',mv);w.removeEventListener('pointerup',up);w.removeEventListener('pointercancel',up);
     if(e.type==='pointercancel'){applyPart(target,start,true);placeHandles();return;}
-    if(commitPart(p.id,p.name,p))p.responsive=!!p.refW;
+    if(commitPart(p.id,p.name,p)){p.responsive=!!p.refW;p.mobileOverride=!!p.mobile;}
     applyPart(target,p,true);placeHandles();
    }
    var w=doc.defaultView;w.addEventListener('pointermove',mv);w.addEventListener('pointerup',up);w.addEventListener('pointercancel',up);
@@ -381,7 +396,7 @@ function installCanvasTools(){
    if(e.pointerId!==ev.pointerId)return;
    var w=doc.defaultView;w.removeEventListener('pointermove',mv);w.removeEventListener('pointerup',up);w.removeEventListener('pointercancel',up);
    if(e.type==='pointercancel'||!moved){applyPart(n,start,true);placeHandles();return;}
-   if(commitPart(p.id,p.name,p))p.responsive=!!p.refW;
+   if(commitPart(p.id,p.name,p)){p.responsive=!!p.refW;p.mobileOverride=!!p.mobile;}
    applyPart(n,p,true);placeHandles();
   }
   var w=doc.defaultView;w.addEventListener('pointermove',mv);w.addEventListener('pointerup',up);w.addEventListener('pointercancel',up);
