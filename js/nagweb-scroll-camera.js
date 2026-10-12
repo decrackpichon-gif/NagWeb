@@ -3015,6 +3015,9 @@ if(pane){
   if(button.dataset.cameraSceneObjectPick!==undefined){
    var plan=mapObjectPlans[s.id],idx=+button.dataset.cameraSceneObjectPick;
    if(!plan||mapObjectVisible[s.id]===false||!Number.isInteger(idx)||idx<0||idx>=plan.entries.length)return;
+   if(baseTransformArmed)stopBaseTransform();
+   if(objectDepthArmed)stopObjectDepth(false);
+   if(surfaceAimArmed)clearSurfaceAim();
    mapObjectSelected[s.id]=plan.entries[idx].id;
    renderPane();
    var field=pane.querySelector('[data-camera-object-select]');if(field)field.focus({preventScroll:true});
@@ -3123,6 +3126,7 @@ if(pane){
   if(input.dataset.cameraObjectSelect!==undefined){
    if(baseTransformArmed)stopBaseTransform();
    if(objectDepthArmed)stopObjectDepth(false);
+   if(surfaceAimArmed)clearSurfaceAim();
    var scene=sec(),plan=mapObjectPlans[scene.id],idx=+input.value;
    mapObjectSelected[scene.id]=input.value!==''&&plan&&Number.isInteger(idx)&&idx>=0&&idx<plan.entries.length?plan.entries[idx].id:null;
    renderPane();
