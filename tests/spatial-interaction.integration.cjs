@@ -43,6 +43,22 @@ assert.equal(c.window.NAGWEB_SPATIAL_SURFACE_PICK('near',...screen,'a').id,'near
 assert.equal(adapter.surfacePoint('near',...screen,'b'),null,'raycast is isolated by scene');
 assert.equal(adapter.surfacePoint('near',-1,200,'a'),null,'cannot raycast outside viewport');
 near.children[0].visible=false;assert.equal(adapter.surfacePoint('near',...screen,'a'),null,'hidden GLB cannot be focused');near.children[0].visible=true;
+// Object depth manipulation must remain editor-only and section-scoped.
+const projectedPivot=adapter.screenPoint('near','a');
+assert.ok(projectedPivot&&Math.abs(projectedPivot.x-screen[0])<1e-6&&Math.abs(projectedPivot.y-screen[1])<1e-6,'gizmo starts at the actual 3D pivot');
+assert.equal(adapter.screenPoint('near','b'),null,'3D gizmo cannot attach to another stage');
+assert.equal(c.window.NAGWEB_SPATIAL_PREVIEW_DEPTH('near',3.5,'a'),true);
+adapter.render(()=>{});
+const depthMoved=near.userData.holder.getWorldPosition(new T.Vector3());
+assert.ok(Math.abs(depthMoved.z-world.z-1.5*unit)<1e-6,'offZ preview uses authored world-depth units');
+assert.equal(near.userData.o.offZ,2,'a live depth preview never changes source data');
+assert.equal(adapter.previewDepth('near',-1,'b'),false,'depth edit cannot affect a different section');
+assert.equal(adapter.previewDepth('near',Infinity,'a'),false,'depth edit rejects nonfinite values');
+assert.equal(adapter.previewDepth('far',101,'a'),false,'depth edit caps invalid extreme values');
+assert.equal(adapter.previewDepth('near',null,'a'),true);
+adapter.render(()=>{});
+assert.ok(near.userData.holder.getWorldPosition(new T.Vector3()).distanceTo(world)<1e-6,'cancel restores the original 3D pivot');
+assert.equal(c.window.NAGWEB_SPATIAL_SCREEN_POINT('near','a').x,projectedPivot.x,'screen projection editor bridge matches adapter');
 const shifted=world.clone().add(new T.Vector3(35,-22,0)),shiftedHit=adapter.anchorPoint(near,...projected(near,shifted));assert.ok(shiftedHit.distanceTo(shifted)<1e-7);
 assert.equal(adapter.anchorPoint(near,NaN,0),null);assert.equal(adapter.pick(objects,NaN,0,legacyCamera),null);
 paint[0](pose,1);near.children[0].geometry.dispose();near.children[0].geometry=new T.RingGeometry(.7,1.6,64);near.userData.nativeR=0;near.userData.o.offZ=0;adapter.render(()=>{});
