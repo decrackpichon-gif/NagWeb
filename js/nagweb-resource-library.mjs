@@ -95,6 +95,10 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   const selectedLibraryElement = () =>
     selection.length === 1 ? libraryResourceById(selection[0]) : null;
   const syncEditButton = () => {
+    // An iframe srcdoc can be replaced before its asynchronous load event.
+    // The selected element may already be measurable in the new document;
+    // ensure its canvas shortcuts are bound to that document as well.
+    bindCanvasResourceEditing();
     const element = selectedLibraryElement();
     let ready = Boolean(element);
     if (element?.type === "vector") {
@@ -214,7 +218,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     event.stopPropagation();
     editButton.click();
   };
-  const bindCanvasResourceEditing = () => {
+  function bindCanvasResourceEditing() {
     let canvasDoc;
     try { canvasDoc = preview.contentDocument; }
     catch { return; }
@@ -240,7 +244,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       if (libraryResourceById(node.dataset.id) && !node.hasAttribute("title"))
         node.title = "Doble clic para personalizar este recurso";
     }
-  };
+  }
   document.addEventListener("keydown", handleCanvasEditShortcut, true);
   preview.addEventListener("load", () => {
     canvasLoading = false;
