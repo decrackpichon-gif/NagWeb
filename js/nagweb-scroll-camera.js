@@ -268,6 +268,15 @@ function createCamera(){
   if(shift){if(Math.abs(sx)>=Math.abs(sy))sy=0;else sx=0;}
   return Object.assign({},start,{rotateY:angle((+start.rotateY||0)-sx*180),rotateX:angle((+start.rotateX||0)+sy*120)});
  }
+ // One pointer gesture => a pure XYZ pose; the Director still owns progress.
+ function translatePose(start,axis,dx,dy,sensitivity){
+  if(!start||!['x','y','z','xy'].includes(axis)||![dx,dy,sensitivity].every(function(n){return typeof n==='number'&&Number.isFinite(n);})||sensitivity<=0)return null;
+  var out=Object.assign({},start),round=function(v){return Math.round(number(v)*10)/10;};
+  if(axis==='x'||axis==='xy')out.x=round(number(start.x)+dx*sensitivity);
+  if(axis==='y'||axis==='xy')out.y=round(number(start.y)+dy*sensitivity);
+  if(axis==='z')out.z=round(number(start.z)-dy*2*sensitivity);
+  return out;
+ }
  function threeCameraState(pose,viewport,perspective,scale){
   if(!pose)return null;
   var pos=threeWorldPoint(pose,scale);if(!pos)return null;
@@ -366,11 +375,11 @@ function createCamera(){
   paint.contains=function(n){return inside(world,n);};
   return paint;
  }
- return {config:config,compile:compile,pose:pose,pathSamples:pathSamples,lookSamples:lookSamples,lookTarget:lookTarget,resolveLookFrame:resolveLookFrame,lookAngles:lookAngles,forwardTarget:forwardTarget,defaultLookFrames:defaultLookFrames,normalizeLook:normalizeLook,lookFrames:lookFrames,targetEligible:targetEligible,elementTarget:elementTarget,curveTension:curveTension,tangentHandle:tangentHandle,tensionFromHandle:tensionFromHandle,lookTangentHandle:lookTangentHandle,lookTensionFromHandle:lookTensionFromHandle,handleFree:handleFree,setHandleMode:setHandleMode,setFreeHandle:setFreeHandle,setLookHandleMode:setLookHandleMode,setLookFreeHandle:setLookFreeHandle,nearestPathAt:nearestPathAt,viewportScale:viewportScale,scalePose:scalePose,attach:attach,threeWorldPoint:threeWorldPoint,surfaceFocusFromWorld:surfaceFocusFromWorld,threeCameraState:threeCameraState,orbitPose:orbitPose,applyThreeCamera:applyThreeCamera,bindThreeCamera:bindThreeCamera,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial,copyFrame:copyFrame,holdFrame:holdFrame,preset:preset};
+ return {config:config,compile:compile,pose:pose,pathSamples:pathSamples,lookSamples:lookSamples,lookTarget:lookTarget,resolveLookFrame:resolveLookFrame,lookAngles:lookAngles,forwardTarget:forwardTarget,defaultLookFrames:defaultLookFrames,normalizeLook:normalizeLook,lookFrames:lookFrames,targetEligible:targetEligible,elementTarget:elementTarget,curveTension:curveTension,tangentHandle:tangentHandle,tensionFromHandle:tensionFromHandle,lookTangentHandle:lookTangentHandle,lookTensionFromHandle:lookTensionFromHandle,handleFree:handleFree,setHandleMode:setHandleMode,setFreeHandle:setFreeHandle,setLookHandleMode:setLookHandleMode,setLookFreeHandle:setLookFreeHandle,nearestPathAt:nearestPathAt,viewportScale:viewportScale,scalePose:scalePose,attach:attach,threeWorldPoint:threeWorldPoint,surfaceFocusFromWorld:surfaceFocusFromWorld,threeCameraState:threeCameraState,orbitPose:orbitPose,translatePose:translatePose,applyThreeCamera:applyThreeCamera,bindThreeCamera:bindThreeCamera,normalize:normalize,frames:frames,transform:transform,layerEligible:layerEligible,layer:layer,layerPose:layerPose,layerTransform:layerTransform,mapSpec:mapSpec,mapPoint:mapPoint,moveSpatial:moveSpatial,copyFrame:copyFrame,holdFrame:holdFrame,preset:preset};
 }
 window.NAGWEB_CREATE_SCROLL_CAMERA=createCamera;
 window.NAGWEB_SCROLL_CAMERA=createCamera();
-var presetChoices=Object.create(null),holdDurations=Object.create(null),cameraEasyStep=Object.create(null),mapOpen=Object.create(null),mapPlanes=Object.create(null),mapFovVisible=Object.create(null),mapObjectVisible=Object.create(null),mapObjectSelected=Object.create(null),mapObjectPlans=Object.create(null),mapZoom=Object.create(null),mapPan=Object.create(null),mapWheelCarry=Object.create(null),mapOverviewVisible=Object.create(null),mapOverviewPickHistory=Object.create(null),mapOverviewSamples=Object.create(null),mapOverviewDetected=Object.create(null),mapOverviewMetrics=Object.create(null),mapOverviewMetricsOpen=Object.create(null),mapOverviewPaceVisible=Object.create(null),mapOverviewComparison=Object.create(null),mapOverviewComparePreview=Object.create(null),mapOverviewCompareFovVisible=Object.create(null),mapOverviewCompareExclusiveVisible=Object.create(null),mapOverviewCompareFocus=Object.create(null),mapOverviewTechnicalOpen=Object.create(null),mapOverviewEventFilter=Object.create(null),mapOverviewEventChosen=Object.create(null),mapPickHistory=Object.create(null),surfaceAimArmed=null,viewportOrbitArmed=null,suppressedClick=null,selected=Object.create(null),lookSelected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
+var presetChoices=Object.create(null),holdDurations=Object.create(null),cameraEasyStep=Object.create(null),mapOpen=Object.create(null),mapPlanes=Object.create(null),mapFovVisible=Object.create(null),mapObjectVisible=Object.create(null),mapObjectSelected=Object.create(null),mapObjectPlans=Object.create(null),mapZoom=Object.create(null),mapPan=Object.create(null),mapWheelCarry=Object.create(null),mapOverviewVisible=Object.create(null),mapOverviewPickHistory=Object.create(null),mapOverviewSamples=Object.create(null),mapOverviewDetected=Object.create(null),mapOverviewMetrics=Object.create(null),mapOverviewMetricsOpen=Object.create(null),mapOverviewPaceVisible=Object.create(null),mapOverviewComparison=Object.create(null),mapOverviewComparePreview=Object.create(null),mapOverviewCompareFovVisible=Object.create(null),mapOverviewCompareExclusiveVisible=Object.create(null),mapOverviewCompareFocus=Object.create(null),mapOverviewTechnicalOpen=Object.create(null),mapOverviewEventFilter=Object.create(null),mapOverviewEventChosen=Object.create(null),mapPickHistory=Object.create(null),surfaceAimArmed=null,viewportOrbitArmed=null,viewportTranslateArmed=null,suppressedClick=null,selected=Object.create(null),lookSelected=Object.create(null),C=window.NAGWEB_SCROLL_CAMERA;
 function safeLabel(v){return String(v==null?'':v).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,42).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];});}
 function targetLabel(e){var label=safeLabel(e&&((e.name||e.text||e.label)||e.type));return label||'Elemento';}
 function keys(s){return C.frames(C.config(s),s.sdEase);}
@@ -1811,6 +1820,7 @@ function clearSurfaceAim(){
  if(a&&a.doc){a.doc.removeEventListener('pointerdown',a.down,true);a.doc.removeEventListener('keydown',a.key,true);}
 }
 function toggleSurfaceAim(s){
+ if(viewportTranslateArmed)stopViewportTranslate();
  var plan=mapObjectPlans[s.id],item=mapObjectSelection(s,plan);
  if(surfaceAimArmed){var same=surfaceAimArmed.sectionId===s.id&&item&&surfaceAimArmed.id===item.id;clearSurfaceAim();if(same){renderPane();return 'cancelled';}}
  if(!item||item.kind!=='shape3d'||!C.config(s))return 'invalid';
@@ -1847,6 +1857,7 @@ function stopViewportOrbit(){
  if(a.cleanup)a.cleanup();
 }
 function toggleViewportOrbit(s){
+ if(viewportTranslateArmed)stopViewportTranslate();
  if(viewportOrbitArmed){var same=viewportOrbitArmed.sectionId===s.id;stopViewportOrbit();if(same){renderPane();return 'cancelled';}}
  var cfg=C.config(s);
  if(!cfg||cfg.orientationMode!=='manual')return 'invalid';
@@ -1913,6 +1924,120 @@ function toggleViewportOrbit(s){
  doc.addEventListener('pointerdown',down,true);
  doc.addEventListener('keydown',key,true);
  document.addEventListener('keydown',key,true);
+ iframe.addEventListener('load',onLoad);
+ renderPane();return 'armed';
+}
+// One-shot spatial camera translation. Controls live in the preview's stage,
+// outside the transformed CSS world and outside the exported interaction flow.
+function stopViewportTranslate(){
+ var a=viewportTranslateArmed;viewportTranslateArmed=null;
+ if(!a)return;
+ a.overlay.removeEventListener('pointerdown',a.down);
+ a.overlay.removeEventListener('keydown',a.nudge);
+ a.doc.removeEventListener('keydown',a.key,true);
+ document.removeEventListener('keydown',a.key,true);
+ a.iframe.removeEventListener('load',a.onLoad);
+ if(a.cleanup)a.cleanup();
+ if(a.overlay.parentNode)a.overlay.parentNode.removeChild(a.overlay);
+}
+function toggleViewportTranslate(s){
+ if(viewportTranslateArmed){var same=viewportTranslateArmed.sectionId===s.id;stopViewportTranslate();if(same){renderPane();return 'cancelled';}}
+ if(viewportOrbitArmed)stopViewportOrbit();
+ if(surfaceAimArmed)clearSurfaceAim();
+ var cfg=C.config(s);
+ if(!cfg)return 'invalid';
+ var iframe=document.getElementById('preview'),win=iframe&&iframe.contentWindow,doc=iframe&&iframe.contentDocument;
+ var section=doc&&Array.from(doc.querySelectorAll('.sc[data-id]')).find(function(el){return el.getAttribute('data-id')===s.id;});
+ var stage=section&&section.querySelector('.nw-sd-stage'),runtime=win&&win.__NAG_SCROLL_DIRECTOR&&win.__NAG_SCROLL_DIRECTOR[s.id];
+ if(!stage||typeof stage.__nwCameraPreviewPose!=='function'||!runtime||typeof runtime.set!=='function')return 'unavailable';
+ var overlay=doc.createElement('div');
+ overlay.setAttribute('data-nw-camera-translate-controls','');
+ overlay.setAttribute('role','group');
+ overlay.setAttribute('aria-label','Mover cámara 3D en los ejes XYZ');
+ overlay.style.cssText='position:absolute;top:14px;right:14px;z-index:2147483000;display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:10px;background:rgba(15,23,42,.94);color:#fff;font:12px/1.35 system-ui,sans-serif;box-shadow:0 3px 22px #0007;pointer-events:auto;max-width:210px;';
+ overlay.innerHTML='<strong style="font-size:12px">Mover cámara · XYZ</strong><div style="display:grid;grid-template-columns:repeat(2,minmax(66px,1fr));gap:5px">'+
+  '<button type="button" data-nw-camera-axis="x" aria-label="Arrastrar cámara en eje X" style="touch-action:none;cursor:ew-resize;padding:8px 5px;border-radius:6px;border:1px solid #ffffff66;color:inherit;background:#ffffff16">↔ X</button>'+
+  '<button type="button" data-nw-camera-axis="y" aria-label="Arrastrar cámara en eje Y" style="touch-action:none;cursor:ns-resize;padding:8px 5px;border-radius:6px;border:1px solid #ffffff66;color:inherit;background:#ffffff16">↕ Y</button>'+
+  '<button type="button" data-nw-camera-axis="z" aria-label="Arrastrar cámara en profundidad Z" style="touch-action:none;cursor:ns-resize;padding:8px 5px;border-radius:6px;border:1px solid #ffffff66;color:inherit;background:#ffffff16">↕ Z</button>'+
+  '<button type="button" data-nw-camera-axis="xy" aria-label="Mover cámara libremente en X e Y" style="touch-action:none;cursor:move;padding:8px 5px;border-radius:6px;border:1px solid #ffffff66;color:inherit;background:#ffffff16">✥ X/Y</button></div>'+
+  '<span data-nw-camera-translate-hint style="font-size:10px;opacity:.85">Arrastrá un eje · Shift: precisión · Escape: salir. ↑ en Z avanza.</span>';
+ stage.appendChild(overlay);
+ var gesture=null;
+ function restore(g){if(g)try{runtime.set(g.pct/100);}catch(_){}}
+ function end(ev,cancel){
+  if(!gesture||ev&&ev.pointerId!==undefined&&ev.pointerId!==gesture.pointerId)return;
+  var g=gesture;gesture=null;
+  doc.removeEventListener('pointermove',move,true);
+  doc.removeEventListener('pointerup',up,true);
+  doc.removeEventListener('pointercancel',abort,true);
+  doc.removeEventListener('lostpointercapture',abort,true);
+  try{if(g.handle.hasPointerCapture&&g.handle.hasPointerCapture(g.pointerId))g.handle.releasePointerCapture(g.pointerId);}catch(_){}
+  restore(g);
+  var changed=!cancel&&g.next&&['x','y','z'].some(function(axis){return Math.abs(g.next[axis]-g.original[axis])>1e-7;});
+  if(!changed)return;
+  if(sec()!==s||!C.config(s))return;
+  var frames=keys(s),index=frames.findIndex(function(k){return k.at===g.at;});
+  if(index<0&&frames.length>=128){toast('Máximo: 128 encuadres de cámara.');return;}
+  var next=Object.assign({at:g.at,ease:s.sdEase||'cinematic'},index>=0?frames[index]:g.original,{x:g.next.x,y:g.next.y,z:g.next.z});
+  snapshot();if(index>=0)frames[index]=next;else frames.push(next);
+  persist(s,frames,g.at);
+ }
+ function move(ev){
+  var g=gesture;if(!g||ev.pointerId!==g.pointerId)return;
+  var scale=C.viewportScale(C.config(s),stage.clientWidth)||1;
+  var next=C.translatePose(g.original,g.axis,ev.clientX-g.x,ev.clientY-g.y,(ev.shiftKey?.2:1)/scale);
+  if(!next)return;
+  if(C.config(s).orientationMode==='lookAt'){
+   var cfg=C.config(s),target=C.lookTarget(cfg,g.pct/100,window.NAGWEB_STORY_MODEL,s.sdEase,previewReferenceSize(s));
+   var facing=C.lookAngles(next,target);if(facing){next.rotateX=facing.rotateX;next.rotateY=facing.rotateY;}
+  }
+  g.next=next;
+  stage.__nwCameraPreviewPose(next);
+  ev.preventDefault();
+ }
+ function up(ev){move(ev);end(ev,false);}
+ function abort(ev){end(ev,true);}
+ function down(ev){
+  var handle=ev.target.closest&&ev.target.closest('[data-nw-camera-axis]');
+  var axis=handle&&handle.getAttribute('data-nw-camera-axis');
+  if(ev.button!==0||gesture||!['x','y','z','xy'].includes(axis))return;
+  if(sec()!==s||!C.config(s)){stopViewportTranslate();renderPane();return;}
+  var pct=progress(s),at=cameraCurrentMoment(s,pct,keys(s)).at,original=C.pose(C.config(s),pct/100,window.NAGWEB_STORY_MODEL,s.sdEase,false,undefined,previewReferenceSize(s));
+  gesture={pointerId:ev.pointerId,handle:handle,axis:axis,x:ev.clientX,y:ev.clientY,pct:pct,at:at,original:original,next:original};
+  try{runtime.set(pct/100);handle.setPointerCapture(ev.pointerId);}catch(_){}
+  ev.preventDefault();ev.stopPropagation();
+  doc.addEventListener('pointermove',move,true);
+  doc.addEventListener('pointerup',up,true);
+  doc.addEventListener('pointercancel',abort,true);
+  doc.addEventListener('lostpointercapture',abort,true);
+ }
+ function nudge(ev){
+  var handle=ev.target.closest&&ev.target.closest('[data-nw-camera-axis]');
+  var axis=handle&&handle.getAttribute('data-nw-camera-axis');
+  if(!['x','y','z','xy'].includes(axis)||!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(ev.key))return;
+  if(gesture||sec()!==s||!C.config(s))return;
+  ev.preventDefault();ev.stopPropagation();
+  var dx=ev.key==='ArrowRight'?10:ev.key==='ArrowLeft'?-10:0,dy=ev.key==='ArrowDown'?10:ev.key==='ArrowUp'?-10:0;
+  var p=progress(s),at=cameraCurrentMoment(s,p,keys(s)).at;
+  var base=C.pose(C.config(s),p/100,window.NAGWEB_STORY_MODEL,s.sdEase,false,undefined,previewReferenceSize(s));
+  var scale=C.viewportScale(C.config(s),stage.clientWidth)||1;
+  var next=C.translatePose(base,axis,dx,dy,(ev.shiftKey?.2:1)/scale);
+  if(!next||!['x','y','z'].some(function(k){return Math.abs(next[k]-base[k])>1e-7;}))return;
+  var frames=keys(s),idx=frames.findIndex(function(k){return k.at===at;});
+  if(idx<0&&frames.length>=128){toast('Máximo: 128 encuadres de cámara.');return;}
+  var frame=Object.assign({at:at,ease:s.sdEase||'cinematic'},idx>=0?frames[idx]:base,{x:next.x,y:next.y,z:next.z});
+  snapshot();if(idx>=0)frames[idx]=frame;else frames.push(frame);
+  persist(s,frames,at);
+ }
+ function key(ev){if(ev.key!=='Escape')return;ev.preventDefault();ev.stopPropagation();if(gesture)end(null,true);else{stopViewportTranslate();renderPane();}}
+ function onLoad(){if(gesture)end(null,true);stopViewportTranslate();renderPane();}
+ viewportTranslateArmed={sectionId:s.id,doc:doc,overlay:overlay,iframe:iframe,down:down,nudge:nudge,key:key,onLoad:onLoad,cleanup:function(){
+  doc.removeEventListener('pointermove',move,true);doc.removeEventListener('pointerup',up,true);
+  doc.removeEventListener('pointercancel',abort,true);doc.removeEventListener('lostpointercapture',abort,true);
+  if(gesture){restore(gesture);gesture=null;}
+ }};
+ overlay.addEventListener('pointerdown',down);overlay.addEventListener('keydown',nudge);
+ doc.addEventListener('keydown',key,true);document.addEventListener('keydown',key,true);
  iframe.addEventListener('load',onLoad);
  renderPane();return 'armed';
 }
@@ -2013,6 +2138,7 @@ C.panel=function(s){
  var html=cRow('Cámara 3D',cSeg('sec.sdCameraEnabled',!!s.sdCameraEnabled,[['false','Desactivada'],['true','Activada']],'bool'));
  if(!s.sdCameraEnabled||!C.config(s))return html;
  var list=keys(s),k=choose(s,list);
+ html+='<div data-camera-translate-controls style="margin:7px 0 9px"><button class="btn tiny" type="button" data-camera-viewport-translate aria-pressed="'+(viewportTranslateArmed&&viewportTranslateArmed.sectionId===s.id?'true':'false')+'">'+(viewportTranslateArmed&&viewportTranslateArmed.sectionId===s.id?'Cerrar controles XYZ':'Mover cámara XYZ en vista 3D')+'</button><p class="hint gh">'+(viewportTranslateArmed&&viewportTranslateArmed.sectionId===s.id?'Arrastrá los ejes X, Y o Z del control que aparece sobre la escena. X/Y permite mover en dos ejes. Shift: precisión. Escape: cancelar.':'Desplazá la posición de la cámara con controles de ejes sobre la escena, viendo el resultado antes de guardar.')+'</p></div>';
  html+=cRow('Trayectoria','<select class="csel" data-camera-path-mode aria-label="Trayectoria de cámara"><option value="linear"'+((s.sdCameraPathMode==='smooth')?'':' selected')+'>Por tramos</option><option value="smooth"'+(s.sdCameraPathMode==='smooth'?' selected':'')+'>Curva suave</option></select>');
  if(s.sdCameraPathMode==='smooth')html+='<p class="hint gh">Los encuadres XYZ se convierten en puntos de una trayectoria continua. Las permanencias con dos posiciones iguales siguen siendo pausas reales.</p>';
  html+=cRow('Orientación','<select class="csel" data-camera-orientation-mode aria-label="Orientación de cámara"><option value="manual"'+(s.sdCameraOrientationMode==='lookAt'?'':' selected')+'>Ángulos manuales</option><option value="lookAt"'+(s.sdCameraOrientationMode==='lookAt'?' selected':'')+'>Mirar hacia</option></select>');
@@ -2607,9 +2733,15 @@ if(pane){
    ev.preventDefault();technical.open=!technical.open;
    mapOverviewTechnicalOpen[sec().id]=technical.open;return;
   }
-  var button=ev.target.closest('[data-camera-viewport-orbit],[data-camera-surface-aim],[data-camera-aim-at-object],[data-camera-scene-object-pick],[data-camera-edit-current],[data-camera-easy-move],[data-camera-overview-compare-alternate],[data-camera-overview-compare-jump],[data-camera-overview-event-step],[data-camera-overview-toggle],[data-camera-map-pan],[data-camera-map-zoom],[data-camera-map-step],[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
+  var button=ev.target.closest('[data-camera-viewport-translate],[data-camera-viewport-orbit],[data-camera-surface-aim],[data-camera-aim-at-object],[data-camera-scene-object-pick],[data-camera-edit-current],[data-camera-easy-move],[data-camera-overview-compare-alternate],[data-camera-overview-compare-jump],[data-camera-overview-event-step],[data-camera-overview-toggle],[data-camera-map-pan],[data-camera-map-zoom],[data-camera-map-step],[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
   if(button===suppressedClick){suppressedClick=null;return;}
   var s=sec(),cfg=C.config(s);if(!cfg)return;var list=keys(s);
+  if(button.dataset.cameraViewportTranslate!==undefined){
+   var state=toggleViewportTranslate(s);
+   if(state==='invalid')toast('Activá la cámara 3D antes de editar la posición.');
+   else if(state==='unavailable')toast('La vista previa 3D todavía no está lista.');
+   return;
+  }
   if(button.dataset.cameraViewportOrbit!==undefined){
    var state=toggleViewportOrbit(s);
    if(state==='invalid')toast('Para orientar con el mouse, elegí Ángulos manuales.');
