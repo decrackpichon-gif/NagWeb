@@ -100,3 +100,65 @@ clickSurface();assert.equal(typeof previewDocument.listeners.keydown,'function')
 previewDocument.listeners.keydown({key:'Escape',preventDefault(){},stopPropagation(){}});
 assert.equal(previewDocument.listeners.pointerdown,undefined,'Escape cancels surface targeting');
 console.log('PASS spatial focus map: model focus, exact surface click, missing geometry, cancel, fallback and Undo');
+
+
+// Direct manual-camera orientation works in the existing preview runtime.
+// The temporary pose updates the real CSS camera transform before any save.
+scene.sdCameraOrientationMode='manual';
+scene.sdCameraFrames=[{at:0,x:0,y:0,z:0,rotateX:0,rotateY:0,rotate:0},{at:100,x:0,y:0,z:0,rotateX:0,rotateY:0,rotate:0}];
+const cssFrames=[];
+const world={classList:{contains(name){return name==='inner';}},style:{},setAttribute(){},children:[],
+ animate(frames){cssFrames.push(frames[0].transform);return {pause(){},cancel(){},effect:{setKeyframes(next){cssFrames.push(next[0].transform);}}};}};
+let captured=false;
+const viewportStage={children:[world],style:{},clientWidth:600,clientHeight:400,clientLeft:0,clientTop:0,
+ getBoundingClientRect(){return {left:0,top:0,right:600,bottom:400,width:600,height:400};},
+ dispatchEvent(){},setPointerCapture(){captured=true;},hasPointerCapture(){return captured;},releasePointerCapture(){captured=false;}};
+assert.ok(C.attach(viewportStage,C.config(scene),1000),'Existing camera must attach');
+assert.equal(typeof viewportStage.__nwCameraPreviewPose,'function');
+assert.equal(viewportStage.__nwCameraPreviewPose({x:0,y:0,z:0,rotateX:12,rotateY:-20,rotate:0}),true);
+assert.ok(cssFrames.some(v=>v.includes('rotateX(-12deg)')&&v.includes('rotateY(20deg)')),'Temporary camera pose must repaint CSS before save');
+const fakeSection={getAttribute(name){return name==='data-id'?'scene':null;},querySelector(sel){return sel==='.nw-sd-stage'?viewportStage:null;}};
+previewDocument.querySelectorAll=()=>[fakeSection];
+let restores=0;
+previewWindow.__NAG_SCROLL_DIRECTOR={scene:{set(){restores++;}}};
+const orbitIframe={contentDocument:previewDocument,contentWindow:previewWindow,
+ load:null,addEventListener(type,fn){if(type==='load')this.load=fn;},
+ removeEventListener(type,fn){if(type==='load'&&this.load===fn)this.load=null;}};
+const outsideListeners={};
+document.getElementById=id=>id==='pane'?pane:id==='preview'?orbitIframe:null;
+document.addEventListener=(type,fn)=>{outsideListeners[type]=fn;};
+document.removeEventListener=(type,fn)=>{if(outsideListeners[type]===fn)delete outsideListeners[type];};
+C.panel(scene);
+const orbitButton={dataset:{cameraViewportOrbit:''}};
+const orbitClick=()=>handlers.click({target:{closest(){return orbitButton;}}});
+const beforeOrbit=undos,beforeOrbitSave=saves;
+orbitClick();
+assert.equal(typeof previewDocument.listeners.pointerdown,'function','Orbit mode must be armed explicitly');
+previewDocument.listeners.pointerdown({button:0,pointerId:88,clientX:100,clientY:100,preventDefault(){},stopImmediatePropagation(){}});
+previewDocument.listeners.pointermove({pointerId:88,clientX:280,clientY:180,shiftKey:false,preventDefault(){}});
+assert.equal(undos,beforeOrbit,'Preview must not create Undo entries during a drag');
+assert.ok(cssFrames.length>1,'Dragging must update the real camera preview');
+previewDocument.listeners.pointerup({pointerId:88,clientX:280,clientY:180,shiftKey:false,preventDefault(){}});
+assert.equal(undos,beforeOrbit+1,'One viewport drag must create one Undo entry');
+assert.equal(saves,beforeOrbitSave+1,'One viewport drag must save only once');
+const addedOrbit=scene.sdCameraFrames.find(k=>k.at===0);
+assert.equal(addedOrbit.rotateY,-54);
+assert.equal(addedOrbit.rotateX,24);
+assert.equal(previewDocument.listeners.pointerdown,undefined,'Completed orbit must release preview listeners');
+assert.equal(orbitIframe.load,null,'Completed orbit must release iframe load listener');
+orbitClick();
+assert.equal(typeof previewDocument.listeners.pointerdown,'function');
+outsideListeners.keydown({key:'Escape',preventDefault(){},stopPropagation(){}});
+assert.equal(previewDocument.listeners.pointerdown,undefined,'Escape must cancel even before any drag');
+orbitClick();
+previewDocument.listeners.pointerdown({button:0,pointerId:91,clientX:200,clientY:100,preventDefault(){},stopImmediatePropagation(){}});
+previewDocument.listeners.pointermove({pointerId:91,clientX:300,clientY:200,shiftKey:true,preventDefault(){}});
+outsideListeners.keydown({key:'Escape',preventDefault(){},stopPropagation(){}});
+assert.equal(undos,beforeOrbit+1,'Escape during drag must restore without history');
+assert.equal(saves,beforeOrbitSave+1);
+assert.ok(restores>=2,'Director must recover authority after commit and cancel');
+const locked=C.orbitPose({rotateX:3,rotateY:2},100,10,600,400,true);
+assert.equal(locked.rotateX,3,'Shift locks the smaller vertical axis');
+assert.equal(locked.rotateY,-28);
+assert.equal(C.orbitPose({},5,5,0,100,false),null,'Invalid viewport cannot change camera');
+console.log('PASS camera viewport orbit: CSS live pose, commit once, Escape, Shift lock, and preview cleanup');
