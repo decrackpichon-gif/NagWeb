@@ -29,6 +29,21 @@ export async function runMotionFanSmoke(page){
    await change('[data-motion-stream="fanHero"]','4');assert.equal((await pose(.06)).flatMap(n=>n.instances).sort((a,b)=>a.depth-b.depth).at(-1).source,3);
    await change('[data-motion-stream="fanDistribution"]','ordered');assert.equal(await page.$eval('[data-stream-fan-ordered]',n=>n.hidden),false);
    await change('[data-motion-stream="fanStart"]','5');const ordered=(await pose(133/529)).flatMap(n=>n.instances);assert.equal(ordered.find(n=>n.stage==='wall'&&n.row===0&&n.column===0)?.source,3);assert.equal(ordered.find(n=>n.stage==='wall'&&n.row===0&&n.column===1)?.source,5);
+   // Reorder source images by dragging actual cards, without copying image assets.
+   await page.click('[data-motion-fan-arrange]');assert.equal(await page.$eval('[data-motion-fan-arrange]',n=>n.getAttribute('aria-pressed')),'true');
+   const points=await samples(250/529,100),first=points[0],second=points.find(q=>first&&q.id!==first.id);
+   assert.ok(first&&second,'Two distinct Fan Shuffle sources must be visible');
+   const list=()=>page.$$eval('[data-motion-layer]',ns=>ns.map(n=>n.dataset.motionLayer));
+   const beforeDrag=await list(),from=beforeDrag.indexOf(first.id),to=beforeDrag.indexOf(second.id);
+   async function screenPoint(point){return page.$eval('.nw-motion-dialog iframe',(f,q)=>{const host=f.contentDocument.querySelector('[data-nw-stream-slot]').offsetParent,fr=f.getBoundingClientRect(),hr=host.getBoundingClientRect();return{x:fr.left+f.clientLeft+hr.left+q.x*hr.width/host.clientWidth,y:fr.top+f.clientTop+hr.top+q.y*hr.height/host.clientHeight};},point);}
+   const origin=await screenPoint(first),destination=await screenPoint(second);
+   await page.mouse.move(origin.x,origin.y);await page.mouse.down();await page.mouse.move(destination.x,destination.y,{steps:5});await page.mouse.up();await ready();
+   const actual=await list(),expected=beforeDrag.slice();expected.splice(from,1);expected.splice(to,0,first.id);
+   assert.deepEqual(actual,expected,'Wall drag moves image in Elements, no duplicates');
+   assert.equal(await page.$eval('[data-motion-fan-arrange]',n=>n.getAttribute('aria-pressed')),'false');
+   await page.click('[data-motion-fan-arrange]');const unchanged=await list();
+   await page.keyboard.press('Escape');assert.deepEqual(await list(),unchanged,'Escape must preserve order');
+   assert.equal(await page.$eval('[data-motion-fan-arrange]',n=>n.getAttribute('aria-pressed')),'false');
    await change('[data-motion-stream="fanDistribution"]','original');assert.equal(await page.$eval('[data-stream-fan-ordered]',n=>n.hidden),true);
    await change('[data-motion-stream="fanHero"]','1');await change('[data-motion-stream="fanStart"]','1');
    const start=await pose(.5);assert.ok(start.some(n=>n.instances.length));assert.deepEqual(geometry(await pose(0)),geometry(await pose(1)));await pose(.04);await(await page.$('.nw-motion-dialog')).screenshot({path:'/tmp/nagweb-motion-visuals/'+template+'-desktop.png'});
