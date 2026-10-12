@@ -135,3 +135,15 @@ Biblioteca offline-first de **recursos abiertos/licenciados** para diseñadores.
   integración persistente y control de checksum de la publicación.
 - La publicación incremental en `resource-vault-data` debe verificarse
   en GitHub; no asumir que el catálogo cambió solo por actualizar el código.
+
+### Publicación comprobada de miniaturas (12/10/2026)
+
+- La ejecución `Resource Vault Heroicons Append` concluyó `success`:
+  https://github.com/decrackpichon-gif/NagWeb/actions/runs/38271989318
+- HEAD de `resource-vault-data`:
+  `2bdc6ecd62992065a2a7535973e3b0cf52fe8c90`.
+- Total: **6762 recursos**, incluidos 323 Heroicons. Hash SHA-256 del
+  índice ligero: `d58f2acb8f5525726458a02cf16556020dc93dfe28b2f5508039178e16902fca`.
+- Las instantáneas originales de Uiverse, Lucide, Three.js y Core Code
+  conservaron sus cantidades y checksums. Sólo cambiaron los índices
+  consolidados y el paquete de Heroicons. No se desplegó Vercel.
