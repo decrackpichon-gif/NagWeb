@@ -67,6 +67,43 @@ try{
  const after=await page.evaluate(id=>{const e=__NAGWEB_SCENE_COMPOSER__.scene.elements.find(x=>x.id===id);return {x:e.x,y:e.y}},id);
  assert.ok(Math.hypot(after.x-before.x,after.y-before.y)>40,'drag should move scene element');
 
+
+ // Mouse handles let users resize/rotate on the canvas without resetting physics.
+ const fieldBeforeTransform=await page.evaluate(()=>__NAGWEB_SCENE_COMPOSER__.field);
+ const rectBefore=await page.evaluate(id=>{const e=__NAGWEB_SCENE_COMPOSER__.scene.elements.find(x=>x.id===id);return {width:e.width,height:e.height,rotation:e.rotation};},id);
+ const resizeRect=await page.$eval('.item.sel .resize-handle',el=>{const r=el.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};});
+ await page.mouse.move(resizeRect.x,resizeRect.y);
+ await page.mouse.down();
+ await page.mouse.move(resizeRect.x+86,resizeRect.y+44,{steps:8});
+ await page.mouse.up();
+ await new Promise(r=>setTimeout(r,120));
+ const resized=await page.evaluate(id=>{const e=__NAGWEB_SCENE_COMPOSER__.scene.elements.find(x=>x.id===id);return {width:e.width,height:e.height,fieldStable:__NAGWEB_SCENE_COMPOSER__.field===__composerTest.field};},id);
+ assert.ok(resized.width>rectBefore.width+60&&resized.height>rectBefore.height+25,'resize handle should change dimensions directly');
+ assert.equal(resized.fieldStable,true,'resize must not rebuild influence field');
+ assert.equal(await page.$eval('#width',e=>Number(e.value)),resized.width,'inspector width should match pointer resize');
+ const rotateRect=await page.$eval('.item.sel .rotate-handle',el=>{const r=el.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};});
+ await page.mouse.move(rotateRect.x,rotateRect.y);
+ await page.mouse.down();
+ await page.mouse.move(rotateRect.x+150,rotateRect.y+48,{steps:8});
+ await page.mouse.up();
+ await new Promise(r=>setTimeout(r,120));
+ const rotated=await page.evaluate(id=>__NAGWEB_SCENE_COMPOSER__.scene.elements.find(x=>x.id===id).rotation,id);
+ assert.ok(Math.abs(rotated-rectBefore.rotation)>10,'rotate handle should change angle directly');
+ assert.equal(await page.$eval('#rotation',e=>Number(e.value)),rotated,'inspector rotation should track pointer rotation');
+ await page.click('#locked');
+ assert.equal(await page.$eval('.item.sel',n=>!!n.querySelector('.resize-handle')),false,'locking hides handles');
+ const lockedBefore=await page.evaluate(id=>{const e=__NAGWEB_SCENE_COMPOSER__.scene.elements.find(x=>x.id===id);return {x:e.x,y:e.y};},id);
+ const lockedRect=await page.$eval('.item.sel',el=>{const r=el.getBoundingClientRect();return {x:r.x+30,y:r.y+30};});
+ await page.mouse.move(lockedRect.x,lockedRect.y);
+ await page.mouse.down();
+ await page.mouse.move(lockedRect.x+75,lockedRect.y+55,{steps:7});
+ await page.mouse.up();
+ const lockedAfter=await page.evaluate(id=>{const e=__NAGWEB_SCENE_COMPOSER__.scene.elements.find(x=>x.id===id);return {x:e.x,y:e.y,locked:e.locked};},id);
+ assert.deepEqual({x:lockedAfter.x,y:lockedAfter.y},lockedBefore,'locked elements should ignore drag gestures');
+ assert.equal(lockedAfter.locked,true);
+ await page.click('#locked');
+ assert.equal(await page.$eval('.item.sel',n=>!!n.querySelector('.resize-handle')),true,'unlocking restores the resize handle');
+
  await page.click('#duplicate');await new Promise(r=>setTimeout(r,80));
  assert.equal(await page.evaluate(()=>__NAGWEB_SCENE_COMPOSER__.scene.elements.length),5);
 

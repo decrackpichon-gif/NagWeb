@@ -100,3 +100,7 @@ El primer test de navegador de carga/cancelación tenía dos falsos fallos: eval
 ### Hito: diagnóstico de geometría real V4-C.1
 
 El laboratorio A/B expone inversión de triángulos, casi colapsos y área mínima de la malla por muestra, y GitHub Actions archiva capturas de tres momentos del recorrido más el informe JSON. El diagnóstico es opt-in únicamente en el laboratorio; no sustituye evaluación humana ni toca V3 estable. El paquete de prueba humano ahora incluye el script A/B. La imagen original `ponjita.png` sigue pendiente de acceso y no debe añadirse al repositorio público.
+
+### Scene Composer V1.2 · manipulación directa en lienzo
+
+El constructor experimental admite redimensionamiento y rotación con tiradores de mouse sin depender de campos numéricos; el inspector conserva la sincronización. `Shift` permite mantener proporción en resize y ángulos de 15° en rotación. La casilla de bloqueo impide arrastrar/transformar accidentalmente un objeto. Estas transformaciones continúan guardándose en el JSON existente, sin cambiar su esquema ni tocar la rama estable. Siguiente criterio: validar la ergonomía en una escena real y estudiar controles de zoom para lienzos grandes.
