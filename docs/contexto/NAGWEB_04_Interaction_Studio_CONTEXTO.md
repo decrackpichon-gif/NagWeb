@@ -87,3 +87,6 @@ Herramienta para **animación de personajes 2.5D e interacción orgánica con mo
 - No agregar aquí capturas o HAR con tokens; los originales se mantienen en archivos privados con nombre, nunca como copia indiscriminada al repositorio público.
 - Documento versionado en esta rama experimental. Actualizarlo con decisiones relevantes sin alterar la estable.
 - Para chat nuevo que trabaje experimental: indicar la rama experimental y leer este contexto más `docs/interaction-engine-experimental-v1.md`. Adjuntar originales solo cuando sea necesario.
+## Avance 11/10/2026 · continuidad experimental
+
+El laboratorio A/B conserva V3 y V4-C.1 separados e incorpora recorridos repetibles y mediciones exportables. Se fortalece la carga de imágenes para descartar preparaciones obsoletas al alternar personajes. La comparación humana con `ponjita.png` sigue pendiente. Para ahorrar compilaciones de Vercel en las dos ramas de Interaction Studio se configuró en el proyecto Vercel `nag_web` un Ignored Build Step por `VERCEL_GIT_COMMIT_REF`, sin desactivar las otras ramas; verificar efectividad tras el push.

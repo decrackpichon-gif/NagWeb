@@ -95,6 +95,43 @@ try{
   assert.equal(cancelled.cancelled,true);
   assert.equal(await page.evaluate(()=>window.__NAGWEB_AB_REVIEW__.running),false);
 
+
+  // Simulate out-of-order asynchronous preparation without relying on network timing.
+  const races=await page.evaluate(async()=>{
+    const api=window.__NAGWEB_V4C_AB__,prep=NAGWEB_INTERACTION_ASSET_PREP,mesh=NAGWEB_ORGANIC_MESH;
+    const realAnalyze=prep.analyzeImage,realPrepare=mesh.prepareAsset;
+    let pending=[],started=[];
+    try{
+      prep.analyzeImage=function(img){
+        started.push(img.src);
+        return new Promise((resolve,reject)=>pending.push({src:img.src,resolve,reject}));
+      };
+      const svg=part=>'data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="140" height="200"><rect width="140" height="200" fill="'+part+'"/></svg>');
+      const first=svg('red'),second=svg('blue');
+      api.loadAsset(first);
+      await new Promise(r=>setTimeout(r,100));
+      api.loadAsset(second);
+      await new Promise(r=>setTimeout(r,100));
+      const previous=api.v4c,source=api.assetSource;
+      pending.find(p=>p.src===first)?.reject(new Error('old asset failure'));
+      await new Promise(r=>setTimeout(r,20));
+      const staleIgnored=api.v4c===previous&&api.assetSource===source;
+      const secondTask=pending.find(p=>p.src===second);
+      if(!secondTask)return {tasks:pending.length,staleIgnored,activeCompleted:false};
+      const realImage=new Image();
+      realImage.src=second;
+      await realImage.decode();
+      const analysis=await realAnalyze(realImage,{maxDimension:512});
+      secondTask.resolve(analysis);
+      await new Promise(r=>setTimeout(r,200));
+      return {tasks:pending.length,staleIgnored,activeCompleted:api.assetSource===second,version:api.v4c?.version,preview:document.querySelector('#preview').src===second};
+    }finally{prep.analyzeImage=realAnalyze;mesh.prepareAsset=realPrepare;}
+  });
+  assert.equal(races.tasks,2,'both separate asset jobs should be initiated');
+  assert.equal(races.staleIgnored,true,'obsolete load failure must not replace current renderer');
+  assert.equal(races.activeCompleted,true,'current asset should install');
+  assert.equal(races.preview,true,'preview should match latest asset');
+
   assert.equal(errors.length,0,'V4-C lab should have no page errors: '+errors.join('\n'));
   assert.equal(consoleErrors.length,0,'V4-C lab should have no console errors: '+consoleErrors.join('\n'));
   fs.mkdirSync('/tmp/nagweb-interaction-experimental',{recursive:true});

@@ -134,20 +134,56 @@ h1{font-size:18px;margin:0 0 6px}.sub{font-size:11px;line-height:1.45;color:#aaa
     report();
   }
 
-  async function prepare(){
+  // A generation belongs to one immutable Image object. Outdated async work
+  // must never install a renderer, change the preview or report an error.
+  var generation=0;
+  async function prepare(image,token){
+    if(token!==generation)return;
+    status.style.color='#a9dcb4';
     status.textContent='Analizando silueta y preparando…';
-    analysis=await A.analyzeImage(source,{maxDimension:512});
-    var profile=A.createProfile(analysis,{leadEnd:'right',cropPadding:.015});
-    prepared=await V3.prepareAsset(source,analysis,{profile:profile,paddingRatio:.015});
-    preview.src=source.src;if(r3)r3.destroy();if(r4)r4.destroy();
+    var nextAnalysis=await A.analyzeImage(image,{maxDimension:512});
+    if(token!==generation)return;
+    var profile=A.createProfile(nextAnalysis,{leadEnd:'right',cropPadding:.015});
+    var nextPrepared=await V3.prepareAsset(image,nextAnalysis,{profile:profile,paddingRatio:.015});
+    if(token!==generation)return;
+    if(window.__NAGWEB_AB_REVIEW__?.running)window.__NAGWEB_AB_REVIEW__.stop();
+    if(r3)r3.destroy();
+    if(r4)r4.destroy();
+    r3=null;r4=null;
+    analysis=nextAnalysis;prepared=nextPrepared;
     r3=V3.createRenderer(Object.assign({leader:f3,canvas:c3,area:s3,image:prepared.canvas},v3opts()));
     r4=V4C.createRenderer(Object.assign({leader:f4,canvas:c4,area:s4,image:prepared.canvas},v4opts()));
-    window.__NAGWEB_V4C_AB__.v3=r3;window.__NAGWEB_V4C_AB__.v4c=r4;window.__NAGWEB_V4C_AB__.analysis=analysis;window.__NAGWEB_V4C_AB__.prepared=prepared;report();
+    preview.src=image.src;
+    window.__NAGWEB_V4C_AB__.v3=r3;
+    window.__NAGWEB_V4C_AB__.v4c=r4;
+    window.__NAGWEB_V4C_AB__.analysis=analysis;
+    window.__NAGWEB_V4C_AB__.prepared=prepared;
+    window.__NAGWEB_V4C_AB__.assetSource=image.src;
+    report();
   }
-  function fail(err){status.textContent='ERROR · '+err.message;status.style.color='#ef9999';console.error(err);}
-  file.onchange=function(){var f=this.files&&this.files[0];if(!f)return;if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(f);source.onload=function(){prepare().catch(fail);};source.src=url;};
-  window.__NAGWEB_V4C_AB__={followerV3:f3,followerV4C:f4,v3:null,v4c:null,analysis:null,prepared:null};
-  outputs();drawDiag();source.onload=function(){prepare().catch(fail);};source.src=fallback;
+  function fail(err,token){
+    if(token!==generation)return;
+    status.textContent='ERROR · '+err.message;
+    status.style.color='#ef9999';
+    console.error(err);
+  }
+  function loadAsset(nextUrl){
+    var token=++generation,image=new Image();
+    if(source)source.onload=source.onerror=null;
+    source=image;
+    image.onload=function(){if(token===generation)prepare(image,token).catch(e=>fail(e,token));};
+    image.onerror=function(){if(token===generation)fail(new Error('No se pudo abrir la imagen'),token);};
+    image.src=nextUrl;
+    return token;
+  }
+  file.onchange=function(){
+    var f=this.files&&this.files[0];if(!f)return;
+    var nextUrl=URL.createObjectURL(f),previous=url;
+    url=nextUrl;loadAsset(nextUrl);
+    if(previous)URL.revokeObjectURL(previous);
+  };
+  window.__NAGWEB_V4C_AB__={followerV3:f3,followerV4C:f4,v3:null,v4c:null,analysis:null,prepared:null,assetSource:null,get generation(){return generation;},loadAsset:loadAsset};
+  outputs();drawDiag();loadAsset(fallback);
 })();
 </script>
 <script src="../js/nagweb-interaction-ab-review-v1.js"></script>
