@@ -59,3 +59,13 @@ Una herramienta para elegir, **previsualizar y editar animaciones antes de inser
 - No agregar aquí capturas o HAR con tokens; los originales se mantienen en archivos privados con nombre, nunca como copia indiscriminada al repositorio público.
 - Documento versionado en esta rama. Actualizarlo con decisiones relevantes y nuevos enlaces, sin disparar despliegues manuales innecesarios.
 - Para comenzar un nuevo chat: indicar el identificador del proyecto, esta rama y la ruta de esta ficha en GitHub; pedir lectura del HEAD y documentación técnica. Adjuntar originales solo si son necesarios. El inventario global es opcional.
+
+## Decisión de prioridades confirmada por el usuario (11/10/2026)
+
+1. **Primero** incorporar las animaciones existentes del catálogo de Animos que falten en Motion Lab. Para cada una, implementar en **un avance sustancial** los controles originales que hayan podido verificarse, edición, preview, inserción y exportación, sin multiplicar pasos innecesariamente.
+2. **Después** sumar controles propios de NagWeb cuando agreguen valor real y estén explícitamente identificados como adicionales. No extender indefinidamente un preset existente.
+3. **Finalmente** diseñar e incorporar animaciones inéditas, pensadas específicamente para NagWeb.
+
+**Hito:** se incorporó la composición **Grid Dive** en `internal-motion-lab`, commit [749f986](https://github.com/decrackpichon-gif/NagWeb/commit/749f986f9eca53a6715fc38ff395b0d4cda40bc4). El nombre fue corroborado en el catálogo de Animos, pero no se contó con la referencia visual ni con sus controles originales. La animación de NagWeb es provisional e interpretativa y **no debe presentarse como reproducción fiel de Animos**. Sus parámetros específicos son propios. Incluye motor, editor, integración de preview/exportación y pruebas de modelo; smoke de navegador en la ejecución [38188030828](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38188030828), aún sin resultado al documentarlo.
+
+**Próxima animación del catálogo que falta:** Pop Parade; obtener antes su movimiento y controles mediante la fuente original. No mezclar esto con NAGWEB 01, 03, 04 ni 05.
