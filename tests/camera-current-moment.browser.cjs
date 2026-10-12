@@ -184,6 +184,27 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   assert.equal((await edit3D()).scale,100,'Escape cancels real pointer scale gesture');
   assert.equal((await edit3D()).history,beforeGizmo.history,'Cancelled scale does not create an Undo');
   console.log('PASS browser 3D gizmos: real pointer yaw/Z, live WebGL, one Undo, Escape and camera isolation');
+  // Visual discoverability / layout depth: test the actual editor and DOM fields.
+  await page.evaluate(()=>{
+   sec().elements.push(mkEl('heading',{id:'story-depth-text',text:'Primer plano',x:45,y:50,w:25,sdCameraDepth:0,sdEnter:'none'}));
+   renderPane();
+  });
+  await page.evaluate(()=>document.querySelector('[data-camera-space-open]').click());
+  assert.equal(await page.locator('[data-camera-map-box]').evaluate(n=>n.open),true,'Edit space shortcut opens camera/object map');
+  assert.equal(await page.locator('[data-camera-layer-pick]').count(),2,'Real editor lists the HTML layer and 3D geometry');
+  const cameraBeforeDepth=await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames));
+  await page.evaluate(()=>document.querySelector('[data-camera-layer-pick="1"]').click());
+  const contrast=await page.locator('[data-camera-object-world-z]').evaluate(n=>({color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundColor}));
+  assert.equal(contrast.color,'rgb(23, 23, 23)','World Z text is dark and legible');
+  assert.equal(contrast.background,'rgb(255, 255, 255)','World Z field has a light background');
+  await page.locator('[data-camera-object-world-z]').fill('325');
+  await page.locator('[data-camera-object-world-z]').press('Tab');
+  const worldState=await page.evaluate(()=>({text:sec().elements.find(e=>e.id==='story-depth-text')?.sdCameraDepth,frames:JSON.stringify(sec().sdCameraFrames),history:history.length}));
+  assert.equal(worldState.text,325,'DOM layer Z persists into existing authored sdCameraDepth');
+  assert.equal(worldState.frames,cameraBeforeDepth,'Editing depth never changes camera frames');
+  await page.evaluate(()=>undo());
+  assert.equal(await page.evaluate(()=>sec().elements.find(e=>e.id==='story-depth-text')?.sdCameraDepth||0),0,'Undo restores DOM spatial depth');
+  console.log('PASS browser spatial UX: shortcut, mixed HTML/3D layer list, legible Z field, HTML depth, undo and camera isolation');
   assert.deepEqual(errors,[]);console.log('PASS object guide: retained preview progress and explicit 0→50% Director displacement');
   console.log('PASS current moment: real editor + Director, create, pointer drag, two Undo, exact selection, no duplicate/history edit and Redo');
   console.log('PASS technical details: native visibility, collapsed height, open/close and pane persistence without authored edits');
