@@ -40,6 +40,7 @@ import {runMotionSearchSmoke} from './nagweb-motion-search-smoke.mjs';
 import {runMotionExpandSmoke} from './nagweb-motion-expand-smoke.mjs';
 import {runMotionDropSmoke} from './nagweb-motion-drop-smoke.mjs';
 import {runMotionStreamSmoke} from './nagweb-motion-stream-smoke.mjs';
+import {runMotionOriginalControlsSmoke} from './nagweb-motion-original-controls-smoke.mjs';
 import {runMotionStreamPlacementSmoke} from './nagweb-motion-stream-placement-smoke.mjs';
 import './nagweb-flip-model-test.mjs';
 import './nagweb-orbit-carousel-model-test.mjs';
@@ -456,7 +457,7 @@ if(suite==='all'||suite==='mosaic'){await runMotionMosaicSmoke(page);await runMo
 if(suite==='all'||suite==='stripe'){await runMotionStripeSmoke(page);await runMotionStreamPlacementSmoke(page,'stripe-reveal');await runMotionBatchImagesSmoke(page,['stripe-reveal']);}
 if(suite==='all'||suite==='wipe'){await runMotionWipeSmoke(page);await runMotionStreamPlacementSmoke(page,'diagonal-wipe');await runMotionBatchImagesSmoke(page,['diagonal-wipe']);}
 if(suite==='all'||suite==='split'){await runMotionSplitSmoke(page);await runMotionStreamPlacementSmoke(page,'split-reveal');await runMotionBatchImagesSmoke(page,['split-reveal']);}
-if(suite==='all'||suite==='showcase'){await runMotionShowcaseOrbitSmoke(page);await runMotionStreamPlacementSmoke(page,'orbit-showcase');await runMotionBatchImagesSmoke(page,['orbit-showcase']);}
+if(suite==='all'||suite==='showcase'){await runMotionOriginalControlsSmoke(page);await runMotionShowcaseOrbitSmoke(page);await runMotionStreamPlacementSmoke(page,'orbit-showcase');await runMotionBatchImagesSmoke(page,['orbit-showcase']);}
 if(suite==='all'||suite==='deck'){await runMotionCascadeDeckSmoke(page);await runMotionStreamPlacementSmoke(page,'cascade-deck');await runMotionBatchImagesSmoke(page,['cascade-deck']);}
 if(suite==='all'||suite==='dance'){await runMotionDanceSmoke(page);await runMotionStreamPlacementSmoke(page,'position-dance');await runMotionBatchImagesSmoke(page,['position-dance']);}
 if(suite==='all'||suite==='trail'){await runMotionTrailSmoke(page);await runMotionStreamPlacementSmoke(page,'image-trail');await runMotionBatchImagesSmoke(page,['image-trail']);}

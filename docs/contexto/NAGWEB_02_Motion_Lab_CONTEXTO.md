@@ -96,3 +96,11 @@ Una herramienta para elegir, **previsualizar y editar animaciones antes de inser
 - Controles originales de tiempo disponibles: presets 5, 10, 15, 20 y 30 segundos, incorporados de una vez a las plantillas procedurales; regla y fotogramas clave expresados en segundos durante reproducción por tiempo. En Scroll siguen como porcentajes. Todo funciona sobre el progreso previo, sin motor adicional.
 - CI previa #38259124120: 53 de 55 suites pasaron. Fallaron `editor` por expectativa de catálogo vieja y `grid-dive` por uso incorrecto de `page.$eval` al contar botones. Se corrigieron las pruebas y se agregaron verificaciones de fidelidad. No dar por aprobada la nueva CI hasta consultar el resultado.
 - Priorizar diferencias reales y documentables, no dedicar avances a controles secundarios inventados. Grid Dive y Pop Parade siguen provisionales hasta consultar movimiento/panel auténtico.
+
+### 12/10/2026: formatos del lienzo y restauración del inspector
+
+- Referencia directa [Animos](https://animos.app/editor): seis botones de relación del marco (16:9, 4:3, 1:1, 4:5, 3:4, 9:16) y «Reset settings».
+- Los **seis formatos** se incorporan como botones que actualizan el selector `frameRatio` existente, sin bifurcar la configuración ni la exportación.
+- «Restaurar ajustes de animación» restablece **de una vez** la configuración visual y los keyframes de parámetros a los defaults reales de la fábrica de cada preset; **no borra** imágenes, textos, orden, encuadres, duración ni modo Tiempo/Scroll. Los cambios continúan siendo borrador hasta insertar/guardar.
+- Una comprobación JavaScript con Showcase Stream confirmó que el reset vuelve a `ringTilt:-28` y `cardRatio:'auto'`, borra keyframes, deja duración 20s y conserva elementos. Hay prueba de navegador añadida a suite `showcase` para formato, restauración, inserción/reapertura y otro preset (Grid Dive), pendiente de GitHub Actions.
+- Prioridad principal intacta: fidelidad real al catálogo de Animos basada en referencias originales, no nuevas ideas secundarias ni nuevos nombres duplicados. Sin merges ni despliegues.
