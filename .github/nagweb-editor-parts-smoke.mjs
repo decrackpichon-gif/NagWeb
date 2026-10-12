@@ -366,6 +366,110 @@ export async function runEditorPartsSmoke(page){
   await page.click('#btn-redo');
   assert.equal(await page.evaluate(()=>sec().elements.find(x=>x.id==='test-hero').wp.__partsMobile?.['layer-1']),undefined);
 
+  // Orden de fotografías persistente. La selección aislada no puede falsear la vista final.
+  await load(10);await select('test-hero');
+  await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-hero');
+   e.wp.__parts={};delete e.wp.__partsMobile;
+   const d=document.querySelector('#preview').contentDocument;
+   const css=d.createElement('style');css.textContent=window.SCW.css.layeredhero;d.head.appendChild(css);
+   const hero=d.querySelector('.nw-lh');hero.style.cssText='position:relative;width:800px;height:400px;--h:400px';
+   d.querySelector('[data-wpart="layer-1"]').className='nw-lh-layer l1';
+   d.querySelector('[data-wpart="layer-2"]').className='nw-lh-layer l2';
+  });
+  await fire('[data-nw-part="layer-1"]');
+  const initialOrder=await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument;
+   return Array.from(d.querySelectorAll('.nw-wpart-action')).map(x=>x.textContent);
+  });
+  assert.ok(initialOrder.includes('Al frente')&&initialOrder.includes('Al fondo'),'foto superpuesta tiene controles de orden');
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument;
+   Array.from(d.querySelectorAll('.nw-wpart-action')).find(x=>x.textContent==='Al frente').click();
+  });
+  const raised=await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,hero=d.querySelector('.nw-lh'),el=d.querySelector('[data-wpart="layer-1"]');
+   const part=sec().elements.find(x=>x.id==='test-hero').wp.__parts['layer-1'];
+   return{part,cssZ:d.defaultView.getComputedStyle(el).zIndex,
+    isolated:hero.classList.contains('nw-part-isolate'),all:hero.querySelector('[data-nw-part=""]')?.classList.contains('on')};
+  });
+  assert.equal(raised.part.z,7,'elevar supera incluso al bloque de texto');
+  assert.equal(raised.cssZ,'7','el orden se refleja en el navegador');
+  assert.equal(raised.isolated,false,'no mantener un falso orden temporal');
+  assert.equal(raised.all,true,'volver a vista completa tras ordenar');
+  const raisedExport=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-hero').wp;
+   return window.SCW.kinds.layeredhero.markup({...e,__parts:e.__parts}, {edit:false});
+  });
+  assert.match(raisedExport,/--nw-z:7;/,'el orden pasa a la exportación');
+  const raisedSaved=await page.evaluate(()=>JSON.parse(localStorage.getItem(STORE_KEY)).pages[curPage].sections[curSec].elements.find(x=>x.id==='test-hero').wp.__parts['layer-1'].z);
+  assert.equal(raisedSaved,7,'el orden se guarda');
+  await page.click('#btn-undo');
+  assert.equal(await page.evaluate(()=>sec().elements.find(x=>x.id==='test-hero').wp.__parts?.['layer-1']?.z),undefined);
+  await page.click('#btn-redo');
+  assert.equal(await page.evaluate(()=>sec().elements.find(x=>x.id==='test-hero').wp.__parts?.['layer-1']?.z),7);
+  // En un Hero móvil, el orden se puede modificar sin cambiar escritorio.
+  await load(11);await select('test-hero');
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument;
+   const css=d.createElement('style');css.textContent=window.SCW.css.layeredhero;d.head.appendChild(css);
+   const hero=d.querySelector('.nw-lh');hero.style.cssText='position:relative;width:400px;height:200px;--h:200px';
+   d.querySelector('[data-wpart="layer-1"]').className='nw-lh-layer l1';
+   d.querySelector('[data-wpart="layer-2"]').className='nw-lh-layer l2';
+  });
+  await fire('[data-nw-part="layer-1"]');
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument;
+   Array.from(d.querySelectorAll('.nw-wpart-action')).find(x=>x.textContent==='Al fondo').click();
+  });
+  const lower=await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,e=sec().elements.find(x=>x.id==='test-hero');
+   return{desktop:e.wp.__parts['layer-1'].z,mobile:e.wp.__partsMobile['layer-1'].z,
+    rendered:d.defaultView.getComputedStyle(d.querySelector('[data-wpart="layer-1"]')).zIndex};
+  });
+  assert.equal(lower.desktop,7,'móvil conserva el orden del escritorio');
+  assert.ok(lower.mobile<2,'móvil envía la foto detrás de Foto 2');
+  assert.equal(lower.rendered,String(lower.mobile),'el orden móvil se ve sin recargar');
+  const mobileExportOrder=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-hero').wp;
+   return window.SCW.kinds.layeredhero.markup({...e,__parts:e.__parts,__partsMobile:e.__partsMobile}, {edit:false});
+  });
+  assert.match(mobileExportOrder,/--nw-z:7;--nw-mz:1;/,'la exportación guarda ambos órdenes');
+  // Si una capa sale del Hero, el selector conserva una acción de recuperación visible.
+  await load(12);await select('test-hero');
+  await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-hero');
+   e.wp.__parts={'layer-1':{x:1600,y:0,r:0,s:1,z:7,refW:800,refH:400}};
+   const d=document.querySelector('#preview').contentDocument;
+   const css=d.createElement('style');css.textContent=window.SCW.css.layeredhero;d.head.appendChild(css);
+   const hero=d.querySelector('.nw-lh');hero.style.cssText='position:relative;width:800px;height:400px;--h:400px';
+   const layer=d.querySelector('[data-wpart="layer-1"]');layer.className='nw-lh-layer l1';
+   layer.style.setProperty('--nw-tx','200cqw');layer.style.setProperty('--nw-z','7');
+  });
+  await fire('[data-nw-part="layer-1"]');
+  const recoverAvailable=await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument;
+   const n=Array.from(d.querySelectorAll('.nw-wpart-action')).find(x=>x.textContent==='Recuperar');
+   const hero=d.querySelector('.nw-lh').getBoundingClientRect(),p=n?.getBoundingClientRect();
+   return{exists:!!n,inFrame:!!(p&&p.left>=0&&p.right<=d.defaultView.innerWidth&&p.top>=0&&p.bottom<=d.defaultView.innerHeight),insideHero:!!(p&&p.left>=hero.left)};
+  });
+  assert.equal(recoverAvailable.exists,true,'pieza fuera del área puede recuperarse');
+  assert.equal(recoverAvailable.inFrame,true,'Recuperar queda accesible en la pantalla');
+  assert.equal(recoverAvailable.insideHero,true);
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument;
+   Array.from(d.querySelectorAll('.nw-wpart-action')).find(x=>x.textContent==='Recuperar').click();
+  });
+  const recovered=await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,hero=d.querySelector('.nw-lh').getBoundingClientRect();
+   const box=d.querySelector('[data-wpart="layer-1"]').getBoundingClientRect(),e=sec().elements.find(x=>x.id==='test-hero');
+   return{x:e.wp.__parts['layer-1'].x,visible:Math.min(hero.right,box.right)>Math.max(hero.left,box.left),
+    recoverAction:Array.from(d.querySelectorAll('.nw-wpart-action')).some(x=>x.textContent==='Recuperar')};
+  });
+  assert.ok(Math.abs(recovered.x)<20,'recuperar aproxima la capa al centro');
+  assert.equal(recovered.visible,true,'vuelve a verse en el lienzo');
+  assert.equal(recovered.recoverAction,false,'Recuperar desaparece cuando ya no hace falta');
+
   console.log('Editor partes: foco, restauración, Escape, Enter e historial OK');
  }finally{
   await page.evaluate(old=>{
