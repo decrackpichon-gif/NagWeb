@@ -224,11 +224,17 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     editOverlay.style.visibility = "visible";
     // HTML controls depend on a rendered wrapper, not on vector measurement.
     // canvasLoading may remain flagged by a late srcdoc mutation.
-    if (!doc || doc.readyState === "loading") {
-      editOverlay.replaceChildren();
-      editOverlayButtons.clear();
-      return;
+    // A srcdoc redraw can momentarily expose an empty document. Keep the
+    // last editor-owned control while the resource remains in this scene.
+    const modelIds = new Set((sec()?.elements || []).filter(e => e.type === "embed" &&
+      e.mode === "html" && e.nwResource?.kind === "uiverse-html" &&
+      e.nwResource.provider === "uiverse").map(e => e.id));
+    for (const [id, control] of editOverlayButtons) {
+      if (modelIds.has(id)) continue;
+      control.remove();
+      editOverlayButtons.delete(id);
     }
+    if (!doc || doc.readyState === "loading") return;
     const frameBounds = preview.getBoundingClientRect();
     const docWidth = doc.documentElement.clientWidth || preview.clientWidth;
     const docHeight = doc.documentElement.clientHeight || preview.clientHeight;
@@ -237,10 +243,12 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     const sx = frameBounds.width / docWidth;
     const sy = frameBounds.height / docHeight;
     const visible = new Set();
+    let matchedDomResources = 0;
     for (const node of doc.querySelectorAll(".el[data-id]")) {
       if (node.closest(".sc")?.dataset.id !== sec()?.id) continue;
       const resource = libraryResourceById(node.dataset.id);
       if (resource?.type !== "embed") continue;
+      matchedDomResources++;
       const rect = node.getBoundingClientRect();
       if (!(rect.width > 0) || !(rect.height > 0) ||
           rect.bottom * sy < 0 || rect.top * sy > frameBounds.height ||
@@ -277,6 +285,9 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       control.style.left = Math.round(left) + "px";
       control.style.top = Math.round(top) + "px";
     }
+    // Do not discard a clickable overlay during a transient srcdoc rebuild.
+    // Once the scene's real HTML nodes are present, hide offscreen controls.
+    if (!matchedDomResources && modelIds.size) return;
     for (const [id, control] of editOverlayButtons) {
       if (visible.has(id)) continue;
       control.remove();

@@ -1345,3 +1345,9 @@ La superposición HTML no espera la bandera de medición de SVG: una actualizaci
 tardía de `srcdoc` puede conservarla activa aunque el marco HTML ya sea
 visible. El control sólo se genera cuando el documento y su nodo visual existen
 y la identidad del recurso coincide con la escena actual.
+
+Durante la reconstrucción temporal del `srcdoc` del lienzo, NagWeb conserva
+el botón de personalización asociado al ID de un HTML/CSS que aún pertenece a
+la escena. Sólo elimina el botón cuando el elemento deja de existir o cuando
+la disposición vuelve a renderizarlo fuera de la vista. Así no desaparece
+entre la detección del componente y el clic del diseñador.

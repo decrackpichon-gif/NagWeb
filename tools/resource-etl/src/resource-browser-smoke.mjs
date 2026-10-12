@@ -1386,7 +1386,23 @@ try {
   },htmlChildId);
   assert.deepEqual(alignment,{withinX:true,withinY:true,notInCanvas:true,childVisible:true});
   const beforeInlineEdit=await page.evaluate(()=>history.length);
-  await canvasEdit.click();
+  try {
+    await canvasEdit.click({timeout:10000});
+  } catch (error) {
+    console.log("RESOURCE_HTML_CLICK_DIAG "+JSON.stringify(await page.evaluate(id=>{
+      const frame=document.querySelector("#preview"), doc=frame?.contentDocument;
+      return {
+        overlayCount:document.querySelector("[data-resource-edit-overlay]")?.children.length,
+        model:!!sec()?.elements.find(e=>e.id===id),
+        scene:sec()?.id, dialogOpen:[...document.querySelectorAll("dialog")].some(d=>d.open),
+        iframeReady:doc?.readyState,
+        iframeHasResource:!!doc?.querySelector('.el[data-id="'+id+'"]'),
+        matchingScene:doc?.querySelector('.el[data-id="'+id+'"]')?.closest(".sc")?.dataset.id,
+        frameBounds:frame?.getBoundingClientRect().toJSON()
+      };
+    },htmlChildId)));
+    throw error;
+  }
   const contextualDialog=page.getByRole("dialog",{name:"Biblioteca de recursos",exact:true});
   await expect(contextualDialog).toBeVisible();
   const browserFrameNode=page.locator('iframe[title="Biblioteca de recursos de NagWeb"]');
