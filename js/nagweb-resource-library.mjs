@@ -291,7 +291,9 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       trigger.addEventListener("click", event => {
         event.preventDefault();
         event.stopImmediatePropagation();
-        if (dialog.open || canvasLoading || preview.contentDocument !== canvasDoc ||
+        // HTML resources do not need vector measurement. A delayed srcdoc
+        // mutation can leave canvasLoading true even after the wrapper renders.
+        if (dialog.open || preview.contentDocument !== canvasDoc ||
             node.closest(".sc")?.dataset.id !== sec()?.id) return;
         const current = libraryResourceById(node.dataset.id);
         if (!current || current.type !== "embed") return;
