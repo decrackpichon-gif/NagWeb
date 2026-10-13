@@ -1999,6 +1999,13 @@ function toggleSurfaceAim(s){
  if(iframe&&typeof iframe.addEventListener==='function')iframe.addEventListener('load',onLoad);
  renderPane();return 'armed';
 }
+// All preview controls must release browser pointer capture on tool switch,
+// Escape and iframe replacement, not just on pointerup.
+function releaseEditorPointerCapture(node,pointerId){
+ if(!node||!Number.isInteger(pointerId)||!node.hasPointerCapture||!node.releasePointerCapture)return false;
+ try{if(node.hasPointerCapture(pointerId)){node.releasePointerCapture(pointerId);return true;}}catch(_){}
+ return false;
+}
 function stopViewportOrbit(){
  var a=viewportOrbitArmed;viewportOrbitArmed=null;
  if(!a)return;
@@ -2074,6 +2081,7 @@ function toggleViewportOrbit(s){
  viewportOrbitArmed={sectionId:s.id,doc:doc,down:down,key:key,onLoad:onLoad,iframe:iframe,cleanup:function(){
   doc.removeEventListener('pointermove',move,true);doc.removeEventListener('pointerup',up,true);
   doc.removeEventListener('pointercancel',abort,true);doc.removeEventListener('lostpointercapture',abort,true);
+  if(gesture)releaseEditorPointerCapture(stage,gesture.pointerId);
   reset();
  }};
  doc.addEventListener('pointerdown',down,true);
@@ -2175,6 +2183,7 @@ function toggleObjectDepth(s){
  objectDepthArmed={sectionId:s.id,id:item.id,doc:doc,win:win,iframe:iframe,handle:handle,down:down,key:key,keyHandle:keyHandle,onLoad:onLoad,cleanup:function(){
   doc.removeEventListener('pointermove',move,true);doc.removeEventListener('pointerup',up,true);
   doc.removeEventListener('pointercancel',abort,true);doc.removeEventListener('lostpointercapture',abort,true);
+  if(gesture)releaseEditorPointerCapture(handle,gesture.pointerId);
   gesture=null;
  }};
  handle.addEventListener('pointerdown',down);handle.addEventListener('keydown',keyHandle);
@@ -2279,7 +2288,7 @@ function toggleBaseTransform(s){
  baseTransformArmed={sectionId:s.id,id:item.id,doc:doc,win:win,iframe:iframe,overlay:overlay,axis:null,down:down,nudge:nudge,key:key,onLoad:onLoad,cleanup:function(){
   doc.removeEventListener('pointermove',move,true);doc.removeEventListener('pointerup',up,true);
   doc.removeEventListener('pointercancel',abort,true);doc.removeEventListener('lostpointercapture',abort,true);
-  if(gesture){axis=gesture.axis;gesture=null;reset();}
+  if(gesture){releaseEditorPointerCapture(gesture.handle,gesture.pointerId);axis=gesture.axis;gesture=null;reset();}
  }};
  // Owner remembers current axis so switching tools or iframe unload clears it.
  var origDown=down;
@@ -2398,7 +2407,7 @@ function toggleViewportTranslate(s){
  viewportTranslateArmed={sectionId:s.id,doc:doc,overlay:overlay,iframe:iframe,down:down,nudge:nudge,key:key,onLoad:onLoad,cleanup:function(){
   doc.removeEventListener('pointermove',move,true);doc.removeEventListener('pointerup',up,true);
   doc.removeEventListener('pointercancel',abort,true);doc.removeEventListener('lostpointercapture',abort,true);
-  if(gesture){restore(gesture);gesture=null;}
+  if(gesture){releaseEditorPointerCapture(gesture.handle,gesture.pointerId);restore(gesture);gesture=null;}
  }};
  overlay.addEventListener('pointerdown',down);overlay.addEventListener('keydown',nudge);
  doc.addEventListener('keydown',key,true);document.addEventListener('keydown',key,true);
