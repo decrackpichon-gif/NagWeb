@@ -9,6 +9,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 // repositories, test fixtures, runtime secrets, or server files go to Pages.
 const PUBLIC_MODULES = Object.freeze([
   "runtime/persistent-vault-client.mjs",
+  "runtime/editor-availability.mjs",
   "runtime/latest-search.mjs",
   "runtime/favorites.mjs",
   "runtime/saved-customizations.mjs",
