@@ -473,6 +473,107 @@ export async function runEditorPartsSmoke(page){
   assert.equal(recovered.visible,true,'vuelve a verse en el lienzo');
   assert.equal(recovered.recoverAction,false,'Recuperar desaparece cuando ya no hace falta');
 
+  // Textos del Hero que se desprenden de la columna para ubicarse libremente.
+  await load(13);await select('test-hero');
+  const originalFloatingBounds=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-hero');
+   e.wp={title:'TÍTULO LIBRE',eyebrow:'EDITOR',sub:'Descripción',texts:[{text:'Texto extra',style:'body'}]};
+   const d=document.querySelector('#preview').contentDocument,hero=d.querySelector('.nw-lh');
+   const css=d.createElement('style');css.textContent=window.SCW.css.layeredhero;d.head.appendChild(css);
+   hero.outerHTML=window.SCW.kinds.layeredhero.markup(e.wp,{edit:true});
+   const newHero=d.querySelector('.nw-lh');
+   newHero.style.width='800px';newHero.style.height='500px';newHero.style.setProperty('--h','500px');
+   const title=newHero.querySelector('.nw-lh-copy [data-wpart="title"]'),rect=title.getBoundingClientRect();
+   return{cx:(rect.left+rect.right)/2,cy:(rect.top+rect.bottom)/2,width:title.offsetWidth,
+    initialPosition:d.defaultView.getComputedStyle(title).position};
+  });
+  assert.equal(originalFloatingBounds.initialPosition,'static','el título comienza dentro de la columna');
+  await fire('[data-nw-part="title"]');
+  const releaseAvailable=await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument;
+   return Array.from(d.querySelectorAll('.nw-wpart-action')).some(n=>n.textContent==='Liberar texto');
+  });
+  assert.equal(releaseAvailable,true,'título ofrece el comando Liberar texto');
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument;
+   Array.from(d.querySelectorAll('.nw-wpart-action')).find(n=>n.textContent==='Liberar texto').click();
+   clearTimeout(previewTimer);
+  });
+  const detached=await page.evaluate(()=>{
+   const model=sec().elements.find(x=>x.id==='test-hero').wp;
+   const d=document.querySelector('#preview').contentDocument,hero=d.querySelector('.nw-lh');
+   hero.outerHTML=window.SCW.kinds.layeredhero.markup(model,{edit:true});
+   const newHero=d.querySelector('.nw-lh');
+   newHero.style.width='800px';newHero.style.height='500px';newHero.style.setProperty('--h','500px');
+   const text=newHero.querySelector(':scope > [data-wpart="title"]'),r=text?.getBoundingClientRect();
+   return{data:model.__parts?.title,freeSibling:!!text,
+    insideColumn:!!newHero.querySelector('.nw-lh-copy [data-wpart="title"]'),
+    siblings:newHero.querySelectorAll('.nw-lh-copy [data-wpart]').length,
+    css:d.defaultView.getComputedStyle(text).position,
+    center:r?[(r.left+r.right)/2,(r.top+r.bottom)/2]:null,
+    bounds:[newHero.clientWidth,newHero.clientHeight]};
+  });
+  assert.equal(detached.data.free,true,'liberar se guarda en la pieza');
+  assert.equal(detached.data.refW,800);assert.equal(detached.data.refH,500);
+  assert.equal(detached.freeSibling,true,'título se convierte en hijo directo del Hero');
+  assert.equal(detached.insideColumn,false,'título sale de la cuadrícula');
+  assert.equal(detached.siblings,2,'rótulo y párrafo conservan su columna');
+  assert.equal(detached.css,'absolute','título tiene posicionamiento libre real');
+  assert.ok(Math.hypot(detached.center[0]-originalFloatingBounds.cx,detached.center[1]-originalFloatingBounds.cy)<10,
+    'liberar mantiene la posición visible');
+  const releasedHtml=await page.evaluate(()=>{
+   const model=sec().elements.find(x=>x.id==='test-hero').wp;
+   return window.SCW.kinds.layeredhero.markup(model,{edit:false});
+  });
+  assert.match(releasedHtml,/nw-lh-float--title/,'la publicación conserva la pieza libre');
+  assert.match(releasedHtml,/--nw-fx:[\d.]+cqw;/,'la publicación conserva la posición proporcional');
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,w=d.defaultView,p=d.querySelector('.nw-lh > [data-wpart="title"]');
+   const r=p.getBoundingClientRect(),x=(r.left+r.right)/2,y=(r.top+r.bottom)/2;
+   p.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,button:0,pointerId:120,clientX:x,clientY:y}));
+   w.dispatchEvent(new w.PointerEvent('pointermove',{bubbles:true,pointerId:120,clientX:x+64,clientY:y+35}));
+   w.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true,pointerId:120,clientX:x+64,clientY:y+35}));
+  });
+  const movedFloating=await page.evaluate(()=>{
+   const model=sec().elements.find(x=>x.id==='test-hero').wp;
+   return{title:model.__parts.title,stored:JSON.parse(localStorage.getItem(STORE_KEY)).pages[curPage].sections[curSec].elements.find(x=>x.id==='test-hero').wp.__parts.title};
+  });
+  assert.equal(movedFloating.title.x,64);
+  assert.equal(movedFloating.title.y,35);
+  assert.equal(movedFloating.title.free,true,'el texto no vuelve a la columna al arrastrarlo');
+  assert.deepEqual(movedFloating.title,movedFloating.stored,'la pieza libre desplazada persiste');
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument;
+   d.__nwCanvasPartAPI.select('test-hero','title');
+  });
+  const returnButton=await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument;
+   return Array.from(d.querySelectorAll('.nw-wpart-action')).some(n=>n.textContent==='Volver a columna');
+  });
+  assert.equal(returnButton,true,'texto libre puede regresar a su columna');
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument;
+   Array.from(d.querySelectorAll('.nw-wpart-action')).find(n=>n.textContent==='Volver a columna').click();
+   clearTimeout(previewTimer);
+  });
+  const returned=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-hero').wp;
+   const html=window.SCW.kinds.layeredhero.markup(e,{edit:false});
+   return{free:e.__parts.title.free||false,x:e.__parts.title.x,y:e.__parts.title.y,
+    floating:html.includes('nw-lh-float--title'),
+    selected:html.includes('data-wfield="title"')};
+  });
+  assert.equal(returned.free,false,'volver a la columna elimina el modo libre');
+  assert.equal(returned.x,0);assert.equal(returned.y,0);
+  assert.equal(returned.floating,false,'la publicación recupera el flujo de la columna');
+  assert.equal(returned.selected,true,'el título no se pierde');
+  await page.click('#btn-undo');
+  assert.equal(await page.evaluate(()=>sec().elements.find(x=>x.id==='test-hero').wp.__parts.title.free),true,
+    'Deshacer recupera la pieza libre');
+  await page.click('#btn-redo');
+  assert.equal(await page.evaluate(()=>!!sec().elements.find(x=>x.id==='test-hero').wp.__parts.title.free),false,
+    'Rehacer vuelve a la columna');
+
   console.log('Editor partes: foco, restauración, Escape, Enter e historial OK');
  }finally{
   await page.evaluate(old=>{
