@@ -510,10 +510,10 @@ function beginMapDrag(node,id=301,x=200,y=180){
   preventDefault(){},stopPropagation(){}});
 }
 function mapMove(node,id,x,y,shift=false){
- node.listeners.pointermove({pointerId:id,clientX:x,clientY:y,shiftKey:shift,preventDefault(){}});
+ outsideListeners.pointermove({pointerId:id,clientX:x,clientY:y,shiftKey:shift,preventDefault(){}});
 }
 function mapUp(node,id,x,y,shift=false){
- node.listeners.pointerup({pointerId:id,clientX:x,clientY:y,shiftKey:shift,preventDefault(){}});
+ outsideListeners.pointerup({pointerId:id,clientX:x,clientY:y,shiftKey:shift,preventDefault(){}});
 }
 const firstPanel=C.panel(scene);assert.match(firstPanel,/Arrastrá el centro de un objeto/);
 assert.match(firstPanel,/data-camera-scene-object-pick="0" tabindex="0"/,'Object map has a focusable drag affordance');
@@ -549,11 +549,11 @@ C.panel(scene);
 mapObj.dataset.plane='top';
 const cancelMap=mapHandle(1);
 beginMapDrag(cancelMap.node,304,200,180);mapMove(cancelMap.node,304,200,130);
-cancelMap.node.listeners.keydown({key:'Escape',preventDefault(){},stopPropagation(){}});
+outsideListeners.keydown({key:'Escape',preventDefault(){},stopPropagation(){}});
 assert.equal(title.sdCameraDepth,oldHtmlDepth,'Escape cancels map Z movement');
 assert.equal(undos,oldCancel,'Escape never creates an undo entry');
 assert.equal(cancelMap.node.captured,false,'Escape releases pointer capture');
-assert.equal(cancelMap.node.listeners.pointermove,undefined,'Escape cleans map listeners');
+assert.equal(outsideListeners.pointermove,undefined,'Escape cleans global map listeners');
 const keyMap=mapHandle(1),depthBeforeKey=title.sdCameraDepth,keyUndo=undos;
 handlers.keydown({target:keyMap.node,key:'ArrowUp',shiftKey:true,preventDefault(){},stopPropagation(){}});
 assert.ok(title.sdCameraDepth>depthBeforeKey,'Shift+ArrowUp edits fine DOM Z in overhead view');
