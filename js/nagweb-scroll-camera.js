@@ -620,7 +620,7 @@ function cameraDragShield(doc){
  if(!doc||!doc.createElement||!doc.body||!doc.body.appendChild)return null;
  var el=doc.createElement('div');
  el.style.cssText='position:fixed;inset:0;z-index:2147483647;background:transparent;pointer-events:auto;touch-action:none;cursor:grabbing;';
- if(el.setAttribute)el.setAttribute('aria-hidden','true');
+ if(el.setAttribute){el.setAttribute('aria-hidden','true');el.setAttribute('data-nw-spatial-drag-shield','');}
  doc.body.appendChild(el);
  return el;
 }
