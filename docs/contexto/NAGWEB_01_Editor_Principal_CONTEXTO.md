@@ -71,6 +71,14 @@ Editor **visual y profesional** para construir sitios y narrativas inmersivas co
 - El editor de partes reutiliza las mismas funciones `commitPart`, `partState`, `applyPart`, controles y selección por capítulo que Hero. El CSS responsive y el HTML exportado provienen de `js/nagweb-feedback-v16.js`. Validar selección, exportación, adaptación de tamaño y herencia con `.github/nagweb-editor-parts-smoke.mjs`.
 - Queda pendiente trasladar a más composiciones la edición directa robusta de elementos internos, priorizando funcionalidades generales antes que pulir indefinidamente un único recurso.
 
+## Infraestructura transversal: piezas internas de cualquier composición (13/10/2026)
+
+- **Contrato compartido:** una composición puede declarar `data-nw-part-scope`, `data-nw-part-mobile` (ancho umbral), `data-nw-part-height` (selector del escenario que determina el alto) y `data-nw-part-y` (`var(--h)` o `100vh`). Los elementos editables usan `data-wpart` y el mismo almacenamiento `__parts` / `__partsMobile`.
+- La lectura de coordenadas, variantes móviles, tamaño de referencia, serialización de CSS relativo y controles del lienzo se resuelven **una sola vez**: `partScope` en `js/nagweb-v14-direction.js`, `partTransformCSS` compartida y expuesta en `SCWX.partTransformCSS` desde `js/nagweb-feedback-v16.js`. Hero e Historia sticky utilizan el mismo contrato, conservando sus propios efectos y su historial.
+- La acción **«Recuperar»** es transversal: puede centrar una pieza que quedó fuera del escenario visible en Hero, Historia sticky u otro contenedor compatible, sin reiniciar sus demás transformaciones. «Al frente / Al fondo» y «Liberar texto» siguen siendo controles específicos del Hero.
+- Compatibilidad: los widgets previos con clases `.nw-lh` y `.nw-story` continúan funcionando sin los nuevos atributos. El CSS anterior sin `refW/refH` continúa en píxeles. Widgets nuevos deben definir sus reglas CSS de transformación y su selector de partes; no deben copiar las funciones de coordenadas existentes.
+- No se alteraron ramas de Motion Lab, Cámara 3D, Interaction Studio ni Biblioteca de recursos. El director de scroll sigue siendo independiente. La prueba en navegador `.github/nagweb-editor-parts-smoke.mjs` cubre recuperación y geometría con alcance configurable.
+
 ## Próximas prioridades (revisar con HEAD actual)
 
 - Priorizar la experiencia de lienzo como herramienta de diseño, edición real de elementos anidados y uso de recursos sin degradar su editabilidad.

@@ -299,9 +299,9 @@ function installCanvasTools(){
    doc.body.appendChild(wh);handles.push(wh);bindHandle(wh,'width');
   }
   var root=active.closest('.el.wdg[data-id]');
-  var hero=active.closest('.nw-lh');
-  if(root&&hero){
-   var hr=hero.getBoundingClientRect();
+  var scope=partScope(active),hero=active.closest('.nw-lh');
+  if(root&&scope){
+   var hr=scope.stage.getBoundingClientRect();
    var within=Math.max(0,Math.min(r.right,hr.right)-Math.max(r.left,hr.left))*Math.max(0,Math.min(r.bottom,hr.bottom)-Math.max(r.top,hr.top));
    function action(label,tip,offset,callback){
     var btn=doc.createElement('button');btn.type='button';btn.className='nw-wpart-action';btn.textContent=label;btn.title=tip;
@@ -311,18 +311,29 @@ function installCanvasTools(){
     doc.body.appendChild(btn);handles.push(btn);
    }
    if(within<Math.min(r.width*r.height*.03,hr.width*hr.height*.01)){
-    action('Recuperar','Centrar esta pieza que quedó fuera del Hero',/^layer-[1-5]$/.test(active.getAttribute('data-wpart')||'')?148:0,function(){
+    action('Recuperar','Centrar esta pieza que quedó fuera del encuadre',/^layer-[1-5]$/.test(active.getAttribute('data-wpart')||'')?148:0,function(){
      var before=partState(root,active),centerX=(hr.left+hr.right)/2,centerY=(hr.top+hr.bottom)/2;
      var next=Object.assign({},before,{x:before.x+centerX-(r.left+r.right)/2,y:before.y+centerY-(r.top+r.bottom)/2});
      if(commitPart(next.id,next.name,next)){next.responsive=!!next.refW;next.mobileOverride=!!next.mobile;applyPart(active,next,true);}
      placeHandles();
     });
    }
+  }
+  if(root&&hero){
+   var hr=hero.getBoundingClientRect();
    var layerName=active.getAttribute('data-wpart'),lm=/^layer-[1-5]$/.test(layerName||'');
    var textPart=/^(eyebrow|title|sub|text-extra-[0-9]+)$/.test(layerName||'');
    if(textPart&&hero.clientWidth>600){
     var basePart=partState(root,active);
-    action(basePart.free?'Volver a columna':'Liberar texto',
+    (function(){
+     var action=function(label,tip,offset,callback){
+      var btn=doc.createElement('button');btn.type='button';btn.className='nw-wpart-action';btn.textContent=label;btn.title=tip;
+      btn.style.left=Math.max(4,Math.min(doc.defaultView.innerWidth-110,hr.left+8+offset))+'px';
+      btn.style.top=Math.max(4,Math.min(doc.defaultView.innerHeight-28,hr.top+52))+'px';
+      btn.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();callback();});
+      doc.body.appendChild(btn);handles.push(btn);
+     };
+     action(basePart.free?'Volver a columna':'Liberar texto',
      basePart.free?'Devolver el texto a la composición original':'Ubicar este texto independientemente dentro del Hero',
      0,function(){
       var node=active;if(!node||!node.isConnected)return;
@@ -337,6 +348,7 @@ function installCanvasTools(){
       }
       if(commitPart(next.id,next.name,next))schedulePreview();
      });
+    })();
    }
    if(lm){
     var others=Array.prototype.filter.call(root.querySelectorAll('.nw-lh-layer[data-wpart]'),function(n){return n!==active;});
@@ -351,8 +363,15 @@ function installCanvasTools(){
      if(all)all.dispatchEvent(new doc.defaultView.PointerEvent('pointerdown',{bubbles:true,cancelable:true,button:0,pointerId:98}));
      else placeHandles();
     }
-    action('Al frente','Colocar esta foto delante de las demás',0,function(){reorder(true);});
-    action('Al fondo','Colocar esta foto detrás de las demás',74,function(){reorder(false);});
+    var action=function(label,offset,front){
+     var btn=doc.createElement('button');btn.type='button';btn.className='nw-wpart-action';btn.textContent=label;
+     btn.title='Colocar esta foto '+(front?'delante':'detrás')+' de las demás';
+     btn.style.left=Math.max(4,Math.min(doc.defaultView.innerWidth-110,hr.left+8+offset))+'px';
+     btn.style.top=Math.max(4,Math.min(doc.defaultView.innerHeight-28,hr.top+52))+'px';
+     btn.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();reorder(front);});
+     doc.body.appendChild(btn);handles.push(btn);
+    };
+    action('Al frente',0,true);action('Al fondo',74,false);
    }
   }
   if(root){
@@ -387,11 +406,25 @@ function installCanvasTools(){
   if(!target)return false;
   clear();active=target;target.classList.add('nw-wpart-sel');placeHandles();return true;
  }
+ // Un widget nuevo solo declara su contenedor, breakpoint y escenario visual.
+ // Los Heroes y las Historias antiguas siguen funcionando sin esos atributos.
+ function partScope(n){
+  var section=n.closest('[data-nw-part-scope]')||n.closest('.nw-lh,.nw-story');
+  if(!section)return null;
+  var story=section.matches('.nw-story');
+  var threshold=+section.getAttribute('data-nw-part-mobile');
+  if(!Number.isFinite(threshold)||threshold<=0)threshold=story?720:600;
+  var selector=section.getAttribute('data-nw-part-height');
+  var stage=selector?section.querySelector(selector):(story?section.querySelector('.nw-story-sticky'):section);
+  if(!stage)stage=section;
+  var unit=section.getAttribute('data-nw-part-y');
+  if(unit!=='100vh'&&unit!=='var(--h)')unit=story?'100vh':'var(--h)';
+  var w=section.clientWidth,h=stage.clientHeight;
+  return{section:section,stage:stage,w:w,h:h,mobile:w>0&&w<=threshold,unitY:unit};
+ }
  function partState(root,n){
   var id=root.dataset.id,e=currentWidget(id),name=n.getAttribute('data-wpart');
-  var hero=n.closest('.nw-lh'),story=n.closest('.nw-story'),storyStage=n.closest('.nw-story-sticky');
-  var mobile=!!(hero&&hero.clientWidth>0&&hero.clientWidth<=600)||
-   !!(!hero&&story&&story.clientWidth>0&&story.clientWidth<=720);
+  var scope=partScope(n),mobile=!!(scope&&scope.mobile);
   var fromDesktop=e&&e.wp&&e.wp.__parts&&e.wp.__parts[name]||{};
   var fromMobile=e&&e.wp&&e.wp.__partsMobile&&e.wp.__partsMobile[name];
   var p=mobile&&fromMobile?fromMobile:fromDesktop;
@@ -401,8 +434,8 @@ function installCanvasTools(){
    widthOverride:!!(mobile&&fromMobile&&fromMobile.fw!=null),
    z:p.z==null?partDefaultZ(name):+p.z,
    responsive:!!(p.refW>0&&p.refH>0),mobile:mobile,mobileOverride:!!(mobile&&fromMobile)};
-  if(hero||storyStage){
-   var w=hero?hero.clientWidth:story.clientWidth,h=hero?hero.clientHeight:storyStage.clientHeight;
+  if(scope){
+   var w=scope.w,h=scope.h;
    if(w>0&&h>0){
     if(p.refW>0&&p.refH>0){state.x=state.x*w/p.refW;state.y=state.y*h/p.refH;}
     if(!mobile&&fromDesktop.free&&fromDesktop.refW>0&&fromDesktop.refH>0){
@@ -423,7 +456,7 @@ function installCanvasTools(){
   }
   var relative=final&&p.responsive&&p.refW>0&&p.refH>0;
   var x=relative?(p.x/p.refW*100).toFixed(5)+'cqw':p.x+'px';
-  var y=relative?(n.closest('.nw-story')?'calc(100vh * '+(p.y/p.refH).toFixed(6)+')':'calc(var(--h) * '+(p.y/p.refH).toFixed(6)+')'):p.y+'px';
+  var y=relative?'calc('+(partScope(n)?.unitY||'var(--h)')+' * '+(p.y/p.refH).toFixed(6)+')':p.y+'px';
   n.style.setProperty(names[0],x);n.style.setProperty(names[1],y);
   n.style.setProperty(names[2],p.r+'deg');n.style.setProperty(names[3],p.s);
   if(p.free&&n.classList.contains('nw-lh-float')){
