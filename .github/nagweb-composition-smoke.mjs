@@ -53,7 +53,13 @@ export async function runCompositionSmoke(page){
  await page.waitForFunction(()=>document.querySelector('#preview').contentDocument.querySelector('[data-id="compose-child"]').style.getPropertyValue('--nw-sd-x')==='50.00px');
  await page.waitForFunction(()=>{const v=document.querySelector('#preview').contentDocument.querySelector('[data-id="compose-video"]');return Number.isFinite(v.duration)&&Math.abs(v.currentTime/v.duration-.25)<.02;});
  await page.click('[data-sd-play="compose-scene"]');
- await page.waitForFunction(()=>NAGWEB_SCROLL_DIRECTOR.progress('compose-scene')>6);
+ // La pose del iframe se actualiza por cuadro; no comparar un estado viejo con el nuevo reloj.
+ await page.waitForFunction(()=>{
+  const p=NAGWEB_SCROLL_DIRECTOR.progress('compose-scene');
+  const child=document.querySelector('#preview').contentDocument.querySelector('[data-id="compose-child"]');
+  const x=parseFloat(child?.style.getPropertyValue('--nw-sd-x')||'');
+  return p>6&&Number.isFinite(x)&&Math.abs(x-p*2)<.6;
+ },{polling:'raf',timeout:10000});
  const play=await page.evaluate(()=>({p:NAGWEB_SCROLL_DIRECTOR.progress('compose-scene'),x:parseFloat(document.querySelector('#preview').contentDocument.querySelector('[data-id="compose-child"]').style.getPropertyValue('--nw-sd-x'))}));
  near(play.x,play.p*2,1);
  await page.evaluate(()=>{NAGWEB_SCROLL_DIRECTOR.live('compose-scene');const w=document.querySelector('#composition-export').contentWindow;w.__NAG_SCROLL_DIRECTOR['compose-scene'].live();const n=w.document.querySelector('[data-id="compose-scene"]');w.scrollTo(0,n.getBoundingClientRect().top+w.scrollY+(n.offsetHeight-w.innerHeight)*.5);});
