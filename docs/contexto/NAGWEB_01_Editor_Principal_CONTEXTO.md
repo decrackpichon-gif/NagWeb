@@ -46,6 +46,14 @@ Editor **visual y profesional** para construir sitios y narrativas inmersivas co
 - No confundir esta recuperación con la opción **«Restablecer»**: la primera rescata la ubicación sin borrar la composición de la pieza, mientras que la segunda restaura sus transformaciones.
 - Archivos: `js/nagweb-feedback-v16.js`, `js/nagweb-v14-direction.js` y `.github/nagweb-editor-parts-smoke.mjs`. Consultar el CI del HEAD para conocer el estado de validación, no presumir éxito por el commit.
 
+## Decisión de producto: textos flotantes dentro del Hero (12/10/2026)
+
+- **Modo Editor, Hero por capas:** una acción contextual **«Liberar texto»** desacopla antetítulo, título, descripción o texto extra de la columna automática y lo convierte en un elemento `position:absolute` hijo directo del Hero. Se preservan su contenido, estilo, transformación, edición directa y los demás textos de la columna.
+- Para evitar saltos iniciales, la liberación captura el centro y el ancho real del elemento y registra `__parts[nombre].free`, `fx`, `fy`, `fw` y `refW/refH`. El HTML exportado utiliza `cqw` y `--h` sin runtime nuevo. Los desplazamientos `x/y` y el escalado siguen en el editor de partes existente.
+- **«Volver a columna»** revierte solo el desacople y recupera el flujo editorial. La acción pasa por el historial de Deshacer/Rehacer. El control de liberación se ofrece en escritorio; el texto liberado conserva su posición proporcional en móvil y admite los desplazamientos móviles ya existentes.
+- Los Heroes anteriores, sin `free`, conservan intacta su composición original; no hay conversión automática ni cambio de motor de scroll.
+- Implementación en `js/nagweb-feedback-v16.js` y `js/nagweb-v14-direction.js`; regresión añadida a `.github/nagweb-editor-parts-smoke.mjs`. Verificar resultados de GitHub Actions antes de considerar validada la funcionalidad.
+
 ## Próximas prioridades (revisar con HEAD actual)
 
 - Priorizar la experiencia de lienzo como herramienta de diseño, edición real de elementos anidados y uso de recursos sin degradar su editabilidad.
