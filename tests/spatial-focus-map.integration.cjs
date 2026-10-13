@@ -490,3 +490,74 @@ scene.layout='stack';
 assert.ok(!C.panel(scene).includes('data-camera-layer-list'),'Map never fabricates 3D coordinates for stack layout');
 scene.layout='free';scene.elements.splice(scene.elements.length-extraLayers.length);
 console.log('PASS spatial editor: 22 visible object guides, discoverable map, DOM/GLB world Z editing, Undo and untouched camera/motion');
+
+
+// Spatial map is an editable compositing view: moving a DOM plane or a GLB
+// anchor must preserve their Director tracks and produce one undo per gesture.
+scene.layout='free';scene.sdCameraEnabled=true;scene.sdCameraOrientationMode='manual';
+const mapObj={dataset:{plane:'top',range:'500',originX:'0',originAxis:'0'},
+ getBoundingClientRect(){return {left:10,top:20,width:600,height:400};},querySelector(){return null;}};
+function mapHandle(index){
+ const holder={transform:null,setAttribute(name,value){if(name==='transform')this.transform=value;}};
+ const node={dataset:{cameraSceneObjectPick:String(index)},parentNode:holder,captured:false,listeners:{},
+  closest(q){if(q==='[data-camera-map]')return mapObj;if(q==='[data-camera-scene-object-pick]')return this;return null;},
+  addEventListener(k,fn){this.listeners[k]=fn;},removeEventListener(k,fn){if(this.listeners[k]===fn)delete this.listeners[k];},
+  setPointerCapture(){this.captured=true;},hasPointerCapture(){return this.captured;},releasePointerCapture(){this.captured=false;},focus(){}};
+ return {node,holder};
+}
+function beginMapDrag(node,id=301,x=200,y=180){
+ handlers.pointerdown({target:node,button:0,pointerId:id,clientX:x,clientY:y,shiftKey:false,
+  preventDefault(){},stopPropagation(){}});
+}
+function mapMove(node,id,x,y,shift=false){
+ node.listeners.pointermove({pointerId:id,clientX:x,clientY:y,shiftKey:shift,preventDefault(){}});
+}
+function mapUp(node,id,x,y,shift=false){
+ node.listeners.pointerup({pointerId:id,clientX:x,clientY:y,shiftKey:shift,preventDefault(){}});
+}
+const firstPanel=C.panel(scene);assert.match(firstPanel,/Arrastrá el centro de un objeto/);
+assert.match(firstPanel,/data-camera-scene-object-pick="0" tabindex="0"/,'Object map has a focusable drag affordance');
+const cameraPathInvariant=JSON.stringify(scene.sdCameraFrames),motionInvariant=JSON.stringify(object.sdKeyframes);
+const oldX=object.x,mapUndoStart=undos,mapSaveStart=saves;
+const glbMap=mapHandle(0);
+beginMapDrag(glbMap.node);mapMove(glbMap.node,301,260,180);
+assert.equal(undos,mapUndoStart,'No project snapshot during a map drag');
+assert.equal(object.x,oldX,'Map preview cannot modify persisted GLB before pointer release');
+assert.match(glbMap.holder.transform,/translate\(/,'Map marker moves live during a drag');
+mapUp(glbMap.node,301,260,180);
+assert.ok(object.x>oldX,'Dragging right changes anchored GLB base X');
+assert.equal(undos,mapUndoStart+1,'Map pointer drag creates exactly one undo');
+assert.equal(saves,mapSaveStart+1,'Map pointer drag saves once');
+assert.equal(JSON.stringify(object.sdKeyframes),motionInvariant,'No timeline changes when editing base X');
+assert.equal(JSON.stringify(scene.sdCameraFrames),cameraPathInvariant,'No camera waypoint edits from map objects');
+C.panel(scene);
+const oldZ=object.offZ,zStartUndo=undos;
+const zMap=mapHandle(0);
+beginMapDrag(zMap.node,302,200,180);mapMove(zMap.node,302,200,140);mapUp(zMap.node,302,200,140);
+assert.ok(Math.abs(object.offZ-oldZ)>.01,'Top X/Z view moves the Three object in authored offZ');
+assert.equal(undos,zStartUndo+1,'World Z gesture has one undo');
+C.panel(scene);
+mapObj.dataset.plane='front';
+const htmlMap=mapHandle(1),oldY=title.y,htmlUndo=undos;
+beginMapDrag(htmlMap.node,303,200,180);mapMove(htmlMap.node,303,200,220);
+assert.equal(title.y,oldY,'DOM base coordinate remains unchanged before release');
+mapUp(htmlMap.node,303,200,220);
+assert.ok(title.y>oldY,'Front X/Y view edits DOM authored Y');
+assert.equal(undos,htmlUndo+1);
+const oldHtmlDepth=title.sdCameraDepth,oldCancel=undos;
+C.panel(scene);
+mapObj.dataset.plane='top';
+const cancelMap=mapHandle(1);
+beginMapDrag(cancelMap.node,304,200,180);mapMove(cancelMap.node,304,200,130);
+cancelMap.node.listeners.keydown({key:'Escape',preventDefault(){},stopPropagation(){}});
+assert.equal(title.sdCameraDepth,oldHtmlDepth,'Escape cancels map Z movement');
+assert.equal(undos,oldCancel,'Escape never creates an undo entry');
+assert.equal(cancelMap.node.captured,false,'Escape releases pointer capture');
+assert.equal(cancelMap.node.listeners.pointermove,undefined,'Escape cleans map listeners');
+const keyMap=mapHandle(1),depthBeforeKey=title.sdCameraDepth,keyUndo=undos;
+handlers.keydown({target:keyMap.node,key:'ArrowUp',shiftKey:true,preventDefault(){},stopPropagation(){}});
+assert.ok(title.sdCameraDepth>depthBeforeKey,'Shift+ArrowUp edits fine DOM Z in overhead view');
+assert.equal(undos,keyUndo+1,'Keyboard map step uses one undo');
+assert.equal(JSON.stringify(scene.sdCameraFrames),cameraPathInvariant,'Camera remains untouched after all 3D layout changes');
+assert.equal(JSON.stringify(object.sdKeyframes),motionInvariant,'3D animation remains untouched after all layout changes');
+console.log('PASS object map drag: X/Y/Z, DOM/GLB, live marker, keyboard, Shift, Escape, single Undo, camera isolation');
