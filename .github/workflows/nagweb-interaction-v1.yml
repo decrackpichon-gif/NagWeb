@@ -1,0 +1,136 @@
+name: NagWeb Interaction Engine V1
+
+on:
+  push:
+    branches:
+      - feat/interaction-engine-v1
+    paths:
+      - 'js/nagweb-interaction-engine-v1.js'
+      - 'js/nagweb-interaction-asset-prep-v1.js'
+      - 'js/nagweb-interaction-influence-v1.js'
+      - 'js/nagweb-interaction-reaction-profiles-v1.js'
+      - 'js/nagweb-interaction-selection-v1.js'
+      - 'js/nagweb-interaction-target-registry-v1.js'
+      - 'js/nagweb-interaction-organic-v2.js'
+      - 'js/nagweb-interaction-organic-v3.js'
+      - 'js/nagweb-interaction-background-ai-v1.js'
+      - 'js/nagweb-interaction-preparation-v1.js'
+      - 'js/nagweb-interaction-session-v1.js'
+      - 'experiments/interaction-engine-v1.html'
+      - 'experiments/organic-follower-v2.html'
+      - 'experiments/organic-follower-v3.html'
+      - 'experiments/background-ai-v1.html'
+      - 'experiments/preparation-pipeline-v1.html'
+      - 'experiments/interaction-studio-v1.html'
+      - '.github/nagweb-interaction-v1-*.mjs'
+      - '.github/nagweb-interaction-session-model-test.mjs'
+      - '.github/nagweb-interaction-selection-model-test.mjs'
+      - '.github/nagweb-interaction-target-registry-model-test.mjs'
+      - '.github/nagweb-interaction-target-registry-browser-smoke.mjs'
+      - '.github/nagweb-interaction-reaction-profiles-model-test.mjs'
+      - '.github/nagweb-interaction-studio-browser-smoke.mjs'
+      - '.github/nagweb-interaction-studio-robustness-smoke.mjs'
+      - '.github/workflows/nagweb-interaction-v1.yml'
+      - 'docs/interaction-engine-v1.md'
+  pull_request:
+    branches:
+      - feat/storytelling-engine-v2
+    paths:
+      - 'js/nagweb-interaction-engine-v1.js'
+      - 'js/nagweb-interaction-asset-prep-v1.js'
+      - 'js/nagweb-interaction-influence-v1.js'
+      - 'js/nagweb-interaction-reaction-profiles-v1.js'
+      - 'js/nagweb-interaction-selection-v1.js'
+      - 'js/nagweb-interaction-target-registry-v1.js'
+      - 'js/nagweb-interaction-organic-v2.js'
+      - 'js/nagweb-interaction-organic-v3.js'
+      - 'js/nagweb-interaction-background-ai-v1.js'
+      - 'experiments/interaction-engine-v1.html'
+      - 'experiments/organic-follower-v2.html'
+      - 'experiments/organic-follower-v3.html'
+      - '.github/nagweb-interaction-v1-*.mjs'
+      - '.github/nagweb-interaction-asset-prep-model-test.mjs'
+      - '.github/nagweb-interaction-influence-model-test.mjs'
+      - '.github/nagweb-interaction-organic-model-test.mjs'
+      - '.github/nagweb-interaction-organic-v3-model-test.mjs'
+      - '.github/nagweb-interaction-organic-v3-browser-smoke.mjs'
+      - '.github/nagweb-interaction-organic-browser-smoke.mjs'
+      - '.github/nagweb-interaction-background-ai-model-test.mjs'
+      - '.github/nagweb-interaction-background-ai-browser-smoke.mjs'
+      - '.github/workflows/nagweb-interaction-v1.yml'
+      - 'docs/interaction-engine-v1.md'
+  workflow_dispatch:
+
+concurrency:
+  group: nagweb-interaction-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  interaction-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run model tests
+        run: |
+          node .github/nagweb-interaction-v1-model-test.mjs
+          node .github/nagweb-interaction-asset-prep-model-test.mjs
+          node .github/nagweb-interaction-influence-model-test.mjs
+          node .github/nagweb-interaction-reaction-profiles-model-test.mjs
+          node .github/nagweb-interaction-selection-model-test.mjs
+          node .github/nagweb-interaction-target-registry-model-test.mjs
+          node .github/nagweb-interaction-organic-model-test.mjs
+          node .github/nagweb-interaction-organic-v3-model-test.mjs
+          node .github/nagweb-interaction-background-ai-model-test.mjs
+          node .github/nagweb-interaction-preparation-model-test.mjs
+          node .github/nagweb-interaction-session-model-test.mjs
+      - name: Install browser driver
+        run: npm install --no-save puppeteer-core
+      - name: Start static server
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/nagweb-interaction-http.log 2>&1 &
+          sleep 2
+      - name: Run browser smoke
+        run: |
+          node .github/nagweb-interaction-v1-browser-smoke.mjs
+          node .github/nagweb-interaction-organic-browser-smoke.mjs
+          node .github/nagweb-interaction-organic-v3-browser-smoke.mjs
+          node .github/nagweb-interaction-background-ai-browser-smoke.mjs
+          node .github/nagweb-interaction-preparation-browser-smoke.mjs
+          node .github/nagweb-interaction-studio-browser-smoke.mjs
+          node .github/nagweb-interaction-target-registry-browser-smoke.mjs
+      - name: Build human QA kit
+        run: |
+          mkdir -p /tmp/nagweb-interaction-studio/experiments /tmp/nagweb-interaction-studio/js
+          cp experiments/interaction-studio-v1.html /tmp/nagweb-interaction-studio/experiments/
+          cp experiments/INTERACTION_STUDIO_TEST.md /tmp/nagweb-interaction-studio/
+          cp js/nagweb-interaction-engine-v1.js /tmp/nagweb-interaction-studio/js/
+          cp js/nagweb-interaction-asset-prep-v1.js /tmp/nagweb-interaction-studio/js/
+          cp js/nagweb-interaction-influence-v1.js /tmp/nagweb-interaction-studio/js/
+          cp js/nagweb-interaction-reaction-profiles-v1.js /tmp/nagweb-interaction-studio/js/
+          cp js/nagweb-interaction-selection-v1.js /tmp/nagweb-interaction-studio/js/
+          cp js/nagweb-interaction-target-registry-v1.js /tmp/nagweb-interaction-studio/js/
+          cp js/nagweb-interaction-organic-v2.js /tmp/nagweb-interaction-studio/js/
+          cp js/nagweb-interaction-organic-v3.js /tmp/nagweb-interaction-studio/js/
+          cp experiments/organic-follower-v3.html /tmp/nagweb-interaction-studio/experiments/
+          cp js/nagweb-interaction-background-ai-v1.js /tmp/nagweb-interaction-studio/js/
+          cp js/nagweb-interaction-preparation-v1.js /tmp/nagweb-interaction-studio/js/
+          cp js/nagweb-interaction-session-v1.js /tmp/nagweb-interaction-studio/js/
+      - name: Upload Interaction Studio test kit
+        uses: actions/upload-artifact@v4
+        with:
+          name: interaction-studio-test-kit
+          path: /tmp/nagweb-interaction-studio
+          if-no-files-found: error
+          retention-days: 14
+      - name: Save interaction lab screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: interaction-engine-v1-visual
+          path: /tmp/nagweb-interaction-v1
+          if-no-files-found: ignore
+          retention-days: 7
