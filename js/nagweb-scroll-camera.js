@@ -619,7 +619,9 @@ function mapObjectDrag(ev,button){
      row=plan&&mapObjectPositions(s,plan,progress(s))[idx],item=row&&row.item,marker=button.parentNode;
  if(!item||!row.point||!marker||!rect||!rect.width||!rect.height||!C.config(s)||mapObjectVisible[s.id]===false)return;
  var origin=row.point,draft=null,moved=false,done=false,pct=progress(s),owner=button.ownerDocument||document;
- ev.preventDefault();ev.stopPropagation();if(button.focus)button.focus();
+ ev.preventDefault();ev.stopPropagation();
+ // Avoid scrolling a narrow editor pane when a drag starts near its edge.
+ if(button.focus)button.focus({preventScroll:true});
  try{if(button.setPointerCapture)button.setPointerCapture(ev.pointerId);}catch(_){} 
  // Listen on the document, not the tiny SVG marker: a pane redraw or
  // pointer leaving the marker must not silently lose the drag gesture.
