@@ -230,14 +230,21 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
    },true));
   });
   const px=markerRect.x+markerRect.width/2,py=markerRect.y+markerRect.height/2;
-  const delta=px+32<(page.viewportSize()?.width||1280)-12?32:-32;
+  // A narrow right sidebar can end before the browser viewport. Keep the
+  // gesture inside the actual map, not merely inside the window: crossing
+  // over the preview iframe would send subsequent events to another document.
+  const mapRect=await page.locator('[data-camera-map]').boundingBox();
+  assert.ok(mapRect&&mapRect.width>50,'Spatial map has a usable interactive area');
+  const leftRoom=px-mapRect.x,rightRoom=mapRect.x+mapRect.width-px;
+  const delta=rightRoom>=leftRoom?Math.min(32,rightRoom-8):-Math.min(32,leftRoom-8);
+  assert.ok(Number.isFinite(delta)&&Math.abs(delta)>=8,'Drag fits inside the spatial map');
   await page.mouse.move(px,py);
   await page.mouse.down();
-  await page.mouse.move(px+delta,py,{steps:4});
+  await page.mouse.move(px+delta,py,{steps:5});
   await page.mouse.up();
   const movedMap=await page.evaluate(()=>({x:sec().elements.find(e=>e.id==='story-depth-text').x,
    frames:JSON.stringify(sec().sdCameraFrames),history:history.length}));
-  if(!((movedMap.x-beforeMap.x)*delta>0))console.log('SPATIAL MAP DRAG TRACE '+JSON.stringify(await page.evaluate(()=>({events:window.__nwDragEvents,mode:document.querySelector('[data-camera-map-object-mode]')?.getAttribute('aria-pressed'),selected:document.querySelector('[data-camera-object-select]')?.value,scroll:document.querySelector('#pane')?.scrollTop,active:document.activeElement?.outerHTML?.slice(0,160)})))+' / delta='+delta+' / x='+beforeMap.x+'->'+movedMap.x);
+  if(!((movedMap.x-beforeMap.x)*delta>0))console.log('SPATIAL MAP DRAG TRACE '+JSON.stringify(await page.evaluate(()=>({events:window.__nwDragEvents,mode:document.querySelector('[data-camera-map-object-mode]')?.getAttribute('aria-pressed'),selected:document.querySelector('[data-camera-object-select]')?.value,scroll:document.querySelector('#pane')?.scrollTop,active:document.activeElement?.outerHTML?.slice(0,160)})))+' / bounds='+JSON.stringify(mapRect)+' / delta='+delta+' / x='+beforeMap.x+'->'+movedMap.x);
   assert.ok((movedMap.x-beforeMap.x)*delta>0,'Dragging inward changes DOM X in the pointer direction');
   assert.equal(movedMap.history,beforeMap.history+1,'Direct map drag persists once');
   assert.equal(movedMap.frames,beforeMap.frames,'Direct map drag never rewrites camera frames');
