@@ -344,6 +344,8 @@ const searchEl = Object.fromEntries(["grid", "prev", "next", "resultCount", "pag
 let resolveSearch, rejectSearch;
 const searchContext = {
   el: searchEl, createLatestSearch, currentFilters: () => ({}),
+  // Card previews are not mounted in this headless search presentation test.
+  closeQuickPreview() {},
   vault: { search: () => new Promise((resolve, reject) => { resolveSearch = resolve; rejectSearch = reject; }) }
 };
 runInNewContext(source.slice(source.indexOf("const resultSearch ="), source.indexOf("function mainArtifact(")), searchContext);

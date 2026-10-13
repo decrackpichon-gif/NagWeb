@@ -774,7 +774,14 @@ try {
   assert.equal(new URL(resourceFrameUrl, "http://localhost").searchParams.get("editResource"), icon.id);
   assert.equal(await page.evaluate(() => selection[0]), inserted.element.id);
   await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
-  await page.getByRole("button", { name: "Personalizar ícono seleccionado", exact: true }).focus();
+  // The SVG toolbar only enables the shortcut once the selected vector's
+  // pixels are measurable after a preview-frame reload. A .focus() alone
+  // can race the asynchronous iframe readiness check.
+  const editShortcutButton = page.getByRole("button", {
+    name: "Personalizar ícono seleccionado", exact: true
+  });
+  await expect(editShortcutButton).toBeEnabled();
+  await editShortcutButton.focus();
   await page.keyboard.press("Alt+Enter");
   await expect(page.getByRole("dialog", { name: "Biblioteca de recursos", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
