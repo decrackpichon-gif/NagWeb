@@ -265,3 +265,24 @@ seguir expandiendo capacidades cuando aporte al objetivo global.
   bocetos de Lucide/Heroicons.
 - Pruebas: clasificador unitario y Chromium en Linux/Windows,
   incluyendo búsqueda/filtro sin descargar las bibliotecas completas.
+
+## Etapa 93: muestra instantánea real de Uiverse (13/10/2026)
+
+- Nueva acción en tarjeta `Ver muestra en la tarjeta`, únicamente
+  para componentes Uiverse que el índice clasifica como
+  `uiverse-html`. Se usa el **documento HTML/CSS real**, no una
+  imagen de catálogo ficticia.
+- El detalle se descarga **sólo al hacer clic**, del shard verificado,
+  y usa la misma caché del cliente persistente. No bajar los 3761
+  Uiverse durante una búsqueda.
+- `iframe sandbox=""` y meta CSP `default-src 'none'` para bloquear
+  JS, red externa, iframes y formularios. Permitir estilos inline
+  para que el componente y su CSS se vean correctamente.
+- Cerrar/desmontar la muestra al elegir otra tarjeta, actualizar
+  resultados o cambiar filtros. Ignorar respuestas tardías.
+- Pruebas de Chromium en ancho desktop/celular, política CSP,
+  reutilización de datos, aislamiento y ausencia de dependencias
+  externas. El generador de versión pública debe incluir
+  `src/runtime/quick-preview.mjs`.
+- No alterar el plan original ni considerar la definición alternativa
+  de v1 como una restricción de alcance. No Vercel, no merges.

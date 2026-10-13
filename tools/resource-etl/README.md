@@ -1560,3 +1560,32 @@ el plan de desarrollo histórico por una ruta artificial de cierre
 de 3-5 pasos. El documento de criterios de v1 es una referencia para
 informar estado y una posible futura entrega, no una nueva restricción
 de alcance ni un impedimento para nuevas familias o mejoras útiles.
+
+## Etapa 93: muestra real de Uiverse sin abrir la ficha (13/10/2026)
+
+La grilla incorpora **«Ver muestra en la tarjeta»** para cada recurso
+Uiverse validado en `editorUse: uiverse-html`. A diferencia de un
+thumbnail inventado, el botón carga el **HTML y CSS originales** del
+snapshot comprimido SHA-256 que ya utiliza la ficha, sin traer la
+biblioteca completa y **sin precargar 48 paquetes al entrar**.
+
+- La muestra sólo se descarga tras la acción explícita del diseñador.
+- Se reutiliza la caché de las ocho partes Uiverse, así abrir luego
+  la ficha del mismo recurso no requiere descargarlo de nuevo.
+- Se monta un `iframe` con `sandbox=""` (sin scripts ni same-origin) y
+  `Content-Security-Policy` estricta: nada de CSS/JS/fuentes/imágenes
+  externas; CSS inline y datos de imagen locales sí.
+- Sólo una tarjeta puede tener muestra activa. Al cerrar, cambiar
+  búsqueda/filtros, o abrir la ficha completa, se desmonta; los
+  resultados asíncronos viejos no reaparecen en nuevas tarjetas.
+- Los recursos React/Three/GLSL y los íconos no prometen esta vista:
+  conservan su ficha y los SVG mantienen sus miniaturas propias.
+
+Pruebas nuevas en `src/quick-preview-selftest.mjs` y recorrido
+Chromium Windows/Linux de muestra, CSS real, aislamiento, cierre y
+cero red externa, tanto en escritorio como celular. El empaquetador
+público agrega exclusivamente `runtime/quick-preview.mjs`. No
+modificar `resource-vault-data` ni desplegar Vercel.
+
+**Plan:** se conserva el plan general de NAGWEB 05; cualquier
+estimación anterior de cierre era informativa, no un recorte.

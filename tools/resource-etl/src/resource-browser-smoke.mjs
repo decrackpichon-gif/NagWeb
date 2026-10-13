@@ -190,6 +190,29 @@ try {
     await page.goto(`http://127.0.0.1:${server.address().port}/host`);
     const frame = page.frameLocator('iframe[title="Biblioteca de prueba"]');
     await frame.locator('[data-resource-id="smoke:icon"]').waitFor();
+    // Explicit quick preview uses the real HTML/CSS in a sandboxed, network-
+    // isolated frame, never auto-fetches 48 card details, and can be closed.
+    const previewTrigger=frame.locator('[data-quick-preview-id="'+css.id+'"]');
+    await expect(previewTrigger).toHaveCount(1);
+    await expect(frame.locator('[data-quick-preview-id="magicui:reference"]')).toHaveCount(0);
+    await expect(previewTrigger).toHaveAttribute("aria-expanded","false");
+    await previewTrigger.click();
+    await expect(previewTrigger).toHaveAttribute("aria-expanded","true");
+    const peekPanel=frame.locator('[data-quick-preview-panel]');
+    await expect(peekPanel).toBeVisible();
+    const peekFrame=peekPanel.locator("iframe");
+    await expect(peekFrame).toHaveAttribute("sandbox","");
+    await expect(peekFrame).toHaveAttribute("referrerpolicy","no-referrer");
+    await expect(peekFrame).toHaveAttribute("srcdoc",/Content-Security-Policy/);
+    await expect(peekFrame).toHaveAttribute("srcdoc",/default-src 'none'/);
+    await expect(frame.frameLocator('[data-quick-preview-panel] iframe').locator("button.card")).toBeVisible();
+    await expect(frame.frameLocator('[data-quick-preview-panel] iframe').locator("button.card")).toHaveText("Prueba");
+    await previewTrigger.click();
+    await expect(previewTrigger).toHaveAttribute("aria-expanded","false");
+    await expect(peekPanel).toBeHidden();
+    await expect(peekPanel.locator("iframe")).toHaveCount(0);
+    report.scenarios.push({browser:"real CSS component quick preview with offline sandbox",
+      width,status:"passed",onDemand:true,noExternalResources:true});
     // Show and filter genuinely insertable vs source-only resources, without
     // requesting the source archive for any result card.
     const useFilter=frame.getByLabel("Uso en NagWeb",{exact:true});

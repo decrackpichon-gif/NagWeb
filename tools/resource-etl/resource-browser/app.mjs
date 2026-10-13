@@ -4,6 +4,7 @@ import {
 import { defaultEditableValues } from "../src/runtime/instance.mjs";
 import { createLatestSearch } from "../src/runtime/latest-search.mjs";
 import { canInsertInEditor } from "../src/runtime/editor-availability.mjs";
+import { canQuickPreview, offlineQuickPreviewDoc } from "../src/runtime/quick-preview.mjs";
 import { FAVORITES_KEY, MAX_FAVORITES, getOptionalStorage, readFavorites, toggleFavorite, saveFavorites } from "../src/runtime/favorites.mjs";
 import { describeEditableControls } from "../src/runtime/editable-controls.mjs";
 import { readSavedCustomization, saveSavedCustomization, deleteSavedCustomization } from "../src/runtime/saved-customizations.mjs";
@@ -88,6 +89,18 @@ const favoriteStorage = getOptionalStorage();
 const presetStorage = getOptionalStorage();
 let favorites = readFavorites(favoriteStorage);
 let selectedResource = null;
+let quickPreviewTile = null;
+let quickPreviewRevision = 0;
+function closeQuickPreview() {
+  ++quickPreviewRevision;
+  if (quickPreviewTile) {
+    const button = quickPreviewTile.querySelector("[data-quick-preview-id]");
+    const panel = quickPreviewTile.querySelector("[data-quick-preview-panel]");
+    if (button) button.setAttribute("aria-expanded", "false");
+    if (panel) { panel.hidden = true; panel.replaceChildren(); }
+  }
+  quickPreviewTile = null;
+}
 function paintFavoriteButton(button,id) {
   const chosen = favorites.has(id);
   button.disabled = !id;
@@ -297,6 +310,7 @@ const resultSearch = createLatestSearch(
       el.next.disabled = true;
     },
     onResult: result => {
+  closeQuickPreview();
   el.resultCount.textContent =
     `${result.total.toLocaleString("es-AR")} resultados`;
   const page = result.total ? Math.floor(result.offset / result.limit) + 1 : 0;
@@ -318,6 +332,14 @@ const resultSearch = createLatestSearch(
           ${badge(item.kind)}
         </span>
       </button>
+      ${canQuickPreview(item) ? `
+        <button type="button" class="secondary quick-preview-toggle"
+          data-quick-preview-id="${esc(item.id)}"
+          aria-expanded="false" aria-label="Ver muestra de ${esc(item.title || item.name || item.id)}">
+          Ver muestra en la tarjeta
+        </button>
+        <div class="quick-preview-panel" data-quick-preview-panel hidden></div>
+      ` : ""}
       <button type="button" class="favorite-toggle" data-favorite-id="${esc(item.id)}"
         aria-pressed="${favorites.has(item.id)}"
         aria-label="${favorites.has(item.id) ? "Quitar de favoritos" : "Guardar en favoritos"}"
@@ -1076,11 +1098,48 @@ el.next.addEventListener("click", () => {
   renderResults();
 });
 el.refresh.addEventListener("click", () => { void refreshIndex(); });
+async function toggleQuickPreview(button) {
+  const tile = button.closest(".resource-tile");
+  const panel = tile?.querySelector("[data-quick-preview-panel]");
+  if (!tile || !panel) return;
+  if (quickPreviewTile === tile) { closeQuickPreview(); return; }
+  closeQuickPreview();
+  quickPreviewTile = tile;
+  const revision = ++quickPreviewRevision;
+  const id = button.dataset.quickPreviewId;
+  button.setAttribute("aria-expanded", "true");
+  panel.hidden = false;
+  panel.textContent = "Cargando muestra desde la biblioteca verificada…";
+  try {
+    const resource = await vault.getResource(id);
+    // The compact index is only a hint; confirm the original source too.
+    if (!resource || resource.source?.provider !== "uiverse" ||
+        resource.runtime?.renderer !== "nagweb-html-tailwind" ||
+        !resource.license?.verified) throw new Error("Este componente no admite vista rápida.");
+    const doc = await previewDoc(resource);
+    const safe = offlineQuickPreviewDoc(doc);
+    if (revision !== quickPreviewRevision || quickPreviewTile !== tile ||
+        !tile.isConnected) return;
+    const frame = document.createElement("iframe");
+    frame.title = "Muestra aislada de " + (resource.title || resource.id);
+    frame.setAttribute("sandbox", "");
+    frame.setAttribute("referrerpolicy", "no-referrer");
+    frame.setAttribute("loading", "lazy");
+    frame.srcdoc = safe;
+    panel.replaceChildren(frame);
+  } catch (error) {
+    if (revision !== quickPreviewRevision || quickPreviewTile !== tile ||
+        !tile.isConnected) return;
+    panel.textContent = "No se pudo mostrar la vista rápida. Abrí la ficha para revisar el recurso.";
+  }
+}
 el.grid.addEventListener("click", (event) => {
+  const peek = event.target.closest("[data-quick-preview-id]");
+  if (peek) { void toggleQuickPreview(peek); return; }
   const star = event.target.closest("[data-favorite-id]");
   if (star) { flipFavorite(star.dataset.favoriteId); return; }
   const card = event.target.closest("[data-resource-id]");
-  if (card) openDetail(card.dataset.resourceId);
+  if (card) { closeQuickPreview(); void openDetail(card.dataset.resourceId); }
 });
 el.detailFavorite.addEventListener("click", () => {
   if (selectedResource?.id) flipFavorite(selectedResource.id);
