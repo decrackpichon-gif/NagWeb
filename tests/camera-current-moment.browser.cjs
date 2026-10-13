@@ -211,6 +211,10 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   assert.equal(worldState.frames,cameraBeforeDepth,'Editing depth never changes camera frames');
   await page.evaluate(()=>undo());
   assert.equal(await page.evaluate(()=>sec().elements.find(e=>e.id==='story-depth-text')?.sdCameraDepth||0),0,'Undo restores DOM spatial depth');
+  // Undo rebuilds the preview iframe asynchronously. Wait for its reload before
+  // exercising an editor gesture; otherwise the browser can redirect the
+  // pointer stream mid-drag while the new frame takes focus.
+  await awaitSettledPreview();
   console.log('PASS browser spatial UX: shortcut, mixed HTML/3D layer list, legible Z field, HTML depth, undo and camera isolation');
   // Real pointer manipulation in the actual panel/map (not a simulated DOM).
   await page.evaluate(()=>document.querySelector('[data-camera-space-open]').click());
