@@ -675,6 +675,108 @@ export async function runEditorPartsSmoke(page){
   assert.equal(backToDesktop.css,'','el ancho móvil deja de sobreescribir escritorio');
   assert.ok(Math.abs(backToDesktop.visible-210)<2,'el texto hereda su ancho original en móvil');
 
+
+  // Historia sticky: posición relativa y versión móvil separada para cada capítulo.
+  await load(16);await select('test-story');
+  const storyStart=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-story');
+   e.wp={t2:'TÍTULO DE CAPÍTULO',k2:'ETAPA DOS',c2:'Texto de apoyo'};
+   const d=document.querySelector('#preview').contentDocument,st=d.createElement('style');
+   st.textContent=window.SCW.css.scrollstory;d.head.appendChild(st);
+   d.querySelector('.nw-story').outerHTML=window.SCW.kinds.scrollstory.markup(e.wp,{edit:true});
+   const story=d.querySelector('.nw-story');story.style.width='1000px';
+   const stage=story.querySelector('.nw-story-sticky');stage.style.height='100vh';
+   return{width:story.clientWidth,height:stage.clientHeight};
+  });
+  assert.equal(storyStart.width,1000);
+  await fire('[data-nw-story-ch="2"]');await fire('[data-nw-story-part="t"]');
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,w=d.defaultView,
+   part=d.querySelector('[data-wpart="t2"]'),r=part.getBoundingClientRect();
+   const x=(r.left+r.right)/2,y=(r.top+r.bottom)/2;
+   part.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:171,button:0,clientX:x,clientY:y}));
+   w.dispatchEvent(new w.PointerEvent('pointermove',{bubbles:true,pointerId:171,button:0,clientX:x+100,clientY:y+60}));
+   w.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true,pointerId:171,button:0,clientX:x+100,clientY:y+60}));
+  });
+  const storyDesktop=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-story'),d=document.querySelector('#preview').contentDocument,
+     part=d.querySelector('[data-wpart="t2"]');
+   return{part:e.wp.__parts?.t2,x:part.style.getPropertyValue('--nw-tx'),
+    y:part.style.getPropertyValue('--nw-ty')};
+  });
+  assert.equal(storyDesktop.part.x,100);
+  assert.equal(storyDesktop.part.y,60);
+  assert.equal(storyDesktop.part.refW,1000);
+  assert.equal(storyDesktop.part.refH,storyStart.height);
+  assert.equal(storyDesktop.x,'10.00000cqw','texto de historia se mueve proporcionalmente al ancho');
+  assert.match(storyDesktop.y,/^calc\(100vh \* /,'historia usa el alto de pantalla');
+  const storyOutput=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-story').wp;
+   return window.SCW.kinds.scrollstory.markup(e,{edit:false});
+  });
+  assert.match(storyOutput,/--nw-tx:10\.00000cqw/,'la historia exporta el desplazamiento proporcional');
+  const narrow=await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,model=sec().elements.find(x=>x.id==='test-story').wp;
+   d.querySelector('.nw-story').outerHTML=window.SCW.kinds.scrollstory.markup(model,{edit:true});
+   const story=d.querySelector('.nw-story');story.style.width='500px';
+   const stage=story.querySelector('.nw-story-sticky');stage.style.height='100vh';
+   return{width:story.clientWidth,height:stage.clientHeight};
+  });
+  assert.equal(narrow.width,500);
+  await fire('[data-nw-story-ch="2"]');await fire('[data-nw-story-part="t"]');
+  const inherited=await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,p=d.querySelector('[data-wpart="t2"]');
+   return d.defaultView.getComputedStyle(p).translate;
+  });
+  assert.ok(Math.abs(parseFloat(inherited)-50)<2,'móvil hereda posición de escritorio a escala');
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,w=d.defaultView,p=d.querySelector('[data-wpart="t2"]');
+   const r=p.getBoundingClientRect(),x=(r.left+r.right)/2,y=(r.top+r.bottom)/2;
+   p.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:172,button:0,clientX:x,clientY:y}));
+   w.dispatchEvent(new w.PointerEvent('pointermove',{bubbles:true,pointerId:172,button:0,clientX:x+40,clientY:y+30}));
+   w.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true,pointerId:172,button:0,clientX:x+40,clientY:y+30}));
+  });
+  const mobileStory=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-story'),d=document.querySelector('#preview').contentDocument,
+     n=d.querySelector('[data-wpart="t2"]');
+   return{desktop:e.wp.__parts?.t2,mobile:e.wp.__partsMobile?.t2,inline:n.style.getPropertyValue('--nw-mx'),
+    actual:d.defaultView.getComputedStyle(n).translate};
+  });
+  assert.deepEqual(mobileStory.desktop,storyDesktop.part,'editar móvil no modifica escritorio');
+  assert.equal(mobileStory.mobile.refW,500);
+  assert.equal(mobileStory.mobile.refH,narrow.height);
+  assert.equal(mobileStory.mobile.x,90);
+  assert.equal(mobileStory.mobile.y,90);
+  assert.equal(mobileStory.inline,'18.00000cqw');
+  assert.ok(Math.abs(parseFloat(mobileStory.actual)-90)<2,'móvil aplica desplazamiento propio');
+  const responsiveOutput=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-story').wp;
+   return window.SCW.kinds.scrollstory.markup(e,{edit:false});
+  });
+  assert.match(responsiveOutput,/--nw-tx:10\.00000cqw/);
+  assert.match(responsiveOutput,/--nw-mx:18\.00000cqw/,'la exportación conserva las dos poses');
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument;
+   const button=d.querySelector('.nw-wpart-reset');
+   if(!button)throw Error('Falta opción de restablecimiento móvil en Historia');
+   button.click();
+  });
+  const afterStoryReset=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-story'),d=document.querySelector('#preview').contentDocument,
+    n=d.querySelector('[data-wpart="t2"]');
+   return{desktop:e.wp.__parts.t2,mobile:e.wp.__partsMobile?.t2,
+    inline:n.style.getPropertyValue('--nw-mx'),
+    actual:d.defaultView.getComputedStyle(n).translate};
+  });
+  assert.deepEqual(afterStoryReset.desktop,storyDesktop.part,'restaurar móvil deja escritorio intacto');
+  assert.equal(afterStoryReset.mobile,undefined,'móvil vuelve a heredar escritorio');
+  assert.equal(afterStoryReset.inline,'');
+  assert.ok(Math.abs(parseFloat(afterStoryReset.actual)-50)<2);
+  await page.click('#btn-undo');
+  assert.ok(await page.evaluate(()=>sec().elements.find(x=>x.id==='test-story').wp.__partsMobile?.t2));
+  await page.click('#btn-redo');
+  assert.equal(await page.evaluate(()=>sec().elements.find(x=>x.id==='test-story').wp.__partsMobile?.t2),undefined);
+
   console.log('Editor partes: foco, restauración, Escape, Enter e historial OK');
  }finally{
   await page.evaluate(old=>{
