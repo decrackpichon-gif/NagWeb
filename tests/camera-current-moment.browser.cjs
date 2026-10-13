@@ -221,12 +221,26 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   assert.ok(markerRect&&markerRect.width>0,'Map provides a visible draggable HTML marker');
   const beforeMap=await page.evaluate(()=>({x:sec().elements.find(e=>e.id==='story-depth-text').x,
    frames:JSON.stringify(sec().sdCameraFrames),history:history.length}));
+  await page.evaluate(()=>{
+   window.__mapDebug={events:[]};
+   const log=(type,e)=>{if(window.__mapDebug.events.length>14)return;
+    window.__mapDebug.events.push({type,x:e.clientX,y:e.clientY,tag:e.target.tagName,
+     marker:e.target.closest('[data-camera-scene-object-pick]')?.getAttribute('data-camera-scene-object-pick'),
+     camera:e.target.closest('[data-camera-map-point]')?.getAttribute('data-camera-map-point'),
+     map:!!e.target.closest('[data-camera-map]')});};
+   ['pointerdown','pointermove','pointerup','click'].forEach(type=>document.addEventListener(type,e=>log(type,e),true));
+  });
   await page.mouse.move(markerRect.x+markerRect.width/2,markerRect.y+markerRect.height/2);
   await page.mouse.down();
   await page.mouse.move(markerRect.x+markerRect.width/2+32,markerRect.y+markerRect.height/2,{steps:4});
   await page.mouse.up();
   const movedMap=await page.evaluate(()=>({x:sec().elements.find(e=>e.id==='story-depth-text').x,
    frames:JSON.stringify(sec().sdCameraFrames),history:history.length}));
+  const dbg=await page.evaluate(()=>({events:window.__mapDebug?.events,
+    mode:document.querySelector('[data-camera-map-object-mode]')?.getAttribute('aria-pressed'),
+    targetAtMarker:document.elementFromPoint(window.__mapDebug.events[0]?.x||0,window.__mapDebug.events[0]?.y||0)?.outerHTML?.slice(0,160),
+    selected:document.querySelector('[data-camera-object-select]')?.value}));
+  console.log('MAP DRAG DIAGNOSTIC '+JSON.stringify({beforeMap,movedMap,dbg,rect:markerRect}));
   assert.ok(movedMap.x>beforeMap.x,'Dragging the DOM marker edits its world X coordinate');
   assert.equal(movedMap.history,beforeMap.history+1,'Direct map drag persists once');
   assert.equal(movedMap.frames,beforeMap.frames,'Direct map drag never rewrites camera frames');
