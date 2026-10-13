@@ -108,3 +108,7 @@ El constructor experimental admite redimensionamiento y rotación con tiradores 
 ### Scene Composer V1.3 · navegación y separación de coordenadas
 
 Se agregó navegación visual al constructor experimental: zoom 25–250 %, encajar, volver a 100 %, zoom con Ctrl/Cmd+rueda y paneo Espacio+drag o mouse central. El stage conserva las unidades del JSON, mientras una capa de medición inversa evita descoordinar puntero, renderer y alcance de influencia. Se comprueba automáticamente zoom sin mutación del documento, gestos a escala y estabilidad de instancia. La prioridad de validación humana será calidad del zoom/paneo y reacción del personaje con `ponjita.png`; pedir esa prueba sólo cuando se disponga de un kit probado.
+
+## Política permanente de despliegues (12/10/2026)
+
+**Vercel se usa solo si el usuario solicita expresamente una publicación.** Esta rama tiene `vercel.json` con `git.deploymentEnabled: false` para evitar que commits, pruebas, documentación y actualizaciones de datos consuman Deployment Storage. Ejecutar QA local o en GitHub Actions, sin llamar a Vercel como parte de un avance normal. No quitar ni cambiar esa configuración, tampoco en ramas derivadas, salvo autorización explícita. `[skip ci]` no bloquea Vercel. No eliminar despliegues existentes ni modificar el proyecto de Vélez Data. Mantener esta decisión cuando se actualice el contexto.
