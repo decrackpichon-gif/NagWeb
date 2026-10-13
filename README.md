@@ -34,3 +34,13 @@ Copiar este texto, reemplazar `0X` por el número y conservar el nombre exacto:
 - **Importante:** chats normales de ChatGPT no reciben ni leen automáticamente archivos del repositorio. El usuario inicia cada chat pegando el mensaje corto anterior. Los asistentes de código compatibles pueden seguir `AGENTS.md` en cada rama.
 
 Este README es un índice de continuidad. Las fichas y el código permanecen en **sus ramas respectivas**.
+
+## Despliegues controlados para ahorrar Deployment Storage
+
+**Política permanente (octubre 2026):** NagWeb **no se publica automáticamente** por commits, cambios de documentación, pruebas ni actualizaciones de datos. El proyecto Vercel `nahue2/nag_web` se despliega **solo cuando el usuario lo pida expresamente**. La configuración compatible con Vercel se encuentra en el `vercel.json` de cada rama activa y también en `main`:
+
+```json
+{ "git": { "deploymentEnabled": false } }
+```
+
+Esta opción desactiva activaciones por Git, pero permite publicar explícitamente desde Vercel Dashboard/CLI/API cuando sea necesario. **No** confundir `[skip ci]` (GitHub Actions) con el mecanismo de Vercel: no basta para evitar despliegues automáticos. No ejecutar Vercel para probar cambios; usar pruebas locales y CI de GitHub. Si se crea una rama nueva, heredar `vercel.json` con la restricción. No borrar deployments ni desconectar GitHub automáticamente. La protección evita almacenamiento futuro, pero no limpia el almacenamiento histórico por sí sola.
