@@ -2,7 +2,9 @@
 // One reproducible entry point; the optional group list avoids unrelated reruns.
 const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process');
 const groups=['renderer','lights','bloom','interaction','timing','hierarchy','projection'];
-const requested=process.argv.slice(2),chosen=requested.length?requested:groups.concat('editor');
+// Run editor regressions first; failures abort early instead of spending minutes
+// on unrelated WebGL groups. When green, every group and syntax check runs.
+const requested=process.argv.slice(2),chosen=requested.length?requested:['editor'].concat(groups);
 if(chosen.some(g=>!groups.includes(g)&&g!=='editor'))throw Error('Unknown group. Use '+groups.concat('editor').join(', '));
 const vendor=process.env.NAGWEB_TEST_VENDOR_DIR,three=vendor?path.resolve(vendor,'three.cjs'):require.resolve('three/build/three.js');
 const jobs=[];
@@ -17,7 +19,7 @@ const failures=[],started=Date.now();
 for(const args of jobs){
  console.log('\nCHECK '+args.join(' '));
  const result=cp.spawnSync(process.execPath,args,{stdio:'inherit',env:process.env,timeout:180000});
- if(result.status!==0){failures.push(args.join(' '));if(result.error)console.error(result.error.message);}
+ if(result.status!==0){failures.push(args.join(' '));if(result.error)console.error(result.error.message);break;} // Fail fast: subsequent checks cannot change the red status.
 }
 console.log('\nSpatial grouped validation: '+(failures.length?'FAIL':'PASS')+'; '+jobs.length+' checks; '+Math.round((Date.now()-started)/1000)+'s');
 if(failures.length){console.error(failures.join('\n'));process.exitCode=1;}
