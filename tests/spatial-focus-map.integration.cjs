@@ -495,6 +495,19 @@ console.log('PASS spatial editor: 22 visible object guides, discoverable map, DO
 // Spatial map is an editable compositing view: moving a DOM plane or a GLB
 // anchor must preserve their Director tracks and produce one undo per gesture.
 scene.layout='free';scene.sdCameraEnabled=true;scene.sdCameraOrientationMode='manual';
+let activePointerShield=null;
+document.body={
+ appendChild(node){this.child=node;node.parentNode=this;activePointerShield=node;},
+ removeChild(node){assert.equal(this.child,node,'Remove only the active drag shield');this.child=null;node.parentNode=null;activePointerShield=null;}
+};
+document.createElement=()=>({style:{},attributes:{},parentNode:null,captured:false,listeners:{},
+ setAttribute(key,value){this.attributes[key]=value;},
+ addEventListener(type,fn){this.listeners[type]=fn;},
+ removeEventListener(type,fn){if(this.listeners[type]===fn)delete this.listeners[type];},
+ setPointerCapture(){this.captured=true;},
+ hasPointerCapture(){return this.captured;},
+ releasePointerCapture(){this.captured=false;}
+});
 const mapObj={dataset:{plane:'top',range:'500',originX:'0',originAxis:'0'},captured:false,listeners:{},
  getBoundingClientRect(){return {left:10,top:20,width:600,height:400};},querySelector(){return null;},
  addEventListener(t,fn){this.listeners[t]=fn;},removeEventListener(t,fn){if(this.listeners[t]===fn)delete this.listeners[t];},
@@ -523,14 +536,17 @@ const cameraPathInvariant=JSON.stringify(scene.sdCameraFrames),motionInvariant=J
 const oldX=object.x,mapUndoStart=undos,mapSaveStart=saves;
 const glbMap=mapHandle(0);
 beginMapDrag(glbMap.node);mapMove(glbMap.node,301,260,180);
-assert.equal(mapObj.captured,true,'Map captures pointer across sidebar instead of SVG marker');
-assert.equal(glbMap.node.captured,false,'Marker does not own the pointer capture');
+assert.ok(activePointerShield,'Drag installs a full-viewport shield over overlapping iframes');
+assert.equal(activePointerShield.captured,true,'Full-screen shield owns pointer capture');
+assert.equal(activePointerShield.attributes['aria-hidden'],'true','Temporary input shield has no semantic content');
+assert.equal(mapObj.captured,false,'Stable map remains free of nested pointer capture');
+assert.equal(glbMap.node.captured,false,'Marker does not own pointer capture');
 assert.equal(undos,mapUndoStart,'No project snapshot during a map drag');
 assert.equal(object.x,oldX,'Map preview cannot modify persisted GLB before pointer release');
 assert.match(glbMap.holder.transform,/translate\(/,'Map marker moves live during a drag');
 mapUp(glbMap.node,301,260,180);
-assert.equal(mapObj.captured,false,'Map releases capture on pointerup');
-assert.equal(mapObj.listeners.lostpointercapture,undefined,'Completed drag removes capture cleanup hook');
+assert.equal(activePointerShield,null,'Pointerup removes the temporary iframe-safe shield');
+assert.equal(mapObj.captured,false,'Map has no stale capture');
 assert.ok(object.x>oldX,'Dragging right changes anchored GLB base X');
 assert.equal(undos,mapUndoStart+1,'Map pointer drag creates exactly one undo');
 assert.equal(saves,mapSaveStart+1,'Map pointer drag saves once');
@@ -558,8 +574,8 @@ beginMapDrag(cancelMap.node,304,200,180);mapMove(cancelMap.node,304,200,130);
 outsideListeners.keydown({key:'Escape',preventDefault(){},stopPropagation(){}});
 assert.equal(title.sdCameraDepth,oldHtmlDepth,'Escape cancels map Z movement');
 assert.equal(undos,oldCancel,'Escape never creates an undo entry');
-assert.equal(mapObj.captured,false,'Escape releases pointer capture held by map');
-assert.equal(mapObj.listeners.lostpointercapture,undefined,'Escape removes map capture cleanup hook');
+assert.equal(activePointerShield,null,'Escape removes the temporary drag shield');
+assert.equal(mapObj.captured,false,'Escape leaves no map pointer capture');
 assert.equal(outsideListeners.pointermove,undefined,'Escape cleans global map listeners');
 const keyMap=mapHandle(1),depthBeforeKey=title.sdCameraDepth,keyUndo=undos;
 handlers.keydown({target:keyMap.node,key:'ArrowUp',shiftKey:true,preventDefault(){},stopPropagation(){}});
