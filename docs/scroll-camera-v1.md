@@ -1000,3 +1000,5 @@ con manipuladores adecuados para composiciones complejas;
 escena de demostración reutilizable del recorrido
 texto → fotografía → texto; oclusión y recorte correcto al
 atravesar planos y pruebas de accesibilidad/táctil reales.
+
+**Superposición de marcadores:** al entrar con «Editar espacio 3D» se activa explícitamente el **modo de edición de objetos**. El SVG de anclas recibe prioridad de interacción sobre los controles HTML de waypoints, y los símbolos de objetos se dibujan por encima de los puntos de cámara dentro del mapa. Hay un conmutador «Editando objetos · Volver a cámara» para recuperar la interacción con waypoints sin salir del mapa. El conmutador solo aparece en escenas que realmente contienen objetivos espaciales. Esto evita que un texto situado junto al encuadre de cámara resulte imposible de seleccionar; la prueba de navegador con mouse real determina si se logró corregir el solapamiento. Suite aislada: **237 comprobaciones PASS**.
