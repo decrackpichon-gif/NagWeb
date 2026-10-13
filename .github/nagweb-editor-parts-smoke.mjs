@@ -517,7 +517,7 @@ export async function runEditorPartsSmoke(page){
   assert.equal(detached.data.refW,800);assert.equal(detached.data.refH,500);
   assert.equal(detached.freeSibling,true,'título se convierte en hijo directo del Hero');
   assert.equal(detached.insideColumn,false,'título sale de la cuadrícula');
-  assert.equal(detached.siblings,2,'rótulo y párrafo conservan su columna');
+  assert.equal(detached.siblings,3,'rótulo, párrafo y texto extra conservan su columna');
   assert.equal(detached.css,'absolute','título tiene posicionamiento libre real');
   assert.ok(Math.hypot(detached.center[0]-originalFloatingBounds.cx,detached.center[1]-originalFloatingBounds.cy)<10,
     'liberar mantiene la posición visible');
