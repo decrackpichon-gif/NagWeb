@@ -111,3 +111,7 @@ Una herramienta para elegir, **previsualizar y editar animaciones antes de inser
 - Vaciar mantiene todas las posiciones animadas con un solo SVG transparente local de 8×8, marca persistente `nwStreamEmpty`, encuadres, orden, superposiciones, duración, edición e inserción/exportación. Los archivos nuevos sustituyen solo sus posiciones y vuelven a activar su miniatura.
 - Atajos de proporción de **imagen** reutilizan `cardRatio`; no duplican el renderer ni el modelo. Ya existían atajos de proporción del lienzo.
 - CI del commit previo `237352db`: **55/55 pruebas pasadas**, run [38267707174](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38267707174). Nuevo browser smoke para vaciar, cargar dos de 12, reabrir e insertar pendiente de la nueva CI. Las referencias visuales originales de Grid Dive y Pop Parade todavía no están accesibles; evitar afirmar fidelidad.
+
+## Política permanente de despliegues (12/10/2026)
+
+**Vercel se usa solo si el usuario solicita expresamente una publicación.** Esta rama tiene `vercel.json` con `git.deploymentEnabled: false` para evitar que commits, pruebas, documentación y actualizaciones de datos consuman Deployment Storage. Ejecutar QA local o en GitHub Actions, sin llamar a Vercel como parte de un avance normal. No quitar ni cambiar esa configuración, tampoco en ramas derivadas, salvo autorización explícita. `[skip ci]` no bloquea Vercel. No eliminar despliegues existentes ni modificar el proyecto de Vélez Data. Mantener esta decisión cuando se actualice el contexto.
