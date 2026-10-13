@@ -54,6 +54,15 @@ Editor **visual y profesional** para construir sitios y narrativas inmersivas co
 - Los Heroes anteriores, sin `free`, conservan intacta su composición original; no hay conversión automática ni cambio de motor de scroll.
 - Implementación en `js/nagweb-feedback-v16.js` y `js/nagweb-v14-direction.js`; regresión añadida a `.github/nagweb-editor-parts-smoke.mjs`. Verificar resultados de GitHub Actions antes de considerar validada la funcionalidad.
 
+## Decisión de producto: ancho independiente de textos libres (13/10/2026)
+
+- En el **Hero por capas**, un texto liberado puede ajustar **el ancho de su caja** arrastrando un tirador lateral (`.nw-wpart-h.width`), mientras que el tirador de esquina sigue escalando el bloque entero. El ancho no modifica `s` ni el contenido del texto.
+- **Escritorio:** el ancho se conserva en `__parts[parte].fw` junto con `refW/refH`, y se exporta mediante la variable CSS proporcional `--nw-fw`.
+- **Móvil (Hero ≤ 600 px):** el ajuste del tirador guarda solamente `__partsMobile[parte].fw`, sin alterar el ancho de escritorio; en la exportación, `--nw-mfw` tiene prioridad solo bajo el container query. Si no existe, hereda `--nw-fw`.
+- El botón existente «Restablecer móvil» elimina el override de ancho móvil junto con el resto de sus variaciones, preservando la composición desktop. Deshacer/Rehacer siguen a cargo del historial de partes existente, sin motor paralelo.
+- La geometría de textos libres se lee del ancho visible actual y se adapta al tamaño del Hero; los textos no liberados y composiciones antiguas no incorporan cambios de ancho.
+- Código: `js/nagweb-v14-direction.js`, `js/nagweb-feedback-v16.js`. Regresiones de navegador en `.github/nagweb-editor-parts-smoke.mjs`. Consultar estado efectivo de Actions antes de considerar completada la validación.
+
 ## Próximas prioridades (revisar con HEAD actual)
 
 - Priorizar la experiencia de lienzo como herramienta de diseño, edición real de elementos anidados y uso de recursos sin degradar su editabilidad.
