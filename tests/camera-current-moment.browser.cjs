@@ -271,7 +271,7 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   await page.mouse.up();
   const movedMap=await page.evaluate(()=>({x:sec().elements.find(e=>e.id==='story-depth-text').x,
    frames:JSON.stringify(sec().sdCameraFrames),history:history.length}));
-  if(!((movedMap.x-beforeMap.x)*delta>0))console.log('SPATIAL MAP DRAG TRACE '+JSON.stringify(await page.evaluate(()=>({events:window.__nwDragEvents,mode:document.querySelector('[data-camera-map-object-mode]')?.getAttribute('aria-pressed'),selected:document.querySelector('[data-camera-object-select]')?.value,scroll:document.querySelector('#pane')?.scrollTop,active:document.activeElement?.outerHTML?.slice(0,160),afterDown,afterMove})))+' / bounds='+JSON.stringify(mapRect)+' / delta='+delta+' / x='+beforeMap.x+'->'+movedMap.x);
+  if(!((movedMap.x-beforeMap.x)*delta>0))console.log('SPATIAL MAP DRAG TRACE '+JSON.stringify({page:await page.evaluate(()=>({events:window.__nwDragEvents,mode:document.querySelector('[data-camera-map-object-mode]')?.getAttribute('aria-pressed'),selected:document.querySelector('[data-camera-object-select]')?.value,scroll:document.querySelector('#pane')?.scrollTop,active:document.activeElement?.outerHTML?.slice(0,160)})),afterDown,afterMove})+' / bounds='+JSON.stringify(mapRect)+' / delta='+delta+' / x='+beforeMap.x+'->'+movedMap.x);
   assert.ok((movedMap.x-beforeMap.x)*delta>0,'Dragging inward changes DOM X in the pointer direction');
   assert.equal(movedMap.history,beforeMap.history+1,'Direct map drag persists once');
   assert.equal(movedMap.frames,beforeMap.frames,'Direct map drag never rewrites camera frames');
