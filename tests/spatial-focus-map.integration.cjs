@@ -502,7 +502,7 @@ function mapHandle(index){
  const node={dataset:{cameraSceneObjectPick:String(index)},parentNode:holder,captured:false,listeners:{},
   closest(q){if(q==='[data-camera-map]')return mapObj;if(q==='[data-camera-scene-object-pick]')return this;return null;},
   addEventListener(k,fn){this.listeners[k]=fn;},removeEventListener(k,fn){if(this.listeners[k]===fn)delete this.listeners[k];},
-  setPointerCapture(){this.captured=true;},hasPointerCapture(){return this.captured;},releasePointerCapture(){this.captured=false;},focus(){}};
+  setPointerCapture(){this.captured=true;},hasPointerCapture(){return this.captured;},releasePointerCapture(){this.captured=false;},focus(){},matches(){return false;}};
  return {node,holder};
 }
 function beginMapDrag(node,id=301,x=200,y=180){
