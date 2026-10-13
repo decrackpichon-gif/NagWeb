@@ -63,6 +63,14 @@ Editor **visual y profesional** para construir sitios y narrativas inmersivas co
 - La geometría de textos libres se lee del ancho visible actual y se adapta al tamaño del Hero; los textos no liberados y composiciones antiguas no incorporan cambios de ancho.
 - Código: `js/nagweb-v14-direction.js`, `js/nagweb-feedback-v16.js`. Regresiones de navegador en `.github/nagweb-editor-parts-smoke.mjs`. Consultar estado efectivo de Actions antes de considerar completada la validación.
 
+## Decisión de producto: geometría adaptable de Historia sticky (13/10/2026)
+
+- Se **generaliza a Historia sticky** el contrato de transformación de piezas que comenzó en Hero, sin introducir otro motor de scroll, alterar los capítulos ni duplicar el sistema de Deshacer/Rehacer.
+- Cada rótulo `k1..k3`, título `t1..t3`, párrafo `c1..c3` e imagen `media-1..media-3` puede guardar coordenadas de referencia `refW/refH` en `__parts`. Los movimientos nuevos se exportan como desplazamientos relativos: X en unidades de contenedor `cqw` (ancho de Historia) e Y como fracción de `100vh` (alto del escenario sticky). Las coordenadas antiguas sin referencias conservan su interpretación en píxeles.
+- La vista **móvil de Historia** usa el punto de corte de 720 px. Los ajustes realizados allí se guardan en `__partsMobile`, sin modificar las coordenadas de escritorio. Si no hay override móvil se hereda la posición de escritorio; «Restablecer móvil» elimina solo ese ajuste.
+- El editor de partes reutiliza las mismas funciones `commitPart`, `partState`, `applyPart`, controles y selección por capítulo que Hero. El CSS responsive y el HTML exportado provienen de `js/nagweb-feedback-v16.js`. Validar selección, exportación, adaptación de tamaño y herencia con `.github/nagweb-editor-parts-smoke.mjs`.
+- Queda pendiente trasladar a más composiciones la edición directa robusta de elementos internos, priorizando funcionalidades generales antes que pulir indefinidamente un único recurso.
+
 ## Próximas prioridades (revisar con HEAD actual)
 
 - Priorizar la experiencia de lienzo como herramienta de diseño, edición real de elementos anidados y uso de recursos sin degradar su editabilidad.
