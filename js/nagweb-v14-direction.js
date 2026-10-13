@@ -300,16 +300,17 @@ function installCanvasTools(){
   }
   var root=active.closest('.el.wdg[data-id]');
   var scope=partScope(active),hero=active.closest('.nw-lh');
+  function action(label,tip,offset,callback){
+   var frame=scope?scope.stage.getBoundingClientRect():r;
+   var btn=doc.createElement('button');btn.type='button';btn.className='nw-wpart-action';btn.textContent=label;btn.title=tip;
+   btn.style.left=Math.max(4,Math.min(doc.defaultView.innerWidth-110,frame.left+8+offset))+'px';
+   btn.style.top=Math.max(4,Math.min(doc.defaultView.innerHeight-28,frame.top+52))+'px';
+   btn.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();callback();});
+   doc.body.appendChild(btn);handles.push(btn);
+  }
   if(root&&scope){
    var hr=scope.stage.getBoundingClientRect();
    var within=Math.max(0,Math.min(r.right,hr.right)-Math.max(r.left,hr.left))*Math.max(0,Math.min(r.bottom,hr.bottom)-Math.max(r.top,hr.top));
-   function action(label,tip,offset,callback){
-    var btn=doc.createElement('button');btn.type='button';btn.className='nw-wpart-action';btn.textContent=label;btn.title=tip;
-    btn.style.left=Math.max(4,Math.min(doc.defaultView.innerWidth-110,hr.left+8+offset))+'px';
-    btn.style.top=Math.max(4,Math.min(doc.defaultView.innerHeight-28,hr.top+52))+'px';
-    btn.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();callback();});
-    doc.body.appendChild(btn);handles.push(btn);
-   }
    if(within<Math.min(r.width*r.height*.03,hr.width*hr.height*.01)){
     action('Recuperar','Centrar esta pieza que quedó fuera del encuadre',/^layer-[1-5]$/.test(active.getAttribute('data-wpart')||'')?148:0,function(){
      var before=partState(root,active),centerX=(hr.left+hr.right)/2,centerY=(hr.top+hr.bottom)/2;
@@ -325,15 +326,7 @@ function installCanvasTools(){
    var textPart=/^(eyebrow|title|sub|text-extra-[0-9]+)$/.test(layerName||'');
    if(textPart&&hero.clientWidth>600){
     var basePart=partState(root,active);
-    (function(){
-     var action=function(label,tip,offset,callback){
-      var btn=doc.createElement('button');btn.type='button';btn.className='nw-wpart-action';btn.textContent=label;btn.title=tip;
-      btn.style.left=Math.max(4,Math.min(doc.defaultView.innerWidth-110,hr.left+8+offset))+'px';
-      btn.style.top=Math.max(4,Math.min(doc.defaultView.innerHeight-28,hr.top+52))+'px';
-      btn.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();callback();});
-      doc.body.appendChild(btn);handles.push(btn);
-     };
-     action(basePart.free?'Volver a columna':'Liberar texto',
+    action(basePart.free?'Volver a columna':'Liberar texto',
      basePart.free?'Devolver el texto a la composición original':'Ubicar este texto independientemente dentro del Hero',
      0,function(){
       var node=active;if(!node||!node.isConnected)return;
@@ -348,7 +341,6 @@ function installCanvasTools(){
       }
       if(commitPart(next.id,next.name,next))schedulePreview();
      });
-    })();
    }
    if(lm){
     var others=Array.prototype.filter.call(root.querySelectorAll('.nw-lh-layer[data-wpart]'),function(n){return n!==active;});
@@ -363,15 +355,8 @@ function installCanvasTools(){
      if(all)all.dispatchEvent(new doc.defaultView.PointerEvent('pointerdown',{bubbles:true,cancelable:true,button:0,pointerId:98}));
      else placeHandles();
     }
-    var action=function(label,offset,front){
-     var btn=doc.createElement('button');btn.type='button';btn.className='nw-wpart-action';btn.textContent=label;
-     btn.title='Colocar esta foto '+(front?'delante':'detrás')+' de las demás';
-     btn.style.left=Math.max(4,Math.min(doc.defaultView.innerWidth-110,hr.left+8+offset))+'px';
-     btn.style.top=Math.max(4,Math.min(doc.defaultView.innerHeight-28,hr.top+52))+'px';
-     btn.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();reorder(front);});
-     doc.body.appendChild(btn);handles.push(btn);
-    };
-    action('Al frente',0,true);action('Al fondo',74,false);
+    action('Al frente','Colocar esta foto delante de las demás',0,function(){reorder(true);});
+    action('Al fondo','Colocar esta foto detrás de las demás',74,function(){reorder(false);});
    }
   }
   if(root){
