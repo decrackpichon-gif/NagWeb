@@ -777,6 +777,95 @@ export async function runEditorPartsSmoke(page){
   await page.click('#btn-redo');
   assert.equal(await page.evaluate(()=>sec().elements.find(x=>x.id==='test-story').wp.__partsMobile?.t2),undefined);
 
+  // Contrato transversal: no implementar otra vez la geometría para cada widget.
+  const geometryShared=await page.evaluate(()=>{
+   const hero=window.SCWX.partTransformCSS({__parts:{title:{x:80,y:40,r:0,s:1,refW:800,refH:400}}},'title','var(--h)');
+   const story=window.SCWX.partTransformCSS({__parts:{t2:{x:80,y:40,r:0,s:1,refW:800,refH:400}}},'t2','100vh');
+   const old=window.SCWX.partTransformCSS({__parts:{title:{x:80,y:40,r:0,s:1}}},'title','var(--h)');
+   return{hero,story,old};
+  });
+  assert.match(geometryShared.hero,/--nw-tx:10\.00000cqw;--nw-ty:calc\(var\(--h\) \* 0\.100000\)/);
+  assert.match(geometryShared.story,/--nw-tx:10\.00000cqw;--nw-ty:calc\(100vh \* 0\.100000\)/);
+  assert.match(geometryShared.old,/--nw-tx:80px;--nw-ty:40px/,'sin referencias, compatibilidad con píxeles');
+  await load(17);
+  await page.evaluate(()=>{
+   sec().elements.push(mkEl('widget',{id:'test-custom',kind:'layeredhero',wp:{}}));
+   const d=document.querySelector('#preview').contentDocument;
+   const css=d.createElement('style');
+   css.textContent='.test-scope{position:relative;display:block;width:900px;height:380px;container-type:inline-size;--h:340px}.test-stage{position:relative;width:100%;height:340px;background:#eaeaea}.test-scope [data-wpart]{translate:var(--nw-tx,0px) var(--nw-ty,0px);rotate:var(--nw-pr,0deg);scale:var(--nw-ps,1)}@container (max-width:650px){.test-scope [data-wpart]{translate:var(--nw-mx,var(--nw-tx,0px)) var(--nw-my,var(--nw-ty,0px));rotate:var(--nw-mr,var(--nw-pr,0deg));scale:var(--nw-ms,var(--nw-ps,1))}}';
+   d.head.appendChild(css);
+   const root=d.createElement('div');root.className='el wdg';root.dataset.id='test-custom';
+   root.innerHTML='<section class="test-scope" data-nw-part-scope="custom" data-nw-part-mobile="650" data-nw-part-height=".test-stage" data-nw-part-y="var(--h)"><div class="test-stage"><div data-wpart="label" style="position:absolute;top:40px;left:40px;width:120px;height:40px;background:#d3caff">Un texto de prueba</div></div></section>';
+   d.body.appendChild(root);
+   curEl=sec().elements.findIndex(x=>x.id==='test-custom');selection=['test-custom'];secFocus=false;
+  });
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,w=d.defaultView,n=d.querySelector('.test-scope [data-wpart]');
+   const r=n.getBoundingClientRect(),x=r.x+15,y=r.y+15;
+   n.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,button:0,pointerId:190,clientX:x,clientY:y}));
+   w.dispatchEvent(new w.PointerEvent('pointermove',{bubbles:true,pointerId:190,clientX:x+90,clientY:y+34}));
+   w.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true,pointerId:190,clientX:x+90,clientY:y+34}));
+  });
+  const customDesktop=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-custom').wp;
+   return e.__parts?.label;
+  });
+  assert.equal(customDesktop.x,90,'un tercer widget comparte el motor de arrastre');
+  assert.equal(customDesktop.y,34);
+  assert.equal(customDesktop.refW,900);
+  assert.equal(customDesktop.refH,340);
+  const customResponsive=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-custom').wp;
+   return window.SCWX.partTransformCSS(e,'label','var(--h)');
+  });
+  assert.match(customResponsive,/--nw-tx:10\.00000cqw/,'el tercer widget serializa sin función propia');
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,scope=d.querySelector('.test-scope'),n=scope.querySelector('[data-wpart]');
+   scope.style.width='500px';
+   n.style.setProperty('--nw-tx','10.00000cqw');
+   n.style.setProperty('--nw-ty','calc(var(--h) * 0.100000)');
+   const w=d.defaultView,r=n.getBoundingClientRect(),x=r.x+15,y=r.y+15;
+   n.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,button:0,pointerId:191,clientX:x,clientY:y}));
+   w.dispatchEvent(new w.PointerEvent('pointermove',{bubbles:true,pointerId:191,clientX:x+35,clientY:y+20}));
+   w.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true,pointerId:191,clientX:x+35,clientY:y+20}));
+  });
+  const customMobile=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-custom').wp;
+   return{desktop:e.__parts?.label,mobile:e.__partsMobile?.label};
+  });
+  assert.deepEqual(customMobile.desktop,customDesktop,'el tercer widget conserva su edición de escritorio');
+  assert.equal(customMobile.mobile.refW,500,'cada widget controla su propio breakpoint');
+  assert.equal(customMobile.mobile.x,85,'el móvil hereda la proporción y agrega desplazamiento');
+  assert.equal(customMobile.mobile.y,54);
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,scope=d.querySelector('.test-scope'),n=scope.querySelector('[data-wpart]');
+   scope.style.width='900px';
+   const e=sec().elements.find(x=>x.id==='test-custom').wp;
+   e.__parts.label={x:2000,y:0,r:0,s:1};
+   n.style.setProperty('--nw-tx','2000px');n.style.setProperty('--nw-ty','0px');
+   d.__nwCanvasPartAPI.select('test-custom','label');
+  });
+  const genericRecovery=await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,button=Array.from(d.querySelectorAll('.nw-wpart-action')).find(b=>b.textContent==='Recuperar');
+   return{exists:!!button,title:button?.title};
+  });
+  assert.equal(genericRecovery.exists,true,'Recuperar funciona sin clases Hero ni Historia');
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument;
+   Array.from(d.querySelectorAll('.nw-wpart-action')).find(b=>b.textContent==='Recuperar').click();
+  });
+  const genericRecovered=await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,stage=d.querySelector('.test-stage').getBoundingClientRect(),node=d.querySelector('.test-scope [data-wpart]').getBoundingClientRect();
+   return{saved:sec().elements.find(x=>x.id==='test-custom').wp.__parts.label,
+     error:Math.hypot((stage.left+stage.right-node.left-node.right)/2,(stage.top+stage.bottom-node.top-node.bottom)/2)};
+  });
+  assert.ok(genericRecovered.saved.x<2000,'la recuperación se guarda en el modelo común');
+  assert.ok(genericRecovered.error<3,'Recuperar centra respecto del escenario declarado');
+  await page.click('#btn-undo');
+  assert.equal(await page.evaluate(()=>sec().elements.find(x=>x.id==='test-custom').wp.__parts.label.x),2000);
+  await page.click('#btn-redo');
+  assert.ok(await page.evaluate(()=>sec().elements.find(x=>x.id==='test-custom').wp.__parts.label.x)<2000);
+
   console.log('Editor partes: foco, restauración, Escape, Enter e historial OK');
  }finally{
   await page.evaluate(old=>{
