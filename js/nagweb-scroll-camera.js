@@ -734,7 +734,7 @@ function canDragMapPan(ev,map,zoom){
  if(!map||zoom<=1||ev.altKey||ev.ctrlKey||ev.metaKey)return false;
  if(ev.button===1)return true;
  if(ev.button!==0||!ev.shiftKey)return false;
- return !ev.target.closest('[data-camera-map-point],[data-camera-look-map-point],[data-camera-tension-handle],[data-camera-look-tension-handle],[data-camera-map-dot],[data-camera-look-map-dot],[data-camera-position],[data-camera-look-position],[data-camera-map-path],[data-camera-look-map-path],[data-camera-look-map-path-hit]');
+ return !ev.target.closest('[data-camera-scene-object-pick],[data-camera-map-point],[data-camera-look-map-point],[data-camera-tension-handle],[data-camera-look-tension-handle],[data-camera-map-dot],[data-camera-look-map-dot],[data-camera-position],[data-camera-look-position],[data-camera-map-path],[data-camera-look-map-path],[data-camera-look-map-path-hit]');
 }
 function startMapPanDrag(ev,map,s){
  var area=map.getBoundingClientRect(),content=map.querySelector('[data-camera-map-content]');
