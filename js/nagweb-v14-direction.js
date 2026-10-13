@@ -389,7 +389,9 @@ function installCanvasTools(){
  }
  function partState(root,n){
   var id=root.dataset.id,e=currentWidget(id),name=n.getAttribute('data-wpart');
-  var hero=n.closest('.nw-lh'),mobile=!!(hero&&hero.clientWidth>0&&hero.clientWidth<=600);
+  var hero=n.closest('.nw-lh'),story=n.closest('.nw-story'),storyStage=n.closest('.nw-story-sticky');
+  var mobile=!!(hero&&hero.clientWidth>0&&hero.clientWidth<=600)||
+   !!(!hero&&story&&story.clientWidth>0&&story.clientWidth<=720);
   var fromDesktop=e&&e.wp&&e.wp.__parts&&e.wp.__parts[name]||{};
   var fromMobile=e&&e.wp&&e.wp.__partsMobile&&e.wp.__partsMobile[name];
   var p=mobile&&fromMobile?fromMobile:fromDesktop;
@@ -399,8 +401,8 @@ function installCanvasTools(){
    widthOverride:!!(mobile&&fromMobile&&fromMobile.fw!=null),
    z:p.z==null?partDefaultZ(name):+p.z,
    responsive:!!(p.refW>0&&p.refH>0),mobile:mobile,mobileOverride:!!(mobile&&fromMobile)};
-  if(hero){
-   var w=hero.clientWidth,h=hero.clientHeight;
+  if(hero||storyStage){
+   var w=hero?hero.clientWidth:story.clientWidth,h=hero?hero.clientHeight:storyStage.clientHeight;
    if(w>0&&h>0){
     if(p.refW>0&&p.refH>0){state.x=state.x*w/p.refW;state.y=state.y*h/p.refH;}
     if(!mobile&&fromDesktop.free&&fromDesktop.refW>0&&fromDesktop.refH>0){
@@ -421,7 +423,7 @@ function installCanvasTools(){
   }
   var relative=final&&p.responsive&&p.refW>0&&p.refH>0;
   var x=relative?(p.x/p.refW*100).toFixed(5)+'cqw':p.x+'px';
-  var y=relative?'calc(var(--h) * '+(p.y/p.refH).toFixed(6)+')':p.y+'px';
+  var y=relative?(n.closest('.nw-story')?'calc(100vh * '+(p.y/p.refH).toFixed(6)+')':'calc(var(--h) * '+(p.y/p.refH).toFixed(6)+')'):p.y+'px';
   n.style.setProperty(names[0],x);n.style.setProperty(names[1],y);
   n.style.setProperty(names[2],p.r+'deg');n.style.setProperty(names[3],p.s);
   if(p.free&&n.classList.contains('nw-lh-float')){
