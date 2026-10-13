@@ -11,6 +11,7 @@ import { normalizeHeroiconOutline } from "./extractors/heroicons.mjs";
 import { transformHeroiconOutline } from "./heroicons-transformer.mjs";
 import { browseHeroiconPaths } from "./snapshot/browse-icon-paths.mjs";
 import { browseLucideShapes } from "./snapshot/browse-lucide-shapes.mjs";
+import { editorUseOf } from "./runtime/editor-availability.mjs";
 import { uiverseBucket } from "./snapshot/build-uiverse-shards.mjs";
 import { describeEditableControls } from "./runtime/editable-controls.mjs";
 import { buildResourceApplyEnvelope } from "./runtime/resource-apply-bridge.mjs";
@@ -34,7 +35,7 @@ const icon = {
   id: "smoke:icon", title: "Ícono de prueba", family: "icon", kind: "svg",
   source: { provider: "smoke" }, license: { id: "MIT", name: "MIT", verified: true },
   runtime: { renderer: "nagweb-svg", entryArtifactId: "icon" },
-  artifacts: [{ id: "icon", role: "icon-data", content: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 4L20 20"/></svg>' }],
+  artifacts: [{ id: "icon", role: "icon-data", format: "svg", content: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 4L20 20"/></svg>' }],
   editableProps: [
     { id: "stroke", label: "Color", valueType: "color", defaultValue: "#112233", binding: { type: "runtime", path: "svg.stroke" } },
     { id: "size", label: "Tamaño", valueType: "number", defaultValue: 24, constraints: { min: 16, max: 64, step: 1, unit: "px" }, binding: { type: "runtime", path: "svg.size" } },
@@ -63,20 +64,28 @@ const heroicon = transformHeroiconOutline({
 const lucideCamera = {
   ...icon, id: "lucide:camera", title: "Camera",
   source: { provider: "lucide" },
-  artifacts: [{id:"icon",role:"icon-data",content:
+  artifacts: [{id:"icon",role:"icon-data",format:"svg",content:
     '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" ' +
     'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
     'stroke-linecap="round" stroke-linejoin="round">' +
     '<path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"/>' +
     '<circle cx="12" cy="13" r="3"/></svg>'}]
 };
-const resources = [icon, css, heroicon, lucideCamera];
+const codeOnly = {
+  id:"magicui:reference", title:"Componente React de referencia",
+  family:"ui",kind:"react-component",source:{provider:"magicui"},
+  license:{id:"MIT",verified:true},
+  runtime:{renderer:"nagweb-react",entryArtifactId:"react"},
+  artifacts:[{id:"react",role:"component",format:"tsx",content:"export default function Demo() { return <div>Demo</div>; }"}]
+};
+const resources = [icon, css, heroicon, lucideCamera, codeOnly];
 const zip = data => gzipSync(JSON.stringify(data));
 const index = zip({ format: "nagweb-resource-browse-index", resourceCount: resources.length,
   resources: resources.map(r => ({ id: r.id, title: r.title, family: r.family, kind: r.kind, provider: r.source.provider,
     ...(browseHeroiconPaths(r) ? { previewPaths: browseHeroiconPaths(r) } : {}),
     ...(browseLucideShapes(r) ? { previewShapes: browseLucideShapes(r) } : {}),
     snapshotId: r.source.provider,
+    editorUse: editorUseOf(r),
     ...(r.source.provider === "uiverse" ? {detailShard:uiverseBucket(r.id)} : {}) })) });
 const library = zip({ format: "nagweb-resource-vault-bundle", resourceCount: resources.length, resources });
 const sha = bytes => createHash("sha256").update(bytes).digest("hex");
@@ -181,6 +190,21 @@ try {
     await page.goto(`http://127.0.0.1:${server.address().port}/host`);
     const frame = page.frameLocator('iframe[title="Biblioteca de prueba"]');
     await frame.locator('[data-resource-id="smoke:icon"]').waitFor();
+    // Show and filter genuinely insertable vs source-only resources, without
+    // requesting the source archive for any result card.
+    const useFilter=frame.getByLabel("Uso en NagWeb",{exact:true});
+    await expect(frame.locator('[data-resource-id="magicui:reference"] [data-editor-use-label="code"]')).toBeVisible();
+    await expect(frame.locator('[data-resource-id="smoke:icon"] [data-editor-use-label="available"]')).toBeVisible();
+    await useFilter.selectOption("available");
+    await expect(frame.locator('[data-resource-id="smoke:icon"]')).toBeVisible();
+    await expect(frame.locator('[data-resource-id="magicui:reference"]')).toHaveCount(0);
+    await useFilter.selectOption("code");
+    await expect(frame.locator('[data-resource-id="magicui:reference"]')).toBeVisible();
+    await expect(frame.locator('[data-resource-id="smoke:icon"]')).toHaveCount(0);
+    await frame.getByRole("button",{name:"Limpiar filtros",exact:true}).click();
+    await expect(useFilter).toHaveValue("");
+    report.scenarios.push({browser:"filter genuine native resources vs source-only",
+      width,status:"passed",noFullLibraryFetch:true});
     // Stage 73: check persistent favorites and filter against the local Vault index.
     const star=frame.locator('[data-favorite-id="smoke:icon"]');
     await star.click();

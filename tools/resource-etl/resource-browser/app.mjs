@@ -3,6 +3,7 @@ import {
 } from "../src/runtime/persistent-vault-client.mjs";
 import { defaultEditableValues } from "../src/runtime/instance.mjs";
 import { createLatestSearch } from "../src/runtime/latest-search.mjs";
+import { canInsertInEditor } from "../src/runtime/editor-availability.mjs";
 import { FAVORITES_KEY, MAX_FAVORITES, getOptionalStorage, readFavorites, toggleFavorite, saveFavorites } from "../src/runtime/favorites.mjs";
 import { describeEditableControls } from "../src/runtime/editable-controls.mjs";
 import { readSavedCustomization, saveSavedCustomization, deleteSavedCustomization } from "../src/runtime/saved-customizations.mjs";
@@ -32,6 +33,7 @@ const el = {
   provider: document.querySelector("[data-provider]"),
   family: document.querySelector("[data-family]"),
   kind: document.querySelector("[data-kind]"),
+  editorUse: document.querySelector("[data-editor-use]"),
   favoriteOnly: document.querySelector("[data-favorite-only]"),
   favoriteCount: document.querySelector("[data-favorite-count]"),
   detailFavorite: document.querySelector("[data-detail-favorite]"),
@@ -265,12 +267,19 @@ function fillSelect(select, items) {
   }
 }
 
+// Published metadata reflects only validated native editor adapters.
+const nativeModes = ["svg","uiverse-html"].filter(
+  kind=>canInsertInEditor(kind,hostKinds ? [...hostKinds] : null));
 function currentFilters() {
   return {
     query: el.search.value.trim(),
     providers: el.provider.value || undefined,
     families: el.family.value || undefined,
     kinds: el.kind.value || undefined,
+    editorUses: el.editorUse.value === "available" ? nativeModes
+      : el.editorUse.value === "code"
+        ? ["code",...["svg","uiverse-html"].filter(kind=>!nativeModes.includes(kind))]
+        : undefined,
     ids: el.favoriteOnly.checked ? [...favorites] : undefined,
     offset,
     limit: PAGE_SIZE
@@ -300,6 +309,7 @@ const resultSearch = createLatestSearch(
     <div class="resource-tile">
       <button type="button" class="resource-card" data-resource-id="${esc(item.id)}">
         <span class="provider">${esc(item.provider)}</span>
+        <span class="editor-use-note" data-editor-use-label="${nativeModes.includes(item.editorUse) ? "available" : "code"}">${nativeModes.includes(item.editorUse) ? "Se puede insertar" : "Explorar y copiar código"}</span>
         ${iconThumbnail(item)}
         <h3>${esc(item.title || item.name || item.id)}</h3>
         <p>${esc(item.description || item.searchText || item.id)}</p>
@@ -1037,7 +1047,7 @@ window.addEventListener("storage", event => {
     void renderResults();
   }
 });
-for (const select of [el.provider, el.family, el.kind]) {
+for (const select of [el.provider, el.family, el.kind, el.editorUse]) {
   select.addEventListener("change", () => {
     clearTimeout(searchTimer);
     offset = 0;
@@ -1050,6 +1060,7 @@ el.clear.addEventListener("click", () => {
   el.provider.value = "";
   el.family.value = "";
   el.kind.value = "";
+  el.editorUse.value = "";
   el.favoriteOnly.checked = false;
   offset = 0;
   renderResults();

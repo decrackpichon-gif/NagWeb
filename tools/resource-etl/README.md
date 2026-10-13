@@ -1532,3 +1532,31 @@ insertables, aceptación integral real en escritorio/celular y cierre
 documentado v1. Importar proveedores o sumar controles por su cuenta no
 es criterio de avance. No prometer que los recursos sólo código ya son
 totalmente editables.
+
+## Etapa 92: utilidad real de los recursos en la grilla
+
+El índice comprimido declara ahora `editorUse` para cada registro,
+con valores `svg`, `uiverse-html` o `code`, determinados desde el
+**renderizador, el artefacto de entrada y la licencia verificada**.
+No se confunde un descriptor genérico de React/Three/GLSL con la
+inserción efectivamente implementada por el editor principal.
+
+La Biblioteca muestra en las tarjetas «Se puede insertar» o
+«Explorar y copiar código», y suma el filtro **Uso en NagWeb**. El
+filtro respeta las clases de recurso que el editor conectado anuncia
+mediante `hostKinds`; los registros incompatibles siguen visibles
+si se selecciona "Todos los recursos". Esta distinción sólo muestra
+capacidades actuales: la función de aplicar sigue validando el
+contenido concreto y su seguridad al abrir la ficha.
+
+Se extienden el test de Chromium de escritorio/celular y la prueba
+unitaria para cubrir clasificación, filtros, restauración y
+proveedores no insertables. La actualización del índice se ejecuta
+sobre los mismos cinco paquetes originales con checksums idénticos
+y preserva las ocho partes Uiverse y las miniaturas de íconos.
+
+**Continuidad:** a pedido del usuario (13/10/2026), NO se sustituye
+el plan de desarrollo histórico por una ruta artificial de cierre
+de 3-5 pasos. El documento de criterios de v1 es una referencia para
+informar estado y una posible futura entrega, no una nueva restricción
+de alcance ni un impedimento para nuevas familias o mejoras útiles.

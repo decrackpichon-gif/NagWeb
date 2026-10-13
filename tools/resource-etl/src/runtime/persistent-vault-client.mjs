@@ -314,6 +314,7 @@ export class NagWebPersistentVaultClient {
     providers,
     families,
     kinds,
+    editorUses,
     categories,
     tags,
     capabilities,
@@ -326,6 +327,7 @@ export class NagWebPersistentVaultClient {
     const providerSet = asSet(providers);
     const familySet = asSet(families);
     const kindSet = asSet(kinds);
+    const editorUseSet = asSet(editorUses);
     const categorySet = asSet(categories);
     const tagSet = asSet(tags);
     const capabilitySet = asSet(capabilities);
@@ -355,6 +357,7 @@ export class NagWebPersistentVaultClient {
       ) {
         continue;
       }
+      if (editorUseSet && !editorUseSet.has(String(resource.editorUse || "code").toLowerCase())) continue;
       if (!intersects(resource.categories, categorySet)) continue;
       if (!intersects(resource.tags, tagSet)) continue;
       if (!intersects(resource.capabilities, capabilitySet)) continue;

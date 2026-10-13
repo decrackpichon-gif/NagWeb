@@ -1,6 +1,7 @@
 import path from "node:path";
 import { browseHeroiconPaths } from "./browse-icon-paths.mjs";
 import { browseLucideShapes } from "./browse-lucide-shapes.mjs";
+import { editorUseOf } from "../runtime/editor-availability.mjs";
 import { uiverseBucket, UIVERSE_SHARD_COUNT } from "./build-uiverse-shards.mjs";
 import { createHash } from "node:crypto";
 import { gunzipSync, gzipSync } from "node:zlib";
@@ -111,6 +112,7 @@ const browseResources = resources.map((resource) => ({
   sourceCommit: resource.source?.commit || null,
   // Archive of origin, not merely the public provider name (core-code has 9).
   snapshotId: originById.get(resource.id) || null,
+  editorUse: editorUseOf(resource),
   ...(shardSet && originById.get(resource.id) === "uiverse"
     ? {detailShard: uiverseBucket(resource.id)} : {}),
   // A few SVG path coordinates per Heroicon, never raw third-party markup.

@@ -42,6 +42,15 @@
           <select data-kind aria-labelledby="kind-label"><option value="">Todos</option></select>
         </label>
 
+        <label>
+          <span id="editor-use-label">Uso en NagWeb</span>
+          <select data-editor-use aria-labelledby="editor-use-label">
+            <option value="">Todos los recursos</option>
+            <option value="available">Se pueden insertar</option>
+            <option value="code">Explorar y copiar código</option>
+          </select>
+        </label>
+
         <label class="favorite-filter">
           <input type="checkbox" data-favorite-only>
           <span>Solo favoritos <small data-favorite-count>(0)</small></span>

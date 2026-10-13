@@ -1,4 +1,4 @@
-name: Resource Vault Lazy Provider Index
+name: Resource Vault Verified Browse Index
 
 on:
   push:
@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   provider-index:
-    name: Index verified provider archives for on-demand detail loading
+    name: Rebuild verified browse metadata without changing source resources
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -32,9 +32,11 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Verify lazy provider client and backwards compatibility
+      - name: Verify lazy client and native resource classification
         working-directory: tools/resource-etl
-        run: node src/provider-lazy-selftest.mjs
+        run: |
+          node src/provider-lazy-selftest.mjs
+          node src/editor-availability-selftest.mjs
 
       - name: Use existing independent data history
         shell: bash
@@ -97,8 +99,22 @@ jobs:
             throw Error("Heroicons previews regressed");
           const lucide=index.resources.filter(r=>r.provider==="lucide" && r.previewShapes?.length).length;
           if(lucide<1800)throw Error("Lucide previews regressed: "+lucide);
-          console.log("Verified provider lazy index:",seen.size,"resources, five original archives,",
-            lucide,"Lucide previews, 323 Heroicons previews");
+          const native=index.resources.filter(r=>["svg","uiverse-html"].includes(r.editorUse));
+          const code=index.resources.filter(r=>r.editorUse==="code");
+          if(native.length!==5954 || code.length!==808 ||
+             native.filter(r=>r.editorUse==="svg").length!==2193 ||
+             native.filter(r=>r.editorUse==="uiverse-html").length!==3761)
+            throw Error("Native/copy-only coverage disagrees with real editor adapters");
+          if (native.some(r=>!(["lucide","heroicons","uiverse"].includes(r.provider))) ||
+              code.some(r=>r.provider==="heroicons" || r.provider==="lucide" || r.provider==="uiverse"))
+            throw Error("Unexpected native classification by provider");
+          const shards=after.detailShards?.uiverse;
+          if(!shards || shards.shards?.length!==8 ||
+             shards.sourceSha256!==before.detailShards?.uiverse?.sourceSha256 ||
+             index.resources.filter(r=>r.snapshotId==="uiverse" && Number.isInteger(r.detailShard)).length!==3761)
+            throw Error("Existing Uiverse detail shards were lost");
+          console.log("Verified library uses:",native.length,"native,",code.length,"copy/inspect,",
+            "with 6762 resources, 8 Uiverse shards and original verified archives");
           NODE
 
       - name: Publish only derived indexes without merging
@@ -112,5 +128,5 @@ jobs:
             echo "Indexes already match"
             exit 0
           fi
-          git -C "$DIR" commit -m "data: index provider provenance for checksum-verified lazy loading"
+          git -C "$DIR" commit -m "data: label native editor compatibility in verified browse index"
           git -C "$DIR" push origin HEAD:refs/heads/resource-vault-data

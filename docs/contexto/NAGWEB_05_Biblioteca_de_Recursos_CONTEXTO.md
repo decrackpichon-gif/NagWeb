@@ -238,3 +238,30 @@ Biblioteca offline-first de **recursos abiertos/licenciados** para diseñadores.
   móvil, cierre v1 y lista de limitaciones. React/Three/GLSL/Lottie
   totalmente editables quedan fuera del primer cierre mientras no
   existan adaptadores reales probados.
+
+## Confirmación de continuidad del plan (13/10/2026)
+
+El usuario aclaró expresamente que su pregunta por cuánto faltaba
+para terminar no era una orden de recortar o cambiar el plan.
+**Mantener la estrategia de desarrollo original**, con mejoras
+significativas y las fuentes abiertas/licenciadas previstas, sin
+convertir el documento `CRITERIOS_CIERRE_V1.md` ni la estimación
+"3 a 5 bloques" en un límite obligatorio. No imponer un cierre
+forzado ni dejar de explorar recursos útiles por esa estimación.
+Evitar microetapas artificiales y controles de poco valor, pero
+seguir expandiendo capacidades cuando aporte al objetivo global.
+
+## Etapa 92: estado utilizable visible en las tarjetas
+
+- El índice incorpora `editorUse` para cada recurso: `svg`,
+  `uiverse-html` o `code`, derivados del renderizador,
+  artefacto real de entrada y licencia, no sólo del proveedor.
+- La grilla muestra el estado y filtra por inserción compatible
+  con el editor conectado o exploración/copia de código.
+- Mantener como capa final de seguridad el validador y
+  `prepareUiverseSandboxHtml` al intentar insertar.
+- Reindexar sólo metadatos; preservar todos los hashes fuente,
+  el catálogo completo, las ocho divisiones Uiverse y los
+  bocetos de Lucide/Heroicons.
+- Pruebas: clasificador unitario y Chromium en Linux/Windows,
+  incluyendo búsqueda/filtro sin descargar las bibliotecas completas.
