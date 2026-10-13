@@ -212,6 +212,27 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   await page.evaluate(()=>undo());
   assert.equal(await page.evaluate(()=>sec().elements.find(e=>e.id==='story-depth-text')?.sdCameraDepth||0),0,'Undo restores DOM spatial depth');
   console.log('PASS browser spatial UX: shortcut, mixed HTML/3D layer list, legible Z field, HTML depth, undo and camera isolation');
+  // Real pointer manipulation in the actual panel/map (not a simulated DOM).
+  await page.evaluate(()=>document.querySelector('[data-camera-space-open]').click());
+  await page.locator('[data-camera-map-plane]').selectOption('front');
+  const objectMarker=page.locator('[data-camera-scene-object-pick="1"]');
+  await objectMarker.scrollIntoViewIfNeeded();
+  const markerRect=await objectMarker.boundingBox();
+  assert.ok(markerRect&&markerRect.width>0,'Map provides a visible draggable HTML marker');
+  const beforeMap=await page.evaluate(()=>({x:sec().elements.find(e=>e.id==='story-depth-text').x,
+   frames:JSON.stringify(sec().sdCameraFrames),history:history.length}));
+  await page.mouse.move(markerRect.x+markerRect.width/2,markerRect.y+markerRect.height/2);
+  await page.mouse.down();
+  await page.mouse.move(markerRect.x+markerRect.width/2+32,markerRect.y+markerRect.height/2,{steps:4});
+  await page.mouse.up();
+  const movedMap=await page.evaluate(()=>({x:sec().elements.find(e=>e.id==='story-depth-text').x,
+   frames:JSON.stringify(sec().sdCameraFrames),history:history.length}));
+  assert.ok(movedMap.x>beforeMap.x,'Dragging the DOM marker edits its world X coordinate');
+  assert.equal(movedMap.history,beforeMap.history+1,'Direct map drag persists once');
+  assert.equal(movedMap.frames,beforeMap.frames,'Direct map drag never rewrites camera frames');
+  await page.evaluate(()=>undo());
+  assert.equal(await page.evaluate(()=>sec().elements.find(e=>e.id==='story-depth-text').x),beforeMap.x,'Undo restores direct spatial XY change');
+  console.log('PASS browser object map drag: real mouse edits DOM X, one Undo, camera path untouched');
   assert.deepEqual(errors,[]);console.log('PASS object guide: retained preview progress and explicit 0→50% Director displacement');
   console.log('PASS current moment: real editor + Director, create, pointer drag, two Undo, exact selection, no duplicate/history edit and Redo');
   console.log('PASS technical details: native visibility, collapsed height, open/close and pane persistence without authored edits');
