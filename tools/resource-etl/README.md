@@ -1487,3 +1487,13 @@ El workflow `.github/workflows/resource-provider-index.yml` recompone
 comprueba 6762 mapeos de ID a archivo de origen, conserva los cinco hashes
 de proveedores y ambas familias de miniaturas, y hace un push normal a la
 historia aislada de `resource-vault-data`. No realiza merges ni despliegues.
+
+### Índice de procedencia publicado
+
+La regeneración de índices terminó correctamente en la ejecución
+https://github.com/decrackpichon-gif/NagWeb/actions/runs/38330281711
+y creó el commit de datos
+`920d48eaebf9a540cee105fdab84d5b5d41e2967`.
+Se verificó que los 6762 IDs resuelvan a un snapshot existente e íntegro.
+Los cinco paquetes fuente conservaron sus hashes, incluyendo las formas
+de los 1860 Lucide y 323 Heroicons que aparecen en la grilla.

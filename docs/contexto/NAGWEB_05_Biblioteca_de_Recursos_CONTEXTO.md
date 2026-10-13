@@ -203,3 +203,18 @@ Biblioteca offline-first de **recursos abiertos/licenciados** para diseñadores.
   `.github/workflows/resource-provider-index.yml` en la rama aislada
   `resource-vault-data`; conservar todos los paquetes y miniaturas.
 - Verificar CI y commit de datos antes de dar esta etapa por publicada.
+
+### Publicación del índice bajo demanda comprobada (13/10/2026 UTC)
+
+- Workflow específico aprobado: https://github.com/decrackpichon-gif/NagWeb/actions/runs/38330281711
+- HEAD publicado en la historia independiente `resource-vault-data`:
+  `920d48eaebf9a540cee105fdab84d5b5d41e2967`.
+- El índice asigna **6762/6762 recursos** a su paquete físico correcto;
+  permanecen cinco archivos de origen con los mismos checksums. También
+  se preservaron las 1860 miniaturas Lucide y las 323 Heroicons.
+- Se añadió un test de navegador que deja deliberadamente inaccesible
+  el archivo combinado `all/library.json.gz`. El acceso normal a recursos
+  ahora debe utilizar únicamente snapshots individuales verificados.
+- La publicación del índice y el CI del código son procesos independientes;
+  verificar el resultado de Chromium Windows del último commit antes de
+  afirmar que la etapa completa pasó.
