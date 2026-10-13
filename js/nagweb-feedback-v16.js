@@ -64,7 +64,13 @@ var PART='[data-wpart]{translate:var(--nw-tx,0px) var(--nw-ty,0px);rotate:var(--
    var className=(cls||'')+(free?' nw-lh-float nw-lh-float--'+part.replace(/[^a-z0-9-]/g,''):'');
    var node='<'+tag+(className?' class="'+className.trim()+'"':'')+' '+attrs+
     ' data-wpart="'+part+'" style="'+heroPartCSS(e,part)+'">'+html+'</'+tag+'>';
-   if(free){floating.push(node);return '';}
+   if(free){
+    floating.push(node);
+    // Conservar la altura del bloque original para no desplazar los demás textos.
+    // El marcador no es interactivo, no tiene data-wpart ni campo editable.
+    return '<'+tag+(cls?' class="'+cls+'"':'')+' data-nw-slot="'+part+'" aria-hidden="true"'+
+     ' style="visibility:hidden;pointer-events:none">'+html+'</'+tag+'>';
+   }
    return node;
   }
   var ex='';

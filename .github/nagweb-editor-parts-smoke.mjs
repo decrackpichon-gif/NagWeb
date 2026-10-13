@@ -485,7 +485,8 @@ export async function runEditorPartsSmoke(page){
    newHero.style.width='800px';newHero.style.height='500px';newHero.style.setProperty('--h','500px');
    const title=newHero.querySelector('.nw-lh-copy [data-wpart="title"]'),rect=title.getBoundingClientRect();
    return{cx:(rect.left+rect.right)/2,cy:(rect.top+rect.bottom)/2,width:title.offsetWidth,
-    initialPosition:d.defaultView.getComputedStyle(title).position};
+    initialPosition:d.defaultView.getComputedStyle(title).position,
+    subY:newHero.querySelector('.nw-lh-copy [data-wpart="sub"]').getBoundingClientRect().top};
   });
   assert.equal(originalFloatingBounds.initialPosition,'static','el título comienza dentro de la columna');
   await fire('[data-nw-part="title"]');
@@ -509,6 +510,8 @@ export async function runEditorPartsSmoke(page){
    return{data:model.__parts?.title,freeSibling:!!text,
     insideColumn:!!newHero.querySelector('.nw-lh-copy [data-wpart="title"]'),
     siblings:newHero.querySelectorAll('.nw-lh-copy [data-wpart]').length,
+    placeholder:!!newHero.querySelector('.nw-lh-copy [data-nw-slot="title"][aria-hidden="true"]'),
+    subY:newHero.querySelector('.nw-lh-copy [data-wpart="sub"]').getBoundingClientRect().top,
     css:d.defaultView.getComputedStyle(text).position,
     center:r?[(r.left+r.right)/2,(r.top+r.bottom)/2]:null,
     bounds:[newHero.clientWidth,newHero.clientHeight]};
@@ -518,6 +521,8 @@ export async function runEditorPartsSmoke(page){
   assert.equal(detached.freeSibling,true,'título se convierte en hijo directo del Hero');
   assert.equal(detached.insideColumn,false,'título sale de la cuadrícula');
   assert.equal(detached.siblings,3,'rótulo, párrafo y texto extra conservan su columna');
+  assert.equal(detached.placeholder,true,'la columna conserva una reserva de espacio invisible');
+  assert.ok(Math.abs(detached.subY-originalFloatingBounds.subY)<5,'liberar título no mueve el párrafo');
   assert.equal(detached.css,'absolute','título tiene posicionamiento libre real');
   assert.ok(Math.hypot(detached.center[0]-originalFloatingBounds.cx,detached.center[1]-originalFloatingBounds.cy)<10,
     'liberar mantiene la posición visible');
