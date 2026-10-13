@@ -1,6 +1,7 @@
 import path from "node:path";
 import { browseHeroiconPaths } from "./browse-icon-paths.mjs";
 import { browseLucideShapes } from "./browse-lucide-shapes.mjs";
+import { uiverseBucket, UIVERSE_SHARD_COUNT } from "./build-uiverse-shards.mjs";
 import { createHash } from "node:crypto";
 import { gunzipSync, gzipSync } from "node:zlib";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -73,6 +74,16 @@ for (const snapshot of globalManifest.snapshots || []) {
 const resources = [...resourcesById.values()].sort((a, b) =>
   a.id.localeCompare(b.id)
 );
+// Shards are an optional acceleration, never a replacement for the original
+// checksum-verified provider archive. Refuse any stale shard mapping.
+const uiverseOrigin = globalManifest.snapshots?.find(s=>s.id==="uiverse");
+const shardSet = globalManifest.detailShards?.uiverse;
+if (shardSet && (shardSet.sourceSha256 !== uiverseOrigin?.sha256 ||
+    shardSet.algorithm !== "sha256-first-byte-mod-8" ||
+    shardSet.shards?.length !== UIVERSE_SHARD_COUNT ||
+    shardSet.shards.some((s,i)=>s.shard!==i || !s.sha256 || !s.libraryPath))) {
+  throw new Error("Stale or invalid Uiverse detail shards: rebuild before reindexing");
+}
 
 const bundle = {
   schemaVersion: "1.0",
@@ -100,6 +111,8 @@ const browseResources = resources.map((resource) => ({
   sourceCommit: resource.source?.commit || null,
   // Archive of origin, not merely the public provider name (core-code has 9).
   snapshotId: originById.get(resource.id) || null,
+  ...(shardSet && originById.get(resource.id) === "uiverse"
+    ? {detailShard: uiverseBucket(resource.id)} : {}),
   // A few SVG path coordinates per Heroicon, never raw third-party markup.
   // Allows the grid to display the actual shape without downloading 37 MB
   // of source code or fetching files from an external image host.

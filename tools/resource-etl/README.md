@@ -1497,3 +1497,38 @@ y creó el commit de datos
 Se verificó que los 6762 IDs resuelvan a un snapshot existente e íntegro.
 Los cinco paquetes fuente conservaron sus hashes, incluyendo las formas
 de los 1860 Lucide y 323 Heroicons que aparecen en la grilla.
+
+## Etapa 91: Uiverse en ocho paquetes de detalle independientes
+
+El archivo Uiverse original contiene **3761 componentes** y pesa unos
+**2,9 MB comprimidos**. Cargar uno desde `getResource()` ya no debe
+obligar a cargar todos. El generador
+`src/snapshot/build-uiverse-shards.mjs` toma el snapshot original,
+verifica su SHA-256 y reparte los recursos en ocho archivos comprimidos
+según el primer byte de SHA-256 del ID, módulo ocho.
+
+El manifest incorpora `detailShards.uiverse` con algoritmo, SHA de
+la fuente y checksum/contador/ruta por parte. El índice agrega
+`detailShard` a los recursos Uiverse. El cliente usa ese archivo en
+`getResource()`, verifica el hash y el esquema, aprovecha el caché
+existente y conserva el fallback a la fuente íntegra cuando un índice
+antiguo no publica divisiones.
+
+Se incluyen pruebas de construcción, recuperación tras corrupción,
+descargas compartidas, exactitud de ID y preservación de recursos; el
+Chromium smoke no entrega el archivo Uiverse entero, para que la
+inserción y personalización real dependan de la parte correspondiente.
+El workflow `.github/workflows/resource-uiverse-shards.yml` publica
+sólo estos ocho archivos derivados y los índices sobre la historia
+independiente de `resource-vault-data`, verificando los 6762 recursos,
+las cinco fuentes inalteradas y las 1860/323 miniaturas. No descarga
+nuevos proveedores, no fusiona ramas ni despliega Vercel.
+
+### Plan de cierre sin etapas infinitas
+
+Consultar [CRITERIOS_CIERRE_V1.md](./CRITERIOS_CIERRE_V1.md). Desde esta
+etapa se priorizan tres bloques grandes: claridad de qué recursos son
+insertables, aceptación integral real en escritorio/celular y cierre
+documentado v1. Importar proveedores o sumar controles por su cuenta no
+es criterio de avance. No prometer que los recursos sólo código ya son
+totalmente editables.

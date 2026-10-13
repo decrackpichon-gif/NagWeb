@@ -218,3 +218,23 @@ Biblioteca offline-first de **recursos abiertos/licenciados** para diseñadores.
 - La publicación del índice y el CI del código son procesos independientes;
   verificar el resultado de Chromium Windows del último commit antes de
   afirmar que la etapa completa pasó.
+
+## Etapa 91: acelerar Uiverse y definir cierre v1 (13/10/2026)
+
+- Decisión de producto: **evitar una secuencia interminable de
+  microetapas**. Se creó `tools/resource-etl/CRITERIOS_CIERRE_V1.md`
+  con definición comprobable de la v1, límites de compatibilidad,
+  condiciones de aceptación y 3-5 bloques estimativos de cierre.
+- Rendimiento: Uiverse (3761 HTML/CSS, ~2,9 MB gzip) se subdivide en
+  ocho paquetes individuales verificados. El índice conserva el
+  `snapshotId` original y agrega `detailShard`; el navegador carga
+  sólo la parte pertinente de cada recurso. No modificar el paquete
+  Uiverse canónico ni forzar descargas de nuevos orígenes.
+- Publicación: `.github/workflows/resource-uiverse-shards.yml`,
+  incrementando sólo ocho partes e índices en la rama de datos
+  independiente; verificar la ejecución antes de declarar publicada.
+- Próximos bloques, sin más controles marginales: claridad de
+  compatibilidad insertable/código-only, QA integrado de escritorio y
+  móvil, cierre v1 y lista de limitaciones. React/Three/GLSL/Lottie
+  totalmente editables quedan fuera del primer cierre mientras no
+  existan adaptadores reales probados.

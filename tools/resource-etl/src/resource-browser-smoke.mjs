@@ -11,6 +11,7 @@ import { normalizeHeroiconOutline } from "./extractors/heroicons.mjs";
 import { transformHeroiconOutline } from "./heroicons-transformer.mjs";
 import { browseHeroiconPaths } from "./snapshot/browse-icon-paths.mjs";
 import { browseLucideShapes } from "./snapshot/browse-lucide-shapes.mjs";
+import { uiverseBucket } from "./snapshot/build-uiverse-shards.mjs";
 import { describeEditableControls } from "./runtime/editable-controls.mjs";
 import { buildResourceApplyEnvelope } from "./runtime/resource-apply-bridge.mjs";
 
@@ -75,7 +76,8 @@ const index = zip({ format: "nagweb-resource-browse-index", resourceCount: resou
   resources: resources.map(r => ({ id: r.id, title: r.title, family: r.family, kind: r.kind, provider: r.source.provider,
     ...(browseHeroiconPaths(r) ? { previewPaths: browseHeroiconPaths(r) } : {}),
     ...(browseLucideShapes(r) ? { previewShapes: browseLucideShapes(r) } : {}),
-    snapshotId: r.source.provider })) });
+    snapshotId: r.source.provider,
+    ...(r.source.provider === "uiverse" ? {detailShard:uiverseBucket(r.id)} : {}) })) });
 const library = zip({ format: "nagweb-resource-vault-bundle", resourceCount: resources.length, resources });
 const sha = bytes => createHash("sha256").update(bytes).digest("hex");
 const snapshots = [...new Set(resources.map(r => r.source.provider))].map(provider => {
@@ -84,14 +86,29 @@ const snapshots = [...new Set(resources.map(r => r.source.provider))].map(provid
   return {id:provider,count:owned.length,libraryPath:provider+"-snapshot.json.gz",
     sha256:sha(body),body};
 });
+const uiverseProvider = snapshots.find(x => x.id === "uiverse");
+const tinyShards = Array.from({length:8}, (_,i) => {
+  const isCurrent = i === uiverseBucket(css.id);
+  const contents = zip({format:"nagweb-provider-shard",sourceSnapshot:"uiverse",
+    sourceSha256:uiverseProvider.sha256,shard:i,count:1,
+    resources:[isCurrent ? css : {...css,id:"uiverse:other-"+i}]});
+  return {id:"uiverse-part-"+i,sourceSnapshot:"uiverse",shard:i,count:1,
+    libraryPath:"part-"+i+".json.gz",sha256:sha(contents),body:contents};
+});
 const fixtures = new Map([
   ["vault-manifest.json", Buffer.from(JSON.stringify({ format: "nagweb-resource-vault-index",
     snapshots: snapshots.map(({body,...meta})=>meta),
+    detailShards:{uiverse:{algorithm:"sha256-first-byte-mod-8",
+      sourceSha256:uiverseProvider.sha256,
+      shards:tinyShards.map(({body,...meta})=>meta)}},
     consolidated: { count: resources.length, browseIndexPath: "index.json.gz", browseIndexSha256: sha(index), libraryPath: "library.json.gz", sha256: sha(library) } }))],
   // Deliberately DO NOT serve library.json.gz to the UI. Browsing/editing
   // must work even when the expensive consolidated source archive is offline.
   ["index.json.gz", index],
-  ...snapshots.map(({libraryPath,body})=>[libraryPath,body])
+  // Uiverse full archive is also intentionally offline: only the exact
+  // small detail shard is available for its component.
+  ...snapshots.filter(x => x.id !== "uiverse").map(({libraryPath,body})=>[libraryPath,body]),
+  ...tinyShards.map(({libraryPath,body})=>[libraryPath,body])
 ]);
 const host = `<!doctype html><meta charset="utf-8"><title>Editor de prueba</title>
 <style>body{margin:0}iframe{width:100%;height:100vh;border:0}</style>

@@ -155,8 +155,10 @@ export class NagWebPersistentVaultClient {
       this.resourceById = null;
     }
     // Keep a provider cache only if its file, checksum and count agree.
-    const retained = new Set((manifest.snapshots || []).map(item =>
-      [item.id,item.libraryPath,item.sha256,item.count].join("|")));
+    const retained = new Set([
+      ...(manifest.snapshots || []),
+      ...Object.values(manifest.detailShards || {}).flatMap(v => v.shards || [])
+    ].map(item => [item.id,item.libraryPath,item.sha256,item.count].join("|")));
     for (const key of this.providerSnapshots.keys()) {
       if (!retained.has(key)) this.providerSnapshots.delete(key);
     }
@@ -236,8 +238,13 @@ export class NagWebPersistentVaultClient {
     if (this.pendingProviderSnapshots.has(key)) return this.pendingProviderSnapshots.get(key);
     const request = (async () => {
       const payload = await this.loadVerifiedGzipJson(snapshot.libraryPath,snapshot.sha256);
-      if (!["nagweb-provider-snapshot","nagweb-code-library"].includes(payload?.format) ||
+      const shard = snapshot.sourceSnapshot === "uiverse";
+      if (!["nagweb-provider-snapshot","nagweb-code-library","nagweb-provider-shard"].includes(payload?.format) ||
           (payload.format === "nagweb-code-library" && snapshot.id !== "core-code") ||
+          (payload.format === "nagweb-provider-shard" && (!shard ||
+            payload.sourceSnapshot !== "uiverse" || payload.shard !== snapshot.shard ||
+            payload.sourceSha256 !== this.manifest?.snapshots?.find(s => s.id === "uiverse")?.sha256)) ||
+          (shard && payload.format !== "nagweb-provider-shard") ||
           payload.count !== snapshot.count ||
           !Array.isArray(payload.resources) || payload.resources.length !== snapshot.count) {
         throw new Error("NagWeb Vault provider snapshot schema or count mismatch: " + snapshot.id);
@@ -250,7 +257,11 @@ export class NagWebPersistentVaultClient {
         byId.set(resource.id,resource);
       }
       // Do not admit a stale in-flight download after an index refresh.
-      if ((this.manifest?.snapshots || []).some(item =>
+      const active=[
+        ...(this.manifest?.snapshots || []),
+        ...Object.values(this.manifest?.detailShards || {}).flatMap(v=>v.shards||[])
+      ];
+      if (active.some(item =>
         [item.id,item.libraryPath,item.sha256,item.count].join("|") === key)) {
         this.providerSnapshots.set(key,byId);
       }
@@ -278,7 +289,19 @@ export class NagWebPersistentVaultClient {
     }
     const snapshot = (manifest?.snapshots || []).find(row => row.id === item.snapshotId);
     if (!snapshot) throw new Error("NagWeb Vault resource references a missing provider archive: " + item.snapshotId);
-    const byId = await this.loadProviderSnapshot(snapshot);
+    let chosen = snapshot;
+    if (item.snapshotId === "uiverse" && Number.isInteger(item.detailShard)) {
+      const group = manifest?.detailShards?.uiverse;
+      if (!group || group.algorithm !== "sha256-first-byte-mod-8" ||
+          group.sourceSha256 !== snapshot.sha256 ||
+          !Array.isArray(group.shards) || group.shards.length !== 8 ||
+          item.detailShard < 0 || item.detailShard >= group.shards.length ||
+          group.shards[item.detailShard]?.shard !== item.detailShard) {
+        throw new Error("NagWeb Vault Uiverse shard mapping is invalid.");
+      }
+      chosen = group.shards[item.detailShard];
+    }
+    const byId = await this.loadProviderSnapshot(chosen);
     if (manifest !== this.manifest) return this.getResource(wanted);
     if (!byId.has(wanted)) {
       throw new Error("NagWeb Vault browse index and provider archive disagree on resource: " + wanted);

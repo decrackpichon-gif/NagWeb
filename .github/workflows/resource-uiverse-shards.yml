@@ -1,0 +1,128 @@
+name: Resource Vault Uiverse Shards
+
+on:
+  push:
+    branches:
+      - feat/resource-etl-v1
+    paths:
+      - ".github/workflows/resource-uiverse-shards.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: resource-vault-snapshot
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish eight checksum-verified Uiverse detail bundles
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout NAGWEB 05 only
+        uses: actions/checkout@v4
+        with:
+          ref: feat/resource-etl-v1
+          fetch-depth: 1
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify sharded detail loader and exact routing offline
+        working-directory: tools/resource-etl
+        run: node src/uiverse-shards-selftest.mjs
+      - name: Checkout existing independent Vault history without merging
+        shell: bash
+        run: |
+          git fetch --no-tags --depth=1 origin refs/heads/resource-vault-data:refs/remotes/origin/resource-vault-data
+          git worktree add -b uiverse-shard-publish "$RUNNER_TEMP/nagweb-uiverse-data" refs/remotes/origin/resource-vault-data
+          cp "$RUNNER_TEMP/nagweb-uiverse-data/vault-manifest.json" "$RUNNER_TEMP/uiverse-manifest-before.json"
+      - name: Build Uiverse shards from canonical 3761-source snapshot
+        shell: bash
+        run: |
+          node tools/resource-etl/src/snapshot/build-uiverse-shards.mjs --root="$RUNNER_TEMP/nagweb-uiverse-data"
+          node tools/resource-etl/src/snapshot/build-consolidated-vault.mjs --root="$RUNNER_TEMP/nagweb-uiverse-data"
+      - name: Verify all eight shards, every resource, five unchanged original packages and previews
+        shell: bash
+        run: |
+          node --input-type=module - <<'NODE'
+          import fs from "node:fs";
+          import path from "node:path";
+          import { gunzipSync } from "node:zlib";
+          import { createHash } from "node:crypto";
+          import { uiverseBucket } from "./tools/resource-etl/src/snapshot/build-uiverse-shards.mjs";
+          const root=process.env.RUNNER_TEMP+"/nagweb-uiverse-data";
+          const before=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+"/uiverse-manifest-before.json","utf8"));
+          const after=JSON.parse(fs.readFileSync(root+"/vault-manifest.json","utf8"));
+          const sha=bytes=>createHash("sha256").update(bytes).digest("hex");
+          if(before.totalResources!==6762||after.totalResources!==6762||
+             before.snapshots.length!==5||after.snapshots.length!==5)
+            throw Error("Source Vault size or provider count changed");
+          for(const original of before.snapshots){
+            const next=after.snapshots.find(s=>s.id===original.id);
+            if(!next||next.sha256!==original.sha256||next.count!==original.count||
+               next.libraryPath!==original.libraryPath)
+              throw Error("Original source package changed: "+original.id);
+          }
+          const source=after.snapshots.find(s=>s.id==="uiverse");
+          const detail=after.detailShards?.uiverse;
+          if(!detail || detail.algorithm!=="sha256-first-byte-mod-8" ||
+             detail.sourceSha256!==source.sha256 || detail.shards?.length!==8)
+            throw Error("Unexpected or stale Uiverse shard routing");
+          const original=JSON.parse(gunzipSync(fs.readFileSync(path.join(root,source.libraryPath))));
+          const fullIds=new Set(original.resources.map(r=>r.id));
+          const seen=new Set();
+          for(let i=0;i<8;i++){
+            const part=detail.shards[i];
+            if(part.shard!==i || part.sourceSnapshot!=="uiverse")
+              throw Error("Uiverse part order invalid");
+            const compressed=fs.readFileSync(path.join(root,part.libraryPath));
+            if(sha(compressed)!==part.sha256)
+              throw Error("Uiverse shard SHA mismatch: "+part.id);
+            const payload=JSON.parse(gunzipSync(compressed));
+            if(payload.format!=="nagweb-provider-shard" ||
+               payload.sourceSha256!==source.sha256 || payload.shard!==i ||
+               payload.count!==part.count||payload.resources.length!==part.count)
+              throw Error("Uiverse shard schema invalid");
+            for(const r of payload.resources){
+              if(!fullIds.has(r.id)||seen.has(r.id)||uiverseBucket(r.id)!==i)
+                throw Error("Uiverse shard changed, duplicated or misrouted "+r.id);
+              seen.add(r.id);
+            }
+            if(compressed.length>=fs.statSync(path.join(root,source.libraryPath)).size)
+              throw Error("Uiverse shard bigger than original provider");
+          }
+          if(seen.size!==3761 || seen.size!==fullIds.size)
+            throw Error("Not all 3761 Uiverse resources survived");
+          const browseBytes=fs.readFileSync(path.join(root,after.consolidated.browseIndexPath));
+          const fullBytes=fs.readFileSync(path.join(root,after.consolidated.libraryPath));
+          if(sha(browseBytes)!==after.consolidated.browseIndexSha256||
+             sha(fullBytes)!==after.consolidated.sha256)
+            throw Error("Consolidated index checksum invalid");
+          const browse=JSON.parse(gunzipSync(browseBytes));
+          if(browse.resourceCount!==6762 || browse.resources.length!==6762)
+            throw Error("Consolidated browse count invalid");
+          const uiverse=browse.resources.filter(r=>r.snapshotId==="uiverse");
+          if(uiverse.length!==3761||uiverse.some(r=>r.detailShard!==uiverseBucket(r.id)))
+            throw Error("Browse index detailShard mapping invalid");
+          if(browse.resources.filter(r=>r.provider==="lucide"&&r.previewShapes?.length).length!==1860 ||
+             browse.resources.filter(r=>r.provider==="heroicons"&&r.previewPaths?.length).length!==323)
+            throw Error("Previous icon previews were lost");
+          console.log("Validated 3761 Uiverse resources in 8 verified shards;"+
+            " 6762 indexed total; unchanged original source hashes.");
+          NODE
+      - name: Publish only new small archives and derived indexes
+        shell: bash
+        run: |
+          DIR="$RUNNER_TEMP/nagweb-uiverse-data"
+          git -C "$DIR" config user.name "github-actions[bot]"
+          git -C "$DIR" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C "$DIR" add uiverse/shards/ all/ vault-manifest.json README.md
+          if git -C "$DIR" diff --cached --quiet; then
+            echo "All shards and indexes are already current"
+            exit 0
+          fi
+          git -C "$DIR" commit -m "data: serve Uiverse components from eight verified detail bundles"
+          git -C "$DIR" push origin HEAD:refs/heads/resource-vault-data
