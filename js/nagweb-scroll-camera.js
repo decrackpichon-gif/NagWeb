@@ -613,12 +613,23 @@ function mapObjectMarkersHtml(s,plan,spec,pct){
    '</g>';
  }).join('')+'</g>';
 }
+// A shared drag boundary for controls adjacent to a preview iframe.
+// Keeping a transparent full-viewport surface during the gesture avoids
+// sending pointermove/up to a different document (or losing them at the pane edge).
+function cameraDragShield(doc){
+ if(!doc||!doc.createElement||!doc.body||!doc.body.appendChild)return null;
+ var el=doc.createElement('div');
+ el.style.cssText='position:fixed;inset:0;z-index:2147483647;background:transparent;pointer-events:auto;touch-action:none;cursor:grabbing;';
+ if(el.setAttribute)el.setAttribute('aria-hidden','true');
+ doc.body.appendChild(el);
+ return el;
+}
 function mapObjectDrag(ev,button){
  var s=sec(),plan=mapObjectPlans[s.id],idx=+button.dataset.cameraSceneObjectPick,
      map=button.closest('[data-camera-map]'),rect=map&&map.getBoundingClientRect(),spec=map&&mapSpecFromNode(map),
      row=plan&&mapObjectPositions(s,plan,progress(s))[idx],item=row&&row.item,marker=button.parentNode;
  if(!item||!row.point||!marker||!rect||!rect.width||!rect.height||!C.config(s)||mapObjectVisible[s.id]===false)return;
- var origin=row.point,draft=null,moved=false,done=false,pct=progress(s),owner=button.ownerDocument||document;
+ var origin=row.point,draft=null,moved=false,done=false,pct=progress(s),owner=button.ownerDocument||document,shield=null;
  ev.preventDefault();ev.stopPropagation();
  // Avoid scrolling a narrow editor pane when a drag starts near its edge.
  if(button.focus)button.focus({preventScroll:true});
@@ -641,8 +652,10 @@ function mapObjectDrag(ev,button){
   done=true;if(!cancel&&e.clientX!=null)move(e);
   owner.removeEventListener('pointermove',move,true);owner.removeEventListener('pointerup',up,true);
   owner.removeEventListener('pointercancel',abort,true);owner.removeEventListener('keydown',key,true);
-  if(map&&map.removeEventListener)map.removeEventListener('lostpointercapture',abort);
-  if(map&&map.hasPointerCapture&&map.hasPointerCapture(ev.pointerId))map.releasePointerCapture(ev.pointerId);
+  var captureTarget=shield||map;
+  if(captureTarget&&captureTarget.removeEventListener)captureTarget.removeEventListener('lostpointercapture',abort);
+  if(captureTarget&&captureTarget.hasPointerCapture&&captureTarget.hasPointerCapture(ev.pointerId))captureTarget.releasePointerCapture(ev.pointerId);
+  if(shield&&shield.parentNode)shield.parentNode.removeChild(shield);
   if(cancel||!moved||!draft||sec()!==s||!mapObjectCommit(s,item,draft)){
    paint(origin);
    if(!cancel&&sec()===s){mapObjectSelected[s.id]=item.id;renderPane();}
@@ -653,8 +666,10 @@ function mapObjectDrag(ev,button){
  function key(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();finish(e,true);}}
  owner.addEventListener('pointermove',move,true);owner.addEventListener('pointerup',up,true);
  owner.addEventListener('pointercancel',abort,true);owner.addEventListener('keydown',key,true);
- if(map&&map.addEventListener)map.addEventListener('lostpointercapture',abort);
- try{if(map&&map.setPointerCapture)map.setPointerCapture(ev.pointerId);}catch(_){}
+ shield=cameraDragShield(owner);
+ var captureTarget=shield||map;
+ if(captureTarget&&captureTarget.addEventListener)captureTarget.addEventListener('lostpointercapture',abort);
+ try{if(captureTarget&&captureTarget.setPointerCapture)captureTarget.setPointerCapture(ev.pointerId);}catch(_){} 
 }
 function mapObjectKey(ev,button){
  if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(ev.key))return;
