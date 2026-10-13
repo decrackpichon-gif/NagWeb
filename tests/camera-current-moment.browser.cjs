@@ -238,13 +238,40 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   const leftRoom=px-mapRect.x,rightRoom=mapRect.x+mapRect.width-px;
   const delta=rightRoom>=leftRoom?Math.min(32,rightRoom-8):-Math.min(32,leftRoom-8);
   assert.ok(Number.isFinite(delta)&&Math.abs(delta)>=8,'Drag fits inside the spatial map');
+  const pointerTrace=await page.evaluate(()=>{
+   const shield=()=>document.querySelector('[data-nw-spatial-drag-shield]');
+   window.__nwMapTrace={events:[]};
+   for(const where of [window,document]){
+    for(const type of ['pointermove','pointerup','mousemove','mouseup','pointercancel']){
+     where.addEventListener(type,e=>{
+      if(window.__nwMapTrace.events.length>=30)return;
+      window.__nwMapTrace.events.push({where:where===window?'window':'document',type,x:e.clientX,y:e.clientY,tag:e.target.tagName});
+     },true);
+    }
+   }
+   return true;
+  });
   await page.mouse.move(px,py);
   await page.mouse.down();
+  const afterDown=await page.evaluate(([x,y])=>{
+   const shield=document.querySelector('[data-nw-spatial-drag-shield]');
+   const box=shield?.getBoundingClientRect();
+   const top=document.elementFromPoint(x,y);
+   return {shield:!!shield,shieldBox:box?{x:box.x,y:box.y,width:box.width,height:box.height}:null,
+    captured:shield?.hasPointerCapture?.(1),top:top?.tagName,topTag:top?.outerHTML?.slice(0,180),
+    hasFocus:document.hasFocus(),events:window.__nwMapTrace?.events};
+  },[px+delta,py]);
   await page.mouse.move(px+delta,py,{steps:5});
+  const afterMove=await page.evaluate(([x,y])=>{
+   const shield=document.querySelector('[data-nw-spatial-drag-shield]');
+   const top=document.elementFromPoint(x,y);
+   return{shield:!!shield,top:top?.tagName,topTag:top?.outerHTML?.slice(0,140),
+    events:window.__nwMapTrace?.events};
+  },[px+delta,py]);
   await page.mouse.up();
   const movedMap=await page.evaluate(()=>({x:sec().elements.find(e=>e.id==='story-depth-text').x,
    frames:JSON.stringify(sec().sdCameraFrames),history:history.length}));
-  if(!((movedMap.x-beforeMap.x)*delta>0))console.log('SPATIAL MAP DRAG TRACE '+JSON.stringify(await page.evaluate(()=>({events:window.__nwDragEvents,mode:document.querySelector('[data-camera-map-object-mode]')?.getAttribute('aria-pressed'),selected:document.querySelector('[data-camera-object-select]')?.value,scroll:document.querySelector('#pane')?.scrollTop,active:document.activeElement?.outerHTML?.slice(0,160)})))+' / bounds='+JSON.stringify(mapRect)+' / delta='+delta+' / x='+beforeMap.x+'->'+movedMap.x);
+  if(!((movedMap.x-beforeMap.x)*delta>0))console.log('SPATIAL MAP DRAG TRACE '+JSON.stringify(await page.evaluate(()=>({events:window.__nwDragEvents,mode:document.querySelector('[data-camera-map-object-mode]')?.getAttribute('aria-pressed'),selected:document.querySelector('[data-camera-object-select]')?.value,scroll:document.querySelector('#pane')?.scrollTop,active:document.activeElement?.outerHTML?.slice(0,160),afterDown,afterMove})))+' / bounds='+JSON.stringify(mapRect)+' / delta='+delta+' / x='+beforeMap.x+'->'+movedMap.x);
   assert.ok((movedMap.x-beforeMap.x)*delta>0,'Dragging inward changes DOM X in the pointer direction');
   assert.equal(movedMap.history,beforeMap.history+1,'Direct map drag persists once');
   assert.equal(movedMap.frames,beforeMap.frames,'Direct map drag never rewrites camera frames');
