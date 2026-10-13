@@ -28,3 +28,7 @@ Si la rama no coincide con el proyecto solicitado, **detener la edición y aclar
 7. No subir videos, HAR, tokens ni adjuntos privados al repositorio público; registrar la referencia, ubicación o nombre del material original.
 
 Para chats de ChatGPT: `AGENTS.md` ayuda a asistentes de código compatibles, pero un chat nuevo **no lee automáticamente GitHub**. El usuario debe indicar el proyecto y pedir explícitamente que se consulten esta guía y la ficha específica.
+
+## Política permanente de despliegues (12/10/2026)
+
+**Vercel se usa solo si el usuario solicita expresamente una publicación.** Esta rama tiene `vercel.json` con `git.deploymentEnabled: false` para evitar que commits, pruebas, documentación y actualizaciones de datos consuman Deployment Storage. Ejecutar QA local o en GitHub Actions, sin llamar a Vercel como parte de un avance normal. No quitar ni cambiar esa configuración, tampoco en ramas derivadas, salvo autorización explícita. `[skip ci]` no bloquea Vercel. No eliminar despliegues existentes ni modificar el proyecto de Vélez Data. Mantener esta decisión cuando se actualice el contexto.

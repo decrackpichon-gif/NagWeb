@@ -179,3 +179,7 @@ Biblioteca offline-first de **recursos abiertos/licenciados** para diseñadores.
   inmediatamente después de `refresh()`, pero la vista previa se
   regenera con 480 ms de debounce. El test se sincroniza con el evento
   de carga del iframe para no introducir falsos errores intermitentes.
+
+## Política permanente de despliegues (12/10/2026)
+
+**Vercel se usa solo si el usuario solicita expresamente una publicación.** Esta rama tiene `vercel.json` con `git.deploymentEnabled: false` para evitar que commits, pruebas, documentación y actualizaciones de datos consuman Deployment Storage. Ejecutar QA local o en GitHub Actions, sin llamar a Vercel como parte de un avance normal. No quitar ni cambiar esa configuración, tampoco en ramas derivadas, salvo autorización explícita. `[skip ci]` no bloquea Vercel. No eliminar despliegues existentes ni modificar el proyecto de Vélez Data. Mantener esta decisión cuando se actualice el contexto.
