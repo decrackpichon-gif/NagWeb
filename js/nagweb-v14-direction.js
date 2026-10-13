@@ -238,12 +238,20 @@ function commitPart(id,name,p){
  if((p.orderChanged||old.z!=null)&&Number.isFinite(+p.z))next.z=Math.max(-100,Math.min(100,Math.round(+p.z)));
  // El Hero conserva la referencia espacial del momento de edición:
  // así el HTML exportado puede adaptar X/Y sin cambiar la pose original.
- if(p.refW>0&&p.refH>0&&(next.x||next.y)){
+ if(p.refW>0&&p.refH>0&&(next.x||next.y||(!mobile&&p.free))){
   next.refW=Math.round(p.refW*10)/10;
   next.refH=Math.round(p.refH*10)/10;
  }
+ if(!mobile&&p.free){
+  next.free=true;
+  next.fx=Math.round((p.fx||0)*10)/10;
+  next.fy=Math.round((p.fy||0)*10)/10;
+  next.fw=Math.max(20,Math.round((p.fw||240)*10)/10);
+ }
  var same=next.x===(+old.x||0)&&next.y===(+old.y||0)&&next.r===(+old.r||0)&&next.s===(old.s==null?1:+old.s)&&
-  (next.z==null||next.z===(old.z==null?partDefaultZ(name):+old.z));
+  (next.z==null||next.z===(old.z==null?partDefaultZ(name):+old.z))&&
+  (!!next.free===!!old.free)&&(!next.free||(
+   next.fx===(+old.fx||0)&&next.fy===(+old.fy||0)&&next.fw===(+old.fw||240)));
  if(same){
   // No crear historial solo por modificar la referencia de una pose visual idéntica.
   if(!next.refW||!old.refW||(Math.abs(next.x/next.refW-old.x/old.refW)<.000001&&Math.abs(next.y/next.refH-old.y/old.refH)<.000001))return false;
@@ -299,6 +307,25 @@ function installCanvasTools(){
     });
    }
    var layerName=active.getAttribute('data-wpart'),lm=/^layer-[1-5]$/.test(layerName||'');
+   var textPart=/^(eyebrow|title|sub|text-extra-[0-9]+)$/.test(layerName||'');
+   if(textPart&&hero.clientWidth>600){
+    var basePart=partState(root,active);
+    action(basePart.free?'Volver a columna':'Liberar texto',
+     basePart.free?'Devolver el texto a la composición original':'Ubicar este texto independientemente dentro del Hero',
+     0,function(){
+      var node=active;if(!node||!node.isConnected)return;
+      var state=partState(root,node),next=Object.assign({},state);
+      if(state.free){
+       next.free=false;next.x=0;next.y=0;
+      }else{
+       var bounds=node.getBoundingClientRect(),frame=hero.getBoundingClientRect();
+       next.free=true;next.fx=(bounds.left+bounds.right)/2-frame.left;
+       next.fy=(bounds.top+bounds.bottom)/2-frame.top;
+       next.fw=Math.max(20,node.offsetWidth);next.x=0;next.y=0;
+      }
+      if(commitPart(next.id,next.name,next))schedulePreview();
+     });
+   }
    if(lm){
     var others=Array.prototype.filter.call(root.querySelectorAll('.nw-lh-layer[data-wpart]'),function(n){return n!==active;});
     function reorder(front){
@@ -355,6 +382,7 @@ function installCanvasTools(){
   var fromMobile=e&&e.wp&&e.wp.__partsMobile&&e.wp.__partsMobile[name];
   var p=mobile&&fromMobile?fromMobile:fromDesktop;
   var state={id:id,name:name,e:e,x:+p.x||0,y:+p.y||0,r:+p.r||0,s:p.s==null?1:+p.s,
+   free:!!fromDesktop.free,fx:+fromDesktop.fx||0,fy:+fromDesktop.fy||0,fw:+fromDesktop.fw||240,
    z:p.z==null?partDefaultZ(name):+p.z,
    responsive:!!(p.refW>0&&p.refH>0),mobile:mobile,mobileOverride:!!(mobile&&fromMobile)};
   if(hero){
