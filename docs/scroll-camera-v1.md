@@ -952,3 +952,51 @@ con el editor real de apertura, selección y campo Z legible, edición
 HTML y Undo. El resultado de CI debe confirmarse por separado.
 
 **CI confirmada** para el último código: [Integración espacial Chromium/WebGL, 39 comprobaciones agrupadas, aprobada](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38280115962) y [smoke de cámara aprobado](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38280115942). El navegador ejecutó y aprobó el acceso «Editar espacio», la lista HTML/3D, el contraste de Z, el cambio HTML y Deshacer. La prueba anterior había detectado una recarga asíncrona del iframe después de Undo; el test ahora espera que concluya antes de iniciar el gesto siguiente. Esto no implica haber validado el preset autónomo ni la oclusión parcial, que siguen pendientes.
+
+
+## Edición directa de objetos en el mapa espacial (12/10/2026)
+
+El mapa de Cámara 3D ya muestra anclas de texto, imágenes y modelos
+Three.js (en **Lienzo libre**). Ahora el marcador de cada objeto se
+puede **arrastrar** con el mouse o con un puntero táctil compatible,
+y también admite **flechas del teclado**. La vista seleccionada define
+los ejes editables: superior X/Z, frontal X/Y y lateral Z/Y.
+
+- El arrastre representa la posición mediante la misma proyección
+  `C.mapPoint` y `C.mapSpec` que utiliza el editor para sus
+  encuadres. Shift bloquea el eje menos desplazado. En vista
+  ampliada, arrastrar un objeto tiene prioridad sobre desplazar
+  el mapa.
+- La conversión inversa conserva el modelo de datos: edita `x/y`
+  como porcentajes del lienzo, `sdCameraDepth` para los planos HTML
+  y `offZ` para objetos `shape3d` anclados. Se compone con
+  los keyframes ya evaluados y **no crea otro motor ni otro reloj**.
+- Se representa la posición propuesta sobre el marcador **sin
+  modificar el proyecto durante el gesto**. Sólo al soltar se
+  guardan los cambios en un snapshot de Deshacer; Escape o
+  pointercancel recuperan el punto original. Las flechas mueven
+  25 unidades por pulsación, o 5 con Shift, siempre sobre los ejes
+  que corresponden a la vista del mapa.
+- Los marcadores ahora son controles enfocables, con etiquetas
+  accesibles y un indicador de arrastre. La lista e inspector de
+  objetos existentes se mantienen sincronizados.
+- En el mapa siguen representándose **anclas y contornos
+  aproximados**, no las superficies geométricas reales, ni las
+  oclusiones de HTML/WebGL. La vista previa completa se actualiza
+  al confirmar el gesto; el marcador se actualiza durante el
+  arrastre.
+
+**Validación:** `tests/spatial-focus-map.integration.cjs` incorpora
+arrastres de un GLB (X y Z) y un texto HTML (Y), vista superior y
+frontal, teclado Z con Shift, Escape, limpieza de listeners,
+Deshacer y conservación de todos los keyframes. Suite aislada:
+**233 comprobaciones PASS**. Se añadió a
+`tests/camera-current-moment.browser.cjs` una prueba de
+puntero real en el mapa de Chromium para edición del X de una
+capa DOM y Undo. Verificar por separado su ejecución CI.
+
+**Pendiente prioritario:** vista espacial verdaderamente amplia
+con manipuladores adecuados para composiciones complejas;
+escena de demostración reutilizable del recorrido
+texto → fotografía → texto; oclusión y recorte correcto al
+atravesar planos y pruebas de accesibilidad/táctil reales.
