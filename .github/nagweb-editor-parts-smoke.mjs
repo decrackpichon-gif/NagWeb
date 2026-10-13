@@ -579,6 +579,102 @@ export async function runEditorPartsSmoke(page){
   assert.equal(await page.evaluate(()=>!!sec().elements.find(x=>x.id==='test-hero').wp.__parts.title.free),false,
     'Rehacer vuelve a la columna');
 
+  // Tirador lateral del texto flotante: ancho propio, sin alterar la escala.
+  await load(14);await select('test-hero');
+  const initialWidth=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-hero');
+   e.wp={title:'UNA FRASE CON MUCHAS PALABRAS PARA PROBAR EL CORTE DE LÍNEAS',
+    __parts:{title:{free:true,x:0,y:0,r:0,s:1,fx:210,fy:190,fw:300,refW:800,refH:500}}};
+   const d=document.querySelector('#preview').contentDocument,style=d.createElement('style');
+   style.textContent=window.SCW.css.layeredhero;d.head.appendChild(style);
+   d.querySelector('.nw-lh').outerHTML=window.SCW.kinds.layeredhero.markup(e.wp,{edit:true});
+   const hero=d.querySelector('.nw-lh');hero.style.width='800px';hero.style.setProperty('--h','500px');
+   const box=hero.querySelector(':scope > .nw-lh-float--title');
+   return{width:box.offsetWidth,scale:d.defaultView.getComputedStyle(box).scale,
+    wrapped:box.getBoundingClientRect().height};
+  });
+  assert.ok(Math.abs(initialWidth.width-300)<2,'el ancho inicial corresponde al modelo');
+  await fire('[data-nw-part="title"]');
+  const widthHandle=await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument;
+   return{count:d.querySelectorAll('.nw-wpart-h').length,width:!!d.querySelector('.nw-wpart-h.width')};
+  });
+  assert.deepEqual(widthHandle,{count:3,width:true},'un tirador lateral distinto del escalado');
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,w=d.defaultView,n=d.querySelector('.nw-wpart-h.width');
+   const r=n.getBoundingClientRect(),x=(r.left+r.right)/2,y=(r.top+r.bottom)/2;
+   n.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,button:0,pointerId:150,clientX:x,clientY:y}));
+   w.dispatchEvent(new w.PointerEvent('pointermove',{bubbles:true,pointerId:150,clientX:x+120,clientY:y}));
+   w.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true,pointerId:150,clientX:x+120,clientY:y}));
+  });
+  const wider=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-hero').wp,d=document.querySelector('#preview').contentDocument;
+   const box=d.querySelector('.nw-lh-float--title');
+   return{fw:e.__parts.title.fw,s:e.__parts.title.s,free:e.__parts.title.free,
+    actual:box.offsetWidth,css:box.style.getPropertyValue('--nw-fw')};
+  });
+  assert.ok(Math.abs(wider.fw-420)<2,'ancho aumenta sin escalar texto');
+  assert.equal(wider.s,1,'el tamaño tipográfico se conserva');
+  assert.equal(wider.free,true);
+  assert.ok(Math.abs(wider.actual-420)<2,'cambia el ancho visible inmediatamente');
+  assert.match(wider.css,/cqw$/,'ancho publicado relativo al tamaño del Hero');
+  const widthExport=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-hero').wp;
+   return window.SCW.kinds.layeredhero.markup(e,{edit:false});
+  });
+  assert.match(widthExport,/--nw-fw:52\.50000cqw;/,'exportación conserva el ancho relativo de escritorio');
+  await page.click('#btn-undo');
+  assert.equal(await page.evaluate(()=>sec().elements.find(x=>x.id==='test-hero').wp.__parts.title.fw),300,'Deshacer restaura ancho');
+  await page.click('#btn-redo');
+  assert.ok(Math.abs(await page.evaluate(()=>sec().elements.find(x=>x.id==='test-hero').wp.__parts.title.fw)-420)<2,'Rehacer restaura el cambio');
+  // Variación móvil: no modifica el ancho guardado para escritorio.
+  await load(15);await select('test-hero');
+  const inheritedMobile=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-hero').wp,d=document.querySelector('#preview').contentDocument;
+   const style=d.createElement('style');style.textContent=window.SCW.css.layeredhero;d.head.appendChild(style);
+   d.querySelector('.nw-lh').outerHTML=window.SCW.kinds.layeredhero.markup(e,{edit:true});
+   const hero=d.querySelector('.nw-lh');hero.style.width='400px';hero.style.setProperty('--h','500px');
+   const n=hero.querySelector('.nw-lh-float--title');
+   return{width:n.offsetWidth,desktop:e.__parts.title.fw};
+  });
+  assert.ok(Math.abs(inheritedMobile.width-210)<2,'móvil hereda el ancho proporcional de escritorio');
+  await fire('[data-nw-part="title"]');
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,w=d.defaultView,n=d.querySelector('.nw-wpart-h.width');
+   const r=n.getBoundingClientRect(),x=(r.left+r.right)/2,y=(r.top+r.bottom)/2;
+   n.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,button:0,pointerId:151,clientX:x,clientY:y}));
+   w.dispatchEvent(new w.PointerEvent('pointermove',{bubbles:true,pointerId:151,clientX:x+65,clientY:y}));
+   w.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true,pointerId:151,clientX:x+65,clientY:y}));
+  });
+  const mobileWidth=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-hero').wp,d=document.querySelector('#preview').contentDocument;
+   return{desktop:e.__parts.title.fw,mobile:e.__partsMobile?.title?.fw,
+    width:d.querySelector('.nw-lh-float--title').offsetWidth};
+  });
+  assert.equal(mobileWidth.desktop,420,'el ajuste móvil no altera el ancho de escritorio');
+  assert.ok(Math.abs(mobileWidth.mobile-275)<2,'móvil guarda un ancho independiente');
+  assert.ok(Math.abs(mobileWidth.width-275)<2,'móvil refleja el cambio en el lienzo');
+  const mobileMarkup=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-hero').wp;
+   return window.SCW.kinds.layeredhero.markup(e,{edit:false});
+  });
+  assert.match(mobileMarkup,/--nw-fw:52\.50000cqw/,'export conserva ancho de escritorio');
+  assert.match(mobileMarkup,/--nw-mfw:68\.75000cqw/,'export incluye ancho móvil independiente');
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,button=d.querySelector('.nw-wpart-reset');
+   if(!button)throw Error('Falta Restablecer móvil');button.click();
+  });
+  const backToDesktop=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-hero').wp,d=document.querySelector('#preview').contentDocument;
+   const title=d.querySelector('.nw-lh-float--title');
+   return{desktop:e.__parts.title.fw,mobile:e.__partsMobile?.title,
+    css:title.style.getPropertyValue('--nw-mfw'),visible:title.offsetWidth};
+  });
+  assert.equal(backToDesktop.desktop,420);
+  assert.equal(backToDesktop.mobile,undefined,'restablecer móvil elimina su ajuste');
+  assert.equal(backToDesktop.css,'','el ancho móvil deja de sobreescribir escritorio');
+  assert.ok(Math.abs(backToDesktop.visible-210)<2,'el texto hereda su ancho original en móvil');
+
   console.log('Editor partes: foco, restauración, Escape, Enter e historial OK');
  }finally{
   await page.evaluate(old=>{
