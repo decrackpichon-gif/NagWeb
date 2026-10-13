@@ -135,13 +135,93 @@
       "threejs",
       "uiverse"
     ],
-    "compressedBytes": 4697869,
+    "compressedBytes": 4697872,
     "uncompressedBytes": 37963241,
-    "sha256": "23ea9c66c918d08306b9a697694e68bedd748522b9ade6aaf229820570c0b24d",
+    "sha256": "3fad11291383f7335b6fb03d158ce8e961c5da78394118b8e5d7be600025d240",
     "libraryPath": "all/library.json.gz",
     "manifestPath": "all/manifest.json",
     "browseIndexPath": "all/browse-index.json.gz",
-    "browseIndexBytes": 490006,
-    "browseIndexSha256": "dfd813bdfffb7546e77014ba69a66385fd73333434e1143553267e9f5d4de5a0"
+    "browseIndexBytes": 496811,
+    "browseIndexSha256": "4d8e0624af4d0ce9f676a90c01a94e7412145cd0381828cbe1f76720c17f44bf"
+  },
+  "detailShards": {
+    "uiverse": {
+      "algorithm": "sha256-first-byte-mod-8",
+      "sourceSha256": "552812ccde459d59563490b3614e7f7b4cc8e6b84ea110ef4ff10c0c0a24f6bb",
+      "shards": [
+        {
+          "id": "uiverse-part-0",
+          "shard": 0,
+          "sourceSnapshot": "uiverse",
+          "libraryPath": "uiverse/shards/part-00.json.gz",
+          "count": 487,
+          "sha256": "455040cf2b0077b793a943491cb28a8762800e89b118a2bd861d2ba5a4f669cd",
+          "compressedBytes": 393320
+        },
+        {
+          "id": "uiverse-part-1",
+          "shard": 1,
+          "sourceSnapshot": "uiverse",
+          "libraryPath": "uiverse/shards/part-01.json.gz",
+          "count": 516,
+          "sha256": "eeb69c67fc6faafb8d77c45fc3e3036e9a74b7a42d386f0f1b461248c58792d7",
+          "compressedBytes": 464824
+        },
+        {
+          "id": "uiverse-part-2",
+          "shard": 2,
+          "sourceSnapshot": "uiverse",
+          "libraryPath": "uiverse/shards/part-02.json.gz",
+          "count": 493,
+          "sha256": "62cf562cfd6280e5f601ad185c5a31d71e52d89d8a7284b90594bc8c24c4252e",
+          "compressedBytes": 397795
+        },
+        {
+          "id": "uiverse-part-3",
+          "shard": 3,
+          "sourceSnapshot": "uiverse",
+          "libraryPath": "uiverse/shards/part-03.json.gz",
+          "count": 458,
+          "sha256": "037741ec1950ef799651fa83e5cc33daec685046e629dd9b25e47d987e4ab113",
+          "compressedBytes": 397487
+        },
+        {
+          "id": "uiverse-part-4",
+          "shard": 4,
+          "sourceSnapshot": "uiverse",
+          "libraryPath": "uiverse/shards/part-04.json.gz",
+          "count": 449,
+          "sha256": "ec45fe600161504efa48a0f3891b3836133474dfd84b8893761ac61d69049a84",
+          "compressedBytes": 386457
+        },
+        {
+          "id": "uiverse-part-5",
+          "shard": 5,
+          "sourceSnapshot": "uiverse",
+          "libraryPath": "uiverse/shards/part-05.json.gz",
+          "count": 429,
+          "sha256": "63afe02418eba22ffc0ec5262eebdabdda902843662df90f4b516aeb78622a23",
+          "compressedBytes": 334344
+        },
+        {
+          "id": "uiverse-part-6",
+          "shard": 6,
+          "sourceSnapshot": "uiverse",
+          "libraryPath": "uiverse/shards/part-06.json.gz",
+          "count": 445,
+          "sha256": "b192cc5faca372d93d789d872423cebc05be1baa93862a61c18b35f7fcd34d3c",
+          "compressedBytes": 357632
+        },
+        {
+          "id": "uiverse-part-7",
+          "shard": 7,
+          "sourceSnapshot": "uiverse",
+          "libraryPath": "uiverse/shards/part-07.json.gz",
+          "count": 484,
+          "sha256": "410ba1a1d9cee131d296366be38a417e63124e8072b03126072f3e6fc8b9d2ce",
+          "compressedBytes": 425043
+        }
+      ]
+    }
   }
 }
