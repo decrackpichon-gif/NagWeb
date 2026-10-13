@@ -1002,3 +1002,48 @@ texto → fotografía → texto; oclusión y recorte correcto al
 atravesar planos y pruebas de accesibilidad/táctil reales.
 
 **Superposición de marcadores:** al entrar con «Editar espacio 3D» se activa explícitamente el **modo de edición de objetos**. El SVG de anclas recibe prioridad de interacción sobre los controles HTML de waypoints, y los símbolos de objetos se dibujan por encima de los puntos de cámara dentro del mapa. Hay un conmutador «Editando objetos · Volver a cámara» para recuperar la interacción con waypoints sin salir del mapa. El conmutador solo aparece en escenas que realmente contienen objetivos espaciales. Esto evita que un texto situado junto al encuadre de cámara resulte imposible de seleccionar; la prueba de navegador con mouse real determina si se logró corregir el solapamiento. Suite aislada: **237 comprobaciones PASS**.
+
+
+## Gestos 3D compartidos y QA independiente (13/10/2026)
+
+Se investigó el arrastre de objetos que funcionaba en regresión aislada
+pero podía perder eventos del mouse durante una secuencia de pruebas que
+incluía ediciones en el iframe, Escape y Undo.
+
+**Corrección transversal:**
+- Los arrastres de marcadores HTML y Three en el mapa utilizan una
+  superficie transparente temporal sobre el documento del editor para
+  impedir que otro iframe reciba el movimiento mientras la operación
+  está activa. El control se retira al guardar, cancelar y terminar.
+- Un helper de liberación de captura se utiliza en el cierre de cuatro
+  tipos de herramienta: orientación de cámara, profundidad de modelo,
+  giro/tamaño de modelo y traslación XYZ. En particular, cancelar con
+  Escape no deja el puntero capturado dentro de un iframe viejo.
+- Se mantienen intactos los campos \`x/y\`, \`sdCameraDepth\`, \`offZ\`,
+  keyframes y el Director determinista 0→1.
+
+**Pruebas eficientemente separadas:**
+- \`tests/spatial-map-drag.browser.cjs\` comprueba en Chromium real
+  selección, mouse, desplazamiento de HTML, un Undo, liberación de la
+  superficie y conservación del recorrido de cámara, sin efectos de
+  pruebas previas. En la ejecución CI
+  [38431845915](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38431845915)
+  el caso aislado pasó; el conjunto global de aquel commit falló por
+  una prueba duplicada al final de una sesión muy extensa.
+- \`tests/camera-current-moment.browser.cjs\` conserva el flujo amplio de
+  keyframes, controles 3D, profundidades, Undo y vista previa, pero
+  ya no repite el arrastre cubierto por el test independiente.
+- \`.github/nagweb-spatial-smoke.cjs\` ejecuta primero la prueba corta,
+  luego el grupo editor y, cuando están verdes, todos los grupos de
+  WebGL, matemáticas, luces y sintaxis. Ante el primer error, detiene
+  la corrida en lugar de consumir minutos en tareas redundantes.
+- Suite aislada de modelos/editor: **251 aserciones aprobadas**.
+  La CI global del commit final debe verificarse con su ejecución.
+
+**Límite aún abierto:** la secuencia artificial de muchas operaciones
+de preview, cancelaciones y Undo acumuladas llegó a perder movimientos
+del puntero en la última parte de una prueba larga. Esto requiere
+verificación específica de resiliencia bajo sesiones extensas; no debe
+confundirse con una falla reproducible del arrastre aislado, pero
+tampoco darse por solucionado sólo por separar las pruebas. No se
+hicieron despliegues Vercel ni merges.
