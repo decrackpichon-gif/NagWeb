@@ -242,6 +242,11 @@ function commitPart(id,name,p){
   next.refW=Math.round(p.refW*10)/10;
   next.refH=Math.round(p.refH*10)/10;
  }
+ if(mobile&&(p.widthChanged||old.fw!=null)){
+  next.fw=Math.max(40,Math.round((p.widthChanged?p.fw:old.fw)*10)/10);
+  next.refW=Math.round((p.refW||old.refW||1)*10)/10;
+  next.refH=Math.round((p.refH||old.refH||1)*10)/10;
+ }
  if(!mobile&&p.free){
   next.free=true;
   next.fx=Math.round((p.fx||0)*10)/10;
@@ -251,7 +256,8 @@ function commitPart(id,name,p){
  var same=next.x===(+old.x||0)&&next.y===(+old.y||0)&&next.r===(+old.r||0)&&next.s===(old.s==null?1:+old.s)&&
   (next.z==null||next.z===(old.z==null?partDefaultZ(name):+old.z))&&
   (!!next.free===!!old.free)&&(!next.free||(
-   next.fx===(+old.fx||0)&&next.fy===(+old.fy||0)&&next.fw===(+old.fw||240)));
+   next.fx===(+old.fx||0)&&next.fy===(+old.fy||0)&&next.fw===(+old.fw||240)))&&
+   (!mobile||next.fw==null||next.fw===(+old.fw||0));
  if(same){
   // No crear historial solo por modificar la referencia de una pose visual idéntica.
   if(!next.refW||!old.refW||(Math.abs(next.x/next.refW-old.x/old.refW)<.000001&&Math.abs(next.y/next.refH-old.y/old.refH)<.000001))return false;
@@ -265,7 +271,7 @@ function installCanvasTools(){
  var fr=document.getElementById('preview');if(!fr)return;
  var doc;try{doc=fr.contentDocument;}catch(err){return;}if(!doc||!doc.body||doc.__nwCanvasTools)return;doc.__nwCanvasTools=1;
  var style=doc.createElement('style');
- style.textContent='[data-wfield],[data-wlist]{cursor:text}[data-wfield]:hover,[data-wlist]:hover{outline:1px dashed rgba(139,108,255,.75);outline-offset:3px}.nw-wpart-sel{outline:1.5px solid #8C6BFF!important;outline-offset:3px!important}.nw-wpart-h{position:fixed;z-index:2147483000;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid #7C5CFF;box-shadow:0 1px 5px rgba(0,0,0,.3)}.nw-wpart-h.size{cursor:nwse-resize}.nw-wpart-h.rot{cursor:grab;background:#7C5CFF}.nw-wpart-action{position:fixed;z-index:2147483003;min-height:23px;border:1px solid #8C6BFF;border-radius:6px;background:#191626;color:#fff;padding:3px 8px;cursor:pointer;font:600 10px/1.2 system-ui;box-shadow:0 3px 10px #0006}.nw-wpart-reset{position:fixed;z-index:2147483002;min-height:23px;border:1px solid #8C6BFF;border-radius:6px;background:#191626;color:#fff;padding:3px 8px;cursor:pointer;font:600 10px/1.2 system-ui;box-shadow:0 3px 10px #0006}.nw-canvas-editing{outline:2px solid #8C6BFF!important;outline-offset:2px!important;cursor:text!important}';
+ style.textContent='[data-wfield],[data-wlist]{cursor:text}[data-wfield]:hover,[data-wlist]:hover{outline:1px dashed rgba(139,108,255,.75);outline-offset:3px}.nw-wpart-sel{outline:1.5px solid #8C6BFF!important;outline-offset:3px!important}.nw-wpart-h{position:fixed;z-index:2147483000;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid #7C5CFF;box-shadow:0 1px 5px rgba(0,0,0,.3)}.nw-wpart-h.size{cursor:nwse-resize}.nw-wpart-h.width{cursor:ew-resize;background:#8C6BFF;border-color:#fff}.nw-wpart-h.rot{cursor:grab;background:#7C5CFF}.nw-wpart-action{position:fixed;z-index:2147483003;min-height:23px;border:1px solid #8C6BFF;border-radius:6px;background:#191626;color:#fff;padding:3px 8px;cursor:pointer;font:600 10px/1.2 system-ui;box-shadow:0 3px 10px #0006}.nw-wpart-reset{position:fixed;z-index:2147483002;min-height:23px;border:1px solid #8C6BFF;border-radius:6px;background:#191626;color:#fff;padding:3px 8px;cursor:pointer;font:600 10px/1.2 system-ui;box-shadow:0 3px 10px #0006}.nw-canvas-editing{outline:2px solid #8C6BFF!important;outline-offset:2px!important;cursor:text!important}';
  doc.head.appendChild(style);
  var active=null,handles=[],keyMove=null;
  function endNudge(cancel){
@@ -286,6 +292,12 @@ function installCanvasTools(){
   var rot=doc.createElement('i');rot.className='nw-wpart-h rot';rot.style.left=(r.left+r.width/2-6)+'px';rot.style.top=(r.top-28)+'px';
   doc.body.appendChild(s);doc.body.appendChild(rot);handles=[s,rot];
   bindHandle(s,'size');bindHandle(rot,'rot');
+  if(active.classList.contains('nw-lh-float')){
+   var wh=doc.createElement('i');wh.className='nw-wpart-h width';
+   wh.title='Arrastrá para cambiar el ancho del texto sin cambiar el tamaño de las letras';
+   wh.style.left=(r.right-6)+'px';wh.style.top=(r.top+r.height/2-6)+'px';
+   doc.body.appendChild(wh);handles.push(wh);bindHandle(wh,'width');
+  }
   var root=active.closest('.el.wdg[data-id]');
   var hero=active.closest('.nw-lh');
   if(root&&hero){
@@ -382,13 +394,19 @@ function installCanvasTools(){
   var fromMobile=e&&e.wp&&e.wp.__partsMobile&&e.wp.__partsMobile[name];
   var p=mobile&&fromMobile?fromMobile:fromDesktop;
   var state={id:id,name:name,e:e,x:+p.x||0,y:+p.y||0,r:+p.r||0,s:p.s==null?1:+p.s,
-   free:!!fromDesktop.free,fx:+fromDesktop.fx||0,fy:+fromDesktop.fy||0,fw:+fromDesktop.fw||240,
+   free:!!fromDesktop.free,fx:+fromDesktop.fx||0,fy:+fromDesktop.fy||0,
+   fw:n.classList.contains('nw-lh-float')?n.offsetWidth:(+fromDesktop.fw||240),
+   widthOverride:!!(mobile&&fromMobile&&fromMobile.fw!=null),
    z:p.z==null?partDefaultZ(name):+p.z,
    responsive:!!(p.refW>0&&p.refH>0),mobile:mobile,mobileOverride:!!(mobile&&fromMobile)};
   if(hero){
    var w=hero.clientWidth,h=hero.clientHeight;
    if(w>0&&h>0){
     if(p.refW>0&&p.refH>0){state.x=state.x*w/p.refW;state.y=state.y*h/p.refH;}
+    if(!mobile&&fromDesktop.free&&fromDesktop.refW>0&&fromDesktop.refH>0){
+     state.fx=state.fx*w/fromDesktop.refW;
+     state.fy=state.fy*h/fromDesktop.refH;
+    }
     state.refW=w;state.refH=h;
    }
   }
@@ -397,13 +415,23 @@ function installCanvasTools(){
  function applyPart(n,p,final){
   var names=p.mobile?['--nw-mx','--nw-my','--nw-mr','--nw-ms']:['--nw-tx','--nw-ty','--nw-pr','--nw-ps'];
   if(final&&p.mobile&&!p.mobileOverride){
-   names.forEach(function(name){n.style.removeProperty(name);});return;
+   names.forEach(function(name){n.style.removeProperty(name);});
+   if(n.classList.contains('nw-lh-float'))n.style.removeProperty('--nw-mfw');
+   return;
   }
   var relative=final&&p.responsive&&p.refW>0&&p.refH>0;
   var x=relative?(p.x/p.refW*100).toFixed(5)+'cqw':p.x+'px';
   var y=relative?'calc(var(--h) * '+(p.y/p.refH).toFixed(6)+')':p.y+'px';
   n.style.setProperty(names[0],x);n.style.setProperty(names[1],y);
   n.style.setProperty(names[2],p.r+'deg');n.style.setProperty(names[3],p.s);
+  if(p.free&&n.classList.contains('nw-lh-float')){
+   var widthName=p.mobile?'--nw-mfw':'--nw-fw';
+   if(p.mobile&&!p.widthOverride&&!p.widthChanged&&final)n.style.removeProperty(widthName);
+   else if(p.widthChanged||!p.mobile){
+    var widthValue=final&&p.refW>0?(p.fw/p.refW*100).toFixed(5)+'cqw':p.fw+'px';
+    n.style.setProperty(widthName,widthValue);
+   }
+  }
   if(/^layer-[1-5]$/.test(p.name||''))n.style.setProperty(p.mobile?'--nw-mz':'--nw-z',p.z);
   n.classList.add('nw-part-t');
  }
@@ -416,7 +444,12 @@ function installCanvasTools(){
    var dist0=Math.max(12,Math.hypot(sx-cx,sy-cy)),previousAngle=Math.atan2(sy-cy,sx-cx),turn=0;
    function mv(e){
     if(e.pointerId!==ev.pointerId)return;
-    if(mode==='size')p.s=Math.max(.2,Math.min(5,start.s*Math.hypot(e.clientX-cx,e.clientY-cy)/dist0));
+    if(mode==='width'){
+     var angle=start.r*Math.PI/180;
+     var projected=(e.clientX-sx)*Math.cos(angle)+(e.clientY-sy)*Math.sin(angle);
+     p.fw=Math.max(64,Math.min(start.refW*1.5,start.fw+projected/Math.max(.2,start.s)));
+     p.widthChanged=true;
+    }else if(mode==='size')p.s=Math.max(.2,Math.min(5,start.s*Math.hypot(e.clientX-cx,e.clientY-cy)/dist0));
     else{
      var a=Math.atan2(e.clientY-cy,e.clientX-cx);
      turn+=Math.atan2(Math.sin(a-previousAngle),Math.cos(a-previousAngle))*180/Math.PI;
@@ -427,7 +460,9 @@ function installCanvasTools(){
    function up(e){
     if(e.pointerId!==ev.pointerId)return;
     var w=doc.defaultView;w.removeEventListener('pointermove',mv);w.removeEventListener('pointerup',up);w.removeEventListener('pointercancel',up);
-    if(e.type==='pointercancel'){applyPart(target,start,true);placeHandles();return;}
+    if(e.type==='pointercancel'||(mode==='width'&&Math.abs(p.fw-start.fw)<.5)){
+     applyPart(target,start,true);placeHandles();return;
+    }
     if(commitPart(p.id,p.name,p)){p.responsive=!!p.refW;p.mobileOverride=!!p.mobile;}
     applyPart(target,p,true);placeHandles();
    }
