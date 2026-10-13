@@ -1458,3 +1458,32 @@ Hacer clic sobre Personalizar mientras se reemplaza el documento causa
 una condición de carrera; el test ahora valida el estado terminado del
 lienzo antes de editar. Esto no cambia el funcionamiento ni el retraso
 real del editor, sólo sincroniza correctamente la prueba.
+
+## Etapa 90: abrir recursos sin descargar los 6762 códigos
+
+La búsqueda ya usa el índice comprimido y verificado del Vault. Hasta ahora,
+al abrir **un** recurso, el navegador descargaba además el archivo completo
+`all/library.json.gz` (4,7 MB comprimidos y cerca de 38 MB de JSON).
+A partir de esta etapa, el índice incorpora `snapshotId` de **origen real**,
+que distingue los proveedores públicos de sus archivos físicos: por ejemplo
+Magic UI vive en `core-code`, no en un archivo independiente.
+
+`getResource()` resuelve el ID por el índice, descarga sólo el paquete de
+origen (`lucide`, `heroicons`, `uiverse`, `threejs-code` o `core-code`),
+verifica SHA-256, conteo, esquema e IDs únicos y reutiliza en memoria el
+mismo paquete para próximas fichas. Las descargas simultáneas del mismo
+archivo comparten promesa; fallos de red o hash nunca se cachean.
+Un refresh conserva exclusivamente snapshots cuyos hashes no cambiaron.
+Se mantiene `loadFullLibrary()` y la compatibilidad con índices históricos
+sin `snapshotId`.
+
+La prueba de Chromium usa cinco mini-paquetes de prueba y no sirve el archivo
+consolidado de código: si algún recorrido vuelve a solicitarlo, la prueba
+falla. Un selftest independiente cubre en Node los cinco casos importantes:
+caché, concurrencia, integridad, refresh y fallback histórico.
+
+El workflow `.github/workflows/resource-provider-index.yml` recompone
+**únicamente** los índices a partir de paquetes locales ya verificados;
+comprueba 6762 mapeos de ID a archivo de origen, conserva los cinco hashes
+de proveedores y ambas familias de miniaturas, y hace un push normal a la
+historia aislada de `resource-vault-data`. No realiza merges ni despliegues.

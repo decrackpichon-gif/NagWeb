@@ -183,3 +183,23 @@ Biblioteca offline-first de **recursos abiertos/licenciados** para diseñadores.
 ## Política permanente de despliegues (12/10/2026)
 
 **Vercel se usa solo si el usuario solicita expresamente una publicación.** Esta rama tiene `vercel.json` con `git.deploymentEnabled: false` para evitar que commits, pruebas, documentación y actualizaciones de datos consuman Deployment Storage. Ejecutar QA local o en GitHub Actions, sin llamar a Vercel como parte de un avance normal. No quitar ni cambiar esa configuración, tampoco en ramas derivadas, salvo autorización explícita. `[skip ci]` no bloquea Vercel. No eliminar despliegues existentes ni modificar el proyecto de Vélez Data. Mantener esta decisión cuando se actualice el contexto.
+
+## Etapa 90: carga bajo demanda del paquete de origen (12/10/2026)
+
+- Problema comprobado: abrir la ficha de un único recurso ejecutaba
+  `loadFullLibrary()` y descargaba el archivo combinado de 4,7 MB, aunque
+  la búsqueda utilizaba un índice liviano.
+- Decisión: guardar `snapshotId` en cada ficha compacta; cargar sólo el
+  archivo del proveedor de origen con verificación SHA-256. Core Code reúne
+  varios proveedores públicos y no debe resolverse por `source.provider`.
+- Caché por hash/ruta/ID de snapshot, promesas compartidas y fallback seguro
+  para índices antiguos. Una actualización de catálogo debe invalidar
+  sólo los archivos que realmente cambiaron. Mantener el método completo
+  `loadFullLibrary()` para restauración y consumidores históricos.
+- Prueba del navegador offline sin el archivo consolidado disponible:
+  buscar, personalizar, insertar y exportar recursos deben funcionar desde
+  snapshots independientes.
+- Publicación con workflow
+  `.github/workflows/resource-provider-index.yml` en la rama aislada
+  `resource-vault-data`; conservar todos los paquetes y miniaturas.
+- Verificar CI y commit de datos antes de dar esta etapa por publicada.

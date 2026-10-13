@@ -74,13 +74,24 @@ const zip = data => gzipSync(JSON.stringify(data));
 const index = zip({ format: "nagweb-resource-browse-index", resourceCount: resources.length,
   resources: resources.map(r => ({ id: r.id, title: r.title, family: r.family, kind: r.kind, provider: r.source.provider,
     ...(browseHeroiconPaths(r) ? { previewPaths: browseHeroiconPaths(r) } : {}),
-    ...(browseLucideShapes(r) ? { previewShapes: browseLucideShapes(r) } : {}) })) });
+    ...(browseLucideShapes(r) ? { previewShapes: browseLucideShapes(r) } : {}),
+    snapshotId: r.source.provider })) });
 const library = zip({ format: "nagweb-resource-vault-bundle", resourceCount: resources.length, resources });
 const sha = bytes => createHash("sha256").update(bytes).digest("hex");
+const snapshots = [...new Set(resources.map(r => r.source.provider))].map(provider => {
+  const owned=resources.filter(r => r.source.provider===provider);
+  const body=zip({format:"nagweb-provider-snapshot",provider,count:owned.length,resources:owned});
+  return {id:provider,count:owned.length,libraryPath:provider+"-snapshot.json.gz",
+    sha256:sha(body),body};
+});
 const fixtures = new Map([
   ["vault-manifest.json", Buffer.from(JSON.stringify({ format: "nagweb-resource-vault-index",
+    snapshots: snapshots.map(({body,...meta})=>meta),
     consolidated: { count: resources.length, browseIndexPath: "index.json.gz", browseIndexSha256: sha(index), libraryPath: "library.json.gz", sha256: sha(library) } }))],
-  ["index.json.gz", index], ["library.json.gz", library]
+  // Deliberately DO NOT serve library.json.gz to the UI. Browsing/editing
+  // must work even when the expensive consolidated source archive is offline.
+  ["index.json.gz", index],
+  ...snapshots.map(({libraryPath,body})=>[libraryPath,body])
 ]);
 const host = `<!doctype html><meta charset="utf-8"><title>Editor de prueba</title>
 <style>body{margin:0}iframe{width:100%;height:100vh;border:0}</style>

@@ -1,0 +1,116 @@
+name: Resource Vault Lazy Provider Index
+
+on:
+  push:
+    branches:
+      - feat/resource-etl-v1
+    paths:
+      - ".github/workflows/resource-provider-index.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: resource-vault-snapshot
+  cancel-in-progress: false
+
+jobs:
+  provider-index:
+    name: Index verified provider archives for on-demand detail loading
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout NAGWEB 05 code
+        uses: actions/checkout@v4
+        with:
+          ref: feat/resource-etl-v1
+          fetch-depth: 1
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Verify lazy provider client and backwards compatibility
+        working-directory: tools/resource-etl
+        run: node src/provider-lazy-selftest.mjs
+
+      - name: Use existing independent data history
+        shell: bash
+        run: |
+          git fetch --no-tags --depth=1 origin refs/heads/resource-vault-data:refs/remotes/origin/resource-vault-data
+          git worktree add -b provider-index-publish "$RUNNER_TEMP/nagweb-provider-index" refs/remotes/origin/resource-vault-data
+          cp "$RUNNER_TEMP/nagweb-provider-index/vault-manifest.json" "$RUNNER_TEMP/before-provider-index.json"
+
+      - name: Rebuild indexes from identical verified archives
+        shell: bash
+        run: |
+          node tools/resource-etl/src/snapshot/build-consolidated-vault.mjs --root="$RUNNER_TEMP/nagweb-provider-index"
+
+      - name: Verify all 6762 resources route to their original snapshots
+        shell: bash
+        run: |
+          node --input-type=module - <<'NODE'
+          import fs from "node:fs";
+          import path from "node:path";
+          import { gunzipSync } from "node:zlib";
+          import { createHash } from "node:crypto";
+          const root=process.env.RUNNER_TEMP+"/nagweb-provider-index";
+          const before=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+"/before-provider-index.json","utf8"));
+          const after=JSON.parse(fs.readFileSync(root+"/vault-manifest.json","utf8"));
+          if(before.totalResources!==6762 || after.totalResources!==before.totalResources ||
+             before.snapshots.length!==5 || after.snapshots.length!==5)
+            throw Error("Provider snapshot counts have changed");
+          const digest=bytes=>createHash("sha256").update(bytes).digest("hex");
+          const idsBySnapshot=new Map();
+          for(const old of before.snapshots){
+            const current=after.snapshots.find(s=>s.id===old.id);
+            if(!current || current.count!==old.count ||
+               current.sha256!==old.sha256 || current.libraryPath!==old.libraryPath)
+              throw Error("Original provider archive changed: "+old.id);
+            const archive=fs.readFileSync(path.join(root,current.libraryPath));
+            if(digest(archive)!==current.sha256)throw Error("Provider checksum mismatch: "+old.id);
+            const payload=JSON.parse(gunzipSync(archive).toString("utf8"));
+            if(!["nagweb-provider-snapshot","nagweb-code-library"].includes(payload.format) ||
+               payload.count!==current.count || payload.resources.length!==current.count)
+              throw Error("Provider snapshot invalid: "+old.id);
+            idsBySnapshot.set(old.id,new Set(payload.resources.map(r=>r.id)));
+          }
+          const compact=fs.readFileSync(path.join(root,after.consolidated.browseIndexPath));
+          const all=fs.readFileSync(path.join(root,after.consolidated.libraryPath));
+          if(digest(compact)!==after.consolidated.browseIndexSha256 ||
+             digest(all)!==after.consolidated.sha256)
+            throw Error("Consolidated checksums invalid");
+          const index=JSON.parse(gunzipSync(compact).toString("utf8"));
+          const library=JSON.parse(gunzipSync(all).toString("utf8"));
+          if(index.resourceCount!==6762 || library.resourceCount!==6762 ||
+             index.resources.length!==6762 || library.resources.length!==6762)
+            throw Error("Consolidated counts invalid");
+          const seen=new Set();
+          for(const r of index.resources){
+            if(seen.has(r.id) || !idsBySnapshot.get(r.snapshotId)?.has(r.id))
+              throw Error("Missing, duplicate, or misrouted resource: "+r.id);
+            seen.add(r.id);
+          }
+          if(index.resources.filter(r=>r.provider==="heroicons" && r.previewPaths?.length).length!==323)
+            throw Error("Heroicons previews regressed");
+          const lucide=index.resources.filter(r=>r.provider==="lucide" && r.previewShapes?.length).length;
+          if(lucide<1800)throw Error("Lucide previews regressed: "+lucide);
+          console.log("Verified provider lazy index:",seen.size,"resources, five original archives,",
+            lucide,"Lucide previews, 323 Heroicons previews");
+          NODE
+
+      - name: Publish only derived indexes without merging
+        shell: bash
+        run: |
+          DIR="$RUNNER_TEMP/nagweb-provider-index"
+          git -C "$DIR" config user.name "github-actions[bot]"
+          git -C "$DIR" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C "$DIR" add vault-manifest.json README.md all
+          if git -C "$DIR" diff --cached --quiet; then
+            echo "Indexes already match"
+            exit 0
+          fi
+          git -C "$DIR" commit -m "data: index provider provenance for checksum-verified lazy loading"
+          git -C "$DIR" push origin HEAD:refs/heads/resource-vault-data

@@ -83,6 +83,8 @@ export class NagWebPersistentVaultClient {
     this.browseIndex = null;
     this.fullLibrary = null;
     this.resourceById = null;
+    this.providerSnapshots = new Map();
+    this.pendingProviderSnapshots = new Map();
   }
 
   async fetchBytes(relativePath) {
@@ -152,6 +154,12 @@ export class NagWebPersistentVaultClient {
       this.fullLibrary = null;
       this.resourceById = null;
     }
+    // Keep a provider cache only if its file, checksum and count agree.
+    const retained = new Set((manifest.snapshots || []).map(item =>
+      [item.id,item.libraryPath,item.sha256,item.count].join("|")));
+    for (const key of this.providerSnapshots.keys()) {
+      if (!retained.has(key)) this.providerSnapshots.delete(key);
+    }
     return index;
   }
 
@@ -217,10 +225,65 @@ export class NagWebPersistentVaultClient {
     return library;
   }
 
+  async loadProviderSnapshot(snapshot) {
+    if (!snapshot?.id || !snapshot.libraryPath ||
+        !/^[a-f0-9]{64}$/i.test(snapshot.sha256 || "") ||
+        !Number.isSafeInteger(snapshot.count) || snapshot.count < 1) {
+      throw new Error("NagWeb Vault provider snapshot descriptor is invalid.");
+    }
+    const key = [snapshot.id,snapshot.libraryPath,snapshot.sha256,snapshot.count].join("|");
+    if (this.providerSnapshots.has(key)) return this.providerSnapshots.get(key);
+    if (this.pendingProviderSnapshots.has(key)) return this.pendingProviderSnapshots.get(key);
+    const request = (async () => {
+      const payload = await this.loadVerifiedGzipJson(snapshot.libraryPath,snapshot.sha256);
+      if (!["nagweb-provider-snapshot","nagweb-code-library"].includes(payload?.format) ||
+          (payload.format === "nagweb-code-library" && snapshot.id !== "core-code") ||
+          payload.count !== snapshot.count ||
+          !Array.isArray(payload.resources) || payload.resources.length !== snapshot.count) {
+        throw new Error("NagWeb Vault provider snapshot schema or count mismatch: " + snapshot.id);
+      }
+      const byId = new Map();
+      for (const resource of payload.resources) {
+        if (typeof resource?.id !== "string" || !resource.id || byId.has(resource.id)) {
+          throw new Error("NagWeb Vault provider snapshot has duplicate or invalid resource IDs: " + snapshot.id);
+        }
+        byId.set(resource.id,resource);
+      }
+      // Do not admit a stale in-flight download after an index refresh.
+      if ((this.manifest?.snapshots || []).some(item =>
+        [item.id,item.libraryPath,item.sha256,item.count].join("|") === key)) {
+        this.providerSnapshots.set(key,byId);
+      }
+      return byId;
+    })();
+    this.pendingProviderSnapshots.set(key,request);
+    try { return await request; }
+    finally {
+      if (this.pendingProviderSnapshots.get(key) === request) this.pendingProviderSnapshots.delete(key);
+    }
+  }
+
   async getResource(id) {
     if (!id) return null;
-    if (!this.resourceById) await this.loadFullLibrary();
-    return this.resourceById.get(String(id)) || null;
+    const wanted = String(id);
+    if (this.resourceById) return this.resourceById.get(wanted) || null;
+    const index = await this.loadBrowseIndex();
+    const manifest = this.manifest;
+    const item = (index.resources || []).find(row => row.id === wanted);
+    if (!item) return null;
+    // Legacy indexes and offline fixtures still use the consolidated bundle.
+    if (!item.snapshotId) {
+      await this.loadFullLibrary();
+      return this.resourceById.get(wanted) || null;
+    }
+    const snapshot = (manifest?.snapshots || []).find(row => row.id === item.snapshotId);
+    if (!snapshot) throw new Error("NagWeb Vault resource references a missing provider archive: " + item.snapshotId);
+    const byId = await this.loadProviderSnapshot(snapshot);
+    if (manifest !== this.manifest) return this.getResource(wanted);
+    if (!byId.has(wanted)) {
+      throw new Error("NagWeb Vault browse index and provider archive disagree on resource: " + wanted);
+    }
+    return byId.get(wanted);
   }
 
   async search({
@@ -337,6 +400,8 @@ export class NagWebPersistentVaultClient {
     this.browseIndex = null;
     this.fullLibrary = null;
     this.resourceById = null;
+    this.providerSnapshots.clear();
+    this.pendingProviderSnapshots.clear();
   }
 }
 
