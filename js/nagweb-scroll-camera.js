@@ -622,10 +622,10 @@ function mapObjectDrag(ev,button){
  ev.preventDefault();ev.stopPropagation();
  // Avoid scrolling a narrow editor pane when a drag starts near its edge.
  if(button.focus)button.focus({preventScroll:true});
- // Document-capture handlers own the gesture. SVG pointer capture is unnecessary
- // here and can produce a premature lostpointercapture during map redraw.
- // Listen on the document, not the tiny SVG marker: a pane redraw or
- // pointer leaving the marker must not silently lose the drag gesture.
+ // Keep the pointer captured on the stable map, not a tiny SVG marker.
+ // This retains pointermove/up when the cursor crosses the sidebar edge
+ // into an iframe or overlapping element. Document listeners remain
+ // active as a fallback outside the marker.
  function paint(v){var p=C.mapPoint(v,spec);marker.setAttribute('transform','translate('+p.x+' '+p.y+')');}
  function move(e){
   if(e.pointerId!==ev.pointerId)return;
@@ -641,7 +641,8 @@ function mapObjectDrag(ev,button){
   done=true;if(!cancel&&e.clientX!=null)move(e);
   owner.removeEventListener('pointermove',move,true);owner.removeEventListener('pointerup',up,true);
   owner.removeEventListener('pointercancel',abort,true);owner.removeEventListener('keydown',key,true);
-  // No SVG capture to release; listeners remain valid outside the marker.
+  if(map&&map.removeEventListener)map.removeEventListener('lostpointercapture',abort);
+  if(map&&map.hasPointerCapture&&map.hasPointerCapture(ev.pointerId))map.releasePointerCapture(ev.pointerId);
   if(cancel||!moved||!draft||sec()!==s||!mapObjectCommit(s,item,draft)){
    paint(origin);
    if(!cancel&&sec()===s){mapObjectSelected[s.id]=item.id;renderPane();}
@@ -652,6 +653,8 @@ function mapObjectDrag(ev,button){
  function key(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();finish(e,true);}}
  owner.addEventListener('pointermove',move,true);owner.addEventListener('pointerup',up,true);
  owner.addEventListener('pointercancel',abort,true);owner.addEventListener('keydown',key,true);
+ if(map&&map.addEventListener)map.addEventListener('lostpointercapture',abort);
+ try{if(map&&map.setPointerCapture)map.setPointerCapture(ev.pointerId);}catch(_){}
 }
 function mapObjectKey(ev,button){
  if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(ev.key))return;
