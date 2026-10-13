@@ -521,6 +521,32 @@ function mapObjectDepthEdit(s,item,desired,pct,size){
  var current=Number.isFinite(+e.sdCameraDepth)?+e.sdCameraDepth:0;
  return {element:e,field:'sdCameraDepth',value:Math.round(Math.max(-4000,Math.min(4000,current+desired-world.z))*10)/10};
 }
+// Convert a projected map move back to the existing authored DOM or Three fields.
+function mapObjectMoveDraft(s,item,point,spec,dx,dy,size,pct){
+ if(!s||!item||!point||!spec||!size||![dx,dy].every(Number.isFinite))return null;
+ var e=(s.elements||[]).find(function(v){return String(v.id)===String(item.id);});
+ if(!e||!C.targetEligible(e,s)||!Number.isFinite(+e.x)||!Number.isFinite(+e.y))return null;
+ var next=C.moveSpatial(point,spec,dx,dy),updates={},actual={x:point.x,y:point.y,z:point.z};
+ if(next.x!==point.x&&size.width>0){updates.x=Math.round(Math.max(-400,Math.min(500,+e.x+(next.x-point.x)/size.width*100))*1000)/1000;actual.x=point.x+(updates.x-e.x)/100*size.width;}
+ if(next.y!==point.y&&size.height>0){updates.y=Math.round(Math.max(-400,Math.min(500,+e.y+(next.y-point.y)/size.height*100))*1000)/1000;actual.y=point.y+(updates.y-e.y)/100*size.height;}
+ if(next.z!==point.z){
+  var d=mapObjectDepthEdit(s,item,Math.max(-4000,Math.min(4000,next.z)),pct,size);
+  if(!d)return null;
+  updates[d.field]=d.value;
+  actual.z=point.z+(d.field==='offZ'?-(d.value-(+e.offZ||0))*size.height/(12*Math.tan(25*Math.PI/180)):d.value-(+e.sdCameraDepth||0));
+ }
+ return {element:e,updates:updates,point:actual};
+}
+function mapObjectCommit(s,item,draft){
+ if(!draft||!s||sec()!==s||!C.config(s)||!(s.elements||[]).includes(draft.element))return false;
+ var keys=Object.keys(draft.updates).filter(function(k){return ['x','y','offZ','sdCameraDepth'].includes(k)&&Number.isFinite(draft.updates[k])&&(+draft.element[k]||0)!==draft.updates[k];});
+ if(!keys.length)return false;
+ if(baseTransformArmed)stopBaseTransform();
+ if(objectDepthArmed)stopObjectDepth(false);
+ if(surfaceAimArmed)clearSurfaceAim();
+ snapshot();keys.forEach(function(k){draft.element[k]=draft.updates[k];});mapObjectSelected[s.id]=item.id;
+ saveProject();renderPane();schedulePreview();return true;
+}
 function mapObjectLayerListHtml(s,plan,pct){
  if(!plan||!plan.entries.length||mapObjectVisible[s.id]===false)return '';
  var rows=mapObjectPositions(s,plan,pct).filter(function(row){return !!row.point;}).sort(function(a,b){return b.point.z-a.point.z;});
@@ -582,10 +608,57 @@ function mapObjectMarkersHtml(s,plan,spec,pct){
   return '<g data-camera-scene-object="'+i+'" data-camera-scene-object-id="'+safeLabel(row.item.id)+'" data-camera-scene-object-kind="'+safeLabel(row.item.kind)+'" data-camera-scene-object-role="'+row.item.role+'" transform="translate('+at.x+' '+at.y+')">'+
    mapObjectShapeHtml(row.item,spec)+
    '<circle data-camera-scene-object-active r="4" stroke="#fff" stroke-width=".95" stroke-dasharray="1.3 .8" fill="none" pointer-events="none" style="display:'+(mapObjectSelected[s.id]===row.item.id?'':'none')+'"/>'+
-   '<circle data-camera-scene-object-pick="'+i+'" r="3.1" fill="transparent" pointer-events="all" style="cursor:help"><title>Ver ubicación y distancia de '+label+'</title></circle>'+
+   '<circle data-camera-scene-object-pick="'+i+'" tabindex="0" role="button" aria-label="Mover '+label+' en el mapa" r="4.3" fill="transparent" pointer-events="all" style="cursor:grab;touch-action:none"><title>Arrastrar para mover en esta vista · Flechas para ajustar · Escape cancela</title></circle>'+
    (i<48?'<text x="2.8" y="-2.1" font-size="2.65" fill="currentColor" stroke="var(--bg,#1c1e23)" stroke-width=".5" paint-order="stroke">'+(i+1)+' · '+label+'</text>':'')+
    '</g>';
  }).join('')+'</g>';
+}
+function mapObjectDrag(ev,button){
+ var s=sec(),plan=mapObjectPlans[s.id],idx=+button.dataset.cameraSceneObjectPick,
+     map=button.closest('[data-camera-map]'),rect=map&&map.getBoundingClientRect(),spec=map&&mapSpecFromNode(map),
+     row=plan&&mapObjectPositions(s,plan,progress(s))[idx],item=row&&row.item,marker=button.parentNode;
+ if(!item||!row.point||!marker||!rect||!rect.width||!rect.height||!C.config(s)||mapObjectVisible[s.id]===false)return;
+ var origin=row.point,draft=null,moved=false,done=false,pct=progress(s);
+ ev.preventDefault();ev.stopPropagation();if(button.focus)button.focus();
+ if(button.setPointerCapture)button.setPointerCapture(ev.pointerId);
+ function paint(v){var p=C.mapPoint(v,spec);marker.setAttribute('transform','translate('+p.x+' '+p.y+')');}
+ function move(e){
+  if(e.pointerId!==ev.pointerId)return;
+  var dx=e.clientX-ev.clientX,dy=e.clientY-ev.clientY;
+  if(Math.hypot(dx,dy)>=3)moved=true;
+  if(!moved)return;
+  if(e.shiftKey){if(Math.abs(dx)>=Math.abs(dy))dy=0;else dx=0;}
+  var next=mapObjectMoveDraft(s,item,origin,spec,dx/rect.width,dy/rect.height,plan.size,pct);
+  if(next){draft=next;paint(draft.point);}
+ }
+ function finish(e,cancel){
+  if(done||e.pointerId!=null&&e.pointerId!==ev.pointerId)return;
+  done=true;if(!cancel&&e.clientX!=null)move(e);
+  button.removeEventListener('pointermove',move);button.removeEventListener('pointerup',up);
+  button.removeEventListener('pointercancel',abort);button.removeEventListener('lostpointercapture',abort);button.removeEventListener('keydown',key);
+  if(button.hasPointerCapture&&button.hasPointerCapture(ev.pointerId))button.releasePointerCapture(ev.pointerId);
+  if(cancel||!moved||!draft||sec()!==s||!mapObjectCommit(s,item,draft)){
+   paint(origin);
+   if(!cancel&&sec()===s){mapObjectSelected[s.id]=item.id;renderPane();}
+  }
+  if(moved)suppressedClick=button;
+ }
+ function up(e){finish(e,false);}function abort(e){finish(e,true);}
+ function key(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();finish(e,true);}}
+ button.addEventListener('pointermove',move);button.addEventListener('pointerup',up);
+ button.addEventListener('pointercancel',abort);button.addEventListener('lostpointercapture',abort);button.addEventListener('keydown',key);
+}
+function mapObjectKey(ev,button){
+ if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(ev.key))return;
+ var s=sec(),plan=mapObjectPlans[s.id],idx=+button.dataset.cameraSceneObjectPick,
+     row=plan&&mapObjectPositions(s,plan,progress(s))[idx],map=button.closest('[data-camera-map]');
+ if(!row||!row.point||!map)return;
+ var spec=mapSpecFromNode(map),unit=(ev.shiftKey?5:25)/(spec.range*2),
+     dx=ev.key==='ArrowRight'?unit:ev.key==='ArrowLeft'?-unit:0,
+     dy=ev.key==='ArrowDown'?unit:ev.key==='ArrowUp'?-unit:0,
+     draft=mapObjectMoveDraft(s,row.item,row.point,spec,dx,dy,plan.size,progress(s));
+ ev.preventDefault();ev.stopPropagation();
+ if(mapObjectCommit(s,row.item,draft)){var updated=pane.querySelector('[data-camera-scene-object-pick="'+idx+'"]');if(updated&&updated.focus)updated.focus({preventScroll:true});}
 }
 function mapObjectPaint(map,s,spec,pct){
  var root=map&&map.querySelector('[data-camera-scene-objects]'),plan=mapObjectPlans[s.id];
@@ -2326,7 +2399,7 @@ function spatialMap(s,list,k){
   (objectPlan&&objectPlan.total?
    '<label style="display:inline-flex;gap:6px;align-items:center"><input type="checkbox" data-camera-scene-objects-toggle'+(mapObjectVisible[s.id]===false?'':' checked')+'> Mostrar objetos de la escena ('+objectPlan.entries.length+(objectPlan.total>objectPlan.entries.length?' de '+objectPlan.total:'')+')</label>'+
    '<div data-camera-scene-objects-legend style="font-size:10px;opacity:.85;margin-top:3px">T Texto · ▧ Imagen · □ Contenedor · ⬡ 3D · • Otro</div>'+
-    '<div style="opacity:.7;font-size:10px">Contornos orientativos según ancho/alto del Lienzo libre, sin escala animada, perspectiva, giro ni oclusiones. En 3D representan el ancla, no la geometría del modelo. No se pueden arrastrar todavía.</div>':
+    '<div style="opacity:.7;font-size:10px">Contornos orientativos según ancho/alto del Lienzo libre, sin escala animada, perspectiva, giro ni oclusiones. En 3D representan el ancla, no la geometría del modelo. Arrastrá el centro de un objeto en el mapa para moverlo. Cambiá de vista para controlar X/Y/Z; Escape cancela.</div>':
    '<div style="opacity:.7">'+(s.layout!=='free'?'Las guías de objetos están disponibles en Lienzo libre.':'No hay objetos compatibles para mostrar en esta escena.')+'</div>')+
   '</div>';
  html+=mapObjectLayerListHtml(s,objectPlan,progress(s));
@@ -2937,7 +3010,7 @@ if(pane){
   var lookCurveHandle=ev.target.closest('[data-camera-look-tension-handle]');if(lookCurveHandle){if(lookCurveHandle.dataset.cameraLookHandleFree==='true')lookFreeHandleDrag(ev,lookCurveHandle);else lookTensionDrag(ev,lookCurveHandle);return;}
   var lookSpatial=ev.target.closest('[data-camera-look-map-point]');if(lookSpatial){lookSpatialDrag(ev,lookSpatial);return;}
   var spatial=ev.target.closest('[data-camera-map-point]');if(spatial){spatialDrag(ev,spatial);return;}
-  if(ev.target.closest('[data-camera-scene-object-pick]')){ev.stopPropagation();return;}
+  var objectMarker=ev.target.closest('[data-camera-scene-object-pick]');if(objectMarker){mapObjectDrag(ev,objectMarker);return;}
   var mapDot=ev.target.closest('[data-camera-look-map-dot],[data-camera-map-dot]'),spatialMapNode=ev.target.closest('[data-camera-map]');
   if(mapDot&&spatialMapNode&&pickSpatial(sec(),spatialMapNode,ev.clientX,ev.clientY)){ev.preventDefault();ev.stopPropagation();return;}
   if(spatialMapNode&&pickSpatial(sec(),spatialMapNode,ev.clientX,ev.clientY)){ev.preventDefault();ev.stopPropagation();return;}
@@ -3001,6 +3074,7 @@ if(pane){
   var lookCurveHandle=ev.target.closest('[data-camera-look-tension-handle]');if(lookCurveHandle){if(lookCurveHandle.dataset.cameraLookHandleFree==='true')lookFreeHandleKey(ev,lookCurveHandle);else lookTensionKey(ev,lookCurveHandle);return;}
   var lookSpatial=ev.target.closest('[data-camera-look-map-point]');if(lookSpatial){lookSpatialKey(ev,lookSpatial);return;}
   var spatial=ev.target.closest('[data-camera-map-point]');if(spatial){spatialKey(ev,spatial);return;}
+  var objectMarker=ev.target.closest('[data-camera-scene-object-pick]');if(objectMarker){mapObjectKey(ev,objectMarker);return;}
   var button=ev.target.closest('[data-camera-jump]');if(!button||['ArrowLeft','ArrowRight'].indexOf(ev.key)<0)return;
   var s=sec();if(!C.config(s))return;ev.preventDefault();ev.stopPropagation();
   var from=+button.dataset.cameraJump,to=Math.round(Math.max(0,Math.min(100,from+(ev.key==='ArrowLeft'?-1:1)*(ev.shiftKey?10:1)))*10)/10;
