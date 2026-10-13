@@ -115,3 +115,11 @@ Una herramienta para elegir, **previsualizar y editar animaciones antes de inser
 ## Política permanente de despliegues (12/10/2026)
 
 **Vercel se usa solo si el usuario solicita expresamente una publicación.** Esta rama tiene `vercel.json` con `git.deploymentEnabled: false` para evitar que commits, pruebas, documentación y actualizaciones de datos consuman Deployment Storage. Ejecutar QA local o en GitHub Actions, sin llamar a Vercel como parte de un avance normal. No quitar ni cambiar esa configuración, tampoco en ramas derivadas, salvo autorización explícita. `[skip ci]` no bloquea Vercel. No eliminar despliegues existentes ni modificar el proyecto de Vélez Data. Mantener esta decisión cuando se actualice el contexto.
+
+
+### 12/10/2026: estabilización de imágenes vacías y carga en cada slot
+- CI anterior [#38280176050](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38280176050): **54 de 55 jobs exitosos**; el único fallo de `showcase` era la línea 36 del test `nagweb-motion-clear-media-smoke.mjs` que todavía utilizaba `page.$eval` al mapear una lista, pese a haberse publicado un parche anterior. El nuevo lote cambia expresamente la línea a `page.$$eval`.
+- Los slots con `nwStreamEmpty` conservan su geometría en preview e instancia/exportación, pero el renderer no rasteriza su textura ni sombra; el canvas queda invisible y se limpia para evitar imágenes fantasma.
+- Carga de imagen individual mediante arrastrar y soltar directamente sobre el slot del panel de capas o su ficha, reutilizando la ruta actual `labLoadImage`, con bloqueo durante otra carga. Referencia de interfaz: «Drop or click to add» de https://animos.app/editor .
+- La nueva prueba cubre vaciar los 12 slots, activar sombra, subir dos SVG por lote y un tercero por drop, dejar nueve vacíos, insertar y reabrir. Solo dar por superada la prueba browser cuando GitHub Actions lo confirme. Grid Dive y Pop Parade continúan sin validación visual de fidelidad al original.
+- **Respetar la política de Vercel manual solamente** documentada en esta ficha y el `vercel.json` actualizado por otro frente; no revertirla ni disparar despliegues.

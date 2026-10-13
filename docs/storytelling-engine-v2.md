@@ -1341,3 +1341,14 @@ Después de vaciar imágenes, el usuario puede cargar archivos individuales o va
 **Verificación:** sintaxis JS validada y prueba local de lógica de borrado sobre 12 posiciones, preservación de elementos y un único asset transparente, con reconstrucción de la vista previa. Se añadió la suite de navegador `nagweb-motion-clear-media-smoke.mjs` bajo el grupo `showcase`: formatos de tarjeta, vaciado, geometría transparente, carga parcial de dos SVG, preservación de diez espacios vacíos, texto añadido, inserción y reapertura. Ejecutar CI y corregir fallos reales antes de dar el browser smoke por aprobado.
 
 **Fidelidad pendiente:** no se tiene el vídeo/inspector activo de las plantillas específicas Grid Dive y Pop Parade, por lo cual siguen siendo interpretaciones de NagWeb y no réplicas verificadas. Dar prioridad a estudiar originales accesibles antes de desarrollar más interpretaciones y no inventar tareas de controles extra.
+
+
+## Vaciar medios sin restos visuales y reemplazo por arrastre (12/10/2026)
+
+La prueba de navegador introducida con «Vaciar imágenes» en el commit `b6a8392` falló en `showcase` por una línea del *test*: se usó `page.$eval` para obtener una colección y llamar `map`. El primer parche (`6008457`) no había corregido efectivamente esa línea; los demás **54 de 55 jobs sí habían pasado**. La aserción quedó cambiada a `page.$$eval` y la prueba extendida.
+
+En el renderer único `js/nagweb-scroll-director-v16.js`, los slots con `nwStreamEmpty` preservan su geometría editable pero no generan textura, sombra ni restos rasterizados; `canvas.style.opacity=0` y `__nwMotionVisible=false` en las posiciones vacías. Se aplica en preview e instancia/exportación mediante `cfg.elements`; no depende de hosts externos ni elimina el slot de la escena.
+
+El flujo «Drop or click to add» visible en la referencia pública https://animos.app/editor motivó el reemplazo por arrastre sobre la miniatura de un slot o sobre su ficha de imagen. El drop delega al cargador `labLoadImage` ya existente, por lo que conserva su validación, estado de carga y asignación del recurso; solo se permite un archivo por slot y se bloquea durante cargas pendientes. El control de media por lote sigue operativo.
+
+Smoke ampliado para: doce slots vacíos sin sombras, dos SVG por lote y uno por drop sobre el slot 3, persistencia de nueve vacíos al insertar/reabrir, formato de imagen, capas y duración. La ejecución CI de este commit debe comprobarse antes de afirmar que el navegador pasó. No contiene cambios a otros frentes ni despliegue manual.
