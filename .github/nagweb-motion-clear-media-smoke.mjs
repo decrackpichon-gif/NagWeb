@@ -37,6 +37,7 @@ export async function runMotionClearMediaSmoke(page){
   assert.deepEqual((await page.$$eval('[data-motion-layer]',ns=>ns.map(n=>n.dataset.motionLayer))).filter(n=>initial.includes(n)),initial,'Slots preserve their order');
   const preview=await page.$$eval('.nw-motion-layer-thumb img',ns=>ns.map(n=>n.hidden));assert.equal(preview.length,12);
   assert.ok(preview.every(Boolean),'Blank slots show no ghost thumbnails');
+  await page.waitForFunction(()=>{const canvases=[...document.querySelector('.nw-motion-dialog iframe')?.contentDocument.querySelectorAll('.nw-stream-card')||[]];return canvases.length===12&&canvases.every(c=>c.style.opacity==='0');},{timeout:15000});
   const emptyCanvases=await page.$eval('.nw-motion-dialog iframe',f=>[...f.contentDocument.querySelectorAll('.nw-stream-card')].map(c=>c.style.opacity));
   assert.equal(emptyCanvases.length,12);assert.ok(emptyCanvases.every(n=>n==='0'),'Blank slots render no shadows or leftover images');
   await (await page.$('[data-motion-stream-batch-upload]')).uploadFile(file,file);
