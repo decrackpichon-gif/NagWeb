@@ -495,8 +495,10 @@ console.log('PASS spatial editor: 22 visible object guides, discoverable map, DO
 // Spatial map is an editable compositing view: moving a DOM plane or a GLB
 // anchor must preserve their Director tracks and produce one undo per gesture.
 scene.layout='free';scene.sdCameraEnabled=true;scene.sdCameraOrientationMode='manual';
-const mapObj={dataset:{plane:'top',range:'500',originX:'0',originAxis:'0'},
- getBoundingClientRect(){return {left:10,top:20,width:600,height:400};},querySelector(){return null;}};
+const mapObj={dataset:{plane:'top',range:'500',originX:'0',originAxis:'0'},captured:false,listeners:{},
+ getBoundingClientRect(){return {left:10,top:20,width:600,height:400};},querySelector(){return null;},
+ addEventListener(t,fn){this.listeners[t]=fn;},removeEventListener(t,fn){if(this.listeners[t]===fn)delete this.listeners[t];},
+ setPointerCapture(){this.captured=true;},hasPointerCapture(){return this.captured;},releasePointerCapture(){this.captured=false;}};
 function mapHandle(index){
  const holder={transform:null,setAttribute(name,value){if(name==='transform')this.transform=value;}};
  const node={dataset:{cameraSceneObjectPick:String(index)},parentNode:holder,captured:false,listeners:{},
@@ -521,10 +523,14 @@ const cameraPathInvariant=JSON.stringify(scene.sdCameraFrames),motionInvariant=J
 const oldX=object.x,mapUndoStart=undos,mapSaveStart=saves;
 const glbMap=mapHandle(0);
 beginMapDrag(glbMap.node);mapMove(glbMap.node,301,260,180);
+assert.equal(mapObj.captured,true,'Map captures pointer across sidebar instead of SVG marker');
+assert.equal(glbMap.node.captured,false,'Marker does not own the pointer capture');
 assert.equal(undos,mapUndoStart,'No project snapshot during a map drag');
 assert.equal(object.x,oldX,'Map preview cannot modify persisted GLB before pointer release');
 assert.match(glbMap.holder.transform,/translate\(/,'Map marker moves live during a drag');
 mapUp(glbMap.node,301,260,180);
+assert.equal(mapObj.captured,false,'Map releases capture on pointerup');
+assert.equal(mapObj.listeners.lostpointercapture,undefined,'Completed drag removes capture cleanup hook');
 assert.ok(object.x>oldX,'Dragging right changes anchored GLB base X');
 assert.equal(undos,mapUndoStart+1,'Map pointer drag creates exactly one undo');
 assert.equal(saves,mapSaveStart+1,'Map pointer drag saves once');
@@ -552,7 +558,8 @@ beginMapDrag(cancelMap.node,304,200,180);mapMove(cancelMap.node,304,200,130);
 outsideListeners.keydown({key:'Escape',preventDefault(){},stopPropagation(){}});
 assert.equal(title.sdCameraDepth,oldHtmlDepth,'Escape cancels map Z movement');
 assert.equal(undos,oldCancel,'Escape never creates an undo entry');
-assert.equal(cancelMap.node.captured,false,'Escape releases pointer capture');
+assert.equal(mapObj.captured,false,'Escape releases pointer capture held by map');
+assert.equal(mapObj.listeners.lostpointercapture,undefined,'Escape removes map capture cleanup hook');
 assert.equal(outsideListeners.pointermove,undefined,'Escape cleans global map listeners');
 const keyMap=mapHandle(1),depthBeforeKey=title.sdCameraDepth,keyUndo=undos;
 handlers.keydown({target:keyMap.node,key:'ArrowUp',shiftKey:true,preventDefault(){},stopPropagation(){}});
