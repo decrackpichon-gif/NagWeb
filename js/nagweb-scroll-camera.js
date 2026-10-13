@@ -618,9 +618,11 @@ function mapObjectDrag(ev,button){
      map=button.closest('[data-camera-map]'),rect=map&&map.getBoundingClientRect(),spec=map&&mapSpecFromNode(map),
      row=plan&&mapObjectPositions(s,plan,progress(s))[idx],item=row&&row.item,marker=button.parentNode;
  if(!item||!row.point||!marker||!rect||!rect.width||!rect.height||!C.config(s)||mapObjectVisible[s.id]===false)return;
- var origin=row.point,draft=null,moved=false,done=false,pct=progress(s);
+ var origin=row.point,draft=null,moved=false,done=false,pct=progress(s),owner=button.ownerDocument||document;
  ev.preventDefault();ev.stopPropagation();if(button.focus)button.focus();
- if(button.setPointerCapture)button.setPointerCapture(ev.pointerId);
+ try{if(button.setPointerCapture)button.setPointerCapture(ev.pointerId);}catch(_){} 
+ // Listen on the document, not the tiny SVG marker: a pane redraw or
+ // pointer leaving the marker must not silently lose the drag gesture.
  function paint(v){var p=C.mapPoint(v,spec);marker.setAttribute('transform','translate('+p.x+' '+p.y+')');}
  function move(e){
   if(e.pointerId!==ev.pointerId)return;
@@ -634,8 +636,8 @@ function mapObjectDrag(ev,button){
  function finish(e,cancel){
   if(done||e.pointerId!=null&&e.pointerId!==ev.pointerId)return;
   done=true;if(!cancel&&e.clientX!=null)move(e);
-  button.removeEventListener('pointermove',move);button.removeEventListener('pointerup',up);
-  button.removeEventListener('pointercancel',abort);button.removeEventListener('lostpointercapture',abort);button.removeEventListener('keydown',key);
+  owner.removeEventListener('pointermove',move,true);owner.removeEventListener('pointerup',up,true);
+  owner.removeEventListener('pointercancel',abort,true);owner.removeEventListener('keydown',key,true);
   if(button.hasPointerCapture&&button.hasPointerCapture(ev.pointerId))button.releasePointerCapture(ev.pointerId);
   if(cancel||!moved||!draft||sec()!==s||!mapObjectCommit(s,item,draft)){
    paint(origin);
@@ -645,8 +647,8 @@ function mapObjectDrag(ev,button){
  }
  function up(e){finish(e,false);}function abort(e){finish(e,true);}
  function key(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();finish(e,true);}}
- button.addEventListener('pointermove',move);button.addEventListener('pointerup',up);
- button.addEventListener('pointercancel',abort);button.addEventListener('lostpointercapture',abort);button.addEventListener('keydown',key);
+ owner.addEventListener('pointermove',move,true);owner.addEventListener('pointerup',up,true);
+ owner.addEventListener('pointercancel',abort,true);owner.addEventListener('keydown',key,true);
 }
 function mapObjectKey(ev,button){
  if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(ev.key))return;
