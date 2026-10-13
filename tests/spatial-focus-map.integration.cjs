@@ -560,4 +560,12 @@ assert.ok(title.sdCameraDepth>depthBeforeKey,'Shift+ArrowUp edits fine DOM Z in 
 assert.equal(undos,keyUndo+1,'Keyboard map step uses one undo');
 assert.equal(JSON.stringify(scene.sdCameraFrames),cameraPathInvariant,'Camera remains untouched after all 3D layout changes');
 assert.equal(JSON.stringify(object.sdKeyframes),motionInvariant,'3D animation remains untouched after all layout changes');
+const spaceNow=C.panel(scene);
+assert.match(spaceNow,/data-camera-map-object-mode aria-pressed="true"/,'Entering edit space prioritizes object hit targets');
+assert.match(spaceNow,/pointer-events:auto;z-index:24/,'Object mode puts SVG markers over camera HTML handles');
+const modeToggle={dataset:{cameraMapObjectMode:''}};
+handlers.click({target:{closest(){return modeToggle;}}});
+assert.match(C.panel(scene),/data-camera-map-object-mode aria-pressed="false"/,'User can switch back to camera waypoints');
+handlers.click({target:{closest(){return modeToggle;}}});
+assert.match(C.panel(scene),/data-camera-map-object-mode aria-pressed="true"/,'Object edit mode can be rearmed without touching authored data');
 console.log('PASS object map drag: X/Y/Z, DOM/GLB, live marker, keyboard, Shift, Escape, single Undo, camera isolation');
