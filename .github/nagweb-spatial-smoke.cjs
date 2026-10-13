@@ -8,6 +8,9 @@ const requested=process.argv.slice(2),chosen=requested.length?requested:['editor
 if(chosen.some(g=>!groups.includes(g)&&g!=='editor'))throw Error('Unknown group. Use '+groups.concat('editor').join(', '));
 const vendor=process.env.NAGWEB_TEST_VENDOR_DIR,three=vendor?path.resolve(vendor,'three.cjs'):require.resolve('three/build/three.js');
 const jobs=[];
+// Fast isolated real-pointer check first; fails in seconds, not after the full
+// renderer and editor suite. All other tests still run when this is green.
+if(chosen.includes('editor'))jobs.push(['tests/spatial-map-drag.browser.cjs']);
 for(const group of chosen){
  if(group==='editor')jobs.push(['.github/nagweb-camera-model-test.mjs'],['.github/nagweb-camera-runtime-test.mjs'],['tests/spatial-focus-map.integration.cjs'],['tests/camera-current-moment.browser.cjs']);
  else jobs.push(['tests/spatial-'+group+'.integration.cjs',three],['tests/spatial-'+group+'.browser.cjs']);
