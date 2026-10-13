@@ -216,72 +216,9 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   // pointer stream mid-drag while the new frame takes focus.
   await awaitSettledPreview();
   console.log('PASS browser spatial UX: shortcut, mixed HTML/3D layer list, legible Z field, HTML depth, undo and camera isolation');
-  // Real pointer manipulation in the actual panel/map (not a simulated DOM).
-  await page.evaluate(()=>document.querySelector('[data-camera-space-open]').click());
-  await page.locator('[data-camera-map-plane]').selectOption('front');
-  const objectMarker=page.locator('[data-camera-scene-object-pick="1"]');
-  await objectMarker.scrollIntoViewIfNeeded();
-  const markerRect=await objectMarker.boundingBox();
-  assert.ok(markerRect&&markerRect.width>0,'Map provides a visible draggable HTML marker');
-  const beforeMap=await page.evaluate(()=>({x:sec().elements.find(e=>e.id==='story-depth-text').x,
-   frames:JSON.stringify(sec().sdCameraFrames),history:history.length}));
-  // Capture the actual browser gesture without relying on model assumptions.
-  await page.evaluate(()=>{
-   window.__nwDragEvents=[];
-   ['pointerdown','pointermove','pointerup','pointercancel','lostpointercapture'].forEach(type=>document.addEventListener(type,e=>{
-    if(window.__nwDragEvents.length>=18)return;
-    window.__nwDragEvents.push({type,x:Math.round(e.clientX),y:Math.round(e.clientY),target:e.target.getAttribute?.('data-camera-scene-object-pick')||e.target.tagName});
-   },true));
-  });
-  const px=markerRect.x+markerRect.width/2,py=markerRect.y+markerRect.height/2;
-  // A narrow right sidebar can end before the browser viewport. Keep the
-  // gesture inside the actual map, not merely inside the window: crossing
-  // over the preview iframe would send subsequent events to another document.
-  const mapRect=await page.locator('[data-camera-map]').boundingBox();
-  assert.ok(mapRect&&mapRect.width>50,'Spatial map has a usable interactive area');
-  const leftRoom=px-mapRect.x,rightRoom=mapRect.x+mapRect.width-px;
-  const delta=rightRoom>=leftRoom?Math.min(32,rightRoom-8):-Math.min(32,leftRoom-8);
-  assert.ok(Number.isFinite(delta)&&Math.abs(delta)>=8,'Drag fits inside the spatial map');
-  const pointerTrace=await page.evaluate(()=>{
-   const shield=()=>document.querySelector('[data-nw-spatial-drag-shield]');
-   window.__nwMapTrace={events:[]};
-   for(const where of [window,document]){
-    for(const type of ['pointermove','pointerup','mousemove','mouseup','pointercancel']){
-     where.addEventListener(type,e=>{
-      if(window.__nwMapTrace.events.length>=30)return;
-      window.__nwMapTrace.events.push({where:where===window?'window':'document',type,x:e.clientX,y:e.clientY,tag:e.target.tagName});
-     },true);
-    }
-   }
-   return true;
-  });
-  await page.mouse.move(px,py);
-  await page.mouse.down();
-  const afterDown=await page.evaluate(([x,y])=>{
-   const shield=document.querySelector('[data-nw-spatial-drag-shield]');
-   const box=shield?.getBoundingClientRect();
-   const top=document.elementFromPoint(x,y);
-   return {shield:!!shield,shieldBox:box?{x:box.x,y:box.y,width:box.width,height:box.height}:null,
-    captured:shield?.hasPointerCapture?.(1),top:top?.tagName,topTag:top?.outerHTML?.slice(0,180),
-    hasFocus:document.hasFocus(),events:window.__nwMapTrace?.events};
-  },[px+delta,py]);
-  await page.mouse.move(px+delta,py,{steps:5});
-  const afterMove=await page.evaluate(([x,y])=>{
-   const shield=document.querySelector('[data-nw-spatial-drag-shield]');
-   const top=document.elementFromPoint(x,y);
-   return{shield:!!shield,top:top?.tagName,topTag:top?.outerHTML?.slice(0,140),
-    events:window.__nwMapTrace?.events};
-  },[px+delta,py]);
-  await page.mouse.up();
-  const movedMap=await page.evaluate(()=>({x:sec().elements.find(e=>e.id==='story-depth-text').x,
-   frames:JSON.stringify(sec().sdCameraFrames),history:history.length}));
-  if(!((movedMap.x-beforeMap.x)*delta>0))console.log('SPATIAL MAP DRAG TRACE '+JSON.stringify({page:await page.evaluate(()=>({events:window.__nwDragEvents,mode:document.querySelector('[data-camera-map-object-mode]')?.getAttribute('aria-pressed'),selected:document.querySelector('[data-camera-object-select]')?.value,scroll:document.querySelector('#pane')?.scrollTop,active:document.activeElement?.outerHTML?.slice(0,160)})),afterDown,afterMove})+' / bounds='+JSON.stringify(mapRect)+' / delta='+delta+' / x='+beforeMap.x+'->'+movedMap.x);
-  assert.ok((movedMap.x-beforeMap.x)*delta>0,'Dragging inward changes DOM X in the pointer direction');
-  assert.equal(movedMap.history,beforeMap.history+1,'Direct map drag persists once');
-  assert.equal(movedMap.frames,beforeMap.frames,'Direct map drag never rewrites camera frames');
-  await page.evaluate(()=>undo());
-  assert.equal(await page.evaluate(()=>sec().elements.find(e=>e.id==='story-depth-text').x),beforeMap.x,'Undo restores direct spatial XY change');
-  console.log('PASS browser object map drag: real mouse edits DOM X, one Undo, camera path untouched');
+  // Spatial map drag is exercised in tests/spatial-map-drag.browser.cjs with a
+  // fresh real browser. Keeping two independent pointer journeys in the
+  // same tab makes this broad regression sensitive to stale input state.
   assert.deepEqual(errors,[]);console.log('PASS object guide: retained preview progress and explicit 0→50% Director displacement');
   console.log('PASS current moment: real editor + Director, create, pointer drag, two Undo, exact selection, no duplicate/history edit and Redo');
   console.log('PASS technical details: native visibility, collapsed height, open/close and pane persistence without authored edits');
