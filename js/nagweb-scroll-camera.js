@@ -622,7 +622,8 @@ function mapObjectDrag(ev,button){
  ev.preventDefault();ev.stopPropagation();
  // Avoid scrolling a narrow editor pane when a drag starts near its edge.
  if(button.focus)button.focus({preventScroll:true});
- try{if(button.setPointerCapture)button.setPointerCapture(ev.pointerId);}catch(_){} 
+ // Document-capture handlers own the gesture. SVG pointer capture is unnecessary
+ // here and can produce a premature lostpointercapture during map redraw.
  // Listen on the document, not the tiny SVG marker: a pane redraw or
  // pointer leaving the marker must not silently lose the drag gesture.
  function paint(v){var p=C.mapPoint(v,spec);marker.setAttribute('transform','translate('+p.x+' '+p.y+')');}
@@ -640,7 +641,7 @@ function mapObjectDrag(ev,button){
   done=true;if(!cancel&&e.clientX!=null)move(e);
   owner.removeEventListener('pointermove',move,true);owner.removeEventListener('pointerup',up,true);
   owner.removeEventListener('pointercancel',abort,true);owner.removeEventListener('keydown',key,true);
-  if(button.hasPointerCapture&&button.hasPointerCapture(ev.pointerId))button.releasePointerCapture(ev.pointerId);
+  // No SVG capture to release; listeners remain valid outside the marker.
   if(cancel||!moved||!draft||sec()!==s||!mapObjectCommit(s,item,draft)){
    paint(origin);
    if(!cancel&&sec()===s){mapObjectSelected[s.id]=item.id;renderPane();}
