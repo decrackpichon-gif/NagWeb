@@ -1123,6 +1123,42 @@ export async function runEditorPartsSmoke(page){
   }
 
 
+  // Serializador compartido: una única pose eficaz incluso si un widget v15 escribía píxeles.
+  const legacyStyleCheck=await page.evaluate(()=>{
+   const examples=[
+    {kind:'cursorreveal',part:'label',model:{label:'PREVIO',ratio:'16/9'}},
+    {kind:'detailmagnifier',part:'caption',model:{caption:'DETALLE',ratio:'4/3'}},
+    {kind:'depthheadline',part:'line-1',model:{text:'ALTO\nSEGUNDO\nTERCERO',h:470,depth:18}},
+    {kind:'magneticmosaic',part:'image-2',model:{h:520}},
+    {kind:'holocard',part:'title',model:{title:'ORIGINAL'}}
+   ];
+   return examples.map(sample=>{
+    const pose={x:96,y:24,r:7,s:1.18,refW:800,refH:400};
+    sample.model.__parts={[sample.part]:pose};
+    const html=window.SCW.kinds[sample.kind].markup(sample.model,{edit:false});
+    const host=document.createElement('div');host.innerHTML=html;
+    const el=Array.from(host.querySelectorAll('[data-wpart]')).find(n=>n.dataset.wpart===sample.part);
+    const style=el?.getAttribute('style')||'';
+    return{kind:sample.kind,
+      x:el?.style.getPropertyValue('--nw-tx'),
+      y:el?.style.getPropertyValue('--nw-ty'),
+      xCount:(style.match(/--nw-tx:/g)||[]).length,
+      yCount:(style.match(/--nw-ty:/g)||[]).length,
+      rotation:el?.style.getPropertyValue('--nw-pr'),
+      preserved:sample.kind==='depthheadline'?style.includes('--i:1')&&style.includes('--d:18px'):
+       sample.kind==='magneticmosaic'?style.includes('background:'):
+       sample.kind==='cursorreveal'||sample.kind==='detailmagnifier'?true:true};
+   });
+  });
+  for(const item of legacyStyleCheck){
+   assert.equal(item.x,'12.00000cqw',item.kind+': ninguna coordenada antigua pisa la nueva');
+   assert.equal(item.y,'calc(var(--h) * 0.060000)',item.kind+': coordenada vertical proporcional');
+   assert.equal(item.xCount,1,item.kind+': un solo X efectivo');
+   assert.equal(item.yCount,1,item.kind+': un solo Y efectivo');
+   assert.equal(item.rotation,'7deg',item.kind+': giro conservado');
+   assert.equal(item.preserved,true,item.kind+': mantiene fondos y propiedades originales');
+  }
+
   // Motor común de movimiento del puntero: capas editables sin sobrescribir su pose guardada.
   for(const cfg of [
    {kind:'depthheadline',id:'test-depth',root:'nw-dh',part:'line-1',height:470,
