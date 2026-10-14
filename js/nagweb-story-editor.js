@@ -1142,8 +1142,8 @@ function labClearStreamImages(){
  labBuildForm();labPreviewDraft();
  var status=labForm.querySelector('[data-motion-stream-batch-status]');if(status)status.textContent='Se vaciaron '+slots.length+' posiciones. Cargá imágenes nuevas cuando quieras.';
 }
-function labLoadImageBatch(input){
- var files=Array.from(input.files||[]),draft=labDraft,slots=draft&&draft.elements.filter(function(e){return e.nwStreamSlot;}),session=labSession,assets=labAssets;input.value='';if(!files.length||!labIsStream()||labUploadsPending())return;
+function labLoadImageBatch(input,filesOverride){
+ var files=Array.from(filesOverride||input.files||[]),draft=labDraft,slots=draft&&draft.elements.filter(function(e){return e.nwStreamSlot;}),session=labSession,assets=labAssets;input.value='';if(!files.length||!labIsStream()||labUploadsPending())return;
  function status(message){if(labDraft===draft){var n=labForm.querySelector('[data-motion-stream-batch-status]');if(n)n.textContent=message;}}
  if(files.length>slots.length){status('Elegí hasta '+slots.length+' imágenes. No se cambió ninguna.');return;}
  var token={kind:'batch'},loaded=[];labImageAdds.set(draft,token);labFinishText(false);labStop();labUploadState();
@@ -1177,11 +1177,11 @@ var labDropHelp=document.createElement('span');labDropHelp.className='hint';labD
 function labHideImageDrop(){labDropHint.hidden=true;}
 function labBindImageDrop(target){
  function fileDrag(ev){return lab.open&&ev.dataTransfer&&Array.from(ev.dataTransfer.types).indexOf('Files')>=0;}
- function over(ev){if(!fileDrag(ev))return;ev.preventDefault();var ready=labDraft&&!labUploadsPending();ev.dataTransfer.dropEffect=ready?'copy':'none';labDropHint.textContent=ready?'Soltá una imagen para agregarla':'Esperá a que termine la carga de imagen.';labDropHint.hidden=false;}
+ function over(ev){if(!fileDrag(ev))return;ev.preventDefault();var ready=labDraft&&!labUploadsPending();ev.dataTransfer.dropEffect=ready?'copy':'none';labDropHint.textContent=ready?(labIsStream()?'Soltá imágenes para completar posiciones vacías, o una para agregarla':'Soltá una imagen para agregarla'):'Esperá a que termine la carga de imagen.';labDropHint.hidden=false;}
  target.addEventListener('dragenter',over);target.addEventListener('dragover',over);
  target.addEventListener('dragleave',function(ev){if(fileDrag(ev)&&(!ev.relatedTarget||!target.contains(ev.relatedTarget)))labHideImageDrop();});
  target.addEventListener('dragend',labHideImageDrop);
- target.addEventListener('drop',function(ev){if(!fileDrag(ev))return;ev.preventDefault();ev.stopPropagation();labHideImageDrop();if(!labDraft)return;var status=lab.querySelector('[data-motion-add-image-status]');if(labUploadsPending()){toast('Esperá a que termine la carga de imagen.');return;}if(ev.dataTransfer.files.length!==1){status.textContent='Agregá una imagen por vez.';toast(status.textContent);return;}labLoadImage(lab.querySelector('[data-motion-add-image-upload]'),ev.dataTransfer.files[0]);});
+ target.addEventListener('drop',function(ev){if(!fileDrag(ev))return;ev.preventDefault();ev.stopPropagation();labHideImageDrop();if(!labDraft)return;var status=lab.querySelector('[data-motion-add-image-status]');if(labUploadsPending()){toast('Esperá a que termine la carga de imagen.');return;}var files=Array.from(ev.dataTransfer.files||[]);if(labIsStream()&&files.length>1){labLoadImageBatch(labForm.querySelector('[data-motion-stream-batch-upload]'),files);return;}if(files.length!==1){status.textContent='Agregá una imagen por vez.';toast(status.textContent);return;}labLoadImage(lab.querySelector('[data-motion-add-image-upload]'),files[0]);});
 }
 labBindImageDrop(lab.querySelector('.nw-motion-stage'));lab.addEventListener('close',labHideImageDrop);window.addEventListener('blur',labHideImageDrop);
 
