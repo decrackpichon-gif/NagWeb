@@ -642,3 +642,15 @@ assert.equal(saves,momentSave,'Scrub preview never saves the project');
 assert.equal(JSON.stringify(scene.sdCameraFrames),momentFrames,'Preview buttons cannot rewrite camera waypoints');
 
 console.log('PASS journey: ordered text/image/text, five camera frames, spatial crossings, single Undo/save, no unrelated edits');
+
+const parallel={x:0,y:0,z:0,rotateX:0,rotateY:0,rotate:0};
+const behind=C.parallelPlaneBehindEye;
+assert.equal(behind({...parallel,z:999},parallel,1000,1,true),true,'Plane is culled at the near-eye tolerance');
+assert.equal(behind({...parallel,z:800},{...parallel,z:199},1000,1,true),true,'Camera and DOM depth compose');
+assert.equal(behind({...parallel,z:800},{...parallel,z:100},1000,1,true),false,'Plane in front of the eye remains visible');
+assert.equal(behind({...parallel,z:1000},parallel,1000,1,false),false,'Objects outside camera world are not culled');
+assert.equal(behind({...parallel,z:1200,rotateY:10},parallel,1000,1,true),false,'Tilted camera does not use whole-plane clipping');
+assert.equal(behind({...parallel,z:1200},{...parallel,rotateX:15},1000,1,true),false,'Tilted planes do not disappear prematurely');
+assert.equal(behind({...parallel,z:1000},parallel,1000,0.5,true),true,'Responsive scaling preserves eye crossing');
+assert.equal(behind({...parallel,z:900},parallel,1000,0.5,true),false,'Responsive scaling does not cull early');
+console.log('PASS conservative DOM plane eye crossing and responsive-depth invariants');

@@ -319,10 +319,8 @@ function rt(DATA,createModel,createStreamModel,createCamera){
     // A parallel, unrotated DOM plane must leave the visible scene when its
     // entire depth reaches the CSS perspective eye. Avoid flipped/interactive
     // content behind the observer; tilted planes retain browser clipping.
-    var beyondEye=!!(viewPose&&q.cameraShared&&!q.c.parent&&q.c.type!=='container'&&
-     Math.abs(viewPose.rotateX)<.0001&&Math.abs(viewPose.rotateY)<.0001&&
-     Math.abs(v.rotateX)<.0001&&Math.abs(v.rotateY)<.0001&&
-     viewPose.z*cameraScale+v.z>=cfg.perspective*cameraScale-1);
+    var beyondEye=camera.parallelPlaneBehindEye(viewPose,v,cfg.perspective,cameraScale,
+     q.cameraShared&&!q.c.parent&&q.c.type!=='container');
     n.style.visibility=beyondEye?'hidden':q.baseVisibility;
     n.style.pointerEvents=beyondEye||op<.025?'none':q.basePointer;
    });
