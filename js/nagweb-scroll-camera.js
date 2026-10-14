@@ -433,6 +433,23 @@ function mapObjectRole(type){
  if(/^(heading|text|paragraph|richtext|title|subtitle|label)$/.test(t))return 'text';
  return 'other';
 }
+// Pure planner: uses existing DOM planes and the existing Director clock.
+function layerJourneyPlan(s){
+ if(!s||s.layout!=='free'||!Array.isArray(s.elements))return {error:'Elegí una escena de Lienzo libre.'};
+ var items=s.elements.filter(function(e){return C.targetEligible(e,s);});
+ var a=items.findIndex(function(e){return mapObjectRole(e.type)==='text';});
+ var b=a<0?-1:items.findIndex(function(e,i){return i>a&&mapObjectRole(e.type)==='image';});
+ var c=b<0?-1:items.findIndex(function(e,i){return i>b&&mapObjectRole(e.type)==='text';});
+ if(c<0)return {error:'Agregá en este orden: un texto, una imagen y otro texto (en Lienzo libre).'};
+ var px=Number.isFinite(+s.sdPerspective)&&+s.sdPerspective>0?+s.sdPerspective:1000,scale=Math.min(2,Math.max(.5,px/1000));
+ var depths=[-300,200,700].map(function(z){return Math.round(z*scale);});
+ var stops=[-900,-240,270,780,1300].map(function(z){return Math.round(z*scale);});
+ var at=[0,25,50,75,100];
+ return {layers:[items[a],items[b],items[c]].map(function(e,i){return {id:e.id,z:depths[i]};}),
+  frames:C.normalize(at.map(function(t,i){return {at:t,x:0,y:0,z:stops[i],rotateX:0,rotateY:0,rotate:0,ease:'linear'};})),
+  length:480};
+}
+C.layerJourneyPlan=layerJourneyPlan;
 function mapObjectDimensions(e,size){
  var w=Number(e&&e.w),h=Number(e&&e.h);
  return {width:Number.isFinite(w)&&w>0?Math.min(400,w)/100*size.width:null,
@@ -2525,7 +2542,14 @@ C.panel=function(s){
  var list=keys(s),k=choose(s,list);
  html+='<style>#pane input.cnum[data-camera-field],#pane input.cnum[data-camera-look-field],#pane input.cnum[data-camera-look-focus-offset],#pane input.cnum[data-camera-depth],#pane input.cnum[data-camera-object-world-z],#pane input.cnum[data-camera-handle-vector],#pane input.cnum[data-camera-look-handle-vector]{background:#fff!important;color:#171717!important;caret-color:#171717!important;border:1px solid #777!important}#pane input.cnum[data-camera-field]:focus-visible,#pane input.cnum[data-camera-object-world-z]:focus-visible{outline:2px solid #8b5cf6;outline-offset:1px}</style>'+
   '<button class="btn" type="button" data-camera-space-open style="display:block;width:100%;margin:9px 0;border:1px solid var(--accent)">◈ Editar espacio 3D · Ver cámara y objetos</button>'+
-  '<div data-camera-translate-controls style="margin:7px 0 9px"><button class="btn tiny" type="button" data-camera-viewport-translate aria-pressed="'+(viewportTranslateArmed&&viewportTranslateArmed.sectionId===s.id?'true':'false')+'">'+(viewportTranslateArmed&&viewportTranslateArmed.sectionId===s.id?'Cerrar controles XYZ':'Mover cámara XYZ en vista 3D')+'</button><p class="hint gh">'+(viewportTranslateArmed&&viewportTranslateArmed.sectionId===s.id?'Arrastrá los ejes X, Y o Z del control que aparece sobre la escena. X/Y permite mover en dos ejes. Shift: precisión. Escape: cancelar.':'Desplazá la posición de la cámara con controles de ejes sobre la escena, viendo el resultado antes de guardar.')+'</p></div>';
+  (s.layout==='free'?'<div data-camera-journey style="margin:8px 0;padding:9px;border:1px solid var(--accent);border-radius:8px">'+
+ '<strong style="font-size:12px">Viaje entre capas · Texto → Imagen → Texto</strong>'+
+ '<p class="hint gh" style="font-size:11px;margin:5px 0">Un clic distribuye tres elementos existentes en profundidad y crea cinco encuadres para atravesarlos con scroll. Es editable y reversible con Deshacer.</p>'+
+ '<button class="btn tiny" type="button" data-camera-journey-apply'+(layerJourneyPlan(s).error?' disabled title="'+safeLabel(layerJourneyPlan(s).error)+'"':'')+'>Preparar recorrido entre capas</button>'+
+ (layerJourneyPlan(s).error?'<p class="hint gh" data-camera-journey-help style="font-size:10px;margin-top:5px">'+safeLabel(layerJourneyPlan(s).error)+'</p>':
+ '<p class="hint gh" style="font-size:10px;margin-top:5px">Usa texto, imagen y texto, en ese orden. Cambia X/Y/Z, su visibilidad y los encuadres de cámara. No elimina elementos ni sus keyframes.</p>')+
+ '</div>':'')+
+ '<div data-camera-translate-controls style="margin:7px 0 9px"><button class="btn tiny" type="button" data-camera-viewport-translate aria-pressed="'+(viewportTranslateArmed&&viewportTranslateArmed.sectionId===s.id?'true':'false')+'">'+(viewportTranslateArmed&&viewportTranslateArmed.sectionId===s.id?'Cerrar controles XYZ':'Mover cámara XYZ en vista 3D')+'</button><p class="hint gh">'+(viewportTranslateArmed&&viewportTranslateArmed.sectionId===s.id?'Arrastrá los ejes X, Y o Z del control que aparece sobre la escena. X/Y permite mover en dos ejes. Shift: precisión. Escape: cancelar.':'Desplazá la posición de la cámara con controles de ejes sobre la escena, viendo el resultado antes de guardar.')+'</p></div>';
  html+=cRow('Trayectoria','<select class="csel" data-camera-path-mode aria-label="Trayectoria de cámara"><option value="linear"'+((s.sdCameraPathMode==='smooth')?'':' selected')+'>Por tramos</option><option value="smooth"'+(s.sdCameraPathMode==='smooth'?' selected':'')+'>Curva suave</option></select>');
  if(s.sdCameraPathMode==='smooth')html+='<p class="hint gh">Los encuadres XYZ se convierten en puntos de una trayectoria continua. Las permanencias con dos posiciones iguales siguen siendo pausas reales.</p>';
  html+=cRow('Orientación','<select class="csel" data-camera-orientation-mode aria-label="Orientación de cámara"><option value="manual"'+(s.sdCameraOrientationMode==='lookAt'?'':' selected')+'>Ángulos manuales</option><option value="lookAt"'+(s.sdCameraOrientationMode==='lookAt'?' selected':'')+'>Mirar hacia</option></select>');
@@ -3121,9 +3145,31 @@ if(pane){
    ev.preventDefault();technical.open=!technical.open;
    mapOverviewTechnicalOpen[sec().id]=technical.open;return;
   }
-  var button=ev.target.closest('[data-camera-map-object-mode],[data-camera-space-open],[data-camera-layer-pick],[data-camera-object-transform],[data-camera-object-depth],[data-camera-viewport-translate],[data-camera-viewport-orbit],[data-camera-surface-aim],[data-camera-aim-at-object],[data-camera-scene-object-pick],[data-camera-edit-current],[data-camera-easy-move],[data-camera-overview-compare-alternate],[data-camera-overview-compare-jump],[data-camera-overview-event-step],[data-camera-overview-toggle],[data-camera-map-pan],[data-camera-map-zoom],[data-camera-map-step],[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
+  var button=ev.target.closest('[data-camera-journey-apply],[data-camera-map-object-mode],[data-camera-space-open],[data-camera-layer-pick],[data-camera-object-transform],[data-camera-object-depth],[data-camera-viewport-translate],[data-camera-viewport-orbit],[data-camera-surface-aim],[data-camera-aim-at-object],[data-camera-scene-object-pick],[data-camera-edit-current],[data-camera-easy-move],[data-camera-overview-compare-alternate],[data-camera-overview-compare-jump],[data-camera-overview-event-step],[data-camera-overview-toggle],[data-camera-map-pan],[data-camera-map-zoom],[data-camera-map-step],[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
   if(button===suppressedClick){suppressedClick=null;return;}
   var s=sec(),cfg=C.config(s);if(!cfg)return;var list=keys(s);
+  if(button.dataset.cameraJourneyApply!==undefined){
+   var journey=layerJourneyPlan(s);if(journey.error){toast(journey.error);return;}
+   if(baseTransformArmed)stopBaseTransform();
+   if(objectDepthArmed)stopObjectDepth(false);
+   if(surfaceAimArmed)clearSurfaceAim();
+   if(viewportOrbitArmed)stopViewportOrbit();
+   if(viewportTranslateArmed)stopViewportTranslate();
+   snapshot();
+   journey.layers.forEach(function(layer){
+    var e=(s.elements||[]).find(function(v){return String(v.id)===String(layer.id);});
+    if(!e)return;
+    e.x=50;e.y=50;e.sdCameraDepth=layer.z;
+    e.sdStart=0;e.sdEnd=100;e.sdEnter='none';e.sdExit='keep';
+   });
+   s.sdCameraFrames=journey.frames;s.sdCameraPathMode='linear';s.sdCameraOrientationMode='manual';
+   s.sdLength=Math.max(Number.isFinite(+s.sdLength)?+s.sdLength:320,journey.length);
+   mapOpen[s.id]=true;mapObjectVisible[s.id]=true;mapObjectEdit[s.id]=true;mapPlanes[s.id]='top';
+   mapObjectSelected[s.id]=journey.layers[0].id;selected[s.id]=0;
+   saveProject();renderPane();schedulePreview();
+   if(window.NAGWEB_SCROLL_DIRECTOR)window.NAGWEB_SCROLL_DIRECTOR.scrub(s.id,0);
+   toast('Viaje entre capas preparado. Recorré el Director del 0 al 100%.');return;
+  }
   if(button.dataset.cameraMapObjectMode!==undefined){mapObjectEdit[s.id]=mapObjectEdit[s.id]!==true;renderPane();return;}
    if(button.dataset.cameraSpaceOpen!==undefined){
     mapOpen[s.id]=true;mapObjectVisible[s.id]=true;mapObjectEdit[s.id]=true;renderPane();
