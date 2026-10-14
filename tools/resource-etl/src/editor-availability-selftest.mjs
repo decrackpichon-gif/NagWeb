@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { editorUseOf, canInsertInEditor } from "./runtime/editor-availability.mjs";
 import { transformMagicCssEffect } from "./light-transformers.mjs";
-import { buildResourceApplyEnvelope } from "./runtime/resource-apply-bridge.mjs";
 import { validatedMagicCssEffect,validSavedMagicEffect } from "./runtime/nagweb-magic-css-effect.mjs";
 import { transformSpinKitLoader } from "./light-transformers.mjs";
 import { buildResourceApplyEnvelope } from "./runtime/resource-apply-bridge.mjs";
