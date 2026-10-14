@@ -1292,6 +1292,143 @@ export async function runEditorPartsSmoke(page){
    assert.equal(await page.evaluate(c=>sec().elements.find(x=>x.id===c.id).wp.__partsMobile?.[c.part],cfg),undefined);
   }
 
+  // Un adaptador para composiciones narrativas con scroll. Recursos reales + publicación.
+  for(const cfg of [
+   {kind:'scrollzoom',id:'test-scrollzoom',root:'nw-sz',stage:'nw-sz-sticky',part:'moment-0-title',
+    model:{title:'TÍTULO',sub:'INICIO',length:240,chapters:[
+     {eyebrow:'CAPÍTULO',title:'PRIMER MOMENTO',text:'Un texto independiente',img:'https://example.test/logo.png'},
+     {title:'SEGUNDO MOMENTO',text:'Otra historia'}]},
+    parts:['media','title','sub','moment-0-img','moment-0-eyebrow','moment-0-title','moment-0-text','moment-1-title','moment-1-text']},
+   {kind:'kineticstrip',id:'test-kinetic',root:'nw-ks',stage:'nw-ks-sticky',part:'card-1',
+    model:{label:'MIS PROYECTOS',projects:[
+     {title:'A',img:'',href:'https://example.test/a'},
+     {title:'B',img:'',href:'https://example.test/b'},
+     {title:'C',img:'',href:'https://example.test/c'}],perCard:50},
+    parts:['label','card-0','card-1','card-2']}
+  ]){
+   await load(cfg.id==='test-scrollzoom'?23:24);
+   await page.evaluate(c=>{
+    const e=mkEl('widget',{id:c.id,kind:c.kind,wp:c.model});
+    sec().elements.push(e);
+    const d=document.querySelector('#preview').contentDocument,style=d.createElement('style');
+    style.textContent=window.SCW.css[c.kind];d.head.appendChild(style);
+    const root=d.createElement('div');root.className='el wdg';root.dataset.id=c.id;
+    root.innerHTML=window.SCW.kinds[c.kind].markup(e.wp,{edit:true});
+    d.body.appendChild(root);
+    const scene=root.querySelector('.'+c.root);
+    scene.style.width='900px';
+    scene.querySelector('.'+c.stage).style.height='600px';
+   },cfg);
+   await select(cfg.id);
+   const initial=await page.evaluate(c=>{
+    const d=document.querySelector('#preview').contentDocument,root=d.querySelector('.el.wdg[data-id="'+c.id+'"]'),
+     sc=root.querySelector('.'+c.root),stage=sc.querySelector('.'+c.stage),
+     parts=Array.from(sc.querySelectorAll('[data-wpart]')).map(n=>n.dataset.wpart),
+     buttons=Array.from(sc.querySelectorAll('[data-nw-part]')).map(n=>n.dataset.nwPart),
+     published=window.SCW.kinds[c.kind].markup(sec().elements.find(e=>e.id===c.id).wp,{edit:false});
+    return{kind:sc.dataset.nwPartScope,mobile:sc.dataset.nwPartMobile,height:stage.clientHeight,
+     width:sc.clientWidth,parts,buttons,publishedHasBar:published.includes('data-nw-partbar'),
+     retainsScroll:c.kind==='scrollzoom'?published.includes('--expand')||published.includes('--len'):
+       published.includes('nw-ks-track'),
+     links:Array.from(sc.querySelectorAll('.nw-ks-card')).map(n=>n.getAttribute('href')),
+     chapters:sc.querySelectorAll('.nw-sz-ch').length};
+   },cfg);
+   assert.equal(initial.kind,cfg.kind);
+   assert.equal(initial.mobile,'720');
+   assert.equal(initial.width,900);assert.equal(initial.height,600);
+   assert.deepEqual(initial.parts,cfg.parts,'las partes del widget se identifican');
+   assert.deepEqual(initial.buttons,[''].concat(cfg.parts),'el editor ofrece selección para cada parte');
+   assert.equal(initial.publishedHasBar,false,'no se exportan controles del editor');
+   assert.equal(initial.retainsScroll,true,'se conserva el recorrido por scroll');
+   if(cfg.kind==='scrollzoom'){
+    assert.equal(initial.chapters,2,'conserva los momentos narrativos');
+   }else{
+    assert.deepEqual(initial.links,[null,null,null],'en edición los links no navegan');
+    const published=await page.evaluate(c=>{
+     const e=sec().elements.find(x=>x.id===c.id).wp;
+     return window.SCW.kinds[c.kind].markup(e,{edit:false});
+    },cfg);
+    assert.match(published,/href="https:\/\/example\.test\/b"/,'publicación mantiene links');
+   }
+   await fire('.el.wdg[data-id="'+cfg.id+'"] [data-nw-part="'+cfg.part+'"]');
+   const selected=await page.evaluate(c=>{
+    const d=document.querySelector('#preview').contentDocument,sc=d.querySelector('.el.wdg[data-id="'+c.id+'"] .'+c.root);
+    return{part:sc.querySelector('.nw-part-edit-active')?.dataset.wpart,
+     count:d.querySelectorAll('.nw-wpart-h').length,isolated:sc.classList.contains('nw-part-isolate')};
+   },cfg);
+   assert.deepEqual(selected,{part:cfg.part,count:2,isolated:true},
+    'las piezas del scroll usan selección común');
+   await page.evaluate(c=>{
+    const d=document.querySelector('#preview').contentDocument,w=d.defaultView,
+     el=d.querySelector('.el.wdg[data-id="'+c.id+'"] [data-wpart="'+c.part+'"]'),r=el.getBoundingClientRect(),
+     x=r.left+r.width/2,y=r.top+r.height/2;
+    el.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,button:0,pointerId:271,clientX:x,clientY:y}));
+    w.dispatchEvent(new w.PointerEvent('pointermove',{bubbles:true,button:0,pointerId:271,clientX:x+72,clientY:y+36}));
+    w.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true,button:0,pointerId:271,clientX:x+72,clientY:y+36}));
+   },cfg);
+   const desktop=await page.evaluate(c=>{
+    const e=sec().elements.find(x=>x.id===c.id).wp,d=document.querySelector('#preview').contentDocument,
+     node=d.querySelector('.el.wdg[data-id="'+c.id+'"] [data-wpart="'+c.part+'"]');
+    return{pose:e.__parts?.[c.part],live:node.style.getPropertyValue('--nw-tx'),
+     stored:JSON.parse(localStorage.getItem(STORE_KEY)).pages[curPage].sections[curSec].elements.find(x=>x.id===c.id)?.wp?.__parts?.[c.part]};
+   },cfg);
+   assert.equal(desktop.pose.x,72);
+   assert.equal(desktop.pose.y,36);
+   assert.equal(desktop.pose.refW,900);
+   assert.equal(desktop.pose.refH,600);
+   assert.deepEqual(desktop.pose,desktop.stored,'se guardan los cambios');
+   assert.match(desktop.live,/cqw$/,'editor aplica posición proporcional');
+   const desktopExport=await page.evaluate(c=>{
+    const e=sec().elements.find(x=>x.id===c.id).wp;
+    return window.SCW.kinds[c.kind].markup(e,{edit:false});
+   },cfg);
+   assert.match(desktopExport,/--nw-tx:8\.00000cqw/,'la posición llega a la publicación');
+   assert.match(desktopExport,/--nw-ty:calc\(100vh \* 0\.060000\)/);
+   // Mobile: el mismo elemento conserva la pose desktop y permite otra independiente.
+   await page.evaluate(c=>{
+    const d=document.querySelector('#preview').contentDocument,root=d.querySelector('.el.wdg[data-id="'+c.id+'"]'),
+     e=sec().elements.find(x=>x.id===c.id).wp;
+    root.innerHTML=window.SCW.kinds[c.kind].markup(e,{edit:true});
+    root.querySelector('.'+c.root).style.width='420px';
+    root.querySelector('.'+c.stage).style.height='600px';
+   },cfg);
+   await fire('.el.wdg[data-id="'+cfg.id+'"] [data-nw-part="'+cfg.part+'"]');
+   const beforeMobile=await page.evaluate(c=>JSON.parse(JSON.stringify(sec().elements.find(x=>x.id===c.id).wp.__parts[c.part])),cfg);
+   await page.evaluate(c=>{
+    const d=document.querySelector('#preview').contentDocument,w=d.defaultView,
+     el=d.querySelector('.el.wdg[data-id="'+c.id+'"] [data-wpart="'+c.part+'"]'),r=el.getBoundingClientRect(),
+     x=r.left+r.width/2,y=r.top+r.height/2;
+    el.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,button:0,pointerId:272,clientX:x,clientY:y}));
+    w.dispatchEvent(new w.PointerEvent('pointermove',{bubbles:true,button:0,pointerId:272,clientX:x+24,clientY:y+18}));
+    w.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true,button:0,pointerId:272,clientX:x+24,clientY:y+18}));
+   },cfg);
+   const mobile=await page.evaluate(c=>{
+    const e=sec().elements.find(x=>x.id===c.id).wp,d=document.querySelector('#preview').contentDocument,
+     el=d.querySelector('.el.wdg[data-id="'+c.id+'"] [data-wpart="'+c.part+'"]');
+    return{desktop:e.__parts?.[c.part],mobile:e.__partsMobile?.[c.part],
+     live:el.style.getPropertyValue('--nw-mx')};
+   },cfg);
+   assert.deepEqual(mobile.desktop,beforeMobile,'editar móvil no toca escritorio');
+   assert.equal(mobile.mobile.refW,420);
+   assert.equal(mobile.mobile.refH,600);
+   assert.ok(mobile.mobile.x>24,'móvil parte del desplazamiento heredado');
+   assert.match(mobile.live,/cqw$/);
+   const exportBoth=await page.evaluate(c=>{
+    const e=sec().elements.find(x=>x.id===c.id).wp;
+    return window.SCW.kinds[c.kind].markup(e,{edit:false});
+   },cfg);
+   assert.match(exportBoth,/--nw-mx:[0-9.]+cqw/,'escritorio y móvil en el HTML');
+   await page.evaluate(()=>{
+    const d=document.querySelector('#preview').contentDocument,btn=d.querySelector('.nw-wpart-reset');
+    if(!btn)throw Error('No se encontró Restablecer móvil');btn.click();
+   });
+   assert.equal(await page.evaluate(c=>sec().elements.find(x=>x.id===c.id).wp.__partsMobile?.[c.part],cfg),undefined);
+   await page.click('#btn-undo');
+   assert.ok(await page.evaluate(c=>sec().elements.find(x=>x.id===c.id).wp.__partsMobile?.[c.part],cfg));
+   await page.click('#btn-redo');
+   assert.equal(await page.evaluate(c=>sec().elements.find(x=>x.id===c.id).wp.__partsMobile?.[c.part],cfg),undefined);
+  }
+
   console.log('Editor partes: foco, restauración, Escape, Enter e historial OK');
  }finally{
   await page.evaluate(old=>{

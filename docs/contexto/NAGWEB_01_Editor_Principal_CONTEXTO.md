@@ -105,6 +105,14 @@ Editor **visual y profesional** para construir sitios y narrativas inmersivas co
 - Implementación en `js/nagweb-feedback-v16.js`, sin reescribir los recursos históricos ni cambiar las otras ramas. Regresiones reales de ambos widgets en `.github/nagweb-editor-parts-smoke.mjs`: selección, edición, guardado, CSS de exportación, composición del movimiento y escritorio/móvil. Verificar el CI exacto del HEAD antes de darlo por aprobado.
 - Próxima prioridad: continuar agregando recursos a través de adaptadores comunes, y corregir defectos de geometría a nivel del motor, no multiplicar controles específicos.
 
+## Contrato transversal para composiciones basadas en scroll (14/10/2026)
+
+- **Media expandible** (`scrollzoom`) y **Cinta cinética** (`kineticstrip`) incorporan el motor compartido `data-nw-part-scope` a través de un adaptador único en `js/nagweb-feedback-v16.js`, sin reescribir el código base de sus recursos. El escenario de ambas composiciones es el contenedor sticky de altura de viewport y el umbral móvil es 720 px.
+- En Media expandible se pueden seleccionar **medio, título inicial, indicación inicial**, además de las imágenes, rótulos, títulos y textos realmente presentes en cada momento narrativo. En Cinta cinética se pueden seleccionar **rótulo y tarjetas individuales**. Ambas conservan sus mecanismos de avance por scroll, campos y variantes.
+- Las poses autorales se guardan en `__parts`/`__partsMobile` con referencias adaptables y se exportan mediante `partStyleMarkup`. El scaling durante la salida de Media expandible se multiplica por la escala diseñada. La inclinación original de las tarjetas se suma a la rotación de la pieza.
+- Los enlaces de tarjetas **no navegan durante la edición**, sin alterar los links publicados. En Media expandible, al seleccionar una parte de un momento que está oculto por el scroll, el modo de aislamiento lo muestra para que pueda editarse, sin modificar la secuencia narrativa publicada.
+- Smoke de navegador agregado a `.github/nagweb-editor-parts-smoke.mjs`: casos reales de ambos recursos, capítulos dinámicos, selección, persistencia, exportación y variantes móviles, junto con sus movimientos originales. Consultar resultados de CI del HEAD antes de considerarlo aprobado.
+
 ## Próximas prioridades (revisar con HEAD actual)
 
 - Priorizar la experiencia de lienzo como herramienta de diseño, edición real de elementos anidados y uso de recursos sin degradar su editabilidad.
