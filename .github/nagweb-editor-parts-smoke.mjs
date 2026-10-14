@@ -1298,7 +1298,7 @@ export async function runEditorPartsSmoke(page){
     model:{title:'TÍTULO',sub:'INICIO',length:240,chapters:[
      {eyebrow:'CAPÍTULO',title:'PRIMER MOMENTO',text:'Un texto independiente',img:'https://example.test/logo.png'},
      {title:'SEGUNDO MOMENTO',text:'Otra historia'}]},
-    parts:['media','title','sub','moment-0-img','moment-0-eyebrow','moment-0-title','moment-0-text','moment-1-title','moment-1-text']},
+    parts:['media','title','sub','moment-0-eyebrow','moment-0-title','moment-0-text','moment-1-title','moment-1-text']},
    {kind:'kineticstrip',id:'test-kinetic',root:'nw-ks',stage:'nw-ks-sticky',part:'card-1',
     model:{label:'MIS PROYECTOS',projects:[
      {title:'A',img:'',href:'https://example.test/a'},
@@ -1341,6 +1341,7 @@ export async function runEditorPartsSmoke(page){
    assert.equal(initial.publishedHasBar,false,'no se exportan controles del editor');
    assert.equal(initial.retainsScroll,true,'se conserva el recorrido por scroll');
    if(cfg.kind==='scrollzoom'){
+    assert.equal(initial.parts.includes('moment-0-img'),false,'no aparece un tirador para una imagen cuya URL no se materializa');
     assert.equal(initial.chapters,2,'conserva los momentos narrativos');
    }else{
     assert.deepEqual(initial.links,[null,null,null],'en edición los links no navegan');

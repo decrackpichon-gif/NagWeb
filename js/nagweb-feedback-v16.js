@@ -402,7 +402,7 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
   var list=[['media','Medio'],['title','Título inicial'],['sub','Indicación inicial']];
   arr(e.chapters).forEach(function(ch,i){
    var c=ch||{},n=i+1;
-   if(str(c.img||'').trim())list.push(['moment-'+i+'-img','Momento '+n+' · Imagen']);
+   if(imgUrl(ctx,c.img))list.push(['moment-'+i+'-img','Momento '+n+' · Imagen']);
    if(str(c.eyebrow||'').trim())list.push(['moment-'+i+'-eyebrow','Momento '+n+' · Rótulo']);
    if(str(c.title||'').trim())list.push(['moment-'+i+'-title','Momento '+n+' · Título']);
    if(str(c.text||'').trim())list.push(['moment-'+i+'-text','Momento '+n+' · Texto']);
