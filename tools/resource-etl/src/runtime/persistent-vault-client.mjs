@@ -1,3 +1,5 @@
+import { OfflineVaultCache } from "./offline-vault-cache.mjs";
+
 const DEFAULT_BASE_URL =
   "https://raw.githubusercontent.com/decrackpichon-gif/NagWeb/resource-vault-data";
 
@@ -70,13 +72,16 @@ function intersects(values, wanted) {
 export class NagWebPersistentVaultClient {
   constructor({
     baseUrl = DEFAULT_BASE_URL,
-    fetchImpl = globalThis.fetch
+    fetchImpl = globalThis.fetch,
+    cacheStorage = globalThis.caches
   } = {}) {
     if (typeof fetchImpl !== "function") {
       throw new Error("A fetch implementation is required.");
     }
 
     this.baseUrl = cleanBaseUrl(baseUrl);
+    this.offlineCache = new OfflineVaultCache(this.baseUrl,cacheStorage);
+    this.lastBrowseUsedOfflineCache = false;
     // Native browser fetch cannot receive this client as its `this` value.
     this.fetchImpl = (...args) => fetchImpl(...args);
     this.manifest = null;
@@ -114,7 +119,15 @@ export class NagWebPersistentVaultClient {
   async loadManifest({ force = false } = {}) {
     if (!force && this.manifest) return this.manifest;
 
-    const manifest = await this.fetchJson("vault-manifest.json");
+    let manifest;
+    try {
+      manifest = await this.fetchJson("vault-manifest.json");
+      this.lastBrowseUsedOfflineCache = false;
+    } catch (error) {
+      manifest = await this.offlineCache.readManifest();
+      if (!manifest) throw error;
+      this.lastBrowseUsedOfflineCache = true;
+    }
     if (manifest.format !== "nagweb-resource-vault-index") {
       throw new Error("Unexpected NagWeb Vault manifest format.");
     }
@@ -150,6 +163,8 @@ export class NagWebPersistentVaultClient {
       previous.libraryPath !== consolidated.libraryPath;
     this.manifest = manifest;
     this.browseIndex = index;
+    await this.offlineCache.saveManifest(manifest);
+    this.lastBrowseUsedOfflineCache = false;
     if (libraryChanged) {
       this.fullLibrary = null;
       this.resourceById = null;
@@ -166,7 +181,17 @@ export class NagWebPersistentVaultClient {
   }
 
   async loadVerifiedGzipJson(relativePath, expectedSha256) {
-    const bytes = await this.fetchBytes(relativePath);
+    let bytes;
+    let usedCached = false;
+    try {
+      bytes = await this.fetchBytes(relativePath);
+    } catch (networkError) {
+      // Only connection/HTTP failures may fall back to previously downloaded
+      // exact-hash content. Never disguise a corrupt online download.
+      bytes = await this.offlineCache.readVerified(relativePath,expectedSha256);
+      if (!bytes) throw networkError;
+      usedCached = true;
+    }
 
     if (expectedSha256) {
       const actual = await sha256Hex(bytes);
@@ -176,8 +201,11 @@ export class NagWebPersistentVaultClient {
         );
       }
     }
-
-    return JSON.parse(await gunzipText(bytes));
+    const parsed = JSON.parse(await gunzipText(bytes));
+    if (!usedCached && expectedSha256) {
+      await this.offlineCache.saveVerified(relativePath,expectedSha256,bytes);
+    }
+    return parsed;
   }
 
   async loadBrowseIndex({ force = false } = {}) {
@@ -198,6 +226,7 @@ export class NagWebPersistentVaultClient {
     }
 
     this.browseIndex = index;
+    await this.offlineCache.saveManifest(manifest);
     return index;
   }
 

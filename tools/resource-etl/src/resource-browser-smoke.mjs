@@ -178,11 +178,15 @@ try {
     const context = await browser.newContext({ viewport: { width, height: 900 } });
     const page = await context.newPage();
     currentPage = page;
+    let simulatedOffline = false;
     page.on("pageerror", error => report.errors.push(error.message));
-    page.on("console", message => { if (message.type() === "error") report.errors.push(message.text()); });
+    page.on("console", message => {
+      if (!simulatedOffline && message.type() === "error") report.errors.push(message.text());
+    });
     await context.route("**/*", async route => {
       const url = new URL(route.request().url());
       if (url.hostname === "127.0.0.1") return route.continue();
+      if (simulatedOffline) return route.abort("internetdisconnected");
       const body = url.origin === "https://raw.githubusercontent.com" ? fixtures.get(url.pathname.split("/").at(-1)) : null;
       if (!body) { report.errors.push(`Unexpected external request: ${url.origin}${url.pathname}`); return route.abort(); }
       return route.fulfill({ status: 200, contentType: "application/octet-stream", headers: { "access-control-allow-origin": "*", "cache-control": "no-store" }, body });
@@ -213,6 +217,26 @@ try {
     await expect(peekPanel.locator("iframe")).toHaveCount(0);
     report.scenarios.push({browser:"real CSS component quick preview with offline sandbox",
       width,status:"passed",onDemand:true,noExternalResources:true});
+    if (width === 1280) {
+      // A reload creates a brand new Vault client, then the entire network is
+      // blocked. The catalog and an already opened Uiverse shard must work.
+      simulatedOffline = true;
+      try {
+        await page.reload({waitUntil:"domcontentloaded"});
+        await frame.locator('[data-resource-id="smoke:icon"]').waitFor();
+        await expect(frame.locator('[data-status]')).toContainText("Sin conexión");
+        const storedPeek = frame.locator('[data-quick-preview-id="'+css.id+'"]');
+        await storedPeek.click();
+        await expect(frame.frameLocator('[data-quick-preview-panel] iframe')
+          .locator("button.card")).toBeVisible();
+        await storedPeek.click();
+        await expect(frame.locator('[data-quick-preview-panel] iframe')).toHaveCount(0);
+      } finally { simulatedOffline = false; }
+      await frame.getByRole("button",{name:"Actualizar índice",exact:true}).click();
+      await expect(frame.locator('[data-status]')).toContainText("Índice verificado");
+      report.scenarios.push({browser:"verified Vault offline after reload",
+        width,status:"passed",persistentBrowse:true,persistentUiverseShard:true});
+    }
     // Show and filter genuinely insertable vs source-only resources, without
     // requesting the source archive for any result card.
     const useFilter=frame.getByLabel("Uso en NagWeb",{exact:true});

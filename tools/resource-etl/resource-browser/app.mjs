@@ -1007,14 +1007,21 @@ async function openDetail(id) {
   }
 }
 
-async function refreshIndex() {
+async function refreshIndex({ allowOfflineFallback = false } = {}) {
   if (el.refresh.disabled) return false;
   el.refresh.disabled = true;
   clearTimeout(searchTimer);
   resultSearch.invalidate();
   el.status.textContent = "Actualizando índice y verificando checksum…";
   try {
-    const index = await vault.refreshBrowseIndex();
+    let index, fromOfflineCache = false;
+    try {
+      index = await vault.refreshBrowseIndex();
+    } catch (error) {
+      if (!allowOfflineFallback) throw error;
+      index = await vault.loadBrowseIndex();
+      fromOfflineCache = vault.lastBrowseUsedOfflineCache;
+    }
     const facets = await vault.facets();
 
     const selectedFilters = [el.provider, el.family, el.kind].map(select => select.value);
@@ -1030,8 +1037,9 @@ async function refreshIndex() {
     });
 
     el.total.textContent = `${index.resourceCount.toLocaleString("es-AR")} recursos`;
-    el.status.textContent =
-      "Índice verificado. El código completo se carga sólo al abrir un recurso.";
+    el.status.textContent = fromOfflineCache
+      ? "Sin conexión: usando la última biblioteca verificada guardada. Sólo estarán disponibles los recursos descargados previamente."
+      : "Índice verificado. El código completo se carga sólo al abrir un recurso.";
     offset = 0;
     await renderResults();
     return true;
@@ -1394,7 +1402,7 @@ el.copyCode.addEventListener("click", async () => {
 });
 
 try {
-  const indexReady = await refreshIndex();
+  const indexReady = await refreshIndex({ allowOfflineFallback: true });
   if (indexReady && editResourceId) await openDetail(editResourceId);
 } catch (error) {
   console.error(error);

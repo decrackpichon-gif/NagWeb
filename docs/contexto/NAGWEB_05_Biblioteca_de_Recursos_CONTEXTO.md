@@ -286,3 +286,25 @@ seguir expandiendo capacidades cuando aporte al objetivo global.
   `src/runtime/quick-preview.mjs`.
 - No alterar el plan original ni considerar la definición alternativa
   de v1 como una restricción de alcance. No Vercel, no merges.
+
+## Caché offline segura y común para todo el catálogo (14/10/2026)
+
+- Decisión: no introducir descargas o servicios aislados por familia.
+  `src/runtime/offline-vault-cache.mjs` implementa almacenamiento
+  opcional mediante Cache Storage para las fuentes verificadas del
+  cliente existente. Sirve a todos los paquetes, sin crear un nuevo
+  sistema para cada icono/componente.
+- Prioridad: al fallar la red, buscar la misma ruta **y SHA-256**
+  previamente guardada; revalidar los bytes antes de usarlos.
+  Nunca sustituir respuestas corruptas de red por contenido de
+  otra versión; persistir el manifiesto sólo tras validar su índice.
+- Guardar únicamente el índice y recursos abiertos. Limitar
+  crecimiento del conjunto cacheado y soportar navegadores sin
+  acceso a Cache Storage.
+- UI: mensaje explícito del modo offline parcial al recuperar
+  índice; actualización manual sigue siendo remota y atómica.
+- Pruebas: Node con Cache Storage de prueba y Chromium en modo
+  red externa desconectada después de recargar.
+- Limitación conocida: no descarga anticipadamente todo el
+  catálogo ni proporciona por sí misma una app-shell instalable
+  completamente offline. No se cambia el plan original de NAGWEB 05.

@@ -1589,3 +1589,35 @@ modificar `resource-vault-data` ni desplegar Vercel.
 
 **Plan:** se conserva el plan general de NAGWEB 05; cualquier
 estimación anterior de cierre era informativa, no un recorte.
+
+## Mejora transversal: archivos verificados disponibles tras recargar el navegador
+
+El cliente del Vault ya no depende únicamente de su caché de memoria.
+En contextos de navegador con Cache Storage habilitado guarda el índice
+comprimido y **sólo los paquetes que el usuario abrió**, con su SHA-256
+en la clave. La ficha del manifiesto se guarda después de comprobar
+índice+checksum, no antes, para no mezclar versiones. Ante fallo de red,
+el cliente lee los archivos locales **únicamente cuando coinciden con
+el hash esperado**; no usa archivos corruptos ni paquetes obsoletos.
+
+Al abrir por primera vez, la UI intenta actualizar el índice remoto;
+si no hay red, recupera la última versión verificada guardada y
+muestra claramente el modo parcial sin conexión. El botón manual
+«Actualizar índice» continúa comprobando la red y conservando el
+índice anterior si falla. Las versiones viejas o sobrantes se acotan
+mediante un límite de 48 paquetes comprimidos por Vault. Cuando
+Cache Storage está deshabilitado, la Biblioteca sigue operando online.
+
+**Alcance correcto:** el navegador sigue necesitando cargar los
+archivos de la propia interfaz desde un origen accesible o ya
+almacenado por otro mecanismo. Esta capa hace que los datos del
+catálogo y los recursos **previamente abiertos** sean reutilizables
+sin Internet mientras la interfaz pueda abrirse. No descarga de
+manera masiva los 6762 recursos y no instala un service worker.
+
+Pruebas en `src/offline-cache-selftest.mjs`: versión íntegra,
+reinicio de cliente, checksum de archivos cacheados, refresh atómico,
+nueva versión no mezclada con archivos viejos, degradación sin Cache
+Storage y límite de almacenamiento. Chromium Windows/Linux comprueba
+la carga del índice y una vista rápida Uiverse tras `reload` con
+acceso externo interrumpido. Sin Vercel, sin mezcla de ramas.
