@@ -159,7 +159,7 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
    var bar=ctx.edit?'<div class="nw-edit-partbar nw-media-editbar" data-nw-partbar><button type="button" data-nw-part="">Todos</button>'+
     items.map(function(p){return '<button type="button" data-nw-part="'+p[0]+'">'+p[1]+'</button>';}).join('')+'</div>':'';
    // Preservar estructura, variantes e imágenes reales creadas en v15.
-   html=html.replace('class="'+selector+'"','class="'+selector+'" data-nw-part-scope="'+kind+'" data-nw-part-mobile="'+threshold+
+   html=html.replace(/(<figure class="[^"]+")/,'$1 data-nw-part-scope="'+kind+'" data-nw-part-mobile="'+threshold+
     '" data-nw-part-y="var(--h)"');
    html=html.replace(/(<figure[^>]*style=")/,'$1--h:calc(100cqw * '+factor+');');
    items.forEach(function(item){
