@@ -145,6 +145,75 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
  X.reg('holocard',def,css,RT(scwBoot,scwCfg,scwRM,run));
 })();
 
+/* ---------- Medios interactivos: un adaptador para Revelado y Lupa ---------- */
+(function(){
+ function enhanceMedia(kind,selector,items,ratioDefault,threshold,run){
+  var old=W.kinds[kind];if(!old)return;
+  var def=Object.assign({},old);
+  def.fields=[{type:'hint',text:'Elegí Imagen, Revelado o Texto desde la barra de la composición. Mové, escalá y rotá cada pieza con el mouse. La versión móvil se guarda por separado, sin modificar el efecto interactivo original.'}].concat((old.fields||[]).filter(function(f){return f.type!=='hint';}));
+  def.markup=function(e,ctx){
+   var html=old.markup(e,ctx),ratio=pick(e.ratio,['16/9','4/3','1/1','3/2','3/4'],ratioDefault);
+   var parts=ratio.split('/'),factor=(+parts[1]/+parts[0]).toFixed(6);
+   var bar=ctx.edit?'<div class="nw-edit-partbar nw-media-editbar" data-nw-partbar><button type="button" data-nw-part="">Todos</button>'+
+    items.map(function(p){return '<button type="button" data-nw-part="'+p[0]+'">'+p[1]+'</button>';}).join('')+'</div>':'';
+   // Preservar estructura, variantes e imágenes reales creadas en v15.
+   html=html.replace('class="'+selector+'"','class="'+selector+'" data-nw-part-scope="'+kind+'" data-nw-part-mobile="'+threshold+
+    '" data-nw-part-y="var(--h)"');
+   html=html.replace(/(<figure[^>]*style=")/,'$1--h:calc(100cqw * '+factor+');');
+   items.forEach(function(item){
+    var key=item[0],value=partTransformCSS(e,key,'var(--h)'),token='data-wpart="'+key+'"';
+    if(!value)return;
+    html=html.replace(new RegExp('<[a-z][^>]*'+token+'[^>]*>','i'),function(tag){
+     if(/\\sstyle="/.test(tag))return tag.replace(/\\sstyle="/,' style="'+value);
+     return tag.slice(0,-1)+' style="'+value+'">';
+    });
+   });
+   if(bar)html=html.replace(/(<figure[^>]*>)/,'$1'+bar);
+   return html;
+  };
+  var css=(W.css&&W.css[kind]||'')+
+   '.'+selector+'{container-type:inline-size;box-sizing:border-box}' +
+   '.'+selector+' [data-wpart]{translate:var(--nw-tx,0px) var(--nw-ty,0px);rotate:var(--nw-pr,0deg);scale:var(--nw-ps,1)}' +
+   '.'+selector+' .nw-media-editbar{left:8px;right:8px;top:8px;max-width:none;z-index:60;justify-content:center}' +
+   (kind==='cursorreveal'?'.nw-cr.nw-part-isolate .nw-cr-top.nw-part-edit-active{clip-path:inset(0)!important}':'')+
+   '@container (max-width:'+threshold+'px){.'+selector+' [data-wpart]{translate:var(--nw-mx,var(--nw-tx,0px)) var(--nw-my,var(--nw-ty,0px));rotate:var(--nw-mr,var(--nw-pr,0deg));scale:var(--nw-ms,var(--nw-ps,1))}}';
+  X.reg(kind,def,css,RT(scwBoot,scwCfg,scwRM,run));
+ }
+ function runReveal(){
+  scwBoot('__nwCursorReveal16','.nw-cr',function(el){
+   if(scwRM())return;
+   var c=scwCfg(el),rad=+c.rad||160,top=el.querySelector('.nw-cr-top');if(!top)return;
+   top.style.clipPath='circle('+rad+'px at 50% 50%)';
+   function set(ev){
+    if(window.SC_EDIT&&el.classList.contains('nw-part-isolate'))return;
+    var r=el.getBoundingClientRect(),x=Math.max(0,Math.min(r.width,ev.clientX-r.left)),y=Math.max(0,Math.min(r.height,ev.clientY-r.top));
+    top.style.clipPath='circle('+rad+'px at '+x+'px '+y+'px)';
+    el.style.setProperty('--cx',x+'px');el.style.setProperty('--cy',y+'px');el.classList.add('is-on');
+   }
+   el.addEventListener('pointermove',set);el.addEventListener('pointerenter',set);
+   el.addEventListener('pointerleave',function(){el.classList.remove('is-on');});
+  });
+ }
+ function runMagnifier(){
+  scwBoot('__nwMagnifier16','.nw-mag',function(el){
+   if(scwRM())return;
+   var lens=el.querySelector('.nw-mag-lens'),li=lens&&lens.querySelector('img'),c=scwCfg(el),zoom=Math.max(1,+c.zoom||2.2);
+   function set(ev){
+    if(window.SC_EDIT&&el.classList.contains('nw-part-isolate'))return;
+    var r=el.getBoundingClientRect(),x=Math.max(0,Math.min(r.width,ev.clientX-r.left)),y=Math.max(0,Math.min(r.height,ev.clientY-r.top));
+    el.style.setProperty('--lx',x+'px');el.style.setProperty('--ly',y+'px');
+    if(li){var L=lens.getBoundingClientRect().width||180;li.style.width=(r.width*zoom)+'px';li.style.height=(r.height*zoom)+'px';
+     li.style.left=(L/2-x*zoom)+'px';li.style.top=(L/2-y*zoom)+'px';}
+    el.classList.add('is-on');
+   }
+   el.addEventListener('pointermove',set);el.addEventListener('pointerenter',set);
+   el.addEventListener('pointerleave',function(){el.classList.remove('is-on');});
+  });
+ }
+ enhanceMedia('cursorreveal','nw-cr',[['base','Imagen base'],['reveal','Imagen revelada'],['label','Etiqueta']],'16/9',600,runReveal);
+ enhanceMedia('detailmagnifier','nw-mag',[['image','Imagen'],['caption','Texto']],'4/3',600,runMagnifier);
+})();
+
 /* ---------- Historia sticky: selector de capítulo para editar texto e imagen ---------- */
 (function(){
  var old=W.kinds.scrollstory;if(!old)return;
