@@ -1,6 +1,6 @@
 # NAGWEB 01 | Referencias originales recuperadas y alcance comprobado
 
-> **Inventario documental del 14/10/2026.** Este documento complementa a [la ficha de continuidad](NAGWEB_01_Editor_Principal_CONTEXTO.md) y a [la documentación técnica](../../storytelling-engine-v2.md). **No** reemplaza el HEAD, los commits ni las pruebas de `feat/storytelling-engine-v2`. No es un inventario exhaustivo de todos los enlaces de chats históricos.
+> **Inventario documental del 14/10/2026.** Este documento complementa a [la ficha de continuidad](NAGWEB_01_Editor_Principal_CONTEXTO.md) y a [la documentación técnica](../storytelling-engine-v2.md). **No** reemplaza el HEAD, los commits ni las pruebas de `feat/storytelling-engine-v2`. No es un inventario exhaustivo de todos los enlaces de chats históricos.
 
 ## Referencias con procedencia identificable
 
