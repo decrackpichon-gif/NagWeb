@@ -21,6 +21,20 @@ function partTransformCSS(e,n,heightUnit){
 }
 // Otros widgets pueden compartir el serializador sin copiar esta lógica.
 X.partTransformCSS=partTransformCSS;
+// Un único inyector para recursos cuyos atributos style ya contenían poses en px.
+// Limpia SOLO las 8 variables geométricas antiguas, conserva imágenes/colores y añade la pose vigente al final.
+function partStyleMarkup(html,e,part,heightUnit){
+ var css=partTransformCSS(e,part,heightUnit);
+ if(!css)return html;
+ var token='data-wpart="'+part+'"';
+ return html.replace(new RegExp('<[a-z][^>]*'+token+'[^>]*>','i'),function(tag){
+  var m=/\sstyle="([^"]*)"/.exec(tag);
+  if(!m)return tag.slice(0,-1)+' style="'+css+'">';
+  var keep=m[1].replace(/(?:^|;)\s*--nw-(?:tx|ty|pr|ps|mx|my|mr|ms):[^;]*/g,'');
+  if(keep&&!keep.endsWith(';'))keep+=';';
+  return tag.replace(m[0],' style="'+keep+css+'"');
+ });
+}
 function heroPartCSS(e,n){
  var desktop=e&&e.__parts&&e.__parts[n],mobile=e&&e.__partsMobile&&e.__partsMobile[n];
  var z=desktop&&Number.isFinite(+desktop.z)?'--nw-z:'+Math.round(+desktop.z)+';':'';
@@ -112,16 +126,7 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
    'class="nw-holo" data-wpart="card" data-nw-part-scope="holocard" data-nw-part-mobile="420"'+
    ' data-nw-part-height=".nw-holo-card" data-nw-part-y="var(--h)"');
   html=html.replace('class="nw-holo-card"','class="nw-holo-card" style="--h:calc(100cqw * '+factor+')"');
-  function addStyle(part){
-   var token='data-wpart="'+part+'"',value=partTransformCSS(e,part,'var(--h)');
-   if(!value||!html.includes(token))return;
-   // Nunca añadir un segundo atributo style; preservar video, fondos y colores originales.
-   html=html.replace(new RegExp('<[a-z][^>]*'+token+'[^>]*>','i'),function(tag){
-    if(/\sstyle="/.test(tag))return tag.replace(/\sstyle="/,' style="'+value);
-    return tag.slice(0,-1)+' style="'+value+'">';
-   });
-  }
-  items.forEach(function(item){addStyle(item[0]);});
+  items.forEach(function(item){html=partStyleMarkup(html,e,item[0],'var(--h)');});
   if(bar)html=html.replace(/(<div class="nw-holo"[^>]*>)/,'$1'+bar);
   return html;
  };
@@ -162,14 +167,7 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
    html=html.replace(/(<figure class="[^"]+")/,'$1 data-nw-part-scope="'+kind+'" data-nw-part-mobile="'+threshold+
     '" data-nw-part-y="var(--h)"');
    html=html.replace(/(<figure[^>]*style=")/,'$1--h:calc(100cqw * '+factor+');');
-   items.forEach(function(item){
-    var key=item[0],value=partTransformCSS(e,key,'var(--h)'),token='data-wpart="'+key+'"';
-    if(!value)return;
-    html=html.replace(new RegExp('<[a-z][^>]*'+token+'[^>]*>','i'),function(tag){
-     if(/\sstyle="/.test(tag))return tag.replace(/\sstyle="/,' style="'+value);
-     return tag.slice(0,-1)+' style="'+value+'">';
-    });
-   });
+   items.forEach(function(item){html=partStyleMarkup(html,e,item[0],'var(--h)');});
    if(bar)html=html.replace(/(<figure[^>]*>)/,'$1'+bar);
    return html;
   };
@@ -220,13 +218,6 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
 // Un mismo adaptador permite editar las líneas tipográficas y las fotos de una grilla.
 // Las poses del autor van en --nw-tx/ty/ps, la animación nunca sobrescribe style.translate/scale.
 (function(){
- function withPartStyle(html,key,value){
-  if(!value)return html;
-  var token='data-wpart="'+key+'"';
-  return html.replace(new RegExp('<[a-z][^>]*'+token+'[^>]*>','i'),function(tag){
-   return /\sstyle="/.test(tag)?tag.replace(/\sstyle="/,' style="'+value):tag.slice(0,-1)+' style="'+value+'">';
-  });
- }
  function enhance(kind,selector,parts,renderExtra,run){
   var old=W.kinds[kind];if(!old)return;
   var def=Object.assign({},old);
@@ -243,7 +234,7 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
    var root=new RegExp('(<'+(kind==='depthheadline'?'div':'figure')+' class="[^"]+")','i');
    html=html.replace(root,'$1 data-nw-part-scope="'+kind+'" data-nw-part-mobile="680" data-nw-part-y="var(--h)"');
    html=html.replace(new RegExp('(<'+(kind==='depthheadline'?'div':'figure')+' class="[^"]+"[^>]*style=")','i'),'$1--h:'+height+'px;');
-   for(var i=0;i<actual.length;i++)html=withPartStyle(html,actual[i][0],partTransformCSS(e,actual[i][0],'var(--h)'));
+   for(var i=0;i<actual.length;i++)html=partStyleMarkup(html,e,actual[i][0],'var(--h)');
    if(ctx.edit){
     var bar='<div class="nw-edit-partbar nw-pointer-editbar" data-nw-partbar><button type="button" data-nw-part="">Todos</button>'+
      actual.map(function(item){return '<button type="button" data-nw-part="'+item[0]+'">'+item[1]+'</button>';}).join('')+'</div>';
