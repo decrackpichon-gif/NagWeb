@@ -1519,8 +1519,8 @@ try {
   await expect(spinFrame).toHaveAttribute("sandbox","");
   await expect(spinFrame).toHaveAttribute("srcdoc",/--sk-size:72px;--sk-color:#3366aa/);
   await expect(page.frameLocator("#preview").frameLocator('[data-id="'+spinId+'"] iframe.emb-sand').locator(".sk-plane")).toHaveCSS("background-color","rgb(51, 102, 170)");
-  await expect(page.getByRole("button",{name:"Personalizar componente HTML/CSS seleccionado",exact:true})).toBeEnabled();
-  await page.getByRole("button",{name:"Personalizar componente HTML/CSS seleccionado",exact:true}).click();
+  await expect(page.getByRole("button",{name:"Personalizar componente SpinKit seleccionado",exact:true})).toBeEnabled();
+  await page.getByRole("button",{name:"Personalizar componente SpinKit seleccionado",exact:true}).click();
   await libraryFrame.locator('[data-detail]').waitFor({state:"visible"});
   await expect(libraryFrame.getByLabel("Color",{exact:true})).toHaveValue("#3366aa");
   await libraryFrame.getByLabel("Color",{exact:true}).fill("#bb2244");

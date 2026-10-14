@@ -113,8 +113,10 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       pendingFocusReturn.focus();
       pendingFocusReturn = null;
     }
-    const label = ["uiverse-html","spinkit-html"].includes(element?.nwResource?.kind)
-      ? "Personalizar componente HTML/CSS seleccionado" : "Personalizar ícono seleccionado";
+    const label = element?.nwResource?.kind === "uiverse-html"
+      ? "Personalizar componente Uiverse seleccionado"
+      : element?.nwResource?.kind === "spinkit-html"
+        ? "Personalizar componente SpinKit seleccionado" : "Personalizar ícono seleccionado";
     if (editButton.getAttribute("aria-label") !== label) {
       editButton.setAttribute("aria-label", label);
       editButton.title = label;
@@ -374,9 +376,15 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
           throw new Error("El recurso está en el lienzo, pero no se pudo guardar. Revisá el almacenamiento del navegador.");
         }
         result = buildResourceApplyResult(message, { status: "applied", message: editContext
-          ? isNativeHtml ? "Cambios guardados en el componente HTML/CSS seleccionado."
-            : "Cambios guardados en el ícono seleccionado." : isNativeHtml
-            ? "Componente HTML/CSS insertado y guardado en la escena actual."
+          ? isNativeHtml
+            ? message.resource.provider === "uiverse"
+              ? "Cambios guardados en el componente Uiverse seleccionado."
+              : "Cambios guardados en el componente SpinKit seleccionado."
+            : "Cambios guardados en el ícono seleccionado."
+          : isNativeHtml
+            ? message.resource.provider === "uiverse"
+              ? "Componente HTML/CSS Uiverse insertado y guardado en la escena actual."
+              : "Componente HTML/CSS SpinKit insertado y guardado en la escena actual."
             : "Ícono insertado y guardado en la escena actual." });
       } catch (error) {
         result = buildResourceApplyResult(message, { status: inserted ? "error" : "rejected", message: error.message });
