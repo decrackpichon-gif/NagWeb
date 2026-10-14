@@ -205,7 +205,7 @@ try {
     const spinnerCard=frame.locator('[data-quick-preview-id="'+spinkit.id+'"]');
     await expect(spinnerCard).toHaveCount(1);
     await spinnerCard.click();
-    await expect(frame.frameLocator('[data-quick-preview-panel] iframe').locator(".sk-plane")).toBeVisible();
+    await expect(frame.frameLocator('[data-quick-preview-id="'+css.id+'"] + [data-quick-preview-panel] iframe').locator(".sk-plane")).toBeVisible();
     await spinnerCard.click();
     const previewTrigger=frame.locator('[data-quick-preview-id="'+css.id+'"]');
     await expect(previewTrigger).toHaveCount(1);
@@ -213,15 +213,15 @@ try {
     await expect(previewTrigger).toHaveAttribute("aria-expanded","false");
     await previewTrigger.click();
     await expect(previewTrigger).toHaveAttribute("aria-expanded","true");
-    const peekPanel=frame.locator('[data-quick-preview-panel]');
+    const peekPanel=frame.locator('[data-quick-preview-id="'+css.id+'"] + [data-quick-preview-panel]');
     await expect(peekPanel).toBeVisible();
     const peekFrame=peekPanel.locator("iframe");
     await expect(peekFrame).toHaveAttribute("sandbox","");
     await expect(peekFrame).toHaveAttribute("referrerpolicy","no-referrer");
     await expect(peekFrame).toHaveAttribute("srcdoc",/Content-Security-Policy/);
     await expect(peekFrame).toHaveAttribute("srcdoc",/default-src 'none'/);
-    await expect(frame.frameLocator('[data-quick-preview-panel] iframe').locator("button.card")).toBeVisible();
-    await expect(frame.frameLocator('[data-quick-preview-panel] iframe').locator("button.card")).toHaveText("Prueba");
+    await expect(frame.frameLocator('[data-quick-preview-id="'+css.id+'"] + [data-quick-preview-panel] iframe').locator("button.card")).toBeVisible();
+    await expect(frame.frameLocator('[data-quick-preview-id="'+css.id+'"] + [data-quick-preview-panel] iframe').locator("button.card")).toHaveText("Prueba");
     await previewTrigger.click();
     await expect(previewTrigger).toHaveAttribute("aria-expanded","false");
     await expect(peekPanel).toBeHidden();
@@ -238,7 +238,7 @@ try {
         await expect(frame.locator('[data-status]')).toContainText("Sin conexión");
         const storedPeek = frame.locator('[data-quick-preview-id="'+css.id+'"]');
         await storedPeek.click();
-        await expect(frame.frameLocator('[data-quick-preview-panel] iframe')
+        await expect(frame.frameLocator('[data-quick-preview-id="'+css.id+'"] + [data-quick-preview-panel] iframe')
           .locator("button.card")).toBeVisible();
         await storedPeek.click();
         await expect(frame.locator('[data-quick-preview-panel] iframe')).toHaveCount(0);

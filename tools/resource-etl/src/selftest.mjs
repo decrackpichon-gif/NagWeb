@@ -1620,10 +1620,13 @@ assert.deepEqual(describeEditableControls({
 }).map(p=>p.id), ["uiverseText1"],
   "Unsupported CSS property is rejected while valid text remains editable");
 assert.equal(htmlCssPropertyStyle(editableSpinKit, { color: "#ee4488" }), "");
-assert.equal(buildResourceApplyEnvelope(editableSpinKit, {
+const editedSpinHtml=buildResourceApplyEnvelope(editableSpinKit, {
   values: { color: "#ee4488" }
-}).descriptor.payload.html, editableSpinKit.artifacts[0].content,
-  "Legacy CSS variable HTML resources are not wrapped unexpectedly");
+}).descriptor.payload.html;
+assert.match(editedSpinHtml,/--sk-size:40px;--sk-color:#ee4488/,
+  "SpinKit CSS variable controls must affect the inserted component");
+assert.ok(editedSpinHtml.includes(editableSpinKit.artifacts[0].content),
+  "The verified upstream SpinKit HTML/CSS must be preserved");
 
 const publicPreviewDir = await mkdtemp(path.join(tmpdir(), "nagweb-pages-preview-"));
 try {
