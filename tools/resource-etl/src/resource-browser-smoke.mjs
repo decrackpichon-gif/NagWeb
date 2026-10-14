@@ -1499,8 +1499,15 @@ try {
     await libraryFrame.getByRole("button",{name:"Cerrar",exact:true}).click();
   await libraryFrame.locator('[data-resource-id="'+spinkit.id+'"]').click();
   await libraryFrame.locator('[data-customize]').waitFor({state:"visible"});
+  const spinSizeGroup=libraryFrame.locator('details[data-category="size"]');
+  if (!await spinSizeGroup.evaluate(node=>node.open)) await spinSizeGroup.locator("summary").click();
+  const spinColorGroup=libraryFrame.locator('details[data-category="color"]');
+  if (!await spinColorGroup.evaluate(node=>node.open)) await spinColorGroup.locator("summary").click();
   await libraryFrame.getByLabel("Color",{exact:true}).fill("#3366aa");
-  await libraryFrame.getByLabel("Tamaño",{exact:true}).fill("72");
+  const spinSizeInput=libraryFrame.getByLabel("Tamaño",{exact:true});
+  await spinSizeInput.focus();
+  await spinSizeInput.press("Home");
+  for (let value=8;value<72;value++) await spinSizeInput.press("ArrowRight");
   await expect(libraryFrame.getByRole("button",{name:"Aplicar en NagWeb",exact:true})).toBeEnabled();
   await libraryFrame.getByRole("button",{name:"Aplicar en NagWeb",exact:true}).click();
   await expect(libraryFrame.locator("[data-apply-status]")).toContainText("insertado y guardado");
