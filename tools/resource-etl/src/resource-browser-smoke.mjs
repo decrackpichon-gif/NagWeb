@@ -6,7 +6,7 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { gzipSync } from "node:zlib";
 import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
-import { transformUiverseComponent, transformSpinKitLoader } from "./light-transformers.mjs";
+import { transformUiverseComponent, transformSpinKitLoader, transformMagicCssEffect } from "./light-transformers.mjs";
 import { normalizeHeroiconOutline } from "./extractors/heroicons.mjs";
 import { transformHeroiconOutline } from "./heroicons-transformer.mjs";
 import { browseHeroiconPaths } from "./snapshot/browse-icon-paths.mjs";
@@ -56,6 +56,13 @@ const spinkit=transformSpinKitLoader({
     css:':root{--sk-size:40px;--sk-color:#333}.sk-plane{width:var(--sk-size);height:var(--sk-size);background-color:var(--sk-color);animation:sk-plane 1.2s infinite}@keyframes sk-plane{to{transform:rotate(360deg)}}'},
   item:{name:"plane",title:"Plane",html:'<div class="sk-plane"></div>'}
 });
+const magicCss=transformMagicCssEffect({
+  raw:{repository:"https://github.com/miniMAC/magic",commit:"offline-smoke",
+    baseCss:".magictime{animation-fill-mode:both;animation-duration:1s}",
+    packageJson:{version:"1.0"}},
+  item:{name:"puffIn",category:"magic_effects",path:"puffIn.scss",
+    code:".puffIn{animation-name:puffIn}@keyframes puffIn{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}"}
+});
 // Genuine Heroicons 24px outline, exercising its native editor integration.
 const heroUpstream = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon">\n  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>\n</svg>';
 const heroicon = transformHeroiconOutline({
@@ -84,7 +91,7 @@ const codeOnly = {
   runtime:{renderer:"nagweb-react",entryArtifactId:"react"},
   artifacts:[{id:"react",role:"component",format:"tsx",content:"export default function Demo() { return <div>Demo</div>; }"}]
 };
-const resources = [icon, css, spinkit, heroicon, lucideCamera, codeOnly];
+const resources = [icon, css, spinkit, magicCss, heroicon, lucideCamera, codeOnly];
 const zip = data => gzipSync(JSON.stringify(data));
 const index = zip({ format: "nagweb-resource-browse-index", resourceCount: resources.length,
   resources: resources.map(r => ({ id: r.id, title: r.title, family: r.family, kind: r.kind, provider: r.source.provider,
@@ -1537,6 +1544,63 @@ try {
   await expect(page.frameLocator("#preview").locator('[data-id="'+spinId+'"] iframe.emb-sand')).toHaveAttribute("sandbox","");
   report.scenarios.push({editor:"SpinKit native HTML/CSS insert, edit, save, export, reload",
     status:"passed",provider:"spinkit",sandbox:true,cssVariables:true,persistence:true,export:true});
+  // Magic.css animates an existing heading without replacing it or changing
+  // the outer element's free-canvas geometry. The source CSS is bundled locally.
+  await page.evaluate(() => {
+    Object.assign(sec(),{layout:"free",elements:[mkEl("heading",{
+      name:"Texto animable",text:"Texto con Magic.css",size:"xl",
+      x:50,y:40,w:60,rot:5,anim:"none"
+    })]});
+    selection=[sec().elements[0].id];curEl=0;secFocus=false;
+    refresh();
+  });
+  await page.getByRole("button",{name:"Biblioteca de recursos",exact:true}).click();
+  if(await libraryFrame.locator("[data-detail]").evaluate(node=>node.open))
+    await libraryFrame.getByRole("button",{name:"Cerrar",exact:true}).click();
+  const magicTile=libraryFrame.locator('[data-resource-id="'+magicCss.id+'"]');
+  await expect(magicTile.locator('[data-editor-use-label="available"]')).toBeVisible();
+  await magicTile.click();
+  await expect(libraryFrame.getByRole("button",{name:"Aplicar animación al elemento",exact:true})).toBeEnabled();
+  const initialState=await page.evaluate(()=>({
+    id:sec().elements[0].id,x:sec().elements[0].x,rot:sec().elements[0].rot,w:sec().elements[0].w,
+    historyLength:history.length
+  }));
+  await libraryFrame.getByRole("button",{name:"Aplicar animación al elemento",exact:true}).click();
+  await expect(libraryFrame.locator("[data-apply-status]")).toContainText("aplicada y guardada");
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  const magicHeading=await page.evaluate(()=>sec().elements[0]);
+  assert.equal(magicHeading.id,initialState.id);
+  assert.equal(magicHeading.x,initialState.x);
+  assert.equal(magicHeading.rot,initialState.rot);
+  assert.equal(magicHeading.w,initialState.w);
+  assert.equal(magicHeading.nwMagicCss.id,magicCss.id);
+  assert.equal(await page.evaluate(()=>history.length),initialState.historyLength+1);
+  const inner=page.frameLocator("#preview").locator('[data-id="'+initialState.id+'"] .nw-magic-inner');
+  await expect(inner).toHaveClass(/puffIn/);
+  const magicExport=await page.evaluate(()=>generateSite(flattenPage(page()),false,true,false));
+  assert.match(magicExport,/@keyframes puffIn/);
+  assert.match(magicExport,/class="nw-magic-inner magictime puffIn"/);
+  assert.match(magicExport,/prefers-reduced-motion:reduce/);
+  await expect(page.getByRole("button",{name:"Personalizar animación seleccionada",exact:true})).toBeEnabled();
+  await page.getByRole("button",{name:"Personalizar animación seleccionada",exact:true}).click();
+  await libraryFrame.locator("[data-detail]").waitFor({state:"visible"});
+  const magicDuration=libraryFrame.getByLabel("Duración",{exact:true});
+  const timingGroup=libraryFrame.locator("details").filter({has:magicDuration});
+  if(!await timingGroup.evaluate(node=>node.open))await timingGroup.locator("summary").click();
+  await magicDuration.focus();
+  await magicDuration.press("Home");
+  for(let i=1;i<20;i++)await magicDuration.press("ArrowRight");
+  await expect(magicDuration).toHaveValue("2");
+  await libraryFrame.getByRole("button",{name:"Guardar animación",exact:true}).click();
+  await expect(libraryFrame.locator("[data-apply-status]")).toContainText("actualizada y guardada");
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  assert.equal(await page.evaluate(()=>sec().elements[0].nwMagicCss.values.duration),2);
+  assert.equal(await page.evaluate(()=>sec().elements.length),1);
+  await page.reload();
+  assert.equal(await page.evaluate(()=>sec().elements[0].nwMagicCss.values.duration),2);
+  await expect(page.frameLocator("#preview").locator('[data-id="'+initialState.id+'"] .nw-magic-inner')).toHaveCSS("animation-duration","2s");
+  report.scenarios.push({editor:"Magic.css on existing text: apply, edit, export, reload, geometry",
+    status:"passed",noNewElement:true,portableCss:true,history:true,reducedMotion:true});
   // Stage 83: insert HTML and SVG inside an existing native container.
   await page.evaluate(() => {
     const scene=sec();scene.layout="free";scene.elements=[];
