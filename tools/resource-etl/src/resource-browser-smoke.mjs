@@ -1601,6 +1601,37 @@ try {
   await expect(page.frameLocator("#preview").locator('[data-id="'+initialState.id+'"] .nw-magic-inner')).toHaveCSS("animation-duration","2s");
   report.scenarios.push({editor:"Magic.css on existing text: apply, edit, export, reload, geometry",
     status:"passed",noNewElement:true,portableCss:true,history:true,reducedMotion:true});
+  // Stage 96: images and vectors share the verified Magic.css effect path.
+  for(const type of ["image","vector"]){
+    await page.evaluate(type=>{
+      if(type==="image")project.assets.images.push({id:"stage96-asset",name:"Imagen",
+        data:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 4'%3E%3Crect width='4' height='4' fill='red'/%3E%3C/svg%3E"});
+      const options=type==="image"?{assetId:"stage96-asset",alt:"Prueba"}
+        :{kind:"path",d:"M0 0L24 24",pW:24,pH:24,stroke:"#335577"};
+      Object.assign(sec(),{layout:"free",elements:[mkEl(type,{...options,x:40,y:45,w:35,rot:7,anim:"none"})]});
+      selection=[sec().elements[0].id];curEl=0;secFocus=false;refresh();
+    },type);
+    const before=await page.evaluate(()=>structuredClone(sec().elements[0]));
+    await page.getByRole("button",{name:"Biblioteca de recursos",exact:true}).click();
+    if(await libraryFrame.locator("[data-detail]").evaluate(n=>n.open))
+      await libraryFrame.getByRole("button",{name:"Cerrar",exact:true}).click();
+    await libraryFrame.locator('[data-resource-id="'+magicCss.id+'"]').click();
+    await expect(libraryFrame.getByRole("button",{name:"Aplicar animación al elemento",exact:true})).toBeEnabled();
+    await libraryFrame.getByRole("button",{name:"Aplicar animación al elemento",exact:true}).click();
+    await expect(libraryFrame.locator("[data-apply-status]")).toContainText("aplicada y guardada");
+    await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+    const after=await page.evaluate(()=>structuredClone(sec().elements[0]));
+    for(const key of ["id","x","y","w","rot"])assert.equal(after[key],before[key]);
+    assert.equal(after.nwMagicCss.id,magicCss.id);
+    const outer=page.frameLocator("#preview").locator('[data-id="'+after.id+'"]');
+    await expect(outer.locator(".nw-magic-inner")).toHaveClass(/puffIn/);
+    await expect(outer.locator(type==="image"?"img.im-base":"svg.vec-svg")).toBeVisible();
+    const exported=await page.evaluate(()=>generateSite(flattenPage(page()),false,true,false));
+    assert.match(exported,/nw-magic-inner magictime puffIn/);
+    await page.reload();
+    assert.equal(await page.evaluate(()=>sec().elements[0].nwMagicCss.id),magicCss.id);
+    report.scenarios.push({editor:"Magic.css on "+type,status:"passed",geometry:true,export:true,reload:true});
+  }
   // Stage 83: insert HTML and SVG inside an existing native container.
   await page.evaluate(() => {
     const scene=sec();scene.layout="free";scene.elements=[];

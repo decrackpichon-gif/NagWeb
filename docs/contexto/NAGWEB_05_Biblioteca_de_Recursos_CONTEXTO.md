@@ -354,3 +354,10 @@ Se recuperaron de los **importadores reales** las direcciones de 17 proveedores 
   ningún paquete fuente (6.762 recursos); prueba de permisos, metadatos y
   recuentos. Las pruebas de navegador deben cubrir aplicar, editar, recargar
   y exportar; sin mezcla de ramas ni Vercel.
+
+## Etapa 96: Magic.css para imágenes e íconos vectoriales (14/10/2026)
+
+- Ampliación reutilizable del adaptador Magic.css a imágenes y vectores del lienzo.
+- Las animaciones se aplican a un wrapper interno y conservan posición y rotación.
+- Chromium verifica inserción del efecto, geometría, exportación y recarga.
+- Sin Vercel, cambios en Vault ni merges.

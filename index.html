@@ -14930,7 +14930,7 @@ function safeMagicFx(e){
 }
 function magicInner(e,inner){
   const fx=safeMagicFx(e);
-  if(!fx || !['heading','label','paragraph','button'].includes(e.type))return inner;
+  if(!fx || !['heading','label','paragraph','button','image','vector'].includes(e.type))return inner;
   const v=fx.values;
   return '<span class="nw-magic-inner magictime '+fx.className+
     '" style="animation-duration:'+v.duration+'s!important;animation-delay:'+v.delay+
@@ -15000,8 +15000,8 @@ function elMarkup(e, p, free, z, sync, inStack){
       const st = free ? pos.slice(0,-1) + inner + '"' : ' style="width:' + e.w + '%;border-radius:' + (e.radius||0) + 'px"';
       const mg = e.magnetic ? ' data-magnetic="1"' : '';
       return '<div class="' + cls + ' im-hov' + hovCls + idleCls + '"' + d + mg + st + '>' +
-             '<img class="im-base" src="' + a.data + '" alt="' + esc(e.alt||'') + '">' +
-             (hov ? '<img class="im-hover" src="' + hov.data + '" alt="">' : '') + '</div>';
+             magicInner(e,'<img class="im-base" src="' + a.data + '" alt="' + esc(e.alt||'') + '">' +
+             (hov ? '<img class="im-hover" src="' + hov.data + '" alt="">' : '')) + '</div>';
     }
     case 'video': {
       if(!e.url){
@@ -15087,7 +15087,7 @@ function elMarkup(e, p, free, z, sync, inStack){
     case 'vector': {
       const hovCls = e.hover ? ' hov-' + e.hover : '', idleCls = e.idle ? ' idle-' + e.idle : '';
       const mg = e.magnetic ? ' data-magnetic="1"' : '';
-      return '<div class="' + cls + ' vec' + hovCls + idleCls + '"' + d + mg + withExtra(pos, iconBoxCSS(e)) + '>' + vectorSVG(e) + '</div>';
+      return '<div class="' + cls + ' vec' + hovCls + idleCls + '"' + d + mg + withExtra(pos, iconBoxCSS(e)) + '>' + magicInner(e,vectorSVG(e)) + '</div>';
     }
     case 'embed': {
       const inner = embedInner(e, p._edit);
@@ -15385,7 +15385,7 @@ function generateSite(p, edit, external, mobileView){
   // Original upstream CSS stays offline and is never fetched at render time.
   const magicStyles=new Map();
   allSecs.forEach(s=>s.elements.forEach(e=>{
-    if(['heading','label','paragraph','button'].includes(e.type)){
+    if(['heading','label','paragraph','button','image','vector'].includes(e.type)){
       const fx=safeMagicFx(e);
       if(fx)magicStyles.set(fx.id,fx.css);
     }
@@ -15585,6 +15585,9 @@ function generateSite(p, edit, external, mobileView){
 <style>
   ${magicCssBlock}
   .nw-magic-inner{display:inline-block;max-width:100%;transform-origin:center}
+  .el.im-hov>.nw-magic-inner,.el.vec>.nw-magic-inner{display:block;width:100%;height:100%;position:relative}
+  .el.vec>.nw-magic-inner>.vec-svg{width:100%;height:100%}
+  .el.im-hov>.nw-magic-inner>.im-base{width:100%;height:100%;object-fit:cover}
   @media(prefers-reduced-motion:reduce){.nw-magic-inner{animation:none!important}}
   *{box-sizing:border-box}
   body{margin:0;background:${p.sections[0].bg};color:${p.sections[0].fg};

@@ -2,7 +2,7 @@
 // Keep animation on an INNER span so it never overwrites canvas positioning.
 const CLASS=/^[a-z][a-zA-Z0-9_-]{0,79}$/i;
 const EASINGS=new Set(["linear","ease","ease-in","ease-out","ease-in-out"]);
-export const MAGIC_TARGET_TYPES=Object.freeze(["heading","label","paragraph","button"]);
+export const MAGIC_TARGET_TYPES=Object.freeze(["heading","label","paragraph","button","image","vector"]);
 export function safeMagicCss(css,className){
   return typeof css==="string" && css.length>20 && css.length<=300000 &&
     typeof className==="string" && CLASS.test(className) &&
