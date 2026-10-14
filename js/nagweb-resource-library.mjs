@@ -91,12 +91,14 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     return { desktop, mobile };
   };
   const cardPercent = (size, geometry) => (geometry.padding + Math.sqrt(geometry.padding ** 2 + 4 * geometry.width * size)) / (2 * geometry.width) * 100;
-  const libraryResourceById = id => sec()?.elements.find(e => e.id === id && (
-    (isMagicTarget(e) && e.nwMagicCss?.id) ||
-    (e.nwResource?.id &&
-    (e.type === "vector" || (e.type === "embed" && e.mode === "html" &&
+  const libraryResourceById = id => sec()?.elements.find(e => {
+    if (e.id !== id) return false;
+    if (isMagicTarget(e) && e.nwMagicCss?.id) return true;
+    if (!e.nwResource?.id) return false;
+    return e.type === "vector" || (e.type === "embed" && e.mode === "html" &&
       ((e.nwResource.kind === "uiverse-html" && e.nwResource.provider === "uiverse") ||
-      (e.nwResource.kind === "spinkit-html" && e.nwResource.provider === "spinkit")))))) || null;
+       (e.nwResource.kind === "spinkit-html" && e.nwResource.provider === "spinkit")));
+  }) || null;
   const selectedLibraryElement = () =>
     selection.length === 1 ? libraryResourceById(selection[0]) : null;
   const syncEditButton = () => {
