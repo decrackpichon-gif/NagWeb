@@ -1047,3 +1047,49 @@ verificación específica de resiliencia bajo sesiones extensas; no debe
 confundirse con una falla reproducible del arrastre aislado, pero
 tampoco darse por solucionado sólo por separar las pruebas. No se
 hicieron despliegues Vercel ni merges.
+
+
+## Recorrido editable «Viaje entre capas» (13/10/2026)
+
+Primer flujo cinematográfico **de un solo clic**, integrado en Cámara 3D dentro
+de escenas **Lienzo libre**, sin otro motor o progreso paralelo.
+
+- El panel muestra **«Viaje entre capas · Texto → Imagen → Texto»**.
+  Requiere tres elementos elegibles ya existentes en ese orden. Mientras
+  falten, el botón está deshabilitado y explica qué incorporar; **no
+  descarga imágenes ni inventa assets**.
+- Al ejecutar **«Preparar recorrido entre capas»**, se colocan sus
+  coordenadas base X/Y en 50/50 y Z a -300, 200 y 700 px con
+  perspectiva de referencia 1000 px (adaptación acotada según la
+  perspectiva de la escena). Se muestran durante todo el recorrido
+  para que el crecimiento aparente provenga del movimiento de cámara,
+  en vez de aplicar escalas artificiales.
+- La cámara recibe cinco encuadres editables en 0/25/50/75/100 %,
+  con Z -900/-240/270/780/1300 px a escala de referencia,
+  trayectoria lineal y ángulos manuales sin giro. La longitud mínima
+  del scroll sube a 480 vh. El usuario puede seguir editando todas
+  estas variables con el inspector y el mapa ya implementados.
+- La operación **no crea ni elimina objetos**, no cambia los
+  keyframes de animación de elementos y no toca modelos GLB no
+  seleccionados. Sí modifica coordenadas, visibilidad temporal y
+  trayectoria de la escena para los tres planos. Todo se realiza
+  como **una única acción de Deshacer** y un guardado.
+- El mapa pasa a superior X/Z, selecciona el primer texto y activa
+  la edición de objetos. El Director vuelve al progreso 0 %.
+
+**Pruebas implementadas:** el planificador puro y el editor real se
+prueban con tres capas en orden, cinco encuadres, conservación de
+objetos y keyframes ajenos, un único snapshot/guardado, cruce de
+las tres Z y Deshacer. La regresión aislada alcanzó **282
+aserciones aprobadas**. Una prueba de Chromium fue añadida en
+`tests/spatial-map-drag.browser.cjs`; la ejecución de CI debe
+verificarse antes de afirmar que el navegador pasó.
+
+**Límite importante:** este es un punto de partida para una escena
+con recursos propios, no el preset autónomo con tres recursos de muestra.
+No implementa todavía oclusión parcial DOM/WebGL; no garantiza que
+movimientos secundarios/keyframes previamente creados en los
+elementos seleccionados no se superpongan visualmente al viaje.
+La siguiente fase debe centrarse en perspectiva, recorte al atravesar
+planos y controles visuales de duración/waypoints a partir de pruebas
+reales, no en sumar otro motor.
