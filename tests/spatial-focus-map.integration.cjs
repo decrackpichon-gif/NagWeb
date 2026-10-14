@@ -594,3 +594,42 @@ assert.match(C.panel(scene),/data-camera-map-object-mode aria-pressed="false"/,'
 handlers.click({target:{closest(){return modeToggle;}}});
 assert.match(C.panel(scene),/data-camera-map-object-mode aria-pressed="true"/,'Object edit mode can be rearmed without touching authored data');
 console.log('PASS object map drag: X/Y/Z, DOM/GLB, live marker, keyboard, Shift, Escape, single Undo, camera isolation');
+
+
+// One-shot cinematic authoring composes existing layers, not another engine.
+const journeyError=C.layerJourneyPlan(scene);
+assert.ok(journeyError.error,'Journey requires text, image and text instead of silently adding assets');
+const journeyPhoto={id:'journey-photo',type:'image',x:28,y:32,w:60,h:40,sdCameraDepth:47,src:'assets/example.png',sdKeyframes:[{at:0,z:0},{at:100,z:0}]};
+const journeyEnd={id:'journey-end',type:'heading',text:'Último capítulo',x:15,y:40,w:55,h:18,sdCameraDepth:0};
+scene.elements.push(journeyPhoto,journeyEnd);
+const journeyPlan=C.layerJourneyPlan(scene);
+assert.ok(!journeyPlan.error);
+assert.equal(JSON.stringify(journeyPlan.layers.map(x=>x.id)),JSON.stringify(['title','journey-photo','journey-end']));
+assert.equal(JSON.stringify(journeyPlan.layers.map(x=>x.z)),JSON.stringify([-300,200,700]));
+assert.equal(JSON.stringify(journeyPlan.frames.map(x=>x.at)),JSON.stringify([0,25,50,75,100]));
+assert.equal(JSON.stringify(journeyPlan.frames.map(x=>x.z)),JSON.stringify([-900,-240,270,780,1300]));
+assert.equal(journeyPlan.length,480);
+const existingThree=JSON.stringify(object),existingPhotoKeyframes=JSON.stringify(journeyPhoto.sdKeyframes);
+const originalLookFrames=JSON.stringify(scene.sdCameraLookFrames),beforeJourneyUndo=undos,beforeJourneySave=saves;
+const rendered=C.panel(scene);
+assert.match(rendered,/data-camera-journey-apply/,'Authoring preset is shown within the existing camera panel');
+assert.ok(!rendered.includes('data-camera-journey-help'),'Journey is enabled when the ordered trio is ready');
+const tripButton={dataset:{cameraJourneyApply:''}};
+handlers.click({target:{closest(){return tripButton;}}});
+assert.equal(undos,beforeJourneyUndo+1,'One click produces exactly one Undo snapshot');
+assert.equal(saves,beforeJourneySave+1,'Journey saves exactly once');
+assert.equal(scene.sdCameraPathMode,'linear');
+assert.equal(scene.sdCameraOrientationMode,'manual');
+assert.equal(scene.sdLength,480);
+assert.equal(JSON.stringify(scene.sdCameraFrames.map(k=>k.z)),JSON.stringify(journeyPlan.frames.map(k=>k.z)));
+assert.equal(title.x,50);assert.equal(journeyPhoto.y,50);assert.equal(journeyEnd.x,50);
+assert.equal(title.sdCameraDepth,-300);assert.equal(journeyPhoto.sdCameraDepth,200);assert.equal(journeyEnd.sdCameraDepth,700);
+assert.equal(title.sdEnter,'none');assert.equal(journeyPhoto.sdEnd,100);assert.equal(journeyEnd.sdExit,'keep');
+assert.equal(JSON.stringify(journeyPhoto.sdKeyframes),existingPhotoKeyframes,'Authoring preserves image animation keyframes');
+assert.equal(JSON.stringify(object),existingThree,'Unrelated GLB and its motion are unchanged');
+assert.equal(JSON.stringify(scene.sdCameraLookFrames),originalLookFrames,'Saved look frames remain untouched while manual orientation is active');
+const tripCfg=C.config(scene),tripStart=C.pose(tripCfg,0,window.NAGWEB_STORY_MODEL,'linear',false),tripEnd=C.pose(tripCfg,1,window.NAGWEB_STORY_MODEL,'linear',false);
+assert.equal(tripStart.z,-900);assert.equal(tripEnd.z,1300);
+assert.ok(tripStart.z<title.sdCameraDepth&&tripEnd.z>journeyEnd.sdCameraDepth,'Camera travels through all authored planes');
+assert.match(C.panel(scene),/data-camera-layer-list/,'Prepared trip remains editable in the existing map');
+console.log('PASS journey: ordered text/image/text, five camera frames, spatial crossings, single Undo/save, no unrelated edits');
