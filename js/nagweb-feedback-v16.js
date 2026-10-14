@@ -166,7 +166,7 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
     var key=item[0],value=partTransformCSS(e,key,'var(--h)'),token='data-wpart="'+key+'"';
     if(!value)return;
     html=html.replace(new RegExp('<[a-z][^>]*'+token+'[^>]*>','i'),function(tag){
-     if(/\sstyle="/.test(tag))return tag.replace(/\\sstyle="/,' style="'+value);
+     if(/\sstyle="/.test(tag))return tag.replace(/\sstyle="/,' style="'+value);
      return tag.slice(0,-1)+' style="'+value+'">';
     });
    });
