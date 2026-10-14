@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { editorUseOf, canInsertInEditor } from "./runtime/editor-availability.mjs";
+import { transformSpinKitLoader } from "./light-transformers.mjs";
+import { buildResourceApplyEnvelope } from "./runtime/resource-apply-bridge.mjs";
 const svg={
  id:"lucide:camera",source:{provider:"lucide"},license:{verified:true},
  runtime:{renderer:"nagweb-svg",entryArtifactId:"svg"},
@@ -26,4 +28,26 @@ assert.equal(canInsertInEditor("uiverse-html",["svg"]),false);
 assert.equal(canInsertInEditor("svg",["uiverse-html"]),false);
 assert.equal(canInsertInEditor("code",["react"]),false);
 assert.equal(canInsertInEditor("code"),false);
+const spinner=transformSpinKitLoader({
+  raw:{ css:":root{--sk-size:40px;--sk-color:#333}.sk-plane{width:var(--sk-size);background:var(--sk-color)}",
+    commit:"verified-smoke",repository:"https://github.com/tobiasahlin/SpinKit",
+    packageJson:{version:"2.0"} },
+  item:{name:"plane",title:"Plane",html:'<div class="sk-plane"></div>'}
+});
+assert.equal(editorUseOf(spinner),"spinkit-html");
+assert.equal(editorUseOf({...spinner,license:{verified:false}}),"code");
+assert.equal(editorUseOf({...spinner,source:{provider:"magicui"}}),"code");
+assert.equal(editorUseOf({...spinner,id:"fake:plane"}),"code");
+assert.equal(editorUseOf({...spinner,artifacts:[{...spinner.artifacts[0],format:"tsx"}]}),"code");
+assert.equal(canInsertInEditor("spinkit-html",["svg","uiverse-html","spinkit-html"]),true);
+assert.equal(canInsertInEditor("spinkit-html",["svg","uiverse-html"]),false);
+assert.equal(canInsertInEditor("spinkit-html",["html"]),true);
+const styled=buildResourceApplyEnvelope(spinner,{values:{size:72,color:"#3366aa"}});
+assert.equal(styled.descriptor.kind,"html");
+assert.match(styled.descriptor.payload.html,/--sk-size:72px;--sk-color:#3366aa/);
+assert.match(styled.descriptor.payload.html,/\.sk-plane/);
+assert.match(styled.descriptor.payload.html,/<div class="sk-plane"><\/div>/);
+const escaped=buildResourceApplyEnvelope(spinner,{values:{size:300,color:"red;position:absolute"}});
+assert.match(escaped.descriptor.payload.html,/--sk-size:40px;--sk-color:#333333/);
+assert.doesNotMatch(escaped.descriptor.payload.html,/position:absolute/);
 console.log("Native editor availability: real renderer, artifact, license, provider, host capability OK.");

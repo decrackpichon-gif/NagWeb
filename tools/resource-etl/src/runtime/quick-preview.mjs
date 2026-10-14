@@ -1,7 +1,8 @@
 // Lightweight, explicitly requested card preview. Never run third-party
 // scripts or permit network requests from its sandboxed frame.
 export function canQuickPreview(item) {
-  return item?.provider === "uiverse" && item.editorUse === "uiverse-html";
+  return (item?.provider === "uiverse" && item.editorUse === "uiverse-html") ||
+    (item?.provider === "spinkit" && item.editorUse === "spinkit-html");
 }
 export function offlineQuickPreviewDoc(doc) {
   if (typeof doc !== "string" || !doc.trim() || doc.length > 2_000_000) {

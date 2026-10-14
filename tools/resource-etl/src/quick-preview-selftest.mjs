@@ -3,6 +3,8 @@ import { canQuickPreview, offlineQuickPreviewDoc } from "./runtime/quick-preview
 
 assert.equal(canQuickPreview({provider:"uiverse",editorUse:"uiverse-html"}),true);
 assert.equal(canQuickPreview({provider:"uiverse",editorUse:"code"}),false);
+assert.equal(canQuickPreview({provider:"spinkit",editorUse:"spinkit-html"}),true);
+assert.equal(canQuickPreview({provider:"spinkit",editorUse:"code"}),false);
 assert.equal(canQuickPreview({provider:"magicui",editorUse:"uiverse-html"}),false);
 assert.equal(canQuickPreview({provider:"heroicons",editorUse:"svg"}),false);
 assert.equal(canQuickPreview(null),false);

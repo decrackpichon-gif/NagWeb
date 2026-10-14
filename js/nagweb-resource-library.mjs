@@ -91,7 +91,8 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   const cardPercent = (size, geometry) => (geometry.padding + Math.sqrt(geometry.padding ** 2 + 4 * geometry.width * size)) / (2 * geometry.width) * 100;
   const libraryResourceById = id => sec()?.elements.find(e => e.id === id && e.nwResource?.id &&
     (e.type === "vector" || (e.type === "embed" && e.mode === "html" &&
-      e.nwResource.kind === "uiverse-html" && e.nwResource.provider === "uiverse"))) || null;
+      ((e.nwResource.kind === "uiverse-html" && e.nwResource.provider === "uiverse") ||
+      (e.nwResource.kind === "spinkit-html" && e.nwResource.provider === "spinkit"))))) || null;
   const selectedLibraryElement = () =>
     selection.length === 1 ? libraryResourceById(selection[0]) : null;
   const syncEditButton = () => {
@@ -112,8 +113,8 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       pendingFocusReturn.focus();
       pendingFocusReturn = null;
     }
-    const label = element?.nwResource?.kind === "uiverse-html"
-      ? "Personalizar componente Uiverse seleccionado" : "Personalizar ícono seleccionado";
+    const label = ["uiverse-html","spinkit-html"].includes(element?.nwResource?.kind)
+      ? "Personalizar componente HTML/CSS seleccionado" : "Personalizar ícono seleccionado";
     if (editButton.getAttribute("aria-label") !== label) {
       editButton.setAttribute("aria-label", label);
       editButton.title = label;
@@ -125,7 +126,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   const header = document.createElement("div");
   header.style.cssText = "height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;gap:12px";
   const hint = document.createElement("span");
-  hint.textContent = "Insertá íconos SVG o HTML/CSS Uiverse compatibles.";
+  hint.textContent = "Insertá SVG y HTML/CSS autónomo verificado.";
   const destination = document.createElement("select");
   destination.setAttribute("aria-label", "Insertar recurso en");
   destination.title = "Destino de inserción";
@@ -158,19 +159,19 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       destination.value = container.id;
     }
     destination.hidden = Boolean(context) || !container;
-    hint.textContent = context?.kind === "uiverse-html"
-      ? "Personalizá el componente Uiverse seleccionado sin reemplazarlo."
+    hint.textContent = ["uiverse-html","spinkit-html"].includes(context?.kind)
+      ? "Personalizá el componente seleccionado sin reemplazarlo."
       : context ? `Personalizá el ícono seleccionado · versión ${context.mobile ? "celular" : "computadora"}.`
-      : "Insertá íconos SVG o HTML/CSS Uiverse compatibles.";
+       : "Insertá SVG y HTML/CSS autónomo verificado.";
     const url = new URL("../tools/resource-etl/resource-browser/", import.meta.url);
     url.searchParams.set("hostOrigin", location.origin);
     // Advertise this editor's current native insertion capability.
     // The receiver still validates the actual SVG for each request.
-    url.searchParams.set("hostKinds", "svg,uiverse-html");
+    url.searchParams.set("hostKinds", "svg,uiverse-html,spinkit-html");
     if (context) {
       url.searchParams.set("editResource", context.resourceId);
       url.searchParams.set("editSession", context.session);
-      if (context.kind === "uiverse-html") url.searchParams.set("editKind", "uiverse-html");
+      if (["uiverse-html","spinkit-html"].includes(context.kind)) url.searchParams.set("editKind", context.kind);
       url.searchParams.set("editValues", JSON.stringify(context.values));
     }
     if (frame.src !== url.href) frame.src = url.href;
@@ -180,10 +181,10 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   editButton.addEventListener("click", () => {
     const element = selectedLibraryElement();
     if (!element) return;
-    if (element.nwResource.kind === "uiverse-html") {
+    if (["uiverse-html","spinkit-html"].includes(element.nwResource.kind)) {
       const values = element.nwResource.values;
       if (!values || typeof values !== "object" || Array.isArray(values)) return;
-      openLibrary({ kind: "uiverse-html", session: crypto.randomUUID(),
+      openLibrary({ kind: element.nwResource.kind, session: crypto.randomUUID(),
         resourceId: element.nwResource.id, elementId: element.id,
         pageId: page().id, sceneId: sec().id, mobile: viewMobile,
         values: structuredClone(values), fingerprint: JSON.stringify(element) });
@@ -273,15 +274,16 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       pending.add(message.requestId);
       let inserted = false;
       try {
-        const isUiverseHtml = message.descriptor?.kind === "html";
-        const isolated = isUiverseHtml ? prepareUiverseSandboxHtml(message) : null;
-        const props = isUiverseHtml ? null : svgElementProps(message);
-        const size = isUiverseHtml ? 320 : props.nwResource.values.size;
+        const isNativeHtml = message.descriptor?.kind === "html";
+        const isolated = isNativeHtml ? prepareUiverseSandboxHtml(message) : null;
+        const props = isNativeHtml ? null : svgElementProps(message);
+        const size = isNativeHtml ? 320 : props.nwResource.values.size;
         const width = deskWidth;
         if (!sec() || !Array.isArray(sec().elements) || !(width > 0)) throw new Error("Seleccioná una escena para insertar el recurso.");
         let element;
         if (editContext) {
-          if (isUiverseHtml !== (editContext.kind === "uiverse-html")) {
+          if (isNativeHtml !== ["uiverse-html","spinkit-html"].includes(editContext.kind) ||
+              (isNativeHtml && message.resource.provider !== (editContext.kind === "spinkit-html" ? "spinkit" : "uiverse"))) {
             throw new Error("El tipo de recurso no coincide con la sesión de edición.");
           }
           if (message.editSession !== editContext.session || message.resource.id !== editContext.resourceId ||
@@ -292,9 +294,9 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
           if (!element || JSON.stringify(element) !== editContext.fingerprint) {
             throw new Error("El recurso cambió o fue eliminado. Volvé a abrir su personalización.");
           }
-          if (isUiverseHtml) {
+          if (isNativeHtml) {
             if (element.type !== "embed" || element.mode !== "html" ||
-                element.nwResource?.kind !== "uiverse-html") {
+                element.nwResource?.kind !== editContext.kind) {
               throw new Error("El elemento seleccionado ya no es un componente Uiverse.");
             }
             const values = message.descriptor.instance.values;
@@ -326,7 +328,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
           refresh();
           syncSelectionToFrame();
           editContext.fingerprint = JSON.stringify(element);
-          editContext.values = isUiverseHtml
+          editContext.values = isNativeHtml
             ? structuredClone(message.descriptor.instance.values) : props.nwResource.values;
         } else {
           if (message.editSession) throw new Error("Esta sesión de personalización terminó. Volvé a abrir el ícono.");
@@ -338,19 +340,20 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
           if (parentId && !parentElement) {
             throw new Error("El contenedor elegido ya no existe. Volvé a abrir la Biblioteca.");
           }
-          const nativeProps = isUiverseHtml ? {
+          const nativeProps = isNativeHtml ? {
               mode: "html", code: isolated.srcdoc, ratio: .75, radius: 0,
-              name: String(message.resource.title || "Componente Uiverse").slice(0, 100),
+              name: String(message.resource.title || "Componente HTML/CSS").slice(0, 100),
               nwResource: {
-                id: message.resource.id, kind: "uiverse-html",
-                provider: "uiverse", license: message.resource.license,
+                id: message.resource.id,
+                kind: message.resource.provider === "spinkit" ? "spinkit-html" : "uiverse-html",
+                provider: message.resource.provider, license: message.resource.license,
                 values: structuredClone(message.descriptor.instance.values)
               }
           } : props;
           const before = JSON.stringify(project);
           const sceneId = sec().id;
           const session = librarySession;
-          const type = isUiverseHtml ? "embed" : "vector";
+          const type = isNativeHtml ? "embed" : "vector";
           const widths = await insertionWidths(type, nativeProps, parentId);
           if (!dialog.open || editContext || librarySession !== session || sec().id !== sceneId || deskWidth !== width || JSON.stringify(project) !== before) {
             throw new Error("La escena cambió durante la inserción. Volvé a aplicar el recurso.");
@@ -359,10 +362,10 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
             if (!(base?.width > 0)) throw new Error("El contenedor no tiene ancho disponible.");
             const value = (sec().layout === "horizontal" && !parentId) || base.padding > 0
               ? cardPercent(pixels, base) : pixels / base.width * 100;
-            return isUiverseHtml ? Math.min(85, value) : value;
+            return isNativeHtml ? Math.min(85, value) : value;
           };
           element = insertElement(type, { ...nativeProps, w: percent(size, widths.desktop),
-            mobile: { w: percent(isUiverseHtml ? 260 : size, widths.mobile) } }, { parent: parentId });
+            mobile: { w: percent(isNativeHtml ? 260 : size, widths.mobile) } }, { parent: parentId });
         }
         inserted = true;
         const persisted = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
@@ -371,9 +374,9 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
           throw new Error("El recurso está en el lienzo, pero no se pudo guardar. Revisá el almacenamiento del navegador.");
         }
         result = buildResourceApplyResult(message, { status: "applied", message: editContext
-          ? isUiverseHtml ? "Cambios guardados en el componente Uiverse seleccionado."
-            : "Cambios guardados en el ícono seleccionado." : isUiverseHtml
-            ? "Componente HTML/CSS Uiverse insertado y guardado en la escena actual."
+          ? isNativeHtml ? "Cambios guardados en el componente HTML/CSS seleccionado."
+            : "Cambios guardados en el ícono seleccionado." : isNativeHtml
+            ? "Componente HTML/CSS insertado y guardado en la escena actual."
             : "Ícono insertado y guardado en la escena actual." });
       } catch (error) {
         result = buildResourceApplyResult(message, { status: inserted ? "error" : "rejected", message: error.message });

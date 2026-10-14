@@ -6,6 +6,7 @@ on:
       - feat/resource-etl-v1
     paths:
       - ".github/workflows/resource-provider-index.yml"
+      - "tools/resource-etl/src/runtime/editor-availability.mjs"
   workflow_dispatch:
 
 permissions:
@@ -99,14 +100,15 @@ jobs:
             throw Error("Heroicons previews regressed");
           const lucide=index.resources.filter(r=>r.provider==="lucide" && r.previewShapes?.length).length;
           if(lucide<1800)throw Error("Lucide previews regressed: "+lucide);
-          const native=index.resources.filter(r=>["svg","uiverse-html"].includes(r.editorUse));
+          const native=index.resources.filter(r=>["svg","uiverse-html","spinkit-html"].includes(r.editorUse));
           const code=index.resources.filter(r=>r.editorUse==="code");
-          if(native.length!==5954 || code.length!==808 ||
+          if(native.length!==5966 || code.length!==796 ||
              native.filter(r=>r.editorUse==="svg").length!==2193 ||
-             native.filter(r=>r.editorUse==="uiverse-html").length!==3761)
+             native.filter(r=>r.editorUse==="uiverse-html").length!==3761 ||
+             native.filter(r=>r.editorUse==="spinkit-html").length!==12)
             throw Error("Native/copy-only coverage disagrees with real editor adapters");
-          if (native.some(r=>!(["lucide","heroicons","uiverse"].includes(r.provider))) ||
-              code.some(r=>r.provider==="heroicons" || r.provider==="lucide" || r.provider==="uiverse"))
+          if (native.some(r=>!(["lucide","heroicons","uiverse","spinkit"].includes(r.provider))) ||
+              code.some(r=>r.provider==="heroicons" || r.provider==="lucide" || r.provider==="uiverse" || r.provider==="spinkit"))
             throw Error("Unexpected native classification by provider");
           const shards=after.detailShards?.uiverse;
           if(!shards || shards.shards?.length!==8 ||
@@ -128,5 +130,5 @@ jobs:
             echo "Indexes already match"
             exit 0
           fi
-          git -C "$DIR" commit -m "data: label native editor compatibility in verified browse index"
+          git -C "$DIR" commit -m "data: include verified SpinKit native HTML compatibility"
           git -C "$DIR" push origin HEAD:refs/heads/resource-vault-data

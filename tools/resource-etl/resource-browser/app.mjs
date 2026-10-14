@@ -187,7 +187,7 @@ if (editSession) {
     const encoded = editParams.get("editValues") || "";
     if (encoded.length > 0 && encoded.length <= 8192) {
       const values = JSON.parse(encoded);
-      if (editKind === "uiverse-html") {
+      if (editKind === "uiverse-html" || editKind === "spinkit-html") {
         if (values && Object.getPrototypeOf(values) === Object.prototype &&
             Object.keys(values).length > 0 && Object.keys(values).length <= 128 &&
             Object.entries(values).every(([key, value]) =>
@@ -204,7 +204,7 @@ if (editSession) {
       }
     }
   } catch { /* Invalid initial values must not enable an edit. */ }
-  el.apply.textContent = editKind === "uiverse-html"
+  el.apply.textContent = ["uiverse-html","spinkit-html"].includes(editKind)
     ? "Guardar cambios en el componente" : "Guardar cambios en el ícono";
 }
 
@@ -281,7 +281,7 @@ function fillSelect(select, items) {
 }
 
 // Published metadata reflects only validated native editor adapters.
-const nativeModes = ["svg","uiverse-html"].filter(
+const nativeModes = ["svg","uiverse-html","spinkit-html"].filter(
   kind=>canInsertInEditor(kind,hostKinds ? [...hostKinds] : null));
 function currentFilters() {
   return {
@@ -291,7 +291,7 @@ function currentFilters() {
     kinds: el.kind.value || undefined,
     editorUses: el.editorUse.value === "available" ? nativeModes
       : el.editorUse.value === "code"
-        ? ["code",...["svg","uiverse-html"].filter(kind=>!nativeModes.includes(kind))]
+        ? ["code",...["svg","uiverse-html","spinkit-html"].filter(kind=>!nativeModes.includes(kind))]
         : undefined,
     ids: el.favoriteOnly.checked ? [...favorites] : undefined,
     offset,
@@ -585,15 +585,16 @@ function updateApplyReadiness(resource) {
     return;
   }
 
-  const acceptsUiverseHtml = hostKinds?.has("uiverse-html") &&
-    prepared.descriptor.kind === "html" && resource.source?.provider === "uiverse";
-  if (hostKinds && !hostKinds.has(prepared.descriptor.kind) && !acceptsUiverseHtml) {
+  const acceptsAutonomousHtml = prepared.descriptor.kind === "html" &&
+    ((hostKinds?.has("uiverse-html") && resource.source?.provider === "uiverse") ||
+      (hostKinds?.has("spinkit-html") && resource.source?.provider === "spinkit"));
+  if (hostKinds && !hostKinds.has(prepared.descriptor.kind) && !acceptsAutonomousHtml) {
     el.applyStatus.textContent = hostKinds.has("svg")
-      ? "Este editor admite SVG y HTML/CSS Uiverse compatibles. Este recurso todavía no se puede insertar, pero podés explorar y copiar su código."
+      ? "Este editor admite SVG y HTML/CSS autónomo verificado. Este recurso todavía no se puede insertar, pero podés explorar y copiar su código."
       : "Este editor todavía no admite insertar este tipo de recurso. Podés explorarlo y copiar su código.";
     return;
   }
-  if (acceptsUiverseHtml) {
+  if (acceptsAutonomousHtml) {
     try {
       prepareUiverseSandboxHtml(prepared);
     } catch (error) {
@@ -1121,7 +1122,7 @@ async function toggleQuickPreview(button) {
   try {
     const resource = await vault.getResource(id);
     // The compact index is only a hint; confirm the original source too.
-    if (!resource || resource.source?.provider !== "uiverse" ||
+    if (!resource || !["uiverse","spinkit"].includes(resource.source?.provider) ||
         resource.runtime?.renderer !== "nagweb-html-tailwind" ||
         !resource.license?.verified) throw new Error("Este componente no admite vista rápida.");
     const doc = await previewDoc(resource);

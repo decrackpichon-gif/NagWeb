@@ -69,6 +69,18 @@ export function htmlWithCustomStyle(resource, values, html) {
   html = applyUiverseCssPlaybackValues(resource, values, html);
   html = applyUiverseTextValues(resource, values, html);
   html = applyUiversePlaceholderValues(resource, values, html);
+  // SpinKit's source stylesheet defines CSS variables on :root. Values on
+  // the component wrapper override those defaults without editing the
+  // verified upstream CSS. Accept only bounded values, never arbitrary CSS.
+  if (resource?.source?.provider === "spinkit" &&
+      resource.runtime?.renderer === "nagweb-html-tailwind") {
+    const size = Number.isFinite(values?.size) && values.size >= 8 && values.size <= 240
+      ? values.size : 40;
+    const color = /^#[0-9a-f]{6}$/i.test(values?.color || "")
+      ? values.color : "#333333";
+    return '<div data-nagweb-custom-style="1" style="--sk-size:' + size +
+      'px;--sk-color:' + color + ';">' + (html || "") + '</div>';
+  }
   const css = htmlCssPropertyStyle(resource, values);
   if (!css || !html) return html || "";
   // Inline style on the actual HTML wrapper survives the insert pipeline.

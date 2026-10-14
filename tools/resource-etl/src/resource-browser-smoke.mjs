@@ -6,7 +6,7 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { gzipSync } from "node:zlib";
 import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
-import { transformUiverseComponent } from "./light-transformers.mjs";
+import { transformUiverseComponent, transformSpinKitLoader } from "./light-transformers.mjs";
 import { normalizeHeroiconOutline } from "./extractors/heroicons.mjs";
 import { transformHeroiconOutline } from "./heroicons-transformer.mjs";
 import { browseHeroiconPaths } from "./snapshot/browse-icon-paths.mjs";
@@ -50,6 +50,12 @@ const css = transformUiverseComponent({
 });
 css.title = "Componente de prueba";
 css.license = { id: "MIT", name: "MIT", verified: true };
+const spinkit=transformSpinKitLoader({
+  raw:{repository:"https://github.com/tobiasahlin/SpinKit",commit:"offline-smoke",
+    packageJson:{version:"2.0.0"},
+    css:':root{--sk-size:40px;--sk-color:#333}.sk-plane{width:var(--sk-size);height:var(--sk-size);background-color:var(--sk-color);animation:sk-plane 1.2s infinite}@keyframes sk-plane{to{transform:rotate(360deg)}}'},
+  item:{name:"plane",title:"Plane",html:'<div class="sk-plane"></div>'}
+});
 // Genuine Heroicons 24px outline, exercising its native editor integration.
 const heroUpstream = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon">\n  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>\n</svg>';
 const heroicon = transformHeroiconOutline({
@@ -78,7 +84,7 @@ const codeOnly = {
   runtime:{renderer:"nagweb-react",entryArtifactId:"react"},
   artifacts:[{id:"react",role:"component",format:"tsx",content:"export default function Demo() { return <div>Demo</div>; }"}]
 };
-const resources = [icon, css, heroicon, lucideCamera, codeOnly];
+const resources = [icon, css, spinkit, heroicon, lucideCamera, codeOnly];
 const zip = data => gzipSync(JSON.stringify(data));
 const index = zip({ format: "nagweb-resource-browse-index", resourceCount: resources.length,
   resources: resources.map(r => ({ id: r.id, title: r.title, family: r.family, kind: r.kind, provider: r.source.provider,
@@ -196,6 +202,11 @@ try {
     await frame.locator('[data-resource-id="smoke:icon"]').waitFor();
     // Explicit quick preview uses the real HTML/CSS in a sandboxed, network-
     // isolated frame, never auto-fetches 48 card details, and can be closed.
+    const spinnerCard=frame.locator('[data-quick-preview-id="'+spinkit.id+'"]');
+    await expect(spinnerCard).toHaveCount(1);
+    await spinnerCard.click();
+    await expect(frame.frameLocator('[data-quick-preview-panel] iframe').locator(".sk-plane")).toBeVisible();
+    await spinnerCard.click();
     const previewTrigger=frame.locator('[data-quick-preview-id="'+css.id+'"]');
     await expect(previewTrigger).toHaveCount(1);
     await expect(frame.locator('[data-quick-preview-id="magicui:reference"]')).toHaveCount(0);
@@ -1476,6 +1487,49 @@ try {
     assert.equal(await page.evaluate(id => sec().elements.find(e => e.id === id).nwResource.id, id), css.id);
     report.scenarios.push({ editor: "Uiverse insertion across native layouts", layout, mobileInsertion: layout === "horizontal", desktopMaxPx: 320, mobileMaxPx: 260, cappedAt85Percent: true, isolated: true, reload: true });
   }
+  // SpinKit uses the same verified, sandboxed native HTML insertion as Uiverse.
+  // Keep CSS custom properties, editing, persistence and export independent.
+  await page.evaluate(() => {
+    Object.assign(sec(),{layout:"free",elements:[]});
+    selection=[];curEl=-1;secFocus=true;refresh();
+  });
+  await page.locator("#btn-view-desk").click();
+  await page.getByRole("button",{name:"Biblioteca de recursos",exact:true}).click();
+  if (await libraryFrame.locator('[data-detail]').evaluate(node=>node.open))
+    await libraryFrame.getByRole("button",{name:"Cerrar",exact:true}).click();
+  await libraryFrame.locator('[data-resource-id="'+spinkit.id+'"]').click();
+  await libraryFrame.locator('[data-customize]').waitFor({state:"visible"});
+  await libraryFrame.getByLabel("Color",{exact:true}).fill("#3366aa");
+  await libraryFrame.getByLabel("Tamaño",{exact:true}).fill("72");
+  await expect(libraryFrame.getByRole("button",{name:"Aplicar en NagWeb",exact:true})).toBeEnabled();
+  await libraryFrame.getByRole("button",{name:"Aplicar en NagWeb",exact:true}).click();
+  await expect(libraryFrame.locator("[data-apply-status]")).toContainText("insertado y guardado");
+  const spinId=await page.evaluate(()=>selection[0]);
+  assert.equal(await page.evaluate(id=>sec().elements.find(e=>e.id===id).nwResource.kind,spinId),"spinkit-html");
+  assert.equal(await page.evaluate(id=>sec().elements.find(e=>e.id===id).nwResource.provider,spinId),"spinkit");
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  const spinFrame=page.frameLocator("#preview").locator('[data-id="'+spinId+'"] iframe.emb-sand');
+  await expect(spinFrame).toHaveAttribute("sandbox","");
+  await expect(spinFrame).toHaveAttribute("srcdoc",/--sk-size:72px;--sk-color:#3366aa/);
+  await expect(page.frameLocator("#preview").frameLocator('[data-id="'+spinId+'"] iframe.emb-sand').locator(".sk-plane")).toHaveCSS("background-color","rgb(51, 102, 170)");
+  await expect(page.getByRole("button",{name:"Personalizar componente HTML/CSS seleccionado",exact:true})).toBeEnabled();
+  await page.getByRole("button",{name:"Personalizar componente HTML/CSS seleccionado",exact:true}).click();
+  await libraryFrame.locator('[data-detail]').waitFor({state:"visible"});
+  await expect(libraryFrame.getByLabel("Color",{exact:true})).toHaveValue("#3366aa");
+  await libraryFrame.getByLabel("Color",{exact:true}).fill("#bb2244");
+  await libraryFrame.getByRole("button",{name:"Guardar cambios en el componente",exact:true}).click();
+  await expect(libraryFrame.locator("[data-apply-status]")).toContainText("guardados");
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  const updated=await page.evaluate(id=>sec().elements.find(e=>e.id===id),spinId);
+  assert.equal(updated.nwResource.values.color,"#bb2244");
+  assert.match(updated.code,/--sk-size:72px;--sk-color:#bb2244/);
+  const spinExport=await page.evaluate(()=>generateSite(flattenPage(page()),false,true,false));
+  assert.match(spinExport,/--sk-size:72px;--sk-color:#bb2244/);
+  await page.reload();
+  assert.equal(await page.evaluate(id=>sec().elements.find(e=>e.id===id).nwResource.values.color,spinId),"#bb2244");
+  await expect(page.frameLocator("#preview").locator('[data-id="'+spinId+'"] iframe.emb-sand')).toHaveAttribute("sandbox","");
+  report.scenarios.push({editor:"SpinKit native HTML/CSS insert, edit, save, export, reload",
+    status:"passed",provider:"spinkit",sandbox:true,cssVariables:true,persistence:true,export:true});
   // Stage 83: insert HTML and SVG inside an existing native container.
   await page.evaluate(() => {
     const scene=sec();scene.layout="free";scene.elements=[];

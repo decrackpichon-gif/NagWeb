@@ -312,3 +312,24 @@ seguir expandiendo capacidades cuando aporte al objetivo global.
 ## Referencias de origen auditadas (14/10/2026)
 
 Se recuperaron de los **importadores reales** las direcciones de 17 proveedores y sus enlaces legales, separados expresamente de las URLs que el usuario pudo haber pegado en conversaciones antiguas. Ver el nuevo archivo [`NAGWEB_05_REFERENCIAS_FUENTES_VERIFICADAS.md`](NAGWEB_05_REFERENCIAS_FUENTES_VERIFICADAS.md). El informe preserva links de repositorios, endpoints, módulos exactos, restricciones del Vault y protocolo para no bloquear el proyecto por URLs históricas no recuperadas. No confundir procedencia desde código con procedencia desde un chat original, ni afirmar compatibilidad de inserción sin pruebas.
+
+## Etapa 94: SpinKit utilizable como HTML/CSS nativo (14/10/2026)
+
+- Se amplía el adaptador HTML seguro existente a los 12 loaders autónomos de
+  SpinKit ya preservados en el paquete verificado `core-code`, sin descargarlos
+  de nuevo ni modificar el original. Los demás proveedores HTML/React no se
+  habilitan automáticamente.
+- SpinKit usa el mismo iframe opaco sin scripts/red externa que Uiverse, validación
+  estricta de proveedor/ID/licencia/markup, persistencia y exportación del elemento
+  nativo `embed`. Conserva un identificador de tipo `spinkit-html` para su
+  edición posterior. Tamaño y color se aplican con variables CSS acotadas sobre
+  el contenedor, respetando la hoja de estilo fuente.
+- Las tarjetas identifican qué SpinKit es insertable y permiten muestra rápida.
+  Un reindexado de metadata existente agrega `editorUse: spinkit-html` sin
+  modificar los cinco paquetes fuente ni las miniaturas existentes.
+- Pruebas: validador y clasificador unitarios, DOM/aislamiento vía Chromium
+  Windows/Linux, inserción, edición, persistencia, exportación y recarga.
+- La CI y la publicación del índice se verifican por ejecución/commit real.
+  No se despliega Vercel, no se fusionan las otras ramas. La extensión futura
+  a otros HTML/CSS será por validación de contenido y proveedor, no por
+  habilitar todo recurso con renderer HTML.

@@ -1,4 +1,4 @@
-// Stage 51: isolated, scriptless HTML/CSS preview for future native placement.
+// Scriptless, opaque-origin HTML/CSS isolation shared by the reviewed Uiverse and SpinKit families.
 // Untrusted HTML is not inserted into NagWeb's main document. Callers must
 // mount the iframe returned by createUiverseSandboxFrame, not its raw markup.
 const FORBIDDEN_TAGS = new Set([
@@ -60,8 +60,10 @@ export function prepareUiverseSandboxHtml(envelope, {
     descriptor.resourceId !== resource?.id ||
     descriptor.instance?.resourceId !== resource?.id ||
     descriptor.instance?.renderer !== "nagweb-html-tailwind" ||
-    resource?.provider !== "uiverse" || resource?.license?.verified !== true) {
-    throw new Error("Solo se admiten componentes Uiverse HTML/CSS con licencia verificada.");
+    !((resource?.provider === "uiverse" && resource?.id?.startsWith("uiverse:")) ||
+      (resource?.provider === "spinkit" && resource?.id?.startsWith("spinkit:"))) ||
+    resource?.license?.verified !== true) {
+    throw new Error("Solo se admiten componentes Uiverse o SpinKit HTML/CSS con licencia verificada.");
   }
   const payload = descriptor.payload || {};
   const html = payload.html;
