@@ -866,6 +866,148 @@ export async function runEditorPartsSmoke(page){
   await page.click('#btn-redo');
   assert.ok(await page.evaluate(()=>sec().elements.find(x=>x.id==='test-custom').wp.__parts.label.x)<2000);
 
+  // Recurso REAL nuevo que consume el contrato compartido: Tarjeta holográfica.
+  await load(18);
+  await page.evaluate(()=>{
+   const model={title:'UN TÍTULO EDITABLE',meta:'IDENTIDAD / MOTION',badge:'NUEVO',cta:'VER MÁS',showBadge:true,showCta:true,
+    ratio:'4/5',tilt:12};
+   const el=mkEl('widget',{id:'test-holo',kind:'holocard',wp:model});
+   sec().elements.push(el);
+   const d=document.querySelector('#preview').contentDocument;
+   const style=d.createElement('style');style.textContent=window.SCW.css.holocard;d.head.appendChild(style);
+   const root=d.createElement('div');root.className='el wdg';root.dataset.id='test-holo';
+   root.innerHTML=window.SCW.kinds.holocard.markup(el.wp,{edit:true});
+   d.body.appendChild(root);
+   root.querySelector('.nw-holo').style.width='680px';
+  });
+  await select('test-holo');
+  const holoBefore=await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,root=d.querySelector('.el.wdg[data-id="test-holo"]'),
+    holo=root.querySelector('.nw-holo'),card=root.querySelector('.nw-holo-card'),css=d.defaultView.getComputedStyle(holo);
+   const parts=Array.from(root.querySelectorAll('[data-wpart]')).map(x=>x.dataset.wpart);
+   const buttons=Array.from(root.querySelectorAll('[data-nw-part]')).map(x=>x.dataset.nwPart);
+   return{parts,buttons,scope:holo.dataset.nwPartScope,mobile:+holo.dataset.nwPartMobile,
+    width:holo.clientWidth-(parseFloat(css.paddingLeft)||0)-(parseFloat(css.paddingRight)||0),
+    height:card.clientHeight,cardTransform:d.defaultView.getComputedStyle(card).transform,
+    originalEffect:window.SCW.css.holocard.includes('rotateX(var(--rx,0deg))'),
+    originalGlare:window.SCW.css.holocard.includes('.nw-holo-fx'),
+    styleAttrs:Array.from(root.querySelectorAll('[data-wpart]')).every(n=>n.attributes.getNamedItem('style')?true:true),
+    hasDuplicates:Array.from(root.querySelectorAll('[data-wpart]')).some(n=>Array.from(n.attributes).filter(a=>a.name==='style').length>1)};
+  });
+  assert.equal(holoBefore.scope,'holocard');
+  assert.equal(holoBefore.mobile,420);
+  for(const key of ['media','badge','title','meta','cta']) {
+   assert.ok(holoBefore.parts.includes(key),'componente holográfico tiene parte '+key);
+   assert.ok(holoBefore.buttons.includes(key),'barra permite seleccionar '+key);
+  }
+  assert.equal(holoBefore.originalEffect,true,'conserva el efecto 3D original');
+  assert.equal(holoBefore.originalGlare,true,'conserva la capa holográfica');
+  assert.equal(holoBefore.hasDuplicates,false,'no duplica estilos inline');
+  await fire('.el.wdg[data-id="test-holo"] [data-nw-part="title"]');
+  const holoSelection=await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,root=d.querySelector('.el.wdg[data-id="test-holo"]');
+   return{part:root.querySelector('.nw-wpart-sel')?.dataset.wpart,handles:d.querySelectorAll('.nw-wpart-h').length,
+    isolate:root.querySelector('.nw-holo').classList.contains('nw-part-isolate')};
+  });
+  assert.deepEqual(holoSelection,{part:'title',handles:2,isolate:true},
+   'título usa selección y tiradores del editor común');
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,w=d.defaultView,
+    n=d.querySelector('.el.wdg[data-id="test-holo"] [data-wpart="title"]'),r=n.getBoundingClientRect(),
+    x=(r.left+r.right)/2,y=(r.top+r.bottom)/2;
+   n.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:201,button:0,clientX:x,clientY:y}));
+   w.dispatchEvent(new w.PointerEvent('pointermove',{bubbles:true,pointerId:201,button:0,clientX:x+60,clientY:y+30}));
+   w.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true,pointerId:201,button:0,clientX:x+60,clientY:y+30}));
+  });
+  const holoMoved=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-holo').wp,
+    d=document.querySelector('#preview').contentDocument;
+   return{saved:e.__parts.title,
+    live:d.querySelector('.el.wdg[data-id="test-holo"] [data-wpart="title"]').style.getPropertyValue('--nw-tx'),
+    store:JSON.parse(localStorage.getItem(STORE_KEY)).pages[curPage].sections[curSec].elements.find(x=>x.id==='test-holo')?.wp?.__parts?.title};
+  });
+  assert.equal(holoMoved.saved.x,60);
+  assert.equal(holoMoved.saved.y,30);
+  assert.ok(Math.abs(holoMoved.saved.refW-holoBefore.width)<1,'ancho medido sin relleno interno');
+  assert.ok(Math.abs(holoMoved.saved.refH-holoBefore.height)<1,'el escenario es la tarjeta real');
+  assert.match(holoMoved.live,/cqw$/);
+  assert.deepEqual(holoMoved.store,holoMoved.saved,'el texto de la tarjeta persiste');
+  const holoPublished=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-holo').wp;
+   return window.SCW.kinds.holocard.markup(e,{edit:false});
+  });
+  assert.match(holoPublished,/--nw-tx:[0-9.]+cqw/,'publicación retiene la pose proporcional');
+  assert.equal(holoPublished.includes('data-nw-partbar'),false,'la barra no se publica');
+  assert.equal(holoPublished.includes('nw-holo-fx'),true,'el holograma se sigue publicando');
+  // Escala y rotación del título usando el mismo mecanismo que Hero e Historia.
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,w=d.defaultView,
+    h=d.querySelector('.nw-wpart-h.size'),node=d.querySelector('.el.wdg[data-id="test-holo"] [data-wpart="title"]'),
+    b=h.getBoundingClientRect(),r=node.getBoundingClientRect(),x=b.left+6,y=b.top+6,cx=r.left+r.width/2,cy=r.top+r.height/2;
+   h.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:202,button:0,clientX:x,clientY:y}));
+   w.dispatchEvent(new w.PointerEvent('pointermove',{bubbles:true,pointerId:202,button:0,clientX:cx+1.3*(x-cx),clientY:cy+1.3*(y-cy)}));
+   w.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true,pointerId:202,button:0,clientX:cx+1.3*(x-cx),clientY:cy+1.3*(y-cy)}));
+  });
+  assert.ok(await page.evaluate(()=>sec().elements.find(x=>x.id==='test-holo').wp.__parts.title.s)>1.15);
+  // Variante móvil aislada, sin tocar escritorio.
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,root=d.querySelector('.el.wdg[data-id="test-holo"]');
+   const e=sec().elements.find(x=>x.id==='test-holo').wp;
+   root.innerHTML=window.SCW.kinds.holocard.markup(e,{edit:true});
+   root.querySelector('.nw-holo').style.width='340px';
+  });
+  await fire('.el.wdg[data-id="test-holo"] [data-nw-part="title"]');
+  const beforeMobile=await page.evaluate(()=>JSON.parse(JSON.stringify(sec().elements.find(x=>x.id==='test-holo').wp.__parts.title)));
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,w=d.defaultView,
+    n=d.querySelector('.el.wdg[data-id="test-holo"] [data-wpart="title"]'),r=n.getBoundingClientRect(),
+    x=(r.left+r.right)/2,y=(r.top+r.bottom)/2;
+   n.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:203,button:0,clientX:x,clientY:y}));
+   w.dispatchEvent(new w.PointerEvent('pointermove',{bubbles:true,pointerId:203,button:0,clientX:x+35,clientY:y+15}));
+   w.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true,pointerId:203,button:0,clientX:x+35,clientY:y+15}));
+  });
+  const holoMobile=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-holo').wp,
+    d=document.querySelector('#preview').contentDocument,h=d.querySelector('.el.wdg[data-id="test-holo"] .nw-holo'),
+    style=d.defaultView.getComputedStyle(h);
+   return{desktop:e.__parts.title,mobile:e.__partsMobile?.title,
+    contentWidth:h.clientWidth-(parseFloat(style.paddingLeft)||0)-(parseFloat(style.paddingRight)||0)};
+  });
+  assert.deepEqual(holoMobile.desktop,beforeMobile,'editar tarjeta móvil no altera escritorio');
+  assert.ok(holoMobile.mobile&&Math.abs(holoMobile.mobile.refW-holoMobile.contentWidth)<1);
+  assert.ok(holoMobile.mobile.x>35,'móvil hereda el desplazamiento proporcional previo');
+  const holoBoth=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-holo').wp;
+   return window.SCW.kinds.holocard.markup(e,{edit:false});
+  });
+  assert.match(holoBoth,/--nw-mx:[0-9.]+cqw/,'el sitio publicado contiene versión móvil');
+  await page.evaluate(()=>{
+   const d=document.querySelector('#preview').contentDocument,
+    n=d.querySelector('.el.wdg[data-id="test-holo"] .nw-wpart-reset');
+   if(!n)throw Error('Falta Restablecer móvil de la tarjeta');
+   n.click();
+  });
+  const holoRestored=await page.evaluate(()=>{
+   const e=sec().elements.find(x=>x.id==='test-holo').wp;
+   return{desktop:e.__parts.title,mobile:e.__partsMobile?.title};
+  });
+  assert.deepEqual(holoRestored.desktop,beforeMobile);
+  assert.equal(holoRestored.mobile,undefined);
+  await page.click('#btn-undo');
+  assert.ok(await page.evaluate(()=>sec().elements.find(x=>x.id==='test-holo').wp.__partsMobile?.title));
+  await page.click('#btn-redo');
+  assert.equal(await page.evaluate(()=>sec().elements.find(x=>x.id==='test-holo').wp.__partsMobile?.title),undefined);
+  // Opciones del recurso original: respetar campos opcionales sin introducir botones vacíos.
+  const holoOptional=await page.evaluate(()=>{
+   const e={title:'Uno',meta:'Dos',showBadge:false,showCta:false,video:'sample.webm'};
+   const html=window.SCW.kinds.holocard.markup(e,{edit:true});
+   return{badge:html.includes('data-nw-part="badge"'),cta:html.includes('data-nw-part="cta"'),
+    video:html.includes('class="nw-holo-video" data-wpart="media"')};
+  });
+  assert.equal(holoOptional.badge,false);
+  assert.equal(holoOptional.cta,false);
+  assert.equal(holoOptional.video,true,'mantiene soporte de video para media editable');
+
   console.log('Editor partes: foco, restauración, Escape, Enter e historial OK');
  }finally{
   await page.evaluate(old=>{
