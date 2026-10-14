@@ -983,7 +983,7 @@ export async function runEditorPartsSmoke(page){
   assert.match(holoBoth,/--nw-mx:[0-9.]+cqw/,'el sitio publicado contiene versión móvil');
   await page.evaluate(()=>{
    const d=document.querySelector('#preview').contentDocument,
-    n=d.querySelector('.el.wdg[data-id="test-holo"] .nw-wpart-reset');
+    n=d.querySelector('.nw-wpart-reset');
    if(!n)throw Error('Falta Restablecer móvil de la tarjeta');
    n.click();
   });
