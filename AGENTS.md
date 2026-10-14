@@ -32,3 +32,7 @@ Para chats de ChatGPT: `AGENTS.md` ayuda a asistentes de código compatibles, pe
 ## Política permanente de despliegues (12/10/2026)
 
 **Vercel se usa solo si el usuario solicita expresamente una publicación.** Esta rama tiene `vercel.json` con `git.deploymentEnabled: false` para evitar que commits, pruebas, documentación y actualizaciones de datos consuman Deployment Storage. Ejecutar QA local o en GitHub Actions, sin llamar a Vercel como parte de un avance normal. No quitar ni cambiar esa configuración, tampoco en ramas derivadas, salvo autorización explícita. `[skip ci]` no bloquea Vercel. No eliminar despliegues existentes ni modificar el proyecto de Vélez Data. Mantener esta decisión cuando se actualice el contexto.
+
+## Verificación Motion Lab contra originales y GitHub
+
+Si el frente es NAGWEB 02, antes de declarar que no se pueden consultar commits, CI o referencias, leer `docs/contexto/NAGWEB_02_REFERENCIAS_ORIGINALES_VERIFICADAS.md`. Allí figuran las rutas REST concretas para `commits?sha=internal-motion-lab`, `actions/runs?branch=internal-motion-lab` y `runs/{id}/jobs`, además de la evidencia extraída de los 3 videos y HAR originales accesibles al usuario en su Biblioteca. No copiar código de Animos ni subir HAR/videos al repo. Los resultados de CI y HEAD deben consultarse en vivo: el informe contiene solo una fotografía de 14/10/2026.

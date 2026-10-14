@@ -123,3 +123,7 @@ Una herramienta para elegir, **previsualizar y editar animaciones antes de inser
 - Carga de imagen individual mediante arrastrar y soltar directamente sobre el slot del panel de capas o su ficha, reutilizando la ruta actual `labLoadImage`, con bloqueo durante otra carga. Referencia de interfaz: «Drop or click to add» de https://animos.app/editor .
 - La nueva prueba cubre vaciar los 12 slots, activar sombra, subir dos SVG por lote y un tercero por drop, dejar nueve vacíos, insertar y reabrir. Solo dar por superada la prueba browser cuando GitHub Actions lo confirme. Grid Dive y Pop Parade continúan sin validación visual de fidelidad al original.
 - **Respetar la política de Vercel manual solamente** documentada en esta ficha y el `vercel.json` actualizado por otro frente; no revertirla ni disparar despliegues.
+
+## Informe de originales verificadas (14/10/2026)
+
+Se inspeccionó directamente el HAR original de Animos (24 solicitudes y 64 presets identificados), dos grabaciones de pantalla y el WebM de Showcase Stream, todos recuperados de la Biblioteca personal. Se verificaron metadatos, controles del inspector y diferencias entre videos de interfaz y exportación. **Detalle de fuentes, observaciones, los 64 identificadores y el procedimiento de consulta de commits/CI:** [NAGWEB_02_REFERENCIAS_ORIGINALES_VERIFICADAS.md](NAGWEB_02_REFERENCIAS_ORIGINALES_VERIFICADAS.md). No se subió el HAR ni los videos al repositorio público. Para versiones nuevas revisar siempre la rama GitHub y no pedir todos los originales indiscriminadamente.
