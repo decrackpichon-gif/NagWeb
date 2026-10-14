@@ -308,3 +308,7 @@ seguir expandiendo capacidades cuando aporte al objetivo global.
 - Limitación conocida: no descarga anticipadamente todo el
   catálogo ni proporciona por sí misma una app-shell instalable
   completamente offline. No se cambia el plan original de NAGWEB 05.
+
+## Referencias de origen auditadas (14/10/2026)
+
+Se recuperaron de los **importadores reales** las direcciones de 17 proveedores y sus enlaces legales, separados expresamente de las URLs que el usuario pudo haber pegado en conversaciones antiguas. Ver el nuevo archivo [`NAGWEB_05_REFERENCIAS_FUENTES_VERIFICADAS.md`](NAGWEB_05_REFERENCIAS_FUENTES_VERIFICADAS.md). El informe preserva links de repositorios, endpoints, módulos exactos, restricciones del Vault y protocolo para no bloquear el proyecto por URLs históricas no recuperadas. No confundir procedencia desde código con procedencia desde un chat original, ni afirmar compatibilidad de inserción sin pruebas.
