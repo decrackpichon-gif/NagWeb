@@ -79,6 +79,15 @@ Editor **visual y profesional** para construir sitios y narrativas inmersivas co
 - Compatibilidad: los widgets previos con clases `.nw-lh` y `.nw-story` continúan funcionando sin los nuevos atributos. El CSS anterior sin `refW/refH` continúa en píxeles. Widgets nuevos deben definir sus reglas CSS de transformación y su selector de partes; no deben copiar las funciones de coordenadas existentes.
 - No se alteraron ramas de Motion Lab, Cámara 3D, Interaction Studio ni Biblioteca de recursos. El director de scroll sigue siendo independiente. La prueba en navegador `.github/nagweb-editor-parts-smoke.mjs` cubre recuperación y geometría con alcance configurable.
 
+## Primer recurso conectado al contrato compartido: Tarjeta holográfica (14/10/2026)
+
+- **NAGWEB 01** conectó la Tarjeta holográfica (`holocard`) al motor universal de edición de partes, sin sustituir sus imágenes, video opcional ni la interacción 3D de reflejo/inclinación. Se mantiene el runtime original de puntero y la definición original de campos y variantes.
+- En el Hero, Historia sticky y ahora la Tarjeta, el lienzo utiliza las mismas funciones de selección, arrastre, escala, giro, guardado, Deshacer/Rehacer y restauración. La tarjeta permite seleccionar **Imagen/video, Etiqueta, Título, Detalle y Botón**, además del contenedor de tarjeta, desde su barra contextual; los campos opcionales no se ofrecen si están ocultos.
+- La tarjeta define `data-nw-part-scope="holocard"`, umbral móvil de **420 px** y un escenario `.nw-holo-card`; sus piezas utilizan el mismo `SCWX.partTransformCSS` y persistencia `__parts`/`__partsMobile`. La geometría se calcula sobre el **ancho útil sin padding**, haciendo que `cqw` corresponda con las coordenadas guardadas. Esto corrige una diferencia sistémica para futuras composiciones con padding.
+- La barra, la selección haciendo clic en el lienzo y la restauración del foco comparten ahora el manejo de scopes genéricos de `js/nagweb-feedback-v16.js`. No se modificó el código fuente base de la biblioteca (`js/creatives-v14-batch5.js`) ni ninguna rama de NAGWEB 02–05.
+- Regresión en `.github/nagweb-editor-parts-smoke.mjs`: prueba la tarjeta REAL, selección, composición, edición interna, guardado, escritorio/móvil, exportación, opciones de imagen/video y campos opcionales. Consultar CI del commit antes de declarar la validación definitiva.
+- Próxima prioridad: ampliar el mecanismo de edición interna a más composiciones reales, agrupándolas cuando compartan una estructura sin crear un motor específico por recurso.
+
 ## Próximas prioridades (revisar con HEAD actual)
 
 - Priorizar la experiencia de lienzo como herramienta de diseño, edición real de elementos anidados y uso de recursos sin degradar su editabilidad.
