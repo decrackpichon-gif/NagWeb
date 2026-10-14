@@ -7,6 +7,8 @@ on:
     paths:
       - ".github/workflows/resource-provider-index.yml"
       - "tools/resource-etl/src/runtime/editor-availability.mjs"
+      - "tools/resource-etl/src/editor-availability-selftest.mjs"
+      - "tools/resource-etl/src/runtime/nagweb-magic-css-effect.mjs"
   workflow_dispatch:
 
 permissions:
