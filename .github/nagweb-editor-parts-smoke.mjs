@@ -1197,8 +1197,10 @@ export async function runEditorPartsSmoke(page){
    assert.match(output,/--nw-ty:calc\(var\(--h\) \* /,'el alto adaptable se exporta');
    // El cambio temporal de puntero suma desplazamiento sin sustituir la pose del autor.
    const composed=await page.evaluate(c=>{
-    const d=document.querySelector('#preview').contentDocument,n=d.querySelector('.el.wdg[data-id="'+c.id+'"] [data-wpart="'+c.part+'"]'),
-      before=d.defaultView.getComputedStyle(n),pose=before.translate,scale=before.scale,
+    const d=document.querySelector('#preview').contentDocument,n=d.querySelector('.el.wdg[data-id="'+c.id+'"] [data-wpart="'+c.part+'"]');
+    // Medir el resultado compuesto, no un fotograma intermedio de la transición CSS.
+    n.style.transition='none';
+    const before=d.defaultView.getComputedStyle(n),pose=before.translate,scale=before.scale,
       stored=n.style.getPropertyValue('--nw-tx');
     n.style.setProperty('--nw-hover-x','19px');n.style.setProperty('--nw-hover-y','7px');
     n.style.setProperty('--nw-hover-s','1.08');
