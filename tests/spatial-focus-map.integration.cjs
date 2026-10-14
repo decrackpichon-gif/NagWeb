@@ -632,4 +632,13 @@ const tripCfg=C.config(scene),tripStart=C.pose(tripCfg,0,window.NAGWEB_STORY_MOD
 assert.equal(tripStart.z,-900);assert.equal(tripEnd.z,1300);
 assert.ok(tripStart.z<title.sdCameraDepth&&tripEnd.z>journeyEnd.sdCameraDepth,'Camera travels through all authored planes');
 assert.match(C.panel(scene),/data-camera-layer-list/,'Prepared trip remains editable in the existing map');
+const previewSteps=C.panel(scene);
+for(const mark of [0,25,50,75,100])assert.match(previewSteps,new RegExp('data-camera-journey-preview="'+mark+'"'),'Layer journey exposes a deterministic preview moment');
+const momentUndo=undos,momentSave=saves,momentFrames=JSON.stringify(scene.sdCameraFrames);
+const atHalf={dataset:{cameraJourneyPreview:'50'}};
+handlers.click({target:{closest(){return atHalf;}}});
+assert.equal(undos,momentUndo,'Scrub preview never creates a snapshot');
+assert.equal(saves,momentSave,'Scrub preview never saves the project');
+assert.equal(JSON.stringify(scene.sdCameraFrames),momentFrames,'Preview buttons cannot rewrite camera waypoints');
+
 console.log('PASS journey: ordered text/image/text, five camera frames, spatial crossings, single Undo/save, no unrelated edits');
