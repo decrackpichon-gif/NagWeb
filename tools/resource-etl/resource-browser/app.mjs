@@ -177,7 +177,7 @@ const editParams = new URLSearchParams(location.search);
 // Optional UI hint: absent means a generic host with unrestricted adapters.
 const hostKindsText = applyTarget ? editParams.get("hostKinds") : null;
 const hostKinds = hostKindsText === null ? null :
-  new Set(hostKindsText.split(",").filter(kind => /^(?:svg|uiverse-html|spinkit-html|html|react|threejs|css-inline-effect|css-class-effect|lottie)$/.test(kind)));
+  new Set(hostKindsText.split(",").filter(kind => /^(?:svg|uiverse-html|spinkit-html|magic-css|html|react|threejs|css-inline-effect|css-class-effect|lottie)$/.test(kind)));
 const editResourceId = applyTarget ? editParams.get("editResource") : null;
 const editSession = editResourceId ? editParams.get("editSession") : null;
 const editKind = editSession ? editParams.get("editKind") : null;
@@ -187,7 +187,7 @@ if (editSession) {
     const encoded = editParams.get("editValues") || "";
     if (encoded.length > 0 && encoded.length <= 8192) {
       const values = JSON.parse(encoded);
-      if (editKind === "uiverse-html" || editKind === "spinkit-html") {
+      if (editKind === "uiverse-html" || editKind === "spinkit-html" || editKind === "magic-css") {
         if (values && Object.getPrototypeOf(values) === Object.prototype &&
             Object.keys(values).length > 0 && Object.keys(values).length <= 128 &&
             Object.entries(values).every(([key, value]) =>
@@ -204,7 +204,8 @@ if (editSession) {
       }
     }
   } catch { /* Invalid initial values must not enable an edit. */ }
-  el.apply.textContent = ["uiverse-html","spinkit-html"].includes(editKind)
+  el.apply.textContent = editKind === "magic-css" ? "Guardar animación"
+    : ["uiverse-html","spinkit-html"].includes(editKind)
     ? "Guardar cambios en el componente" : "Guardar cambios en el ícono";
 }
 
@@ -281,7 +282,7 @@ function fillSelect(select, items) {
 }
 
 // Published metadata reflects only validated native editor adapters.
-const nativeModes = ["svg","uiverse-html","spinkit-html"].filter(
+const nativeModes = ["svg","uiverse-html","spinkit-html","magic-css"].filter(
   kind=>canInsertInEditor(kind,hostKinds ? [...hostKinds] : null));
 function currentFilters() {
   return {
@@ -291,7 +292,7 @@ function currentFilters() {
     kinds: el.kind.value || undefined,
     editorUses: el.editorUse.value === "available" ? nativeModes
       : el.editorUse.value === "code"
-        ? ["code",...["svg","uiverse-html","spinkit-html"].filter(kind=>!nativeModes.includes(kind))]
+        ? ["code",...["svg","uiverse-html","spinkit-html","magic-css"].filter(kind=>!nativeModes.includes(kind))]
         : undefined,
     ids: el.favoriteOnly.checked ? [...favorites] : undefined,
     offset,
@@ -553,6 +554,8 @@ el.preview.addEventListener("load", () => {
 
 function updateApplyReadiness(resource) {
   el.apply.disabled = true;
+  if(!editSession) el.apply.textContent = resource?.source?.provider==="magic-css"
+    ? "Aplicar animación al elemento" : "Aplicar en NagWeb";
   if (editResourceId && (!editSession || resource?.id !== editResourceId || !Object.keys(editInitialValues).length)) {
     el.applyStatus.textContent = "Volvé a abrir la personalización desde el ícono seleccionado en NagWeb.";
     return;
@@ -585,10 +588,16 @@ function updateApplyReadiness(resource) {
     return;
   }
 
+  if(prepared.descriptor.kind === "css-inline-effect" && !hostKinds?.has("magic-css")){
+    el.applyStatus.textContent="Seleccioná primero un título, texto o botón en NagWeb para aplicar esta animación.";
+    return;
+  }
+  const acceptsMagicCss = prepared.descriptor.kind === "css-inline-effect" &&
+    hostKinds?.has("magic-css") && resource.source?.provider === "magic-css";
   const acceptsAutonomousHtml = prepared.descriptor.kind === "html" &&
     ((hostKinds?.has("uiverse-html") && resource.source?.provider === "uiverse") ||
       (hostKinds?.has("spinkit-html") && resource.source?.provider === "spinkit"));
-  if (hostKinds && !hostKinds.has(prepared.descriptor.kind) && !acceptsAutonomousHtml) {
+  if (hostKinds && !hostKinds.has(prepared.descriptor.kind) && !acceptsAutonomousHtml && !acceptsMagicCss) {
     el.applyStatus.textContent = hostKinds.has("svg")
       ? "Este editor admite SVG y HTML/CSS autónomo verificado. Este recurso todavía no se puede insertar, pero podés explorar y copiar su código."
       : "Este editor todavía no admite insertar este tipo de recurso. Podés explorarlo y copiar su código.";

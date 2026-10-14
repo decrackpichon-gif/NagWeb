@@ -14,11 +14,23 @@ export function editorUseOf(resource) {
     if (resource.source?.provider === "uiverse" && resource.id?.startsWith("uiverse:")) return "uiverse-html";
     if (resource.source?.provider === "spinkit" && resource.id?.startsWith("spinkit:")) return "spinkit-html";
   }
+  if (renderer === "nagweb-css-inline-effect" &&
+      resource.source?.provider === "magic-css" &&
+      resource.id?.startsWith("magic-css:") &&
+      resource.runtime?.setup?.schema === "nagweb-css-effect/0.2" &&
+      resource.runtime.setup.baseClass === "magictime" &&
+      /^[a-z][a-zA-Z0-9_-]{0,79}$/i.test(resource.runtime.setup.className || "") &&
+      entry?.role === "stylesheet" && entry.format === "css" &&
+      typeof entry.content === "string" && entry.content.includes("." + resource.runtime.setup.className) &&
+      /@(?:-webkit-)?keyframes\s/i.test(entry.content) &&
+      entry.content.length <= 300000 &&
+      !/(?:@import\b|url\s*\(|expression\s*\(|-moz-binding|behavior\s*:|<|\\0)/i.test(entry.content))
+    return "magic-css";
   return "code";
 }
 
 export function canInsertInEditor(editorUse, supportedKinds = null) {
-  if (editorUse !== "svg" && editorUse !== "uiverse-html" && editorUse !== "spinkit-html") return false;
+  if (editorUse !== "svg" && editorUse !== "uiverse-html" && editorUse !== "spinkit-html" && editorUse !== "magic-css") return false;
   if (!supportedKinds) return true;
   return supportedKinds.includes(editorUse) ||
     ((editorUse === "uiverse-html" || editorUse === "spinkit-html") && supportedKinds.includes("html"));

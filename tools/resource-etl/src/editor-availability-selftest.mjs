@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
 import { editorUseOf, canInsertInEditor } from "./runtime/editor-availability.mjs";
+import { transformMagicCssEffect } from "./light-transformers.mjs";
+import { buildResourceApplyEnvelope } from "./runtime/resource-apply-bridge.mjs";
+import { validatedMagicCssEffect,validSavedMagicEffect } from "./runtime/nagweb-magic-css-effect.mjs";
 import { transformSpinKitLoader } from "./light-transformers.mjs";
 import { buildResourceApplyEnvelope } from "./runtime/resource-apply-bridge.mjs";
 const svg={
@@ -50,4 +53,27 @@ assert.match(styled.descriptor.payload.html,/<div class="sk-plane"><\/div>/);
 const escaped=buildResourceApplyEnvelope(spinner,{values:{size:300,color:"red;position:absolute"}});
 assert.match(escaped.descriptor.payload.html,/--sk-size:40px;--sk-color:#333333/);
 assert.doesNotMatch(escaped.descriptor.payload.html,/position:absolute/);
+
+const magic=transformMagicCssEffect({
+ raw:{baseCss:".magictime{animation-duration:1s;animation-fill-mode:both}",repository:"https://github.com/miniMAC/magic",commit:"test",
+  packageJson:{version:"1.0"}},
+ item:{name:"puffIn",category:"magic_effects",path:"puffIn.scss",
+  code:".puffIn{animation-name:puffIn}@keyframes puffIn{from{opacity:0}to{opacity:1}}"}
+});
+assert.equal(editorUseOf(magic),"magic-css");
+assert.equal(canInsertInEditor("magic-css",["svg","magic-css"]),true);
+assert.equal(canInsertInEditor("magic-css",["svg"]),false);
+assert.equal(editorUseOf({...magic,license:{verified:false}}),"code");
+assert.equal(editorUseOf({...magic,artifacts:[]}),"code");
+assert.equal(editorUseOf({...magic,source:{provider:"other"}}),"code");
+const magicEnvelope=buildResourceApplyEnvelope(magic,{values:{duration:2,delay:0.4,easing:"linear",iterations:2}});
+const valid=validatedMagicCssEffect(magicEnvelope);
+assert.equal(valid.id,magic.id);
+assert.deepEqual(valid.values,{duration:2,delay:0.4,easing:"linear",iterations:2});
+assert.equal(validSavedMagicEffect(valid),true);
+assert.throws(()=>validatedMagicCssEffect({...magicEnvelope,descriptor:{...magicEnvelope.descriptor,
+ payload:{...magicEnvelope.descriptor.payload,css:"@import url(https://bad.example)"}}}),/no tiene identidad/);
+assert.throws(()=>validatedMagicCssEffect({...magicEnvelope,descriptor:{...magicEnvelope.descriptor,
+ payload:{...magicEnvelope.descriptor.payload,iterations:999}}}),/fuera de rango/);
+assert.equal(validSavedMagicEffect({...valid,css:'<style>bad</style>'}),false);
 console.log("Native editor availability: real renderer, artifact, license, provider, host capability OK.");

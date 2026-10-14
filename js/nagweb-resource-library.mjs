@@ -1,5 +1,6 @@
 import { NAGWEB_RESOURCE_APPLY_PROTOCOL, NAGWEB_RESOURCE_APPLY_TYPE, buildResourceApplyResult } from "../tools/resource-etl/src/runtime/resource-apply-bridge.mjs";
 import { svgElementProps } from "../tools/resource-etl/src/runtime/nagweb-svg-element.mjs";
+import { validatedMagicCssEffect,isMagicTarget } from "../tools/resource-etl/src/runtime/nagweb-magic-css-effect.mjs";
 import { prepareUiverseSandboxHtml } from "../tools/resource-etl/src/runtime/nagweb-html-sandbox.mjs";
 
 const toolbar = document.querySelector(".tb-left");
@@ -26,6 +27,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   let opener = button;
   let pendingFocusReturn = null;
   let canvasLoading = false;
+  let magicTargetAtOpen = null;
   const measureVector = element => {
     const doc = preview.contentDocument;
     const node = doc && [...doc.querySelectorAll('.el[data-id]')].find(n => n.dataset.id === element.id);
@@ -89,10 +91,12 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     return { desktop, mobile };
   };
   const cardPercent = (size, geometry) => (geometry.padding + Math.sqrt(geometry.padding ** 2 + 4 * geometry.width * size)) / (2 * geometry.width) * 100;
-  const libraryResourceById = id => sec()?.elements.find(e => e.id === id && e.nwResource?.id &&
+  const libraryResourceById = id => sec()?.elements.find(e => e.id === id && (
+    (isMagicTarget(e) && e.nwMagicCss?.id) ||
+    (e.nwResource?.id &&
     (e.type === "vector" || (e.type === "embed" && e.mode === "html" &&
       ((e.nwResource.kind === "uiverse-html" && e.nwResource.provider === "uiverse") ||
-      (e.nwResource.kind === "spinkit-html" && e.nwResource.provider === "spinkit"))))) || null;
+      (e.nwResource.kind === "spinkit-html" && e.nwResource.provider === "spinkit")))))) || null;
   const selectedLibraryElement = () =>
     selection.length === 1 ? libraryResourceById(selection[0]) : null;
   const syncEditButton = () => {
@@ -113,7 +117,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       pendingFocusReturn.focus();
       pendingFocusReturn = null;
     }
-    const label = element?.nwResource?.kind === "uiverse-html"
+    const label = element?.nwMagicCss?.id ? "Personalizar animación seleccionada" : element?.nwResource?.kind === "uiverse-html"
       ? "Personalizar componente Uiverse seleccionado"
       : element?.nwResource?.kind === "spinkit-html"
         ? "Personalizar componente SpinKit seleccionado" : "Personalizar ícono seleccionado";
@@ -151,6 +155,10 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     pendingFocusReturn = null;
     librarySession++;
     editContext = context;
+    const selectedTarget = !context && selection.length === 1
+      ? sec()?.elements.find(e => e.id === selection[0] && isMagicTarget(e)) : null;
+    magicTargetAtOpen = selectedTarget
+      ? { id:selectedTarget.id, sceneId:sec().id, fingerprint:JSON.stringify(selectedTarget) } : null;
     opener = context ? editButton : button;
     destination.replaceChildren(new Option("Raíz de la escena", ""));
     const container = !context && selection.length === 1
@@ -161,19 +169,22 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       destination.value = container.id;
     }
     destination.hidden = Boolean(context) || !container;
-    hint.textContent = ["uiverse-html","spinkit-html"].includes(context?.kind)
+    hint.textContent = context?.kind === "magic-css" ? "Editá la animación del texto o botón seleccionado."
+      : ["uiverse-html","spinkit-html"].includes(context?.kind)
       ? "Personalizá el componente seleccionado sin reemplazarlo."
       : context ? `Personalizá el ícono seleccionado · versión ${context.mobile ? "celular" : "computadora"}.`
+        : magicTargetAtOpen ? "Podés aplicar Magic.css al texto o botón seleccionado."
        : "Insertá SVG y HTML/CSS autónomo verificado.";
     const url = new URL("../tools/resource-etl/resource-browser/", import.meta.url);
     url.searchParams.set("hostOrigin", location.origin);
     // Advertise this editor's current native insertion capability.
     // The receiver still validates the actual SVG for each request.
-    url.searchParams.set("hostKinds", "svg,uiverse-html,spinkit-html");
+    url.searchParams.set("hostKinds", "svg,uiverse-html,spinkit-html" +
+      (magicTargetAtOpen || context?.kind === "magic-css" ? ",magic-css" : ""));
     if (context) {
       url.searchParams.set("editResource", context.resourceId);
       url.searchParams.set("editSession", context.session);
-      if (["uiverse-html","spinkit-html"].includes(context.kind)) url.searchParams.set("editKind", context.kind);
+      if (["uiverse-html","spinkit-html","magic-css"].includes(context.kind)) url.searchParams.set("editKind", context.kind);
       url.searchParams.set("editValues", JSON.stringify(context.values));
     }
     if (frame.src !== url.href) frame.src = url.href;
@@ -183,6 +194,13 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   editButton.addEventListener("click", () => {
     const element = selectedLibraryElement();
     if (!element) return;
+    if (element.nwMagicCss?.id) {
+      openLibrary({kind:"magic-css",session:crypto.randomUUID(),
+        resourceId:element.nwMagicCss.id,elementId:element.id,
+        pageId:page().id,sceneId:sec().id,values:structuredClone(element.nwMagicCss.values),
+        fingerprint:JSON.stringify(element)});
+      return;
+    }
     if (["uiverse-html","spinkit-html"].includes(element.nwResource.kind)) {
       const values = element.nwResource.values;
       if (!values || typeof values !== "object" || Array.isArray(values)) return;
@@ -260,6 +278,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   dialog.addEventListener("close", () => {
     librarySession++;
     editContext = null;
+    magicTargetAtOpen = null;
     pendingFocusReturn = opener;
     syncEditButton();
   });
@@ -276,6 +295,41 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       pending.add(message.requestId);
       let inserted = false;
       try {
+        if (message.descriptor?.kind === "css-inline-effect") {
+          const effect=validatedMagicCssEffect(message);
+          const targetId=editContext?.kind==="magic-css" ? editContext.elementId : magicTargetAtOpen?.id;
+          const target=sec().elements.find(e=>e.id===targetId);
+          if(!isMagicTarget(target))throw Error("Seleccioná un texto o botón compatible.");
+          if(editContext) {
+            if(editContext.kind!=="magic-css" || editContext.resourceId!==effect.id ||
+              message.editSession!==editContext.session || page().id!==editContext.pageId ||
+              sec().id!==editContext.sceneId || JSON.stringify(target)!==editContext.fingerprint)
+              throw Error("La sesión de edición de la animación ya no está vigente.");
+          } else if(message.editSession || !magicTargetAtOpen ||
+              sec().id!==magicTargetAtOpen.sceneId ||
+              selection.length!==1 || selection[0]!==targetId ||
+              JSON.stringify(target)!==magicTargetAtOpen.fingerprint) {
+            throw Error("El elemento cambió durante la selección. Volvé a abrir la Biblioteca.");
+          }
+          if(JSON.stringify(target.nwMagicCss)!==JSON.stringify(effect)){
+            snapshot();
+            target.nwMagicCss=effect;
+            selection=[target.id];curEl=sec().elements.indexOf(target);secFocus=false;
+            refresh();syncSelectionToFrame();
+          }
+          inserted=true;
+          const saved=JSON.parse(localStorage.getItem(STORE_KEY)||"null");
+          const copy=saved?.pages?.flatMap(p=>p.sections).flatMap(s=>s.elements).find(e=>e.id===target.id);
+          if(JSON.stringify(copy?.nwMagicCss)!==JSON.stringify(effect))
+            throw Error("El efecto se aplicó, pero no pudo guardarse.");
+          if(editContext){
+            editContext.fingerprint=JSON.stringify(target);
+            editContext.values=structuredClone(effect.values);
+          } else magicTargetAtOpen.fingerprint=JSON.stringify(target);
+          result=buildResourceApplyResult(message,{status:"applied",
+            message:editContext ? "Animación Magic.css actualizada y guardada."
+              : "Animación Magic.css aplicada y guardada en el elemento seleccionado."});
+        } else {
         const isNativeHtml = message.descriptor?.kind === "html";
         const isolated = isNativeHtml ? prepareUiverseSandboxHtml(message) : null;
         const props = isNativeHtml ? null : svgElementProps(message);
@@ -386,6 +440,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
               ? "Componente HTML/CSS Uiverse insertado y guardado en la escena actual."
               : "Componente HTML/CSS SpinKit insertado y guardado en la escena actual."
             : "Ícono insertado y guardado en la escena actual." });
+        }
       } catch (error) {
         result = buildResourceApplyResult(message, { status: inserted ? "error" : "rejected", message: error.message });
       }

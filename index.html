@@ -14915,6 +14915,28 @@ function linkAttrs(e, p){
   if(!L.href) return '';
   return ' data-href="' + esc(L.href) + '"' + L.secAttr + ' role="link" tabindex="0"';
 }
+function safeMagicFx(e){
+  const fx=e?.nwMagicCss,v=fx?.values;
+  return fx && fx.provider==='magic-css' && typeof fx.id==='string' &&
+    fx.id.startsWith('magic-css:') && fx.license?.verified===true &&
+    /^[a-z][a-zA-Z0-9_-]{0,79}$/i.test(fx.className||'') &&
+    typeof fx.css==='string' && fx.css.length>20 && fx.css.length<=300000 &&
+    fx.css.includes('.'+fx.className) && /@(?:-webkit-)?keyframes\s/i.test(fx.css) &&
+    !/(?:@import\b|url\s*\(|expression\s*\(|-moz-binding|behavior\s*:|<|\\0)/i.test(fx.css) &&
+    v && Number.isFinite(v.duration) && v.duration>=.1 && v.duration<=8 &&
+    Number.isFinite(v.delay) && v.delay>=0 && v.delay<=5 &&
+    Number.isInteger(v.iterations) && v.iterations>=1 && v.iterations<=10 &&
+    ['linear','ease','ease-in','ease-out','ease-in-out'].includes(v.easing) ? fx : null;
+}
+function magicInner(e,inner){
+  const fx=safeMagicFx(e);
+  if(!fx || !['heading','label','paragraph','button'].includes(e.type))return inner;
+  const v=fx.values;
+  return '<span class="nw-magic-inner magictime '+fx.className+
+    '" style="animation-duration:'+v.duration+'s!important;animation-delay:'+v.delay+
+    's!important;animation-timing-function:'+v.easing+'!important;animation-iteration-count:'+
+    v.iterations+'!important">'+inner+'</span>';
+}
 function elMarkup(e, p, free, z, sync, inStack){
   if(e.type === 'shape3d' || e.type === 'light3d' || e.type === 'container') return '';
   if(e.hidden && !p._edit) return '';
@@ -14942,15 +14964,15 @@ function elMarkup(e, p, free, z, sync, inStack){
   switch(e.type){
     case 'label': {
       const content = rich ? runsMarkup(e.runs) : esc(e.text);
-      return '<p class="' + cls + ' lbl s-' + (e.size||'xs') + (rich?' rich':'') + '"' + d + withExtra(pos, rich?'':typeCSS(e)) + '>' + content + '</p>';
+      return '<p class="' + cls + ' lbl s-' + (e.size||'xs') + (rich?' rich':'') + '"' + d + withExtra(pos, rich?'':typeCSS(e)) + '>' + magicInner(e,content) + '</p>';
     }
     case 'heading': {
       const content = rich ? runsMarkup(e.runs) : esc(e.text);
-      return '<h2 class="' + cls + ' hd s-' + (e.size||'xl') + (rich?' rich':'') + '"' + d + withExtra(pos, rich?'':typeCSS(e)) + '>' + content + '</h2>';
+      return '<h2 class="' + cls + ' hd s-' + (e.size||'xl') + (rich?' rich':'') + '"' + d + withExtra(pos, rich?'':typeCSS(e)) + '>' + magicInner(e,content) + '</h2>';
     }
     case 'paragraph': {
       const content = rich ? runsMarkup(e.runs) : esc(e.text);
-      return '<p class="' + cls + ' pg s-' + (e.size||'md') + (rich?' rich':'') + '"' + d + withExtra(pos, rich?'':typeCSS(e)) + '>' + content + '</p>';
+      return '<p class="' + cls + ' pg s-' + (e.size||'md') + (rich?' rich':'') + '"' + d + withExtra(pos, rich?'':typeCSS(e)) + '>' + magicInner(e,content) + '</p>';
     }
     case 'button': {
       const mg = e.magnetic ? ' data-magnetic="1"' : '';
@@ -14962,7 +14984,7 @@ function elMarkup(e, p, free, z, sync, inStack){
       }
       /* en lienzo libre el ancho del botón es un mínimo: si el texto no entra, crece */
       if(free && pos) pos = pos.replace('width:', 'min-width:');
-      return '<a class="' + cls + ' btn3' + hovCls + ' ' + (e.style==='outline'?'outline':e.style==='glass'?'glass':'solid') + '" href="' + esc(href) + '"' + secAttr + d + mg + withExtra(pos, typeCSS(e)) + '>' + esc(e.text) + '</a>';
+      return '<a class="' + cls + ' btn3' + hovCls + ' ' + (e.style==='outline'?'outline':e.style==='glass'?'glass':'solid') + '" href="' + esc(href) + '"' + secAttr + d + mg + withExtra(pos, typeCSS(e)) + '>' + magicInner(e,esc(e.text)) + '</a>';
     }
     case 'image': {
       const a = (p.assets.images||[]).find(x => x.id === e.assetId);
@@ -15359,6 +15381,16 @@ function generateSite(p, edit, external, mobileView){
 
   /* barras de navegación fijas: se dibujan aparte (fuera del scroll y del mundo 3D) */
   const allSecs = p.sections;
+  // Embed only the Magic.css styles actually applied to text and buttons.
+  // Original upstream CSS stays offline and is never fetched at render time.
+  const magicStyles=new Map();
+  allSecs.forEach(s=>s.elements.forEach(e=>{
+    if(['heading','label','paragraph','button'].includes(e.type)){
+      const fx=safeMagicFx(e);
+      if(fx)magicStyles.set(fx.id,fx.css);
+    }
+  }));
+  const magicCssBlock=[...magicStyles.values()].join('\n');
   const isNav = s => s.navFixed && s.layout !== 'horizontal';
   let navSecs = allSecs.filter(isNav);
   if(navSecs.length && navSecs.length < allSecs.length) p = Object.assign({}, p, { sections: allSecs.filter(s => !isNav(s)) });
@@ -15551,6 +15583,9 @@ function generateSite(p, edit, external, mobileView){
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?${fontUrl}&display=swap" rel="stylesheet">
 <style>
+  ${magicCssBlock}
+  .nw-magic-inner{display:inline-block;max-width:100%;transform-origin:center}
+  @media(prefers-reduced-motion:reduce){.nw-magic-inner{animation:none!important}}
   *{box-sizing:border-box}
   body{margin:0;background:${p.sections[0].bg};color:${p.sections[0].fg};
     font-family:${f.body},system-ui,sans-serif;overflow-x:clip}

@@ -333,3 +333,24 @@ Se recuperaron de los **importadores reales** las direcciones de 17 proveedores 
   No se despliega Vercel, no se fusionan las otras ramas. La extensión futura
   a otros HTML/CSS será por validación de contenido y proveedor, no por
   habilitar todo recurso con renderer HTML.
+
+## Etapa 95: Magic.css sobre elementos existentes (14/10/2026)
+
+- Se habilitan los **65 efectos CSS autónomos de Magic.css ya guardados** para
+  textos, títulos, párrafos y botones que estén seleccionados en NagWeb.
+  A diferencia de insertar HTML, se aplica el efecto al objeto existente y se
+  conserva su identidad, geometría y selección. Los demás objetos siguen sin
+  declararse compatibles hasta contar con una solución que no rompa layout/3D.
+- Los CSS validados se guardan junto al elemento, no requieren CDN ni código
+  descargado durante reproducción/exportación. La animación ocurre en un
+  `span` interno para preservar la posición y la transformación del lienzo.
+  Solo se integra código de los registros Magic.css verificados, con clase,
+  keyframes y valores acotados. Se rechazan importaciones/URL CSS externas.
+- El navegador ofrece los controles reales de duración, demora, curva y
+  repeticiones. El efecto se puede reabrir para editar en su mismo elemento.
+  Se respeta `prefers-reduced-motion` y se conserva la exportación offline.
+- El índice compacto de la rama separada `resource-vault-data` pasa a
+  clasificar Magic.css como `magic-css`, sin alterar ni volver a descargar
+  ningún paquete fuente (6.762 recursos); prueba de permisos, metadatos y
+  recuentos. Las pruebas de navegador deben cubrir aplicar, editar, recargar
+  y exportar; sin mezcla de ramas ni Vercel.
