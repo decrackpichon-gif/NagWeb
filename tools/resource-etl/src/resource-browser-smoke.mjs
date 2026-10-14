@@ -205,7 +205,7 @@ try {
     const spinnerCard=frame.locator('[data-quick-preview-id="'+spinkit.id+'"]');
     await expect(spinnerCard).toHaveCount(1);
     await spinnerCard.click();
-    await expect(frame.frameLocator('[data-quick-preview-id="'+css.id+'"] + [data-quick-preview-panel] iframe').locator(".sk-plane")).toBeVisible();
+    await expect(frame.frameLocator('[data-quick-preview-id="'+spinkit.id+'"] + [data-quick-preview-panel] iframe').locator(".sk-plane")).toBeVisible();
     await spinnerCard.click();
     const previewTrigger=frame.locator('[data-quick-preview-id="'+css.id+'"]');
     await expect(previewTrigger).toHaveCount(1);
