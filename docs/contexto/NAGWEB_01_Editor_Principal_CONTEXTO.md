@@ -96,6 +96,14 @@ Editor **visual y profesional** para construir sitios y narrativas inmersivas co
 - Ambos recursos usan una altura de referencia vinculada a su relación de aspecto, y la serialización proporcional comparte el mismo mecanismo usado previamente por Hero, Historia sticky y Tarjeta holográfica.
 - Regresión extendida en `.github/nagweb-editor-parts-smoke.mjs`: prueba selección, geometría, guardado, exportación y herencia móvil/restauración en ambos recursos reales. Confirmar el estado de GitHub Actions del HEAD antes de considerarlo validado.
 
+## Adaptador para composiciones reactivas de texto e imágenes (14/10/2026)
+
+- **Titular con profundidad** (`depthheadline`) y **Mosaico magnético** (`magneticmosaic`) se conectaron juntos al contrato genérico de edición de partes internas. Cada línea del titular y cada fotografía del mosaico (más su etiqueta) disponen de selección, transformación por mouse, posición proporcional, variante móvil, Deshacer/Rehacer y exportación mediante el mismo motor existente.
+- **Corrección sistémica:** antes las animaciones de puntero sobrescribían `element.style.translate`/`style.scale`, pisando o ignorando la posición diseñada. El adaptador nuevo diferencia la pose del autor (`--nw-tx`, `--nw-ty`, `--nw-ps`) y el desplazamiento efímero del puntero (`--nw-hover-x/y/s`) que se suma por CSS. También conserva las modalidades de perspectiva 3D, parallax, explosión y onda del titular mediante `--nw-hover-transform`.
+- En edición la animación temporal queda pausada para poder arrastrar las piezas; el efecto sigue activo al publicar, y se respeta `prefers-reduced-motion`. Las composiciones previas siguen ofreciendo sus variantes y controles.
+- Implementación en `js/nagweb-feedback-v16.js`, sin reescribir los recursos históricos ni cambiar las otras ramas. Regresiones reales de ambos widgets en `.github/nagweb-editor-parts-smoke.mjs`: selección, edición, guardado, CSS de exportación, composición del movimiento y escritorio/móvil. Verificar el CI exacto del HEAD antes de darlo por aprobado.
+- Próxima prioridad: continuar agregando recursos a través de adaptadores comunes, y corregir defectos de geometría a nivel del motor, no multiplicar controles específicos.
+
 ## Próximas prioridades (revisar con HEAD actual)
 
 - Priorizar la experiencia de lienzo como herramienta de diseño, edición real de elementos anidados y uso de recursos sin degradar su editabilidad.

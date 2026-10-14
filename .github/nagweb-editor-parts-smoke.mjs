@@ -1122,6 +1122,138 @@ export async function runEditorPartsSmoke(page){
    assert.equal(await page.evaluate(c=>sec().elements.find(x=>x.id===c.id).wp.__partsMobile?.[c.part],cfg),undefined);
   }
 
+
+  // Motor común de movimiento del puntero: capas editables sin sobrescribir su pose guardada.
+  for(const cfg of [
+   {kind:'depthheadline',id:'test-depth',root:'nw-dh',part:'line-1',height:470,
+    model:{text:'PRIMERA\nSEGUNDA\nTERCERA\nCUARTA',h:470,reaction:'tilt3d',amount:44,depth:22,perspective:800},
+    expected:['line-0','line-1','line-2','line-3'],label:'Línea 2'},
+   {kind:'magneticmosaic',id:'test-mosaic',root:'nw-mm',part:'image-2',height:520,
+    model:{h:520,label:'GALERÍA PERSONAL',strength:25},
+    expected:['image-0','image-1','image-2','image-3','label'],label:'Imagen 3'}
+  ]){
+   await load(cfg.id==='test-depth'?21:22);
+   await page.evaluate(c=>{
+    const el=mkEl('widget',{id:c.id,kind:c.kind,wp:c.model});sec().elements.push(el);
+    const d=document.querySelector('#preview').contentDocument,style=d.createElement('style');
+    style.textContent=window.SCW.css[c.kind];d.head.appendChild(style);
+    const wrap=d.createElement('div');wrap.className='el wdg';wrap.dataset.id=c.id;
+    wrap.innerHTML=window.SCW.kinds[c.kind].markup(el.wp,{edit:true});d.body.appendChild(wrap);
+    wrap.querySelector('.'+c.root).style.width='900px';
+   },cfg);
+   await select(cfg.id);
+   const initial=await page.evaluate(c=>{
+    const d=document.querySelector('#preview').contentDocument,
+      root=d.querySelector('.el.wdg[data-id="'+c.id+'"] .'+c.root),
+      parts=Array.from(root.querySelectorAll('[data-wpart]')).map(n=>n.dataset.wpart),
+      buttons=Array.from(root.querySelectorAll('[data-nw-part]')).map(n=>n.dataset.nwPart),
+      css=d.defaultView.getComputedStyle(root);
+    return{width:root.clientWidth-(parseFloat(css.paddingLeft)||0)-(parseFloat(css.paddingRight)||0),
+      height:root.clientHeight,parts,buttons,scope:root.dataset.nwPartScope,threshold:+root.dataset.nwPartMobile,
+      animationsHaveVariables:window.SCW.css[c.kind].includes('--nw-hover-x')&&window.SCW.css[c.kind].includes('--nw-hover-s'),
+      barInPublished:window.SCW.kinds[c.kind].markup(sec().elements.find(e=>e.id===c.id).wp,{edit:false}).includes('data-nw-partbar'),
+      lineEffects:window.SCW.css[c.kind].includes('nw-hover-transform')};
+   },cfg);
+   assert.equal(initial.scope,cfg.kind,'recurso conectado al motor universal');
+   assert.equal(initial.threshold,680);
+   assert.equal(initial.height,cfg.height);
+   assert.equal(initial.animationsHaveVariables,true,'las animaciones usan variables separadas');
+   assert.equal(initial.barInPublished,false,'los botones del editor no se exportan');
+   assert.deepEqual(initial.parts,cfg.expected,'todas las partes internas se pueden editar');
+   assert.deepEqual(initial.buttons,[''].concat(cfg.expected),'barra con todas las partes');
+   if(cfg.kind==='depthheadline')assert.equal(initial.lineEffects,true,'perspectiva 3D conservada');
+   await fire('.el.wdg[data-id="'+cfg.id+'"] [data-nw-part="'+cfg.part+'"]');
+   const selected=await page.evaluate(c=>{
+    const d=document.querySelector('#preview').contentDocument,root=d.querySelector('.el.wdg[data-id="'+c.id+'"] .'+c.root);
+    return{part:root.querySelector('.nw-part-edit-active')?.dataset.wpart,
+      handles:d.querySelectorAll('.nw-wpart-h').length,isolated:root.classList.contains('nw-part-isolate')};
+   },cfg);
+   assert.deepEqual(selected,{part:cfg.part,handles:2,isolated:true},'selección interna mediante motor común');
+   await page.evaluate(c=>{
+    const d=document.querySelector('#preview').contentDocument,w=d.defaultView,
+      node=d.querySelector('.el.wdg[data-id="'+c.id+'"] [data-wpart="'+c.part+'"]'),r=node.getBoundingClientRect(),
+      x=r.left+r.width/2,y=r.top+r.height/2;
+    node.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,button:0,pointerId:241,clientX:x,clientY:y}));
+    w.dispatchEvent(new w.PointerEvent('pointermove',{bubbles:true,button:0,pointerId:241,clientX:x+90,clientY:y+27}));
+    w.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true,button:0,pointerId:241,clientX:x+90,clientY:y+27}));
+   },cfg);
+   const moved=await page.evaluate(c=>{
+    const e=sec().elements.find(x=>x.id===c.id).wp,d=document.querySelector('#preview').contentDocument,
+      n=d.querySelector('.el.wdg[data-id="'+c.id+'"] [data-wpart="'+c.part+'"]');
+    return{pose:e.__parts?.[c.part],inline:n.style.getPropertyValue('--nw-tx'),
+      saved:JSON.parse(localStorage.getItem(STORE_KEY)).pages[curPage].sections[curSec].elements.find(x=>x.id===c.id)?.wp?.__parts?.[c.part]};
+   },cfg);
+   assert.equal(moved.pose.x,90,'pieza se mueve 90 px');
+   assert.equal(moved.pose.y,27);
+   assert.ok(Math.abs(moved.pose.refW-initial.width)<1,'referencia: ancho útil');
+   assert.equal(moved.pose.refH,initial.height,'referencia: alto real');
+   assert.deepEqual(moved.saved,moved.pose,'se guarda en el proyecto');
+   assert.match(moved.inline,/cqw$/,'posición relativa en el editor');
+   const output=await page.evaluate(c=>{
+    const e=sec().elements.find(x=>x.id===c.id).wp;
+    return window.SCW.kinds[c.kind].markup(e,{edit:false});
+   },cfg);
+   assert.match(output,new RegExp('data-wpart="'+cfg.part+'"[^>]*style="[^"]*--nw-tx:'));
+   assert.match(output,/--nw-ty:calc\(var\(--h\) \* /,'el alto adaptable se exporta');
+   // El cambio temporal de puntero suma desplazamiento sin sustituir la pose del autor.
+   const composed=await page.evaluate(c=>{
+    const d=document.querySelector('#preview').contentDocument,n=d.querySelector('.el.wdg[data-id="'+c.id+'"] [data-wpart="'+c.part+'"]'),
+      before=d.defaultView.getComputedStyle(n),pose=before.translate,scale=before.scale,
+      stored=n.style.getPropertyValue('--nw-tx');
+    n.style.setProperty('--nw-hover-x','19px');n.style.setProperty('--nw-hover-y','7px');
+    n.style.setProperty('--nw-hover-s','1.08');
+    const after=d.defaultView.getComputedStyle(n);
+    return{before:pose,after:after.translate,beforeScale:scale,afterScale:after.scale,stored,
+     inlineTranslate:n.style.translate,inlineScale:n.style.scale};
+   },cfg);
+   assert.ok(Math.abs(parseFloat(composed.after)-parseFloat(composed.before)-19)<2,'hover se suma sin pisar posición');
+   assert.equal(composed.stored,moved.inline,'no reemplaza la pose original');
+   assert.equal(composed.inlineTranslate,'','sin style.translate invasivo');
+   assert.equal(composed.inlineScale,'','sin style.scale invasivo');
+   assert.ok(parseFloat(composed.afterScale)>parseFloat(composed.beforeScale),'se añade escala interactiva');
+   await page.evaluate(c=>{
+    const d=document.querySelector('#preview').contentDocument,root=d.querySelector('.el.wdg[data-id="'+c.id+'"]'),
+      el=sec().elements.find(x=>x.id===c.id).wp;
+    root.innerHTML=window.SCW.kinds[c.kind].markup(el,{edit:true});
+    root.querySelector('.'+c.root).style.width='400px';
+   },cfg);
+   await fire('.el.wdg[data-id="'+cfg.id+'"] [data-nw-part="'+cfg.part+'"]');
+   const desktopCopy=await page.evaluate(c=>JSON.parse(JSON.stringify(sec().elements.find(x=>x.id===c.id).wp.__parts[c.part])),cfg);
+   await page.evaluate(c=>{
+    const d=document.querySelector('#preview').contentDocument,w=d.defaultView,
+      node=d.querySelector('.el.wdg[data-id="'+c.id+'"] [data-wpart="'+c.part+'"]'),r=node.getBoundingClientRect(),
+      x=r.left+r.width/2,y=r.top+r.height/2;
+    node.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,button:0,pointerId:242,clientX:x,clientY:y}));
+    w.dispatchEvent(new w.PointerEvent('pointermove',{bubbles:true,button:0,pointerId:242,clientX:x+32,clientY:y+15}));
+    w.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true,button:0,pointerId:242,clientX:x+32,clientY:y+15}));
+   },cfg);
+   const mobile=await page.evaluate(c=>{
+    const e=sec().elements.find(x=>x.id===c.id).wp,d=document.querySelector('#preview').contentDocument,
+      n=d.querySelector('.el.wdg[data-id="'+c.id+'"] [data-wpart="'+c.part+'"]');
+    return{desktop:e.__parts[c.part],mobile:e.__partsMobile?.[c.part],inline:n.style.getPropertyValue('--nw-mx')};
+   },cfg);
+   assert.deepEqual(mobile.desktop,desktopCopy,'móvil no modifica escritorio');
+   assert.equal(mobile.mobile.refH,initial.height);
+   assert.ok(mobile.mobile.refW<initial.width,'referencia adaptada al ancho móvil');
+   assert.ok(mobile.mobile.x>32,'móvil parte de la pose heredada');
+   assert.match(mobile.inline,/cqw$/);
+   const exportMobile=await page.evaluate(c=>{
+    const e=sec().elements.find(x=>x.id===c.id).wp;
+    return window.SCW.kinds[c.kind].markup(e,{edit:false});
+   },cfg);
+   assert.match(exportMobile,/--nw-mx:[0-9.]+cqw/,'el sitio publicado conserva desktop y móvil');
+   await page.evaluate(()=>{
+    const d=document.querySelector('#preview').contentDocument,b=d.querySelector('.nw-wpart-reset');
+    if(!b)throw Error('Falta Restablecer móvil');
+    b.click();
+   });
+   assert.equal(await page.evaluate(c=>sec().elements.find(x=>x.id===c.id).wp.__partsMobile?.[c.part],cfg),undefined);
+   await page.click('#btn-undo');
+   assert.ok(await page.evaluate(c=>sec().elements.find(x=>x.id===c.id).wp.__partsMobile?.[c.part],cfg));
+   await page.click('#btn-redo');
+   assert.equal(await page.evaluate(c=>sec().elements.find(x=>x.id===c.id).wp.__partsMobile?.[c.part],cfg),undefined);
+  }
+
   console.log('Editor partes: foco, restauración, Escape, Enter e historial OK');
  }finally{
   await page.evaluate(old=>{
