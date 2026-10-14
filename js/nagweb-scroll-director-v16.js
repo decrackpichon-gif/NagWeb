@@ -278,7 +278,7 @@ function rt(DATA,createModel,createStreamModel,createCamera){
    var cs=getComputedStyle(n),baseOpacity=parseFloat(cs.opacity),baseFilter=cs.filter&&cs.filter!=='none'?cs.filter:'blur(0px)',basePointer=cs.pointerEvents||'auto';
    n.style.setProperty('--nw-sd-base-opacity',isFinite(baseOpacity)?baseOpacity:1);
    n.style.setProperty('--nw-sd-base-filter',baseFilter);n.setAttribute('data-nw-sd-el','1');
-   els.push({n:n,c:c,cameraLayer:cameraPaint?camera.layer(cfg.camera,c.id):null,cameraShared:cameraPaint?cameraPaint.contains(n):false,basePointer:basePointer,baseOpacity:isFinite(baseOpacity)?baseOpacity:1,depth:null,depthValue:''});
+   els.push({n:n,c:c,cameraLayer:cameraPaint?camera.layer(cfg.camera,c.id):null,cameraShared:cameraPaint?cameraPaint.contains(n):false,basePointer:basePointer,baseOpacity:isFinite(baseOpacity)?baseOpacity:1,baseVisibility:n.style.visibility,depth:null,depthValue:''});
   });
   var ordered=cfg.depthOrder?els.filter(function(q){return q.c.keyframes&&q.c.keyframes.length;}):[];
   var streamPaint=streamRenderer(stage,cfg);
@@ -287,7 +287,8 @@ function rt(DATA,createModel,createStreamModel,createCamera){
    var scrollRoot=cfg.group?sec.closest('.sc'):sec,r=(scrollRoot.__nwStoryLayout||scrollRoot).getBoundingClientRect(),span=Math.max(1,scrollRoot.offsetHeight-innerHeight),timeP=cfg.loop?(elapsed%cfg.duration)/cfg.duration:Math.min(1,elapsed/cfg.duration),p=manual==null?(cfg.time?(motion.matches?.5:timeP):model.clamp(-r.top/span,0,1)):manual;
    last=p;
    var cameraScale=camera.viewportScale(cfg.camera,stage.clientWidth),cameraSize={width:Math.max(1,stage.clientWidth)/Math.max(.0001,cameraScale),height:Math.max(1,stage.clientHeight)/Math.max(.0001,cameraScale)};
-   if(cameraPaint)cameraPaint(camera.scalePose(camera.pose(cfg.camera,p,model,cfg.ease,motion.matches,cameraTrack,cameraSize),cameraScale),cameraScale);
+   var viewPose=cameraPaint?camera.pose(cfg.camera,p,model,cfg.ease,motion.matches,cameraTrack,cameraSize):null;
+   if(cameraPaint)cameraPaint(camera.scalePose(viewPose,cameraScale),cameraScale);
    if(ordered.length)ordered.slice().sort(function(a,b){return model.evaluate(a.c,p,cfg.ease,motion.matches).z-model.evaluate(b.c,p,cfg.ease,motion.matches).z;}).forEach(function(q,i){q.n.style.zIndex=i+1;});
    els.forEach(function(q){
     var n=q.n,v=camera.layerPose(model.evaluate(q.c,p,cfg.ease,motion.matches),q.cameraLayer,motion.matches,cameraScale),op=v.opacity/100;
@@ -315,7 +316,15 @@ function rt(DATA,createModel,createStreamModel,createCamera){
     if(cameraPaint)n.__nwSpatialPose=Object.freeze(Object.assign({},v,{opacity:op*q.baseOpacity}));
     n.style.setProperty('--nw-sd-opacity',op.toFixed(4));
     n.style.setProperty('--nw-sd-blur',v.blur.toFixed(2)+'px');
-    n.style.pointerEvents=op<.025?'none':q.basePointer;
+    // A parallel, unrotated DOM plane must leave the visible scene when its
+    // entire depth reaches the CSS perspective eye. Avoid flipped/interactive
+    // content behind the observer; tilted planes retain browser clipping.
+    var beyondEye=!!(viewPose&&q.cameraShared&&!q.c.parent&&q.c.type!=='container'&&
+     Math.abs(viewPose.rotateX)<.0001&&Math.abs(viewPose.rotateY)<.0001&&
+     Math.abs(v.rotateX)<.0001&&Math.abs(v.rotateY)<.0001&&
+     viewPose.z*cameraScale+v.z>=cfg.perspective*cameraScale-1);
+    n.style.visibility=beyondEye?'hidden':q.baseVisibility;
+    n.style.pointerEvents=beyondEye||op<.025?'none':q.basePointer;
    });
    if(streamPaint)streamPaint(p);
    // Anchored Three.js objects derive their position from the transformed DOM rect.
