@@ -398,7 +398,7 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
    ' [data-wpart]{translate:var(--nw-mx,var(--nw-tx,0px)) var(--nw-my,var(--nw-ty,0px));rotate:var(--nw-mr,var(--nw-pr,0deg));scale:var(--nw-ms,var(--nw-ps,1))}}';
   X.reg(kind,def,css,run);
  }
- function zoomParts(e){
+ function zoomParts(e,ctx){
   var list=[['media','Medio'],['title','Título inicial'],['sub','Indicación inicial']];
   arr(e.chapters).forEach(function(ch,i){
    var c=ch||{},n=i+1;

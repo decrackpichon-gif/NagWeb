@@ -221,8 +221,6 @@ if(workspaceState.leftToggles!==1||workspaceState.rightToggles!==1) throw new Er
 if(Math.abs(workspaceState.rightWidth-savedInspectorWidth)>3) throw new Error('Inspector width did not survive reload: '+JSON.stringify({workspaceState,savedInspectorWidth}));
 await page.click('.nw-dock-toggle.left');
 
-// Probar primero las partes del Editor: los fallos intermitentes externos no las ocultan.
-await runEditorPartsSmoke(page);
 await runMotionStreamPlacementSmoke(page);
 await runMotionStreamSmoke(page);
 await runMotionStreamPlacementSmoke(page,'iso-orbit');
@@ -260,6 +258,7 @@ await runMotionSearchSmoke(page);
 await runStorytellingSmoke(page);
 await runCompositionSmoke(page);
 await runTransparentSmoke(page);
+await runEditorPartsSmoke(page);
 if(pageErrors.length) throw new Error('Browser page errors:\n'+pageErrors.join('\n\n'));
 console.log('NagWeb smoke OK',state);
 }finally{
