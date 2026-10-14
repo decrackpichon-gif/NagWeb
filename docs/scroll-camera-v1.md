@@ -1093,3 +1093,10 @@ elementos seleccionados no se superpongan visualmente al viaje.
 La siguiente fase debe centrarse en perspectiva, recorte al atravesar
 planos y controles visuales de duración/waypoints a partir de pruebas
 reales, no en sumar otro motor.
+
+
+## Cruce del ojo de perspectiva: planos HTML paralelos (14/10/2026)
+
+El Director oculta un plano raíz DOM, sin inclinación 3D, cuando la suma de su profundidad evaluada y el avance Z de la cámara llega al ojo de perspectiva CSS. Además desactiva sus eventos de puntero y restaura el valor de visibilidad inline original al volver delante del ojo. Se utiliza la pose ya calculada por el Director; no hay un segundo reloj ni un nuevo keyframe. Contenedores y planos inclinados conservan el clipping nativo del navegador, sin imponerles un criterio de centro que recortaría geometría visible.
+
+**Alcance y límite:** esto corrige únicamente el estado de un plano paralelo completamente detrás del ojo, no resuelve oclusión parcial DOM/WebGL, intersecciones de elementos rotados ni la composición volumétrica compleja. Validar el paso visual con una escena texto → foto → texto en Chromium y verificar que las reglas CSS externas de visibilidad no cambien el comportamiento en proyectos reales. El cambio de código se comprobó sintácticamente; la CI de cámara/espacial debe registrarse como aprobada sólo después de su conclusión.
