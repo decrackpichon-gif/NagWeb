@@ -63,6 +63,42 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   assert.equal(after.shield,false,'Temporary pointer shield is removed after mouseup');
   await page.evaluate(()=>undo());
   assert.equal(await page.evaluate(()=>sec().elements.find(e=>e.id==='spatial-test-heading').x),before.x,'Undo restores authored position');
+  // The same real editor can author a complete five-waypoint 3D story
+  // from its existing text + image + text, without creating new renderers.
+  await page.evaluate(()=>{
+   const s=sec();
+   s.elements.push(mkEl('img',{id:'journey-test-photo',x:42,y:35,w:45,h:40,src:'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%222%22 height=%222%22/%3E'}));
+   s.elements.push(mkEl('heading',{id:'journey-test-outro',text:'Después de la imagen',x:26,y:42,w:40,sdEnter:'none'}));
+   renderPane();
+  });
+  const beforeJourney=await page.evaluate(()=>({frames:JSON.stringify(sec().sdCameraFrames),
+   photo:sec().elements.find(e=>e.id==='journey-test-photo')?.sdCameraDepth||0,
+   untouched:JSON.stringify(sec().elements.find(e=>e.id==='spatial-test-box')),undo:history.length}));
+  const journeyButton=page.locator('[data-camera-journey-apply]');
+  await journeyButton.waitFor({state:'visible'});
+  assert.equal(await journeyButton.isEnabled(),true);
+  await journeyButton.click();
+  const trip=await page.evaluate(()=>{
+   const s=sec(),C=window.NAGWEB_SCROLL_CAMERA,cfg=C.config(s);
+   return {frames:s.sdCameraFrames.map(k=>({at:k.at,z:k.z})),depths:['spatial-test-heading','journey-test-photo','journey-test-outro'].map(id=>s.elements.find(e=>e.id===id)?.sdCameraDepth),
+    motion:s.sdCameraPathMode,look:s.sdCameraOrientationMode,length:s.sdLength,undo:history.length,
+    other:JSON.stringify(s.elements.find(e=>e.id==='spatial-test-box')),
+    start:C.pose(cfg,0,window.NAGWEB_STORY_MODEL,'linear',false).z,
+    end:C.pose(cfg,1,window.NAGWEB_STORY_MODEL,'linear',false).z};
+  });
+  assert.equal(JSON.stringify(trip.depths),JSON.stringify([-300,200,700]));
+  assert.equal(JSON.stringify(trip.frames.map(k=>k.at)),JSON.stringify([0,25,50,75,100]));
+  assert.equal(trip.start,-900);assert.equal(trip.end,1300);
+  assert.equal(trip.look,'manual');assert.equal(trip.motion,'linear');
+  assert.ok(trip.length>=480);
+  assert.equal(trip.undo,beforeJourney.undo+1,'Journey is one undoable action');
+  assert.equal(trip.other,beforeJourney.untouched,'Existing unrelated GLB is unchanged');
+  await page.evaluate(()=>undo());
+  const reverted=await page.evaluate(()=>({frames:JSON.stringify(sec().sdCameraFrames),
+   depth:sec().elements.find(e=>e.id==='journey-test-photo')?.sdCameraDepth||0}));
+  assert.equal(reverted.frames,beforeJourney.frames,'Undo restores earlier camera path');
+  assert.equal(reverted.depth,beforeJourney.photo,'Undo restores earlier photo depth');
+  console.log('PASS real editor journey: text/image/text depths, five waypoints, camera crossing, one Undo');
   assert.deepEqual(errors,[]);
   console.log('PASS isolated Chromium spatial map: real pointer movement, DOM X, cleanup, one Undo and camera isolation');
  }finally{await browser.close();}
