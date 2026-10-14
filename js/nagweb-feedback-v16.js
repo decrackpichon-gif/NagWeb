@@ -216,6 +216,119 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
  enhanceMedia('detailmagnifier','nw-mag',[['image','Imagen'],['caption','Texto']],'4/3',600,runMagnifier);
 })();
 
+/* ---------- Composiciones reactivas: edición estable + movimiento independiente ---------- */
+// Un mismo adaptador permite editar las líneas tipográficas y las fotos de una grilla.
+// Las poses del autor van en --nw-tx/ty/ps, la animación nunca sobrescribe style.translate/scale.
+(function(){
+ function withPartStyle(html,key,value){
+  if(!value)return html;
+  var token='data-wpart="'+key+'"';
+  return html.replace(new RegExp('<[a-z][^>]*'+token+'[^>]*>','i'),function(tag){
+   return /\sstyle="/.test(tag)?tag.replace(/\sstyle="/,' style="'+value):tag.slice(0,-1)+' style="'+value+'">';
+  });
+ }
+ function enhance(kind,selector,parts,renderExtra,run){
+  var old=W.kinds[kind];if(!old)return;
+  var def=Object.assign({},old);
+  def.fields=[{type:'hint',text:kind==='depthheadline'?
+   'Elegí una línea desde la barra para moverla, escalarla o girarla independientemente. La reacción 3D al cursor se suma a tu diseño, sin reemplazarlo. En móvil podés guardar una distribución distinta.':
+   'Seleccioná cada fotografía o la etiqueta desde la barra. Podés acomodarlas por separado; la atracción al cursor conserva las posiciones diseñadas y funciona en la página publicada.'}]
+   .concat((old.fields||[]).filter(function(field){return field.type!=='hint';}));
+  def.markup=function(e,ctx){
+   var html=old.markup(e,ctx),actual=parts(e),height=num(e.h,kind==='depthheadline'?440:520,240,1000);
+   if(kind==='magneticmosaic'){
+    // La etiqueta ya era editable en el inspector, pero no tenía selección de parte interna.
+    html=html.replace('data-wfield="label"','data-wfield="label" data-wpart="label"');
+   }
+   var root=new RegExp('(<'+(kind==='depthheadline'?'div':'figure')+' class="[^"]+")','i');
+   html=html.replace(root,'$1 data-nw-part-scope="'+kind+'" data-nw-part-mobile="680" data-nw-part-y="var(--h)"');
+   html=html.replace(new RegExp('(<'+(kind==='depthheadline'?'div':'figure')+' class="[^"]+"[^>]*style=")','i'),'$1--h:'+height+'px;');
+   for(var i=0;i<actual.length;i++)html=withPartStyle(html,actual[i][0],partTransformCSS(e,actual[i][0],'var(--h)'));
+   if(ctx.edit){
+    var bar='<div class="nw-edit-partbar nw-pointer-editbar" data-nw-partbar><button type="button" data-nw-part="">Todos</button>'+
+     actual.map(function(item){return '<button type="button" data-nw-part="'+item[0]+'">'+item[1]+'</button>';}).join('')+'</div>';
+    html=html.replace(new RegExp('(<'+(kind==='depthheadline'?'div':'figure')+' class="[^"]+"[^>]*>)','i'),'$1'+bar);
+   }
+   return html;
+  };
+  var css=(W.css&&W.css[kind]||'')+
+   '.'+selector+'{position:relative;container-type:inline-size;isolation:isolate}' +
+   '.'+selector+' .nw-pointer-editbar{left:8px;right:8px;top:8px;max-width:none;justify-content:center;z-index:70}' +
+   '.'+selector+' [data-wpart]{translate:calc(var(--nw-tx,0px) + var(--nw-hover-x,0px)) calc(var(--nw-ty,0px) + var(--nw-hover-y,0px));rotate:var(--nw-pr,0deg);scale:calc(var(--nw-ps,1) * var(--nw-hover-s,1))}' +
+   '@container (max-width:680px){.'+selector+' [data-wpart]{translate:calc(var(--nw-mx,var(--nw-tx,0px)) + var(--nw-hover-x,0px)) calc(var(--nw-my,var(--nw-ty,0px)) + var(--nw-hover-y,0px));rotate:var(--nw-mr,var(--nw-pr,0deg));scale:calc(var(--nw-ms,var(--nw-ps,1)) * var(--nw-hover-s,1))}}' +
+   (kind==='depthheadline'?
+    '.nw-dh .nw-dh-line{transform:var(--nw-hover-transform,translateZ(calc(var(--i) * var(--d))));transition:transform .18s ease-out,translate .18s ease-out,scale .18s ease-out}':
+    '.nw-mm .nw-mm-grid i{transition:translate .18s ease-out,scale .18s ease-out}')+
+   '@media(prefers-reduced-motion:reduce){.'+selector+' [data-wpart]{--nw-hover-x:0px;--nw-hover-y:0px;--nw-hover-s:1}'+
+    (kind==='depthheadline'?'.nw-dh .nw-dh-line{transform:none!important;translate:calc(var(--nw-tx,0px) + var(--nw-hover-x,0px)) calc(var(--nw-ty,0px) + var(--nw-hover-y,0px))!important;scale:var(--nw-ps,1)!important}':
+      '.nw-mm .nw-mm-grid i{translate:calc(var(--nw-tx,0px) + var(--nw-hover-x,0px)) calc(var(--nw-ty,0px) + var(--nw-hover-y,0px))!important;scale:var(--nw-ps,1)!important}')+
+   '}';
+  X.reg(kind,def,css,RT(scwBoot,scwCfg,scwRM,run));
+ }
+ function depthParts(e){
+  var strings=lines(e.text);if(!strings.length)strings=['DESIGN','IN MOTION','WITH DEPTH'];
+  return strings.map(function(s,i){return ['line-'+i,'Línea '+(i+1)];});
+ }
+ function mosaicParts(){
+  return [['image-0','Imagen 1'],['image-1','Imagen 2'],['image-2','Imagen 3'],['image-3','Imagen 4'],['label','Etiqueta']];
+ }
+ function depthRuntime(){
+  scwBoot('__nwDepthTitle16','.nw-dh',function(el){
+   if(window.SC_EDIT||scwRM())return;
+   var cfg=scwCfg(el),amp=(+cfg.amount||34)/100,mode=cfg.reaction||'tilt3d',dep=+cfg.depth||14,ls=el.querySelectorAll('.nw-dh-line');
+   function pose(node,i,x,y,z,transform){
+    node.style.setProperty('--nw-hover-x',x+'px');node.style.setProperty('--nw-hover-y',y+'px');
+    node.style.setProperty('--nw-hover-s',z);
+    node.style.setProperty('--nw-hover-transform',transform||'translateZ('+(i*dep)+'px)');
+   }
+   function reset(){for(var i=0;i<ls.length;i++)pose(ls[i],i,0,0,1);}
+   reset();if(mode==='none')return;
+   el.addEventListener('pointermove',function(ev){
+    var r=el.getBoundingClientRect(),x=(ev.clientX-r.left)/Math.max(1,r.width)-.5,
+      y=(ev.clientY-r.top)/Math.max(1,r.height)-.5;
+    for(var i=0;i<ls.length;i++){
+     var k=(i+1)/Math.max(1,ls.length),sg=i%2?-1:1,z='translateZ('+(i*dep)+'px)',dx=0,dy=0,sc=1;
+     if(mode==='parallax'){dx=x*90*amp*k;dy=y*55*amp*k;}
+     else if(mode==='tilt3d'){
+      dx=x*24*amp*k;dy=y*12*amp*k;
+      z+=' rotateX('+(-y*18*amp)+'deg) rotateY('+(x*24*amp)+'deg)';
+     }else if(mode==='explode'){dx=x*150*amp*k*sg;dy=y*100*amp*k;sc=1+Math.abs(x+y)*.12*amp*k;}
+     else if(mode==='wave'){
+      dx=x*70*amp*Math.sin(i+1);dy=y*60*amp*Math.cos(i*.8);
+      z+=' rotateZ('+(x*6*amp*sg)+'deg)';
+     }
+     pose(ls[i],i,dx,dy,sc,z);
+    }
+   });
+   el.addEventListener('pointerleave',reset);
+  });
+ }
+ function mosaicRuntime(){
+  scwBoot('__nwMagMosaic16','.nw-mm',function(el){
+   if(window.SC_EDIT||scwRM())return;
+   var cfg=scwCfg(el),amt=+cfg.strength||20,cards=el.querySelectorAll('.nw-mm-grid i');
+   el.addEventListener('pointermove',function(ev){
+    var outer=el.getBoundingClientRect(),mx=ev.clientX-outer.left,my=ev.clientY-outer.top;
+    for(var i=0;i<cards.length;i++){
+     var r=cards[i].getBoundingClientRect(),cx=r.left-outer.left+r.width/2,cy=r.top-outer.top+r.height/2;
+     var dx=mx-cx,dy=my-cy,dist=Math.max(70,Math.sqrt(dx*dx+dy*dy)),k=Math.min(1,170/dist);
+     cards[i].style.setProperty('--nw-hover-x',(dx/dist*amt*k)+'px');
+     cards[i].style.setProperty('--nw-hover-y',(dy/dist*amt*k)+'px');
+     cards[i].style.setProperty('--nw-hover-s',String(1+.035*k));
+    }
+   });
+   el.addEventListener('pointerleave',function(){
+    for(var i=0;i<cards.length;i++){
+     cards[i].style.setProperty('--nw-hover-x','0px');cards[i].style.setProperty('--nw-hover-y','0px');
+     cards[i].style.setProperty('--nw-hover-s','1');
+    }
+   });
+  });
+ }
+ enhance('depthheadline','nw-dh',depthParts,null,depthRuntime);
+ enhance('magneticmosaic','nw-mm',mosaicParts,null,mosaicRuntime);
+})();
+
 /* ---------- Historia sticky: selector de capítulo para editar texto e imagen ---------- */
 (function(){
  var old=W.kinds.scrollstory;if(!old)return;
