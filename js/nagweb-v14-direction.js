@@ -404,7 +404,10 @@ function installCanvasTools(){
   if(!stage)stage=section;
   var unit=section.getAttribute('data-nw-part-y');
   if(unit!=='100vh'&&unit!=='var(--h)')unit=story?'100vh':'var(--h)';
-  var w=section.clientWidth,h=stage.clientHeight;
+  var styles=doc.defaultView.getComputedStyle(section);
+  // CSS cqw se mide sobre la caja de contenido, NO sobre padding + contenido.
+  var w=section.clientWidth-(parseFloat(styles.paddingLeft)||0)-(parseFloat(styles.paddingRight)||0);
+  var h=stage.clientHeight;
   return{section:section,stage:stage,w:w,h:h,mobile:w>0&&w<=threshold,unitY:unit};
  }
  function partState(root,n){

@@ -115,8 +115,11 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
   function addStyle(part){
    var token='data-wpart="'+part+'"',value=partTransformCSS(e,part,'var(--h)');
    if(!value||!html.includes(token))return;
-   if(html.includes(token+' style="'))html=html.replace(token+' style="',token+' style="'+value);
-   else html=html.replace(token,token+' style="'+value+'"');
+   // Nunca añadir un segundo atributo style; preservar video, fondos y colores originales.
+   html=html.replace(new RegExp('<[a-z][^>]*'+token+'[^>]*>','i'),function(tag){
+    if(/\sstyle="/.test(tag))return tag.replace(/\sstyle="/,' style="'+value);
+    return tag.slice(0,-1)+' style="'+value+'">';
+   });
   }
   items.forEach(function(item){addStyle(item[0]);});
   if(bar)html=html.replace(/(<div class="nw-holo"[^>]*>)/,'$1'+bar);
