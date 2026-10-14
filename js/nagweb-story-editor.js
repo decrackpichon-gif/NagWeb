@@ -985,7 +985,7 @@ function labSetImagePreview(box,e){
  var a=e&&(project.assets.images||[]).concat(labAssets).find(function(a){return a.id===e.assetId;}),src=a&&typeof a.data==='string'?a.data:'',img=box.querySelector('img'),name=box.querySelector('[data-motion-image-name]');
  if(img){img.hidden=!src||!!(e&&e.nwStreamEmpty);if(src&&!img.hidden){if(img.getAttribute('src')!==src)img.src=src;}else img.removeAttribute('src');}
  if(name)name.textContent=e&&e.nwStreamEmpty?'Sin imagen':a&&a.name||'Sin imagen';
- if(box.hasAttribute('data-motion-image-preview'))box.setAttribute('aria-label','Reemplazar imagen de '+(e&&e.name||'lámina')+' · '+(a&&a.name||'Sin imagen'));
+ if(box.hasAttribute('data-motion-image-preview'))box.setAttribute('aria-label','Reemplazar imagen de '+(e&&e.name||'lámina')+' · '+(e&&e.nwStreamEmpty?'Sin imagen':a&&a.name||'Sin imagen'));
 }
 function labRefreshImages(){
  if(!labDraft)return;lab.querySelectorAll('[data-motion-layer]').forEach(function(n){var e=labDraft.elements.find(function(e){return e.id===n.dataset.motionLayer;});if(e&&e.type==='image')labSetImagePreview(n.querySelector('.nw-motion-layer-thumb'),e);});
@@ -1151,7 +1151,7 @@ function labLoadImageBatch(input){
  function fail(){if(!active())return;labImageAdds.delete(draft);if(labDraft===draft)labUploadState();status('No se pudo cargar una de las imágenes. No se cambió ninguna.');}
  function next(index){
   if(!active())return;
-  if(index===files.length){labImageAdds.delete(draft);loaded.forEach(function(a,i){a.id=nid();assets.push(a);slots[i].assetId=a.id;delete slots[i].nwStreamEmpty;});if(labDraft===draft){clearTimeout(labEditTimer);labBuildForm();labPreviewDraft();status('Se cargaron '+loaded.length+' imágenes en las primeras posiciones.');}return;}
+  if(index===files.length){labImageAdds.delete(draft);var targets=slots.filter(function(e){return e.nwStreamEmpty;}).concat(slots.filter(function(e){return !e.nwStreamEmpty;}));loaded.forEach(function(a,i){a.id=nid();assets.push(a);targets[i].assetId=a.id;delete targets[i].nwStreamEmpty;});if(labDraft===draft){clearTimeout(labEditTimer);labBuildForm();labPreviewDraft();status('Se cargaron '+loaded.length+' imágenes en las primeras posiciones.');}return;}
   var file=files[index];if(file.type&&file.type.indexOf('image/')!==0){fail();return;}var reader=new FileReader();reader.onerror=fail;reader.onload=function(){if(!active())return;var data=String(reader.result),image=new Image();image.onerror=fail;image.onload=function(){if(!active())return;if(!image.naturalWidth||!image.naturalHeight){fail();return;}loaded.push({name:file.name,data:data});next(index+1);};image.src=data;};try{reader.readAsDataURL(file);}catch(error){fail();}
  }
  next(0);
