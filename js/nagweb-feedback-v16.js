@@ -150,7 +150,9 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
  function enhanceMedia(kind,selector,items,ratioDefault,threshold,run){
   var old=W.kinds[kind];if(!old)return;
   var def=Object.assign({},old);
-  def.fields=[{type:'hint',text:'Elegí Imagen, Revelado o Texto desde la barra de la composición. Mové, escalá y rotá cada pieza con el mouse. La versión móvil se guarda por separado, sin modificar el efecto interactivo original.'}].concat((old.fields||[]).filter(function(f){return f.type!=='hint';}));
+  def.fields=[{type:'hint',text:kind==='cursorreveal'?
+   'Seleccioná Imagen base, Imagen revelada o Etiqueta. Movelas, giralas o escalalas independientemente; los cambios móviles se guardan aparte y se conserva el revelado por cursor.':
+   'Seleccioná Imagen o Texto. Ajustá cada pieza con el mouse; la Lupa sigue funcionando y podés guardar una distribución móvil independiente.'}].concat((old.fields||[]).filter(function(f){return f.type!=='hint';}));
   def.markup=function(e,ctx){
    var html=old.markup(e,ctx),ratio=pick(e.ratio,['16/9','4/3','1/1','3/2','3/4'],ratioDefault);
    var parts=ratio.split('/'),factor=(+parts[1]/+parts[0]).toFixed(6);
@@ -164,7 +166,7 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
     var key=item[0],value=partTransformCSS(e,key,'var(--h)'),token='data-wpart="'+key+'"';
     if(!value)return;
     html=html.replace(new RegExp('<[a-z][^>]*'+token+'[^>]*>','i'),function(tag){
-     if(/\\sstyle="/.test(tag))return tag.replace(/\\sstyle="/,' style="'+value);
+     if(/\sstyle="/.test(tag))return tag.replace(/\\sstyle="/,' style="'+value);
      return tag.slice(0,-1)+' style="'+value+'">';
     });
    });

@@ -88,6 +88,14 @@ Editor **visual y profesional** para construir sitios y narrativas inmersivas co
 - Regresión en `.github/nagweb-editor-parts-smoke.mjs`: prueba la tarjeta REAL, selección, composición, edición interna, guardado, escritorio/móvil, exportación, opciones de imagen/video y campos opcionales. Consultar CI del commit antes de declarar la validación definitiva.
 - Próxima prioridad: ampliar el mecanismo de edición interna a más composiciones reales, agrupándolas cuando compartan una estructura sin crear un motor específico por recurso.
 
+## Edición de composiciones de imagen reutilizando el motor compartido (14/10/2026)
+
+- **Imagen revelada por el cursor** (`cursorreveal`) y **Lupa de detalle** (`detailmagnifier`) se integran al contrato común `data-nw-part-scope` mediante un **único adaptador** en `js/nagweb-feedback-v16.js`, sin alterar el código original de la biblioteca ni recrear sus herramientas de movimiento.
+- La barra de edición selecciona independientemente **Imagen base / Imagen revelada / Etiqueta** y **Imagen / Texto**. Arrastre, escala, rotación, guardado, Deshacer/Rehacer, restauración móvil y exportación reutilizan `partTransformCSS`, `__parts` y `__partsMobile`. El umbral móvil es 600 px de ancho útil de cada figura.
+- Se conservan imágenes reales, máscaras circulares, lupa, filtros de movimiento reducido, relaciones de aspecto, variantes y campos del modelo original. Durante la edición aislada de la capa revelada se muestra completa para que sea seleccionable, sin afectar la animación publicada.
+- Ambos recursos usan una altura de referencia vinculada a su relación de aspecto, y la serialización proporcional comparte el mismo mecanismo usado previamente por Hero, Historia sticky y Tarjeta holográfica.
+- Regresión extendida en `.github/nagweb-editor-parts-smoke.mjs`: prueba selección, geometría, guardado, exportación y herencia móvil/restauración en ambos recursos reales. Confirmar el estado de GitHub Actions del HEAD antes de considerarlo validado.
+
 ## Próximas prioridades (revisar con HEAD actual)
 
 - Priorizar la experiencia de lienzo como herramienta de diseño, edición real de elementos anidados y uso de recursos sin degradar su editabilidad.

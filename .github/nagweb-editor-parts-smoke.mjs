@@ -1008,6 +1008,120 @@ export async function runEditorPartsSmoke(page){
   assert.equal(holoOptional.cta,false);
   assert.equal(holoOptional.video,true,'mantiene soporte de video para media editable');
 
+
+  // Adaptador transversal para 2 recursos reales de imagen interactiva, sin duplicar motor de partes.
+  for(const cfg of [
+   {kind:'cursorreveal',id:'test-reveal',scope:'nw-cr',part:'label',image:'reveal',text:'MOSTRAR',ratio:'16/9',
+    label:'Etiqueta',preserved:'.nw-cr-top{clip-path:circle',interactive:'nw-cr-top'},
+   {kind:'detailmagnifier',id:'test-lens',scope:'nw-mag',part:'caption',image:'image',text:'AMPLIAR',ratio:'4/3',
+    label:'Texto',preserved:'.nw-mag-lens{position:absolute',interactive:'nw-mag-lens'}
+  ]){
+   await load(cfg.id==='test-reveal'?19:20);
+   await page.evaluate(c=>{
+    const e=mkEl('widget',{id:c.id,kind:c.kind,wp:c.kind==='cursorreveal'?{label:c.text,ratio:c.ratio}:{caption:c.text,ratio:c.ratio}});
+    sec().elements.push(e);
+    const d=document.querySelector('#preview').contentDocument,style=d.createElement('style');
+    style.textContent=window.SCW.css[c.kind];d.head.appendChild(style);
+    const root=d.createElement('div');root.className='el wdg';root.dataset.id=c.id;
+    root.innerHTML=window.SCW.kinds[c.kind].markup(e.wp,{edit:true});
+    d.body.appendChild(root);
+    root.querySelector('.'+c.scope).style.width='840px';
+   },cfg);
+   await select(cfg.id);
+   const setup=await page.evaluate(c=>{
+    const d=document.querySelector('#preview').contentDocument,root=d.querySelector('.el.wdg[data-id="'+c.id+'"]'),
+     scope=root.querySelector('.'+c.scope),parts=Array.from(scope.querySelectorAll('[data-wpart]')).map(n=>n.dataset.wpart),
+     buttons=Array.from(scope.querySelectorAll('[data-nw-part]')).map(n=>n.dataset.nwPart);
+    const html=window.SCW.kinds[c.kind].markup(sec().elements.find(e=>e.id===c.id).wp,{edit:false});
+    return{scope:scope.dataset.nwPartScope,threshold:+scope.dataset.nwPartMobile,parts,buttons,width:scope.clientWidth,height:scope.clientHeight,
+     hasVisual:!!scope.querySelector('.'+c.interactive),hasExportBar:html.includes('data-nw-partbar'),
+     cssLegacy:window.SCW.css[c.kind].includes(c.preserved),
+     scopeHeightStyle:scope.style.getPropertyValue('--h')};
+   },cfg);
+   assert.equal(setup.scope,cfg.kind,'contrato genérico para '+cfg.kind);
+   assert.equal(setup.threshold,600);
+   assert.equal(setup.width,840);
+   assert.ok(setup.height>220);
+   assert.ok(setup.hasVisual&&setup.cssLegacy,'conserva imagen y efecto de '+cfg.kind);
+   assert.ok(!setup.hasExportBar,'barra ausente en exportación');
+   assert.ok(setup.parts.includes(cfg.part)&&setup.parts.includes(cfg.image),'partes en '+cfg.kind);
+   assert.ok(setup.buttons.includes(cfg.part)&&setup.buttons.includes(cfg.image),'controles de '+cfg.kind);
+   assert.match(setup.scopeHeightStyle,/100cqw/,'alto responsivo derivado de la proporción');
+   await fire('.el.wdg[data-id="'+cfg.id+'"] [data-nw-part="'+cfg.part+'"]');
+   const selected=await page.evaluate(c=>{
+    const d=document.querySelector('#preview').contentDocument,scope=d.querySelector('.el.wdg[data-id="'+c.id+'"] .'+c.scope);
+    return{part:scope.querySelector('.nw-part-edit-active')?.dataset.wpart,
+     handles:d.querySelectorAll('.nw-wpart-h').length,isolated:scope.classList.contains('nw-part-isolate')};
+   },cfg);
+   assert.deepEqual(selected,{part:cfg.part,handles:2,isolated:true},'selección integrada al editor de partes');
+   await page.evaluate(c=>{
+    const d=document.querySelector('#preview').contentDocument,w=d.defaultView,
+     n=d.querySelector('.el.wdg[data-id="'+c.id+'"] [data-wpart="'+c.part+'"]'),r=n.getBoundingClientRect(),
+     x=(r.left+r.right)/2,y=(r.top+r.bottom)/2;
+    n.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:220,button:0,clientX:x,clientY:y}));
+    w.dispatchEvent(new w.PointerEvent('pointermove',{bubbles:true,pointerId:220,button:0,clientX:x+84,clientY:y+28}));
+    w.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true,pointerId:220,button:0,clientX:x+84,clientY:y+28}));
+   },cfg);
+   const moved=await page.evaluate(c=>{
+    const e=sec().elements.find(x=>x.id===c.id).wp,d=document.querySelector('#preview').contentDocument,
+     part=d.querySelector('.el.wdg[data-id="'+c.id+'"] [data-wpart="'+c.part+'"]');
+    return{pose:e.__parts[c.part],live:part.style.getPropertyValue('--nw-tx'),
+      saved:JSON.parse(localStorage.getItem(STORE_KEY)).pages[curPage].sections[curSec].elements.find(x=>x.id===c.id)?.wp?.__parts?.[c.part]};
+   },cfg);
+   assert.equal(moved.pose.x,84);
+   assert.equal(moved.pose.y,28);
+   assert.equal(moved.pose.refW,840);
+   assert.ok(Math.abs(moved.pose.refH-setup.height)<1,'la proporción usa altura real de '+cfg.kind);
+   assert.match(moved.live,/cqw$/);
+   assert.deepEqual(moved.pose,moved.saved,'persiste '+cfg.kind);
+   const exportDesk=await page.evaluate(c=>{
+    const e=sec().elements.find(x=>x.id===c.id).wp;
+    return window.SCW.kinds[c.kind].markup(e,{edit:false});
+   },cfg);
+   assert.match(exportDesk,/--nw-tx:10\.00000cqw/,'exportación adapta desktop');
+   assert.match(exportDesk,/data-nw-part-scope="/);
+   await page.evaluate(c=>{
+    const d=document.querySelector('#preview').contentDocument,root=d.querySelector('.el.wdg[data-id="'+c.id+'"]'),
+     model=sec().elements.find(x=>x.id===c.id).wp;
+    root.innerHTML=window.SCW.kinds[c.kind].markup(model,{edit:true});
+    root.querySelector('.'+c.scope).style.width='380px';
+   },cfg);
+   await fire('.el.wdg[data-id="'+cfg.id+'"] [data-nw-part="'+cfg.part+'"]');
+   const desktopBefore=await page.evaluate(c=>JSON.parse(JSON.stringify(sec().elements.find(x=>x.id===c.id).wp.__parts[c.part])),cfg);
+   await page.evaluate(c=>{
+    const d=document.querySelector('#preview').contentDocument,w=d.defaultView,
+     n=d.querySelector('.el.wdg[data-id="'+c.id+'"] [data-wpart="'+c.part+'"]'),r=n.getBoundingClientRect(),
+     x=(r.left+r.right)/2,y=(r.top+r.bottom)/2;
+    n.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:221,button:0,clientX:x,clientY:y}));
+    w.dispatchEvent(new w.PointerEvent('pointermove',{bubbles:true,pointerId:221,button:0,clientX:x+38,clientY:y+19}));
+    w.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true,pointerId:221,button:0,clientX:x+38,clientY:y+19}));
+   },cfg);
+   const mobile=await page.evaluate(c=>{
+    const e=sec().elements.find(x=>x.id===c.id).wp,d=document.querySelector('#preview').contentDocument,
+     n=d.querySelector('.el.wdg[data-id="'+c.id+'"] [data-wpart="'+c.part+'"]');
+    return{desktop:e.__parts[c.part],mobile:e.__partsMobile?.[c.part],live:n.style.getPropertyValue('--nw-mx')};
+   },cfg);
+   assert.deepEqual(mobile.desktop,desktopBefore,'móvil no pisa escritorio');
+   assert.equal(mobile.mobile.refW,380);
+   assert.ok(mobile.mobile.x>38,'móvil parte de la pose proporcional de escritorio');
+   assert.match(mobile.live,/cqw$/);
+   const exportBoth=await page.evaluate(c=>{
+    const e=sec().elements.find(x=>x.id===c.id).wp;
+    return window.SCW.kinds[c.kind].markup(e,{edit:false});
+   },cfg);
+   assert.match(exportBoth,/--nw-mx:[0-9.]+cqw/,'publicación conserva móvil');
+   await page.evaluate(()=>{
+    const d=document.querySelector('#preview').contentDocument,n=d.querySelector('.nw-wpart-reset');
+    if(!n)throw Error('Falta Restablecer móvil en '+d.body.dataset.partsRun);
+    n.click();
+   });
+   assert.equal(await page.evaluate(c=>sec().elements.find(x=>x.id===c.id).wp.__partsMobile?.[c.part],cfg),undefined);
+   await page.click('#btn-undo');
+   assert.ok(await page.evaluate(c=>sec().elements.find(x=>x.id===c.id).wp.__partsMobile?.[c.part],cfg));
+   await page.click('#btn-redo');
+   assert.equal(await page.evaluate(c=>sec().elements.find(x=>x.id===c.id).wp.__partsMobile?.[c.part],cfg),undefined);
+  }
+
   console.log('Editor partes: foco, restauración, Escape, Enter e historial OK');
  }finally{
   await page.evaluate(old=>{
