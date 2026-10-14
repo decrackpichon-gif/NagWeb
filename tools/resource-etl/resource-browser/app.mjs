@@ -177,7 +177,7 @@ const editParams = new URLSearchParams(location.search);
 // Optional UI hint: absent means a generic host with unrestricted adapters.
 const hostKindsText = applyTarget ? editParams.get("hostKinds") : null;
 const hostKinds = hostKindsText === null ? null :
-  new Set(hostKindsText.split(",").filter(kind => /^(?:svg|uiverse-html|html|react|threejs|css-inline-effect|css-class-effect|lottie)$/.test(kind)));
+  new Set(hostKindsText.split(",").filter(kind => /^(?:svg|uiverse-html|spinkit-html|html|react|threejs|css-inline-effect|css-class-effect|lottie)$/.test(kind)));
 const editResourceId = applyTarget ? editParams.get("editResource") : null;
 const editSession = editResourceId ? editParams.get("editSession") : null;
 const editKind = editSession ? editParams.get("editKind") : null;
