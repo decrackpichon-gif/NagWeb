@@ -150,3 +150,7 @@ Editor **visual y profesional** para construir sitios y narrativas inmersivas co
 ## Política permanente de despliegues (12/10/2026)
 
 **Vercel se usa solo si el usuario solicita expresamente una publicación.** Esta rama tiene `vercel.json` con `git.deploymentEnabled: false` para evitar que commits, pruebas, documentación y actualizaciones de datos consuman Deployment Storage. Ejecutar QA local o en GitHub Actions, sin llamar a Vercel como parte de un avance normal. No quitar ni cambiar esa configuración, tampoco en ramas derivadas, salvo autorización explícita. `[skip ci]` no bloquea Vercel. No eliminar despliegues existentes ni modificar el proyecto de Vélez Data. Mantener esta decisión cuando se actualice el contexto.
+
+## Referencias originales auditadas (14/10/2026)
+
+Se contrastaron los antecedentes del Editor principal con la rama `feat/storytelling-engine-v2`, el inventario histórico recuperado y los archivos Scrollcraft identificados en Biblioteca. **Ver [`NAGWEB_01_REFERENCIAS_ORIGINALES_VERIFICADAS.md`](NAGWEB_01_REFERENCIAS_ORIGINALES_VERIFICADAS.md)** para URL literales recuperadas, origen (usuario / despliegue generado / GitHub), prototipos antiguos y límites de la recuperación. El inventario **no es exhaustivo** y **no bloquea nuevos avances**: usar el código/CI del HEAD real y pedir un enlace histórico individual únicamente si es imprescindible. No atribuir al usuario enlaces encontrados solo en HTML/código ni mezclar este proyecto con Motion Lab.

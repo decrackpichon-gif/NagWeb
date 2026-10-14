@@ -32,3 +32,7 @@ Para chats de ChatGPT: `AGENTS.md` ayuda a asistentes de código compatibles, pe
 ## Política permanente de despliegues (12/10/2026)
 
 **Vercel se usa solo si el usuario solicita expresamente una publicación.** Esta rama tiene `vercel.json` con `git.deploymentEnabled: false` para evitar que commits, pruebas, documentación y actualizaciones de datos consuman Deployment Storage. Ejecutar QA local o en GitHub Actions, sin llamar a Vercel como parte de un avance normal. No quitar ni cambiar esa configuración, tampoco en ramas derivadas, salvo autorización explícita. `[skip ci]` no bloquea Vercel. No eliminar despliegues existentes ni modificar el proyecto de Vélez Data. Mantener esta decisión cuando se actualice el contexto.
+
+## Referencias de NAGWEB 01 | Editor principal
+
+Consultar `docs/contexto/NAGWEB_01_REFERENCIAS_ORIGINALES_VERIFICADAS.md` al retomar el Editor principal: clasifica las URL recuperadas, vistas previas históricas, archivos Scrollcraft en Biblioteca y referencias aún no disponibles. **El inventario antiguo incompleto no es un bloqueo** ni motivo para reauditar de cero los chats. Solo buscar un archivo/URL específica si la tarea actual lo necesita. Mantener el desarrollo exclusivamente en `feat/storytelling-engine-v2`, con Vercel manual y sin merges.
