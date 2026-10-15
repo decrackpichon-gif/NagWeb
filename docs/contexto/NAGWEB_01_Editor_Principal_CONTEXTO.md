@@ -122,6 +122,14 @@ Editor **visual y profesional** para construir sitios y narrativas inmersivas co
 - Código en `js/nagweb-feedback-v16.js`; regresiones añadidas a `.github/nagweb-editor-parts-smoke.mjs`. Verificar el resultado del CI del commit funcional vigente; esta nota documenta el alcance, no equivale a declarar la prueba aprobada.
 - Próximo bloque recomendado: extender esta capacidad a otras composiciones preexistentes agrupándolas por estructura, priorizando las que ya tienen `data-wpart`, sin introducir una herramienta de transformación nueva.
 
+## Contrato adaptable para composiciones de altura variable (15/10/2026)
+
+- **NAGWEB 01** amplía el adaptador de edición interna ya utilizado en Collage/Moodboard a cuatro composiciones preexistentes: `splitfeature` (Split Feature), `floatingcaption` (Floating Caption), `casehero` (Case Hero) y `bentoshow` (Bento Show). Reutiliza sus `data-wpart` históricos, añade selectores para las piezas de texto que no eran manipulables y conserva sus variantes gráficas y el motor actual de historial.
+- **Contrato nuevo, limitado a altura intrínseca:** `data-nw-part-y="100cqw"` permite almacenar desplazamientos Y proporcionales al ancho útil del contenedor en lugar de asumir una altura CSS fija; `partScope` considera `refH=refW` solamente en estos elementos. X y Y se exportan proporcionalmente con `partTransformCSS` y `partStyleMarkup`; los valores heredados sin `refW/refH` permanecen en píxeles. Los recursos que usan `var(--h)` o `100vh` no cambian.
+- Cada composición puede editar fotografías, títulos y otros textos identificados mediante la misma barra contextual y los tiradores existentes. La barra es de posicionamiento absoluto para no convertirse en una celda nueva de las grillas o flexbox; se omite por completo en la salida publicada. Se conserva `__partsMobile` como versión independiente para ancho útil ≤ 600 px, con restauración e historial compartidos.
+- Archivos: `js/nagweb-v14-direction.js`, `js/nagweb-feedback-v16.js` y smoke de navegador `.github/nagweb-editor-parts-smoke.mjs`. El estado definitivo de las pruebas debe comprobarse con GitHub Actions del commit funcional `62408d1e3bec30d17d0eba5207dd6ccb7a4dc9b4` (o con un HEAD posterior si hubo correcciones).
+- Próxima prioridad: seguir generalizando composición/selección de partes en los recursos todavía no conectados, pero priorizar ahora consolidación y regresiones reales si aparecen en CI; no mezclar Motion Lab, Cámara 3D, Interaction Studio ni Biblioteca de recursos.
+
 ## Próximas prioridades (revisar con HEAD actual)
 
 - Priorizar la experiencia de lienzo como herramienta de diseño, edición real de elementos anidados y uso de recursos sin degradar su editabilidad.
