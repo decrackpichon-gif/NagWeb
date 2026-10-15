@@ -2,6 +2,10 @@
 
 NagWeb es **un único editor visual** con cinco frentes de desarrollo independientes. Este `main` es una versión histórica del producto; **NO** representa el código más nuevo de todos los frentes. No fusionar ramas automáticamente.
 
+## Regla prioritaria: V1.0 primero
+
+**Todos los frentes deben cerrar primero una V1.0 estable, funcional y verificable, con alcance finito.** Las ampliaciones y recursos opcionales pasan a V1.1+. No inventar tareas ni alargar innecesariamente el desarrollo. Consultar la [Política universal de desarrollo](POLITICA_DESARROLLO_V1_PRIMERO.md), que tiene precedencia sobre prioridades históricas de expansión y también se aplica a otros proyectos futuros.
+
 ## Identidad fija, ramas y contexto
 
 | Proyecto | Rama de trabajo | Contexto permanente | Documentación técnica |
