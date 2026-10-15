@@ -42,3 +42,7 @@ Para chats de ChatGPT: `AGENTS.md` ayuda a asistentes de código compatibles, pe
 ## Política permanente de despliegues (12/10/2026)
 
 **Vercel se usa solo si el usuario solicita expresamente una publicación.** Esta rama tiene `vercel.json` con `git.deploymentEnabled: false` para evitar que commits, pruebas, documentación y actualizaciones de datos consuman Deployment Storage. Ejecutar QA local o en GitHub Actions, sin llamar a Vercel como parte de un avance normal. No quitar ni cambiar esa configuración, tampoco en ramas derivadas, salvo autorización explícita. `[skip ci]` no bloquea Vercel. No eliminar despliegues existentes ni modificar el proyecto de Vélez Data. Mantener esta decisión cuando se actualice el contexto.
+
+### NAGWEB 04 · contrato cerrado V1.0 (15/10/2026)
+
+Consultar en docs/contexto/NAGWEB_04_Interaction_Studio_CONTEXTO.md de la rama experimental la sección «NAGWEB 04 · Alcance cerrado V1.0». Máxima prioridad actual: completar exportación e importación del personaje y sus ajustes junto con la escena; después QA integral y kit descargable, y una única validación visual humana de candidato. No crear tareas de expansión (motores, controles, efectos o afinaciones) antes del cierre. Preservar estable/experimental separadas, sin merges ni Vercel.

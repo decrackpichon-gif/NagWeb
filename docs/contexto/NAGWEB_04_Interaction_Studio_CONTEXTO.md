@@ -112,3 +112,26 @@ Se agregó navegación visual al constructor experimental: zoom 25–250 %, enca
 ## Política permanente de despliegues (12/10/2026)
 
 **Vercel se usa solo si el usuario solicita expresamente una publicación.** Esta rama tiene `vercel.json` con `git.deploymentEnabled: false` para evitar que commits, pruebas, documentación y actualizaciones de datos consuman Deployment Storage. Ejecutar QA local o en GitHub Actions, sin llamar a Vercel como parte de un avance normal. No quitar ni cambiar esa configuración, tampoco en ramas derivadas, salvo autorización explícita. `[skip ci]` no bloquea Vercel. No eliminar despliegues existentes ni modificar el proyecto de Vélez Data. Mantener esta decisión cuando se actualice el contexto.
+
+## NAGWEB 04 · Alcance cerrado V1.0 (15/10/2026)
+
+**Prioridad sobre planes anteriores:** terminar la primera versión usable y estable. No proponer nuevos motores, herramientas, presets, diagnósticos o retoques opcionales antes de cumplir esta definición. Conservar V3 estable y los prototipos V4-C.1, sin merges ni despliegues manuales.
+
+**Producto V1.0:** constructor de escenas interactivo local y portable. Cargar un personaje, verlo seguir el mouse con movimiento orgánico, crear una escena con fondo, texto, botón, imagen y forma, seleccionar qué elementos reaccionan, editar su posición/tamaño/rotación y guardar/reabrir el proyecto completo.
+
+**Ya implementado en código y probado:** motor follower, preparación de imágenes y V3 de referencia; V4-C.1 experimental; Composer con capas, edición en lienzo, controles de influencia, zoom y exportación/importación JSON de elementos. La última batería automatizada de funcionalidad es https://github.com/decrackpichon-gif/NagWeb/actions/runs/38265721797 y terminó exitosa. Esa batería **no** valida la persistencia del personaje ni sustituye la evaluación visual con PNG real.
+
+**Bloqueante real confirmado:** el Composer carga el personaje mediante URL temporal, pero no guarda la imagen en scene.character.source. Al importar el JSON se restaura el modelo y los controles de UI pero no se reconstruye la imagen ni se sincronizan por completo los parámetros del renderer. La exportación actual no garantiza reabrir el mismo proyecto. Resolver restauración íntegra del personaje y opciones de escena en un bloque. Proteger la carga asíncrona contra resultados antiguos si es relevante al corregir el flujo.
+
+**Criterios de aceptación finitos:**
+1. Cargar personaje propio, preferentemente PNG transparente, y obtener seguimiento orgánico y reacción de elementos sin defectos graves.
+2. Crear y editar escena con fondo, imagen, texto, botón y forma; seleccionar objetivos de influencia y conservar drag, resize, rotate, bloqueo y zoom existentes.
+3. Exportar e importar **todo el proyecto**, incluida la imagen de personaje y sus opciones, sin depender de URLs temporales que se pierdan al reiniciar.
+4. Validar una única secuencia de punta a punta: abrir, cargar imagen, componer, interactuar, exportar, volver a abrir e importar; comprobar integridad, errores de archivo y el riesgo de cargas rápidas.
+5. Generar ZIP portable con instrucciones correctas y enlace de descarga comprobado; pedir una sola prueba humana del candidato completo con personaje real, y declarar V1.0 terminada si cumple lo anterior.
+
+**Fuera del alcance V1.0, para V1.1+:** más motores orgánicos, perfeccionamiento indefinido de curvas, nuevos presets, nuevos controles, zoom más elaborado, efectos, variantes de estética, más formatos de exportación e integración con NAGWEB 01. No borrar nada existente: simplemente no convertir esas mejoras en requisitos para el cierre.
+
+**Camino mínimo:** siguiente «Avanza» corrige persistencia de personaje y rehidratación real; una pasada integral de QA y kit final; única evaluación humana visual si hace falta, luego cierre. No generar nuevas microetapas ni porcentajes de avance inventados.
+
+**Descarga:** el enlace anterior al artefacto GitHub no abrió para el usuario. La run 38265721797 conserva su artefacto ZIP sin expirar, recuperado y comprobado. Entregar archivos mediante enlace de descarga verificado en el chat, no únicamente URLs directas a artefactos sujetos a permisos/vencimiento.
