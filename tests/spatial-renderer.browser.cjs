@@ -116,6 +116,47 @@ for(const [mode,html] of Object.entries(generated)){
   assert.equal(occlusion.gpu.masked,0,'Depth-only HTML proxy hides geometry behind its footprint');
   assert.ok(occlusion.gpu.outside>0,'Uncovered GPU pixels remain visible beside the DOM proxy');
   console.log('PASS real WebGL depth-only HTML occlusion: box, partial coverage and alpha fallback');
+
+  // Loaded PNG alpha is used as a fragment mask, not as a solid rectangle.
+  const transparency=await page.evaluate(async()=>{
+   const d=window.__test3D,stage=d.objects[0].userData.anchorEl.closest('.nw-sd-stage'),
+     world=stage.querySelector('[data-nw-camera-world]'),api=window.__testCameraApi,gl=d.renderer.getContext();
+   const canvas=document.createElement('canvas');canvas.width=8;canvas.height=8;
+   const cx=canvas.getContext('2d');cx.clearRect(0,0,8,8);
+   cx.fillStyle='#fff';cx.fillRect(0,0,4,8);
+   const img=document.createElement('img');img.setAttribute('data-nw-sd-el','1');
+   img.style.cssText='position:absolute;left:40%;top:37.5%;width:20%;height:25%;object-fit:fill';
+   img.src=canvas.toDataURL('image/png');world.appendChild(img);await img.decode();
+   img.__nwSpatialPose={x:0,y:0,z:200,scale:100,rotate:0,rotateX:0,rotateY:0,opacity:1};
+   d.adapter.connect(api,[stage]);d.tick();
+   const proxy=d.scene.children.find(x=>x.isMesh&&x.material&&x.material.colorWrite===false);
+   if(!proxy||!proxy.material.map){img.remove();d.adapter.connect(api,[stage]);return null;}
+   // Read two pixels *inside* the proxy footprint, on its solid and empty halves.
+   const f=new THREE.Scene(),cam=new THREE.OrthographicCamera(-2,2,2,-2,.1,100);
+   const back=new THREE.Mesh(new THREE.PlaneGeometry(6,6),new THREE.MeshBasicMaterial({color:0xff3344}));back.position.z=-3;
+   const front=proxy.clone();front.position.set(0,0,-2);front.rotation.set(0,0,0);front.scale.set(2,2,1);
+   f.add(back,front);
+   d.renderer.setScissorTest(false);
+   d.renderer.setViewport(0,0,d.renderer.domElement.clientWidth,d.renderer.domElement.clientHeight);
+   function read(x){
+    d.renderer.render(f,cam);const bytes=new Uint8Array(4);
+    gl.readPixels(Math.floor(x*gl.drawingBufferWidth),Math.floor(.5*gl.drawingBufferHeight),1,1,gl.RGBA,gl.UNSIGNED_BYTE,bytes);
+    return bytes[3];
+   }
+   front.visible=false;const base=read(.4),baseRight=read(.6);
+   front.visible=true;const solid=read(.4),clear=read(.6);
+   const texture=proxy.material.map,depth=proxy.position.z;
+   back.geometry.dispose();back.material.dispose();
+   img.remove();d.adapter.connect(api,[stage]);d.tick();
+   return{base,baseRight,solid,clear,hasTexture:!!texture,depth,textureDisposed:!d.scene.children.includes(proxy)};
+  });
+  assert.ok(transparency,'Embedded PNG generates a Three depth proxy');
+  assert.ok(transparency.base>0&&transparency.baseRight>0,'GPU reference covers both image halves');
+  assert.equal(transparency.solid,0,'Opaque PNG pixels occlude the model behind them');
+  assert.ok(transparency.clear>0,'Transparent PNG pixels reveal the model behind them');
+  assert.equal(transparency.textureDisposed,true,'Alpha-depth proxy is released on reconnect');
+  console.log('PASS real WebGL alpha-depth masking: PNG opaque pixels block, transparent pixels pass, texture cleanup');
+
  }
 
  await page.screenshot({path:'work/spatial-'+mode+'.png'});

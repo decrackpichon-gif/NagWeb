@@ -73,6 +73,29 @@ adapter.render(()=>{});assert.equal(shape.userData.holder.visible,false);
  node.isConnected=true;a.querySelectorAll=()=>[];adapter.connect(api,[a,b]);
  assert.equal(scene.children.filter(n=>n.isMesh&&n.material&&n.material.colorWrite===false).length,0,'Reconnect disposes old depth proxies');
 
+ // A transparent root with one embedded alpha image must not block its clear
+ // pixels. An image source swap also needs to dispose the retired GPU texture.
+ const img={tagName:'IMG',parentElement:world,offsetLeft:0,offsetTop:0,offsetWidth:200,offsetHeight:200,
+  isConnected:true,style:{},complete:true,naturalWidth:2,naturalHeight:2,
+  src:'data:image/png;base64,AA==',__nwSpatialPose:{x:0,y:0,z:130,scale:100,opacity:1,rotate:0,rotateX:0,rotateY:0}};
+ a.querySelectorAll=()=>[img];
+ context.window.getComputedStyle=()=>({display:'block',visibility:'visible',opacity:'1',objectFit:'fill',
+  borderRadius:'0px',clipPath:'none',maskImage:'none',filter:'none',mixBlendMode:'normal',backgroundColor:'rgba(0, 0, 0, 0)'});
+ adapter.connect(api,[a,b]);adapter.render(()=>{});
+ const alphaPlane=scene.children.find(n=>n.isMesh&&n.material&&n.material.colorWrite===false);
+ assert.ok(alphaPlane,'Embedded PNG creates a depth surface');
+ assert.ok(alphaPlane.material.map,'Embedded PNG provides its alpha map');
+ assert.equal(alphaPlane.material.alphaTest,.08,'Pixels with low alpha do not write depth');
+ const oldTexture=alphaPlane.material.map;
+ img.src='data:image/webp;base64,AA==';adapter.render(()=>{});
+ assert.notEqual(alphaPlane.material.map,oldTexture,'Updated image receives a new texture');
+ assert.equal(oldTexture.version>0,true,'Retired GPU texture was initialized before source swap');
+ img.src='https://other.example/remote.png';adapter.render(()=>{});
+ assert.equal(alphaPlane.visible,false,'Unsafe remote image does not occlude 3D content');
+ adapter.destroy();
+ assert.equal(scene.children.some(n=>n.isMesh&&n.material&&n.material.colorWrite===false),false,'Destroy removes alpha depth proxies');
+
+
 const currentCam=adapter.view(shape).camera,old=currentCam.position.clone();adapter.destroy();paints[0]({x:222,y:0,z:0,rotate:0,rotateX:0,rotateY:0},1);assert.deepEqual(currentCam.position.toArray(),old.toArray(),'destroy removes bindings');assert.equal(adapter.owns(shape),false);
 const html=fs.readFileSync('index.html','utf8');assert.ok(html.includes('${window.NAGWEB_CREATE_SPATIAL_RENDERER.toString()}'));assert.ok(html.indexOf('src="js/nagweb-spatial-renderer.js"')<html.indexOf('src="js/nagweb-scroll-director-v16.js"'));
 for(const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)){if(!/\bsrc=/.test(m[1])&&(!/\btype=/.test(m[1])||/javascript|module/.test(m[1])))new vm.Script(m[2]);}

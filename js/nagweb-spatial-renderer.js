@@ -44,28 +44,40 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
  // image, links and focus; no rasterization of the DOM is involved.
  // Deliberately refuse transparency, clipping and transformed ancestry rather
  // than drawing an inaccurate rectangle in front of somebody else's content.
- function opaqueSurface(node){
+ function safeImage(node){
+  var img=node&&node.tagName==='IMG'?node:null;
+  if(!img&&node&&node.children&&node.children.length===1&&node.children[0].tagName==='IMG'){
+   img=node.children[0];
+   if(Math.abs(img.offsetLeft)>1||Math.abs(img.offsetTop)>1||
+      Math.abs(img.offsetWidth-node.offsetWidth)>1||Math.abs(img.offsetHeight-node.offsetHeight)>1)return null;
+  }
+  if(!img||!img.style||img.style.transform&&img.style.transform!=='none')return null;
+  var cs=window.getComputedStyle(img);
+  if(!cs||cs.opacity!=='1'||cs.visibility==='hidden'||cs.display==='none'||
+     cs.objectFit&&cs.objectFit!=='fill'||cs.borderRadius&&cs.borderRadius!=='0px'||
+     cs.clipPath&&cs.clipPath!=='none'||cs.filter&&cs.filter!=='none'&&
+      !/^(?:blur\(0(?:px)?\)\s*)+$/.test(cs.filter))return null;
+  // Embedded and blob assets have no CORS ambiguity. Remote/cropped imagery is
+  // intentionally excluded instead of generating a wrong depth silhouette.
+  var src=img.currentSrc||img.src||'';
+  if(!/^data:image\/(?:png|webp|svg\+xml|jpeg)[;,]/i.test(src)&&!/^blob:/i.test(src))return null;
+  return {img:img,src:src,jpeg:/^data:image\/jpeg[;,]/i.test(src)};
+ }
+ function surfaceKind(node){
   if(!node||!node.style||!node.offsetWidth||!node.offsetHeight||
-     node.style.transform&&node.style.transform!=='none')return false;
-  if(!window.getComputedStyle)return false;
+     node.style.transform&&node.style.transform!=='none'||!window.getComputedStyle)return null;
   var cs=window.getComputedStyle(node);
-  if(!cs||cs.visibility==='hidden'||cs.display==='none'||cs.opacity!=='1')return false;
+  if(!cs||cs.visibility==='hidden'||cs.display==='none'||cs.opacity!=='1')return null;
   if(cs.borderRadius&&cs.borderRadius!=='0px'||cs.clipPath&&cs.clipPath!=='none'||
      cs.maskImage&&cs.maskImage!=='none'||
      cs.filter&&cs.filter!=='none'&&!/^(?:blur\(0(?:px)?\)\s*)+$/.test(cs.filter)||
-     cs.mixBlendMode&&cs.mixBlendMode!=='normal')return false;
-  var color=cs.backgroundColor||'';
-  if(/^rgb\(/i.test(color))return true;
-  if(/^rgba\(/i.test(color)){
-   var values=color.match(/[\d.]+/g);
-   return !!values&&values.length>=4&&+values[3]>=.999;
-  }
-  // JPEG has no alpha channel. An unwrapped native IMG fills its own box.
-  if(node.tagName==='IMG'&&node.complete&&node.naturalWidth>0){
-   var src=node.currentSrc||node.src||'';
-   return /^data:image\/jpeg[;,]/i.test(src)||/\.jpe?g(?:[?#]|$)/i.test(src);
-  }
-  return false;
+     cs.mixBlendMode&&cs.mixBlendMode!=='normal')return null;
+  var color=cs.backgroundColor||'',opaque=/^rgb\(/i.test(color);
+  if(/^rgba\(/i.test(color)){var parts=color.match(/[\d.]+/g);opaque=!!parts&&parts.length>=4&&+parts[3]>=.999;}
+  if(opaque)return{kind:'opaque'};
+  var candidate=safeImage(node);
+  if(!candidate)return null;
+  return candidate.jpeg?{kind:'opaque'}:{kind:'image',img:candidate.img,src:candidate.src};
  }
  function discoverOccluders(row){
   if(typeof row.stage.querySelectorAll!=='function')return;
@@ -73,20 +85,34 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
   if(!world)return;
   Array.from(row.stage.querySelectorAll('[data-nw-sd-el]')).forEach(function(node){
    if(node.parentElement!==world)return; // No ambiguous ancestor transforms.
-   if(!opaqueSurface(node))return;
+   if(!surfaceKind(node))return;
    var mat=new T.MeshBasicMaterial({colorWrite:false,depthWrite:true,depthTest:true,side:T.DoubleSide});
    var mesh=new T.Mesh(new T.PlaneGeometry(1,1),mat);
    mesh.visible=false;mesh.renderOrder=-1000;mesh.frustumCulled=false;scene.add(mesh);
-   row.occluders.push({node:node,world:world,mesh:mesh});
+   row.occluders.push({node:node,world:world,mesh:mesh,texture:null,source:null});
   });
  }
  function updateOccluders(row){
   row.occluders.forEach(function(o){
    var node=o.node,mesh=o.mesh,pose=node.__nwSpatialPose;
    mesh.visible=false;
-   if(!row.state||!node.isConnected||!opaqueSurface(node)||!pose||
+   var surface=surfaceKind(node);
+   if(!row.state||!node.isConnected||!surface||!pose||
       !Number.isFinite(+pose.z)||!Number.isFinite(+pose.scale)||
       +pose.scale<=0||!Number.isFinite(+pose.opacity)||+pose.opacity<.999)return;
+   if(surface.kind==='image'){
+    if(!surface.img.complete||!surface.img.naturalWidth||!surface.img.naturalHeight)return;
+    if(o.source!==surface.src||o.image!==surface.img){
+     if(o.texture)o.texture.dispose();
+     o.texture=new T.Texture(surface.img);o.texture.needsUpdate=true;
+     o.source=surface.src;o.image=surface.img;
+     mesh.material.map=o.texture;mesh.material.alphaTest=.08;
+     mesh.material.needsUpdate=true;
+    }
+   }else if(o.texture){
+    o.texture.dispose();o.texture=null;o.source=null;o.image=null;
+    mesh.material.map=null;mesh.material.alphaTest=0;mesh.material.needsUpdate=true;
+   }
    var w=node.offsetWidth,h=node.offsetHeight,world=o.world;
    // Match the shared .inner offset convention used by spatial 3D anchors.
    var offset={x:(world.offsetLeft||0)+(row.stage.clientLeft||0),
@@ -252,7 +278,7 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
    gizmos.forEach(function(g){g.node.visible=g.visible;});
   }
  }
- function destroy(){rows.forEach(function(row){row.occluders.forEach(function(o){scene.remove(o.mesh);o.mesh.geometry.dispose();o.mesh.material.dispose();});row.unbind();row.objects.forEach(function(g){delete g.userData.nwPreviewOffZ;delete g.userData.nwPreviewBaseTransform;});if(row.bloom)row.bloom.dispose();row.materials.forEach(function(copies){copies.forEach(function(m){m.dispose();});});row.objects.forEach(function(g){delete g.userData.spatialOpacity;delete g.userData.spatialParent;g.userData.holder.matrixAutoUpdate=true;g.userData.holder.rotation.x=0;g.userData.holder.rotation.y=0;});scene.remove(row.rig);});rows=[];}
+ function destroy(){rows.forEach(function(row){row.occluders.forEach(function(o){scene.remove(o.mesh);if(o.texture)o.texture.dispose();o.mesh.geometry.dispose();o.mesh.material.dispose();});row.unbind();row.objects.forEach(function(g){delete g.userData.nwPreviewOffZ;delete g.userData.nwPreviewBaseTransform;});if(row.bloom)row.bloom.dispose();row.materials.forEach(function(copies){copies.forEach(function(m){m.dispose();});});row.objects.forEach(function(g){delete g.userData.spatialOpacity;delete g.userData.spatialParent;g.userData.holder.matrixAutoUpdate=true;g.userData.holder.rotation.x=0;g.userData.holder.rotation.y=0;});scene.remove(row.rig);});rows=[];}
  function view(g){
   var row=rows.find(function(r){return r.objects.indexOf(g)>=0;})||lightRow(g);
   if(!row||!row.state)return null;
