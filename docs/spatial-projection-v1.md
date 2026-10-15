@@ -117,3 +117,12 @@ El Director continúa evaluando el tiempo y las poses. La utilidad compartida `p
 **Conservadurismo intencional:** cámaras con pitch/yaw, dimensiones desconocidas o planos inclinados con giro Z adicional no se ocultan por este cálculo parcial: sigue actuando el recorte del navegador. Tampoco se promete oclusión parcial entre DOM y mallas WebGL ni corrección de anclas dentro de jerarquías transformadas. El cálculo utiliza el `offsetWidth/offsetHeight` de la vista y el tamaño de pose, sin aproximar la visibilidad a partir del centro del plano.
 
 **QA:** nuevos casos aislados de rotación X/Y combinada, tamaño, escala adaptable y fallbacks; el fixture Chromium de proyección compartida también verifica un botón HTML real atravesando la profundidad, hit testing y recuperación al volver. Verificar los resultados de GitHub Actions del commit antes de declararlos aprobados.
+
+
+## Primera integración de oclusión HTML → WebGL (14/10/2026)
+
+Se incorpora al adaptador espacial de Three una **pasada de profundidad sin color** para superficies raíz HTML totalmente opacas, sin transformaciones propias ni clipping complejo. En el mismo render y usando la cámara ya sincronizada con el Director, una malla proxy invisible para el color representa cada rectángulo HTML compatible. El depth buffer impide dibujar detrás las partes de un modelo WebGL cubiertas por ese plano. El DOM real continúa siendo texto/imágenes/enlaces accesibles: no se rasteriza ni se reemplaza. No hay lectores nuevos de scroll.
+
+Se consideran solo superficies cuyo fondo CSS es completamente opaco o imágenes JPEG nativas completas sin transformaciones complejas. Se omiten elementos transparentes, con bordes redondeados, máscaras, clips, filtros, composiciones especiales, jerarquías o layout ambiguos; no se representa un texto con un rectángulo falso. Se actualizan posición, profundidad, escala y giro de los proxies desde la pose ya evaluada, sin keyframes duplicados. Conexión y liberación eliminan geometrías/materiales temporales.
+
+La primera implementación **no es todavía la oclusión total del objetivo final**: falta composición precisa de imágenes con alpha y mapas UV, geometría parcialmente translúcida, contenedores anidados y algunas combinaciones de bloom/transparencias; los bordes y transformaciones CSS complejas se excluyen antes que falsear profundidad. Se agregan pruebas de estado del adaptador y de profundidad GPU real en Chromium para evitar regresiones, además de conservar la suite espacial existente. Consultar CI del commit antes de declararla aprobada.

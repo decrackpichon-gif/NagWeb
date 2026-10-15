@@ -52,6 +52,27 @@ renderer.render=originalRender;
 // Reconnecting removes old bindings, and offscreen spatial holders stop hit testing.
 adapter.connect(api,[a,b]);a.getBoundingClientRect=()=>({left:0,top:-900,right:600,bottom:-500,width:600,height:400});
 adapter.render(()=>{});assert.equal(shape.userData.holder.visible,false);
+
+ // An opaque root contributes a GPU depth-only proxy, without changing the
+ // browser-visible DOM or adding a second time/evaluation source.
+ const node={stage:a,parentElement:world,offsetLeft:600,offsetTop:300,offsetWidth:200,offsetHeight:200,
+  isConnected:true,style:{},__nwSpatialPose:{x:0,y:0,z:125,scale:100,rotate:0,rotateX:0,rotateY:0,opacity:1}};
+ a.querySelector=()=>world;a.querySelectorAll=()=>[node];
+ context.window.getComputedStyle=()=>({display:'block',visibility:'visible',opacity:'1',
+  borderRadius:'0px',clipPath:'none',maskImage:'none',filter:'none',mixBlendMode:'normal',backgroundColor:'rgb(255, 255, 255)'});
+ a.getBoundingClientRect=()=>({left:0,top:0,right:600,bottom:400,width:600,height:400});
+ adapter.connect(api,[a,b]);adapter.render(()=>{});
+ const blockers=scene.children.filter(n=>n.isMesh&&n.material&&n.material.colorWrite===false);
+ assert.equal(blockers.length,1,'Opaque HTML layer has exactly one depth-only Three proxy');
+ assert.equal(blockers[0].visible,false,'Depth proxy is hidden outside its spatial pass');
+ assert.equal(blockers[0].material.depthWrite,true);
+ assert.equal(blockers[0].material.colorWrite,false,'Occlusion never paints WebGL color over HTML');
+ assert.equal(blockers[0].position.z,-500+125,'Proxy follows the same depth as CSS camera layers');
+ node.__nwSpatialPose.opacity=.5;adapter.render(()=>{});assert.equal(blockers[0].visible,false);
+ node.__nwSpatialPose.opacity=1;node.isConnected=false;adapter.render(()=>{});assert.equal(blockers[0].visible,false);
+ node.isConnected=true;a.querySelectorAll=()=>[];adapter.connect(api,[a,b]);
+ assert.equal(scene.children.filter(n=>n.isMesh&&n.material&&n.material.colorWrite===false).length,0,'Reconnect disposes old depth proxies');
+
 const currentCam=adapter.view(shape).camera,old=currentCam.position.clone();adapter.destroy();paints[0]({x:222,y:0,z:0,rotate:0,rotateX:0,rotateY:0},1);assert.deepEqual(currentCam.position.toArray(),old.toArray(),'destroy removes bindings');assert.equal(adapter.owns(shape),false);
 const html=fs.readFileSync('index.html','utf8');assert.ok(html.includes('${window.NAGWEB_CREATE_SPATIAL_RENDERER.toString()}'));assert.ok(html.indexOf('src="js/nagweb-spatial-renderer.js"')<html.indexOf('src="js/nagweb-scroll-director-v16.js"'));
 for(const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)){if(!/\bsrc=/.test(m[1])&&(!/\btype=/.test(m[1])||/javascript|module/.test(m[1])))new vm.Script(m[2]);}

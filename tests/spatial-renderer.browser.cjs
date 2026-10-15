@@ -50,6 +50,43 @@ for(const [mode,html] of Object.entries(generated)){
  await page.emulateMedia({reducedMotion:'no-preference'});
  await page.setViewportSize({width:1000,height:800});
  await page.evaluate(()=>{window.__NAG_SCROLL_DIRECTOR.space.set(0);window.__test3D.tick();});
+
+ // Real GPU depth prepass. An opaque DOM surface in front of a box punches
+ // only the covered WebGL pixels, while the original DOM stays selectable.
+ if(mode==='exported'){
+  const occlusion=await page.evaluate(()=>{
+   const d=window.__test3D,box=d.objects[0],stage=box.userData.anchorEl.closest('.nw-sd-stage'),
+     world=stage.querySelector('[data-nw-camera-world]'),original=window.__NAG_SCROLL_DIRECTOR.space;
+   original.set(0);d.tick();
+   const cam=d.adapter.view(box).camera,gl=d.renderer.getContext(),ratio=d.renderer.getPixelRatio();
+   const center=box.userData.holder.getWorldPosition(new THREE.Vector3()).project(cam),
+     rect=stage.getBoundingClientRect(),
+     sx=rect.left+(center.x+1)*rect.width/2,sy=rect.top+(1-center.y)*rect.height/2;
+   function alpha(){
+    d.tick();const px=new Uint8Array(4),W=d.renderer.domElement.clientHeight;
+    gl.readPixels(Math.floor(sx*ratio),Math.floor((W-sy-1)*ratio),1,1,gl.RGBA,gl.UNSIGNED_BYTE,px);
+    return px[3];
+   }
+   const before=alpha(),block=document.createElement('div');
+   block.setAttribute('data-nw-sd-el','1');
+   block.style.cssText='position:absolute;left:60%;top:37.5%;width:20%;height:25%;background-color:rgb(255,255,255);pointer-events:auto';
+   block.__nwSpatialPose={x:0,y:0,z:180,scale:100,rotate:0,rotateX:0,rotateY:0,opacity:1};
+   world.appendChild(block);
+   const api=window.NAGWEB_CREATE_SCROLL_CAMERA();d.adapter.connect(api,[stage]);
+   original.set(0);const occluded=alpha();
+   const probe=d.scene.children.find(m=>m.isMesh&&m.material&&m.material.colorWrite===false);
+   const depth=probe&&probe.position.z;
+   block.__nwSpatialPose.opacity=.5;const restored=alpha();
+   block.remove();d.adapter.connect(api,[stage]);original.set(0);d.tick();
+   return{before,occluded,restored,depth,hasProxy:!!probe};
+  });
+  assert.ok(occlusion.hasProxy,'Opaque DOM layer creates a real GPU depth proxy');
+  assert.ok(occlusion.before>0,'Unoccluded GLB/box paints the WebGL pixel');
+  assert.equal(occlusion.occluded,0,'Opaque DOM surface hides the part of the GLB behind it');
+  assert.ok(occlusion.restored>0,'Semi-transparent HTML does not incorrectly mask the GLB');
+  console.log('PASS real WebGL depth-only HTML occlusion: box, partial coverage and alpha fallback');
+ }
+
  await page.screenshot({path:'work/spatial-'+mode+'.png'});
  assert.deepEqual(errors,[]);console.log('PASS '+mode+': resize and reduced motion');
  const delayed=instrumented.replace('"env":""','"env":"studio"').replaceAll('function(gltf){ fitGLTF(gltf, o, group); }','function(gltf){ window.__lateRoot=gltf.scene;window.__finishGLB=function(){fitGLTF(gltf,o,group);};window.__failGLB=fallback; }');

@@ -26,7 +26,7 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
    var members=objects.filter(function(g){return g.userData.anchorEl&&stage.contains(g.userData.anchorEl);});
    if(!members.length)return;
    var section=stage.closest?stage.closest('.sc'):null,sectionId=section&&section.getAttribute('data-id');
-   var cam=new T.PerspectiveCamera(50,1,.1,100000),rig=new T.Group(),row={stage:stage,sectionId:sectionId,camera:cam,objects:members,state:null,rig:rig,lights:[],materials:new Map()};
+   var cam=new T.PerspectiveCamera(50,1,.1,100000),rig=new T.Group(),row={stage:stage,sectionId:sectionId,camera:cam,objects:members,state:null,rig:rig,lights:[],materials:new Map(),occluders:[]};
    lightSources.forEach(function(source,index){
     if(source.userData.sectionId&&source.userData.sectionId!==sectionId)return;
     var copy=source.clone();rig.add(copy);if(copy.target)rig.add(copy.target);
@@ -35,8 +35,72 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
    rig.visible=false;scene.add(rig);
    row.unbind=api.bindThreeCamera(stage,cam,function(state){row.state=state;});
    rows.push(row);
+   discoverOccluders(row);
   });
  }
+
+ // A depth-only proxy makes fully opaque HTML rectangles occlude WebGL
+ // geometry pixel by pixel. The CSS surface keeps rendering its actual text,
+ // image, links and focus; no rasterization of the DOM is involved.
+ // Deliberately refuse transparency, clipping and transformed ancestry rather
+ // than drawing an inaccurate rectangle in front of somebody else's content.
+ function opaqueSurface(node){
+  if(!node||!node.style||!node.offsetWidth||!node.offsetHeight||
+     node.style.transform&&node.style.transform!=='none')return false;
+  if(!window.getComputedStyle)return false;
+  var cs=window.getComputedStyle(node);
+  if(!cs||cs.visibility==='hidden'||cs.display==='none'||cs.opacity!=='1')return false;
+  if(cs.borderRadius&&cs.borderRadius!=='0px'||cs.clipPath&&cs.clipPath!=='none'||
+     cs.maskImage&&cs.maskImage!=='none'||cs.filter&&cs.filter!=='none'||
+     cs.mixBlendMode&&cs.mixBlendMode!=='normal')return false;
+  var color=cs.backgroundColor||'';
+  if(/^rgb\\(/i.test(color))return true;
+  if(/^rgba\\(/i.test(color)){
+   var values=color.match(/[\\d.]+/g);
+   return !!values&&values.length>=4&&+values[3]>=.999;
+  }
+  // JPEG has no alpha channel. An unwrapped native IMG fills its own box.
+  if(node.tagName==='IMG'&&node.complete&&node.naturalWidth>0){
+   var src=node.currentSrc||node.src||'';
+   return /^data:image\\/jpeg[;,]/i.test(src)||/\\.jpe?g(?:[?#]|$)/i.test(src);
+  }
+  return false;
+ }
+ function discoverOccluders(row){
+  if(typeof row.stage.querySelectorAll!=='function')return;
+  var world=row.stage.querySelector('[data-nw-camera-world]');
+  if(!world)return;
+  Array.from(row.stage.querySelectorAll('[data-nw-sd-el]')).forEach(function(node){
+   if(node.parentElement!==world)return; // No ambiguous ancestor transforms.
+   if(!opaqueSurface(node))return;
+   var mat=new T.MeshBasicMaterial({colorWrite:false,depthWrite:true,depthTest:true,side:T.DoubleSide});
+   var mesh=new T.Mesh(new T.PlaneGeometry(1,1),mat);
+   mesh.visible=false;mesh.renderOrder=-1000;mesh.frustumCulled=false;scene.add(mesh);
+   row.occluders.push({node:node,world:world,mesh:mesh});
+  });
+ }
+ function updateOccluders(row){
+  row.occluders.forEach(function(o){
+   var node=o.node,mesh=o.mesh,pose=node.__nwSpatialPose;
+   mesh.visible=false;
+   if(!row.state||!node.isConnected||!opaqueSurface(node)||!pose||
+      !Number.isFinite(+pose.z)||!Number.isFinite(+pose.scale)||
+      +pose.scale<=0||!Number.isFinite(+pose.opacity)||+pose.opacity<.999)return;
+   var w=node.offsetWidth,h=node.offsetHeight,world=o.world;
+   // Match the shared .inner offset convention used by spatial 3D anchors.
+   var offset={x:(world.offsetLeft||0)+(row.stage.clientLeft||0),
+     y:(world.offsetTop||0)+(row.stage.clientTop||0)};
+   var x=node.offsetLeft+offset.x+(world.clientLeft||0)-(world.scrollLeft||0)+w/2;
+   var y=node.offsetTop+offset.y+(world.clientTop||0)-(world.scrollTop||0)+h/2;
+   mesh.position.set(x-row.stage.clientWidth/2+(+pose.x||0),
+     row.stage.clientHeight/2-y-(+pose.y||0),-row.state.cssPerspective+pose.z);
+   mesh.rotation.set(-(+pose.rotateX||0)*Math.PI/180,(+pose.rotateY||0)*Math.PI/180,
+     -(+pose.rotate||0)*Math.PI/180,'ZXY');
+   mesh.scale.set(w*pose.scale/100,h*pose.scale/100,1);
+   mesh.visible=true;
+  });
+ }
+
  function owns(g){return rows.some(function(row){return row.objects.indexOf(g)>=0;});}
  function worldOffset(node,row){
   var world=node.closest&&node.closest('[data-nw-camera-world]');
@@ -153,6 +217,7 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
   var autoClear=renderer.autoClear,lightVisible=lightSources.map(function(light){return light.visible;}),gizmos=[];
   lightSources.forEach(function(light){if(lightRow(light))light.children.forEach(function(child){gizmos.push({node:child,visible:child.visible});});});
   try{
+   rows.forEach(function(row){row.occluders.forEach(function(o){o.mesh.visible=false;});});
    roots.forEach(function(g,i){if(owns(objects[i])){g.visible=false;visible[i]=false;}});
    gizmos.forEach(function(g){g.node.visible=false;});
    legacyRender();
@@ -162,10 +227,11 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
     if(!row.state||!row.stage.isConnected){if(row.bloom){row.bloom.dispose();row.bloom=null;}return;}
     var r=row.stage.getBoundingClientRect(),W=renderer.domElement.clientWidth,H=renderer.domElement.clientHeight;
     if(r.bottom<=0||r.top>=H||r.right<=0||r.left>=W||!r.width||!r.height){if(row.bloom){row.bloom.dispose();row.bloom=null;}return;}
-    rows.forEach(function(other){other.rig.visible=false;});
+    rows.forEach(function(other){other.rig.visible=false;other.occluders.forEach(function(o){o.mesh.visible=false;});});
     syncLights(row,lightVisible);row.rig.visible=true;
     roots.forEach(function(g){g.visible=false;});
     row.objects.forEach(function(g){place(g,row);visible[objects.indexOf(g)]=g.userData.holder.visible;});
+    updateOccluders(row);
     renderer.setViewport(r.left,H-r.bottom,r.width,r.height);
     renderer.setScissor(Math.max(0,r.left),Math.max(0,H-r.bottom),Math.min(W,r.right)-Math.max(0,r.left),Math.min(H,r.bottom)-Math.max(0,r.top));
     renderer.setScissorTest(true);renderer.clearDepth();
@@ -181,11 +247,11 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
    renderer.setScissorTest(false);renderer.setViewport(0,0,renderer.domElement.clientWidth,renderer.domElement.clientHeight);
    renderer.autoClear=autoClear;roots.forEach(function(g,i){g.visible=visible[i];});
    lightSources.forEach(function(light,i){light.visible=lightVisible[i];});
-   rows.forEach(function(row){row.rig.visible=false;});
+   rows.forEach(function(row){row.rig.visible=false;row.occluders.forEach(function(o){o.mesh.visible=false;});});
    gizmos.forEach(function(g){g.node.visible=g.visible;});
   }
  }
- function destroy(){rows.forEach(function(row){row.unbind();row.objects.forEach(function(g){delete g.userData.nwPreviewOffZ;delete g.userData.nwPreviewBaseTransform;});if(row.bloom)row.bloom.dispose();row.materials.forEach(function(copies){copies.forEach(function(m){m.dispose();});});row.objects.forEach(function(g){delete g.userData.spatialOpacity;delete g.userData.spatialParent;g.userData.holder.matrixAutoUpdate=true;g.userData.holder.rotation.x=0;g.userData.holder.rotation.y=0;});scene.remove(row.rig);});rows=[];}
+ function destroy(){rows.forEach(function(row){row.occluders.forEach(function(o){scene.remove(o.mesh);o.mesh.geometry.dispose();o.mesh.material.dispose();});row.unbind();row.objects.forEach(function(g){delete g.userData.nwPreviewOffZ;delete g.userData.nwPreviewBaseTransform;});if(row.bloom)row.bloom.dispose();row.materials.forEach(function(copies){copies.forEach(function(m){m.dispose();});});row.objects.forEach(function(g){delete g.userData.spatialOpacity;delete g.userData.spatialParent;g.userData.holder.matrixAutoUpdate=true;g.userData.holder.rotation.x=0;g.userData.holder.rotation.y=0;});scene.remove(row.rig);});rows=[];}
  function view(g){
   var row=rows.find(function(r){return r.objects.indexOf(g)>=0;})||lightRow(g);
   if(!row||!row.state)return null;
