@@ -403,11 +403,13 @@ function installCanvasTools(){
   var stage=selector?section.querySelector(selector):(story?section.querySelector('.nw-story-sticky'):section);
   if(!stage)stage=section;
   var unit=section.getAttribute('data-nw-part-y');
-  if(unit!=='100vh'&&unit!=='var(--h)')unit=story?'100vh':'var(--h)';
+  if(unit!=='100vh'&&unit!=='var(--h)'&&unit!=='100cqw')unit=story?'100vh':'var(--h)';
   var styles=doc.defaultView.getComputedStyle(section);
   // CSS cqw se mide sobre la caja de contenido, NO sobre padding + contenido.
   var w=section.clientWidth-(parseFloat(styles.paddingLeft)||0)-(parseFloat(styles.paddingRight)||0);
-  var h=stage.clientHeight;
+  // En diseños de altura intrínseca, X e Y se referencian al ancho útil.
+  // Evita fijar una altura artificial que alteraría el diseño original.
+  var h=unit==='100cqw'?w:stage.clientHeight;
   return{section:section,stage:stage,w:w,h:h,mobile:w>0&&w<=threshold,unitY:unit};
  }
  function partState(root,n){
