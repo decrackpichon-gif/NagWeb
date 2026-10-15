@@ -1,5 +1,11 @@
 # NagWeb Interaction Engine · Experimental V1
 
+## Directiva máxima de producción: versión 1.0 primero (15/10/2026)
+
+**Decisión general del usuario, prioritaria también para este frente:** terminar una V1.0 **estable, funcional y entregable**, en el menor tiempo y con la menor cantidad de trabajo innecesario. Congelar el alcance en el recorrido esencial, resolver bloqueantes reales de manera transversal, ejecutar la comprobación final pertinente y **cerrar la versión**. No proponer nuevas funciones, recursos, efectos, opciones, controles ni tareas de pulido no bloqueantes antes del cierre; registrarlas como V1.1+.
+
+Esta regla **prevalece sobre prioridades antiguas de expansión** de esta ficha, sin derogar funcionalidades comprometidas que resulten imprescindibles para una V1.0 útil. Consultar la [política universal de desarrollo](https://github.com/decrackpichon-gif/NagWeb/blob/main/POLITICA_DESARROLLO_V1_PRIMERO.md). No mezclar ramas ni adelantar merges o despliegues sin autorización.
+
 Rama de I+D: `feat/interaction-engine-experimental-v1`.
 
 Esta rama nació desde `feat/interaction-engine-v1` en el commit `65b1cdb1e1675f24140cb3be1c263b004b9bcb38`.
