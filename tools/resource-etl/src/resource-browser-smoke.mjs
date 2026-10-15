@@ -828,36 +828,17 @@ try {
     name: "Personalizar ícono seleccionado", exact: true
   })).toBeEnabled();
   await page.evaluate(() => { selection = []; curEl = -1; secFocus = false; });
-  // Observe the native event path if a platform drops the shortcut. The
-  // listeners are read-only; the normal editor code still performs the edit.
+  // RenderPane can schedule a new preview document after the toolbar is
+  // enabled. Wait for bindings on the CURRENT srcdoc before interacting.
+  // Use a real Chromium double-click, not a synthesized DOM event that can
+  // target an old iframe document on Windows.
+  await expect(page.frameLocator("#preview").locator('html[data-nagweb-resource-edit-ready="1"]'))
+    .toBeAttached();
   const svgClickTarget=page.frameLocator("#preview").locator(`[data-id="${inserted.element.id}"] svg`);
-  await svgClickTarget.evaluate(svg=>{
-    const doc=svg.ownerDocument;
-    doc.defaultView.__nagwebSvgClickTrace=[];
-    for(const [label,target] of [["window",doc.defaultView],["document",doc],["svg",svg]]) {
-      target.addEventListener("dblclick",event=>{
-        doc.defaultView.__nagwebSvgClickTrace.push({
-          label, phase:event.eventPhase,defaultPrevented:event.defaultPrevented,
-          target:event.target?.localName,button:event.button
-        });
-      },true);
-    }
-  });
-  await svgClickTarget.dispatchEvent("dblclick", { button: 0, bubbles: true });
-  const shortcutProbe=await page.evaluate(id=>{
-    const doc=preview.contentDocument;
-    const svg=doc.querySelector(`[data-id="${id}"] svg`);
-    return {
-      trace:doc.defaultView.__nagwebSvgClickTrace,
-      readyState:doc.readyState,
-      currentScene:sec().id,resourceScene:svg?.closest(".sc")?.dataset.id,
-      selected:[...selection],
-      editDisabled:document.querySelector("[data-resource-library-edit]")?.disabled,
-      dialogOpen:document.querySelector('dialog[aria-label="Biblioteca de recursos"]')?.open
-    };
-  },inserted.element.id);
-  console.log("RESOURCE_SVG_SHORTCUT_TRACE "+JSON.stringify(shortcutProbe));
-  await expect(page.getByRole("dialog", { name: "Biblioteca de recursos", exact: true })).toBeVisible();
+  await expect(svgClickTarget).toBeVisible();
+  await svgClickTarget.dblclick();
+  await expect(page.getByRole("dialog", { name: "Biblioteca de recursos", exact: true }))
+    .toBeVisible({timeout:10000});
   const resourceFrameUrl = await page.locator('iframe[title="Biblioteca de recursos de NagWeb"]').getAttribute("src");
   assert.equal(new URL(resourceFrameUrl, "http://localhost").searchParams.get("editResource"), icon.id);
   assert.equal(await page.evaluate(() => selection[0]), inserted.element.id);

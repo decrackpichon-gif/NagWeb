@@ -315,6 +315,9 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       if (libraryResourceById(node.dataset.id) && !node.hasAttribute("title"))
         node.title = "Doble clic para personalizar este recurso";
     }
+    // Readiness belongs to this exact iframe document, not the previous
+    // srcdoc. A newly rendered canvas must finish binding before interaction.
+    canvasDoc.documentElement.dataset.nagwebResourceEditReady = "1";
   }
   document.addEventListener("keydown", handleCanvasEditShortcut, true);
   preview.addEventListener("load", () => {
