@@ -8,7 +8,7 @@ vm.runInNewContext(js,env,{filename:'nagweb-story-model.js'});
 const model=env.window.NAGWEB_STREAM_MODEL;
 assert.ok(model&&typeof model.layout==='function','Shared motion model is available');
 
-// One inspector value, one meaning across the presets: percent of the card's shorter edge.
+// Cross-preset invariant: changing the original radius control must not modify motion geometry.
 const direct=['orbit-showcase','cover-ring','cover-ring-vertical','cover-flow','cover-flow-vertical','wheel-carousel','wheel-spin','wheel-spin-bottom','spiral-stream','focus-slider','orbit-globe','sphere-globe','vortex-spin','sphere-wall','sphere-cascade','totem-wall','parallax-totem','flip-grid','grid-dive','mosaic-marquee'];
 const indirect=['mosaic-wipe','stripe-reveal','diagonal-wipe','split-reveal','scatter-dial','fan-shuffle','feed-scroll','sweep-ring','spread-rows','spread-columns','depth-stack-scroll','grid-zoom-strip','collage-reel','triple-scene','hero-reel'];
 let checked=0,images=0;
@@ -27,10 +27,8 @@ for(const kind of direct.concat(indirect)){
       assert.equal(card[prop],previous[prop],'Corner editing preserves geometry ('+kind+' / '+prop+')');
      }
      assert.ok(Number.isFinite(card.corner)&&card.corner>=0,'Card has a finite nonnegative corner: '+kind);
-     if(direct.includes(kind)){
-      const expected=Math.min(card.textureWidth,card.textureHeight)*radius/100;
-      assert.ok(Math.abs(card.corner-expected)<1e-7,'Percentage tracks shorter edge: '+kind);
-     }
+     // Radius semantics vary by the original Animos preset. Never replace the HAR oracle
+     // with a global short-edge formula: source-specific tests verify exact geometry.
      for(const instance of card.instances||[]){
       if(instance.rounded){
        assert.ok(Number.isFinite(instance.rounded.radius)&&instance.rounded.radius>=0,'Valid rounded mesh: '+kind);
@@ -44,4 +42,4 @@ for(const kind of direct.concat(indirect)){
   }
  }
 }
-console.log('Motion corner-percent regression passed: '+checked+' configurations, '+images+' card surfaces across '+(direct.length+indirect.length)+' presets');
+console.log('Motion corner isolation regression passed: '+checked+' configurations, '+images+' card surfaces across '+(direct.length+indirect.length)+' presets');
