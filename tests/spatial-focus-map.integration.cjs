@@ -662,7 +662,7 @@ const sampleBeforeCount=scene.elements.length,sampleBeforeElements=scene.element
 const samplePlan=C.layerJourneyDemo(scene,ctx.mkEl);
 assert.ok(!samplePlan.error,'Self-contained example needs no existing ordered trio');
 assert.equal(scene.elements.length,sampleBeforeCount,'Demo planner never edits the scene');
-assert.deepEqual(samplePlan.created.map(function(e){return e.type;}),['heading','img','heading']);
+assert.equal(JSON.stringify(samplePlan.created.map(function(e){return e.type;})),JSON.stringify(['heading','img','heading']),'VM-produced arrays are compared across realms');
 assert.ok(samplePlan.created[1].src.startsWith('data:image/svg+xml;charset=utf-8,'),'Sample image is fully embedded');
 assert.equal(samplePlan.frames.length,5);
 const demoPanel=C.panel(scene);assert.match(demoPanel,/data-camera-journey-demo/);
@@ -671,7 +671,7 @@ handlers.click({target:{closest(){return {dataset:{cameraJourneyDemo:''}};}}});
 assert.equal(undos,sampleBeforeUndo+1,'Sample journey uses one Undo snapshot');
 assert.equal(saves,sampleBeforeSave+1,'Sample journey saves once');
 assert.equal(scene.elements.length,sampleBeforeCount+3,'Sample journey inserts exactly three reusable elements');
-assert.deepEqual(scene.elements.slice(0,sampleBeforeCount).map(function(e){return JSON.stringify(e);}),sampleBeforeElements,'Existing objects remain unchanged');
-assert.deepEqual(scene.elements.slice(-3).map(function(e){return e.sdCameraDepth;}),[-300,200,700]);
+assert.equal(JSON.stringify(scene.elements.slice(0,sampleBeforeCount).map(function(e){return JSON.stringify(e);})),JSON.stringify(sampleBeforeElements),'Existing objects remain unchanged');
+assert.equal(JSON.stringify(scene.elements.slice(-3).map(function(e){return e.sdCameraDepth;})),JSON.stringify([-300,200,700]));
 assert.equal(scene.sdCameraFrames.length,5);
 console.log('PASS offline example: self-contained image, five camera stops, existing objects unchanged, one Undo/save');
