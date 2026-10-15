@@ -45,6 +45,37 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
    if(test.focus){assert.ok(Math.abs(rows[1].three[0]-480)<.001);assert.ok(Math.abs(rows[1].three[1]-370)<.001,'The focused point must be at the actual camera centre');}
    console.log('PASS projection '+test.name+': CSS centres, Three projection and GPU pixels');
   }
+  // A real CSS plane passes through the perspective eye. Partially crossed
+  // tilted planes keep their interaction until the farthest corner has passed.
+  const crossing=await page.evaluate(()=>{
+   const f=window.fixture,C=f.C,stage=f.stage,world=f.world;
+   stage.style.width='800px';stage.style.height='600px';
+   world.style.left='0px';world.style.top='0px';world.style.right='0px';world.style.bottom='0px';
+   const plane=document.createElement('button');
+   plane.textContent='Plano inclinado';plane.style.cssText='position:absolute;left:300px;top:250px;width:200px;height:100px;border:0;background:#f35;transform-origin:50% 50%;cursor:pointer';
+   world.appendChild(plane);f.paint({x:0,y:0,z:0,rotateX:0,rotateY:0,rotate:0},1);
+   function sample(z,pitch,yaw){
+    const pose={x:0,y:0,z:z,rotateX:pitch,rotateY:yaw,rotate:0,scale:100};
+    plane.style.transform=C.layerTransform(pose,950,true);
+    const hidden=C.parallelPlaneBehindEye({x:0,y:0,z:0,rotateX:0,rotateY:0},pose,950,1,true,{width:plane.offsetWidth,height:plane.offsetHeight});
+    plane.style.visibility=hidden?'hidden':'';
+    plane.style.pointerEvents=hidden?'none':'auto';
+    return {hidden,visibility:getComputedStyle(plane).visibility,
+      pointer:getComputedStyle(plane).pointerEvents,
+      hit:document.elementFromPoint(480,370)===plane};
+   }
+   const stages=[sample(0,0,0),sample(970,0,45),sample(1050,0,45),sample(0,0,0)];
+   plane.remove();return stages;
+  });
+  assert.equal(crossing[0].hidden,false);
+  assert.equal(crossing[0].hit,true,'Visible plane must be selectable in Chromium');
+  assert.equal(crossing[1].hidden,false,'Near edge stays available during a partial crossing');
+  assert.equal(crossing[2].hidden,true,'Fully passed tilted DOM plane is culled');
+  assert.equal(crossing[2].visibility,'hidden');
+  assert.equal(crossing[2].pointer,'none','Fully passed DOM plane cannot intercept the editor mouse');
+  assert.equal(crossing[3].visibility,'visible','Rewinding restores the original element visibility');
+  assert.equal(crossing[3].hit,true,'Rewound plane becomes selectable again');
+  console.log('PASS Chromium tilted CSS plane: partial crossing, full eye crossing, hit testing and rewind');
   await page.evaluate(()=>{const f=window.fixture;f.unbind();f.renderer.dispose();for(const {mesh} of f.points){mesh.geometry.dispose();mesh.material.dispose();}});
   assert.deepEqual(errors,[]);console.log('PASS '+comparisons+' independent CSS/Three coordinate comparisons; maximum error '+maxError.toFixed(6)+'px');
  }finally{await browser.close();}

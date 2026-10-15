@@ -23,14 +23,29 @@ function createCamera(){
  function layerEligible(e,s){return !!e&&!e.parent&&!e.fixed&&!e.modal&&!e.nwMotionInstance&&['shape3d','light3d','spacer'].indexOf(e.type)<0&&(e.type!=='container'||!!s&&(s.layout==='free'||s.layout==='stack'));}
  function layer(c,id){return c&&(c.layers||[]).find(function(l){return l.id===id;})||null;}
  function layerPose(v,l,reduced,scale){var factor=l&&Number.isFinite(+scale)&&+scale>0?+scale:1;return Object.assign({},v,{z:(v.z+(l&&!reduced?number(l.z):0))*factor});}
- function parallelPlaneBehindEye(cameraPose,layerPose,perspective,scale,eligible){
+ function parallelPlaneBehindEye(cameraPose,layerPose,perspective,scale,eligible,footprint){
   if(!eligible||!cameraPose||!layerPose)return false;
   var f=Number.isFinite(+scale)&&+scale>0?+scale:1;
-  // This conservative rule covers axis-aligned planes only. A tilted plane may
-  // intersect the near plane, so its own browser clipping remains authoritative.
-  if([cameraPose.rotateX,cameraPose.rotateY,layerPose.rotateX,layerPose.rotateY].some(function(v){return Math.abs(+v||0)>.0001;}))return false;
+  // The eye-plane test is exact for a straight camera. With a pitched/yawed
+  // camera the object's X/Y position also affects depth; defer to CSS clipping
+  // until we have a full world-space quad instead of culling its centre.
+  if([cameraPose.rotateX,cameraPose.rotateY].some(function(v){return Math.abs(+v||0)>.0001;}))return false;
   var eye=+perspective*f,depth=(+cameraPose.z||0)*f+(+layerPose.z||0);
-  return Number.isFinite(eye)&&eye>0&&Number.isFinite(depth)&&depth>=eye-1;
+  if(!Number.isFinite(eye)||eye<=0||!Number.isFinite(depth))return false;
+  var pitch=(+layerPose.rotateX||0)*Math.PI/180,yaw=(+layerPose.rotateY||0)*Math.PI/180;
+  if(Math.abs(pitch)>.000001||Math.abs(yaw)>.000001){
+   // R_x(pitch) R_y(yaw), the same order as layerTransform. The sum of
+   // corner extrema is the *nearest* corner's distance from the centre.
+   // Partial crossings keep their browser-provided perspective clipping.
+   var width=footprint&&+footprint.width,height=footprint&&+footprint.height;
+   if(!Number.isFinite(width)||width<=0||!Number.isFinite(height)||height<=0||
+      Math.abs(+layerPose.rotate||0)>.0001)return false;
+   var size=Number.isFinite(+layerPose.scale)?Math.max(0,+layerPose.scale)/100:1;
+   var reach=size*(width*Math.abs(Math.sin(yaw)*Math.cos(pitch))+
+      height*Math.abs(Math.sin(pitch)))/2;
+   depth-=reach;
+  }
+  return depth>=eye-1;
  }
  function layerTransform(v,perspective,shared){
   return (shared?'':'perspective('+perspective+'px) ')+'translateZ('+v.z.toFixed(3)+'px) rotateX('+v.rotateX.toFixed(3)+'deg) rotateY('+v.rotateY.toFixed(3)+'deg)';

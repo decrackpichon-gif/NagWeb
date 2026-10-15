@@ -108,3 +108,12 @@ No reproduce el fallo del smoke completo ni lo da por resuelto.
   deformaciones skeleton/morph, hardware móvil ni rendimiento con muchos modelos.
 - No se despliega en Vercel ni se integra a main. Se conserva la prohibición de
   despliegue Git de `feat/scroll-camera-v1` en `vercel.json`.
+
+
+## Cruce conservador de planos HTML inclinados (14/10/2026)
+
+El Director continúa evaluando el tiempo y las poses. La utilidad compartida `parallelPlaneBehindEye` ahora admite la huella de píxeles de un plano raíz HTML y calcula cuánto se acercan sus cuatro esquinas al ojo de perspectiva cuando hay rotaciones X/Y. Solo oculta el plano una vez que **toda** su superficie queda detrás del observador. Mientras parte del plano siga adelante, el navegador conserva su recorte CSS. Se restablecen la visibilidad y la interacción al retroceder. No se altera el contenido guardado, su rotación ni la cámara.
+
+**Conservadurismo intencional:** cámaras con pitch/yaw, dimensiones desconocidas o planos inclinados con giro Z adicional no se ocultan por este cálculo parcial: sigue actuando el recorte del navegador. Tampoco se promete oclusión parcial entre DOM y mallas WebGL ni corrección de anclas dentro de jerarquías transformadas. El cálculo utiliza el `offsetWidth/offsetHeight` de la vista y el tamaño de pose, sin aproximar la visibilidad a partir del centro del plano.
+
+**QA:** nuevos casos aislados de rotación X/Y combinada, tamaño, escala adaptable y fallbacks; el fixture Chromium de proyección compartida también verifica un botón HTML real atravesando la profundidad, hit testing y recuperación al volver. Verificar los resultados de GitHub Actions del commit antes de declararlos aprobados.

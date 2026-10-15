@@ -655,6 +655,20 @@ assert.equal(behind({...parallel,z:1200,rotateY:10},parallel,1000,1,true),false,
 assert.equal(behind({...parallel,z:1200},{...parallel,rotateX:15},1000,1,true),false,'Tilted planes do not disappear prematurely');
 assert.equal(behind({...parallel,z:1000},parallel,1000,0.5,true),true,'Responsive scaling preserves eye crossing');
 assert.equal(behind({...parallel,z:900},parallel,1000,0.5,true),false,'Responsive scaling does not cull early');
+
+assert.equal(behind(parallel,{...parallel,z:1020,rotateY:45},1000,1,true,{width:200,height:100}),false,'Yawed plane keeps its near edge visible while crossing');
+assert.equal(behind(parallel,{...parallel,z:1080,rotateY:45},1000,1,true,{width:200,height:100}),true,'Yawed plane disappears once its last corner crosses the eye');
+assert.equal(behind(parallel,{...parallel,z:1080,rotateY:-45},1000,1,true,{width:200,height:100}),true,'Mirrored yaw uses the same conservative threshold');
+assert.equal(behind(parallel,{...parallel,z:1030,rotateX:30},1000,1,true,{width:200,height:100}),false,'Pitched plane stays visible during partial crossing');
+assert.equal(behind(parallel,{...parallel,z:1080,rotateX:30},1000,1,true,{width:200,height:100}),true,'Pitched plane is culled after its full surface crosses');
+assert.equal(behind(parallel,{...parallel,z:1080,rotateX:30,rotateY:45},1000,1,true,{width:200,height:100}),false,'Combined rotations include both corner-extents');
+assert.equal(behind(parallel,{...parallel,z:1120,rotateX:30,rotateY:45},1000,1,true,{width:200,height:100}),true,'Combined tilt eventually disappears completely');
+assert.equal(behind(parallel,{...parallel,z:1120,rotateX:30,rotateY:45,scale:200},1000,1,true,{width:200,height:100}),false,'Scaled plane waits for enlarged corners');
+assert.equal(behind(parallel,{...parallel,z:1200,rotateY:45},1000,1,true),false,'Unknown plane dimensions never trigger speculative culling');
+assert.equal(behind(parallel,{...parallel,z:1200,rotateY:45,rotate:30},1000,1,true,{width:200,height:100}),false,'Additional in-plane rotation preserves browser clipping');
+assert.equal(behind({...parallel,rotateY:8},{...parallel,z:2000,rotateY:45},1000,1,true,{width:200,height:100}),false,'Tilted cameras need complete world-space geometry');
+assert.equal(behind(parallel,{...parallel,z:540,rotateY:45},1000,.5,true,{width:200,height:100}),true,'Responsive perspective and layer depth use the same units');
+console.log('PASS tilted DOM plane eye crossing: complete corners only, scale, mirrored angles and safe fallbacks');
 console.log('PASS conservative DOM plane eye crossing and responsive-depth invariants');
 
 
