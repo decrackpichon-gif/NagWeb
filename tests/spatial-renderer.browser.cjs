@@ -24,6 +24,8 @@ const generated=await page.evaluate(()=>{
 for(const [mode,html] of Object.entries(generated)){
  errors.length=0;
  let instrumented=html.replace("  function connectSpatial3D(ev){","  window.__test3D={adapter:spatial3D,objects:objects,renderer:renderer,scene:scene,tick:tick};\n  function connectSpatial3D(ev){");
+ // Expose only the genuine runtime camera to this local fixture; no production global.
+ instrumented=instrumented.replace('var camera=createCamera(),spatialStages=[];','var camera=createCamera(),spatialStages=[];window.__testCameraApi=camera;');
  // Exercise the exact serialized generator runtime in an independent document.
  fs.writeFileSync('work/generated-'+mode+'.html',instrumented);
  await page.goto('file:///'+path.resolve('work/generated-'+mode+'.html').replaceAll('\\','/'),{waitUntil:'load'});
@@ -72,7 +74,7 @@ for(const [mode,html] of Object.entries(generated)){
    block.style.cssText='position:absolute;left:60%;top:37.5%;width:20%;height:25%;background-color:rgb(255,255,255);pointer-events:auto';
    block.__nwSpatialPose={x:0,y:0,z:180,scale:100,rotate:0,rotateX:0,rotateY:0,opacity:1};
    world.appendChild(block);
-   const api=window.NAGWEB_CREATE_SCROLL_CAMERA();d.adapter.connect(api,[stage]);
+   const api=window.__testCameraApi;d.adapter.connect(api,[stage]);
    original.set(0);const occluded=alpha();
    const probe=d.scene.children.find(m=>m.isMesh&&m.material&&m.material.colorWrite===false);
    const depth=probe&&probe.position.z;
