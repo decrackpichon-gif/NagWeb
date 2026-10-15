@@ -1640,6 +1640,115 @@ export async function runEditorPartsSmoke(page){
    assert.equal((legacy.match(/--nw-tx:/g)||[]).length,1);
   }
 
+
+  // Siete variantes tipográficas/de identidad: piezas reales y datos de autor.
+  // No recargar el iframe entre recursos: selección y gestos comparten editor.
+  for(const cfg of [
+   {kind:'editorialposter',id:'test-typ-ep',root:'scx-ep',part:'title',
+    wp:{title:'TÍTULO GRANDE',eyebrow:'ESTUDIO',number:'02',note:'Pie editorial'},
+    names:['eyebrow','number','title','note']},
+   {kind:'bignumber',id:'test-typ-bn',root:'scx-bn',part:'number',
+    wp:{number:'42',suffix:'%',label:'RESULTADOS',text:'Descripción'},
+    names:['number','label','text']},
+   {kind:'pullquote',id:'test-typ-pq',root:'scx-pq',part:'quote',
+    wp:{quote:'Una cita importante',author:'Autor',role:'Director',mark:'quote'},
+    names:['mark','quote','author','role']},
+   {kind:'typespecimen',id:'test-typ-ts',root:'scx-ts',part:'hero',
+    wp:{kicker:'FUENTE',note:'2026',hero:'Aa',upper:'ABCDEFGHI',lower:'abcdef',nums:'12345'},
+    names:['kicker','note','hero','upper','lower','nums']},
+   {kind:'eventposter',id:'test-typ-ev',root:'scx-ev',part:'title',
+    wp:{date:'15 OCT',title:'EXPOSICIÓN',place:'MUSEO',cta:'VISITAR'},
+    names:['date','symbol','title','place','cta']},
+   {kind:'splitstatement',id:'test-typ-ss',root:'scx-ss',part:'image',
+    wp:{eyebrow:'CAMPANA',title:'NUEVA MIRADA',imageSide:'left'},
+    names:['eyebrow','title','image']},
+   {kind:'brandboard',id:'test-typ-bb',root:'scx-bb',part:'swatch-2',
+    wp:{brand:'NAG',tagline:'Identidad',sample:'Texto demo',style:'cards'},
+    names:['swatch-0','swatch-1','swatch-2','swatch-3','brand','tagline','sample']}
+  ]){
+   await page.evaluate(c=>{
+    const d=document.querySelector('#preview').contentDocument;
+    d.querySelectorAll('.el.wdg[data-id^="test-typ-"]').forEach(n=>n.remove());
+    const e=mkEl('widget',{id:c.id,kind:c.kind,wp:c.wp});sec().elements.push(e);
+    const css=d.createElement('style');css.textContent=window.SCW.css[c.kind];d.head.appendChild(css);
+    const host=d.createElement('div');host.className='el wdg';host.dataset.id=c.id;
+    host.innerHTML=window.SCW.kinds[c.kind].markup(e.wp,{edit:true});d.body.appendChild(host);
+    host.querySelector('.'+c.root).style.width='880px';
+   },cfg);
+   await select(cfg.id);
+   const info=await page.evaluate(c=>{
+    const d=document.querySelector('#preview').contentDocument,
+     sc=d.querySelector('.el.wdg[data-id="'+c.id+'"] .'+c.root),cs=d.defaultView.getComputedStyle(sc),
+     published=window.SCW.kinds[c.kind].markup(sec().elements.find(x=>x.id===c.id).wp,{edit:false});
+    return{scope:sc.dataset.nwPartScope,cut:sc.dataset.nwPartMobile,unit:sc.dataset.nwPartY,
+     parts:[...sc.querySelectorAll('[data-wpart]')].map(n=>n.dataset.wpart),
+     buttons:[...sc.querySelectorAll('[data-nw-part]')].map(n=>n.dataset.nwPart),
+     width:sc.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight),
+     published,editable:!!sc.querySelector('[data-wfield]')};
+   },cfg);
+   assert.equal(info.scope,cfg.kind);assert.equal(info.unit,'100cqw');assert.equal(info.cut,'600');
+   assert.ok(info.width>600);
+   assert.deepEqual(info.parts,cfg.names,'partes originales de '+cfg.kind);
+   assert.deepEqual(info.buttons,[''].concat(cfg.names),'selector reutilizado en '+cfg.kind);
+   assert.ok(info.editable&&!info.published.includes('data-nw-partbar'),'edición directa sin toolbar publicada');
+   await fire('.el.wdg[data-id="'+cfg.id+'"] [data-nw-part="'+cfg.part+'"]');
+   const selected=await page.evaluate(c=>{
+    const d=document.querySelector('#preview').contentDocument,
+     root=d.querySelector('.el.wdg[data-id="'+c.id+'"] .'+c.root);
+    return{part:root.querySelector('.nw-part-edit-active')?.dataset.wpart,
+     handles:d.querySelectorAll('.nw-wpart-h').length};
+   },cfg);
+   assert.deepEqual(selected,{part:cfg.part,handles:2},'gestos comunes en '+cfg.kind);
+   await page.evaluate(c=>{
+    const d=document.querySelector('#preview').contentDocument,w=d.defaultView,
+     n=d.querySelector('.el.wdg[data-id="'+c.id+'"] [data-wpart="'+c.part+'"]'),
+     b=n.getBoundingClientRect(),x=(b.left+b.right)/2,y=(b.top+b.bottom)/2;
+    n.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,button:0,pointerId:331,clientX:x,clientY:y}));
+    w.dispatchEvent(new w.PointerEvent('pointermove',{bubbles:true,button:0,pointerId:331,clientX:x+56,clientY:y+28}));
+    w.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true,button:0,pointerId:331,clientX:x+56,clientY:y+28}));
+   },cfg);
+   const result=await page.evaluate(c=>{
+    const e=sec().elements.find(x=>x.id===c.id).wp;
+    return{pose:e.__parts?.[c.part],
+     saved:JSON.parse(localStorage.getItem(STORE_KEY)).pages[curPage].sections[curSec].elements.find(x=>x.id===c.id)?.wp?.__parts?.[c.part],
+     html:window.SCW.kinds[c.kind].markup(e,{edit:false})};
+   },cfg);
+   assert.equal(result.pose.x,56);assert.equal(result.pose.y,28);
+   assert.ok(Math.abs(result.pose.refW-info.width)<1);
+   assert.equal(result.pose.refH,result.pose.refW);
+   assert.deepEqual(result.pose,result.saved);
+   assert.match(result.html,/--nw-ty:calc\(100cqw \* [0-9.]+\)/);
+   if(cfg.kind==='brandboard')assert.match(result.html,/--c:/,'paleta original intacta');
+   if(cfg.kind==='pullquote')assert.match(result.html,/“/,'ornamento original intacto');
+   // Control móvil en los dos tipos de composición: tipográfica e identidad.
+   if(cfg.kind==='editorialposter'||cfg.kind==='brandboard'){
+    await page.evaluate(c=>{
+     const d=document.querySelector('#preview').contentDocument,
+      host=d.querySelector('.el.wdg[data-id="'+c.id+'"]'),
+      e=sec().elements.find(x=>x.id===c.id).wp;
+     host.innerHTML=window.SCW.kinds[c.kind].markup(e,{edit:true});
+     host.querySelector('.'+c.root).style.width='420px';
+    },cfg);
+    await fire('.el.wdg[data-id="'+cfg.id+'"] [data-nw-part="'+cfg.part+'"]');
+    await page.evaluate(c=>{
+     const d=document.querySelector('#preview').contentDocument,w=d.defaultView,
+      n=d.querySelector('.el.wdg[data-id="'+c.id+'"] [data-wpart="'+c.part+'"]'),
+      b=n.getBoundingClientRect(),x=(b.left+b.right)/2,y=(b.top+b.bottom)/2;
+     n.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,button:0,pointerId:332,clientX:x,clientY:y}));
+     w.dispatchEvent(new w.PointerEvent('pointermove',{bubbles:true,button:0,pointerId:332,clientX:x+20,clientY:y+12}));
+     w.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true,button:0,pointerId:332,clientX:x+20,clientY:y+12}));
+    },cfg);
+    const mobile=await page.evaluate(c=>{
+     const e=sec().elements.find(x=>x.id===c.id).wp;
+     return{desktop:e.__parts?.[c.part],mobile:e.__partsMobile?.[c.part],
+      html:window.SCW.kinds[c.kind].markup(e,{edit:false})};
+    },cfg);
+    assert.deepEqual(mobile.desktop,result.pose,'móvil no cambia desktop');
+    assert.ok(mobile.mobile&&mobile.mobile.refW>0);
+    assert.match(mobile.html,/--nw-my:calc\(100cqw \* [0-9.]+\)/);
+   }
+  }
+
   console.log('Editor partes: foco, restauración, Escape, Enter e historial OK');
  }finally{
   await page.evaluate(old=>{
