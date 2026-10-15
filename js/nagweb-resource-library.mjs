@@ -265,6 +265,11 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       elementId: element.id, pageId: page().id, sceneId: sec().id, mobile: viewMobile, values,
       fingerprint: JSON.stringify(element) });
   });
+  // Selection changes redraw #pane even when the preview/main subtree does
+  // not mutate. Keep FX edit/remove availability synchronized with the real
+  // inspector, without polling or relying on synthetic test clicks.
+  const inspectorPane=document.getElementById("pane");
+  if(inspectorPane)new MutationObserver(syncEditButton).observe(inspectorPane,{childList:true,subtree:true});
   new MutationObserver(syncEditButton).observe(document.querySelector("main"), { childList: true, subtree: true });
   new MutationObserver(() => {
     canvasLoading = true;
