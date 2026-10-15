@@ -2,6 +2,7 @@
 // Keep animation on an INNER span so it never overwrites canvas positioning.
 const CLASS=/^[a-z][a-zA-Z0-9_-]{0,79}$/i;
 const EASINGS=new Set(["linear","ease","ease-in","ease-out","ease-in-out"]);
+const SHAKE=/^shake(?:-(?:little|slow|hard|horizontal|vertical|rotate|opacity|crazy|chunk))?$/;
 export const MAGIC_TARGET_TYPES=Object.freeze(["heading","label","paragraph","button","image","vector","svgdraw","video"]);
 export function safeMagicCss(css,className){
   return typeof css==="string" && css.length>20 && css.length<=300000 &&
@@ -31,11 +32,38 @@ export function validatedMagicCssEffect(envelope){
     license:structuredClone(resource.license)
   };
 }
+export function safeCssShake(css,className){
+  return typeof css==="string" && css.length>100 && css.length<=120000 &&
+    SHAKE.test(className||"") && css.includes("."+className) &&
+    /@(?:-webkit-)?keyframes\s/.test(css) &&
+    !/(?:@import\b|url\s*\(|expression\s*\(|-moz-binding|behavior\s*:|<|\\0)/i.test(css);
+}
+export function validatedCssEffect(envelope){
+  const {resource,descriptor}=envelope||{};
+  if(descriptor?.kind==="css-inline-effect")return validatedMagicCssEffect(envelope);
+  const p=descriptor?.payload,fx=p?.effect;
+  if(descriptor?.kind!=="css-effect" ||
+     resource?.provider!=="csshake" ||
+     !/^csshake:shake(?:-(?:little|slow|hard|horizontal|vertical|rotate|opacity|crazy|chunk))?$/.test(resource?.id||"") ||
+     resource.license?.verified!==true || descriptor.resourceId!==resource.id ||
+     descriptor.instance?.resourceId!==resource.id ||
+     descriptor.instance?.renderer!=="nagweb-css-class-effect" ||
+     fx?.schema!=="nagweb-css-effect/0.1" ||
+     fx.className!==resource.id.slice("csshake:".length) ||
+     !Array.isArray(p.dependencies)||p.dependencies.length!==1||p.dependencies[0]!=="csshake:runtime" ||
+     !["hover","constant"].includes(p.trigger) || !safeCssShake(p.css,fx.className))
+    throw Error("Este efecto CSSShake no tiene identidad, licencia o CSS autónomo válido.");
+  return {id:resource.id,provider:"csshake",className:fx.className,
+    css:p.css,values:{trigger:p.trigger},license:structuredClone(resource.license)};
+}
 export function isMagicTarget(element){
   return MAGIC_TARGET_TYPES.includes(element?.type);
 }
 export function validSavedMagicEffect(fx){
   const v=fx?.values;
+  if(fx?.provider==="csshake")return fx.id==="csshake:"+fx.className &&
+    fx.license?.verified===true && safeCssShake(fx.css,fx.className) &&
+    ["hover","constant"].includes(v?.trigger);
   return fx?.provider==="magic-css" && typeof fx.id==="string" &&
     fx.id.startsWith("magic-css:") && fx.license?.verified===true &&
     safeMagicCss(fx.css,fx.className) && v &&

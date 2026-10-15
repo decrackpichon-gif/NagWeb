@@ -1,6 +1,6 @@
 import { NAGWEB_RESOURCE_APPLY_PROTOCOL, NAGWEB_RESOURCE_APPLY_TYPE, buildResourceApplyResult } from "../tools/resource-etl/src/runtime/resource-apply-bridge.mjs";
 import { svgElementProps } from "../tools/resource-etl/src/runtime/nagweb-svg-element.mjs";
-import { validatedMagicCssEffect,isMagicTarget } from "../tools/resource-etl/src/runtime/nagweb-magic-css-effect.mjs";
+import { validatedCssEffect,isMagicTarget } from "../tools/resource-etl/src/runtime/nagweb-magic-css-effect.mjs";
 import { prepareUiverseSandboxHtml } from "../tools/resource-etl/src/runtime/nagweb-html-sandbox.mjs";
 
 const toolbar = document.querySelector(".tb-left");
@@ -30,7 +30,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   clearMagicButton.type="button";
   clearMagicButton.className="tb-ico";
   clearMagicButton.textContent="Quitar FX";
-  clearMagicButton.setAttribute("aria-label","Quitar animación Magic.css seleccionada");
+  clearMagicButton.setAttribute("aria-label","Quitar animación seleccionada");
   clearMagicButton.title="Quitar animación del elemento sin borrarlo";
   clearMagicButton.dataset.resourceLibraryClearMagic="";
   clearMagicButton.disabled=true;
@@ -211,24 +211,24 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       destination.value = container.id;
     }
     destination.hidden = Boolean(context) || !container;
-    hint.textContent = context?.kind === "magic-css" ? "Editá la animación del elemento seleccionado."
+    hint.textContent = ["magic-css","csshake"].includes(context?.kind) ? "Editá la animación del elemento seleccionado."
       : ["uiverse-html","spinkit-html"].includes(context?.kind)
       ? "Personalizá el componente seleccionado sin reemplazarlo."
       : context ? `Personalizá el ícono seleccionado · versión ${context.mobile ? "celular" : "computadora"}.`
         : magicTargetAtOpen ? (magicTargetAtOpen.targets.length===1
-          ? "Podés aplicar Magic.css al elemento seleccionado."
-          : `Aplicá Magic.css a ${magicTargetAtOpen.targets.length} elementos compatibles de una vez.`)
+          ? "Podés aplicar una animación al elemento seleccionado."
+          : `Aplicá una animación a ${magicTargetAtOpen.targets.length} elementos compatibles de una vez.`)
        : "Insertá SVG y HTML/CSS autónomo verificado.";
     const url = new URL("../tools/resource-etl/resource-browser/", import.meta.url);
     url.searchParams.set("hostOrigin", location.origin);
     // Advertise this editor's current native insertion capability.
     // The receiver still validates the actual SVG for each request.
     url.searchParams.set("hostKinds", "svg,uiverse-html,spinkit-html" +
-      (magicTargetAtOpen || context?.kind === "magic-css" ? ",magic-css" : ""));
+      (magicTargetAtOpen || ["magic-css","csshake"].includes(context?.kind) ? ",magic-css,csshake" : ""));
     if (context) {
       url.searchParams.set("editResource", context.resourceId);
       url.searchParams.set("editSession", context.session);
-      if (["uiverse-html","spinkit-html","magic-css"].includes(context.kind)) url.searchParams.set("editKind", context.kind);
+      if (["uiverse-html","spinkit-html","magic-css","csshake"].includes(context.kind)) url.searchParams.set("editKind", context.kind);
       url.searchParams.set("editValues", JSON.stringify(context.values));
     }
     if (frame.src !== url.href) frame.src = url.href;
@@ -239,7 +239,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     const element = selectedLibraryElement();
     if (!element) return;
     if (element.nwMagicCss?.id) {
-      openLibrary({kind:"magic-css",session:crypto.randomUUID(),
+      openLibrary({kind:element.nwMagicCss.provider,session:crypto.randomUUID(),
         resourceId:element.nwMagicCss.id,elementId:element.id,
         pageId:page().id,sceneId:sec().id,values:structuredClone(element.nwMagicCss.values),
         fingerprint:JSON.stringify(element)});
@@ -344,9 +344,9 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       pending.add(message.requestId);
       let inserted = false;
       try {
-        if (message.descriptor?.kind === "css-inline-effect") {
-          const effect=validatedMagicCssEffect(message);
-          const requested=editContext?.kind==="magic-css"
+        if (["css-inline-effect","css-effect"].includes(message.descriptor?.kind)) {
+          const effect=validatedCssEffect(message);
+          const requested=["magic-css","csshake"].includes(editContext?.kind)
             ? [{id:editContext.elementId,fingerprint:editContext.fingerprint}]
             : magicTargetAtOpen?.targets;
           if(!requested?.length)throw Error("Seleccioná elementos compatibles para animar.");
@@ -354,7 +354,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
           if(targets.some(e=>!isMagicTarget(e)))
             throw Error("La selección contiene elementos que no admiten esta animación.");
           if(editContext) {
-            if(editContext.kind!=="magic-css" || editContext.resourceId!==effect.id ||
+            if(editContext.kind!==effect.provider || editContext.resourceId!==effect.id ||
               message.editSession!==editContext.session || page().id!==editContext.pageId ||
               sec().id!==editContext.sceneId || JSON.stringify(targets[0])!==editContext.fingerprint)
               throw Error("La sesión de edición de la animación ya no está vigente.");
@@ -387,8 +387,8 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
             editContext.values=structuredClone(effect.values);
           } else magicTargetAtOpen.targets=targets.map(e=>({id:e.id,fingerprint:JSON.stringify(e)}));
           result=buildResourceApplyResult(message,{status:"applied",
-            message:editContext ? "Animación Magic.css actualizada y guardada."
-              : targets.length===1 ? "Animación Magic.css aplicada y guardada en el elemento seleccionado."
+            message:editContext ? "Animación actualizada y guardada."
+              : targets.length===1 ? "Animación aplicada y guardada en el elemento seleccionado."
               : `Animación Magic.css aplicada y guardada en ${targets.length} elementos.`});
         } else {
         const isNativeHtml = message.descriptor?.kind === "html";

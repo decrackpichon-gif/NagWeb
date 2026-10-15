@@ -14917,6 +14917,13 @@ function linkAttrs(e, p){
 }
 function safeMagicFx(e){
   const fx=e?.nwMagicCss,v=fx?.values;
+  if(fx?.provider==='csshake')return fx.id==='csshake:'+fx.className &&
+    /^shake(?:-(?:little|slow|hard|horizontal|vertical|rotate|opacity|crazy|chunk))?$/.test(fx.className||'') &&
+    fx.license?.verified===true && typeof fx.css==='string' &&
+    fx.css.length>100 && fx.css.length<=120000 &&
+    fx.css.includes('.'+fx.className) && /@(?:-webkit-)?keyframes\s/.test(fx.css) &&
+    !/(?:@import\b|url\s*\(|expression\s*\(|-moz-binding|behavior\s*:|<|\\0)/i.test(fx.css) &&
+    ['hover','constant'].includes(v?.trigger) ? fx : null;
   return fx && fx.provider==='magic-css' && typeof fx.id==='string' &&
     fx.id.startsWith('magic-css:') && fx.license?.verified===true &&
     /^[a-z][a-zA-Z0-9_-]{0,79}$/i.test(fx.className||'') &&
@@ -14932,6 +14939,8 @@ function magicInner(e,inner){
   const fx=safeMagicFx(e);
   if(!fx || !['heading','label','paragraph','button','image','vector','svgdraw','video'].includes(e.type))return inner;
   const v=fx.values;
+  if(fx.provider==='csshake')return '<span class="nw-magic-inner '+fx.className+
+    (v.trigger==='constant'?' shake-constant':'')+'">'+inner+'</span>';
   return '<span class="nw-magic-inner magictime '+fx.className+
     '" style="animation-duration:'+v.duration+'s!important;animation-delay:'+v.delay+
     's!important;animation-timing-function:'+v.easing+'!important;animation-iteration-count:'+

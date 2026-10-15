@@ -26,11 +26,25 @@ export function editorUseOf(resource) {
       entry.content.length <= 300000 &&
       !/(?:@import\b|url\s*\(|expression\s*\(|-moz-binding|behavior\s*:|<|\\0)/i.test(entry.content))
     return "magic-css";
+  if(renderer==="nagweb-css-class-effect" && resource.source?.provider==="csshake" &&
+    /^csshake:shake(?:-(?:little|slow|hard|horizontal|vertical|rotate|opacity|crazy|chunk))?$/.test(resource.id||"") &&
+    resource.runtime?.setup?.schema==="nagweb-css-effect/0.1" &&
+    resource.runtime.setup.className===resource.id.slice("csshake:".length) &&
+    resource.runtime.setup.trigger==="hover" &&
+    JSON.stringify(resource.runtime.registryDependencies)===JSON.stringify(["csshake:runtime"]) &&
+    entry?.role==="animation-data" && entry.format==="json" &&
+    typeof entry.content==="string" && entry.content.length<20000){
+    try{
+      const spec=JSON.parse(entry.content);
+      if(spec.schema==="nagweb-css-effect/0.1" &&
+         spec.className===resource.runtime.setup.className)return "csshake";
+    }catch{}
+  }
   return "code";
 }
 
 export function canInsertInEditor(editorUse, supportedKinds = null) {
-  if (editorUse !== "svg" && editorUse !== "uiverse-html" && editorUse !== "spinkit-html" && editorUse !== "magic-css") return false;
+  if (editorUse !== "svg" && editorUse !== "uiverse-html" && editorUse !== "spinkit-html" && editorUse !== "magic-css" && editorUse !== "csshake") return false;
   if (!supportedKinds) return true;
   return supportedKinds.includes(editorUse) ||
     ((editorUse === "uiverse-html" || editorUse === "spinkit-html") && supportedKinds.includes("html"));
