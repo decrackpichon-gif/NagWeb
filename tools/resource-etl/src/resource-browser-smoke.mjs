@@ -194,9 +194,13 @@ try {
     const shellPage=await shellContext.newPage();
     currentPage=shellPage;
     shellPage.on("pageerror",error=>report.errors.push("Offline shell: "+error.message));
+    let shellExternalOffline=false;
     await shellContext.route("**/*",route=>{
       const url=new URL(route.request().url());
       if(url.hostname==="127.0.0.1")return route.continue();
+      // Playwright route.fulfill() bypasses context.setOffline(); block the
+      // test's mocked Vault responses too, or it falsely remains online.
+      if(shellExternalOffline)return route.abort("internetdisconnected");
       const body=url.origin==="https://raw.githubusercontent.com"
         ? fixtures.get(url.pathname.split("/").at(-1)):null;
       if(!body){report.errors.push("Unexpected offline-shell request: "+url.href);return route.abort();}
@@ -211,6 +215,7 @@ try {
         return Boolean(navigator.serviceWorker.controller &&
           (await cache.keys()).length>=30);
       }),{timeout:25000}).toBe(true);
+      shellExternalOffline=true;
       await shellContext.setOffline(true);
       await shellPage.reload({waitUntil:"domcontentloaded",timeout:15000});
       await shellPage.locator('[data-resource-id="smoke:icon"]').waitFor({timeout:12000});
@@ -218,6 +223,7 @@ try {
       report.scenarios.push({browser:"standalone offline app shell and verified Vault index",
         status:"passed",serviceWorker:true,noThirdPartyAssets:true});
     }finally{
+      shellExternalOffline=false;
       await shellContext.setOffline(false);
       await shellContext.close();
     }
