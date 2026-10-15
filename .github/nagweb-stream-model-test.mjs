@@ -9,3 +9,18 @@ const plain=x=>JSON.parse(JSON.stringify(x)),a=plain(m.layout(1280,720,c,0,12)),
 const front=a.find(x=>x.slot===3),back=a.find(x=>x.slot===9);assert.equal(front.depth,1);assert.equal(front.alpha,1);assert.ok(Math.abs(back.alpha-.3)<1e-9);assert.ok(front.width>back.width,'Perspective enlarges the front surface');assert.ok(front.upper.some(p=>Math.abs(p.y-front.upper[0].y)>1),'A card is curved rather than a rigid flat plane');assert.equal(a.length,12);assert.ok(a.every((x,i)=>!i||x.depth>=a[i-1].depth));
 const bounded=m.config({turns:Infinity,start:90,end:10,ringSize:999,perspective:-10});assert.equal(bounded.turns,1);assert.equal(bounded.end,91);assert.equal(bounded.ringSize,95);assert.equal(bounded.perspective,0);
 console.log('Showcase Stream: ciclo exacto, fases de scroll y límites, profundidad/perspectiva, curvatura real y orden de superficies OK');
+
+
+const directorSource=fs.readFileSync(new URL('../js/nagweb-scroll-director-v16.js',import.meta.url),'utf8');
+const from=directorSource.indexOf('function streamData(s,c){'),until=directorSource.indexOf('\n var data=secs.map',from);
+assert.ok(from>=0&&until>from,'Preview/export serializer present');
+const streamData=new Function('p','window','groupOwner',directorSource.slice(from,until)+';return streamData;')({assets:{images:[]}},scope.window,()=>null);
+for(const template of ['showcase-stream','spread-columns','cover-ring','iso-orbit','orbit-globe','focus-slider']){
+ const serialized=streamData({elements:[]},{template,stream:{ringTilt:-28}});
+ assert.equal(serialized.stream.kind,template,'Render and export know the selected preset: '+template);
+ assert.equal(serialized.stream.ringTilt,-28,'Existing customization retained: '+template);
+}
+assert.deepEqual(streamData({elements:[]},{template:'unsupported-preset',stream:{}}),{},'Reject unregistered templates');
+const editorSource=fs.readFileSync(new URL('../js/nagweb-story-editor.js',import.meta.url),'utf8');
+assert.ok(editorSource.includes("stream:streamModel.config({kind:'showcase-stream',ringTilt:-28"),'New Showcase compositions preserve their kind');
+console.log('Motion Lab: preview/export identity and legacy configurations OK');
