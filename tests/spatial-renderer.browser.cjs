@@ -85,8 +85,7 @@ for(const [mode,html] of Object.entries(generated)){
    // plane masks just its footprint, without sampling an arbitrary project GLB.
    let gpu=null;
    if(probe){
-    const gpuScene=new THREE.Scene(),gpuCamera=new THREE.PerspectiveCamera(50,
-     d.renderer.domElement.clientWidth/d.renderer.domElement.clientHeight,.1,100);
+    const gpuScene=new THREE.Scene(),gpuCamera=new THREE.OrthographicCamera(-2,2,2,-2,.1,100);
     const back=new THREE.Mesh(new THREE.PlaneGeometry(6,6),new THREE.MeshBasicMaterial({color:0xff4455}));
     back.position.z=-3;
     const front=probe.clone();front.position.set(0,0,-2);front.rotation.set(0,0,0);front.scale.set(1,1,1);
