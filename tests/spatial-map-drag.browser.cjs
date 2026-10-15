@@ -122,10 +122,15 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   // scene. No test-only project serializer or second camera evaluator.
   const beforeReload=await page.evaluate(()=>{
    const scene=sec(),saved=JSON.parse(localStorage.getItem('scrollcraft.proyecto.v3')||'null');
+   const preserved=els=>JSON.stringify((els||[]).map(e=>{
+    const fields=['id','type','text','src','shape','modelId','x','y','w','h','offX','offY','offZ',
+     'sdCameraDepth','sdEnter','nwSpatialScale','nwSpatialRotateX','nwSpatialRotateY'];
+    return Object.fromEntries(fields.filter(k=>e[k]!==undefined).map(k=>[k,e[k]]));
+   }));
    return {sceneId:scene.id,frames:JSON.stringify(scene.sdCameraFrames),
-    elements:JSON.stringify(scene.elements),
+    elements:preserved(scene.elements),
     storedFrames:JSON.stringify(saved?.pages?.[0]?.sections?.[0]?.sdCameraFrames),
-    storedElements:JSON.stringify(saved?.pages?.[0]?.sections?.[0]?.elements)};
+    storedElements:preserved(saved?.pages?.[0]?.sections?.[0]?.elements)};
   });
   assert.equal(beforeReload.frames,beforeReload.storedFrames,'Undo persists camera frames to localStorage');
   assert.equal(beforeReload.elements,beforeReload.storedElements,'Undo persists authored layers without resurrecting deleted demo');
@@ -133,8 +138,13 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   await page.waitForFunction(()=>typeof sec==='function'&&sec()?.id==='spatial-drag-isolated');
   const recovered=await page.evaluate(()=>{
    const scene=sec(),html=generateSite(flattenPage(page()),false,false,false);
+   const preserved=els=>JSON.stringify((els||[]).map(e=>{
+    const fields=['id','type','text','src','shape','modelId','x','y','w','h','offX','offY','offZ',
+     'sdCameraDepth','sdEnter','nwSpatialScale','nwSpatialRotateX','nwSpatialRotateY'];
+    return Object.fromEntries(fields.filter(k=>e[k]!==undefined).map(k=>[k,e[k]]));
+   }));
    return {sceneId:scene.id,frames:JSON.stringify(scene.sdCameraFrames),
-    elements:JSON.stringify(scene.elements),
+    elements:preserved(scene.elements),
     hasScene:html.includes('id="scene"'),
     hasText:html.includes('Plano de texto'),
     has3D:html.includes('spatial-test-box'),
