@@ -1,69 +1,39 @@
-# NAGWEB 05 | Criterios de cierre para versión 1
+# NAGWEB 05 | Contrato cerrado para entregar V1.0
 
-**Rama exclusiva:** `feat/resource-etl-v1`  
-**Fuente de verdad:** el código y los commits de esta rama; datos en `resource-vault-data`.  
-**Propósito:** evitar desarrollar eternamente funciones adicionales sin un hito de entrega.
+**Directiva prioritaria del usuario (15/10/2026): PRIMERO TERMINAR. DESPUÉS MEJORAR.** Esta ficha sustituye los antiguos planes abiertos y estimaciones por etapas. Fuente técnica de verdad: `feat/resource-etl-v1`; catálogo histórico independiente: `resource-vault-data`. Consultar además `AGENTS.md` y `POLITICA_DESARROLLO_V1_PRIMERO.md` en `main`.
 
-## Qué es la v1 que podemos dar por terminada
+## Qué constituye una V1.0 útil y terminada
 
-Una biblioteca que permita **buscar → ver → personalizar → insertar →
-volver a editar → guardar → exportar** recursos que ya cuentan con un
-adaptador real para NagWeb. Los recursos que hoy son **solo código**
-(React, Three.js, GLSL, etc.) pueden permanecer explorables y copiables,
-pero tienen que figurar inequívocamente como **no insertables** hasta
-completar su adaptador. No se debe confundir `hay un recurso` con
-`puedo utilizarlo plenamente en el editor`.
+Un diseñador debe poder **buscar → previsualizar → elegir un recurso compatible → insertar/aplicar → personalizar → volver a editar → guardar/recuperar → exportar** sin perder objetos, estilos ni datos. Lo que no tiene adaptador comprobado debe seguir siendo consultable/copiable, pero **no presentarse como insertable**.
 
-No es un objetivo de v1 importar más proveedores por cantidad, reescribir
-otros proyectos, construir un editor React/Three universal ni automatizar
-todos los originales con licencia incierta. Esos son posibles avances
-posteriores, si el usuario decide ampliar el alcance.
+Se conserva lo implementado hasta ahora, sin eliminar opciones existentes: catálogo, licencias y procedencias verificadas; filtros, favoritos, miniaturas, carga progresiva, caché offline parcial; SVG Lucide/Heroicons; HTML/CSS Uiverse/SpinKit compatibles en aislamiento; efectos Magic.css/CSSShake sobre objetos existentes con historial, edición, persistencia y exportación; responsive y accesibilidad esenciales.
 
-## Condiciones verificables de cierre
+**Conteo confirmado en la reconstrucción del índice:** 6762 registros; 6041 clasificados como de uso nativo según sus adaptadores y 721 como consulta/código. La clasificación **no garantiza personalización universal** ni sustituye las pruebas funcionales. Mantener los cinco snapshots originales, hashes/licencias e independencia de ramas.
 
-1. **Catálogo confiable:** los 6762 registros actuales conservan identidad,
-   licencias, proveedor, fuente y checksum. Búsqueda, filtros, favoritos
-   y miniaturas funcionan sin descargar todo el código.
-2. **Uso real:** SVG Lucide/Heroicons y HTML/CSS Uiverse compatibles cumplen
-   inserción, edición contextual, persistencia, responsive y exportación
-   sin duplicados ni pérdidas. Los restantes muestran límites claros.
-3. **Rendimiento:** índice compacto, cargas de detalle bajo demanda y
-   paquetes Uiverse divididos, sin dependencias de imágenes externas ni
-   descargas completas para elegir un elemento.
-4. **Pruebas de aceptación:** CI sin fallas en Chromium Windows, Chromium
-   Linux, tests internos y Windows smoke, más prueba manual guiada de
-   insertar, modificar y exportar componentes representativos.
-5. **Entrega y continuidad:** guía corta para abrir/probar la Biblioteca,
-   limitaciones visibles y ficha de contexto actualizada, sin exigir
-   Vercel ni fusiones de ramas para declarar terminado este frente.
+## Estado comprobado al 15/10/2026
 
-## Bloques pendientes después del empaquetado Uiverse
+- HEAD de código antes de esta actualización documental: `5a0d006097fabbac3ec6695911563d508e6e2f47` (política general ya registrada).
+- Última ejecución completa de Resource ETL CI para código `d9e229f5b51aa6b4c08131dc6f8d60c5bc5389d9`: https://github.com/decrackpichon-gif/NagWeb/actions/runs/38749872518 . **Falló el job Chromium Windows**; aprobaron Chromium Linux, Self test y Windows smoke.
+- El fallo Windows ocurrió en `tools/resource-etl/src/resource-browser-smoke.mjs`, cerca de la línea 860: la prueba disparó un evento sintético de doble clic para personalizar un SVG, pero el diálogo no se abrió. **No está demostrado** que la interacción real del usuario esté rota ni que el defecto sea el atajo Alt+Enter. Verificar la ruta de evento real y la prueba; corregir la causa concreta, no deshabilitar sin más la cobertura.
+- Reconstrucción del índice `Resource Vault Verified Browse Index` de `d9e229f...`: https://github.com/decrackpichon-gif/NagWeb/actions/runs/38749871198 — **success** con 6762 recursos y recuentos nativos verificables.
+- La guía de aceptación ya existe: `docs/contexto/NAGWEB_05_GUIA_PRUEBA_Y_ALCANCE.md`.
 
-- **A. UX de compatibilidad:** diferenciar recursos insertables, recursos
-  de código/previsualización y casos no soportados con mensajes claros.
-- **B. QA de recorridos completos:** seleccionar casos reales de SVG y
-  Uiverse en escritorio/celular; confirmar persistencia y exportación.
-  Corregir los fallos reales encontrados en un mismo lote.
-- **C. Cierre v1:** guía de uso, evidencia resumida de las pruebas,
-  checklist de criterios anteriores y lista final de limitaciones.
+## Únicos pendientes obligatorios para V1.0
 
-**Límite de alcance:** no crear controles secundarios ni importar nuevas
-familias por inercia entre A, B y C. Abrir otro plan únicamente si aparece
-un defecto grave o el usuario pide ampliar funcionalidades.
+1. **Eliminar el bloqueo real de QA.** Reproducir y resolver el fallo de la apertura de personalización SVG en Chromium Windows, separando defecto del producto y defecto de la simulación. Reutilizar el control contextual que funciona; no crear una interfaz nueva. Ejecutar **una CI completa para el bloque corregido**; exigir los cuatro jobs en verde y ninguna regresión importante de uso, seguridad o persistencia.
+2. **Aceptar el recorrido principal una vez.** En el editor real, probar un SVG, un componente Uiverse/SpinKit compatible y un efecto Magic.css/CSSShake: buscar, personalizar, insertar/aplicar, reabrir, guardar, recargar, deshacer cuando corresponda y exportar. Revisar al menos un tamaño de escritorio y uno móvil; verificar el HTML exportado y los límites offline. Reutilizar pruebas ya existentes; no repetir auditorías aprobadas.
+3. **Preparar entrega y declarar el cierre.** Registrar commit definitivo, versión V1.0, resultados reales de CI y aceptación, cómo abrir/ejecutar, familias utilizables y limitaciones de «solo código». Si la aceptación revela un error que bloquea el recorrido, corregirlo en un lote y volver a comprobarlo. De lo contrario, **cerrar V1.0 sin añadir trabajo**.
 
-## Lo que queda fuera del primer cierre
+Estas son condiciones de aceptación, **no tres proyectos nuevos**. Agrupar los puntos cuando sea posible. No declarar V1.0 completada con CI roja ni presentarla como una integración universal que no existe.
 
-Convertir automáticamente todos los recursos de React, Three.js, GLSL
-y Lottie en elementos completamente editables del lienzo. La meta mayor
-de NagWeb puede incluirlo, pero esa integración requiere capacidades
-específicas y coordinar con los otros frentes sin mezclar ramas.
-Tampoco se promete compatibilidad con recursos cuyo uso legal no esté
-habilitado.
+## Postergar expresamente a V1.1+
 
-**Estimación de planificación:** tras empaquetar Uiverse, entre
-**3 y 5 bloques de trabajo significativos** para intentar una v1
-cerrable, sujeto a que QA no descubra fallos graves. No equivalen a
-3-5 microetapas de tamaño fijo ni a un plazo garantizado.
+- Nuevos proveedores, aumento de recursos o snapshots, animaciones y controles adicionales sin necesidad de cierre.
+- Adaptadores nativos universales para React, Three.js, GLSL y Lottie, importaciones complejas y personalizaciones particulares por plantilla que hoy solo se exploran/copian.
+- Rediseños estéticos, nuevas previsualizaciones, filtros secundarios, optimizaciones marginales y expansión de modo offline más allá del funcionamiento acordado.
 
-**Estado:** documento de definición de cierre. Tener una casilla aquí no
-acredita que esté aprobada; usar CI, commits y prueba manual real.
+Estos temas **no se eliminan de la visión original**: quedan para el desarrollo posterior y no bloquean una primera versión funcional. El usuario podrá recuperar cualquiera expresamente.
+
+## Reglas de ejecución para el próximo «Avanza»
+
+Ir directamente al primer bloqueo pendiente en el HEAD actual; realizar cambios agrupados, una verificación integral proporcional y preferiblemente un commit funcional. Si las pruebas quedan verdes, pasar a aceptación y entrega **sin reabrir alcance**. No reconstruir trabajo hecho, no más recuentos de etapas arbitrarios, no commits ceremoniales. No hacer merges, no desplegar Vercel, no modificar otros proyectos.

@@ -8,6 +8,14 @@
 
 Esta regla **prevalece sobre prioridades antiguas de expansión** de esta ficha, sin derogar funcionalidades comprometidas que resulten imprescindibles para una V1.0 útil. Consultar la [política universal de desarrollo](https://github.com/decrackpichon-gif/NagWeb/blob/main/POLITICA_DESARROLLO_V1_PRIMERO.md). No mezclar ramas ni adelantar merges o despliegues sin autorización.
 
+## Alcance cerrado de NAGWEB 05 para V1.0 (15/10/2026)
+
+**Decisión operativa vinculante:** usar `tools/resource-etl/CRITERIOS_CIERRE_V1.md` como contrato finito de aceptación. Priorizar el recorrido completo de la Biblioteca con los adaptadores YA implementados; no añadir recursos, familias, controles ni mejoras no bloqueantes. Los 721 ítems de consulta/código no requieren un adaptador nativo para cerrar V1.0; conservarlos identificados y accesibles. Las capacidades ampliadas siguen pendientes de V1.1+, no descartadas.
+
+**Bloqueante comprobado:** la ejecución `38749872518` aprobó Chromium Linux, Self test y Windows smoke, pero falló Chromium Windows cuando un evento sintético de doble clic SVG no abrió la personalización. Comprobar si falla el producto o la simulación; después CI completa, una aceptación manual representativa y entrega. No declarar lista la V1.0 antes de esas evidencias.
+
+**Esta sección prevalece sobre las listas antiguas de «próximas etapas» de más abajo.** No reconstruir capacidades, no abrir un nuevo plan, no confundir registros de catálogo con componentes plenamente editables.
+
 ## Identidad inmutable y ramas
 
 - Proyecto: **NAGWEB 05 | Biblioteca de recursos**.

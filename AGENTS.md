@@ -12,6 +12,8 @@ Este repositorio contiene cinco frentes **independientes** del mismo producto. L
 - Conservar calidad, seguridad y pruebas necesarias. Mover mejoras opcionales al backlog V1.1+, **sin impedir la entrega**.
 - Leer la **[política universal canónica](https://github.com/decrackpichon-gif/NagWeb/blob/main/POLITICA_DESARROLLO_V1_PRIMERO.md)**, aplicable a todos los proyectos actuales y futuros salvo cambio expreso del usuario.
 
+Para **NAGWEB 05**, el contrato específico y finito de cierre está en `tools/resource-etl/CRITERIOS_CIERRE_V1.md`. **Antes de implementar un nuevo recurso o animación, revisar el bloqueo de aceptación existente**: CI Chromium Windows, recorrido completo y entrega. No extender V1.0 para integrar las familias que hoy son «solo código» si ya están claramente identificadas.
+
 ## Identificar el frente antes de editar
 
 Determinar la rama de trabajo ACTUAL y leer exclusivamente su ficha en `docs/contexto/`, además de sus documentos técnicos:
