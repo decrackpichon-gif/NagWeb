@@ -2,17 +2,17 @@
 // One reproducible entry point; the optional group list avoids unrelated reruns.
 const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process');
 const groups=['renderer','lights','bloom','interaction','timing','hierarchy','projection'];
-// Run editor regressions first; failures abort early instead of spending minutes
-// on unrelated WebGL groups. When green, every group and syntax check runs.
-const requested=process.argv.slice(2),chosen=requested.length?requested:['editor'].concat(groups);
+// Run the renderer group first: a regression in the shared GPU path should be
+// reported before historical editor UI flakes. Each group still runs once.
+const requested=process.argv.slice(2),chosen=requested.length?requested:['renderer','editor'].concat(groups.filter(g=>g!=='renderer'));
 if(chosen.some(g=>!groups.includes(g)&&g!=='editor'))throw Error('Unknown group. Use '+groups.concat('editor').join(', '));
 const vendor=process.env.NAGWEB_TEST_VENDOR_DIR,three=vendor?path.resolve(vendor,'three.cjs'):require.resolve('three/build/three.js');
 const jobs=[];
 // Fast isolated real-pointer check first; fails in seconds, not after the full
 // renderer and editor suite. All other tests still run when this is green.
-if(chosen.includes('editor'))jobs.push(['tests/spatial-map-drag.browser.cjs']);
+// Include the isolated pointer regression alongside other editor tests, not before renderer.
 for(const group of chosen){
- if(group==='editor')jobs.push(['.github/nagweb-camera-model-test.mjs'],['.github/nagweb-camera-runtime-test.mjs'],['tests/spatial-focus-map.integration.cjs'],['tests/camera-current-moment.browser.cjs']);
+ if(group==='editor')jobs.push(['tests/spatial-map-drag.browser.cjs'],['.github/nagweb-camera-model-test.mjs'],['.github/nagweb-camera-runtime-test.mjs'],['tests/spatial-focus-map.integration.cjs'],['tests/camera-current-moment.browser.cjs']);
  else jobs.push(['tests/spatial-'+group+'.integration.cjs',three],['tests/spatial-'+group+'.browser.cjs']);
 }
 const syntax=['js/nagweb-spatial-renderer.js','js/nagweb-scroll-camera.js','js/nagweb-scroll-director-v16.js','.github/nagweb-camera-browser-smoke.mjs','.github/nagweb-spatial-smoke.cjs'];
