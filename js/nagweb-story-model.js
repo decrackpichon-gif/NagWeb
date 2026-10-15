@@ -387,9 +387,10 @@ if(focusSlider){out.kind='focus-slider';out.direction=raw.direction==='vertical'
    fit=Math.min(1,Math.max(1,fw/2-inset-2)/Math.max(1,limitX),Math.max(1,fh/2-inset-2)/Math.max(1,limitY));
    showcaseFitCache.set(fitKey,fit);if(showcaseFitCache.size>32)showcaseFitCache.delete(showcaseFitCache.keys().next().value);
   }
-  for(var i=0;i<count;i++){var a=angle+2*Math.PI*i/count,mid=point(a),steps=Math.min(96,Math.max(16,Math.ceil(cardW/Math.max(2,radius)*32/(1-c.perspective/100)))),top=[],bottom=[],minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  for(var i=0;i<count;i++){var a=angle+2*Math.PI*i/count,mid=point(a),steps=Math.min(96,Math.max(16,Math.ceil(cardW/Math.max(2,radius)*32/(1-c.perspective/100)))),top=[],bottom=[],stripDepth=[],minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
    for(var j=0;j<=steps;j++){var p=point(a-(j/steps-.5)*cardW/Math.max(1,radius)),t={x:p.x-p.ax,y:p.y-p.ay},b={x:p.x+p.ax,y:p.y+p.ay};top.push(t);bottom.push(b);minX=Math.min(minX,t.x,b.x);maxX=Math.max(maxX,t.x,b.x);minY=Math.min(minY,t.y,b.y);maxY=Math.max(maxY,t.y,b.y);}
-   var front=Math.max(0,Math.min(1,(mid.depth+1)/2));front=front*front*(3-2*front);cards.push({slot:i,depth:mid.depth,alpha:1-c.backFade/100+c.backFade/100*front,left:Math.floor(minX)-3,top:Math.floor(minY)-3,width:Math.max(1,Math.ceil(maxX)-Math.floor(minX)+6),height:Math.max(1,Math.ceil(maxY)-Math.floor(minY)+6),upper:top,lower:bottom,textureWidth:cardW,textureHeight:cardH,corner:Math.min(cardW,cardH)*c.cornerRadius/100});
+   for(var k=0;k<steps;k++)stripDepth.push(Math.sin(a-((k+.5)/steps-.5)*cardW/Math.max(1,radius)));
+   var front=Math.max(0,Math.min(1,(mid.depth+1)/2));front=front*front*(3-2*front);cards.push({slot:i,depth:mid.depth,stripDepth:stripDepth,alpha:1-c.backFade/100+c.backFade/100*front,left:Math.floor(minX)-3,top:Math.floor(minY)-3,width:Math.max(1,Math.ceil(maxX)-Math.floor(minX)+6),height:Math.max(1,Math.ceil(maxY)-Math.floor(minY)+6),upper:top,lower:bottom,textureWidth:cardW,textureHeight:cardH,corner:Math.min(cardW,cardH)*c.cornerRadius/100});
   }
   return cards.sort(function(a,b){return a.depth-b.depth||a.slot-b.slot;});
  }
