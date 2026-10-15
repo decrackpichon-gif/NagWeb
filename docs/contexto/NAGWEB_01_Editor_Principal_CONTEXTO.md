@@ -158,6 +158,10 @@ Editor **visual y profesional** para construir sitios y narrativas inmersivas co
 - Regresión integrada en `.github/nagweb-editor-parts-smoke.mjs`: recursos reales, selección de partes, interacción del puntero, persistencia, serialización y edición móvil representativa. Comprobar el estado de <https://github.com/decrackpichon-gif/NagWeb/actions/runs/38687596223> antes de dar el bloque por validado.
 - Próximo foco: tratar por separado los mockups y creativos que combinan gestos del puntero con transformaciones autorales, evitando que un efecto sobrescriba la pose manual, y consolidar defectos transversales cuando aparezcan en las pruebas.
 
+## Hito de cierre V1.0 (15/10/2026)
+
+Documento de entrega y aceptación con alcance cerrado: [`docs/NAGWEB_01_ENTREGA_V1.md`](../NAGWEB_01_ENTREGA_V1.md). Se corrigió el bloqueo de descarga de JSON e HTML en navegadores sin integración especial (`8c4e318043168f93400ecc1681736507dded912a`). La verificación integral se encuentra en la ejecución de GitHub Actions `38772559880`; verificar su resultado antes de afirmar V1.0 validada. No continuar expandiendo recursos ni variantes mientras se completa el cierre funcional.
+
 ## Próximas prioridades (revisar con HEAD actual)
 
 - Priorizar la experiencia de lienzo como herramienta de diseño, edición real de elementos anidados y uso de recursos sin degradar su editabilidad.
