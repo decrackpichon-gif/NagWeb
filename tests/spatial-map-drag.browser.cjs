@@ -116,6 +116,37 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   await page.evaluate(()=>undo());
   assert.equal(await page.evaluate(()=>JSON.stringify(sec().elements)),beforeDemo.elements,'One Undo removes the sample without altering existing content');
   assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),beforeDemo.frames,'Undo restores camera path');
+
+  // V1.0 acceptance: Undo must persist, not just update in-memory state.
+  // Reload the actual editor, then build the exported HTML from the recovered
+  // scene. No test-only project serializer or second camera evaluator.
+  const beforeReload=await page.evaluate(()=>{
+   const scene=sec(),saved=JSON.parse(localStorage.getItem('scrollcraft.proyecto.v3')||'null');
+   return {sceneId:scene.id,frames:JSON.stringify(scene.sdCameraFrames),
+    elements:JSON.stringify(scene.elements),
+    storedFrames:JSON.stringify(saved?.pages?.[0]?.sections?.[0]?.sdCameraFrames),
+    storedElements:JSON.stringify(saved?.pages?.[0]?.sections?.[0]?.elements)};
+  });
+  assert.equal(beforeReload.frames,beforeReload.storedFrames,'Undo persists camera frames to localStorage');
+  assert.equal(beforeReload.elements,beforeReload.storedElements,'Undo persists authored layers without resurrecting deleted demo');
+  await page.reload({waitUntil:'load'});
+  await page.waitForFunction(()=>typeof sec==='function'&&sec()?.id==='spatial-drag-isolated');
+  const recovered=await page.evaluate(()=>{
+   const scene=sec(),html=generateSite(flattenPage(page()),false,false,false);
+   return {sceneId:scene.id,frames:JSON.stringify(scene.sdCameraFrames),
+    elements:JSON.stringify(scene.elements),
+    hasScene:html.includes('id="scene"'),
+    hasText:html.includes('Plano de texto'),
+    has3D:html.includes('spatial-test-box'),
+    hasDirector:html.includes('NAGWEB_CREATE_SCROLL_CAMERA')};
+  });
+  assert.equal(recovered.sceneId,beforeReload.sceneId,'Editor reopens the same authored 3D scene');
+  assert.equal(recovered.frames,beforeReload.frames,'Reopened camera keyframes match saved project');
+  assert.equal(recovered.elements,beforeReload.elements,'Reopened text, image and GLB layers match saved project');
+  assert.ok(recovered.hasScene&&recovered.hasText&&recovered.has3D&&recovered.hasDirector,
+   'Recovered scene exports semantic HTML with original content and camera runtime');
+  console.log('PASS V1.0 browser round trip: Undo -> localStorage -> reload -> camera/layers -> exported HTML');
+
   console.log('PASS real editor offline sample: three reusable planes, five stops, zero external assets, one Undo');
   console.log('PASS real editor journey: text/image/text depths, five waypoints, camera crossing, one Undo');
   assert.deepEqual(errors,[]);
