@@ -14930,7 +14930,7 @@ function safeMagicFx(e){
 }
 function magicInner(e,inner){
   const fx=safeMagicFx(e);
-  if(!fx || !['heading','label','paragraph','button','image','vector'].includes(e.type))return inner;
+  if(!fx || !['heading','label','paragraph','button','image','vector','svgdraw','video'].includes(e.type))return inner;
   const v=fx.values;
   return '<span class="nw-magic-inner magictime '+fx.className+
     '" style="animation-duration:'+v.duration+'s!important;animation-delay:'+v.delay+
@@ -15011,13 +15011,14 @@ function elMarkup(e, p, free, z, sync, inStack){
       }
       const inner = free ? ';border-radius:' + (e.radius||0) + 'px' : '';
       const st = free ? pos.slice(0,-1) + inner + '"' : ' style="width:' + e.w + '%;border-radius:' + (e.radius||0) + 'px"';
-      return '<video class="' + cls + ' vid"' + d + st + ' src="' + esc(e.url) + '" autoplay playsinline' +
-             (e.muted !== false ? ' muted' : '') + (e.loop ? ' loop' : '') + '></video>';
+      return '<div class="' + cls + ' vid nw-magic-video"' + d + st + '>' +
+        magicInner(e,'<video src="' + esc(e.url) + '" autoplay playsinline' +
+        (e.muted !== false ? ' muted' : '') + (e.loop ? ' loop' : '') + '></video>') + '</div>';
     }
     case 'svgdraw': {
       if(!e.svgCode) return '';
       var svgHtml = e.svgCode.replace('<svg', '<svg class="sd-inner" style="stroke:' + esc(e.color) + ';stroke-width:' + (e.strokeWidth||4) + '"');
-      return '<div class="' + cls + ' svgdraw"' + d + pos + '>' + svgHtml + '</div>';
+      return '<div class="' + cls + ' svgdraw"' + d + pos + '>' + magicInner(e,svgHtml) + '</div>';
     }
     case 'marquee': {
       if(e.kind === 'text'){
@@ -15585,7 +15586,9 @@ function generateSite(p, edit, external, mobileView){
 <style>
   ${magicCssBlock}
   .nw-magic-inner{display:inline-block;max-width:100%;transform-origin:center}
-  .el.im-hov>.nw-magic-inner,.el.vec>.nw-magic-inner{display:block;width:100%;height:100%;position:relative}
+  .el.im-hov>.nw-magic-inner,.el.vec>.nw-magic-inner,.el.svgdraw>.nw-magic-inner,.el.nw-magic-video>.nw-magic-inner{display:block;width:100%;height:100%;position:relative}
+  .el.nw-magic-video video{width:100%;height:100%;object-fit:cover;display:block}
+  .el.svgdraw>.nw-magic-inner svg{width:100%;height:auto;display:block}
   .el.vec>.nw-magic-inner>.vec-svg{width:100%;height:100%}
   .el.im-hov>.nw-magic-inner>.im-base{width:100%;height:100%;object-fit:cover}
   @media(prefers-reduced-motion:reduce){.nw-magic-inner{animation:none!important}}

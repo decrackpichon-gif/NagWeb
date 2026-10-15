@@ -1670,3 +1670,8 @@ acceso externo interrumpido. Sin Vercel, sin mezcla de ramas.
 - Las animaciones se aplican a un wrapper interno y conservan posición y rotación.
 - Chromium verifica inserción del efecto, geometría, exportación y recarga.
 - Sin Vercel, cambios en Vault ni merges.
+
+## Etapa 97: Magic.css en SVG dibujados y vídeos (15/10/2026)
+
+- Reutiliza el motor Magic.css verificado para `svgdraw` y `video`, con animación del contenido visual interior y geometría externa estable.
+- Se conserva exportación sin dependencias nuevas y modo de movimiento reducido. No afecta objetos 3D, ni otras ramas.
