@@ -841,9 +841,11 @@ try {
   await svgClickTarget.dblclick();
   await expect(page.getByRole("dialog", { name: "Biblioteca de recursos", exact: true }))
     .toBeVisible({timeout:10000});
-  // Two real pointer clicks may be recorded by the editor's ordinary canvas
-  // history. The customization workflow itself must not add more snapshots.
+  // A pure double-click must not create edit snapshots or round the
+  // selected element's geometry. Real drags still create undo history.
   const gestureHistory=await page.evaluate(() => history.length);
+  assert.equal(gestureHistory,canvasShortcutHistory,
+    "Selecting a resource with double-click must not add undo history");
   assert.deepEqual(await page.evaluate(id =>
     structuredClone(sec().elements.find(e=>e.id===id)),inserted.element.id),
     canvasShortcutElement,"A real SVG double-click must preserve the inserted object");

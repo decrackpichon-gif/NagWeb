@@ -17200,8 +17200,13 @@ ${edit ? `
       var cy = node.getBoundingClientRect().top + node.getBoundingClientRect().height / 2;
       var out = { x:x0, y:y0, w:w0, rot:r0 };
       var h0 = node.offsetHeight, wpx0 = node.offsetWidth;
+      var changed = false;
 
       function move(e){
+        // A click (including either click in a double-click) is selection,
+        // not an edit. Ignore subpixel jitter and preserve original geometry.
+        if(Math.abs(e.clientX - sx) < 1 && Math.abs(e.clientY - sy) < 1) return;
+        changed = true;
         var dx = (e.clientX - sx) / rect.width * 100, dy = (e.clientY - sy) / rect.height * 100;
         if(handle === 'move'){
           if(!free){ showTip(inAutoLayout(node) ? 'Está en un auto layout: se acomoda solo. Cambiá el orden arrastrándolo en la lista de elementos (columna derecha).'
@@ -17230,7 +17235,7 @@ ${edit ? `
         window.removeEventListener('pointermove', move);
         window.removeEventListener('pointerup', up);
         hideTip();
-        post({ type:'change', id:id, x:out.x, y:out.y, w:out.w, rot:out.rot, h:out.h, ratio:out.ratio });
+        if(changed) post({ type:'change', id:id, x:out.x, y:out.y, w:out.w, rot:out.rot, h:out.h, ratio:out.ratio });
       }
       window.addEventListener('pointermove', move);
       window.addEventListener('pointerup', up);
