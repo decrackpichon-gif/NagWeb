@@ -1632,16 +1632,52 @@ try {
     assert.equal(await page.evaluate(()=>sec().elements[0].nwMagicCss.id),magicCss.id);
     report.scenarios.push({editor:"Magic.css on "+type,status:"passed",geometry:true,export:true,reload:true});
   }
+  // Stage 97: new SVG drawings and videos use the same Magic.css
+  // application path, preserving the original object and its geometry.
+  for(const type of ["svgdraw","video"]){
+    await page.evaluate(type=>{
+      const options=type==="svgdraw"
+        ? {svgCode:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 2L22 22"/></svg>',
+            color:"#335577",strokeWidth:3}
+        : {url:"data:video/mp4;base64,AAAA",muted:true,loop:false};
+      Object.assign(sec(),{layout:"free",elements:[mkEl(type,{...options,
+        x:43,y:37,w:38,rot:8,anim:"none"})]});
+      selection=[sec().elements[0].id];curEl=0;secFocus=false;refresh();
+    },type);
+    const before=await page.evaluate(()=>structuredClone(sec().elements[0]));
+    await page.getByRole("button",{name:"Biblioteca de recursos",exact:true}).click();
+    if(await libraryFrame.locator("[data-detail]").evaluate(n=>n.open))
+      await libraryFrame.getByRole("button",{name:"Cerrar",exact:true}).click();
+    await libraryFrame.locator('[data-resource-id="'+magicCss.id+'"]').click();
+    await expect(libraryFrame.getByRole("button",{name:"Aplicar animación al elemento",exact:true})).toBeEnabled();
+    await libraryFrame.getByRole("button",{name:"Aplicar animación al elemento",exact:true}).click();
+    await expect(libraryFrame.locator("[data-apply-status]")).toContainText("aplicada y guardada");
+    await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+    const after=await page.evaluate(()=>structuredClone(sec().elements[0]));
+    for(const key of ["id","x","y","w","rot"])assert.equal(after[key],before[key]);
+    assert.equal(after.nwMagicCss.id,magicCss.id);
+    const outer=page.frameLocator("#preview").locator('[data-id="'+after.id+'"]');
+    await expect(outer.locator(".nw-magic-inner")).toHaveClass(/puffIn/);
+    await expect(outer.locator(type==="svgdraw"?"svg.sd-inner":"video")).toBeAttached();
+    const exported=await page.evaluate(()=>generateSite(flattenPage(page()),false,true,false));
+    assert.match(exported,/nw-magic-inner magictime puffIn/);
+    await page.reload();
+    assert.equal(await page.evaluate(()=>sec().elements[0].nwMagicCss.id),magicCss.id);
+    report.scenarios.push({editor:"Magic.css on "+type,status:"passed",
+      geometry:true,export:true,reload:true});
+  }
   // Removing an existing Magic.css effect never deletes the target object.
-  await page.evaluate(()=>{
+  // Playwright page.evaluate runs in the browser, so transfer fixture data
+  // explicitly rather than referencing Node's module-scoped magicCss.
+  const removalFixture={id:magicCss.id,provider:"magic-css",className:"puffIn",
+    css:magicCss.artifacts.find(a=>a.role==="stylesheet").content,
+    values:{duration:1,delay:0,easing:"ease",iterations:1},
+    license:magicCss.license};
+  await page.evaluate(fixture=>{
     const element=mkEl("heading",{text:"Efecto reversible",x:48,y:40,w:60,rot:6,anim:"none"});
-    element.nwMagicCss={...structuredClone(sec().elements.find(e=>e.nwMagicCss)?.nwMagicCss||{}),
-      id:magicCss.id,provider:"magic-css",className:"puffIn",
-      css:magicCss.artifacts.find(a=>a.role==="stylesheet").content,
-      values:{duration:1,delay:0,easing:"ease",iterations:1},
-      license:structuredClone(magicCss.license)};
+    element.nwMagicCss=structuredClone(fixture);
     sec().elements=[element];selection=[element.id];curEl=0;secFocus=false;refresh();
-  });
+  },removalFixture);
   const clearing=await page.evaluate(()=>({id:sec().elements[0].id,history:history.length}));
   const clearMagic=page.getByRole("button",{name:"Quitar animación Magic.css seleccionada",exact:true});
   await expect(clearMagic).toBeEnabled();
@@ -1650,9 +1686,16 @@ try {
   assert.equal(await page.evaluate(()=>sec().elements[0].nwMagicCss),undefined);
   assert.equal(await page.evaluate(()=>history.length),clearing.history+1);
   await expect(clearMagic).toBeDisabled();
+  await page.locator("#btn-undo").click();
+  assert.equal(await page.evaluate(()=>sec().elements[0].nwMagicCss.id),magicCss.id);
+  await expect(clearMagic).toBeEnabled();
+  await page.locator("#btn-redo").click();
+  assert.equal(await page.evaluate(()=>sec().elements[0].nwMagicCss),undefined);
+  await expect(clearMagic).toBeDisabled();
   await page.reload();
   assert.equal(await page.evaluate(()=>sec().elements[0].nwMagicCss),undefined);
-  report.scenarios.push({editor:"Remove existing Magic.css without removing object",status:"passed",history:true,persistence:true});
+  report.scenarios.push({editor:"Remove existing Magic.css without removing object",status:"passed",
+    history:true,undoRedo:true,persistence:true});
   // Stage 83: insert HTML and SVG inside an existing native container.
   await page.evaluate(() => {
     const scene=sec();scene.layout="free";scene.elements=[];
