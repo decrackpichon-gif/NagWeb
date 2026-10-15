@@ -218,7 +218,7 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
 // Los decoradores de v14 ya identifican las fotos. Este adaptador reutiliza esos
 // data-wpart y extiende el mismo contrato de Hero a Collage y Moodboard.
 (function(){
- function enhance(kind,rootClass,stageSelector,images,extra){
+ function enhance(kind,rootClass,stageSelector,images,extra,fields){
   var old=W.kinds[kind];if(!old)return;
   var def=Object.assign({},old);
   def.fields=[{type:'hint',text:'Seleccioná una foto o un texto desde la barra o el lienzo. Mové, escalá y girá cada pieza; la distribución móvil se guarda aparte y las composiciones anteriores siguen funcionando.'}]
@@ -231,7 +231,7 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
    root.setAttribute('data-nw-part-height',stageSelector);
    root.setAttribute('data-nw-part-y','var(--h)');
    // v14 no identificaba los dos textos del pie como partes movibles.
-   (extra||[]).forEach(function(a){
+   (fields||[]).forEach(function(a){
     var node=root.querySelector(a[1]);if(node)node.setAttribute('data-wpart',a[0]);
    });
    var parts=[];
