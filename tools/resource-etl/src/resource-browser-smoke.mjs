@@ -817,6 +817,8 @@ try {
   // Canvas shortcut regression: a double-click on an existing SVG must
   // reopen that exact resource without inserting or mutating another element.
   const canvasShortcutHistory = await page.evaluate(() => history.length);
+  const canvasShortcutElement = await page.evaluate(id =>
+    structuredClone(sec().elements.find(e=>e.id===id)),inserted.element.id);
   // On Windows the canvas SVG can be visible before the outer preview load
   // handler has cleared its editing readiness guard. Verify readiness first,
   // then remove selection to test that dblclick selects the SVG itself.
@@ -839,10 +841,18 @@ try {
   await svgClickTarget.dblclick();
   await expect(page.getByRole("dialog", { name: "Biblioteca de recursos", exact: true }))
     .toBeVisible({timeout:10000});
+  // Two real pointer clicks may be recorded by the editor's ordinary canvas
+  // history. The customization workflow itself must not add more snapshots.
+  const gestureHistory=await page.evaluate(() => history.length);
+  assert.deepEqual(await page.evaluate(id =>
+    structuredClone(sec().elements.find(e=>e.id===id)),inserted.element.id),
+    canvasShortcutElement,"A real SVG double-click must preserve the inserted object");
   const resourceFrameUrl = await page.locator('iframe[title="Biblioteca de recursos de NagWeb"]').getAttribute("src");
   assert.equal(new URL(resourceFrameUrl, "http://localhost").searchParams.get("editResource"), icon.id);
   assert.equal(await page.evaluate(() => selection[0]), inserted.element.id);
   await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
+  assert.equal(await page.evaluate(() => history.length), gestureHistory,
+    "Closing SVG customization must not add undo history");
   // The SVG toolbar only enables the shortcut once the selected vector's
   // pixels are measurable after a preview-frame reload. A .focus() alone
   // can race the asynchronous iframe readiness check.
@@ -868,12 +878,12 @@ try {
   await editShortcutButton.press("Enter");
   await expect(page.getByRole("dialog", { name: "Biblioteca de recursos", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
-  assert.equal(await page.evaluate(() => history.length), canvasShortcutHistory,
-    "Opening and cancelling direct canvas customization never adds undo history");
+  assert.equal(await page.evaluate(() => history.length), gestureHistory,
+    "Opening and cancelling customization must not add history beyond normal canvas selection");
   assert.equal(await page.evaluate(() => sec().elements.length), 1);
   report.scenarios.push({ editor: "direct canvas SVG customization", doubleClick: true,
     keyboard: process.platform==="win32" ? "Alt+Enter handler and native Enter" : "Alt+Enter and native Enter",
-    preservesUndoHistory: true });
+    preservesElement:true,noCustomizationUndo:true,canvasClickSnapshots:gestureHistory-canvasShortcutHistory });
   await page.locator("#btn-view-mob").click();
   await page.getByRole("button", { name: "Biblioteca de recursos", exact: true }).click();
   await libraryFrame.locator('[data-resource-id="smoke:icon"]').click();
