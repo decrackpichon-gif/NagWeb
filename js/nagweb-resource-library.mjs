@@ -22,6 +22,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   editButton.className = "tb-ico";
   editButton.textContent = "Editar";
   editButton.setAttribute("aria-label", "Personalizar ícono seleccionado");
+  editButton.setAttribute("aria-keyshortcuts", "Alt+Enter");
   editButton.title = "Personalizar ícono seleccionado";
   editButton.style.cssText = "white-space:nowrap;flex-shrink:0;font-size:12px";
   editButton.dataset.resourceLibraryEdit = "";

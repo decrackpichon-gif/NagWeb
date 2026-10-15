@@ -869,15 +869,30 @@ try {
     name: "Personalizar ícono seleccionado", exact: true
   });
   await expect(editShortcutButton).toBeEnabled();
+  // Chromium/Windows can consume physical Alt+Enter at the browser layer.
+  // Verify our exact shortcut handler with a bubbling keyboard event there;
+  // keep the real OS keyboard path on Linux.
   await editShortcutButton.focus();
-  await page.keyboard.press("Alt+Enter");
+  if(process.platform==="win32"){
+    await editShortcutButton.dispatchEvent("keydown",{
+      key:"Enter",code:"Enter",altKey:true,bubbles:true,cancelable:true
+    });
+  }else{
+    await page.keyboard.press("Alt+Enter");
+  }
+  await expect(page.getByRole("dialog", { name: "Biblioteca de recursos", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
+  // Native Enter is the accessible fallback when the OS reserves Alt+Enter.
+  await editShortcutButton.focus();
+  await editShortcutButton.press("Enter");
   await expect(page.getByRole("dialog", { name: "Biblioteca de recursos", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
   assert.equal(await page.evaluate(() => history.length), canvasShortcutHistory,
     "Opening and cancelling direct canvas customization never adds undo history");
   assert.equal(await page.evaluate(() => sec().elements.length), 1);
   report.scenarios.push({ editor: "direct canvas SVG customization", doubleClick: true,
-    keyboard: "Alt+Enter", preservesUndoHistory: true });
+    keyboard: process.platform==="win32" ? "Alt+Enter handler and native Enter" : "Alt+Enter and native Enter",
+    preservesUndoHistory: true });
   await page.locator("#btn-view-mob").click();
   await page.getByRole("button", { name: "Biblioteca de recursos", exact: true }).click();
   await libraryFrame.locator('[data-resource-id="smoke:icon"]').click();
@@ -1799,7 +1814,10 @@ try {
   for(const key of ["id","x","y","w","rot"])assert.equal(shakeAfter[key],shakeBefore[key]);
   assert.equal(shakeAfter.nwMagicCss.provider,"csshake");
   assert.equal(shakeAfter.nwMagicCss.values.trigger,"hover");
-  await expect(page.frameLocator("#preview").locator('[data-id="'+shakeAfter.id+'"] .nw-magic-inner')).toHaveClass(/shake/);
+  const shakeAnimated=page.frameLocator("#preview").locator('[data-id="'+shakeAfter.id+'"] .nw-magic-inner');
+  await expect(shakeAnimated).toHaveClass(/shake/);
+  await shakeAnimated.hover();
+  await expect(shakeAnimated).toHaveCSS("animation-name","shake");
   let shakeExport=await page.evaluate(()=>generateSite(flattenPage(page()),false,true,false));
   assert.match(shakeExport,/@keyframes shake/);
   assert.match(shakeExport,/class="nw-magic-inner shake"/);
@@ -1810,6 +1828,8 @@ try {
   await expect(libraryFrame.locator("[data-apply-status]")).toContainText("actualizada y guardada");
   await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
   assert.equal(await page.evaluate(()=>sec().elements[0].nwMagicCss.values.trigger),"constant");
+  await expect(page.frameLocator("#preview").locator('[data-id="'+shakeAfter.id+'"] .shake-constant'))
+    .toHaveCSS("animation-name","shake");
   shakeExport=await page.evaluate(()=>generateSite(flattenPage(page()),false,true,false));
   assert.match(shakeExport,/shake shake-constant/);
   await page.reload();

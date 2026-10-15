@@ -412,3 +412,10 @@ Se recuperaron de los **importadores reales** las direcciones de 17 proveedores 
 - El host valida origen, identidad, dependencia única, clase permitida, CSS sin recursos externos, y licencia; persistencia compartida en `nwMagicCss`. Se agregaron pruebas unitarias y Chromium de aplicación, edición, exportación, persistencia y deshacer.
 - Corregida la prueba que exigía mantener una selección activa tras `undo()` cuando el editor explícitamente la limpia. Se debe confirmar la ejecución de CI y la actualización del índice derivado (6041 nativos y 721 código, 6762 totales).
 - Sin deploy de Vercel ni merge a main.
+
+## QA de integración, teclado y cobertura de CSSShake (15/10/2026)
+
+- La CI del commit `7068681` pasó Linux, selftests y Windows smoke, pero falló **Chromium Windows** al usar `Alt+Enter` sobre el botón de personalización. Ese atajo puede ser capturado por el navegador o el sistema operativo Windows.
+- El test separa la verificación del manejador `Alt+Enter` (evento de teclado sobre el botón en Windows, atajo físico en Linux) de la activación accesible estándar con `Enter` que funciona sin ese atajo. El botón anuncia `aria-keyshortcuts="Alt+Enter"`.
+- CSSShake recibe una comprobación visual de `animation-name` en Hover/Siempre, y los diez nombres upstream se prueban como variantes nativas tanto en Hover como en Siempre. Las nuevas variantes no auditadas siguen siendo «Solo código».
+- La guía `NAGWEB_05_GUIA_PRUEBA_Y_ALCANCE.md` documenta prueba manual y la diferencia entre el hito estable y el objetivo completo. No declarar Windows aprobado hasta revisar la CI del commit final. Sin deploy Vercel ni merges.

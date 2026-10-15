@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { editorUseOf, canInsertInEditor } from "./runtime/editor-availability.mjs";
 import { transformMagicCssEffect,transformCssShakeRuntime,transformCssShakeEffect } from "./light-transformers.mjs";
+import {CSSSHAKE_EFFECTS} from "./extractors/csshake.mjs";
 import { validatedMagicCssEffect,validatedCssEffect,validSavedMagicEffect } from "./runtime/nagweb-magic-css-effect.mjs";
 import { transformSpinKitLoader } from "./light-transformers.mjs";
 import { buildResourceApplyEnvelope } from "./runtime/resource-apply-bridge.mjs";
@@ -75,7 +76,7 @@ assert.throws(()=>validatedMagicCssEffect({...magicEnvelope,descriptor:{...magic
 assert.throws(()=>validatedMagicCssEffect({...magicEnvelope,descriptor:{...magicEnvelope.descriptor,
  payload:{...magicEnvelope.descriptor.payload,iterations:999}}}),/fuera de rango/);
 assert.equal(validSavedMagicEffect({...valid,css:'<style>bad</style>'}),false);
-console.log("Native editor availability: real renderer, artifact, license, provider, host capability OK.");
+// A success notice belongs after every provider's validation, not between them.
 
 const shakeRaw={repository:"https://github.com/elrumordelaluz/csshake",commit:"test",scss:"//source",
  packageJson:{version:"1.6"},effects:[{name:"shake",className:"shake"}],
@@ -97,3 +98,25 @@ assert.throws(()=>validatedCssEffect({...shakeEnvelope,descriptor:{...shakeEnvel
  payload:{...shakeEnvelope.descriptor.payload,css:"@import url(https://bad.invalid)"}}}),/CSSShake/);
 assert.throws(()=>validatedCssEffect({...shakeEnvelope,descriptor:{...shakeEnvelope.descriptor,
  payload:{...shakeEnvelope.descriptor.payload,trigger:"click"}}}),/CSSShake/);
+
+const fullShakeCss=CSSSHAKE_EFFECTS.map(({className})=>
+  `.${className}:hover,.${className}.shake-constant{animation:${className} 1s infinite}`+
+  `@keyframes ${className}{from{transform:translateX(0)}to{transform:translateX(1px)}}`
+).join("\n");
+assert.equal(CSSSHAKE_EFFECTS.length,10);
+const completeRaw={...shakeRaw,css:fullShakeCss,effects:CSSSHAKE_EFFECTS};
+for(const variant of CSSSHAKE_EFFECTS){
+  const entry=transformCssShakeEffect({raw:completeRaw,effect:variant});
+  assert.equal(editorUseOf(entry),"csshake",entry.id);
+  for(const trigger of ["hover","constant"]){
+    const envelope=buildResourceApplyEnvelope(entry,{values:{trigger}});
+    envelope.descriptor.payload.css=fullShakeCss;
+    const validated=validatedCssEffect(envelope);
+    assert.equal(validated.id,entry.id);
+    assert.equal(validated.values.trigger,trigger);
+    assert.equal(validSavedMagicEffect(validated),true,entry.id);
+  }
+}
+const unknown=transformCssShakeEffect({raw:completeRaw,effect:{name:"shake-unknown",className:"shake-unknown"}});
+assert.equal(editorUseOf(unknown),"code","New upstream CSSShake variants remain copy-only until audited");
+console.log("Native editor availability: 10 CSSShake variants (hover and constant), SVG, HTML, Magic.css, license and provider validation OK.");
