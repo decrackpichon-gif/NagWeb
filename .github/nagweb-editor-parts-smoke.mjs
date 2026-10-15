@@ -1536,7 +1536,17 @@ export async function runEditorPartsSmoke(page){
     parts:['image-0','stat','stat-label','copy-title','copy-text','image-1'],
     model:{title:'TÍTULO',text:'Texto de muestra',big:'99',label:'PROYECTOS'}}
   ]){
-   await load(27+['splitfeature','floatingcaption','casehero','bentoshow'].indexOf(cfg.kind));
+   // El lienzo sigue inicializado después de la prueba fotográfica.
+   // Reutilizarlo evita carreras entre cargas sucesivas y ejercita la
+   // selección entre composiciones dentro de una misma sesión real.
+   await page.evaluate(()=>{
+    const fr=document.querySelector('#preview'),d=fr?.contentDocument;
+    if(!d?.__nwCanvasPartAPI||fr.contentWindow?.__nwFeedback16Editors!==1){
+     throw Error('El lienzo compartido dejó de estar inicializado');
+    }
+    d.__nwCanvasPartAPI.clear();
+    d.querySelectorAll('.el.wdg[data-id^="test-fluid-"]').forEach(n=>n.remove());
+   });
    await page.evaluate(c=>{
     const e=mkEl('widget',{id:c.id,kind:c.kind,wp:c.model});sec().elements.push(e);
     const d=document.querySelector('#preview').contentDocument,s=d.createElement('style');
