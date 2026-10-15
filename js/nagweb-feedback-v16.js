@@ -219,24 +219,24 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
 // data-wpart y extiende el mismo contrato de Hero a Collage y Moodboard.
 (function(){
  function enhance(kind,rootClass,stageSelector,images,extra,fields){
-  var old=W.kinds[kind];if(!old)return;
+  var old=W.kinds[kind];if(!old)return;extra=extra||{};
   var def=Object.assign({},old);
-  def.fields=[{type:'hint',text:'Seleccioná una foto o un texto desde la barra o el lienzo. Mové, escalá y girá cada pieza; la distribución móvil se guarda aparte y las composiciones anteriores siguen funcionando.'}]
+  def.fields=[{type:'hint',text:extra.hint||'Seleccioná una foto o un texto desde la barra o el lienzo. Mové, escalá y girá cada pieza; la distribución móvil se guarda aparte y las composiciones anteriores siguen funcionando.'}]
    .concat((old.fields||[]).filter(function(f){return f.type!=='hint';}));
   def.markup=function(e,ctx){
    var t=document.createElement('template');t.innerHTML=old.markup(e,ctx);
    var root=t.content.firstElementChild;if(!root)return t.innerHTML;
    root.setAttribute('data-nw-part-scope',kind);
-   root.setAttribute('data-nw-part-mobile','600');
-   root.setAttribute('data-nw-part-height',stageSelector);
-   root.setAttribute('data-nw-part-y','var(--h)');
+   root.setAttribute('data-nw-part-mobile',String(extra.mobile||600));
+   if(stageSelector)root.setAttribute('data-nw-part-height',stageSelector);
+   root.setAttribute('data-nw-part-y',extra.unitY||'var(--h)');
    // v14 no identificaba los dos textos del pie como partes movibles.
    (fields||[]).forEach(function(a){
     var node=root.querySelector(a[1]);if(node)node.setAttribute('data-wpart',a[0]);
    });
    var parts=[];
    root.querySelectorAll('[data-wpart]').forEach(function(n){
-    var name=n.getAttribute('data-wpart'),label=/^image-/.test(name)?'Foto '+(+name.split('-')[1]+1):name==='label'?'Rótulo':name==='caption'?'Descripción':name;
+    var name=n.getAttribute('data-wpart'),label=extra.labels&&extra.labels[name]||(/^image-/.test(name)?'Foto '+(+name.split('-')[1]+1):name==='label'?'Rótulo':name==='caption'?'Descripción':name);
     parts.push([name,label]);
    });
    if(ctx&&ctx.edit){
@@ -247,7 +247,7 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
     root.insertBefore(nav,root.firstChild);
    }
    var html=t.innerHTML;
-   parts.forEach(function(a){html=partStyleMarkup(html,e,a[0],'var(--h)');});
+   parts.forEach(function(a){html=partStyleMarkup(html,e,a[0],extra.unitY||'var(--h)');});
    return html;
   };
   // La antigua regla .nw-part-t tenía especificidad mayor: el modo móvil
@@ -256,9 +256,9 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
   var css=(W.css&&W.css[kind]||'')+
    '.'+rootClass+'{position:relative;container-type:inline-size;isolation:isolate}' +
    '.'+rootClass+' .nw-photo-editbar{left:10px;right:10px;top:10px;max-width:calc(100% - 20px);max-height:110px;overflow:auto;z-index:70}' +
-   extra.css+
+   (extra.css||'')+
    partSel+'{translate:var(--nw-tx,0px) var(--nw-ty,0px);rotate:var(--nw-pr,0deg);scale:var(--nw-ps,1)}' +
-   '@container (max-width:600px){'+partSel+'{translate:var(--nw-mx,var(--nw-tx,0px)) var(--nw-my,var(--nw-ty,0px));rotate:var(--nw-mr,var(--nw-pr,0deg));scale:var(--nw-ms,var(--nw-ps,1))}}';
+   '@container (max-width:'+(extra.mobile||600)+'px){'+partSel+'{translate:var(--nw-mx,var(--nw-tx,0px)) var(--nw-my,var(--nw-ty,0px));rotate:var(--nw-mr,var(--nw-pr,0deg));scale:var(--nw-ms,var(--nw-ps,1))}}';
   X.reg(kind,def,css,W.runtime&&W.runtime[kind]||'');
  }
  enhance('editorialcollage','scx-ec','.scx-ec-grid',3,{
@@ -273,6 +273,25 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
    '.scx-mb>div{height:var(--h)}'+
    '@container (max-width:600px){.scx-mb>div,.scx-mb figcaption{--h:90cqw}}'
  },[['label','figcaption']]);
+ // Cuatro composiciones de altura variable: conservar su flujo CSS y medir
+ // las dos coordenadas respecto del ancho útil de su propio contenedor.
+ // Así no hay que inventar una altura fija para maquetas de texto adaptable.
+ enhance('splitfeature','scx-sf',null,2,{
+  unitY:'100cqw',hint:'Editá imagen principal, imagen secundaria y los bloques de texto desde el lienzo; las posiciones móviles se guardan aparte.',
+  labels:{'main-image':'Imagen principal','detail-image':'Imagen secundaria',kicker:'Rótulo',title:'Título',text:'Descripción'}
+ },[['kicker','.scx-sf-side b'],['text','.scx-sf-side p']]);
+ enhance('floatingcaption','scx-fc',null,1,{
+  unitY:'100cqw',hint:'Mové la imagen, el recuadro flotante y sus textos por separado. Conservá variantes de escritorio y móvil.',
+  labels:{image:'Imagen','caption-card':'Recuadro',eyebrow:'Rótulo',title:'Título',text:'Descripción'}
+ },[['eyebrow','.scx-fc figcaption b'],['text','.scx-fc figcaption p']]);
+ enhance('casehero','scx-ch',null,1,{
+  unitY:'100cqw',hint:'Editá imagen, título y metadatos sin perder los diseños Split, Overlay e Imagen inferior.',
+  labels:{image:'Imagen',eyebrow:'Rótulo',title:'Título',meta:'Información',year:'Año'}
+ },[['eyebrow','.scx-ch-copy>b'],['meta','.scx-ch-copy>div span'],['year','.scx-ch-copy>div strong']]);
+ enhance('bentoshow','scx-bs',null,2,{
+  unitY:'100cqw',hint:'Seleccioná las dos imágenes, la cifra, el rótulo y los textos de Bento por separado.',
+  labels:{'image-0':'Imagen 1','image-1':'Imagen 2',stat:'Cifra','stat-label':'Rótulo', 'copy-title':'Antetítulo','copy-text':'Texto'}
+ },[['stat-label','.scx-bs-stat span'],['copy-title','.scx-bs-copy b'],['copy-text','.scx-bs-copy p']]);
 })(); 
 
 /* ---------- Composiciones reactivas: edición estable + movimiento independiente ---------- */
