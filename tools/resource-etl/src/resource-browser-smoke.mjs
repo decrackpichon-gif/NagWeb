@@ -207,9 +207,8 @@ try {
       await shellPage.goto(`http://127.0.0.1:${server.address().port}/resource-browser/`);
       await shellPage.locator('[data-resource-id="smoke:icon"]').waitFor();
       await expect.poll(()=>shellPage.evaluate(async()=>{
-        const ready=await navigator.serviceWorker.ready;
         const cache=await caches.open("nagweb-resource-browser-shell-v1");
-        return Boolean(ready.active && navigator.serviceWorker.controller &&
+        return Boolean(navigator.serviceWorker.controller &&
           (await cache.keys()).length>=30);
       }),{timeout:25000}).toBe(true);
       await shellContext.setOffline(true);
