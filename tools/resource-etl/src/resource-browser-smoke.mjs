@@ -1669,6 +1669,7 @@ try {
     await expect(outer.locator(type==="image"?"img.im-base":"svg.vec-svg")).toBeVisible();
     const exported=await page.evaluate(()=>generateSite(flattenPage(page()),false,true,false));
     assert.match(exported,/nw-magic-inner magictime puffIn/);
+    assert.match(exported,/@keyframes puffIn/, "Export must include the stylesheet, not only the animation class");
     await page.reload();
     assert.equal(await page.evaluate(()=>sec().elements[0].nwMagicCss.id),magicCss.id);
     report.scenarios.push({editor:"Magic.css on "+type,status:"passed",geometry:true,export:true,reload:true});
@@ -1702,6 +1703,7 @@ try {
     await expect(outer.locator(type==="svgdraw"?"svg.sd-inner":"video")).toBeAttached();
     const exported=await page.evaluate(()=>generateSite(flattenPage(page()),false,true,false));
     assert.match(exported,/nw-magic-inner magictime puffIn/);
+    assert.match(exported,/@keyframes puffIn/, "Export must include the stylesheet, not only the animation class");
     await page.reload();
     assert.equal(await page.evaluate(()=>sec().elements[0].nwMagicCss.id),magicCss.id);
     report.scenarios.push({editor:"Magic.css on "+type,status:"passed",

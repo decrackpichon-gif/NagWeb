@@ -15384,11 +15384,12 @@ function generateSite(p, edit, external, mobileView){
 
   /* barras de navegación fijas: se dibujan aparte (fuera del scroll y del mundo 3D) */
   const allSecs = p.sections;
-  // Embed only the Magic.css styles actually applied to text and buttons.
-  // Original upstream CSS stays offline and is never fetched at render time.
+  // Collect verified styles for every element supported by magicInner().
+  // Do not require individual per-type branches: a future compatible target
+  // must bring its CSS into both the canvas preview and offline export.
   const magicStyles=new Map();
   allSecs.forEach(s=>s.elements.forEach(e=>{
-    if(['heading','label','paragraph','button','image','vector'].includes(e.type)){
+    if(['heading','label','paragraph','button','image','vector','svgdraw','video'].includes(e.type)){
       const fx=safeMagicFx(e);
       if(fx)magicStyles.set(fx.id,fx.css);
     }
