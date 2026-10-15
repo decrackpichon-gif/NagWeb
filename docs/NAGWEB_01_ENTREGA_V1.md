@@ -26,10 +26,10 @@ Esto es un **alcance cerrado para V1.0**. Los recursos adicionales, efectos nuev
 
 - [x] Flujo de creación, edición, guardado, historial y exportación ya cubierto por pruebas de navegador existentes.
 - [x] Corregida la dependencia del puente privado de descargas: respaldo y HTML disponibles en navegador común (`8c4e318`).
-- [ ] Aprobación de la **prueba integral V1.0** para crear una página, escena y botón, guardar JSON/HTML, recargar e importar el respaldo. CI: https://github.com/decrackpichon-gif/NagWeb/actions/runs/38773384278 . **No dar por aprobada mientras el run no haya finalizado correctamente**.
-- [ ] Revisión final de uso y apariencia de un sitio propio por parte del usuario, si desea aceptarlo visualmente como su V1.0.
+- [x] **Prueba integral V1.0 aprobada**: crear una página, escena y botón, descargar JSON e HTML con un navegador común, recargar e importar el respaldo. Se conservan páginas, escenas, estructura y contenido. GitHub Actions: https://github.com/decrackpichon-gif/NagWeb/actions/runs/38773384278 .
+- [ ] Revisión visual de un sitio propio por parte del usuario, opcional como aceptación estética, **no bloquea el cierre técnico de la V1.0**.
 
-**Estado:** candidata V1.0 en validación. No se amplía el alcance por tareas opcionales. Si la prueba nueva falla, corregir ese defecto y repetir solo lo necesario. No mergear ni desplegar en Vercel sin autorización del usuario.
+**Estado: NAGWEB 01 V1.0 funcional, cerrada técnicamente en la rama exclusiva.** La batería completa de Chromium finalizó con éxito el 15/10/2026. La publicación en Vercel, un merge con otras ramas y la aceptación visual específica del usuario son decisiones separadas y no se realizaron. Se pueden desarrollar mejoras V1.1+ sin posponer el cierre de esta versión.
 
 ## Trabajo pospuesto para V1.1+
 
