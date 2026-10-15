@@ -2,6 +2,12 @@
 
 > **Ficha de continuidad de producto, decisiones y referencias.** Actualizada 11/10/2026 a partir de documentos y ramas comprobadas. No reemplaza el código ni el historial Git. Toda cifra de estado es una **fotografía** y hay que verificar cambios posteriores.
 
+## Directiva máxima de producción: versión 1.0 primero (15/10/2026)
+
+**Decisión general del usuario, prioritaria también para este frente:** terminar una V1.0 **estable, funcional y entregable**, en el menor tiempo y con la menor cantidad de trabajo innecesario. Congelar el alcance en el recorrido esencial, resolver bloqueantes reales de manera transversal, ejecutar la comprobación final pertinente y **cerrar la versión**. No proponer nuevas funciones, recursos, efectos, opciones, controles ni tareas de pulido no bloqueantes antes del cierre; registrarlas como V1.1+.
+
+Esta regla **prevalece sobre prioridades antiguas de expansión** de esta ficha, sin derogar funcionalidades comprometidas que resulten imprescindibles para una V1.0 útil. Consultar la [política universal de desarrollo](https://github.com/decrackpichon-gif/NagWeb/blob/main/POLITICA_DESARROLLO_V1_PRIMERO.md). No mezclar ramas ni adelantar merges o despliegues sin autorización.
+
 ## Identidad inmutable y ramas
 
 - Proyecto: **NAGWEB 03 | Cámara 3D**.
