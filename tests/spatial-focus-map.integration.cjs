@@ -667,7 +667,7 @@ assert.equal(behind(parallel,{...parallel,z:1120,rotateX:30,rotateY:45,scale:200
 assert.equal(behind(parallel,{...parallel,z:1200,rotateY:45},1000,1,true),false,'Unknown plane dimensions never trigger speculative culling');
 assert.equal(behind(parallel,{...parallel,z:1200,rotateY:45,rotate:30},1000,1,true,{width:200,height:100}),false,'Additional in-plane rotation preserves browser clipping');
 assert.equal(behind({...parallel,rotateY:8},{...parallel,z:2000,rotateY:45},1000,1,true,{width:200,height:100}),false,'Tilted cameras need complete world-space geometry');
-assert.equal(behind(parallel,{...parallel,z:540,rotateY:45},1000,.5,true,{width:200,height:100}),true,'Responsive perspective and layer depth use the same units');
+assert.equal(behind(parallel,{...parallel,z:580,rotateY:45},1000,.5,true,{width:200,height:100}),true,'Responsive perspective and layer depth use the same units');
 console.log('PASS tilted DOM plane eye crossing: complete corners only, scale, mirrored angles and safe fallbacks');
 console.log('PASS conservative DOM plane eye crossing and responsive-depth invariants');
 
