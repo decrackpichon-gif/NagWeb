@@ -28,6 +28,8 @@ for(const perspective of [0,18,40]){
     assert.equal(c.upper.length,c.lower.length);
     assert.equal(c.stripDepth.length,c.upper.length-1,'One depth for each curved texture strip');
     assert.ok(c.stripDepth.every(d=>Number.isFinite(d)&&d>=-1&&d<=1),'Curved strip depth is normalized');
+    assert.equal(c.stripAlpha.length,c.stripDepth.length,'Each depth strip has a fade level');
+    assert.ok(c.stripAlpha.every(a=>Number.isFinite(a)&&a>=0&&a<=1),'Strip opacity is finite and normalized');
     assert.ok(c.upper.length>=17&&c.upper.length<=97);
     for(const p of c.upper.concat(c.lower))assert.ok(Number.isFinite(p.x)&&Number.isFinite(p.y),'Finite mesh vertex');
     const points=c.upper.concat(c.lower);
@@ -47,6 +49,25 @@ for(const progress of [0,.125,.25,.375,.5,.625,.75,.875]){
  }
 }
 assert.ok(curvedOcclusions>0,'Curved cards expose meaningful per-strip depth');
+
+// The foreground/rear fade follows each strip's own depth, not just the card center.
+let fadeSamples=0;
+for(const backFade of [10,70,95]){
+ for(const perspective of [0,18,40]){
+  for(const progress of [0,.125,.25,.5,.75,.999]){
+   const cards=model.layout(960,540,{kind:'showcase-stream',backFade,perspective},progress,12,16/9,false);
+   for(const card of cards){
+    near(card.alpha,1-backFade/100+(backFade/100)*Math.pow((card.depth+1)/2,2)*(3-2*((card.depth+1)/2)),'Card center fade stays compatible');
+    card.stripDepth.forEach((d,i)=>{
+     const t=(d+1)/2,expected=1-backFade/100+(backFade/100)*t*t*(3-2*t);
+     near(card.stripAlpha[i],expected,'Each curved strip uses its physical depth');
+     fadeSamples++;
+    });
+   }
+  }
+ }
+}
+console.log('Showcase strip fades OK: '+fadeSamples+' samples');
 
 // Corner percentages remain proportional even when a user changes the format,
 // canvas orientation, image size, or corners in the inspector.
