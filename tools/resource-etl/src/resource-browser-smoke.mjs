@@ -1666,6 +1666,70 @@ try {
     report.scenarios.push({editor:"Magic.css on "+type,status:"passed",
       geometry:true,export:true,reload:true});
   }
+  // A mixed-type selection shares one effect, one undo step and one
+  // persisted operation; unrelated objects remain exactly as they were.
+  await page.evaluate(()=>{
+    const heading=mkEl("heading",{text:"Selección grupal",x:15,y:23,w:33,rot:4,anim:"none"});
+    const drawing=mkEl("svgdraw",{svgCode:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 12L22 12"/></svg>',
+      color:"#224466",strokeWidth:2,x:46,y:47,w:31,rot:9,anim:"none"});
+    const unrelated=mkEl("button",{text:"No seleccionado",x:78,y:72,w:20,anim:"none"});
+    Object.assign(sec(),{layout:"free",elements:[heading,drawing,unrelated]});
+    selection=[heading.id,drawing.id];curEl=0;secFocus=false;refresh();
+  });
+  const multiBefore=await page.evaluate(()=>({
+    ids:sec().elements.map(e=>e.id),
+    geometry:sec().elements.map(e=>[e.x,e.y,e.w,e.rot]),
+    history:history.length
+  }));
+  await page.getByRole("button",{name:"Biblioteca de recursos",exact:true}).click();
+  if(await libraryFrame.locator("[data-detail]").evaluate(n=>n.open))
+    await libraryFrame.getByRole("button",{name:"Cerrar",exact:true}).click();
+  await libraryFrame.locator('[data-resource-id="'+magicCss.id+'"]').click();
+  await expect(libraryFrame.getByRole("button",{name:"Aplicar animación al elemento",exact:true})).toBeEnabled();
+  await libraryFrame.getByRole("button",{name:"Aplicar animación al elemento",exact:true}).click();
+  await expect(libraryFrame.locator("[data-apply-status]")).toContainText("guardada en 2 elementos");
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  const multiAfter=await page.evaluate(()=>({
+    ids:sec().elements.map(e=>e.id),
+    geometry:sec().elements.map(e=>[e.x,e.y,e.w,e.rot]),
+    effects:sec().elements.map(e=>e.nwMagicCss?.id||null),
+    selected:[...selection],
+    history:history.length
+  }));
+  assert.deepEqual(multiAfter.ids,multiBefore.ids);
+  assert.deepEqual(multiAfter.geometry,multiBefore.geometry);
+  assert.deepEqual(multiAfter.effects,[magicCss.id,magicCss.id,null]);
+  assert.deepEqual(multiAfter.selected,multiBefore.ids.slice(0,2));
+  assert.equal(multiAfter.history,multiBefore.history+1);
+  const multiExport=await page.evaluate(()=>generateSite(flattenPage(page()),false,true,false));
+  assert.equal((multiExport.match(/class="nw-magic-inner magictime puffIn"/g)||[]).length,2);
+  await page.locator("#btn-undo").click();
+  assert.deepEqual(await page.evaluate(()=>sec().elements.map(e=>e.nwMagicCss?.id||null)),[null,null,null]);
+  await page.locator("#btn-redo").click();
+  assert.deepEqual(await page.evaluate(()=>sec().elements.map(e=>e.nwMagicCss?.id||null)),
+    [magicCss.id,magicCss.id,null]);
+  await page.reload();
+  assert.deepEqual(await page.evaluate(()=>sec().elements.map(e=>e.nwMagicCss?.id||null)),
+    [magicCss.id,magicCss.id,null]);
+  // Removal of a multi-selection must also be one undoable change.
+  await page.evaluate(ids=>{
+    selection=ids;curEl=0;secFocus=false;renderPane();
+  },multiBefore.ids.slice(0,2));
+  const clearMultiple=page.getByRole("button",{name:"Quitar animación Magic.css seleccionada",exact:true});
+  await expect(clearMultiple).toBeEnabled();
+  const multiClearHistory=await page.evaluate(()=>history.length);
+  await clearMultiple.click();
+  assert.deepEqual(await page.evaluate(()=>sec().elements.map(e=>e.nwMagicCss?.id||null)),[null,null,null]);
+  assert.equal(await page.evaluate(()=>history.length),multiClearHistory+1);
+  await page.locator("#btn-undo").click();
+  assert.deepEqual(await page.evaluate(()=>sec().elements.map(e=>e.nwMagicCss?.id||null)),
+    [magicCss.id,magicCss.id,null]);
+  await page.locator("#btn-redo").click();
+  assert.deepEqual(await page.evaluate(()=>sec().elements.map(e=>e.nwMagicCss?.id||null)),[null,null,null]);
+  await page.reload();
+  assert.deepEqual(await page.evaluate(()=>sec().elements.map(e=>e.nwMagicCss?.id||null)),[null,null,null]);
+  report.scenarios.push({editor:"Magic.css multi-selection across heading and SVG",
+    status:"passed",atomicHistory:true,undoRedo:true,persistence:true,export:true,noCollateral:true});
   // Removing an existing Magic.css effect never deletes the target object.
   // Playwright page.evaluate runs in the browser, so transfer fixture data
   // explicitly rather than referencing Node's module-scoped magicCss.
