@@ -54,15 +54,15 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
      cs.maskImage&&cs.maskImage!=='none'||cs.filter&&cs.filter!=='none'||
      cs.mixBlendMode&&cs.mixBlendMode!=='normal')return false;
   var color=cs.backgroundColor||'';
-  if(/^rgb\\(/i.test(color))return true;
-  if(/^rgba\\(/i.test(color)){
-   var values=color.match(/[\\d.]+/g);
+  if(/^rgb\(/i.test(color))return true;
+  if(/^rgba\(/i.test(color)){
+   var values=color.match(/[\d.]+/g);
    return !!values&&values.length>=4&&+values[3]>=.999;
   }
   // JPEG has no alpha channel. An unwrapped native IMG fills its own box.
   if(node.tagName==='IMG'&&node.complete&&node.naturalWidth>0){
    var src=node.currentSrc||node.src||'';
-   return /^data:image\\/jpeg[;,]/i.test(src)||/\\.jpe?g(?:[?#]|$)/i.test(src);
+   return /^data:image\/jpeg[;,]/i.test(src)||/\.jpe?g(?:[?#]|$)/i.test(src);
   }
   return false;
  }
