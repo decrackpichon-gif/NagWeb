@@ -113,6 +113,15 @@ Editor **visual y profesional** para construir sitios y narrativas inmersivas co
 - Los enlaces de tarjetas **no navegan durante la edición**, sin alterar los links publicados. En Media expandible, al seleccionar una parte de un momento que está oculto por el scroll, el modo de aislamiento lo muestra para que pueda editarse, sin modificar la secuencia narrativa publicada.
 - Smoke de navegador agregado a `.github/nagweb-editor-parts-smoke.mjs`: casos reales de ambos recursos, capítulos dinámicos, selección, persistencia, exportación y variantes móviles, junto con sus movimientos originales. Consultar resultados de CI del HEAD antes de considerarlo aprobado.
 
+## Adaptador compartido para Collage editorial y Moodboard (14/10/2026)
+
+- **NAGWEB 01** incorpora **Collage editorial** (`editorialcollage`) y **Moodboard** (`moodboard`) al contrato `data-nw-part-scope` del editor, sin reconstruir el catálogo ni alterar `js/creatives-v14-batch1.js` o `js/creatives-v14-batch3.js`.
+- Se reutilizan los `data-wpart` de fotografías declarados por el decorador histórico: `image-0..2` en Collage y `image-0..5` en Moodboard. Sus rótulos/pies también son seleccionables desde la misma barra, con arrastre, escala, giro, Deshacer/Rehacer, guardado y exportación compartidos.
+- **Responsive real:** `__parts` conserva escritorio y `__partsMobile` guarda ajustes bajo los 600 px de contenido. El eje X usa `cqw` del contenedor de contenido; Y usa `var(--h)`, vinculado a la altura efectiva de la grilla y a sus variantes originales. Modelos heredados sin `refW/refH` conservan desplazamientos en píxeles.
+- El adaptador respeta las composiciones, fondos, variantes y efectos históricos. `partStyleMarkup` elimina variables de transformación duplicadas por el decorador antiguo, sin alterar los valores ajenos. No genera barra de edición en HTML publicado.
+- Código en `js/nagweb-feedback-v16.js`; regresiones añadidas a `.github/nagweb-editor-parts-smoke.mjs`. Verificar el resultado del CI del commit funcional vigente; esta nota documenta el alcance, no equivale a declarar la prueba aprobada.
+- Próximo bloque recomendado: extender esta capacidad a otras composiciones preexistentes agrupándolas por estructura, priorizando las que ya tienen `data-wpart`, sin introducir una herramienta de transformación nueva.
+
 ## Próximas prioridades (revisar con HEAD actual)
 
 - Priorizar la experiencia de lienzo como herramienta de diseño, edición real de elementos anidados y uso de recursos sin degradar su editabilidad.
