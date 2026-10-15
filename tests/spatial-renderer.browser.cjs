@@ -239,13 +239,24 @@ for(const [mode,html] of Object.entries(generated)){
    div.__nwSpatialPose=Object.assign({},div.__nwSpatialPose,{z:250});d.tick();
    const front=div.classList.contains('nw-spatial-inverse-occluded');
    const sameText=div.textContent==='Texto detrás del modelo',samePose=div.__nwSpatialPose.z===250;
+   // Moving the GLB without moving the camera must immediately affect the
+   // very next inverse check. No stale world-matrix ray intersections allowed.
+   div.__nwSpatialPose=Object.assign({},div.__nwSpatialPose,{z:-150});d.tick();
+   const restoredBehind=div.classList.contains('nw-spatial-inverse-occluded');
+   const observer=new MutationObserver(()=>{}),counts={writes:0};
+   observer.observe(div,{attributes:true,attributeFilter:['class']});
+   d.tick();d.tick();d.tick();const changes=observer.takeRecords().length;observer.disconnect();
+   const cssMaskOn=div.classList.contains('nw-spatial-inverse-occluded');
    div.remove();d.adapter.connect(api,[stage]);d.tick();
-   return{behind,front,sameText,samePose};
+   return{behind,front,sameText,samePose,restoredBehind,changes,cssMaskOn};
   });
   assert.equal(inverse.behind,true,'Fully covered HTML text is hidden behind opaque 3D');
   assert.equal(inverse.front,false,'HTML reappears when brought in front of 3D');
   assert.equal(inverse.sameText,true,'Text stays editable DOM, without rasterizing');
   assert.equal(inverse.samePose,true,'Existing keyframe pose data is not mutated');
+  assert.equal(inverse.restoredBehind,true,'Moving HTML back restores inverse occlusion on its next render');
+  assert.equal(inverse.cssMaskOn,true,'Occluded HTML remains hidden during static renders');
+  assert.equal(inverse.changes,0,'Static renders never remove/reapply the same inverse CSS mask');
   console.log('PASS inverse 3D to HTML conservative full coverage: depth and DOM restoration');
  }
 
