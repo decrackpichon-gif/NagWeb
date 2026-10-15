@@ -29,6 +29,22 @@ Esta regla **prevalece sobre prioridades antiguas de expansión** de esta ficha,
 
 **Regla operativa:** ante «Avanza», trabajar en A o B y avanzar hacia el cierre. No introducir un bloque C por mejoras opcionales. Consultar siempre el HEAD antes de modificar; esta fotografía de CI no reemplaza el estado actual.
 
+## Estado de entrega: Cámara 3D V1.0 lista (15/10/2026)
+
+**V1.0 terminada dentro del alcance cerrado anteriormente definido.** Se cerró el bloqueante de la oclusión inversa experimental preservando su implementación pero desactivándola por defecto, sin alterar el uso esencial de HTML real ni las máscaras HTML→WebGL admitidas. No se requirió introducir nuevos efectos, herramientas ni controles.
+
+**Fuente de verdad de la entrega:** código en `feat/scroll-camera-v1` commit [`3088025f9de18c1c13f937f760cba48064f193da`](https://github.com/decrackpichon-gif/NagWeb/commit/3088025f9de18c1c13f937f760cba48064f193da), anterior a este commit documental.
+
+**Validación final completa y verde:**
+- [NagWeb camera smoke #38774758688](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38774758688): **success**.
+- [NagWeb spatial integration #38774758571](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38774758571): **success; 41 checks**, con navegador Chromium y WebGL real.
+- Nueva aceptación real de V1.0: Deshacer → persistir en localStorage → recargar editor → preservar capas y keyframes → generar HTML. Incluye el ejemplo de tres capas y cinco encuadres; pruebas adicionales comprueban reproducción con Director y GLB exportado.
+- El commit documental no modifica runtime ni altera el resultado de la CI.
+
+**Entrega y uso:** [`docs/NAGWEB_03_CAMARA_3D_V1_0_ENTREGA.md`](../NAGWEB_03_CAMARA_3D_V1_0_ENTREGA.md) contiene alcance, pasos de acceso desde la rama, comprobaciones y limitaciones. La rama no se fusiona a `main`, no hay despliegue Vercel ni release público automático.
+
+**V1.1+ (no bloqueante para V1.0):** oclusión inversa WebGL→HTML parcial y universal, contenedores CSS arbitrarios, efectos adicionales y optimizaciones no relacionadas con fallos del uso mínimo. No reinterpretar estas ideas como defectos de V1.0.
+
 ## Identidad inmutable y ramas
 
 - Proyecto: **NAGWEB 03 | Cámara 3D**.
