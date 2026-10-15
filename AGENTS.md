@@ -2,6 +2,16 @@
 
 Este repositorio contiene cinco frentes **independientes** del mismo producto. Los nombres son fijos: NAGWEB 01 | Editor principal, NAGWEB 02 | Motion Lab, NAGWEB 03 | Cámara 3D, NAGWEB 04 | Interaction Studio, NAGWEB 05 | Biblioteca de recursos.
 
+## Regla prioritaria universal: V1.0 primero (15/10/2026)
+
+**Prioridad absoluta del usuario para TODOS los proyectos: cerrar rápido una V1.0 estable, funcional, comprobable y usable.** La expansión de catálogos, controles, efectos, variantes, opciones o refinamientos no esenciales debe esperar a V1.1+. **No inventar tareas para postergar la finalización.** Esta decisión tiene precedencia sobre los «próximos pasos» históricos orientados a expansión.
+
+- Al retomar, definir el **recorrido principal completo** y un alcance de aceptación **finito** a partir del estado real actual; no convertir ideas adicionales en requisitos.
+- Cada «Avanza» debe resolver bloqueantes o acercar de manera significativa a V1.0, atacando causas compartidas en vez de microetapas repetitivas.
+- Validar el uso real de extremo a extremo, persistencia y salida/entrega según el proyecto; entregar V1.0 sin presentarla como lista infinita de capacidades.
+- Conservar calidad, seguridad y pruebas necesarias. Mover mejoras opcionales al backlog V1.1+, **sin impedir la entrega**.
+- Leer la **[política universal canónica](https://github.com/decrackpichon-gif/NagWeb/blob/main/POLITICA_DESARROLLO_V1_PRIMERO.md)**, aplicable a todos los proyectos actuales y futuros salvo cambio expreso del usuario.
+
 ## Identificar el frente antes de editar
 
 Determinar la rama de trabajo ACTUAL y leer exclusivamente su ficha en `docs/contexto/`, además de sus documentos técnicos:
