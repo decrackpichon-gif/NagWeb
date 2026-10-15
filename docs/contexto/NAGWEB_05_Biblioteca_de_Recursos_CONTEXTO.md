@@ -404,3 +404,11 @@ Se recuperaron de los **importadores reales** las direcciones de 17 proveedores 
 - La nueva CI confirmó que, incluso con barra compacta, el botón de quitar efectos podía seguir deshabilitado porque la Biblioteca solo observaba mutaciones dentro de `main`. El panel `#pane`, donde el editor vuelve a dibujar la selección, requiere observación propia.
 - El commit `b9a6420` añade un `MutationObserver` de `#pane` para actualizar estado de personalización/eliminación sin sondeo temporal. Es una corrección transversal para la selección de recursos, no una excepción de prueba.
 - CI de ese commit: https://github.com/decrackpichon-gif/NagWeb/actions/runs/38730450545 . Confirmar éxito de Chromium Windows y Linux antes de continuar con CSSShake.
+
+## Etapa 102: CSSShake nativo (15/10/2026)
+
+- Los diez efectos CSSShake MIT se integran con el motor FX existente, sin duplicar el sistema de selección, historial, guardado ni exportación. Los ocho tipos de destino admitidos siguen siendo los de Magic.css; no se crean objetos nuevos.
+- Activación Hover/Siempre editable desde la Biblioteca. `csshake:runtime` se descarga bajo demanda desde el Vault con verificación de licencia y archivos, y queda guardado en cada efecto para exportar offline.
+- El host valida origen, identidad, dependencia única, clase permitida, CSS sin recursos externos, y licencia; persistencia compartida en `nwMagicCss`. Se agregaron pruebas unitarias y Chromium de aplicación, edición, exportación, persistencia y deshacer.
+- Corregida la prueba que exigía mantener una selección activa tras `undo()` cuando el editor explícitamente la limpia. Se debe confirmar la ejecución de CI y la actualización del índice derivado (6041 nativos y 721 código, 6762 totales).
+- Sin deploy de Vercel ni merge a main.

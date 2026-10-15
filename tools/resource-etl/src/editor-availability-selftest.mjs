@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { editorUseOf, canInsertInEditor } from "./runtime/editor-availability.mjs";
-import { transformMagicCssEffect } from "./light-transformers.mjs";
-import { validatedMagicCssEffect,validSavedMagicEffect } from "./runtime/nagweb-magic-css-effect.mjs";
+import { transformMagicCssEffect,transformCssShakeRuntime,transformCssShakeEffect } from "./light-transformers.mjs";
+import { validatedMagicCssEffect,validatedCssEffect,validSavedMagicEffect } from "./runtime/nagweb-magic-css-effect.mjs";
 import { transformSpinKitLoader } from "./light-transformers.mjs";
 import { buildResourceApplyEnvelope } from "./runtime/resource-apply-bridge.mjs";
 const svg={
@@ -76,3 +76,24 @@ assert.throws(()=>validatedMagicCssEffect({...magicEnvelope,descriptor:{...magic
  payload:{...magicEnvelope.descriptor.payload,iterations:999}}}),/fuera de rango/);
 assert.equal(validSavedMagicEffect({...valid,css:'<style>bad</style>'}),false);
 console.log("Native editor availability: real renderer, artifact, license, provider, host capability OK.");
+
+const shakeRaw={repository:"https://github.com/elrumordelaluz/csshake",commit:"test",scss:"//source",
+ packageJson:{version:"1.6"},effects:[{name:"shake",className:"shake"}],
+ css:".shake:hover,.shake.shake-constant{animation:shake 1s infinite}@keyframes shake{from{transform:translate(0)}to{transform:translate(1px)}}"};
+const shakeRuntime=transformCssShakeRuntime(shakeRaw);
+const shake=transformCssShakeEffect({raw:shakeRaw,effect:{name:"shake",className:"shake"}});
+assert.equal(editorUseOf(shake),"csshake");
+assert.equal(editorUseOf(shakeRuntime),"code");
+assert.equal(canInsertInEditor("csshake",["csshake"]),true);
+assert.equal(canInsertInEditor("csshake",["magic-css"]),false);
+assert.equal(editorUseOf({...shake,license:{verified:false}}),"code");
+const shakeEnvelope=buildResourceApplyEnvelope(shake,{values:{trigger:"constant"}});
+shakeEnvelope.descriptor.payload.css=shakeRaw.css;
+const validatedShake=validatedCssEffect(shakeEnvelope);
+assert.equal(validatedShake.provider,"csshake");
+assert.deepEqual(validatedShake.values,{trigger:"constant"});
+assert.equal(validSavedMagicEffect(validatedShake),true);
+assert.throws(()=>validatedCssEffect({...shakeEnvelope,descriptor:{...shakeEnvelope.descriptor,
+ payload:{...shakeEnvelope.descriptor.payload,css:"@import url(https://bad.invalid)"}}}),/CSSShake/);
+assert.throws(()=>validatedCssEffect({...shakeEnvelope,descriptor:{...shakeEnvelope.descriptor,
+ payload:{...shakeEnvelope.descriptor.payload,trigger:"click"}}}),/CSSShake/);

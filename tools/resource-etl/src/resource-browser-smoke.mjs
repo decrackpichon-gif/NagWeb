@@ -6,7 +6,7 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { gzipSync } from "node:zlib";
 import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
-import { transformUiverseComponent, transformSpinKitLoader, transformMagicCssEffect } from "./light-transformers.mjs";
+import { transformUiverseComponent, transformSpinKitLoader, transformMagicCssEffect, transformCssShakeRuntime, transformCssShakeEffect } from "./light-transformers.mjs";
 import { normalizeHeroiconOutline } from "./extractors/heroicons.mjs";
 import { transformHeroiconOutline } from "./heroicons-transformer.mjs";
 import { browseHeroiconPaths } from "./snapshot/browse-icon-paths.mjs";
@@ -63,6 +63,11 @@ const magicCss=transformMagicCssEffect({
   item:{name:"puffIn",category:"magic_effects",path:"puffIn.scss",
     code:".puffIn{animation-name:puffIn}@keyframes puffIn{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}"}
 });
+const shakeSource={repository:"https://github.com/elrumordelaluz/csshake",commit:"offline-smoke",
+ packageJson:{version:"1.6"},scss:"// fixture",effects:[{name:"shake",className:"shake"}],
+ css:".shake{display:inherit}.shake:hover,.shake.shake-constant{animation:shake .5s infinite}@keyframes shake{from{transform:translate(0)}to{transform:translate(2px)}}"};
+const csshakeRuntime=transformCssShakeRuntime(shakeSource);
+const csshake=transformCssShakeEffect({raw:shakeSource,effect:{name:"shake",className:"shake"}});
 // Genuine Heroicons 24px outline, exercising its native editor integration.
 const heroUpstream = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon">\n  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>\n</svg>';
 const heroicon = transformHeroiconOutline({
@@ -91,7 +96,7 @@ const codeOnly = {
   runtime:{renderer:"nagweb-react",entryArtifactId:"react"},
   artifacts:[{id:"react",role:"component",format:"tsx",content:"export default function Demo() { return <div>Demo</div>; }"}]
 };
-const resources = [icon, css, spinkit, magicCss, heroicon, lucideCamera, codeOnly];
+const resources = [icon, css, spinkit, magicCss, csshakeRuntime, csshake, heroicon, lucideCamera, codeOnly];
 const zip = data => gzipSync(JSON.stringify(data));
 const index = zip({ format: "nagweb-resource-browse-index", resourceCount: resources.length,
   resources: resources.map(r => ({ id: r.id, title: r.title, family: r.family, kind: r.kind, provider: r.source.provider,
@@ -1758,7 +1763,7 @@ try {
   await page.evaluate(ids=>{
     selection=ids;curEl=0;secFocus=false;refresh();
   },multiBefore.ids.slice(0,2));
-  const clearMultiple=page.getByRole("button",{name:"Quitar animación Magic.css seleccionada",exact:true});
+  const clearMultiple=page.getByRole("button",{name:"Quitar animación seleccionada",exact:true});
   await expect(clearMultiple).toBeEnabled();
   const multiClearHistory=await page.evaluate(()=>history.length);
   await clearMultiple.click();
@@ -1773,6 +1778,51 @@ try {
   assert.deepEqual(await page.evaluate(()=>sec().elements.map(e=>e.nwMagicCss?.id||null)),[null,null,null]);
   report.scenarios.push({editor:"Magic.css multi-selection across heading and SVG",
     status:"passed",atomicHistory:true,undoRedo:true,persistence:true,export:true,noCollateral:true});
+
+  // CSSShake: verified Vault CSS, apply, editable Hover/Constant and offline export.
+  await page.evaluate(()=>{
+    const title=mkEl("heading",{text:"CSSShake",x:42,y:35,w:44,rot:12,anim:"none"});
+    sec().elements=[title];selection=[title.id];curEl=0;secFocus=false;refresh();
+  });
+  const shakeBefore=await page.evaluate(()=>structuredClone(sec().elements[0]));
+  await page.getByRole("button",{name:"Biblioteca de recursos",exact:true}).click();
+  if(await libraryFrame.locator("[data-detail]").evaluate(n=>n.open))
+    await libraryFrame.getByRole("button",{name:"Cerrar",exact:true}).click();
+  const shakeTile=libraryFrame.locator('[data-resource-id="'+csshake.id+'"]');
+  await expect(shakeTile.locator('[data-editor-use-label="available"]')).toBeVisible();
+  await shakeTile.click();
+  await expect(libraryFrame.getByRole("button",{name:"Aplicar animación al elemento",exact:true})).toBeEnabled();
+  await libraryFrame.getByRole("button",{name:"Aplicar animación al elemento",exact:true}).click();
+  await expect(libraryFrame.locator("[data-apply-status]")).toContainText("aplicada y guardada");
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  const shakeAfter=await page.evaluate(()=>structuredClone(sec().elements[0]));
+  for(const key of ["id","x","y","w","rot"])assert.equal(shakeAfter[key],shakeBefore[key]);
+  assert.equal(shakeAfter.nwMagicCss.provider,"csshake");
+  assert.equal(shakeAfter.nwMagicCss.values.trigger,"hover");
+  await expect(page.frameLocator("#preview").locator('[data-id="'+shakeAfter.id+'"] .nw-magic-inner')).toHaveClass(/shake/);
+  let shakeExport=await page.evaluate(()=>generateSite(flattenPage(page()),false,true,false));
+  assert.match(shakeExport,/@keyframes shake/);
+  assert.match(shakeExport,/class="nw-magic-inner shake"/);
+  await page.getByRole("button",{name:"Personalizar animación seleccionada",exact:true}).click();
+  await libraryFrame.locator("[data-detail]").waitFor({state:"visible"});
+  await libraryFrame.getByLabel("Activación",{exact:true}).selectOption("constant");
+  await libraryFrame.getByRole("button",{name:"Guardar animación",exact:true}).click();
+  await expect(libraryFrame.locator("[data-apply-status]")).toContainText("actualizada y guardada");
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  assert.equal(await page.evaluate(()=>sec().elements[0].nwMagicCss.values.trigger),"constant");
+  shakeExport=await page.evaluate(()=>generateSite(flattenPage(page()),false,true,false));
+  assert.match(shakeExport,/shake shake-constant/);
+  await page.reload();
+  assert.equal(await page.evaluate(()=>sec().elements[0].nwMagicCss.values.trigger),"constant");
+  await page.evaluate(()=>{selection=[sec().elements[0].id];curEl=0;secFocus=false;refresh();});
+  const shakeClear=page.getByRole("button",{name:"Quitar animación seleccionada",exact:true});
+  await expect(shakeClear).toBeEnabled();
+  await shakeClear.click();
+  assert.equal(await page.evaluate(()=>sec().elements[0].nwMagicCss),undefined);
+  await page.locator("#btn-undo").click();
+  assert.equal(await page.evaluate(()=>sec().elements[0].nwMagicCss.provider),"csshake");
+  report.scenarios.push({editor:"CSSShake native hover, constant, edit, export, reload and undo",
+    status:"passed",portableCss:true,noNewElement:true,reducedMotion:true});
   // Removing an existing Magic.css effect never deletes the target object.
   // Playwright page.evaluate runs in the browser, so transfer fixture data
   // explicitly rather than referencing Node's module-scoped magicCss.
@@ -1786,7 +1836,7 @@ try {
     sec().elements=[element];selection=[element.id];curEl=0;secFocus=false;refresh();
   },removalFixture);
   const clearing=await page.evaluate(()=>({id:sec().elements[0].id,history:history.length}));
-  const clearMagic=page.getByRole("button",{name:"Quitar animación Magic.css seleccionada",exact:true});
+  const clearMagic=page.getByRole("button",{name:"Quitar animación seleccionada",exact:true});
   await expect(clearMagic).toBeEnabled();
   await clearMagic.click();
   assert.equal(await page.evaluate(()=>sec().elements[0].id),clearing.id);
@@ -1795,6 +1845,7 @@ try {
   await expect(clearMagic).toBeDisabled();
   await page.locator("#btn-undo").click();
   assert.equal(await page.evaluate(()=>sec().elements[0].nwMagicCss.id),magicCss.id);
+  await page.evaluate(()=>{selection=[sec().elements[0].id];curEl=0;secFocus=false;refresh();});
   await expect(clearMagic).toBeEnabled();
   await page.locator("#btn-redo").click();
   assert.equal(await page.evaluate(()=>sec().elements[0].nwMagicCss),undefined);
