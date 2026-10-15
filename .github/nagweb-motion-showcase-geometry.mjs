@@ -26,6 +26,8 @@ for(const perspective of [0,18,40]){
     near(c.corner,Math.min(c.textureWidth,c.textureHeight)*.03,'3% rounded corner');
     assert.ok(c.alpha>=0&&c.alpha<=1);
     assert.equal(c.upper.length,c.lower.length);
+    assert.equal(c.stripDepth.length,c.upper.length-1,'One depth for each curved texture strip');
+    assert.ok(c.stripDepth.every(d=>Number.isFinite(d)&&d>=-1&&d<=1),'Curved strip depth is normalized');
     assert.ok(c.upper.length>=17&&c.upper.length<=97);
     for(const p of c.upper.concat(c.lower))assert.ok(Number.isFinite(p.x)&&Number.isFinite(p.y),'Finite mesh vertex');
     const points=c.upper.concat(c.lower);
@@ -34,6 +36,17 @@ for(const perspective of [0,18,40]){
   }
  }
 }
+
+// Curved cards cannot be treated as a single plane: end strips may overlap
+// another card at a different depth than the center strip.
+let curvedOcclusions=0;
+for(const progress of [0,.125,.25,.375,.5,.625,.75,.875]){
+ const cards=model.layout(960,540,{kind:'showcase-stream',ringTilt:-28,cardSize:40,perspective:18},progress,12,16/9,false);
+ for(const card of cards){
+  if(Math.max(...card.stripDepth)-Math.min(...card.stripDepth)>1e-3)curvedOcclusions++;
+ }
+}
+assert.ok(curvedOcclusions>0,'Curved cards expose meaningful per-strip depth');
 
 // Corner percentages remain proportional even when a user changes the format,
 // canvas orientation, image size, or corners in the inspector.
