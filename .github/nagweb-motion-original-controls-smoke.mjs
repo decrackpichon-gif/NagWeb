@@ -10,10 +10,13 @@ export async function runMotionOriginalControlsSmoke(page){
   assert.equal(stored.length,12);
   assert.equal(await page.$eval('[data-motion-stream="ringTilt"]',n=>n.value),'-28');
   assert.equal(await page.$eval('[data-motion-stream="cardRatio"]',n=>n.value),'auto');
+  assert.equal(await page.$eval('[data-motion-stream="cornerRadius"]',n=>n.value),'3','Reference corner radius defaults to 3%');
   await page.click('[data-motion-frame-ratio="1:1"]');
   assert.equal(await page.$eval('[data-motion-stream="frameRatio"]',n=>n.value),'1:1','ratio shortcut uses real format control');
   assert.equal(await page.$eval('[data-motion-frame-ratio="1:1"]',n=>n.getAttribute('aria-pressed')),'true');
   await page.$eval('[data-motion-stream="ringTilt"]',n=>{n.value='9';n.dispatchEvent(new Event('input',{bubbles:true}));});
+  await page.$eval('[data-motion-stream="cornerRadius"]',n=>{n.value='10';n.dispatchEvent(new Event('input',{bubbles:true}));});
+  assert.equal(await page.$eval('[data-motion-stream="cornerRadius"]',n=>n.value),'10','Corner radius remains editable');
   await page.$eval('[data-motion-stream="cardRatio"]',n=>{n.value='4:3';n.dispatchEvent(new Event('change',{bubbles:true}));});
   await page.$eval('[data-motion-config="duration"]',n=>{n.value='20';n.dispatchEvent(new Event('change',{bubbles:true}));});
   await page.$eval('[data-motion-progress]',n=>{n.value='25';n.dispatchEvent(new Event('input',{bubbles:true}));});
@@ -22,6 +25,7 @@ export async function runMotionOriginalControlsSmoke(page){
   assert.equal(await page.$eval('[data-motion-stream="ringTilt"]',n=>n.value),'9');
   await page.click('[data-motion-stream-reset]');
   assert.equal(await page.$eval('[data-motion-stream="ringTilt"]',n=>n.value),'-28','reset restores template-specific tilt');
+  assert.equal(await page.$eval('[data-motion-stream="cornerRadius"]',n=>n.value),'3','reset restores original corner radius');
   assert.equal(await page.$eval('[data-motion-stream="cardRatio"]',n=>n.value),'auto','reset restores template card aspect');
   assert.equal(await page.$eval('[data-motion-stream="frameRatio"]',n=>n.value),'16:9','reset restores frame');
   assert.equal(await page.$eval('[data-motion-frame-ratio="16:9"]',n=>n.getAttribute('aria-pressed')),'true');
