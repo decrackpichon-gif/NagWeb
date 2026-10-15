@@ -1,14 +1,19 @@
 import puppeteer from 'puppeteer-core';
 import fs from 'node:fs';
-import './nagweb-depth-model-test.mjs';
-import './nagweb-stream-model-test.mjs';
+// Run shared model oracles once in the procedural suite; browser jobs stay independent.
+if(['procedural','all'].includes(process.env.NAGWEB_SMOKE_SUITE||'all')){
+ for(const testFile of ["./nagweb-depth-model-test.mjs","./nagweb-stream-model-test.mjs","./nagweb-grid-dive-model-test.mjs","./nagweb-motion-parameter-keyframes-model-test.mjs","./nagweb-orbit-model-test.mjs","./nagweb-flip-model-test.mjs","./nagweb-orbit-carousel-model-test.mjs","./nagweb-column-drift-model-test.mjs","./nagweb-spotlight-model-test.mjs","./nagweb-sphere-model-test.mjs","./nagweb-sphere-cascade-model-test.mjs","./nagweb-totem-wall-model-test.mjs","./nagweb-parallax-totem-model-test.mjs","./nagweb-vortex-model-test.mjs","./nagweb-globe-model-test.mjs","./nagweb-orbit-globe-model-test.mjs","./nagweb-marquee-model-test.mjs","./nagweb-grid-strip-model-test.mjs","./nagweb-depth-stack-model-test.mjs","./nagweb-spread-model-test.mjs","./nagweb-scatter-model-test.mjs","./nagweb-fan-model-test.mjs","./nagweb-feed-model-test.mjs","./nagweb-collage-model-test.mjs","./nagweb-triple-model-test.mjs","./nagweb-sweep-model-test.mjs","./nagweb-spread-columns-model-test.mjs","./nagweb-focus-slider-model-test.mjs","./nagweb-focus-orbit-model-test.mjs","./nagweb-hero-model-test.mjs","./nagweb-mosaic-model-test.mjs","./nagweb-stripe-model-test.mjs","./nagweb-wipe-model-test.mjs","./nagweb-split-model-test.mjs","./nagweb-showcase-orbit-model-test.mjs","./nagweb-cascade-deck-model-test.mjs","./nagweb-dance-model-test.mjs","./nagweb-trail-model-test.mjs","./nagweb-ring-model-test.mjs","./nagweb-ring-vertical-model-test.mjs","./nagweb-cover-model-test.mjs","./nagweb-bottom-model-test.mjs","./nagweb-spin-model-test.mjs","./nagweb-wheel-model-test.mjs","./nagweb-photo-model-test.mjs","./nagweb-burst-model-test.mjs","./nagweb-peel-model-test.mjs","./nagweb-band-model-test.mjs","./nagweb-spiral-model-test.mjs","./nagweb-shift-model-test.mjs","./nagweb-drop-model-test.mjs","./nagweb-zoom-model-test.mjs","./nagweb-reveal-model-test.mjs","./nagweb-diagonal-model-test.mjs","./nagweb-toss-model-test.mjs","./nagweb-focus-model-test.mjs","./nagweb-stack-model-test.mjs","./nagweb-carousel-model-test.mjs","./nagweb-ticker-loop-model-test.mjs","./nagweb-ticker-model-test.mjs","./nagweb-orbit-bloom-model-test.mjs","./nagweb-stage-model-test.mjs","./nagweb-pop-model-test.mjs","./nagweb-image-crop-model-test.mjs"])await import(testFile);
+}
+
+
+
 // Run the additional geometry sweep once in the existing Showcase job, not in every suite.
 if(['showcase','all'].includes(process.env.NAGWEB_SMOKE_SUITE||'all'))await import('./nagweb-motion-showcase-geometry.mjs');
 // Run the common corner-percent audit only once in the procedural suite.
 if(['procedural','all'].includes(process.env.NAGWEB_SMOKE_SUITE||'all'))await import('./nagweb-motion-corner-percent-model-test.mjs');
-import './nagweb-grid-dive-model-test.mjs';
-import './nagweb-motion-parameter-keyframes-model-test.mjs';
-import './nagweb-orbit-model-test.mjs';
+
+
+
 import {runStorytellingSmoke} from './nagweb-storytelling-smoke.mjs';
 import {runCompositionSmoke} from './nagweb-composition-smoke.mjs';
 import {runHistorySmoke} from './nagweb-history-smoke.mjs';
@@ -47,37 +52,37 @@ import {runMotionStreamSmoke} from './nagweb-motion-stream-smoke.mjs';
 import {runMotionOriginalControlsSmoke} from './nagweb-motion-original-controls-smoke.mjs';
 import {runMotionClearMediaSmoke} from './nagweb-motion-clear-media-smoke.mjs';
 import {runMotionStreamPlacementSmoke} from './nagweb-motion-stream-placement-smoke.mjs';
-import './nagweb-flip-model-test.mjs';
-import './nagweb-orbit-carousel-model-test.mjs';
-import './nagweb-column-drift-model-test.mjs';
-import './nagweb-spotlight-model-test.mjs';
-import './nagweb-sphere-model-test.mjs';
-import './nagweb-sphere-cascade-model-test.mjs';
-import './nagweb-totem-wall-model-test.mjs';
-import './nagweb-parallax-totem-model-test.mjs';
-import './nagweb-vortex-model-test.mjs';
-import './nagweb-globe-model-test.mjs';
-import './nagweb-orbit-globe-model-test.mjs';
-import './nagweb-marquee-model-test.mjs';
-import './nagweb-grid-strip-model-test.mjs';
-import './nagweb-depth-stack-model-test.mjs';
-import './nagweb-spread-model-test.mjs';
-import './nagweb-scatter-model-test.mjs';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import {runMotionScatterSmoke} from './nagweb-motion-scatter-smoke.mjs';
 import {runMotionScatterPathsSmoke} from './nagweb-motion-scatter-paths-smoke.mjs';
 import {runMotionScatterDragSmoke} from './nagweb-motion-scatter-drag-smoke.mjs';
 import {runMotionScatterSizeSmoke} from './nagweb-motion-scatter-size-smoke.mjs';
-import './nagweb-fan-model-test.mjs';
+
 import {runMotionFanSmoke} from './nagweb-motion-fan-smoke.mjs';
-import './nagweb-feed-model-test.mjs';
+
 import {runMotionFeedSmoke} from './nagweb-motion-feed-smoke.mjs';
-import './nagweb-collage-model-test.mjs';
+
 import {runMotionCollageSmoke} from './nagweb-motion-collage-smoke.mjs';
-import './nagweb-triple-model-test.mjs';
+
 import {runMotionTripleSmoke} from './nagweb-motion-triple-smoke.mjs';
-import './nagweb-sweep-model-test.mjs';
+
 import {runMotionSweepSmoke} from './nagweb-motion-sweep-smoke.mjs';
-import './nagweb-spread-columns-model-test.mjs';
+
 import {runMotionSpreadColumnsSmoke} from './nagweb-motion-spread-columns-smoke.mjs';
 import {runMotionSpreadSmoke} from './nagweb-motion-spread-smoke.mjs';
 import {runMotionDepthStackSmoke} from './nagweb-motion-depth-stack-smoke.mjs';
@@ -92,82 +97,82 @@ import {runMotionTotemWallSmoke} from './nagweb-motion-totem-wall-smoke.mjs';
 import {runMotionSphereCascadeSmoke} from './nagweb-motion-sphere-cascade-smoke.mjs';
 if(['sphere-wall','sphere-cascade','totem-wall','parallax-totem','vortex-spin','sphere-globe','orbit-globe','mosaic-marquee','grid-dive','pop-parade','grid-zoom-strip','depth-stack-scroll','spread-rows','spread-columns','sweep-ring','triple-scene','collage-reel','feed-scroll','fan-shuffle','scatter-dial'].includes(process.env.NAGWEB_SMOKE_SUITE))await import('./nagweb-sphere-renderer-test.mjs');
 import {runMotionSphereSmoke} from './nagweb-motion-sphere-smoke.mjs';
-import './nagweb-focus-slider-model-test.mjs';
+
 import {runMotionFocusSliderSmoke} from './nagweb-motion-focus-slider-smoke.mjs';
-import './nagweb-focus-orbit-model-test.mjs';
+
 import {runMotionFocusOrbitSmoke} from './nagweb-motion-focus-orbit-smoke.mjs';
 import {runMotionSpotlightSmoke} from './nagweb-motion-spotlight-smoke.mjs';
 import {runMotionColumnDriftSmoke} from './nagweb-motion-column-drift-smoke.mjs';
 import {runMotionOrbitCarouselSmoke} from './nagweb-motion-orbit-carousel-smoke.mjs';
 import {runMotionFlipSmoke} from './nagweb-motion-flip-smoke.mjs';
-import './nagweb-hero-model-test.mjs';
+
 import {runMotionHeroSmoke} from './nagweb-motion-hero-smoke.mjs';
-import './nagweb-mosaic-model-test.mjs';
+
 import {runMotionMosaicSmoke} from './nagweb-motion-mosaic-smoke.mjs';
-import './nagweb-stripe-model-test.mjs';
+
 import {runMotionStripeSmoke} from './nagweb-motion-stripe-smoke.mjs';
-import './nagweb-wipe-model-test.mjs';
+
 import {runMotionWipeSmoke} from './nagweb-motion-wipe-smoke.mjs';
-import './nagweb-split-model-test.mjs';
+
 import {runMotionSplitSmoke} from './nagweb-motion-split-smoke.mjs';
-import './nagweb-showcase-orbit-model-test.mjs';
+
 import {runMotionShowcaseOrbitSmoke} from './nagweb-motion-showcase-orbit-smoke.mjs';
-import './nagweb-cascade-deck-model-test.mjs';
+
 import {runMotionCascadeDeckSmoke} from './nagweb-motion-cascade-deck-smoke.mjs';
-import './nagweb-dance-model-test.mjs';
+
 import {runMotionDanceSmoke} from './nagweb-motion-dance-smoke.mjs';
-import './nagweb-trail-model-test.mjs';
+
 import {runMotionTrailSmoke} from './nagweb-motion-trail-smoke.mjs';
-import './nagweb-ring-model-test.mjs';
-import './nagweb-ring-vertical-model-test.mjs';
+
+
 import {runMotionRingSmoke} from './nagweb-motion-ring-smoke.mjs';
-import './nagweb-cover-model-test.mjs';
+
 import {runMotionCoverSmoke} from './nagweb-motion-cover-smoke.mjs';
-import './nagweb-bottom-model-test.mjs';
+
 import {runMotionBottomSmoke} from './nagweb-motion-bottom-smoke.mjs';
-import './nagweb-spin-model-test.mjs';
+
 import {runMotionSpinSmoke} from './nagweb-motion-spin-smoke.mjs';
-import './nagweb-wheel-model-test.mjs';
+
 import {runMotionWheelSmoke} from './nagweb-motion-wheel-smoke.mjs';
-import './nagweb-photo-model-test.mjs';
+
 import {runMotionPhotoSmoke} from './nagweb-motion-photo-smoke.mjs';
-import './nagweb-burst-model-test.mjs';
+
 import {runMotionBurstSmoke} from './nagweb-motion-burst-smoke.mjs';
-import './nagweb-peel-model-test.mjs';
+
 import {runMotionPeelSmoke} from './nagweb-motion-peel-smoke.mjs';
-import './nagweb-band-model-test.mjs';
+
 import {runMotionBandSmoke} from './nagweb-motion-band-smoke.mjs';
-import './nagweb-spiral-model-test.mjs';
+
 import {runMotionSpiralSmoke} from './nagweb-motion-spiral-smoke.mjs';
-import './nagweb-shift-model-test.mjs';
+
 import {runMotionFocusShiftSmoke,runMotionFocusShiftDepthSmoke} from './nagweb-motion-focus-shift-smoke.mjs';
-import './nagweb-drop-model-test.mjs';
+
 import {runMotionDropCascadeSmoke,runMotionDropCascadeDepthSmoke} from './nagweb-motion-drop-cascade-smoke.mjs';
-import './nagweb-zoom-model-test.mjs';
+
 import {runMotionZoomSmoke} from './nagweb-motion-zoom-smoke.mjs';
-import './nagweb-reveal-model-test.mjs';
+
 import {runMotionGridRevealSmoke} from './nagweb-motion-grid-reveal-smoke.mjs';
-import './nagweb-diagonal-model-test.mjs';
+
 import {runMotionDiagonalSmoke} from './nagweb-motion-diagonal-smoke.mjs';
-import './nagweb-toss-model-test.mjs';
+
 import {runMotionTossSmoke,runMotionTossDepthSmoke} from './nagweb-motion-toss-smoke.mjs';
-import './nagweb-focus-model-test.mjs';
+
 import {runMotionFocusSmoke,runMotionFocusDepthSmoke} from './nagweb-motion-focus-smoke.mjs';
-import './nagweb-stack-model-test.mjs';
+
 import {runMotionStackSmoke} from './nagweb-motion-stack-smoke.mjs';
-import './nagweb-carousel-model-test.mjs';
+
 import {runMotionCarouselSmoke} from './nagweb-motion-carousel-smoke.mjs';
-import './nagweb-ticker-loop-model-test.mjs';
+
 import {runMotionTickerLoopSmoke} from './nagweb-motion-ticker-loop-smoke.mjs';
-import './nagweb-ticker-model-test.mjs';
+
 import {runMotionTickerSmoke} from './nagweb-motion-ticker-smoke.mjs';
-import './nagweb-orbit-bloom-model-test.mjs';
+
 import {runMotionOrbitBloomDepthSmoke} from './nagweb-motion-orbit-bloom-depth-smoke.mjs';
 import {runMotionOrbitBloomSmoke} from './nagweb-motion-orbit-bloom-smoke.mjs';
-import './nagweb-stage-model-test.mjs';
+
 import {runMotionStageSmoke} from './nagweb-motion-stage-smoke.mjs';
-import './nagweb-pop-model-test.mjs';
-import './nagweb-image-crop-model-test.mjs';
+
+
 import {runMotionImageCropSmoke} from './nagweb-motion-image-crop-smoke.mjs';
 import {runMotionPopGridSmoke} from './nagweb-motion-pop-grid-smoke.mjs';
 import {runMotionIsoOrbitSmoke} from './nagweb-motion-iso-orbit-smoke.mjs';
