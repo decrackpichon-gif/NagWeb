@@ -293,7 +293,12 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     let canvasDoc;
     try { canvasDoc = preview.contentDocument; }
     catch { return; }
-    if (!canvasDoc || canvasDoc.readyState === "loading" || boundCanvasDocuments.has(canvasDoc)) return;
+    // A newly assigned srcdoc can briefly expose a document without its
+    // root element (or the transitional about:blank document). Never bind to
+    // it or mark it ready until the actual preview document exists.
+    if (!canvasDoc || canvasDoc.readyState === "loading" ||
+        !canvasDoc.documentElement || canvasDoc.URL === "about:blank" ||
+        boundCanvasDocuments.has(canvasDoc)) return;
     boundCanvasDocuments.add(canvasDoc);
     canvasDoc.addEventListener("keydown", handleCanvasEditShortcut, true);
     canvasDoc.addEventListener("dblclick", event => {
@@ -317,7 +322,8 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     }
     // Readiness belongs to this exact iframe document, not the previous
     // srcdoc. A newly rendered canvas must finish binding before interaction.
-    canvasDoc.documentElement.dataset.nagwebResourceEditReady = "1";
+    const root=canvasDoc.documentElement;
+    if(root)root.dataset.nagwebResourceEditReady = "1";
   }
   document.addEventListener("keydown", handleCanvasEditShortcut, true);
   preview.addEventListener("load", () => {
