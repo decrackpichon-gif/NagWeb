@@ -70,3 +70,9 @@ For fast catalog browsing without loading source code, use `all/browse-index.jso
 The complete lightweight Vault is also available as one verified bundle: `all/library.json.gz` (6,762 resources).
 
 For fast catalog browsing without loading source code, use `all/browse-index.json.gz`.
+
+## One-file restore
+
+The complete lightweight Vault is also available as one verified bundle: `all/library.json.gz` (6,762 resources).
+
+For fast catalog browsing without loading source code, use `all/browse-index.json.gz`.
