@@ -8,6 +8,27 @@
 
 Esta regla **prevalece sobre prioridades antiguas de expansión** de esta ficha, sin derogar funcionalidades comprometidas que resulten imprescindibles para una V1.0 útil. Consultar la [política universal de desarrollo](https://github.com/decrackpichon-gif/NagWeb/blob/main/POLITICA_DESARROLLO_V1_PRIMERO.md). No mezclar ramas ni adelantar merges o despliegues sin autorización.
 
+## Alcance cerrado de Cámara 3D V1.0 (15/10/2026)
+
+**Contrato de producto:** permitir que una persona construya y exporte un recorrido espacial editable con cámara, texto, imagen y un modelo 3D, controlado exclusivamente por el Director de Scroll 0→1. Las funciones implementadas se conservan; no se exigen nuevas modalidades, efectos ni paneles antes de entregar.
+
+**Incluido en V1.0, utilizando lo ya programado:**
+1. Crear/editar en **Lienzo libre** una escena con texto, imagen y objeto GLB o forma 3D; visualizar y ajustar posición/profundidad y encuadre con las herramientas ya existentes.
+2. Crear o modificar un recorrido de cámara XYZ/orientación con keyframes, navegar por el mapa/vista previa y reproducir el mismo estado de manera determinista desde el Director 0→1. El ejemplo «Crear ejemplo completo» puede servir para iniciar, no debe ser un flujo separado.
+3. Conservar contenido y acciones: selección, edición, **Deshacer**, guardado/recuperación y exportación HTML; que el sitio exportado reproduzca el recorrido sin depender del editor.
+4. Perspectiva y recorte **correctos para la escena mínima admitida**, incluyendo paso texto→imagen→texto y un modelo 3D integrado. No aceptar una V1.0 si el recorrido normal rompe geometrías, salta entre fotogramas, deja texto incorrectamente oculto o pierde información.
+5. Comportamiento estable de sus operaciones esenciales, sin regresiones críticas de cámara, edición, persistencia o recursos; respetar movimiento reducido. Comprobarlo con las suites ya disponibles y una prueba final de principio a fin en editor y exportado.
+
+**Bloqueante verificado en el código actual:** HEAD funcional anterior `e8b035789dc4b96af92f6fdb0dbf567e1ee22db9` tiene [smoke de cámara aprobado](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38688685580), pero la [integración espacial falló](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38688685663) al exigir ocultamiento completo de HTML detrás de geometría 3D. Corregir el fallo real o limitar con un fallback seguro la parte experimental para que no introduzca errores en el recorrido principal. No dar por verde el HEAD por la existencia de pruebas históricas aprobadas.
+
+**Explícitamente posterior a V1.0 (sin borrar implementaciones previas):** oclusión WebGL→HTML **parcial por píxel para cualquier geometría**, sombras/refraction/bloom perfeccionados, jerarquías CSS arbitrarias, composiciones complejas, nuevos controles, vistas, presets, animaciones, recursos, mejoras cosméticas y optimizaciones sin impacto comprobado en el uso esencial. Las variantes visuales complejas no representables con precisión pueden declararse limitadas en V1.0 si la ruta básica es fiable y no muestran resultados engañosos. Este aplazamiento no permite descartar funcionalidades esenciales ya acordadas ni ocultar fallos dentro del caso mínimo admitido.
+
+**Camino de cierre (máximo dos entregas técnicas, salvo fallo real imprevisto):**
+- **A. Estabilización y corrección final:** resolver la regresión de integración espacial y cualquier defecto probado en el flujo mínimo; no desarrollar nuevas capacidades.
+- **B. Validación integral y entrega:** ejecutar una única batería pertinente, verificar editor→Deshacer/guardar→reabrir→exportar→recorrer 0/25/50/75/100% en navegador y comprobar que el resultado es fiel. Documentar restricciones concretas, señalar versión V1.0 lista cuando los criterios se cumplan y proporcionar instrucciones de uso/entrega desde la rama, sin merge o despliegue automático.
+
+**Regla operativa:** ante «Avanza», trabajar en A o B y avanzar hacia el cierre. No introducir un bloque C por mejoras opcionales. Consultar siempre el HEAD antes de modificar; esta fotografía de CI no reemplaza el estado actual.
+
 ## Identidad inmutable y ramas
 
 - Proyecto: **NAGWEB 03 | Cámara 3D**.
