@@ -5,6 +5,10 @@ import { prepareUiverseSandboxHtml } from "../tools/resource-etl/src/runtime/nag
 
 const toolbar = document.querySelector(".tb-left");
 if (toolbar && !document.querySelector("[data-resource-library-open]")) {
+  // The toolbar uses a three-column CSS grid. Keep contextual actions above
+  // the centered project title when the left column gets crowded.
+  toolbar.style.position = "relative";
+  toolbar.style.zIndex = "2";
   const button = document.createElement("button");
   button.type = "button";
   button.className = "tb-ico";
@@ -16,7 +20,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   const editButton = document.createElement("button");
   editButton.type = "button";
   editButton.className = "tb-ico";
-  editButton.textContent = "Personalizar";
+  editButton.textContent = "Editar";
   editButton.setAttribute("aria-label", "Personalizar ícono seleccionado");
   editButton.title = "Personalizar ícono seleccionado";
   editButton.style.cssText = "white-space:nowrap;flex-shrink:0;font-size:12px";
@@ -25,7 +29,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   const clearMagicButton=document.createElement("button");
   clearMagicButton.type="button";
   clearMagicButton.className="tb-ico";
-  clearMagicButton.textContent="Quitar animación";
+  clearMagicButton.textContent="Quitar FX";
   clearMagicButton.setAttribute("aria-label","Quitar animación Magic.css seleccionada");
   clearMagicButton.title="Quitar animación del elemento sin borrarlo";
   clearMagicButton.dataset.resourceLibraryClearMagic="";

@@ -1754,7 +1754,7 @@ try {
     [magicCss.id,magicCss.id,null]);
   // Removal of a multi-selection must also be one undoable change.
   await page.evaluate(ids=>{
-    selection=ids;curEl=0;secFocus=false;renderPane();
+    selection=ids;curEl=0;secFocus=false;refresh();
   },multiBefore.ids.slice(0,2));
   const clearMultiple=page.getByRole("button",{name:"Quitar animación Magic.css seleccionada",exact:true});
   await expect(clearMultiple).toBeEnabled();
