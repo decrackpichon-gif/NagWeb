@@ -24,6 +24,14 @@ import {
   hasUnappliedResourceEdits
 } from "../src/runtime/resource-apply-bridge.mjs";
 
+// Only a standalone browser tab installs the offline shell. The library
+// iframe embedded in NagWeb must not register a worker on the editor's behalf.
+if (window.top === window && "serviceWorker" in navigator &&
+    (location.protocol === "https:" || ["localhost","127.0.0.1"].includes(location.hostname))) {
+  navigator.serviceWorker.register("./offline-shell-sw.mjs", { type: "module" })
+    .catch(() => { /* Offline shell is optional: online browsing still works. */ });
+}
+
 const vault = createNagWebPersistentVaultClient();
 const PAGE_SIZE = 48;
 

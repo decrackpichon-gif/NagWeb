@@ -382,3 +382,11 @@ Se recuperaron de los **importadores reales** las direcciones de 17 proveedores 
 - La personalización posterior de una animación sigue siendo por elemento individual. No se cambia el protocolo de mensajes ni se amplían las licencias o proveedores.
 - Se incorporó un recorrido Chromium con elementos heterogéneos, exportación, persistencia, deshacer/rehacer y ausencia de efectos sobre un tercer objeto. **No declarar la CI aprobada hasta comprobar el workflow del commit final.**
 - Vercel permanece desactivado para publicaciones automáticas. No mezclar esta rama con `main` ni con `resource-vault-data`.
+
+## Etapa 100: interfaz de la Biblioteca reutilizable sin conexión (15/10/2026)
+
+- Se añadió un **service worker opcional y limitado al navegador independiente** de la Biblioteca, sin instalarlo desde el iframe que abre NagWeb dentro del editor. Después de una instalación completa, conserva únicamente el HTML, CSS, JavaScript, motor de vistas previas y dependencias locales necesarios para reabrir el panel offline.
+- El worker sólo intercepta las rutas propias y conocidas de la interfaz, no el editor principal ni el dominio remoto del Vault. Los datos y paquetes mantienen exclusivamente el mecanismo SHA-256 del cliente `offline-vault-cache.mjs` ya existente. No se almacenan todos los 6762 recursos anticipadamente.
+- `src/preview/public-browser-assets.mjs` centraliza los módulos incluidos tanto en la vista de GitHub Pages como en la instalación offline, evitando listas divergentes. `build-public-site.mjs` continúa sin publicar ni desplegar: sólo copia archivos necesarios.
+- Degradación progresiva: no debe bloquear navegadores sin Service Worker, sitios sin contexto seguro, iframes ni primera visita sin red. Cambios de versión de la app requieren incrementar la versión del caché del worker.
+- Test nuevo: inventario completo de archivos, restricciones del worker y empaquetado público en directorio temporal. La disponibilidad offline efectiva en Chromium debe comprobarse en CI/prueba manual antes de anunciar el cierre de esta capacidad. Vercel sigue desactivado.

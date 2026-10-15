@@ -7,36 +7,7 @@ import { cp, mkdir, writeFile, readFile, stat } from "node:fs/promises";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 // Only browser-reachable modules are published. No importers, CLI, source
 // repositories, test fixtures, runtime secrets, or server files go to Pages.
-const PUBLIC_MODULES = Object.freeze([
-  "runtime/persistent-vault-client.mjs",
-  "runtime/offline-vault-cache.mjs",
-  "runtime/editor-availability.mjs",
-  "runtime/quick-preview.mjs",
-  "runtime/latest-search.mjs",
-  "runtime/favorites.mjs",
-  "runtime/saved-customizations.mjs",
-  "runtime/instance.mjs",
-  "runtime/editable-controls.mjs",
-  "runtime/html-css-customization.mjs",
-  "runtime/uiverse-colors.mjs",
-  "runtime/uiverse-dimensions.mjs",
-  "runtime/uiverse-spacing.mjs",
-  "runtime/uiverse-type-borders.mjs",
-  "runtime/uiverse-timing.mjs",
-  "runtime/uiverse-multi-timing.mjs",
-  "runtime/uiverse-bezier.mjs",
-  "runtime/uiverse-easing.mjs",
-  "runtime/uiverse-playback.mjs",
-  "runtime/uiverse-text.mjs",
-  "runtime/uiverse-placeholder.mjs",
-  "runtime/nagweb-html-sandbox.mjs",
-  "runtime/resource-apply-bridge.mjs",
-  "runtime/insert-adapters.mjs",
-  "preview/lottie-browser-preview.mjs",
-  "preview/csshake-browser-preview.mjs",
-  "preview/magiccss-browser-preview.mjs",
-  "preview/css-playback-controls.mjs"
-]);
+import { PUBLIC_MODULES } from "./public-browser-assets.mjs";
 const landingPage = `<!doctype html>
 <html lang="es">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -71,9 +42,11 @@ export async function buildPublicResourceBrowser({ outputDir } = {}) {
   const browser = await readFile(path.join(destination, "resource-browser", "index.html"), "utf8");
   const app = await readFile(path.join(destination, "resource-browser", "app.mjs"), "utf8");
   const vendor = await stat(path.join(destination, "resource-browser", "vendor", "lottie_light.min.js"));
+  const serviceWorker = await stat(path.join(destination, "resource-browser", "offline-shell-sw.mjs"));
+  const moduleList = await stat(path.join(destination, "src", "preview", "public-browser-assets.mjs"));
   if (!browser.includes("Biblioteca de recursos") ||
       !app.includes("createNagWebPersistentVaultClient") ||
-      !vendor.isFile()) {
+      !vendor.isFile() || !serviceWorker.isFile() || !moduleList.isFile()) {
     throw new Error("Incomplete public browser snapshot.");
   }
   return { destination, entrypoint: "resource-browser/index.html" };
