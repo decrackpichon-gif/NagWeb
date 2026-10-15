@@ -1632,6 +1632,27 @@ try {
     assert.equal(await page.evaluate(()=>sec().elements[0].nwMagicCss.id),magicCss.id);
     report.scenarios.push({editor:"Magic.css on "+type,status:"passed",geometry:true,export:true,reload:true});
   }
+  // Removing an existing Magic.css effect never deletes the target object.
+  await page.evaluate(()=>{
+    const element=mkEl("heading",{text:"Efecto reversible",x:48,y:40,w:60,rot:6,anim:"none"});
+    element.nwMagicCss={...structuredClone(sec().elements.find(e=>e.nwMagicCss)?.nwMagicCss||{}),
+      id:magicCss.id,provider:"magic-css",className:"puffIn",
+      css:magicCss.artifacts.find(a=>a.role==="stylesheet").content,
+      values:{duration:1,delay:0,easing:"ease",iterations:1},
+      license:structuredClone(magicCss.license)};
+    sec().elements=[element];selection=[element.id];curEl=0;secFocus=false;refresh();
+  });
+  const clearing=await page.evaluate(()=>({id:sec().elements[0].id,history:history.length}));
+  const clearMagic=page.getByRole("button",{name:"Quitar animación Magic.css seleccionada",exact:true});
+  await expect(clearMagic).toBeEnabled();
+  await clearMagic.click();
+  assert.equal(await page.evaluate(()=>sec().elements[0].id),clearing.id);
+  assert.equal(await page.evaluate(()=>sec().elements[0].nwMagicCss),undefined);
+  assert.equal(await page.evaluate(()=>history.length),clearing.history+1);
+  await expect(clearMagic).toBeDisabled();
+  await page.reload();
+  assert.equal(await page.evaluate(()=>sec().elements[0].nwMagicCss),undefined);
+  report.scenarios.push({editor:"Remove existing Magic.css without removing object",status:"passed",history:true,persistence:true});
   // Stage 83: insert HTML and SVG inside an existing native container.
   await page.evaluate(() => {
     const scene=sec();scene.layout="free";scene.elements=[];

@@ -22,6 +22,15 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   editButton.style.cssText = "white-space:nowrap;flex-shrink:0;font-size:12px";
   editButton.dataset.resourceLibraryEdit = "";
   editButton.disabled = true;
+  const clearMagicButton=document.createElement("button");
+  clearMagicButton.type="button";
+  clearMagicButton.className="tb-ico";
+  clearMagicButton.textContent="Quitar animación";
+  clearMagicButton.setAttribute("aria-label","Quitar animación Magic.css seleccionada");
+  clearMagicButton.title="Quitar animación del elemento sin borrarlo";
+  clearMagicButton.dataset.resourceLibraryClearMagic="";
+  clearMagicButton.disabled=true;
+  clearMagicButton.style.cssText="white-space:nowrap;flex-shrink:0;font-size:12px";
   let editContext = null;
   let librarySession = 0;
   let opener = button;
@@ -115,6 +124,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       catch { ready = false; }
     }
     if (editButton.disabled !== !ready) editButton.disabled = !ready;
+    clearMagicButton.disabled=!(element?.nwMagicCss?.id);
     if (pendingFocusReturn && !dialog.open && !pendingFocusReturn.disabled) {
       pendingFocusReturn.focus();
       pendingFocusReturn = null;
@@ -152,7 +162,18 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
   frame.style.cssText = "display:block;width:100%;height:calc(100% - 48px);border:0";
   dialog.append(header, frame);
   document.body.append(dialog);
-  toolbar.append(button, editButton);
+  toolbar.append(button,editButton,clearMagicButton);
+  clearMagicButton.addEventListener("click",()=>{
+    const selected=selectedLibraryElement();
+    if(!selected?.nwMagicCss?.id || !isMagicTarget(selected) || dialog.open)return;
+    snapshot();
+    delete selected.nwMagicCss;
+    refresh();syncSelectionToFrame();syncEditButton();
+    const stored=JSON.parse(localStorage.getItem(STORE_KEY)||"null");
+    const saved=stored?.pages?.flatMap(p=>p.sections).flatMap(s=>s.elements).find(e=>e.id===selected.id);
+    if(saved && !saved.nwMagicCss)toast("Animación quitada. Podés deshacer este cambio.");
+    else toast("No se pudo verificar el guardado de la animación eliminada.");
+  });
   const openLibrary = context => {
     pendingFocusReturn = null;
     librarySession++;

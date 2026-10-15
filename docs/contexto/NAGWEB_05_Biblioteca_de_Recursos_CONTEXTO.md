@@ -366,3 +366,10 @@ Se recuperaron de los **importadores reales** las direcciones de 17 proveedores 
 
 - Reutiliza el motor Magic.css verificado para `svgdraw` y `video`, con animación del contenido visual interior y geometría externa estable.
 - Se conserva exportación sin dependencias nuevas y modo de movimiento reducido. No afecta objetos 3D, ni otras ramas.
+
+## Etapa 98: quitar animaciones y compatibilidad anterior de videos (15/10/2026)
+
+- Botón contextual `Quitar animación`, activo solo en elementos seleccionados con Magic.css.
+- Elimina la animación sin eliminar el elemento, registrando historial y guardando el proyecto.
+- Los vídeos sin efecto mantienen exactamente la salida nativa anterior, sin wrappers innecesarios.
+- Prueba integrada de eliminación, recarga, estado del botón e historial.

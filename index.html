@@ -15011,6 +15011,8 @@ function elMarkup(e, p, free, z, sync, inStack){
       }
       const inner = free ? ';border-radius:' + (e.radius||0) + 'px' : '';
       const st = free ? pos.slice(0,-1) + inner + '"' : ' style="width:' + e.w + '%;border-radius:' + (e.radius||0) + 'px"';
+      if(!safeMagicFx(e)) return '<video class="' + cls + ' vid"' + d + st + ' src="' + esc(e.url) + '" autoplay playsinline' +
+             (e.muted !== false ? ' muted' : '') + (e.loop ? ' loop' : '') + '></video>';
       return '<div class="' + cls + ' vid nw-magic-video"' + d + st + '>' +
         magicInner(e,'<video src="' + esc(e.url) + '" autoplay playsinline' +
         (e.muted !== false ? ' muted' : '') + (e.loop ? ' loop' : '') + '></video>') + '</div>';
