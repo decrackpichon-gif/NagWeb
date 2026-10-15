@@ -20616,8 +20616,12 @@ function mItemHTML(it){
   return `<button class="mi${en ? '' : ' dis'}" data-cmd="${c.id}"><span class="mi-ck">${ck ? ico('check') : ''}</span><span class="mi-l">${escHtml(c.label)}</span><span class="mi-k">${c.keys && c.keys[0] ? keyLabel(c.keys[0]) : ''}</span></button>`;
 }
 function openSub(btn, def){
-  document.querySelectorAll('.amenu-sub').forEach(n => { if(+n.dataset.level >= +(btn.closest('[data-level]') || { dataset:{ level:0 } }).dataset.level + 1) n.remove(); });
-  const lvl = +(btn.closest('[data-level]').dataset.level) + 1;
+  // Hover/click handlers can outlive a submenu removed by an earlier event.
+  // Never dereference a detached menu item or reopen a stale submenu.
+  const parent = btn.closest('[data-level]');
+  if(!parent || !parent.isConnected) return;
+  const lvl = +parent.dataset.level + 1;
+  document.querySelectorAll('.amenu-sub').forEach(n => { if(+n.dataset.level >= lvl) n.remove(); });
   const sub = document.createElement('div');
   sub.className = 'amenu-sub'; sub.dataset.level = lvl;
   sub.innerHTML = def.items.map(mItemHTML).join('');
@@ -20627,7 +20631,7 @@ function openSub(btn, def){
   if(left + sub.offsetWidth > window.innerWidth - 6) left = Math.max(6, r.left - sub.offsetWidth - 4);
   if(top + sub.offsetHeight > window.innerHeight - 6) top = Math.max(6, window.innerHeight - sub.offsetHeight - 6);
   sub.style.left = left + 'px'; sub.style.top = top + 'px';
-  document.querySelectorAll('.mi.sub-open').forEach(n => { if(n.closest('[data-level]') === btn.closest('[data-level]')) n.classList.remove('sub-open'); });
+  document.querySelectorAll('.mi.sub-open').forEach(n => { if(n.closest('[data-level]') === parent) n.classList.remove('sub-open'); });
   btn.classList.add('sub-open');
 }
 function flatCmds(){
@@ -20692,9 +20696,11 @@ document.addEventListener('pointerover', ev => {
   if(!b) return;
   if(b.classList.contains('has-sub') && !b.classList.contains('dis')){ if(!b.classList.contains('sub-open')) openSub(b, JSON.parse(b.dataset.sub)); }
   else {
-    const lvl = +b.closest('[data-level]').dataset.level;
+    const parent = b.closest('[data-level]');
+    if(!parent || !parent.isConnected) return;
+    const lvl = +parent.dataset.level;
     document.querySelectorAll('.amenu-sub').forEach(n => { if(+n.dataset.level > lvl) n.remove(); });
-    b.closest('[data-level]').querySelectorAll('.mi.sub-open').forEach(n => n.classList.remove('sub-open'));
+    parent.querySelectorAll('.mi.sub-open').forEach(n => n.classList.remove('sub-open'));
   }
 });
 document.addEventListener('click', ev => {

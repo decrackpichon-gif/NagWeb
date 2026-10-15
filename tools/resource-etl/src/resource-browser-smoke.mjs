@@ -630,7 +630,7 @@ try {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   const page = await context.newPage();
   currentPage = page;
-  page.on("pageerror", error => report.errors.push(`Editor: ${error.message}`));
+  page.on("pageerror", error => report.errors.push(`Editor: ${error.stack || error.message}`));
   page.on("console", message => { if (message.type() === "error") report.errors.push(`Editor: ${message.text()}`); });
   await context.route("**/*", async route => {
     const url = new URL(route.request().url());
@@ -2010,6 +2010,19 @@ try {
   await expect(libraryFrame.locator("[data-detail-title]")).toContainText("Camera");
   report.scenarios.push({editor:"Lucide visual thumbnails from verified lightweight index",
     status:"passed",providerFilter:true,realShapes:true,noExternalImages:true});
+
+  // Contextual menu hover must tolerate submenu removal and not throw.
+  // The same app menu is used during resource editing in the full editor.
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  await page.locator("#btn-appmenu").click();
+  const topSubmenu=page.locator(".amenu .mi.has-sub:not(.dis)").first();
+  await expect(topSubmenu).toBeVisible();
+  await topSubmenu.hover();
+  await expect(page.locator(".amenu-sub").first()).toBeVisible();
+  await page.locator("#btn-appmenu").click();
+  await expect(page.locator(".amenu")).toHaveCount(0);
+  report.scenarios.push({editor:"app menu submenu hover and removal",
+    status:"passed",noUncaughtExceptions:true});
 
   await context.close();
   assert.deepEqual(report.errors, [], "Browser must not emit uncaught errors or external requests");
