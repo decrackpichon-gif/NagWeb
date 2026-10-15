@@ -1,5 +1,10 @@
 name: NagWeb smoke
 
+# Keep the newest push/dispatch per branch. Older 55-job matrices waste CI capacity.
+concurrency:
+  group: nagweb-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches:
