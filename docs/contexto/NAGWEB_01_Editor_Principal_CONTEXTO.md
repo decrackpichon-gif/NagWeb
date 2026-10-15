@@ -20,6 +20,19 @@ Esos documentos **ya existen** en sus ramas y suelen tener muchos más detalles 
 
 Editor **visual y profesional** para construir sitios y narrativas inmersivas con edición directa en lienzo. Mover, posicionar, rotar, escalar y editar textos, imágenes, botones, escenas y elementos internos sin programar. Unificar Creativos e Interactivos como recursos de calidad, personalizables y reutilizables. Mantener compatibilidad entre escenas, componentes, keyframes, responsive, vista previa, guardado y exportación.
 
+## Prioridad de cierre acelerado (15/10/2026)
+
+**Decisión explícita del usuario:** cerrar **NAGWEB 01 | Editor principal** lo más pronto posible. No continuar una expansión indefinida de recursos, mockups, variantes, controles ni efectos por iniciativa del asistente. Esta decisión de producto tiene prioridad sobre sugerencias históricas de «añadir más recursos» que figuran debajo; lo documentado previamente sigue implementado y no debe deshacerse.
+
+**Alcance de cierre de esta rama:**
+- Validar un flujo real y completo de autoría: crear o abrir un sitio, agregar y editar directamente elementos esenciales en el lienzo (texto, imagen, botón y partes ya implementadas), organizar escenas, vista responsive, guardado/reapertura e historial, previsualización, publicación mediante **exportación funcional del sitio**. Incluir Director de Scroll y contenedor universal **solo hasta confirmar su funcionamiento actual**, no ampliar sus catálogos.
+- Corregir de forma **agrupada y transversal** únicamente defectos que impidan o deterioren significativamente ese flujo. Ejecutar una verificación de extremo a extremo y CI relevante. No introducir una tarea nueva por cada recurso ni verificar una y otra vez el mismo comportamiento.
+- Después de ese pase, preparar entrega clara de **NAGWEB 01 como versión funcional cerrada**: cómo ejecutarlo/probarlo, funcionalidades verificadas, limitaciones reales y problemas no bloqueantes para un backlog posterior. No llamar «terminado» a un estado sin comprobar la experiencia completa.
+- **Fuera de este cierre**: crear animaciones nuevas, añadir recursos de catálogo, mejorar estética de cada plantilla sin que bloquee el uso, nuevas opciones por recurso y fusionar/integrar NAGWEB 02/03/04/05. Son proyectos o mejoras independientes y no deben convertir el objetivo de NAGWEB 01 en infinito.
+- No hacer merge a `main` ni desplegar en Vercel sin permiso; desarrollar y cerrar en `feat/storytelling-engine-v2`.
+
+**Última verificación al fijar este criterio:** HEAD funcional `ec1bc0baaf58c684168c241f2b33ccacd0848732` superó el smoke de GitHub Actions (ejecución `38687596223`). La aprobación de regresiones no equivale por sí misma a una aceptación visual de extremo a extremo.
+
 ## Trabajo y decisiones conocidos
 
 - Director de Scroll con progreso 0→1, timeline interactivo, keyframes de posición/escala/rotación/opacidad/desenfoque, easing, edición por momento, vista previa y exportación.
