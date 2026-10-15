@@ -1103,3 +1103,10 @@ El Director oculta un plano raíz DOM, sin inclinación 3D, cuando la suma de su
 
 ### Validación de cruce de plano paralelo (14/10/2026)
 La decisión de ocultar un plano DOM paralelo al quedar detrás del ojo se centraliza en `parallelPlaneBehindEye` de la API de cámara, que recibe la pose de cámara y la del elemento ya evaluadas por el Director. La regresión comprueba el umbral de recorte, profundidades compuestas, vista adaptable, exclusión de objetos externos y conservación de planos/cámaras inclinados. Se evita duplicar la fórmula en el runtime y en los tests. No aborda intersecciones parciales de geometría o oclusión HTML/WebGL.
+
+
+## Recorrido autocontenido para aprender Cámara 3D (14/10/2026)
+
+La opción «Crear ejemplo completo» inserta tres elementos editables (título, paisaje vectorial SVG incrustado, título) y genera el mismo recorrido de cinco encuadres que «Preparar recorrido entre capas». La imagen de ejemplo es un recurso de muestra, **no una fotografía**, y puede sustituirse por una propia. No utiliza servidores ni descarga recursos. Al generar la muestra se preservan todos los elementos anteriores de la escena; se añade únicamente la terna nueva y se aplica el plan calculado explícitamente para sus IDs, aunque existan otros textos/imágenes previamente. Todo ocurre dentro de una única operación Deshacer/guardado. Esta opción trabaja en la escena actual de Lienzo libre y no crea una página o sección aparte.
+
+**Pruebas añadidas:** planificador sin mutación, imagen incrustada, IDs únicos, cinco encuadres, tres elementos nuevos y objetos anteriores intactos, snapshot único; flujo de editor Chromium con creación y un único Undo. El Director sigue siendo dueño del progreso 0→1 y no hay otro reloj. **Pendiente:** verificar calidad visual del recorrido en escena final y recorte parcial real DOM/WebGL; el SVG es demostrativo, no sustituye recursos fotográficos de producción.

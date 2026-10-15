@@ -98,6 +98,25 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
    depth:sec().elements.find(e=>e.id==='journey-test-photo')?.sdCameraDepth||0}));
   assert.equal(reverted.frames,beforeJourney.frames,'Undo restores earlier camera path');
   assert.equal(reverted.depth,beforeJourney.photo,'Undo restores earlier photo depth');
+  // A self-contained scene example must work from the real editor, without external assets.
+  const beforeDemo=await page.evaluate(()=>({elements:JSON.stringify(sec().elements),count:sec().elements.length,
+   undo:history.length,frames:JSON.stringify(sec().sdCameraFrames)}));
+  await page.locator('[data-camera-journey-demo]').click();
+  const afterDemo=await page.evaluate(()=>{const s=sec(),added=s.elements.slice(-3);return {
+   count:s.elements.length,earlier:JSON.stringify(s.elements.slice(0,-3)),types:added.map(e=>e.type),
+   ids:added.map(e=>e.id),image:added[1].src,depths:added.map(e=>e.sdCameraDepth),
+   frames:s.sdCameraFrames.length,undo:history.length};});
+  assert.equal(afterDemo.count,beforeDemo.count+3,'Real editor creates three sample layers');
+  assert.equal(afterDemo.earlier,beforeDemo.elements,'Real editor leaves existing layers unchanged');
+  assert.equal(JSON.stringify(afterDemo.types),JSON.stringify(['heading','img','heading']));
+  assert.equal(new Set(afterDemo.ids).size,3,'Each sample has a unique ID');
+  assert.ok(afterDemo.image.startsWith('data:image/svg+xml;charset=utf-8,'),'Sample loads offline');
+  assert.equal(JSON.stringify(afterDemo.depths),JSON.stringify([-300,200,700]));
+  assert.equal(afterDemo.frames,5);assert.equal(afterDemo.undo,beforeDemo.undo+1);
+  await page.evaluate(()=>undo());
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().elements)),beforeDemo.elements,'One Undo removes the sample without altering existing content');
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),beforeDemo.frames,'Undo restores camera path');
+  console.log('PASS real editor offline sample: three reusable planes, five stops, zero external assets, one Undo');
   console.log('PASS real editor journey: text/image/text depths, five waypoints, camera crossing, one Undo');
   assert.deepEqual(errors,[]);
   console.log('PASS isolated Chromium spatial map: real pointer movement, DOM X, cleanup, one Undo and camera isolation');

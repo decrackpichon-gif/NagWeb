@@ -26,6 +26,8 @@ const ctx={window,document,sec(){return scene;},snapshot(){undos++;},saveProject
  CustomEvent:class{constructor(type,opts){this.type=type;this.detail=opts.detail;}}};
 for(const name of ['nagweb-story-model','nagweb-scroll-camera'])
  vm.runInNewContext(fs.readFileSync('js/'+name+'.js','utf8'),ctx,{filename:name+'.js'});
+let nextDemoId=0;
+ctx.mkEl=function(type,props){return Object.assign({id:'camera-demo-'+(++nextDemoId),type:type},props);};
 const C=window.NAGWEB_SCROLL_CAMERA;
 const map={dataset:{plane:'front',range:'500',originX:'0',originAxis:'0'},
  getBoundingClientRect(){return {left:0,top:0,width:600,height:400};},querySelector(){return null;}};
@@ -654,3 +656,22 @@ assert.equal(behind({...parallel,z:1200},{...parallel,rotateX:15},1000,1,true),f
 assert.equal(behind({...parallel,z:1000},parallel,1000,0.5,true),true,'Responsive scaling preserves eye crossing');
 assert.equal(behind({...parallel,z:900},parallel,1000,0.5,true),false,'Responsive scaling does not cull early');
 console.log('PASS conservative DOM plane eye crossing and responsive-depth invariants');
+
+
+const sampleBeforeCount=scene.elements.length,sampleBeforeElements=scene.elements.map(function(e){return JSON.stringify(e);});
+const samplePlan=C.layerJourneyDemo(scene,ctx.mkEl);
+assert.ok(!samplePlan.error,'Self-contained example needs no existing ordered trio');
+assert.equal(scene.elements.length,sampleBeforeCount,'Demo planner never edits the scene');
+assert.deepEqual(samplePlan.created.map(function(e){return e.type;}),['heading','img','heading']);
+assert.ok(samplePlan.created[1].src.startsWith('data:image/svg+xml;charset=utf-8,'),'Sample image is fully embedded');
+assert.equal(samplePlan.frames.length,5);
+const demoPanel=C.panel(scene);assert.match(demoPanel,/data-camera-journey-demo/);
+const sampleBeforeUndo=undos,sampleBeforeSave=saves;
+handlers.click({target:{closest(){return {dataset:{cameraJourneyDemo:''}};}}});
+assert.equal(undos,sampleBeforeUndo+1,'Sample journey uses one Undo snapshot');
+assert.equal(saves,sampleBeforeSave+1,'Sample journey saves once');
+assert.equal(scene.elements.length,sampleBeforeCount+3,'Sample journey inserts exactly three reusable elements');
+assert.deepEqual(scene.elements.slice(0,sampleBeforeCount).map(function(e){return JSON.stringify(e);}),sampleBeforeElements,'Existing objects remain unchanged');
+assert.deepEqual(scene.elements.slice(-3).map(function(e){return e.sdCameraDepth;}),[-300,200,700]);
+assert.equal(scene.sdCameraFrames.length,5);
+console.log('PASS offline example: self-contained image, five camera stops, existing objects unchanged, one Undo/save');

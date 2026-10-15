@@ -459,6 +459,34 @@ function layerJourneyPlan(s){
   length:480};
 }
 C.layerJourneyPlan=layerJourneyPlan;
+
+ // Optional self-contained visual example. No asset download or secondary scroll driver.
+ function layerJourneyDemo(s,make){
+  if(!s||s.layout!=='free'||!Array.isArray(s.elements))return {error:'El ejemplo necesita una escena de Lienzo libre.'};
+  if(typeof make!=='function')return {error:'No está disponible la creación de elementos.'};
+  var art='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">'+
+   '<defs><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#171636"/><stop offset=".52" stop-color="#745e91"/><stop offset="1" stop-color="#fcb78c"/></linearGradient>'+
+   '<linearGradient id="ridge" x2="0" y2="1"><stop stop-color="#466b93"/><stop offset="1" stop-color="#142b46"/></linearGradient></defs>'+
+   '<rect width="1200" height="800" fill="url(#sky)"/><circle cx="880" cy="233" r="108" fill="#ffe5bb" opacity=".92"/>'+
+   '<path d="M0 555 L185 326 L350 526 L600 270 L890 557 L1070 350 L1200 520 V800 H0Z" fill="#a9a1b4"/>'+
+   '<path d="M0 665 L240 480 L398 605 L685 370 L918 640 L1085 485 L1200 600 V800 H0Z" fill="url(#ridge)"/>'+
+   '<path d="M0 730 Q250 655 535 744 T1200 690 V800 H0Z" fill="#112338"/>'+
+   '<path d="M0 739 Q350 680 670 750 T1200 730" fill="none" stroke="#c3d7dd" stroke-width="5" opacity=".42"/></svg>';
+  var pieces=[
+   make('heading',{text:'ATRAVESÁ EL ESPACIO',name:'01 · Apertura',x:50,y:50,w:76,h:18,sdEnter:'none'}),
+   make('img',{src:'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(art),name:'02 · Paisaje de muestra',x:50,y:50,w:78,h:57,sdEnter:'none'}),
+   make('heading',{text:'CAMBIÁ LA MIRADA',name:'03 · Cierre',x:50,y:50,w:76,h:18,sdEnter:'none'})
+  ];
+  var ids=pieces.map(function(e){return e&&String(e.id);});
+  if(pieces.some(function(e){return !e||!e.id;})||new Set(ids).size!==3||
+     pieces.some(function(e){return s.elements.some(function(old){return String(old.id)===String(e.id);});}))
+   return {error:'No se pudieron crear identificadores únicos para el ejemplo.'};
+  var plan=layerJourneyPlan({layout:'free',elements:pieces,sdPerspective:s.sdPerspective});
+  if(plan.error)return plan;
+  plan.created=pieces;
+  return plan;
+ }
+ C.layerJourneyDemo=layerJourneyDemo;
 function mapObjectDimensions(e,size){
  var w=Number(e&&e.w),h=Number(e&&e.h);
  return {width:Number.isFinite(w)&&w>0?Math.min(400,w)/100*size.width:null,
@@ -2553,8 +2581,9 @@ C.panel=function(s){
   '<button class="btn" type="button" data-camera-space-open style="display:block;width:100%;margin:9px 0;border:1px solid var(--accent)">◈ Editar espacio 3D · Ver cámara y objetos</button>'+
   (s.layout==='free'?'<div data-camera-journey style="margin:8px 0;padding:9px;border:1px solid var(--accent);border-radius:8px">'+
  '<strong style="font-size:12px">Viaje entre capas · Texto → Imagen → Texto</strong>'+
- '<p class="hint gh" style="font-size:11px;margin:5px 0">Un clic distribuye tres elementos existentes en profundidad y crea cinco encuadres para atravesarlos con scroll. Es editable y reversible con Deshacer.</p>'+
+ '<p class="hint gh" style="font-size:11px;margin:5px 0">Prepará tres elementos existentes, o agregá tres capas de ejemplo con una imagen SVG incorporada, sin recursos externos. Cada opción crea cinco encuadres editables y se revierte con un solo Deshacer.</p>'+
  '<button class="btn tiny" type="button" data-camera-journey-apply'+(layerJourneyPlan(s).error?' disabled title="'+safeLabel(layerJourneyPlan(s).error)+'"':'')+'>Preparar recorrido entre capas</button>'+
+ '<button class="btn tiny" type="button" data-camera-journey-demo style="margin-left:5px">Crear ejemplo completo</button>'+
  (layerJourneyPlan(s).error?'<p class="hint gh" data-camera-journey-help style="font-size:10px;margin-top:5px">'+safeLabel(layerJourneyPlan(s).error)+'</p>':
  '<p class="hint gh" style="font-size:10px;margin-top:5px">Usa texto, imagen y texto, en ese orden. Cambia X/Y/Z, su visibilidad y los encuadres de cámara. No elimina elementos ni sus keyframes.</p>')+
  '<div data-camera-journey-steps role="group" aria-label="Previsualizar momentos del recorrido" style="display:flex;gap:4px;flex-wrap:wrap;margin-top:8px">'+
@@ -3156,7 +3185,7 @@ if(pane){
    ev.preventDefault();technical.open=!technical.open;
    mapOverviewTechnicalOpen[sec().id]=technical.open;return;
   }
-  var button=ev.target.closest('[data-camera-journey-preview],[data-camera-journey-apply],[data-camera-map-object-mode],[data-camera-space-open],[data-camera-layer-pick],[data-camera-object-transform],[data-camera-object-depth],[data-camera-viewport-translate],[data-camera-viewport-orbit],[data-camera-surface-aim],[data-camera-aim-at-object],[data-camera-scene-object-pick],[data-camera-edit-current],[data-camera-easy-move],[data-camera-overview-compare-alternate],[data-camera-overview-compare-jump],[data-camera-overview-event-step],[data-camera-overview-toggle],[data-camera-map-pan],[data-camera-map-zoom],[data-camera-map-step],[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
+  var button=ev.target.closest('[data-camera-journey-preview],[data-camera-journey-apply],[data-camera-journey-demo],[data-camera-map-object-mode],[data-camera-space-open],[data-camera-layer-pick],[data-camera-object-transform],[data-camera-object-depth],[data-camera-viewport-translate],[data-camera-viewport-orbit],[data-camera-surface-aim],[data-camera-aim-at-object],[data-camera-scene-object-pick],[data-camera-edit-current],[data-camera-easy-move],[data-camera-overview-compare-alternate],[data-camera-overview-compare-jump],[data-camera-overview-event-step],[data-camera-overview-toggle],[data-camera-map-pan],[data-camera-map-zoom],[data-camera-map-step],[data-camera-jump],[data-camera-add],[data-camera-delete],[data-camera-first],[data-camera-copy],[data-camera-hold],[data-camera-preset],[data-camera-look-jump],[data-camera-look-add],[data-camera-look-delete],[data-camera-look-init]');if(!button)return;
   if(button===suppressedClick){suppressedClick=null;return;}
   var s=sec(),cfg=C.config(s);if(!cfg)return;var list=keys(s);
   if(button.dataset.cameraJourneyPreview!==undefined){
@@ -3164,14 +3193,17 @@ if(pane){
    if(![0,25,50,75,100].includes(at)||!window.NAGWEB_SCROLL_DIRECTOR)return;
    window.NAGWEB_SCROLL_DIRECTOR.scrub(s.id,at/100);return;
   }
-  if(button.dataset.cameraJourneyApply!==undefined){
-   var journey=layerJourneyPlan(s);if(journey.error){toast(journey.error);return;}
+  if(button.dataset.cameraJourneyApply!==undefined||button.dataset.cameraJourneyDemo!==undefined){
+   var isDemo=button.dataset.cameraJourneyDemo!==undefined;
+   var journey=isDemo?C.layerJourneyDemo(s,typeof mkEl==='function'?mkEl:null):layerJourneyPlan(s);
+   if(journey.error){toast(journey.error);return;}
    if(baseTransformArmed)stopBaseTransform();
    if(objectDepthArmed)stopObjectDepth(false);
    if(surfaceAimArmed)clearSurfaceAim();
    if(viewportOrbitArmed)stopViewportOrbit();
    if(viewportTranslateArmed)stopViewportTranslate();
    snapshot();
+   if(journey.created)s.elements.push.apply(s.elements,journey.created);
    journey.layers.forEach(function(layer){
     var e=(s.elements||[]).find(function(v){return String(v.id)===String(layer.id);});
     if(!e)return;
@@ -3184,7 +3216,7 @@ if(pane){
    mapObjectSelected[s.id]=journey.layers[0].id;selected[s.id]=0;
    saveProject();renderPane();schedulePreview();
    if(window.NAGWEB_SCROLL_DIRECTOR)window.NAGWEB_SCROLL_DIRECTOR.scrub(s.id,0);
-   toast('Viaje entre capas preparado. Recorré el Director del 0 al 100%.');return;
+   toast(isDemo?'Ejemplo agregado: tres planos editables y cinco encuadres. Podés deshacerlo de una vez.':'Viaje entre capas preparado. Recorré el Director del 0 al 100%.');return;
   }
   if(button.dataset.cameraMapObjectMode!==undefined){mapObjectEdit[s.id]=mapObjectEdit[s.id]!==true;renderPane();return;}
    if(button.dataset.cameraSpaceOpen!==undefined){
