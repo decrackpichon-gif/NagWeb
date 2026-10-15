@@ -81,18 +81,41 @@ for(const [mode,html] of Object.entries(generated)){
    original.set(0);const occluded=alpha();
    const probe=d.scene.children.find(m=>m.isMesh&&m.material&&m.material.colorWrite===false);
    const depth=probe&&probe.position.z;
+   // Independent, deterministic GPU reference. This verifies a depth-only
+   // plane masks just its footprint, without sampling an arbitrary project GLB.
+   let gpu=null;
+   if(probe){
+    const gpuScene=new THREE.Scene(),gpuCamera=new THREE.PerspectiveCamera(50,
+     d.renderer.domElement.clientWidth/d.renderer.domElement.clientHeight,.1,100);
+    const back=new THREE.Mesh(new THREE.PlaneGeometry(6,6),new THREE.MeshBasicMaterial({color:0xff4455}));
+    back.position.z=-3;
+    const front=probe.clone();front.position.set(0,0,-2);front.rotation.set(0,0,0);front.scale.set(1,1,1);
+    gpuScene.add(back,front);
+    d.renderer.setScissorTest(false);
+    d.renderer.setViewport(0,0,d.renderer.domElement.clientWidth,d.renderer.domElement.clientHeight);
+    const getAlpha=(fx,fy)=>{
+     d.renderer.render(gpuScene,gpuCamera);
+     const px=new Uint8Array(4);
+     gl.readPixels(Math.floor(fx*gl.drawingBufferWidth),Math.floor(fy*gl.drawingBufferHeight),1,1,gl.RGBA,gl.UNSIGNED_BYTE,px);
+     return px[3];
+    };
+    front.visible=false;const unmasked=getAlpha(.5,.5);
+    front.visible=true;const masked=getAlpha(.5,.5),outside=getAlpha(.8,.5);
+    gpu={unmasked,masked,outside};
+    back.geometry.dispose();back.material.dispose();
+   }
    block.__nwSpatialPose.opacity=.5;const restored=alpha();
    const cs=getComputedStyle(block),diagnostic={attached:block.parentElement===world,
     width:block.offsetWidth,height:block.offsetHeight,styleTransform:block.style.transform,
     opacity:cs.opacity,background:cs.backgroundColor,borderRadius:cs.borderRadius,
     clipPath:cs.clipPath,mask:cs.maskImage,filter:cs.filter,mixBlend:cs.mixBlendMode};
    block.remove();d.adapter.connect(api,[stage]);original.set(0);d.tick();
-   return{before,occluded,restored,depth,hasProxy:!!probe,diagnostic,canvas:d.renderer.domElement.getBoundingClientRect().toJSON(),stage:rect.toJSON(),pos:{sx,sy}};
+   return{before,occluded,restored,depth,hasProxy:!!probe,gpu,diagnostic,canvas:d.renderer.domElement.getBoundingClientRect().toJSON(),stage:rect.toJSON(),pos:{sx,sy}};
   });
   assert.ok(occlusion.hasProxy,'Opaque DOM layer creates a real GPU depth proxy: '+JSON.stringify(occlusion));
-  assert.ok(occlusion.before>0,'Unoccluded GLB/box paints the WebGL pixel');
-  assert.equal(occlusion.occluded,0,'Opaque DOM surface hides the part of the GLB behind it');
-  assert.ok(occlusion.restored>0,'Semi-transparent HTML does not incorrectly mask the GLB');
+  assert.ok(occlusion.gpu.unmasked>0,'GPU reference paints a visible pixel: '+JSON.stringify(occlusion));
+  assert.equal(occlusion.gpu.masked,0,'Depth-only HTML proxy hides geometry behind its footprint');
+  assert.ok(occlusion.gpu.outside>0,'Uncovered GPU pixels remain visible beside the DOM proxy');
   console.log('PASS real WebGL depth-only HTML occlusion: box, partial coverage and alpha fallback');
  }
 
