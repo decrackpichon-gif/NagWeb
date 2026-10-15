@@ -96,6 +96,7 @@ adapter.render(()=>{});assert.equal(shape.userData.holder.visible,false);
  assert.equal(scene.children.some(n=>n.isMesh&&n.material&&n.material.colorWrite===false),false,'Destroy removes alpha depth proxies');
 
 
+adapter.connect(api,[a,b]);
 const currentCam=adapter.view(shape).camera,old=currentCam.position.clone();adapter.destroy();paints[0]({x:222,y:0,z:0,rotate:0,rotateX:0,rotateY:0},1);assert.deepEqual(currentCam.position.toArray(),old.toArray(),'destroy removes bindings');assert.equal(adapter.owns(shape),false);
 const html=fs.readFileSync('index.html','utf8');assert.ok(html.includes('${window.NAGWEB_CREATE_SPATIAL_RENDERER.toString()}'));assert.ok(html.indexOf('src="js/nagweb-spatial-renderer.js"')<html.indexOf('src="js/nagweb-scroll-director-v16.js"'));
 for(const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)){if(!/\bsrc=/.test(m[1])&&(!/\btype=/.test(m[1])||/javascript|module/.test(m[1])))new vm.Script(m[2]);}
