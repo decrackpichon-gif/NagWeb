@@ -79,10 +79,14 @@ for(const [mode,html] of Object.entries(generated)){
    const probe=d.scene.children.find(m=>m.isMesh&&m.material&&m.material.colorWrite===false);
    const depth=probe&&probe.position.z;
    block.__nwSpatialPose.opacity=.5;const restored=alpha();
+   const cs=getComputedStyle(block),diagnostic={attached:block.parentElement===world,
+    width:block.offsetWidth,height:block.offsetHeight,styleTransform:block.style.transform,
+    opacity:cs.opacity,background:cs.backgroundColor,borderRadius:cs.borderRadius,
+    clipPath:cs.clipPath,mask:cs.maskImage,filter:cs.filter,mixBlend:cs.mixBlendMode};
    block.remove();d.adapter.connect(api,[stage]);original.set(0);d.tick();
-   return{before,occluded,restored,depth,hasProxy:!!probe};
+   return{before,occluded,restored,depth,hasProxy:!!probe,diagnostic};
   });
-  assert.ok(occlusion.hasProxy,'Opaque DOM layer creates a real GPU depth proxy');
+  assert.ok(occlusion.hasProxy,'Opaque DOM layer creates a real GPU depth proxy: '+JSON.stringify(occlusion));
   assert.ok(occlusion.before>0,'Unoccluded GLB/box paints the WebGL pixel');
   assert.equal(occlusion.occluded,0,'Opaque DOM surface hides the part of the GLB behind it');
   assert.ok(occlusion.restored>0,'Semi-transparent HTML does not incorrectly mask the GLB');
