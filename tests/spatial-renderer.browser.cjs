@@ -145,16 +145,37 @@ for(const [mode,html] of Object.entries(generated)){
    }
    front.visible=false;const base=read(.4),baseRight=read(.6);
    front.visible=true;const solid=read(.4),clear=read(.6);
+   // Rebuild the mask when CSS shape changes; transparent PNG and rounded
+   // corners must intersect in one alpha texture, without rewriting the DOM.
+   img.style.borderRadius='40%';d.tick();
+   const roundedTex=proxy.material.alphaMap,corner=read(.29,.29),roundedSolid=read(.40),roundedClear=read(.60);
+   img.style.borderRadius='0';img.style.clipPath='circle(38% at 50% 50%)';d.tick();
+   const circleTex=proxy.material.alphaMap,circleCorner=read(.29,.29),circleSolid=read(.40);
+   img.style.clipPath='inset(20% 20% 20% 20% round 10px)';d.tick();
+   const insetTex=proxy.material.alphaMap,insetCorner=read(.29,.29),insetSolid=read(.40);
+   img.style.clipPath='none';img.style.objectFit='cover';img.style.width='210px';img.style.height='110px';d.tick();
+   const fittedTex=proxy.material.alphaMap,fitKeyChanged=!!fittedTex&&fittedTex!==insetTex;
    const texture=proxy.material.map,depth=proxy.position.z;
    back.geometry.dispose();back.material.dispose();
    img.remove();d.adapter.connect(api,[stage]);d.tick();
-   return{base,baseRight,solid,clear,hasTexture:!!texture,depth,textureDisposed:!d.scene.children.includes(proxy)};
+   return{base,baseRight,solid,clear,hasTexture:!!texture,depth,textureDisposed:!d.scene.children.includes(proxy),shapes:{rounded:!!roundedTex,corner,roundedSolid,roundedClear,circle:!!circleTex,circleCorner,circleSolid,inset:!!insetTex,insetCorner,insetSolid,fitKeyChanged}};
   });
   assert.ok(transparency,'Embedded PNG generates a Three depth proxy');
   assert.ok(transparency.base>0&&transparency.baseRight>0,'GPU reference covers both image halves');
   assert.equal(transparency.solid,0,'Opaque PNG pixels occlude the model behind them');
   assert.ok(transparency.clear>0,'Transparent PNG pixels reveal the model behind them');
   assert.equal(transparency.textureDisposed,true,'Alpha-depth proxy is released on reconnect');
+  assert.equal(transparency.shapes.rounded,true,'Border-radius creates GPU alpha mask');
+  assert.equal(transparency.shapes.corner,transparency.base,'Rounded corner reveals geometry behind transparent cutout');
+  assert.equal(transparency.shapes.roundedSolid,0,'Rounded PNG interior still occludes geometry');
+  assert.ok(transparency.shapes.roundedClear>0,'Rounded PNG preserves its own alpha');
+  assert.equal(transparency.shapes.circle,true,'Circular clip-path produces GPU alpha mask');
+  assert.equal(transparency.shapes.circleCorner,transparency.base,'Circle clip cuts away the diagonal corner');
+  assert.equal(transparency.shapes.circleSolid,0,'Circle clip still retains image opacity');
+  assert.equal(transparency.shapes.inset,true,'Inset clip-path produces GPU alpha mask');
+  assert.equal(transparency.shapes.insetCorner,transparency.base,'Inset clip reveals pixels outside its box');
+  assert.equal(transparency.shapes.insetSolid,0,'Inset clip retains its opaque interior');
+  assert.equal(transparency.shapes.fitKeyChanged,true,'Object-fit cover regenerates an aligned image silhouette');
   console.log('PASS real WebGL alpha-depth masking: PNG opaque pixels block, transparent pixels pass, texture cleanup');
 
  }

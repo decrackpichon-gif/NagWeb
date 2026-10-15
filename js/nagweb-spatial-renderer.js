@@ -44,6 +44,86 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
  // image, links and focus; no rasterization of the DOM is involved.
  // Deliberately refuse transparency, clipping and transformed ancestry rather
  // than drawing an inaccurate rectangle in front of somebody else's content.
+
+ function cssUnit(value,basis){
+  var m=/^(-?(?:\d+(?:\.\d*)?|\.\d+))(px|%)?$/.exec(String(value||'').trim());
+  return m?(+m[1])*(m[2]==='%'?basis/100:1):NaN;
+ }
+ function imagePosition(value){
+  var v=String(value||'50% 50%').trim().split(/\s+/);
+  if(v.length>2||v.length<1)return null;
+  function pos(s,vertical){
+   if(s==='center')return .5;if(s===(vertical?'top':'left'))return 0;
+   if(s===(vertical?'bottom':'right'))return 1;
+   var n=cssUnit(s,1);return /%$/.test(s)&&Number.isFinite(n)?n*100:NaN;
+  }
+  var x=pos(v[0],false),y=pos(v[1]||'50%',true);
+  return Number.isFinite(x)&&Number.isFinite(y)?[x,y]:null;
+ }
+ function shapeSpec(node,cs,w,h){
+  var names=['borderTopLeftRadius','borderTopRightRadius','borderBottomRightRadius','borderBottomLeftRadius'];
+  var fallback=String(cs.borderRadius||'0px').trim().split(/\s+/);
+  // CSS corner properties allow elliptical radii; complex shorthand with
+  // nontrivial slash syntax is handled by each computed corner instead.
+  var corners=[];
+  for(var i=0;i<4;i++){
+   var raw=cs[names[i]]||fallback[0]||'0px',parts=String(raw).split(/\s+/);
+   if(parts.length>2)return null;
+   var rx=cssUnit(parts[0],w),ry=cssUnit(parts[1]||parts[0],h);
+   if(!Number.isFinite(rx)||!Number.isFinite(ry)||rx<0||ry<0)return null;
+   corners.push([rx,ry]);
+  }
+  var factor=Math.min(1,
+   w/Math.max(1e-9,corners[0][0]+corners[1][0]),
+   w/Math.max(1e-9,corners[3][0]+corners[2][0]),
+   h/Math.max(1e-9,corners[0][1]+corners[3][1]),
+   h/Math.max(1e-9,corners[1][1]+corners[2][1]));
+  corners.forEach(function(p){p[0]*=factor;p[1]*=factor;});
+  var rounded=corners.some(function(p){return p[0]>.01&&p[1]>.01;});
+  var rawClip=String(cs.clipPath||'none').trim(),clip=null;
+  if(rawClip!=='none'){
+   var m;
+   if((m=/^inset\((.+)\)$/i.exec(rawClip))){
+    var sections=m[1].split(/\s+round\s+/i);
+    if(sections.length>2)return null;
+    var tokens=sections[0].trim().split(/\s+/);if(tokens.length<1||tokens.length>4)return null;
+    var values=tokens.map(function(v,i){return cssUnit(v,i%2===0?h:w);});
+    if(values.some(function(v){return !Number.isFinite(v);}))return null;
+    var t=values[0],r=values[1]!=null?values[1]:t,b=values[2]!=null?values[2]:t,l=values[3]!=null?values[3]:r;
+    var rad=sections[1]?cssUnit(sections[1].trim(),Math.min(w,h)):0;
+    if(!Number.isFinite(rad)||rad<0)return null;
+    clip={kind:'inset',l:l,t:t,r:w-r,b:h-b,rad:rad};
+   }else if((m=/^circle\(([^)]+)\)$/i.exec(rawClip))){
+    var vals=m[1].split(/\s+at\s+/i),pts=(vals[1]||'50% 50%').trim().split(/\s+/);
+    if(pts.length!==2)return null;
+    var radius=cssUnit(vals[0].trim(),Math.sqrt((w*w+h*h)/2)),
+       cx=cssUnit(pts[0],w),cy=cssUnit(pts[1],h);
+    if([radius,cx,cy].some(function(v){return !Number.isFinite(v)||v<0;}))return null;
+    clip={kind:'ellipse',cx:cx,cy:cy,rx:radius,ry:radius};
+   }else if((m=/^ellipse\(([^)]+)\)$/i.exec(rawClip))){
+    var pieces=m[1].split(/\s+at\s+/i),rr=pieces[0].trim().split(/\s+/),
+       pp=(pieces[1]||'50% 50%').trim().split(/\s+/);
+    if(rr.length!==2||pp.length!==2)return null;
+    var cx=cssUnit(pp[0],w),cy=cssUnit(pp[1],h),rx=cssUnit(rr[0],w),ry=cssUnit(rr[1],h);
+    if([cx,cy,rx,ry].some(function(v){return !Number.isFinite(v)||v<0;}))return null;
+    clip={kind:'ellipse',cx:cx,cy:cy,rx:rx,ry:ry};
+   }else return null;
+  }
+  return{corners:corners,rounded:rounded,clip:clip};
+ }
+ function roundedPath(ctx,l,t,r,b,c){
+  var sx=r-l,sy=b-t,tl=c[0],tr=c[1],br=c[2],bl=c[3];
+  function curve(x,y,rx,ry,a,b){
+   if(rx>.001&&ry>.001)ctx.ellipse(x,y,rx,ry,0,a,b);
+   else ctx.lineTo(x+rx*Math.cos(b),y+ry*Math.sin(b));
+  }
+  ctx.beginPath();ctx.moveTo(l+tl[0],t);ctx.lineTo(r-tr[0],t);
+  curve(r-tr[0],t+tr[1],tr[0],tr[1],-Math.PI/2,0);
+  ctx.lineTo(r,b-br[1]);curve(r-br[0],b-br[1],br[0],br[1],0,Math.PI/2);
+  ctx.lineTo(l+bl[0],b);curve(l+bl[0],b-bl[1],bl[0],bl[1],Math.PI/2,Math.PI);
+  ctx.lineTo(l,t+tl[1]);curve(l+tl[0],t+tl[1],tl[0],tl[1],Math.PI,Math.PI*1.5);
+  ctx.closePath();
+ }
  function safeImage(node){
   var img=node&&node.tagName==='IMG'?node:null;
   if(!img&&node&&node.children&&node.children.length===1&&node.children[0].tagName==='IMG'){
@@ -54,30 +134,68 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
   if(!img||!img.style||img.style.transform&&img.style.transform!=='none')return null;
   var cs=window.getComputedStyle(img);
   if(!cs||cs.opacity!=='1'||cs.visibility==='hidden'||cs.display==='none'||
-     cs.objectFit&&cs.objectFit!=='fill'||cs.borderRadius&&cs.borderRadius!=='0px'||
-     cs.clipPath&&cs.clipPath!=='none'||cs.filter&&cs.filter!=='none'&&
-      !/^(?:blur\(0(?:px)?\)\s*)+$/.test(cs.filter))return null;
-  // Embedded and blob assets have no CORS ambiguity. Remote/cropped imagery is
-  // intentionally excluded instead of generating a wrong depth silhouette.
+     cs.filter&&cs.filter!=='none'&&!/^(?:blur\(0(?:px)?\)\s*)+$/.test(cs.filter))return null;
+  var fit=cs.objectFit||'fill',position=imagePosition(cs.objectPosition);
+  if(['fill','cover','contain'].indexOf(fit)<0||!position)return null;
+  var shape=shapeSpec(img,cs,img.offsetWidth,img.offsetHeight);
+  if(!shape||cs.maskImage&&cs.maskImage!=='none'||cs.mixBlendMode&&cs.mixBlendMode!=='normal')return null;
   var src=img.currentSrc||img.src||'';
   if(!/^data:image\/(?:png|webp|svg\+xml|jpeg)[;,]/i.test(src)&&!/^blob:/i.test(src))return null;
-  return {img:img,src:src,jpeg:/^data:image\/jpeg[;,]/i.test(src)};
+  return {img:img,src:src,jpeg:/^data:image\/jpeg[;,]/i.test(src),fit:fit,position:position,shape:shape};
  }
  function surfaceKind(node){
   if(!node||!node.style||!node.offsetWidth||!node.offsetHeight||
      node.style.transform&&node.style.transform!=='none'||!window.getComputedStyle)return null;
   var cs=window.getComputedStyle(node);
   if(!cs||cs.visibility==='hidden'||cs.display==='none'||cs.opacity!=='1')return null;
-  if(cs.borderRadius&&cs.borderRadius!=='0px'||cs.clipPath&&cs.clipPath!=='none'||
-     cs.maskImage&&cs.maskImage!=='none'||
+  if(cs.maskImage&&cs.maskImage!=='none'||
      cs.filter&&cs.filter!=='none'&&!/^(?:blur\(0(?:px)?\)\s*)+$/.test(cs.filter)||
      cs.mixBlendMode&&cs.mixBlendMode!=='normal')return null;
+  var shape=shapeSpec(node,cs,node.offsetWidth,node.offsetHeight);
+  if(!shape)return null;
   var color=cs.backgroundColor||'',opaque=/^rgb\(/i.test(color);
   if(/^rgba\(/i.test(color)){var parts=color.match(/[\d.]+/g);opaque=!!parts&&parts.length>=4&&+parts[3]>=.999;}
-  if(opaque)return{kind:'opaque'};
+  if(opaque)return{kind:'opaque',shape:shape};
   var candidate=safeImage(node);
   if(!candidate)return null;
-  return candidate.jpeg?{kind:'opaque'}:{kind:'image',img:candidate.img,src:candidate.src};
+  return candidate.jpeg&&candidate.fit==='fill'&&!candidate.shape.rounded&&!candidate.shape.clip?
+   {kind:'opaque',shape:shape}:{kind:'image',img:candidate.img,src:candidate.src,fit:candidate.fit,position:candidate.position,shape:shape,imgShape:candidate.shape};
+ }
+ function makeMask(surface,w,h){
+  if(typeof document==='undefined')return null;
+  var max=Math.max(w,h),factor=Math.min(1,1024/max),can=document.createElement('canvas');
+  can.width=Math.max(1,Math.round(w*factor));can.height=Math.max(1,Math.round(h*factor));
+  var ctx=can.getContext('2d');if(!ctx)return null;
+  ctx.scale(can.width/w,can.height/h);
+  ctx.fillStyle='#fff';
+  if(surface.kind==='image'){
+   var img=surface.img,iw=img.naturalWidth,ih=img.naturalHeight;
+   if(!iw||!ih)return null;
+   var sx=surface.fit==='cover'?Math.max(w/iw,h/ih):surface.fit==='contain'?Math.min(w/iw,h/ih):0;
+   var dw=sx?iw*sx:w,dh=sx?ih*sx:h;
+   var dx=(w-dw)*surface.position[0],dy=(h-dh)*surface.position[1];
+   ctx.drawImage(img,dx,dy,dw,dh);
+   ctx.globalCompositeOperation='source-in';ctx.fillRect(0,0,w,h);
+  }else ctx.fillRect(0,0,w,h);
+  function intersect(shape){
+   if(!shape)return;
+   if(shape.rounded){
+    ctx.globalCompositeOperation='destination-in';roundedPath(ctx,0,0,w,h,shape.corners);ctx.fill();
+   }
+   if(shape.clip){
+    var clip=shape.clip;ctx.globalCompositeOperation='destination-in';ctx.beginPath();
+    if(clip.kind==='ellipse')ctx.ellipse(clip.cx,clip.cy,Math.max(.00001,clip.rx),Math.max(.00001,clip.ry),0,0,Math.PI*2);
+    else if(clip.rad>0){
+     var rad=Math.min(clip.rad,Math.max(0,(clip.r-clip.l)/2),Math.max(0,(clip.b-clip.t)/2));
+     roundedPath(ctx,clip.l,clip.t,clip.r,clip.b,[[rad,rad],[rad,rad],[rad,rad],[rad,rad]]);
+    }else ctx.rect(clip.l,clip.t,clip.r-clip.l,clip.b-clip.t);
+    ctx.fill();
+   }
+  }
+  intersect(surface.shape);
+  if(surface.kind==='image')intersect(surface.imgShape);
+  var tex=new T.CanvasTexture(can);tex.generateMipmaps=false;tex.minFilter=T.LinearFilter;tex.magFilter=T.LinearFilter;
+  tex.needsUpdate=true;return tex;
  }
  function discoverOccluders(row){
   if(typeof row.stage.querySelectorAll!=='function')return;
@@ -100,20 +218,25 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
    if(!row.state||!node.isConnected||!surface||!pose||
       !Number.isFinite(+pose.z)||!Number.isFinite(+pose.scale)||
       +pose.scale<=0||!Number.isFinite(+pose.opacity)||+pose.opacity<.999)return;
-   if(surface.kind==='image'){
-    if(!surface.img.complete||!surface.img.naturalWidth||!surface.img.naturalHeight)return;
-    if(o.source!==surface.src||o.image!==surface.img){
-     if(o.texture)o.texture.dispose();
-     o.texture=new T.Texture(surface.img);o.texture.needsUpdate=true;
-     o.source=surface.src;o.image=surface.img;
-     mesh.material.map=o.texture;mesh.material.alphaTest=.08;
-     mesh.material.needsUpdate=true;
-    }
-   }else if(o.texture){
-    o.texture.dispose();o.texture=null;o.source=null;o.image=null;
-    mesh.material.map=null;mesh.material.alphaTest=0;mesh.material.needsUpdate=true;
+   if(surface.kind==='image'&&(!surface.img.complete||!surface.img.naturalWidth||!surface.img.naturalHeight))return;
+   var w=node.offsetWidth,h=node.offsetHeight,shape=surface.shape;
+   var needsMask=shape.rounded||!!shape.clip||surface.kind==='image'&&
+     (surface.fit!=='fill'||surface.imgShape.rounded||!!surface.imgShape.clip);
+   var key=JSON.stringify({type:surface.kind,src:surface.src||'',w:w,h:h,
+     shape:shape,imgShape:surface.imgShape,fit:surface.fit,position:surface.position});
+   if(o.source!==key||o.image!==surface.img){
+    var next=null;
+    if(needsMask)next=makeMask(surface,w,h);
+    else if(surface.kind==='image'){next=new T.Texture(surface.img);next.needsUpdate=true;}
+    if((needsMask||surface.kind==='image')&&!next)return;
+    if(o.texture)o.texture.dispose();
+    o.texture=next;o.source=key;o.image=surface.img||null;
+    mesh.material.map=needsMask?null:next;
+    mesh.material.alphaMap=needsMask?next:null;
+    mesh.material.alphaTest=next?.08:0;
+    mesh.material.needsUpdate=true;
    }
-   var w=node.offsetWidth,h=node.offsetHeight,world=o.world;
+   var world=o.world;
    // Match the shared .inner offset convention used by spatial 3D anchors.
    var offset={x:(world.offsetLeft||0)+(row.stage.clientLeft||0),
      y:(world.offsetTop||0)+(row.stage.clientTop||0)};
