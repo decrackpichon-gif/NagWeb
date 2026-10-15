@@ -1524,7 +1524,7 @@ export async function runEditorPartsSmoke(page){
   // exportación proporcional sin modificar sus layouts/variantes originales.
   for(const cfg of [
    {kind:'splitfeature',id:'test-fluid-split',root:'scx-sf',part:'detail-image',
-    parts:['main-image','kicker','title','text','detail-image'],
+    parts:['main-image','detail-image','kicker','title','text'],
     model:{title:'DOS COLUMNAS',kicker:'CATEGORÍA',text:'Descripción',layout:'right'}},
    {kind:'floatingcaption',id:'test-fluid-float',root:'scx-fc',part:'caption-card',
     parts:['image','caption-card','eyebrow','title','text'],
