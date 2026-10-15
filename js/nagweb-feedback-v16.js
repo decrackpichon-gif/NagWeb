@@ -313,7 +313,7 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
  enhance('pullquote','scx-pq',null,0,{
   unitY:'100cqw',labels:{quote:'Cita',author:'Autor',role:'Cargo',mark:'Comillas o línea'},
   hint:'Editá la cita, el autor, el cargo y el signo gráfico independientemente.'
- },[['author','footer b'],['role','footer span'],['mark','blockquote > i']]);
+ },[['author','footer b'],['role','footer span'],['mark',':scope > i']]);
  enhance('typespecimen','scx-ts',null,0,{
   unitY:'100cqw',labels:{kicker:'Rótulo',note:'Nota',hero:'Muestra principal',upper:'Texto superior',lower:'Texto inferior',nums:'Números'},
   hint:'Reordená los seis bloques de la muestra tipográfica desde el lienzo.'
