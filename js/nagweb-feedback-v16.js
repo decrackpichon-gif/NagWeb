@@ -214,6 +214,67 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
  enhanceMedia('detailmagnifier','nw-mag',[['image','Imagen'],['caption','Texto']],'4/3',600,runMagnifier);
 })();
 
+/* ---------- Composiciones fotográficas: edición adaptable sin otro motor ---------- */
+// Los decoradores de v14 ya identifican las fotos. Este adaptador reutiliza esos
+// data-wpart y extiende el mismo contrato de Hero a Collage y Moodboard.
+(function(){
+ function enhance(kind,rootClass,stageSelector,images,extra){
+  var old=W.kinds[kind];if(!old)return;
+  var def=Object.assign({},old);
+  def.fields=[{type:'hint',text:'Seleccioná una foto o un texto desde la barra o el lienzo. Mové, escalá y girá cada pieza; la distribución móvil se guarda aparte y las composiciones anteriores siguen funcionando.'}]
+   .concat((old.fields||[]).filter(function(f){return f.type!=='hint';}));
+  def.markup=function(e,ctx){
+   var t=document.createElement('template');t.innerHTML=old.markup(e,ctx);
+   var root=t.content.firstElementChild;if(!root)return t.innerHTML;
+   root.setAttribute('data-nw-part-scope',kind);
+   root.setAttribute('data-nw-part-mobile','600');
+   root.setAttribute('data-nw-part-height',stageSelector);
+   root.setAttribute('data-nw-part-y','var(--h)');
+   // v14 no identificaba los dos textos del pie como partes movibles.
+   (extra||[]).forEach(function(a){
+    var node=root.querySelector(a[1]);if(node)node.setAttribute('data-wpart',a[0]);
+   });
+   var parts=[];
+   root.querySelectorAll('[data-wpart]').forEach(function(n){
+    var name=n.getAttribute('data-wpart'),label=/^image-/.test(name)?'Foto '+(+name.split('-')[1]+1):name==='label'?'Rótulo':name==='caption'?'Descripción':name;
+    parts.push([name,label]);
+   });
+   if(ctx&&ctx.edit){
+    var nav=document.createElement('nav');nav.className='nw-edit-partbar nw-photo-editbar';
+    nav.setAttribute('data-nw-partbar','');
+    var all=document.createElement('button');all.type='button';all.setAttribute('data-nw-part','');all.textContent='Todos';nav.appendChild(all);
+    parts.forEach(function(a){var b=document.createElement('button');b.type='button';b.setAttribute('data-nw-part',a[0]);b.textContent=a[1];nav.appendChild(b);});
+    root.insertBefore(nav,root.firstChild);
+   }
+   var html=t.innerHTML;
+   parts.forEach(function(a){html=partStyleMarkup(html,e,a[0],'var(--h)');});
+   return html;
+  };
+  // La antigua regla .nw-part-t tenía especificidad mayor: el modo móvil
+  // debe prevalecer sobre esa regla sin perder CSS de fotografías ni layout.
+  var partSel='.'+rootClass+' [data-wpart],.el.wdg.wk-'+kind+' .'+rootClass+' [data-wpart]';
+  var css=(W.css&&W.css[kind]||'')+
+   '.'+rootClass+'{position:relative;container-type:inline-size;isolation:isolate}' +
+   '.'+rootClass+' .nw-photo-editbar{left:10px;right:10px;top:10px;max-width:calc(100% - 20px);max-height:110px;overflow:auto;z-index:70}' +
+   extra.css+
+   partSel+'{translate:var(--nw-tx,0px) var(--nw-ty,0px);rotate:var(--nw-pr,0deg);scale:var(--nw-ps,1)}' +
+   '@container (max-width:600px){'+partSel+'{translate:var(--nw-mx,var(--nw-tx,0px)) var(--nw-my,var(--nw-ty,0px));rotate:var(--nw-mr,var(--nw-pr,0deg));scale:var(--nw-ms,var(--nw-ps,1))}}';
+  X.reg(kind,def,css,W.runtime&&W.runtime[kind]||'');
+ }
+ enhance('editorialcollage','scx-ec','.scx-ec-grid',3,{
+  css:'.scx-ec .scx-ec-grid,.scx-ec figcaption{--h:clamp(300px,48cqw,620px)}'+
+   '.scx-ec--square .scx-ec-grid,.scx-ec--square figcaption{--h:min(78cqw,650px)}'+
+   '.scx-ec--tall .scx-ec-grid,.scx-ec--tall figcaption{--h:min(100cqw,800px)}'+
+   '.scx-ec .scx-ec-grid{height:var(--h)}'+
+   '@container (max-width:560px){.scx-ec .scx-ec-grid,.scx-ec figcaption{--h:90cqw}}'
+ },[['label','.scx-ec figcaption b'],['caption','.scx-ec figcaption span']]);
+ enhance('moodboard','scx-mb','.scx-mb > div',6,{
+  css:'.scx-mb>div,.scx-mb figcaption{--h:clamp(320px,55cqw,680px)}'+
+   '.scx-mb>div{height:var(--h)}'+
+   '@container (max-width:600px){.scx-mb>div,.scx-mb figcaption{--h:90cqw}}'
+ },[['label','figcaption']]);
+})(); 
+
 /* ---------- Composiciones reactivas: edición estable + movimiento independiente ---------- */
 // Un mismo adaptador permite editar las líneas tipográficas y las fotos de una grilla.
 // Las poses del autor van en --nw-tx/ty/ps, la animación nunca sobrescribe style.translate/scale.
