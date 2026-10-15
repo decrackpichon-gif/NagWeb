@@ -6,6 +6,7 @@ import './nagweb-orbit-model-test.mjs';
 import {runStorytellingSmoke} from './nagweb-storytelling-smoke.mjs';
 import {runCompositionSmoke} from './nagweb-composition-smoke.mjs';
 import {runEditorPartsSmoke} from './nagweb-editor-parts-smoke.mjs';
+import {runReleaseSmoke} from './nagweb-release-smoke.mjs';
 import {runHistorySmoke} from './nagweb-history-smoke.mjs';
 import {runLegacySmoke} from './nagweb-legacy-smoke.mjs';
 import {runTransparentSmoke} from './nagweb-transparent-smoke.mjs';
@@ -259,6 +260,7 @@ await runStorytellingSmoke(page);
 await runCompositionSmoke(page);
 await runTransparentSmoke(page);
 await runEditorPartsSmoke(page);
+await runReleaseSmoke(page);
 if(pageErrors.length) throw new Error('Browser page errors:\n'+pageErrors.join('\n\n'));
 console.log('NagWeb smoke OK',state);
 }finally{

@@ -19278,10 +19278,21 @@ $('btn-copy').addEventListener('click', async () => {
   }
 });
 
-let downloads = null;
+// V1.0: el editor web no puede depender del puente de descargas de una app.
+ // Blob + enlace temporal permiten guardar archivos en cualquier navegador.
+let downloads = {
+  save: async ({filename, data}) => {
+    const mime = /\.json$/i.test(filename) ? 'application/json;charset=utf-8'
+      : /\.html?$/i.test(filename) ? 'text/html;charset=utf-8'
+      : 'application/octet-stream';
+    blobDownload(data instanceof Blob ? data : new Blob([data], {type:mime}), filename);
+  }
+};
 (async () => {
-  try{ downloads = window.claude ? await window.claude.use('downloads') : null; }catch(e){ downloads = null; }
-  if(!downloads){ $('btn-download').innerHTML = '<b>Ver el código de esta página</b><small>Copialo y guardalo como index.html</small>'; $('btn-export').style.display = 'none'; }
+  try{
+    const native = window.claude ? await window.claude.use('downloads') : null;
+    if(native && typeof native.save === 'function') downloads = native;
+  }catch(e){ /* La descarga nativa del navegador sigue disponible. */ }
 })();
 
 $('btn-download').addEventListener('click', async () => {
