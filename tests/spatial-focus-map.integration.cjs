@@ -659,7 +659,7 @@ assert.equal(behind({...parallel,z:900},parallel,1000,0.5,true),false,'Responsiv
 assert.equal(behind(parallel,{...parallel,z:1020,rotateY:45},1000,1,true,{width:200,height:100}),false,'Yawed plane keeps its near edge visible while crossing');
 assert.equal(behind(parallel,{...parallel,z:1080,rotateY:45},1000,1,true,{width:200,height:100}),true,'Yawed plane disappears once its last corner crosses the eye');
 assert.equal(behind(parallel,{...parallel,z:1080,rotateY:-45},1000,1,true,{width:200,height:100}),true,'Mirrored yaw uses the same conservative threshold');
-assert.equal(behind(parallel,{...parallel,z:1030,rotateX:30},1000,1,true,{width:200,height:100}),false,'Pitched plane stays visible during partial crossing');
+assert.equal(behind(parallel,{...parallel,z:1020,rotateX:30},1000,1,true,{width:200,height:100}),false,'Pitched plane stays visible during partial crossing');
 assert.equal(behind(parallel,{...parallel,z:1080,rotateX:30},1000,1,true,{width:200,height:100}),true,'Pitched plane is culled after its full surface crosses');
 assert.equal(behind(parallel,{...parallel,z:1080,rotateX:30,rotateY:45},1000,1,true,{width:200,height:100}),false,'Combined rotations include both corner-extents');
 assert.equal(behind(parallel,{...parallel,z:1120,rotateX:30,rotateY:45},1000,1,true,{width:200,height:100}),true,'Combined tilt eventually disappears completely');
