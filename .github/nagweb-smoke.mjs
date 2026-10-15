@@ -2,6 +2,8 @@ import puppeteer from 'puppeteer-core';
 import fs from 'node:fs';
 import './nagweb-depth-model-test.mjs';
 import './nagweb-stream-model-test.mjs';
+// Run the additional geometry sweep once in the existing Showcase job, not in every suite.
+if(['showcase','all'].includes(process.env.NAGWEB_SMOKE_SUITE||'all'))await import('./nagweb-motion-showcase-geometry.mjs');
 import './nagweb-grid-dive-model-test.mjs';
 import './nagweb-motion-parameter-keyframes-model-test.mjs';
 import './nagweb-orbit-model-test.mjs';
