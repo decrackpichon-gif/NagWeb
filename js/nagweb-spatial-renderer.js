@@ -36,7 +36,11 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
    row.unbind=api.bindThreeCamera(stage,cam,function(state){row.state=state;});
    rows.push(row);
    discoverOccluders(row);
-   discoverInverseLayers(row);
+   // V1.0: keep incomplete reverse HTML masking dormant. The exported
+   // canvas is behind the authored DOM, so sparse raycasts cannot create a
+   // trustworthy partial WebGL→HTML intersection. Only an explicit opt-in
+   // may exercise the preserved experimental implementation in V1.1+.
+   if(options.experimentalInverseOcclusion===true)discoverInverseLayers(row);
   });
  }
 
@@ -527,7 +531,7 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
     roots.forEach(function(g){g.visible=false;});
     row.objects.forEach(function(g){place(g,row);visible[objects.indexOf(g)]=g.userData.holder.visible;});
     updateOccluders(row);
-    fullInverseOcclusion(row);
+    if(options.experimentalInverseOcclusion===true)fullInverseOcclusion(row);
     renderer.setViewport(r.left,H-r.bottom,r.width,r.height);
     renderer.setScissor(Math.max(0,r.left),Math.max(0,H-r.bottom),Math.min(W,r.right)-Math.max(0,r.left),Math.min(H,r.bottom)-Math.max(0,r.top));
     renderer.setScissorTest(true);renderer.clearDepth();

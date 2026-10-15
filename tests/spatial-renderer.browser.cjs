@@ -221,43 +221,42 @@ for(const [mode,html] of Object.entries(generated)){
  }
 
 
- // Full inverse occlusion keeps authored HTML intact. Real Three raycasts
- // hide only a tiny element entirely covered by an opaque shape from the same
- // camera, then reveal it when the HTML moves in front of that shape.
+ // V1.0 safe fallback: never mutate or hide real HTML based on the
+ // experimental reverse-occlusion approximation. The forward GPU alpha
+ // masks remain covered by their independent pixel tests above.
  if(mode==='exported'){
   const inverse=await page.evaluate(()=>{
    const d=window.__test3D,g=d.objects[0],api=window.__testCameraApi,
-     stage=g.userData.anchorEl.closest('.nw-sd-stage'),world=stage.querySelector('[data-nw-camera-world]');
+     stage=g.userData.anchorEl.closest('.nw-sd-stage'),
+     world=stage.querySelector('[data-nw-camera-world]');
    window.__NAG_SCROLL_DIRECTOR.space.set(0);d.tick();
    const a=g.userData.anchorEl,div=document.createElement('p');
-   div.dataset.nwSdEl='1';div.textContent='Texto detrás del modelo';
+   div.dataset.nwSdEl='1';
+   div.textContent='Texto editable delante del lienzo WebGL';
    div.style.cssText='position:absolute;left:'+(a.offsetLeft+a.offsetWidth/2-4)+'px;top:'+
      (a.offsetTop+a.offsetHeight/2-4)+'px;width:8px;height:8px;margin:0;background:white';
    div.__nwSpatialPose={x:0,y:0,z:-150,scale:100,opacity:1,rotate:0,rotateX:0,rotateY:0};
    world.appendChild(div);d.adapter.connect(api,[stage]);d.tick();
-   const behind=div.classList.contains('nw-spatial-inverse-occluded');
-   div.__nwSpatialPose=Object.assign({},div.__nwSpatialPose,{z:250});d.tick();
-   const front=div.classList.contains('nw-spatial-inverse-occluded');
-   const sameText=div.textContent==='Texto detrás del modelo',samePose=div.__nwSpatialPose.z===250;
-   // Moving the GLB without moving the camera must immediately affect the
-   // very next inverse check. No stale world-matrix ray intersections allowed.
-   div.__nwSpatialPose=Object.assign({},div.__nwSpatialPose,{z:-150});d.tick();
-   const restoredBehind=div.classList.contains('nw-spatial-inverse-occluded');
-   const observer=new MutationObserver(()=>{}),counts={writes:0};
+   const behindVisible=!div.classList.contains('nw-spatial-inverse-occluded');
+   const freshCSS=getComputedStyle(div).visibility!=='hidden';
+   div.__nwSpatialPose=Object.assign({},div.__nwSpatialPose,{z:250});
+   d.tick();const frontVisible=!div.classList.contains('nw-spatial-inverse-occluded');
+   const observer=new MutationObserver(()=>{});
    observer.observe(div,{attributes:true,attributeFilter:['class']});
-   d.tick();d.tick();d.tick();const changes=observer.takeRecords().length;observer.disconnect();
-   const cssMaskOn=div.classList.contains('nw-spatial-inverse-occluded');
+   d.tick();d.tick();d.tick();
+   const redundantWrites=observer.takeRecords().length;observer.disconnect();
+   const textPreserved=div.textContent==='Texto editable delante del lienzo WebGL';
    div.remove();d.adapter.connect(api,[stage]);d.tick();
-   return{behind,front,sameText,samePose,restoredBehind,changes,cssMaskOn};
+   return{behindVisible,frontVisible,freshCSS,redundantWrites,textPreserved,
+     strayMasks:document.querySelectorAll('.nw-spatial-inverse-occluded').length,
+     injectedStyle:!!document.querySelector('style[data-nw-experimental-inverse]')};
   });
-  assert.equal(inverse.behind,true,'Fully covered HTML text is hidden behind opaque 3D');
-  assert.equal(inverse.front,false,'HTML reappears when brought in front of 3D');
-  assert.equal(inverse.sameText,true,'Text stays editable DOM, without rasterizing');
-  assert.equal(inverse.samePose,true,'Existing keyframe pose data is not mutated');
-  assert.equal(inverse.restoredBehind,true,'Moving HTML back restores inverse occlusion on its next render');
-  assert.equal(inverse.cssMaskOn,true,'Occluded HTML remains hidden during static renders');
-  assert.equal(inverse.changes,0,'Static renders never remove/reapply the same inverse CSS mask');
-  console.log('PASS inverse 3D to HTML conservative full coverage: depth and DOM restoration');
+  assert.ok(inverse.behindVisible&&inverse.frontVisible&&inverse.freshCSS,
+   'V1.0 fallback preserves the authored text regardless of experimental 3D coverage');
+  assert.equal(inverse.redundantWrites,0,'Static frames do not mutate DOM classes');
+  assert.equal(inverse.textPreserved,true,'HTML remains semantic and editable');
+  assert.equal(inverse.strayMasks,0,'No experimental hidden HTML remains after reconnect');
+  console.log('PASS V1.0 safe default: DOM text preserved, inverse raycasts opt-in only');
  }
 
  await page.screenshot({path:'work/spatial-'+mode+'.png'});
