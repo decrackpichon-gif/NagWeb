@@ -1519,6 +1519,117 @@ export async function runEditorPartsSmoke(page){
    assert.equal((legacy.match(/--nw-tx:/g)||[]).length,1,'una sola pose eficaz');
   }
 
+
+  // Cuatro composiciones de altura intrínseca comparten selección, guardado y
+  // exportación proporcional sin modificar sus layouts/variantes originales.
+  for(const cfg of [
+   {kind:'splitfeature',id:'test-fluid-split',root:'scx-sf',part:'detail-image',
+    parts:['main-image','kicker','title','text','detail-image'],
+    model:{title:'DOS COLUMNAS',kicker:'CATEGORÍA',text:'Descripción',layout:'right'}},
+   {kind:'floatingcaption',id:'test-fluid-float',root:'scx-fc',part:'caption-card',
+    parts:['image','caption-card','eyebrow','title','text'],
+    model:{title:'TARJETA',eyebrow:'RÓTULO',text:'Descripción',pos:'bl'}},
+   {kind:'casehero',id:'test-fluid-case',root:'scx-ch',part:'title',
+    parts:['eyebrow','title','meta','year','image'],
+    model:{title:'MI PROYECTO',eyebrow:'CASO',meta:'ESTUDIO',year:'2026',layout:'overlay'}},
+   {kind:'bentoshow',id:'test-fluid-bento',root:'scx-bs',part:'image-1',
+    parts:['image-0','stat','stat-label','copy-title','copy-text','image-1'],
+    model:{title:'TÍTULO',text:'Texto de muestra',big:'99',label:'PROYECTOS'}}
+  ]){
+   await load(27+['splitfeature','floatingcaption','casehero','bentoshow'].indexOf(cfg.kind));
+   await page.evaluate(c=>{
+    const e=mkEl('widget',{id:c.id,kind:c.kind,wp:c.model});sec().elements.push(e);
+    const d=document.querySelector('#preview').contentDocument,s=d.createElement('style');
+    s.textContent=window.SCW.css[c.kind];d.head.appendChild(s);
+    const host=d.createElement('div');host.className='el wdg';host.dataset.id=c.id;
+    host.innerHTML=window.SCW.kinds[c.kind].markup(e.wp,{edit:true});d.body.appendChild(host);
+    host.querySelector('.'+c.root).style.width='900px';
+   },cfg);
+   await select(cfg.id);
+   const initial=await page.evaluate(c=>{
+    const d=document.querySelector('#preview').contentDocument,
+     scope=d.querySelector('.el.wdg[data-id="'+c.id+'"] .'+c.root),
+     style=d.defaultView.getComputedStyle(scope),
+     published=window.SCW.kinds[c.kind].markup(sec().elements.find(e=>e.id===c.id).wp,{edit:false});
+    return{scope:scope.dataset.nwPartScope,unit:scope.dataset.nwPartY,threshold:scope.dataset.nwPartMobile,
+     width:scope.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight),
+     parts:[...scope.querySelectorAll('[data-wpart]')].map(n=>n.dataset.wpart),
+     buttons:[...scope.querySelectorAll('[data-nw-part]')].map(n=>n.dataset.nwPart),
+     hasTitle:!!scope.querySelector('[data-wfield="title"]'),
+     hasToolbar:published.includes('data-nw-partbar'),markup:published};
+   },cfg);
+   assert.equal(initial.scope,cfg.kind);assert.equal(initial.unit,'100cqw');
+   assert.equal(initial.threshold,'600');
+   assert.ok(initial.width>650,'ancho útil del contenedor de flujo');
+   assert.deepEqual(initial.parts,cfg.parts,'partes reales del recurso');
+   assert.deepEqual(initial.buttons,[''].concat(cfg.parts),'la barra permite seleccionarlas');
+   assert.ok(initial.hasTitle&&!initial.hasToolbar,'texto editable y exportación sin controles');
+   await fire('.el.wdg[data-id="'+cfg.id+'"] [data-nw-part="'+cfg.part+'"]');
+   assert.deepEqual(await page.evaluate(c=>{
+    const d=document.querySelector('#preview').contentDocument,
+     root=d.querySelector('.el.wdg[data-id="'+c.id+'"] .'+c.root);
+    return{part:root.querySelector('.nw-part-edit-active')?.dataset.wpart,
+     handles:d.querySelectorAll('.nw-wpart-h').length};
+   },cfg),{part:cfg.part,handles:2});
+   const drag=async(dx,dy,pointerId)=>page.evaluate(({cfg,dx,dy,pointerId})=>{
+    const d=document.querySelector('#preview').contentDocument,w=d.defaultView,
+     el=d.querySelector('.el.wdg[data-id="'+cfg.id+'"] [data-wpart="'+cfg.part+'"]'),
+     box=el.getBoundingClientRect(),x=(box.left+box.right)/2,y=(box.top+box.bottom)/2;
+    el.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,button:0,pointerId,clientX:x,clientY:y}));
+    w.dispatchEvent(new w.PointerEvent('pointermove',{bubbles:true,button:0,pointerId,clientX:x+dx,clientY:y+dy}));
+    w.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true,button:0,pointerId,clientX:x+dx,clientY:y+dy}));
+   },{cfg,dx,dy,pointerId});
+   await drag(70,30,301);
+   const desktop=await page.evaluate(c=>{
+    const e=sec().elements.find(x=>x.id===c.id).wp,
+     d=document.querySelector('#preview').contentDocument,
+     el=d.querySelector('.el.wdg[data-id="'+c.id+'"] [data-wpart="'+c.part+'"]');
+    return{pose:e.__parts[c.part],liveX:el.style.getPropertyValue('--nw-tx'),
+     liveY:el.style.getPropertyValue('--nw-ty'),
+     saved:JSON.parse(localStorage.getItem(STORE_KEY)).pages[curPage].sections[curSec].elements.find(x=>x.id===c.id)?.wp?.__parts?.[c.part],
+     html:window.SCW.kinds[c.kind].markup(e,{edit:false})};
+   },cfg);
+   assert.equal(desktop.pose.x,70);assert.equal(desktop.pose.y,30);
+   assert.ok(Math.abs(desktop.pose.refW-initial.width)<1);
+   assert.equal(desktop.pose.refH,desktop.pose.refW,'alto relativo al ancho en flujo CSS');
+   assert.deepEqual(desktop.pose,desktop.saved,'persiste en el proyecto');
+   assert.match(desktop.liveX,/cqw$/);
+   assert.match(desktop.liveY,/100cqw/);
+   assert.match(desktop.html,/--nw-ty:calc\(100cqw \* [0-9.]+\)/);
+   assert.equal((desktop.html.match(/--nw-tx:/g)||[]).length,1,'sin duplicaciones de pose');
+   // El mismo recurso y pieza en móvil: herencia y desplazamiento independiente.
+   await page.evaluate(c=>{
+    const d=document.querySelector('#preview').contentDocument,
+     host=d.querySelector('.el.wdg[data-id="'+c.id+'"]'),
+     e=sec().elements.find(x=>x.id===c.id).wp;
+    host.innerHTML=window.SCW.kinds[c.kind].markup(e,{edit:true});
+    host.querySelector('.'+c.root).style.width='420px';
+   },cfg);
+   await fire('.el.wdg[data-id="'+cfg.id+'"] [data-nw-part="'+cfg.part+'"]');
+   await drag(24,12,302);
+   const mobile=await page.evaluate(c=>{
+    const e=sec().elements.find(x=>x.id===c.id).wp,
+     d=document.querySelector('#preview').contentDocument,
+     sc=d.querySelector('.el.wdg[data-id="'+c.id+'"] .'+c.root),
+     cs=d.defaultView.getComputedStyle(sc);
+    return{desktop:e.__parts?.[c.part],mobile:e.__partsMobile?.[c.part],
+     width:sc.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight),
+     html:window.SCW.kinds[c.kind].markup(e,{edit:false})};
+   },cfg);
+   assert.deepEqual(mobile.desktop,desktop.pose,'móvil no pisa el diseño desktop');
+   assert.ok(mobile.mobile&&mobile.mobile.x>=24);
+   assert.ok(Math.abs(mobile.mobile.refW-mobile.width)<1);
+   assert.equal(mobile.mobile.refH,mobile.mobile.refW);
+   assert.match(mobile.html,/--nw-my:calc\(100cqw \* [0-9.]+\)/);
+   const legacy=await page.evaluate(c=>{
+    const e=sec().elements.find(x=>x.id===c.id).wp;
+    return window.SCW.kinds[c.kind].markup({...e,__parts:{[c.part]:{x:13,y:7,r:4,s:1.1}},__partsMobile:{}},{edit:false});
+   },cfg);
+   assert.match(legacy,/--nw-tx:13px/);
+   assert.match(legacy,/--nw-ty:7px/,'legacy conserva px sin referencia');
+   assert.equal((legacy.match(/--nw-tx:/g)||[]).length,1);
+  }
+
   console.log('Editor partes: foco, restauración, Escape, Enter e historial OK');
  }finally{
   await page.evaluate(old=>{
