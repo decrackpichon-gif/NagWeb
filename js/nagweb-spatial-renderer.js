@@ -2,7 +2,7 @@
 'use strict';
 // Rendering adapter only: no scroll reader, progress evaluator or animation clock.
 function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
- var rows=[],api=null;options=options||{};
+ var rows=[],api=null,inverseStyle=null;options=options||{};
  lightSources=lightSources||scene.children.filter(function(n){return n.isLight;});
  function units(row){return Math.max(1,row.stage.clientHeight)/(2*6*Math.tan(50*Math.PI/360));}
  function lightRow(light){return rows.find(function(row){return row.lights.some(function(q){return q.source===light;})&&light.userData.sectionId===row.sectionId;});}
@@ -26,7 +26,7 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
    var members=objects.filter(function(g){return g.userData.anchorEl&&stage.contains(g.userData.anchorEl);});
    if(!members.length)return;
    var section=stage.closest?stage.closest('.sc'):null,sectionId=section&&section.getAttribute('data-id');
-   var cam=new T.PerspectiveCamera(50,1,.1,100000),rig=new T.Group(),row={stage:stage,sectionId:sectionId,camera:cam,objects:members,state:null,rig:rig,lights:[],materials:new Map(),occluders:[]};
+   var cam=new T.PerspectiveCamera(50,1,.1,100000),rig=new T.Group(),row={stage:stage,sectionId:sectionId,camera:cam,objects:members,state:null,rig:rig,lights:[],materials:new Map(),occluders:[],inverseLayers:[]};
    lightSources.forEach(function(source,index){
     if(source.userData.sectionId&&source.userData.sectionId!==sectionId)return;
     var copy=source.clone();rig.add(copy);if(copy.target)rig.add(copy.target);
@@ -36,6 +36,7 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
    row.unbind=api.bindThreeCamera(stage,cam,function(state){row.state=state;});
    rows.push(row);
    discoverOccluders(row);
+   discoverInverseLayers(row);
   });
  }
 
@@ -232,6 +233,70 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
    row.occluders.push({node:node,world:world,nested:nested,mesh:mesh,texture:null,source:null});
   });
  }
+
+ // Conservative inverse: only hide complete rectangular HTML footprints
+ // when opaque WebGL geometry is strictly in front at every probe. We do not
+ // synthesize a partial mask from sparse rays or alter the authored DOM.
+ function discoverInverseLayers(row){
+  if(typeof row.stage.querySelectorAll!=='function')return;
+  var world=row.stage.querySelector('[data-nw-camera-world]');
+  if(!world)return;
+  Array.from(row.stage.querySelectorAll('[data-nw-sd-el]')).forEach(function(node){
+   if(!node||!node.style||!node.offsetWidth||!node.offsetHeight||
+      row.objects.some(function(g){return g.userData.anchorEl===node;})||
+      node.style.transform&&node.style.transform!=='none')return;
+   var nested=node.parentElement!==world;
+   if(nested&&!depthParentUsable(node,world))return;
+   // Do not hide authored 3D containers or interactive editor anchors.
+   if(node.classList&&node.classList.contains('container-box'))return;
+   row.inverseLayers.push({node:node,world:world,nested:nested,quad:new T.Object3D()});
+  });
+  if(!row.inverseLayers.length||inverseStyle||typeof document==='undefined'||!document.head)return;
+  inverseStyle=document.createElement('style');
+  inverseStyle.textContent='.nw-spatial-inverse-occluded{visibility:hidden!important;pointer-events:none!important}';
+  document.head.appendChild(inverseStyle);
+ }
+ function fullInverseOcclusion(row){
+  var layers=row.inverseLayers;if(!layers||!layers.length)return;
+  layers.forEach(function(q){if(q.node.classList)q.node.classList.remove('nw-spatial-inverse-occluded');});
+  if(!row.state||!row.stage.isConnected)return;
+  var solids=[];
+  row.objects.forEach(function(g){
+   if(!g.userData.holder||!g.userData.holder.visible||g.userData.spatialOpacity<.999)return;
+   g.traverse(function(m){
+    if(!m.isMesh||!m.visible||!m.geometry||!m.material)return;
+    var materials=Array.isArray(m.material)?m.material:[m.material];
+    if(materials.some(function(mat){return !mat||!mat.visible||mat.transparent||
+     +mat.opacity<.999||+mat.alphaTest>0||mat.alphaMap;}))return;
+    solids.push(m);
+   });
+  });
+  if(!solids.length)return;
+  row.camera.updateMatrixWorld(true);
+  var origin=row.camera.getWorldPosition(new T.Vector3()),ray=new T.Raycaster(),points=[-.49,-.25,0,.25,.49];
+  layers.slice(0,12).forEach(function(q){
+   var node=q.node,pose=node.__nwSpatialPose;
+   if(!node.isConnected||!pose||+pose.opacity<.999||
+      (typeof window.getComputedStyle==='function'&&window.getComputedStyle(node).visibility==='hidden')||!Number.isFinite(+pose.z)||
+      !Number.isFinite(+pose.scale)||+pose.scale<=0)return;
+   if(!placeDepthQuad(row,q,pose,q.quad))return;
+   q.quad.updateMatrixWorld(true);
+   var covered=true,count=0;
+   for(var yi=0;yi<points.length&&covered;yi++)for(var xi=0;xi<points.length;xi++){
+    var p=q.quad.localToWorld(new T.Vector3(points[xi],points[yi],0)),
+      delta=p.clone().sub(origin),distance=delta.length();
+    if(!Number.isFinite(distance)||distance<=1){covered=false;break;}
+    ray.set(origin,delta.normalize());
+    ray.near=0;ray.far=distance-.5;
+    var hits=ray.intersectObjects(solids,false);
+    count++;
+    if(!hits.length){covered=false;break;}
+   }
+   if(covered&&count===points.length*points.length&&node.classList)
+    node.classList.add('nw-spatial-inverse-occluded');
+  });
+ }
+
  function updateOccluders(row){
   row.occluders.forEach(function(o){
    var node=o.node,mesh=o.mesh,pose=node.__nwSpatialPose;
@@ -258,7 +323,15 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
     mesh.material.alphaTest=next?.08:0;
     mesh.material.needsUpdate=true;
    }
-   var world=o.world;
+   if(!placeDepthQuad(row,o,pose,mesh))return;
+   mesh.visible=true;
+  });
+ }
+
+ function placeDepthQuad(row,o,pose,quad){
+  var node=o.node;
+  if(!node||!node.offsetWidth||!node.offsetHeight)return false;
+   var world=o.world,w=node.offsetWidth,h=node.offsetHeight,mesh=quad;
    var rotation=new T.Euler(-(+pose.rotateX||0)*Math.PI/180,(+pose.rotateY||0)*Math.PI/180,
      -(+pose.rotate||0)*Math.PI/180,'ZXY'),scale=pose.scale/100;
    if(o.nested){
@@ -287,8 +360,7 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
     mesh.rotation.copy(rotation);
     mesh.scale.set(w*scale,h*scale,1);
    }
-   mesh.visible=true;
-  });
+   return true;
  }
 
  function owns(g){return rows.some(function(row){return row.objects.indexOf(g)>=0;});}
@@ -422,6 +494,7 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
     roots.forEach(function(g){g.visible=false;});
     row.objects.forEach(function(g){place(g,row);visible[objects.indexOf(g)]=g.userData.holder.visible;});
     updateOccluders(row);
+    fullInverseOcclusion(row);
     renderer.setViewport(r.left,H-r.bottom,r.width,r.height);
     renderer.setScissor(Math.max(0,r.left),Math.max(0,H-r.bottom),Math.min(W,r.right)-Math.max(0,r.left),Math.min(H,r.bottom)-Math.max(0,r.top));
     renderer.setScissorTest(true);renderer.clearDepth();
@@ -441,7 +514,7 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
    gizmos.forEach(function(g){g.node.visible=g.visible;});
   }
  }
- function destroy(){rows.forEach(function(row){row.occluders.forEach(function(o){scene.remove(o.mesh);if(o.texture)o.texture.dispose();o.mesh.geometry.dispose();o.mesh.material.dispose();});row.unbind();row.objects.forEach(function(g){delete g.userData.nwPreviewOffZ;delete g.userData.nwPreviewBaseTransform;});if(row.bloom)row.bloom.dispose();row.materials.forEach(function(copies){copies.forEach(function(m){m.dispose();});});row.objects.forEach(function(g){delete g.userData.spatialOpacity;delete g.userData.spatialParent;g.userData.holder.matrixAutoUpdate=true;g.userData.holder.rotation.x=0;g.userData.holder.rotation.y=0;});scene.remove(row.rig);});rows=[];}
+ function destroy(){rows.forEach(function(row){row.inverseLayers.forEach(function(q){if(q.node.classList)q.node.classList.remove('nw-spatial-inverse-occluded');});row.occluders.forEach(function(o){scene.remove(o.mesh);if(o.texture)o.texture.dispose();o.mesh.geometry.dispose();o.mesh.material.dispose();});row.unbind();row.objects.forEach(function(g){delete g.userData.nwPreviewOffZ;delete g.userData.nwPreviewBaseTransform;});if(row.bloom)row.bloom.dispose();row.materials.forEach(function(copies){copies.forEach(function(m){m.dispose();});});row.objects.forEach(function(g){delete g.userData.spatialOpacity;delete g.userData.spatialParent;g.userData.holder.matrixAutoUpdate=true;g.userData.holder.rotation.x=0;g.userData.holder.rotation.y=0;});scene.remove(row.rig);});rows=[];if(inverseStyle){if(inverseStyle.parentNode)inverseStyle.parentNode.removeChild(inverseStyle);inverseStyle=null;}}
  function view(g){
   var row=rows.find(function(r){return r.objects.indexOf(g)>=0;})||lightRow(g);
   if(!row||!row.state)return null;

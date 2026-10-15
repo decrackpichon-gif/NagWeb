@@ -220,6 +220,35 @@ for(const [mode,html] of Object.entries(generated)){
   console.log('PASS nested HTML/WebGL depth bridge: affine parent, opacity, clipping and cleanup');
  }
 
+
+ // Full inverse occlusion keeps authored HTML intact. Real Three raycasts
+ // hide only a tiny element entirely covered by an opaque shape from the same
+ // camera, then reveal it when the HTML moves in front of that shape.
+ if(mode==='exported'){
+  const inverse=await page.evaluate(()=>{
+   const d=window.__test3D,g=d.objects[0],api=window.__testCameraApi,
+     stage=g.userData.anchorEl.closest('.nw-sd-stage'),world=stage.querySelector('[data-nw-camera-world]');
+   window.__NAG_SCROLL_DIRECTOR.space.set(0);d.tick();
+   const a=g.userData.anchorEl,div=document.createElement('p');
+   div.dataset.nwSdEl='1';div.textContent='Texto detrás del modelo';
+   div.style.cssText='position:absolute;left:'+(a.offsetLeft+a.offsetWidth/2-4)+'px;top:'+
+     (a.offsetTop+a.offsetHeight/2-4)+'px;width:8px;height:8px;margin:0;background:white';
+   div.__nwSpatialPose={x:0,y:0,z:-150,scale:100,opacity:1,rotate:0,rotateX:0,rotateY:0};
+   world.appendChild(div);d.adapter.connect(api,[stage]);d.tick();
+   const behind=div.classList.contains('nw-spatial-inverse-occluded');
+   div.__nwSpatialPose=Object.assign({},div.__nwSpatialPose,{z:250});d.tick();
+   const front=div.classList.contains('nw-spatial-inverse-occluded');
+   const sameText=div.textContent==='Texto detrás del modelo',samePose=div.__nwSpatialPose.z===250;
+   div.remove();d.adapter.connect(api,[stage]);d.tick();
+   return{behind,front,sameText,samePose};
+  });
+  assert.equal(inverse.behind,true,'Fully covered HTML text is hidden behind opaque 3D');
+  assert.equal(inverse.front,false,'HTML reappears when brought in front of 3D');
+  assert.equal(inverse.sameText,true,'Text stays editable DOM, without rasterizing');
+  assert.equal(inverse.samePose,true,'Existing keyframe pose data is not mutated');
+  console.log('PASS inverse 3D to HTML conservative full coverage: depth and DOM restoration');
+ }
+
  await page.screenshot({path:'work/spatial-'+mode+'.png'});
  assert.deepEqual(errors,[]);console.log('PASS '+mode+': resize and reduced motion');
  const delayed=instrumented.replace('"env":""','"env":"studio"').replaceAll('function(gltf){ fitGLTF(gltf, o, group); }','function(gltf){ window.__lateRoot=gltf.scene;window.__finishGLB=function(){fitGLTF(gltf,o,group);};window.__failGLB=fallback; }');
