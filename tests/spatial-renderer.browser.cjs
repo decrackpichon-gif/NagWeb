@@ -65,8 +65,11 @@ for(const [mode,html] of Object.entries(generated)){
      rect=stage.getBoundingClientRect(),
      sx=rect.left+(center.x+1)*rect.width/2,sy=rect.top+(1-center.y)*rect.height/2;
    function alpha(){
-    d.tick();const px=new Uint8Array(4),W=d.renderer.domElement.clientHeight;
-    gl.readPixels(Math.floor(sx*ratio),Math.floor((W-sy-1)*ratio),1,1,gl.RGBA,gl.UNSIGNED_BYTE,px);
+    d.tick();
+    const px=new Uint8Array(4),canvas=d.renderer.domElement,cr=canvas.getBoundingClientRect();
+    const x=Math.floor((sx-cr.left)/cr.width*gl.drawingBufferWidth),
+      y=Math.floor((cr.bottom-sy)/cr.height*gl.drawingBufferHeight);
+    gl.readPixels(x,y,1,1,gl.RGBA,gl.UNSIGNED_BYTE,px);
     return px[3];
    }
    const before=alpha(),block=document.createElement('div');
@@ -84,7 +87,7 @@ for(const [mode,html] of Object.entries(generated)){
     opacity:cs.opacity,background:cs.backgroundColor,borderRadius:cs.borderRadius,
     clipPath:cs.clipPath,mask:cs.maskImage,filter:cs.filter,mixBlend:cs.mixBlendMode};
    block.remove();d.adapter.connect(api,[stage]);original.set(0);d.tick();
-   return{before,occluded,restored,depth,hasProxy:!!probe,diagnostic};
+   return{before,occluded,restored,depth,hasProxy:!!probe,diagnostic,canvas:d.renderer.domElement.getBoundingClientRect().toJSON(),stage:rect.toJSON(),pos:{sx,sy}};
   });
   assert.ok(occlusion.hasProxy,'Opaque DOM layer creates a real GPU depth proxy: '+JSON.stringify(occlusion));
   assert.ok(occlusion.before>0,'Unoccluded GLB/box paints the WebGL pixel');

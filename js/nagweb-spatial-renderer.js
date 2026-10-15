@@ -52,7 +52,7 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
   if(!cs||cs.visibility==='hidden'||cs.display==='none'||cs.opacity!=='1')return false;
   if(cs.borderRadius&&cs.borderRadius!=='0px'||cs.clipPath&&cs.clipPath!=='none'||
      cs.maskImage&&cs.maskImage!=='none'||
-     cs.filter&&cs.filter!=='none'&&!/^blur\(0(?:px)?\)$/.test(cs.filter)||
+     cs.filter&&cs.filter!=='none'&&!/^(?:blur\(0(?:px)?\)\s*)+$/.test(cs.filter)||
      cs.mixBlendMode&&cs.mixBlendMode!=='normal')return false;
   var color=cs.backgroundColor||'';
   if(/^rgb\(/i.test(color))return true;
