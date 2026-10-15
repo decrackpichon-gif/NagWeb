@@ -373,3 +373,12 @@ Se recuperaron de los **importadores reales** las direcciones de 17 proveedores 
 - Elimina la animación sin eliminar el elemento, registrando historial y guardando el proyecto.
 - Los vídeos sin efecto mantienen exactamente la salida nativa anterior, sin wrappers innecesarios.
 - Prueba integrada de eliminación, recarga, estado del botón e historial.
+
+## Etapa 99: Magic.css para selecciones múltiples (15/10/2026)
+
+- La Biblioteca admite aplicar un único efecto Magic.css a una selección de 1 a 48 elementos **todos compatibles**, incluyendo combinaciones de texto, botones, imágenes, vectores, SVG dibujados y vídeos. No altera los elementos no seleccionados ni habilita tipos incompatibles.
+- Al abrir el diálogo captura los IDs, la página, la escena y la huella de cada elemento. Antes de aplicar, comprueba la selección completa y evita modificaciones parciales si un elemento cambia, desaparece o cambia la selección.
+- La aplicación y el botón «Quitar animación» modifican todos los elementos elegidos en **una sola operación de historial**, conservando IDs, posición, geometría y los restantes atributos. La eliminación funciona para cualquier subconjunto animado dentro de una selección compatible.
+- La personalización posterior de una animación sigue siendo por elemento individual. No se cambia el protocolo de mensajes ni se amplían las licencias o proveedores.
+- Se incorporó un recorrido Chromium con elementos heterogéneos, exportación, persistencia, deshacer/rehacer y ausencia de efectos sobre un tercer objeto. **No declarar la CI aprobada hasta comprobar el workflow del commit final.**
+- Vercel permanece desactivado para publicaciones automáticas. No mezclar esta rama con `main` ni con `resource-vault-data`.
