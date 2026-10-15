@@ -4,6 +4,8 @@ import './nagweb-depth-model-test.mjs';
 import './nagweb-stream-model-test.mjs';
 // Run the additional geometry sweep once in the existing Showcase job, not in every suite.
 if(['showcase','all'].includes(process.env.NAGWEB_SMOKE_SUITE||'all'))await import('./nagweb-motion-showcase-geometry.mjs');
+// Run the common corner-percent audit only once in the procedural suite.
+if(['procedural','all'].includes(process.env.NAGWEB_SMOKE_SUITE||'all'))await import('./nagweb-motion-corner-percent-model-test.mjs');
 import './nagweb-grid-dive-model-test.mjs';
 import './nagweb-motion-parameter-keyframes-model-test.mjs';
 import './nagweb-orbit-model-test.mjs';
