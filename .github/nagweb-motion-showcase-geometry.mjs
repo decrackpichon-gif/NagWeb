@@ -56,3 +56,27 @@ const widthAt=(cards,depth)=>cards.find(c=>Math.abs(c.depth-depth)<1e-8).width;
 assert.ok(widthAt(strong,1)>widthAt(neutral,1),'Perspective grows front-facing cards');
 assert.ok(widthAt(strong,-1)<widthAt(neutral,-1),'Perspective shrinks rear cards');
 console.log('Showcase geometry OK: '+inspected+' surfaces, perspective, raster bounds, corner percentages, exact loops and scroll clamps');
+
+
+// The padded scene must remain visible even with large cards and maximum perspective.
+// Exercise the common landscape/square/portrait layouts through an entire revolution.
+let checkedPaddedScenes=0;
+for(const [width,height,frameRatio] of [[960,540,'16:9'],[600,600,'1:1'],[540,960,'9:16']]){
+ for(const cardSize of [21,50,80]){
+  for(const perspective of [0,18,40]){
+   for(const progress of [0,.125,.25,.5,.75,.999]){
+    const padding=Math.min(width,height)*.06;
+    const cards=model.layout(width,height,{kind:'showcase-stream',frameRatio,ringTilt:-28,cardSize,perspective,padding:6},progress,12,16/9,false);
+    assert.equal(cards.length,12,'All slots retained after responsive scaling');
+    for(const card of cards){
+     for(const pt of card.upper.concat(card.lower)){
+      assert.ok(Math.abs(pt.x-width/2)<=width/2-padding+.1,'No card exceeds horizontal safe area');
+      assert.ok(Math.abs(pt.y-height/2)<=height/2-padding+.1,'No card exceeds vertical safe area');
+     }
+    }
+    checkedPaddedScenes++;
+   }
+  }
+ }
+}
+console.log('Showcase padded geometry OK: '+checkedPaddedScenes+' responsive/perspective combinations');
