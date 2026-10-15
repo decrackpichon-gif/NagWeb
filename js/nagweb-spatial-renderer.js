@@ -55,7 +55,7 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
   function pos(s,vertical){
    if(s==='center')return .5;if(s===(vertical?'top':'left'))return 0;
    if(s===(vertical?'bottom':'right'))return 1;
-   var n=cssUnit(s,1);return /%$/.test(s)&&Number.isFinite(n)?n*100:NaN;
+   var n=cssUnit(s,1);return /%$/.test(s)&&Number.isFinite(n)?n:NaN;
   }
   var x=pos(v[0],false),y=pos(v[1]||'50%',true);
   return Number.isFinite(x)&&Number.isFinite(y)?[x,y]:null;

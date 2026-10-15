@@ -138,13 +138,14 @@ for(const [mode,html] of Object.entries(generated)){
    f.add(back,front);
    d.renderer.setScissorTest(false);
    d.renderer.setViewport(0,0,d.renderer.domElement.clientWidth,d.renderer.domElement.clientHeight);
-   function read(x){
+   function read(x,y=.5){
     d.renderer.render(f,cam);const bytes=new Uint8Array(4);
-    gl.readPixels(Math.floor(x*gl.drawingBufferWidth),Math.floor(.5*gl.drawingBufferHeight),1,1,gl.RGBA,gl.UNSIGNED_BYTE,bytes);
+    gl.readPixels(Math.floor(x*gl.drawingBufferWidth),Math.floor(y*gl.drawingBufferHeight),1,1,gl.RGBA,gl.UNSIGNED_BYTE,bytes);
     return bytes[3];
    }
    front.visible=false;const base=read(.4),baseRight=read(.6);
    front.visible=true;const solid=read(.4),clear=read(.6);
+   const initialTexture=proxy.material.map;
    // Rebuild the mask when CSS shape changes; transparent PNG and rounded
    // corners must intersect in one alpha texture, without rewriting the DOM.
    img.style.borderRadius='40%';d.tick();
@@ -155,7 +156,7 @@ for(const [mode,html] of Object.entries(generated)){
    const insetTex=proxy.material.alphaMap,insetCorner=read(.29,.29),insetSolid=read(.40);
    img.style.clipPath='none';img.style.objectFit='cover';img.style.width='210px';img.style.height='110px';d.tick();
    const fittedTex=proxy.material.alphaMap,fitKeyChanged=!!fittedTex&&fittedTex!==insetTex;
-   const texture=proxy.material.map,depth=proxy.position.z;
+   const texture=initialTexture,depth=proxy.position.z;
    back.geometry.dispose();back.material.dispose();
    img.remove();d.adapter.connect(api,[stage]);d.tick();
    return{base,baseRight,solid,clear,hasTexture:!!texture,depth,textureDisposed:!d.scene.children.includes(proxy),shapes:{rounded:!!roundedTex,corner,roundedSolid,roundedClear,circle:!!circleTex,circleCorner,circleSolid,inset:!!insetTex,insetCorner,insetSolid,fitKeyChanged}};
