@@ -197,17 +197,39 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
   var tex=new T.CanvasTexture(can);tex.generateMipmaps=false;tex.minFilter=T.LinearFilter;tex.magFilter=T.LinearFilter;
   tex.needsUpdate=true;return tex;
  }
+ // Nested depth surfaces use the same affine ancestry bridge as WebGL
+ // objects. Refuse flattening, clipping and semi-transparent containers,
+ // which cannot be represented by an independent quad with correct depth.
+ function depthParentUsable(node,world){
+  var parent=node.parentElement,count=0;
+  while(parent&&parent!==world&&count++<8){
+   if(!parent.classList||!parent.classList.contains('container-box'))return false;
+   var cs=window.getComputedStyle(parent);
+   if(!cs||cs.display==='none'||cs.visibility==='hidden'||
+      !Number.isFinite(+cs.opacity)||+cs.opacity<.999||
+      cs.transformStyle!=='preserve-3d'||
+      cs.overflowX&&cs.overflowX!=='visible'||
+      cs.overflowY&&cs.overflowY!=='visible'||
+      cs.clipPath&&cs.clipPath!=='none'||
+      cs.maskImage&&cs.maskImage!=='none'||
+      cs.filter&&cs.filter!=='none'&&!/^(?:blur\(0(?:px)?\)\s*)+$/.test(cs.filter)||
+      cs.mixBlendMode&&cs.mixBlendMode!=='normal')return false;
+   parent=parent.parentElement;
+  }
+  return parent===world;
+ }
  function discoverOccluders(row){
   if(typeof row.stage.querySelectorAll!=='function')return;
   var world=row.stage.querySelector('[data-nw-camera-world]');
   if(!world)return;
   Array.from(row.stage.querySelectorAll('[data-nw-sd-el]')).forEach(function(node){
-   if(node.parentElement!==world)return; // No ambiguous ancestor transforms.
+   var nested=node.parentElement!==world;
+   if(nested&&!depthParentUsable(node,world))return;
    if(!surfaceKind(node))return;
    var mat=new T.MeshBasicMaterial({colorWrite:false,depthWrite:true,depthTest:true,side:T.DoubleSide});
    var mesh=new T.Mesh(new T.PlaneGeometry(1,1),mat);
    mesh.visible=false;mesh.renderOrder=-1000;mesh.frustumCulled=false;scene.add(mesh);
-   row.occluders.push({node:node,world:world,mesh:mesh,texture:null,source:null});
+   row.occluders.push({node:node,world:world,nested:nested,mesh:mesh,texture:null,source:null});
   });
  }
  function updateOccluders(row){
@@ -237,16 +259,34 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
     mesh.material.needsUpdate=true;
    }
    var world=o.world;
-   // Match the shared .inner offset convention used by spatial 3D anchors.
-   var offset={x:(world.offsetLeft||0)+(row.stage.clientLeft||0),
-     y:(world.offsetTop||0)+(row.stage.clientTop||0)};
-   var x=node.offsetLeft+offset.x+(world.clientLeft||0)-(world.scrollLeft||0)+w/2;
-   var y=node.offsetTop+offset.y+(world.clientTop||0)-(world.scrollTop||0)+h/2;
-   mesh.position.set(x-row.stage.clientWidth/2+(+pose.x||0),
-     row.stage.clientHeight/2-y-(+pose.y||0),-row.state.cssPerspective+pose.z);
-   mesh.rotation.set(-(+pose.rotateX||0)*Math.PI/180,(+pose.rotateY||0)*Math.PI/180,
-     -(+pose.rotate||0)*Math.PI/180,'ZXY');
-   mesh.scale.set(w*pose.scale/100,h*pose.scale/100,1);
+   var rotation=new T.Euler(-(+pose.rotateX||0)*Math.PI/180,(+pose.rotateY||0)*Math.PI/180,
+     -(+pose.rotate||0)*Math.PI/180,'ZXY'),scale=pose.scale/100;
+   if(o.nested){
+    if(!depthParentUsable(node,world))return;
+    // parentSpace is the existing CSS-to-Three matrix bridge. No second
+    // hierarchy parser and no change to the Director's evaluation clock.
+    var parent=parentSpace({userData:{anchorEl:node}},row,true);
+    if(!parent||parent.opacity<.999||Math.abs(parent.matrix.determinant())<1e-10)return;
+    var host=node.offsetParent||node.parentElement;
+    var local=new T.Matrix4().compose(new T.Vector3(
+      node.offsetLeft+(host&&host.clientLeft||0)-(host&&host.scrollLeft||0)+w/2+(+pose.x||0),
+      -node.offsetTop-(host&&host.clientTop||0)+(host&&host.scrollTop||0)-h/2-(+pose.y||0),
+      +pose.z),new T.Quaternion().setFromEuler(rotation),new T.Vector3(w*scale,h*scale,1));
+    mesh.matrixAutoUpdate=false;
+    mesh.matrix.copy(parent.matrix).multiply(local);
+    mesh.matrix.decompose(mesh.position,mesh.quaternion,mesh.scale);
+    mesh.matrixWorldNeedsUpdate=true;
+   }else{
+    // Match the shared .inner offset convention used by spatial 3D anchors.
+    var offset={x:(world.offsetLeft||0)+(row.stage.clientLeft||0),
+      y:(world.offsetTop||0)+(row.stage.clientTop||0)};
+    var x=node.offsetLeft+offset.x+(world.clientLeft||0)-(world.scrollLeft||0)+w/2;
+    var y=node.offsetTop+offset.y+(world.clientTop||0)-(world.scrollTop||0)+h/2;
+    mesh.position.set(x-row.stage.clientWidth/2+(+pose.x||0),
+      row.stage.clientHeight/2-y-(+pose.y||0),-row.state.cssPerspective+pose.z);
+    mesh.rotation.copy(rotation);
+    mesh.scale.set(w*scale,h*scale,1);
+   }
    mesh.visible=true;
   });
  }
@@ -256,9 +296,9 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
   var world=node.closest&&node.closest('[data-nw-camera-world]');
   return {world:world,x:world?(world.offsetLeft||0)+(row.stage.clientLeft||0):0,y:world?(world.offsetTop||0)+(row.stage.clientTop||0):0};
  }
- function parentSpace(g,row){
+ function parentSpace(g,row,force){
   var node=g.userData.anchorEl;
-  if(!node.hasAttribute||!node.hasAttribute('data-nw-spatial-parent'))return null;
+  if(!force&&(!node.hasAttribute||!node.hasAttribute('data-nw-spatial-parent')))return null;
   var chain=[],n=node.parentElement,world=node.closest('[data-nw-camera-world]');
   while(n&&n!==world&&n!==row.stage&&chain.length<8){chain.unshift(n);n=n.parentElement;}
   if(!world||n!==world)return{opacity:0,matrix:new T.Matrix4()};

@@ -181,6 +181,45 @@ for(const [mode,html] of Object.entries(generated)){
 
  }
 
+ // Test the same nested CSS matrix bridge in a real generated document.
+ if(mode==='exported'){
+  const nested=await page.evaluate(()=>{
+   const d=window.__test3D,g=d.objects[0],api=window.__testCameraApi,
+     stage=g.userData.anchorEl.closest('.nw-sd-stage'),
+     world=stage.querySelector('[data-nw-camera-world]');
+   window.__NAG_SCROLL_DIRECTOR.space.set(0);
+   const parent=document.createElement('div'),plane=document.createElement('div');
+   parent.className='container-box';
+   parent.style.cssText='position:absolute;left:15%;top:12%;width:240px;height:180px;transform:rotate(17deg);transform-origin:0 0;transform-style:preserve-3d;overflow:visible';
+   plane.setAttribute('data-nw-sd-el','1');
+   plane.style.cssText='position:absolute;left:30px;top:20px;width:80px;height:40px;background:rgb(255,255,255)';
+   plane.__nwSpatialPose={x:0,y:0,z:0,scale:100,rotate:0,rotateX:0,rotateY:0,opacity:1};
+   parent.appendChild(plane);world.appendChild(parent);
+   d.adapter.connect(api,[stage]);d.tick();
+   const occluder=d.scene.children.find(n=>n.isMesh&&n.material&&n.material.colorWrite===false);
+   if(!occluder){parent.remove();d.adapter.connect(api,[stage]);return null;}
+   const view=d.adapter.view(g),v=occluder.getWorldPosition(new THREE.Vector3()).project(view.camera),
+     r=view.rect,dom=plane.getBoundingClientRect(),
+     projected={x:r.left+(v.x+1)*r.width/2,y:r.top+(1-v.y)*r.height/2},
+     expected={x:dom.left+dom.width/2,y:dom.top+dom.height/2};
+   const orig=d.renderer.render.bind(d.renderer);let masks=0;
+   d.renderer.render=function(){if(occluder.visible)masks++;return orig(...arguments);};
+   parent.style.opacity='.5';d.tick();const translucentPasses=masks;
+   parent.style.opacity='1';parent.style.overflow='hidden';d.tick();const clippedPasses=masks;
+   parent.style.overflow='visible';d.tick();const supportedPasses=masks;
+   d.renderer.render=orig;parent.remove();d.adapter.connect(api,[stage]);d.tick();
+   return{projected,expected,translucentPasses,clippedPasses,supportedPasses,disposed:!d.scene.children.includes(occluder)};
+  });
+  assert.ok(nested,'Preserve-3d parent produces a nested HTML depth plane');
+  assert.ok(Math.abs(nested.projected.x-nested.expected.x)<1,'Nested CSS and Three X coordinates agree: '+JSON.stringify(nested));
+  assert.ok(Math.abs(nested.projected.y-nested.expected.y)<1,'Nested CSS and Three Y coordinates agree: '+JSON.stringify(nested));
+  assert.equal(nested.translucentPasses,0,'Parent opacity disables depth occlusion');
+  assert.equal(nested.clippedPasses,0,'Parent overflow clipping disables depth occlusion');
+  assert.ok(nested.supportedPasses>0,'Depth occlusion returns once the parent is valid');
+  assert.equal(nested.disposed,true,'Nested depth plane is released after reconnect');
+  console.log('PASS nested HTML/WebGL depth bridge: affine parent, opacity, clipping and cleanup');
+ }
+
  await page.screenshot({path:'work/spatial-'+mode+'.png'});
  assert.deepEqual(errors,[]);console.log('PASS '+mode+': resize and reduced motion');
  const delayed=instrumented.replace('"env":""','"env":"studio"').replaceAll('function(gltf){ fitGLTF(gltf, o, group); }','function(gltf){ window.__lateRoot=gltf.scene;window.__finishGLB=function(){fitGLTF(gltf,o,group);};window.__failGLB=fallback; }');

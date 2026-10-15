@@ -72,6 +72,37 @@ adapter.render(()=>{});assert.equal(shape.userData.holder.visible,false);
  node.__nwSpatialPose.opacity=1;node.isConnected=false;adapter.render(()=>{});assert.equal(blockers[0].visible,false);
  node.isConnected=true;a.querySelectorAll=()=>[];adapter.connect(api,[a,b]);
  assert.equal(scene.children.filter(n=>n.isMesh&&n.material&&n.material.colorWrite===false).length,0,'Reconnect disposes old depth proxies');
+ // Reuse the existing parent-space matrix, including real CSS layout offsets,
+ // for an opaque HTML child nested in a preserve-3d container.
+ const parentBox={parentElement:world,offsetParent:world,offsetLeft:80,offsetTop:40,
+  clientLeft:0,clientTop:0,scrollLeft:0,scrollTop:0,offsetWidth:240,offsetHeight:180,
+  classList:{contains(k){return k==='container-box';}}};
+ const inside={parentElement:parentBox,offsetParent:parentBox,offsetLeft:30,offsetTop:20,
+  offsetWidth:80,offsetHeight:40,style:{},isConnected:true,
+  closest(){return world;},__nwSpatialPose:{x:0,y:0,z:30,scale:100,rotate:0,rotateX:0,rotateY:0,opacity:1}};
+ const cssState={opacity:'1',display:'block',visibility:'visible',transformStyle:'preserve-3d',
+  overflowX:'visible',overflowY:'visible',clipPath:'none',maskImage:'none',filter:'none',
+  mixBlendMode:'normal',transformOrigin:'0px 0px',translate:'none',rotate:'none',
+  scale:'none',transform:'none',borderRadius:'0px',backgroundColor:'rgb(255, 255, 255)'};
+ let nestedOpacity=1;
+ context.window.getComputedStyle=el=>Object.assign({},cssState,el===parentBox?{opacity:String(nestedOpacity)}:{});
+ a.querySelectorAll=()=>[inside];
+ adapter.connect(api,[a,b]);adapter.render(()=>{});
+ const nested=scene.children.find(n=>n.isMesh&&n.material&&n.material.colorWrite===false);
+ assert.ok(nested,'Opaque nested HTML receives a depth-only plane');
+ assert.ok(Math.abs(nested.position.x-(-150))<1e-6,'Nested HTML includes inherited X offset');
+ assert.ok(Math.abs(nested.position.y-120)<1e-6,'Nested HTML includes inherited Y offset');
+ assert.ok(Math.abs(nested.position.z-(-470))<1e-6,'Nested HTML keeps the shared Z depth');
+ const restoreRender=renderer.render;
+ let visibleOnRender=false;
+ renderer.render=function(){if(nested.visible)visibleOnRender=true;return restoreRender.apply(this,arguments);};
+ nestedOpacity=.5;adapter.render(()=>{});assert.equal(visibleOnRender,false,'Translucent parent must not write a fake solid depth mask');
+ renderer.render=restoreRender;
+ nestedOpacity=1;parentBox.classList.contains=()=>false;adapter.render(()=>{});
+ assert.equal(nested.visible,false,'Unsupported nested ancestor is ignored at paint time');
+ parentBox.classList.contains=k=>k==='container-box';a.querySelectorAll=()=>[];
+ adapter.connect(api,[a,b]);
+ assert.equal(scene.children.filter(n=>n.isMesh&&n.material&&n.material.colorWrite===false).length,0,'Nested depth resources release on reconnect');
 
  // A transparent root with one embedded alpha image must not block its clear
  // pixels. An image source swap also needs to dispose the retired GPU texture.
