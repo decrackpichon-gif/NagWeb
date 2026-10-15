@@ -26,7 +26,7 @@ Esto es un **alcance cerrado para V1.0**. Los recursos adicionales, efectos nuev
 
 - [x] Flujo de creación, edición, guardado, historial y exportación ya cubierto por pruebas de navegador existentes.
 - [x] Corregida la dependencia del puente privado de descargas: respaldo y HTML disponibles en navegador común (`8c4e318`).
-- [ ] Aprobación de la **prueba integral V1.0** para crear una página, escena y botón, guardar JSON/HTML, recargar e importar el respaldo. CI: https://github.com/decrackpichon-gif/NagWeb/actions/runs/38772559880 . **No dar por aprobada mientras el run no haya finalizado correctamente**.
+- [ ] Aprobación de la **prueba integral V1.0** para crear una página, escena y botón, guardar JSON/HTML, recargar e importar el respaldo. CI: https://github.com/decrackpichon-gif/NagWeb/actions/runs/38773384278 . **No dar por aprobada mientras el run no haya finalizado correctamente**.
 - [ ] Revisión final de uso y apariencia de un sitio propio por parte del usuario, si desea aceptarlo visualmente como su V1.0.
 
 **Estado:** candidata V1.0 en validación. No se amplía el alcance por tareas opcionales. Si la prueba nueva falla, corregir ese defecto y repetir solo lo necesario. No mergear ni desplegar en Vercel sin autorización del usuario.

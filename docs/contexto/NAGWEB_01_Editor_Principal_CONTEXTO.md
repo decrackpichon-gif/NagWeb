@@ -160,7 +160,7 @@ Editor **visual y profesional** para construir sitios y narrativas inmersivas co
 
 ## Hito de cierre V1.0 (15/10/2026)
 
-Documento de entrega y aceptación con alcance cerrado: [`docs/NAGWEB_01_ENTREGA_V1.md`](../NAGWEB_01_ENTREGA_V1.md). Se corrigió el bloqueo de descarga de JSON e HTML en navegadores sin integración especial (`8c4e318043168f93400ecc1681736507dded912a`). La verificación integral se encuentra en la ejecución de GitHub Actions `38772559880`; verificar su resultado antes de afirmar V1.0 validada. No continuar expandiendo recursos ni variantes mientras se completa el cierre funcional.
+Documento de entrega y aceptación con alcance cerrado: [`docs/NAGWEB_01_ENTREGA_V1.md`](../NAGWEB_01_ENTREGA_V1.md). Se corrigió el bloqueo de descarga de JSON e HTML en navegadores sin integración especial (`8c4e318043168f93400ecc1681736507dded912a`). La verificación integral se encuentra en la ejecución de GitHub Actions `38773384278`; verificar su resultado antes de afirmar V1.0 validada. No continuar expandiendo recursos ni variantes mientras se completa el cierre funcional.
 
 ## Próximas prioridades (revisar con HEAD actual)
 
