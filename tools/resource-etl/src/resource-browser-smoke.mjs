@@ -187,6 +187,42 @@ const report = { platform: process.platform, scenarios: [], errors: [] };
 try {
   browser = await chromium.launch({ headless: true,
     ...(process.env.NAGWEB_BROWSER_EXECUTABLE ? { executablePath: process.env.NAGWEB_BROWSER_EXECUTABLE } : {}) });
+  // Standalone shell should keep working on a subsequent fully offline
+  // reload. The verified Vault cache still owns manifest/index integrity.
+  {
+    const shellContext=await browser.newContext({viewport:{width:1080,height:800}});
+    const shellPage=await shellContext.newPage();
+    currentPage=shellPage;
+    shellPage.on("pageerror",error=>report.errors.push("Offline shell: "+error.message));
+    await shellContext.route("**/*",route=>{
+      const url=new URL(route.request().url());
+      if(url.hostname==="127.0.0.1")return route.continue();
+      const body=url.origin==="https://raw.githubusercontent.com"
+        ? fixtures.get(url.pathname.split("/").at(-1)):null;
+      if(!body){report.errors.push("Unexpected offline-shell request: "+url.href);return route.abort();}
+      return route.fulfill({status:200,contentType:"application/octet-stream",
+        headers:{"access-control-allow-origin":"*","cache-control":"no-store"},body});
+    });
+    try {
+      await shellPage.goto(`http://127.0.0.1:${server.address().port}/resource-browser/`);
+      await shellPage.locator('[data-resource-id="smoke:icon"]').waitFor();
+      await expect.poll(()=>shellPage.evaluate(async()=>{
+        const ready=await navigator.serviceWorker.ready;
+        const cache=await caches.open("nagweb-resource-browser-shell-v1");
+        return Boolean(ready.active && navigator.serviceWorker.controller &&
+          (await cache.keys()).length>=30);
+      }),{timeout:25000}).toBe(true);
+      await shellContext.setOffline(true);
+      await shellPage.reload({waitUntil:"domcontentloaded",timeout:15000});
+      await shellPage.locator('[data-resource-id="smoke:icon"]').waitFor({timeout:12000});
+      await expect(shellPage.locator("[data-status]")).toContainText("Sin conexión");
+      report.scenarios.push({browser:"standalone offline app shell and verified Vault index",
+        status:"passed",serviceWorker:true,noThirdPartyAssets:true});
+    }finally{
+      await shellContext.setOffline(false);
+      await shellContext.close();
+    }
+  }
   for (const width of [1280, 390]) {
     const context = await browser.newContext({ viewport: { width, height: 900 } });
     const page = await context.newPage();
