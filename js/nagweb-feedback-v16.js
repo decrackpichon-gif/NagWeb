@@ -255,7 +255,9 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
   var partSel='.'+rootClass+' [data-wpart],.el.wdg.wk-'+kind+' .'+rootClass+' [data-wpart]';
   var css=(W.css&&W.css[kind]||'')+
    '.'+rootClass+'{position:relative;container-type:inline-size;isolation:isolate}' +
-   '.'+rootClass+' .nw-photo-editbar{left:10px;right:10px;top:10px;max-width:calc(100% - 20px);max-height:110px;overflow:auto;z-index:70}' +
+   '.'+rootClass+' .nw-photo-editbar{position:absolute;display:flex;flex-wrap:wrap;gap:4px;left:10px;right:10px;top:10px;max-width:calc(100% - 20px);max-height:110px;padding:6px;border-radius:10px;background:rgba(12,12,16,.85);overflow:auto;z-index:70;box-sizing:border-box;box-shadow:0 8px 28px -12px #000;pointer-events:auto}' +
+   '.'+rootClass+' .nw-photo-editbar button{pointer-events:auto;border:1px solid rgba(255,255,255,.2);border-radius:6px;background:rgba(255,255,255,.1);color:#fff;padding:4px 7px;font:600 10px/1.2 system-ui;cursor:pointer}' +
+   '.'+rootClass+' .nw-photo-editbar button:hover,.'+rootClass+' .nw-photo-editbar button.on{background:#7658ff;border-color:#9e8aff}' +
    (extra.css||'')+
    partSel+'{translate:var(--nw-tx,0px) var(--nw-ty,0px);rotate:var(--nw-pr,0deg);scale:var(--nw-ps,1)}' +
    '@container (max-width:'+(extra.mobile||600)+'px){'+partSel+'{translate:var(--nw-mx,var(--nw-tx,0px)) var(--nw-my,var(--nw-ty,0px));rotate:var(--nw-mr,var(--nw-pr,0deg));scale:var(--nw-ms,var(--nw-ps,1))}}';
