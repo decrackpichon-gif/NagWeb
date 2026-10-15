@@ -232,7 +232,12 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
    root.setAttribute('data-nw-part-y',extra.unitY||'var(--h)');
    // v14 no identificaba los dos textos del pie como partes movibles.
    (fields||[]).forEach(function(a){
-    var node=root.querySelector(a[1]);if(node)node.setAttribute('data-wpart',a[0]);
+    // Un selector puede representar una parte o una familia de piezas repetidas.
+    // Se conservan IDs deterministas: color-0, color-1..., sin campos paralelos.
+    var nodes=a[2]?root.querySelectorAll(a[1]):[root.querySelector(a[1])];
+    nodes.forEach(function(node,i){
+     if(node)node.setAttribute('data-wpart',a[0]+(a[2]?'-'+i:''));
+    });
    });
    var parts=[];
    root.querySelectorAll('[data-wpart]').forEach(function(n){
@@ -294,6 +299,38 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
   unitY:'100cqw',hint:'Seleccioná las dos imágenes, la cifra, el rótulo y los textos de Bento por separado.',
   labels:{'image-0':'Imagen 1','image-1':'Imagen 2',stat:'Cifra','stat-label':'Rótulo', 'copy-title':'Antetítulo','copy-text':'Texto'}
  },[['stat-label','.scx-bs-stat span'],['copy-title','.scx-bs-copy b'],['copy-text','.scx-bs-copy p']]);
+
+ // Un solo adaptador para composiciones de texto, identidad y afiches;
+ // la fuente de verdad visual sigue siendo cada recurso v14.
+ enhance('editorialposter','scx-ep',null,0,{
+  unitY:'100cqw',labels:{eyebrow:'Antetítulo',number:'Número',title:'Título',note:'Nota'},
+  hint:'Acomodá antetítulo, número, título y nota por separado, sin cambiar la composición editorial.'
+ });
+ enhance('bignumber','scx-bn',null,0,{
+  unitY:'100cqw',labels:{number:'Cifra',label:'Rótulo',text:'Texto'},
+  hint:'Mové la cifra principal, el rótulo y la descripción con posiciones independientes para móvil.'
+ },[['number','.scx-bn-num'],['label','.scx-bn-copy b'],['text','.scx-bn-copy p']]);
+ enhance('pullquote','scx-pq',null,0,{
+  unitY:'100cqw',labels:{quote:'Cita',author:'Autor',role:'Cargo',mark:'Comillas o línea'},
+  hint:'Editá la cita, el autor, el cargo y el signo gráfico independientemente.'
+ },[['author','footer b'],['role','footer span'],['mark','blockquote > i']]);
+ enhance('typespecimen','scx-ts',null,0,{
+  unitY:'100cqw',labels:{kicker:'Rótulo',note:'Nota',hero:'Muestra principal',upper:'Texto superior',lower:'Texto inferior',nums:'Números'},
+  hint:'Reordená los seis bloques de la muestra tipográfica desde el lienzo.'
+ },[['kicker','header b'],['note','header span'],['upper','.scx-ts-grid p.up'],['lower','.scx-ts-grid p:not(.up)'],['nums','.scx-ts-grid em']]);
+ enhance('eventposter','scx-ev',null,0,{
+  unitY:'100cqw',labels:{date:'Fecha',symbol:'Símbolo',title:'Título',place:'Lugar',cta:'Llamado a la acción'},
+  hint:'Mové título, fecha, símbolo, lugar y llamado a la acción sin alterar el afiche original.'
+ },[['date','header b'],['symbol','header i'],['place','footer span'],['cta','footer strong']]);
+ enhance('splitstatement','scx-ss',null,0,{
+  unitY:'100cqw',labels:{eyebrow:'Antetítulo',title:'Título',image:'Imagen'},
+  hint:'Editá el titular, antetítulo y fotografía conservando las variantes de división.'
+ },[['eyebrow','.scx-ss-copy>b']]);
+ enhance('brandboard','scx-bb',null,4,{
+  unitY:'100cqw',labels:{'swatch-0':'Color 1','swatch-1':'Color 2','swatch-2':'Color 3','swatch-3':'Color 4',
+   brand:'Marca',tagline:'Lema',sample:'Muestra'},
+  hint:'Acomodá los cuatro colores y los textos de la presentación de marca. Sus valores se siguen editando en el inspector.'
+ },[['swatch','.scx-bb-sw i',true],['brand','.scx-bb-copy b'],['tagline','.scx-bb-copy span'],['sample','.scx-bb-copy em']]);
 })(); 
 
 /* ---------- Composiciones reactivas: edición estable + movimiento independiente ---------- */
