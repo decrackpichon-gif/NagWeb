@@ -130,6 +130,15 @@ Editor **visual y profesional** para construir sitios y narrativas inmersivas co
 - Archivos: `js/nagweb-v14-direction.js`, `js/nagweb-feedback-v16.js` y smoke de navegador `.github/nagweb-editor-parts-smoke.mjs`. El estado definitivo de las pruebas debe comprobarse con GitHub Actions del commit funcional `62408d1e3bec30d17d0eba5207dd6ccb7a4dc9b4` (o con un HEAD posterior si hubo correcciones).
 - Próxima prioridad: seguir generalizando composición/selección de partes en los recursos todavía no conectados, pero priorizar ahora consolidación y regresiones reales si aparecen en CI; no mezclar Motion Lab, Cámara 3D, Interaction Studio ni Biblioteca de recursos.
 
+## Adaptador único para siete composiciones tipográficas y de identidad (15/10/2026)
+
+- **NAGWEB 01** amplía el adaptador compartido de partes de `js/nagweb-feedback-v16.js`, ya utilizado por Collage, Moodboard y cuatro composiciones de altura variable, a siete recursos v14: `editorialposter`, `bignumber`, `pullquote`, `typespecimen`, `eventposter`, `splitstatement` y `brandboard`.
+- El editor permite seleccionar y transformar las piezas tipográficas, imágenes y elementos gráficos internos de cada recurso, conservando los `data-wfield`, sus formatos y variaciones originales. En el tablero de marca también se identifican por separado los cuatro colores (`swatch-0..3`), sin alterar la paleta definida desde el inspector.
+- La extensión reutiliza el contrato de `data-nw-part-scope`, `data-nw-part-y="100cqw"`, `partTransformCSS`, `partStyleMarkup`, `__parts` y `__partsMobile`, con el corte móvil de 600 px de ancho útil. El adaptador admite ahora selectores repetidos que asignan IDs de pieza deterministas, evitando crear un sistema paralelo.
+- Se preservan retrocompatibilidad de desplazamientos en píxeles, historial, texto editable en el lienzo, CSS y contenido original. La barra contextual solo existe en modo editor, sin aparecer en la exportación.
+- Regresión integrada en `.github/nagweb-editor-parts-smoke.mjs`: recursos reales, selección de partes, interacción del puntero, persistencia, serialización y edición móvil representativa. Comprobar el estado de <https://github.com/decrackpichon-gif/NagWeb/actions/runs/38687596223> antes de dar el bloque por validado.
+- Próximo foco: tratar por separado los mockups y creativos que combinan gestos del puntero con transformaciones autorales, evitando que un efecto sobrescriba la pose manual, y consolidar defectos transversales cuando aparezcan en las pruebas.
+
 ## Próximas prioridades (revisar con HEAD actual)
 
 - Priorizar la experiencia de lienzo como herramienta de diseño, edición real de elementos anidados y uso de recursos sin degradar su editabilidad.
