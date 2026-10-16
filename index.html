@@ -18544,6 +18544,41 @@ $('pane').addEventListener('click', ev => {
   saveProject(); renderPane(); renderScenes(); schedulePreview();
 });
 
+// El panel de orden se delega en el inspector, que se regenera al editar.
+let heroDraggedPart='';
+$('pane').addEventListener('dragstart',ev=>{
+ const row=ev.target.closest('[data-hero-layer]');if(!row)return;
+ heroDraggedPart=row.dataset.heroLayer;
+ if(ev.dataTransfer){ev.dataTransfer.effectAllowed='move';ev.dataTransfer.setData('text/plain',heroDraggedPart);}
+});
+$('pane').addEventListener('dragover',ev=>{
+ if(ev.target.closest('[data-hero-layer]')){ev.preventDefault();if(ev.dataTransfer)ev.dataTransfer.dropEffect='move';}
+});
+$('pane').addEventListener('drop',ev=>{
+ const target=ev.target.closest('[data-hero-layer]'),box=target&&target.closest('[data-hero-layers]');
+ if(!box)return;ev.preventDefault();
+ const from=heroDraggedPart||(ev.dataTransfer&&ev.dataTransfer.getData('text/plain'))||'';
+ const dragged=[...box.children].find(n=>n.dataset.heroLayer===from);
+ if(!dragged||dragged===target){heroDraggedPart='';return;}
+ box.insertBefore(dragged,target);
+ reorderHeroFromInspector([...box.children].map(n=>n.dataset.heroLayer),false);
+ heroDraggedPart='';
+});
+$('pane').addEventListener('click',ev=>{
+ const reset=ev.target.closest('[data-hero-reset-order]'),
+  layer=ev.target.closest('[data-hero-layer]');
+ if(reset){
+  const box=reset.closest('[data-hero-stack]').querySelector('[data-hero-layers]');
+  reorderHeroFromInspector([...box.children].map(n=>n.dataset.heroLayer),true);
+  return;
+ }
+ if(layer){
+  const e=sec().elements[curEl],d=document.querySelector('#preview')?.contentDocument;
+  if(!e||!d)return;
+  const btn=d.querySelector('.el.wdg[data-id="'+e.id+'"] [data-nw-part="'+layer.dataset.heroLayer+'"]');
+  if(btn)btn.dispatchEvent(new d.defaultView.PointerEvent('pointerdown',{bubbles:true,cancelable:true,button:0,pointerId:777}));
+ }
+});
 function renderPane(){
   if(curPane === 'scene'){ curPane = 'elements'; secFocus = true; selection = []; }
   if(curPane === 'library'){ curPane = 'elements'; setLTab('assets'); }
@@ -21713,6 +21748,57 @@ function listEditor(f, items, root){
 }
 const listOpen = {};
 
+// El orden de apilamiento del Hero incluye TODOS los elementos, no solo fotos.
+// Se ofrece como lista de capas arrastrable dentro del inspector derecho.
+function heroLayersPanel(e){
+ if(e.wk!=='layeredhero')return '';
+ const wp=e.wp||{},K=window.SCW&&SCW.kinds.layeredhero,defaults=K&&K.defaults||{};
+ const field=k=>wp[k]!=null?wp[k]:defaults[k];
+ const list=[['layer-1','Imagen 1']];
+ for(let i=2;i<=5;i++)if(field('img'+i))list.push(['layer-'+i,'Imagen '+i]);
+ list.push(['eyebrow','Antetítulo'],['title','Título'],['sub','Descripción']);
+ (Array.isArray(wp.texts)?wp.texts:[]).forEach((_,i)=>list.push(['text-extra-'+i,'Texto '+(i+1)]));
+ const desktop=wp.__parts||{},mobile=wp.__partsMobile||{};
+ const z=part=>{
+  const mob=viewMobile&&mobile[part]||null,base=desktop[part]||null,p=mob&&mob.z!=null?mob:base;
+  const fallback=part.startsWith('layer-')?(+part.split('-')[1]===1?0:+part.split('-')[1]):
+    base&&base.free?7:6;
+  return p&&p.z!=null?+p.z:fallback;
+ };
+ list.sort((a,b)=>z(b[0])-z(a[0]));
+ const rowStyle='display:flex;align-items:center;gap:7px;width:100%;padding:8px;margin:3px 0;border:1px solid #7776;border-radius:6px;background:var(--panel-2);color:var(--ink);cursor:grab;font:500 12px system-ui;text-align:left';
+ const rows=list.map(([id,label])=>'<button type="button" draggable="true" data-hero-layer="'+id+'" style="'+rowStyle+'" title="Arrastrá para cambiar el orden; clic para seleccionar la parte">⠿ '+escHtml(label)+'</button>').join('');
+ return '<section data-hero-stack style="margin:14px 0;padding:12px;border:1px solid var(--line);border-radius:10px">'+
+  '<h3 style="margin:0 0 4px;font-size:14px">Capas del Hero</h3>'+
+  '<p class="hint" style="margin:0 0 8px">Arrastrá para ordenar: arriba tapa a abajo. Podés ordenar fotos y textos. Los cambios de celular son independientes.</p>'+
+  '<div data-hero-layers>'+rows+'</div>'+
+  (viewMobile?'<button type="button" class="btn tiny" data-hero-reset-order style="margin-top:8px">Restablecer orden de celular</button>':'')+
+  '</section>';
+}
+function reorderHeroFromInspector(parts,reset){
+ const e=sec().elements[curEl];
+ if(!e||e.type!=='widget'||e.wk!=='layeredhero'||!Array.isArray(parts))return;
+ e.wp=e.wp||{};const target=viewMobile?'__partsMobile':'__parts';
+ const base=e.wp.__parts||{},source=e.wp[target]||{},dest={...source};
+ let changed=false;
+ if(reset&&viewMobile){
+  for(const id of parts){
+   const old=dest[id];if(!old||old.z==null)continue;
+   if(old.__nwOrderOnly)delete dest[id];
+   else{dest[id]={...old};delete dest[id].z;}
+   changed=true;
+  }
+ }else{
+  parts.forEach((id,i)=>{
+   const z=70-i,old=source[id]||null;
+   let next=old?{...old}:viewMobile?
+     {...base[id],x:base[id]?.x||0,y:base[id]?.y||0,r:base[id]?.r||0,s:base[id]?.s==null?1:base[id].s,__nwOrderOnly:true}:{x:0,y:0,r:0,s:1};
+   if(next.z!==z){next.z=z;dest[id]=next;changed=true;}
+  });
+ }
+ if(!changed)return;
+ snapshot();e.wp[target]=dest;saveProject();renderPane();schedulePreview();
+}
 /* ---------- panel Estilo: componentes ---------- */
 function widgetGroups(e){
   const K = window.SCW && SCW.kinds[e.wk];
@@ -21722,7 +21808,7 @@ function widgetGroups(e){
   const vals = Object.assign({}, K.defaults, e.wp);
   const top = `<div class="wdesc">${K.icon ? '<span class="wico">' + K.icon + '</span>' : ''}<span><b>${escHtml(K.label)}</b><small>${escHtml(K.desc || '')}</small></span></div>` +
     `<div class="row" style="margin:2px 0 8px"><button type="button" class="btn tiny" data-wreset="1">Restablecer valores</button></div>`;
-  return schemaGroups(K.fields, vals, 'wp', 'w-' + e.wk, 'Contenido', top);
+  return schemaGroups(K.fields, vals, 'wp', 'w-' + e.wk, 'Contenido', top + heroLayersPanel(e));
 }
 /* ---------- panel Estilo: shader ---------- */
 function shaderSelect(bind, cur, withNone){
