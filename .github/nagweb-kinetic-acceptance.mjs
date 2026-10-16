@@ -14,7 +14,10 @@ export async function runKineticAcceptanceSmoke(page){
    frame.srcdoc=generateSite({...p,sections:[scene,tail]},false,false,false);
    document.body.append(frame);
   },mode);
-  await page.waitForFunction(()=>!!document.querySelector('#nw-accept-public')?.contentDocument?.querySelector('.nw-ks-sticky'),{timeout:20000});
+  await page.waitForFunction(()=>{
+   const root=document.querySelector('#nw-accept-public')?.contentDocument?.querySelector('.nw-ks');
+   return !!(root&&root.style.getPropertyValue('--p')!=='');
+  },{timeout:30000});
   const res=await page.evaluate(async()=>{
    const frame=document.querySelector('#nw-accept-public'),win=frame.contentWindow,doc=frame.contentDocument,
     ks=doc.querySelector('.nw-ks'),sticky=doc.querySelector('.nw-ks-sticky'),track=doc.querySelector('.nw-ks-track');
@@ -54,7 +57,10 @@ export async function runKineticAcceptanceSmoke(page){
    frame.srcdoc=generateSite({...flattenPage(page()),sections:[scene,tail]},false,false,false);
    document.body.append(frame);
   },mode);
-  await page.waitForFunction(()=>!!document.querySelector('#nw-accept-story-public')?.contentDocument?.querySelector('.nw-story-sticky'),{timeout:20000});
+  await page.waitForFunction(()=>{
+   const root=document.querySelector('#nw-accept-story-public')?.contentDocument?.querySelector('.nw-story');
+   return !!(root&&root.style.getPropertyValue('--storyP')!=='');
+  },{timeout:30000});
   const samples=await page.evaluate(async()=>{
    const frame=document.querySelector('#nw-accept-story-public'),w=frame.contentWindow,d=frame.contentDocument,
     root=d.querySelector('.nw-story'),sticky=d.querySelector('.nw-story-sticky');
