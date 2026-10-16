@@ -22,14 +22,21 @@ Esto es un **alcance cerrado para V1.0**. Los recursos adicionales, efectos nuev
 4. Para múltiples páginas, **Descargar sitio completo** genera un ZIP con páginas y recursos. Esta función aún carga JSZip desde una CDN pública y, por lo tanto, requiere conectividad al momento de preparar el ZIP. Si no está disponible, la descarga individual `index.html` y el respaldo JSON funcionan por separado.
 5. Conservar el proyecto JSON para seguir editando y los HTML/ZIP para publicar o entregar el sitio. El HTML exportado es diferente al archivo JSON editable.
 
+## Incidente de aceptación manual y recuperación
+
+- En el chat del 16/10/2026 el usuario completó siete pruebas principales y sus notas de fallos en controles interactivos que **no enviaban los valores al asistente**. La conversación no recibió esas descripciones; se perdieron. No culpar al usuario ni afirmar que no probó los flujos.
+- Los siete casos (crear/editar; historial/recuperación; Hero; responsive; Historia sticky; Director; guardado/exportación) deben tratarse como **reportados fallidos**, aunque algunas pruebas de CI pasen.
+- **Prohibidos formularios efímeros para recopilar incidencias.** Recibir informes como mensajes de chat, videos narrados o capturas adjuntas; sintetizar, confirmar y registrar textualmente en el contexto antes de cambios técnicos. No exigir repetir la ronda entera.
+- Continuidad recomendada: revisar autónomamente los recorridos visibles y sus fallos de UX, corregir defectos reales agrupados, entregar versión nueva sólo tras validación de casos concretos. Si una diferencia no puede reproducirse sin datos nuevos, pedir **una sola captura/video del caso puntual**, no siete informes.
+
 ## Criterio final de aceptación
 
 - [x] Flujo de creación, edición, guardado, historial y exportación ya cubierto por pruebas de navegador existentes.
 - [x] Corregida la dependencia del puente privado de descargas: respaldo y HTML disponibles en navegador común (`8c4e318`).
 - [x] **Prueba integral V1.0 aprobada**: crear una página, escena y botón, descargar JSON e HTML con un navegador común, recargar e importar el respaldo. Se conservan páginas, escenas, estructura y contenido. GitHub Actions: https://github.com/decrackpichon-gif/NagWeb/actions/runs/38773384278 .
-- [ ] Revisión visual de un sitio propio por parte del usuario, opcional como aceptación estética, **no bloquea el cierre técnico de la V1.0**.
+- [ ] **ACEPTACIÓN MANUAL RECHAZADA (16/10/2026): las siete pruebas principales reportadas como fallidas.** Faltan los detalles individuales porque no fueron transmitidos por el formulario efímero. No inventar resultados, no pedir que el usuario complete nuevamente las siete pruebas ni restablecer el cierre por éxito del CI.
 
-**Estado: NAGWEB 01 V1.0 funcional, cerrada técnicamente en la rama exclusiva.** La batería completa de Chromium finalizó con éxito el 15/10/2026. La publicación en Vercel, un merge con otras ramas y la aceptación visual específica del usuario son decisiones separadas y no se realizaron. Se pueden desarrollar mejoras V1.1+ sin posponer el cierre de esta versión.
+**Estado real: V1.0 NO ACEPTADA, pendiente de corregir fallos de uso.** La batería automática de Chromium pasó el 15/10/2026, pero el usuario hizo las siete pruebas manuales del recorrido principal y reportó que **todas fallaron**, con explicaciones que se perdieron porque el asistente creó controles locales que no enviaban sus respuestas al chat. **Las pruebas automáticas no sustituyen la aceptación manual.** No declarar el Editor terminado ni aplazar estos fallos a V1.1. No se hizo merge ni despliegue.
 
 ## Trabajo pospuesto para V1.1+
 

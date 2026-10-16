@@ -158,6 +158,14 @@ Editor **visual y profesional** para construir sitios y narrativas inmersivas co
 - Regresión integrada en `.github/nagweb-editor-parts-smoke.mjs`: recursos reales, selección de partes, interacción del puntero, persistencia, serialización y edición móvil representativa. Comprobar el estado de <https://github.com/decrackpichon-gif/NagWeb/actions/runs/38687596223> antes de dar el bloque por validado.
 - Próximo foco: tratar por separado los mockups y creativos que combinan gestos del puntero con transformaciones autorales, evitando que un efecto sobrescriba la pose manual, y consolidar defectos transversales cuando aparezcan en las pruebas.
 
+## Estado de aceptación V1.0: NO ACEPTADA (16/10/2026)
+
+**Corrección importante a la declaración anterior de «V1.0 terminada»:** el usuario ejecutó el checklist de siete flujos principales, **marcó los siete como fallidos y detalló las razones** en campos interactivos. Estos datos nunca fueron transmitidos al asistente porque el formulario sólo retenía estado local; además se perdió cuando cambió la conversación. **No se conocen las descripciones originales y no se deben inventar**. El usuario quedó obligado injustamente a repetir trabajo. Esta pérdida de reportes es una falla del asistente.
+
+Los siete rubros rechazados fueron: 1) crear y editar páginas/escenas/capas, 2) deshacer/rehacer/recuperación, 3) Hero por capas, 4) escritorio/móvil, 5) Historia sticky, 6) Director de Scroll y keyframes, 7) guardado/recarga/exportación. No se puede inferir que todos los subpasos individuales fallaron; sí que **el usuario calificó las siete pruebas como fallidas**.
+
+**Directiva de corrección:** NO llamar aceptada o terminada la V1.0 por pruebas automáticas aprobadas. NO volver a ofrecer formularios con estado local efímero; recopilar los reportes como mensajes reales o archivos adjuntos. NO pedir repetir las siete pruebas. Partir de una auditoría autónoma del recorrido con gestos reales y experiencia visible; si queda algún defecto no reproducible, solicitar sólo un ejemplo puntual por video/audio/captura. Registrar datos realmente recibidos en texto persistente y resolver los bloqueantes en bloques agrupados. La corrección de Cinta cinética está verificada automáticamente, pero no sustituye las otras siete pruebas rechazadas.
+
 ## Aceptación manual V1.0: observaciones del 16/10/2026
 
 **Observaciones aportadas por el usuario:**
