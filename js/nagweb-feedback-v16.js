@@ -35,6 +35,20 @@ function partStyleMarkup(html,e,part,heightUnit){
   return tag.replace(m[0],' style="'+keep+css+'"');
  });
 }
+// Un solo contrato para historias/cintas sticky dentro de escenas libres.
+// Los widgets absolutos no extendían la altura de la escena, así que al
+// hacer scroll el escenario desaparecía y el efecto publicado quedaba roto.
+function freeStickyRunway(el){
+ var wrapper=el&&el.closest('.el.wdg'),inner=wrapper&&wrapper.parentElement,scene=inner&&inner.parentElement;
+ if(!inner||!inner.classList.contains('inner')||!scene||!scene.classList.contains('free'))return;
+ var originalVH=Math.max(1,parseFloat(scene.style.minHeight)||100);
+ Array.prototype.forEach.call(inner.children,function(node){
+  if(node===wrapper||!node.classList.contains('el'))return;
+  var y=Number(node.getAttribute('data-y'));
+  if(node.hasAttribute('data-y')&&isFinite(y))
+   node.style.top=(originalVH*y/100).toFixed(3)+'vh';
+ });
+}
 function heroPartCSS(e,n){
  var desktop=e&&e.__parts&&e.__parts[n],mobile=e&&e.__partsMobile&&e.__partsMobile[n];
  var z=desktop&&Number.isFinite(+desktop.z)?'--nw-z:'+Math.round(+desktop.z)+';':'';
@@ -451,7 +465,12 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
   return '<section class="nw-story nw-story--'+side+'" data-nw-part-scope="story" data-nw-part-mobile="720" data-nw-part-y="100vh" data-nw-part-height=".nw-story-sticky" style="'+cssVars({'--bg':bg,'--fg':fg,'--ac':a,'--len':num(e.length,300,160,560)+'vh','--r':num(e.round,18,0,60)+'px'})+'">'+bar+'<div class="nw-story-sticky"><div class="nw-story-visual">'+m+'<span></span></div><div class="nw-story-copy">'+h+'<div class="nw-story-progress"><i></i></div></div></div></section>';
  };
  var css=PART+'.nw-story-editbar{left:12px;right:12px;top:12px;max-width:none;justify-content:space-between}.nw-story-editbar>span{display:flex;gap:4px;flex-wrap:wrap}.nw-story{position:relative;width:100%;container-type:inline-size;height:var(--len);background:var(--bg);color:var(--fg)}.nw-story-sticky{position:sticky;top:0;height:100vh;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr);gap:clamp(28px,5vw,80px);align-items:center;padding:clamp(24px,5vw,74px);box-sizing:border-box;overflow:hidden}.nw-story--right .nw-story-visual{order:2}.nw-story-visual{position:relative;height:min(72vh,760px);overflow:hidden;border-radius:var(--r);background:#111}.nw-story-media{position:absolute;inset:0;overflow:hidden;background-size:cover!important;background-position:center!important;opacity:0;scale:calc(var(--nw-ps,1)*1.035);transition:opacity .55s ease,scale 1.1s cubic-bezier(.2,.8,.2,1)}.nw-story-media>img{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover}.nw-story-media.is-active{opacity:1;scale:var(--nw-ps,1)}.nw-story-visual>span{position:absolute;inset:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);border-radius:inherit;pointer-events:none}.nw-story-copy{position:relative;min-height:310px;display:grid;align-items:center}.nw-story-step{grid-area:1/1;opacity:0;translate:0 24px;pointer-events:none;transition:opacity .4s ease,translate .55s cubic-bezier(.2,.8,.2,1)}.nw-story-step.is-active{opacity:1;translate:0 0;pointer-events:auto}.nw-story-step>b{font-size:10px;letter-spacing:.16em;color:var(--ac)}.nw-story-step h3{margin:16px 0 12px;font-size:clamp(38px,6cqw,78px);line-height:.92;letter-spacing:-.045em}.nw-story-step p{margin:0;max-width:42ch;line-height:1.55;opacity:.7}.nw-story-progress{position:absolute;left:0;right:0;bottom:-34px;height:2px;background:color-mix(in srgb,var(--fg) 16%,transparent)}.nw-story-progress i{display:block;width:calc(var(--storyP,0)*100%);height:100%;background:var(--ac)}@container (max-width:720px){.nw-story [data-wpart]{translate:var(--nw-mx,var(--nw-tx,0px)) var(--nw-my,var(--nw-ty,0px));rotate:var(--nw-mr,var(--nw-pr,0deg));scale:var(--nw-ms,var(--nw-ps,1))}.nw-story-media.is-active{scale:var(--nw-ms,var(--nw-ps,1))}.nw-story-media:not(.is-active){scale:calc(var(--nw-ms,var(--nw-ps,1))*1.035)}.nw-story-sticky{grid-template-columns:1fr;grid-template-rows:56vh auto;align-content:center}.nw-story--right .nw-story-visual{order:0}.nw-story-copy{min-height:220px}}';
- function run(){scwBoot('__nwScrollStory16','.nw-story',function(el){var cards=el.querySelectorAll('.nw-story-step'),media=el.querySelectorAll('.nw-story-media'),busy=0;function upd(){busy=0;if(window.SC_EDIT&&el.__nwStoryManual)return;var r=el.getBoundingClientRect(),span=Math.max(1,r.height-innerHeight),p=Math.max(0,Math.min(.999,-r.top/span)),idx=Math.min(cards.length-1,Math.floor(p*cards.length));for(var i=0;i<cards.length;i++){cards[i].classList.toggle('is-active',i===idx);if(media[i])media[i].classList.toggle('is-active',i===idx);}el.style.setProperty('--storyP',p);}function req(){if(!busy){busy=1;requestAnimationFrame(upd);}}upd();addEventListener('scroll',req,{passive:true});addEventListener('resize',req);});}
+ // Escena de altura automática para Historia sticky en lienzo libre,
+ // sin cambiar las escenas libres que no contienen esta composición.
+ css+='.sc.free:has(> .inner > .el.wk-scrollstory){min-height:0!important;display:block}'+
+  '.sc.free:has(> .inner > .el.wk-scrollstory)>.inner{position:relative!important;inset:auto!important;display:block!important;width:100%!important;max-width:none!important}'+
+  '.sc.free:has(> .inner > .el.wk-scrollstory)>.inner>.el.wk-scrollstory{position:relative!important;left:auto!important;top:auto!important;transform:none!important;width:100%!important;margin:0!important}';
+ function run(){scwBoot('__nwScrollStory16','.nw-story',function(el){freeStickyRunway(el);var cards=el.querySelectorAll('.nw-story-step'),media=el.querySelectorAll('.nw-story-media'),busy=0;function upd(){busy=0;if(window.SC_EDIT&&el.__nwStoryManual)return;var r=el.getBoundingClientRect(),span=Math.max(1,r.height-innerHeight),p=Math.max(0,Math.min(.999,-r.top/span)),idx=Math.min(cards.length-1,Math.floor(p*cards.length));for(var i=0;i<cards.length;i++){cards[i].classList.toggle('is-active',i===idx);if(media[i])media[i].classList.toggle('is-active',i===idx);}el.style.setProperty('--storyP',p);}function req(){if(!busy){busy=1;requestAnimationFrame(upd);}}upd();addEventListener('scroll',req,{passive:true});addEventListener('resize',req);});}
  X.reg('scrollstory',def,css,RT(scwBoot,run));
 })();
 
@@ -588,19 +607,7 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
   scwBoot('__nwKineticStrip16Parts','.nw-ks',function(el){
    var track=el.querySelector('.nw-ks-track'),clip=el.querySelector('.nw-ks-clip'),busy=0;
    if(!track||!clip)return;
-   // Lienzo libre no extendía su altura por widgets absolutos.
-   // Reservar el recorrido sticky y mantener la posición de las otras piezas.
-   var wrapper=el.closest('.el.wdg.wk-kineticstrip'),
-       inner=wrapper&&wrapper.parentElement,scene=inner&&inner.parentElement;
-   if(inner&&inner.classList.contains('inner')&&scene&&scene.classList.contains('free')){
-    var originalVH=Math.max(1,parseFloat(scene.style.minHeight)||100);
-    Array.prototype.forEach.call(inner.children,function(node){
-     if(node===wrapper||!node.classList.contains('el'))return;
-     var y=Number(node.getAttribute('data-y'));
-     if(node.hasAttribute('data-y')&&isFinite(y))
-      node.style.top=(originalVH*y/100).toFixed(3)+'vh';
-    });
-   }
+   freeStickyRunway(el);
    function upd(){
     busy=0;var r=el.getBoundingClientRect(),span=Math.max(1,r.height-innerHeight),
      p=Math.max(0,Math.min(1,-r.top/span)),
