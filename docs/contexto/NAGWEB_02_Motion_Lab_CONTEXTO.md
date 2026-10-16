@@ -2,6 +2,14 @@
 
 > **Ficha de continuidad de producto, decisiones y referencias.** Actualizada 11/10/2026 a partir de documentos y ramas comprobadas. No reemplaza el código ni el historial Git. Toda cifra de estado es una **fotografía** y hay que verificar cambios posteriores.
 
+## Estado de entrega V1.0 — 16/10/2026
+
+**Motion Lab 1.0 completó su cierre técnico.** La ejecución de GitHub Actions [38773569183](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38773569183) terminó con **55 de 55 suites aprobadas** sobre el código [`7fe46a03`](https://github.com/decrackpichon-gif/NagWeb/commit/7fe46a033943b5979927d692f490b7de5f4ca72b). La falla de píxeles transparentes en la prueba de Showcase Stream se resolvió al comprobar el compositor visible correcto. No quedan bloqueantes automatizados conocidos en esa revisión.
+
+**Entrega y pasos de aceptación:** [`docs/contexto/NAGWEB_02_ENTREGA_V1.0.md`](./NAGWEB_02_ENTREGA_V1.0.md). Incluye acceso desde GitHub Desktop, recorrido funcional y prueba manual de seis pasos. La revisión manual del usuario puede identificar defectos reales de dispositivo o experiencia no cubiertos por las pruebas, pero no justifica ampliar el alcance. **Congeladas las funciones de V1.0; avanzar únicamente ante un defecto bloqueante reproducible o con autorización para V1.1+.**
+
+Este estado sustituye los «pendientes de CI» y planes de expansión históricos que aparezcan más abajo. No se hizo merge ni despliegue Vercel.
+
 ## Directiva máxima de producción: versión 1.0 primero (15/10/2026)
 
 **Decisión general del usuario, prioritaria también para este frente:** terminar una V1.0 **estable, funcional y entregable**, en el menor tiempo y con la menor cantidad de trabajo innecesario. Congelar el alcance en el recorrido esencial, resolver bloqueantes reales de manera transversal, ejecutar la comprobación final pertinente y **cerrar la versión**. No proponer nuevas funciones, recursos, efectos, opciones, controles ni tareas de pulido no bloqueantes antes del cierre; registrarlas como V1.1+.
