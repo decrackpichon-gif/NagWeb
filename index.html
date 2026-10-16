@@ -18255,7 +18255,7 @@ function mobBanner(o, isSec){
   if(!viewMobile) return '';
   return `<div class="mob-banner">📱 Estás editando la versión para <b>celular</b>.<br>
     <span>Posición, ancho, rotación, alto${isSec ? ', alineación' : ''} y tamaño de letra se guardan <b>solo para celular</b> (los marcados "solo celular"). Textos, colores, estilos y animaciones son los mismos en las dos versiones.</span>
-    ${o ? `<div class="row" style="margin-top:7px"><button class="btn tiny" data-act="${isSec ? 'mob-reset-sec' : 'mob-reset'}">↺ ${isSec ? 'Esta sección' : 'Este elemento'}: volver a como está en compu</button></div>` : ''}</div>`;
+    ${o ? `<div class="row" style="margin-top:7px"><button class="btn tiny" data-act="${isSec ? 'mob-reset-sec' : 'mob-reset'}">↺ ${isSec ? 'Esta sección' : 'Este elemento'}: volver a como está en compu</button><button class="btn tiny" data-act="mob-reset-all" title="Quita todos los ajustes de celular de los elementos y de sus partes internas de esta escena">↺ Toda la escena: restaurar diseño celular</button></div>` : ''}</div>`;
 }
 /* marca en los rótulos qué campos se guardan aparte para celular */
 function decorateMobileFields(){
@@ -18933,6 +18933,18 @@ function doAct(act){
     }
     case 'mob-reset-sec': {
       snapshot(); s.mobile = {}; refresh(); break;
+    }
+    case 'mob-reset-all': {
+      if(!viewMobile)return;
+      // Restauración integral, no confundir la opción «Este elemento»
+      // con restaurar el orden/posición de TODA la escena de celular.
+      const hasChanges=Object.keys(s.mobile||{}).length||s.elements.some(e=>
+        Object.keys(e.mobile||{}).length||(e.wp&&Object.keys(e.wp.__partsMobile||{}).length));
+      if(!hasChanges){toast('Esta escena ya hereda el diseño de computadora.');break;}
+      snapshot();s.mobile={};
+      s.elements.forEach(e=>{e.mobile={};if(e.wp&&e.wp.__partsMobile)e.wp.__partsMobile={};});
+      refresh();toast('Restaurado todo el diseño de celular de esta escena; compu no cambió.');
+      break;
     }
     case 'mob-stack': {
       snapshot(); mobileStack(s); refresh();
