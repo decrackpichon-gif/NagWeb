@@ -42,6 +42,20 @@
 - **Collage editorial:** confuso su propósito, usuario informa arrastre de fotos incluso publicado; describir composición editorial estática e investigar diferencia entre editor y HTML exportado. Un test automatizado no reprodujo movimiento en HTML; no invalidar la experiencia.
 - **Cinta cinética:** se iba de pantalla al avanzar el scroll; se reprodujo y corrigió el caso Lienzo libre en `d1c072`, confirmado en Actions `38943321838`. No asumir aceptación manual hasta que el usuario lo pruebe.
 
+## Avance técnico sobre los reportes (16/10/2026)
+
+**Importante:** corrección implementada no equivale a aceptación manual. La V1.0 sigue **NO ACEPTADA** hasta comprobar los resultados en uso real. La batería completa de GitHub Actions para el último commit funcional se encuentra en <https://github.com/decrackpichon-gif/NagWeb/actions/runs/38952544279> y debe verificarse antes de presentarla como aprobada.
+
+- **#1:** `bb3725a`: Shift + arrastre del tirador de un texto cambia proporcionalmente caja/tamaño de letra; sin Shift modifica caja. Regresión de gesto con Chromium en `.github/nagweb-editor-reported-smoke.mjs` aprobó en ejecuciones intermedias.
+- **#2:** `bb3725a`: corregido el atributo `data-x/y/w/rot` del nodo al terminar el arrastre; segundo drag A→B→C probado con punteros reales en Chromium.
+- **#3:** `a2fdb90`, `38d29b1`, `26df435`: inspector `Capas del Hero` arrastrable para fotografías y textos, z-index en piezas de texto sin contexto de apilamiento superior, orden móvil independiente y restablecimiento de orden móvil. Regresión en `nagweb-editor-reported-smoke.mjs`; pendiente inspección manual de composición visual.
+- **#4:** `3c97c3f`: además de restaurar un elemento, opción `Toda la escena: restaurar diseño celular` que elimina las posiciones móviles de elementos y partes internas, sin tocar desktop. Prueba específica añadida en `635edceb`. El significado del viejo botón individual ahora queda diferenciado.
+- **#5:** `2142907`, `3e7ffcb`, `f8a2a09`: corregida geometría sticky de Historia dentro de Lienzo libre mediante el mismo contrato de Cinta cinética; runtime exportado incluye helper. Chromium verificó pantalla pegada y cambio de capítulos en escenas flow/free en ejecuciones anteriores; falta aceptación manual de arrastre interno.
+- **#6:** `3f257a9`: seleccionar un keyframe o hacer clic en la línea de tiempo cambia automáticamente a `Momento de la escena`, activando los tiradores existentes que crean o alteran ese momento sin modificar el diseño base. La UI previa tenía este modo pero quedaba en Diseño base, explicando el comportamiento observado. Regresión de timeline actualizada en `aa2db31`. Debe comprobarse visualmente manipulación, rotación y tamaño en momentos 0 y 50%.
+- **#7:** `bb3725a`: aviso persistente de fallo de cuota y botón de respaldo JSON directo, indicando que F5 perdería cambios no persistidos. Importar JSON indica proyecto/páginas abiertos y distingue carga en memoria de almacenamiento persistido. Smoke de cuota y exportación aprobó en ejecuciones anteriores, con prueba `release-smoke` adaptada en `3f257a9`. Aun es necesaria aceptación manual con su imagen real grande.
+
+No añadir funciones de catálogo a V1.0. No pedir repetir las siete pruebas: el usuario ya informó todos los resultados completos y este archivo contiene su detalle.
+
 ## Protocolo sin pérdida de reportes
 1. No pedir al usuario que vuelva a completar checklist; **este documento contiene todo el informe recibido**.
 2. No usar formularios de estado local efímero. Incorporar futuros reportes que el usuario envíe en texto o adjuntos aquí.
