@@ -46,6 +46,8 @@ export async function runStorytellingSmoke(page){
  });
  await page.waitForFunction(()=>document.querySelector('#preview')?.contentWindow?.__NAG_SCROLL_DIRECTOR?.['story-scene']);
  assert.ok(await page.evaluate(()=>!!window.NAGWEB_STORY_TIMELINE_UI));
+ // Comparar el diseño base desde un estado explícito, no de localStorage previo.
+ await page.evaluate(()=>NAGWEB_STORY_EDITOR.setCanvasMode('base'));
 
  // La Timeline mantiene contexto y jerarquía aunque la pista crezca con zoom.
  const timelineUx=await page.evaluate(()=>{
@@ -81,6 +83,7 @@ export async function runStorytellingSmoke(page){
  const uxLabels=await page.evaluate(()=>{
   const e=sec().elements[0],first=NAGWEB_STORY_EDITOR.frames(e)[0];
   NAGWEB_STORY_EDITOR.select('story-text',first.id);
+  if(NAGWEB_STORY_EDITOR.canvasMode()!=='moment')throw Error('Seleccionar keyframe debe activar la edición del momento');
   const p=document.getElementById('pane').innerText;
   return{
    x:NAGWEB_STORY_MODEL.properties.x.label,
