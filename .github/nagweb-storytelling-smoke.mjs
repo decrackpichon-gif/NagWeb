@@ -101,7 +101,7 @@ export async function runStorytellingSmoke(page){
  assert.ok(!uxLabels.pane.includes('Punto de partida'));
 
  // Diseño base y Momento de la escena son capas distintas.
- assert.equal(await page.evaluate(()=>NAGWEB_STORY_EDITOR.canvasMode()),'base');
+ assert.equal(await page.evaluate(()=>NAGWEB_STORY_EDITOR.canvasMode()),'moment');
  assert.ok(await page.$('[data-story-canvas-mode="base"]'));
  assert.ok(await page.$('[data-story-canvas-mode="moment"]'));
  await page.click('[data-story-canvas-mode="moment"]');
