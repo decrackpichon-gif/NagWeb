@@ -7,6 +7,7 @@ import {runStorytellingSmoke} from './nagweb-storytelling-smoke.mjs';
 import {runCompositionSmoke} from './nagweb-composition-smoke.mjs';
 import {runEditorPartsSmoke} from './nagweb-editor-parts-smoke.mjs';
 import {runReleaseSmoke} from './nagweb-release-smoke.mjs';
+import {runKineticAcceptanceSmoke} from './nagweb-kinetic-acceptance.mjs';
 import {runHistorySmoke} from './nagweb-history-smoke.mjs';
 import {runLegacySmoke} from './nagweb-legacy-smoke.mjs';
 import {runTransparentSmoke} from './nagweb-transparent-smoke.mjs';
@@ -222,6 +223,7 @@ if(workspaceState.leftToggles!==1||workspaceState.rightToggles!==1) throw new Er
 if(Math.abs(workspaceState.rightWidth-savedInspectorWidth)>3) throw new Error('Inspector width did not survive reload: '+JSON.stringify({workspaceState,savedInspectorWidth}));
 await page.click('.nw-dock-toggle.left');
 
+await runKineticAcceptanceSmoke(page);
 await runReleaseSmoke(page);
 await runMotionStreamPlacementSmoke(page);
 await runMotionStreamSmoke(page);
