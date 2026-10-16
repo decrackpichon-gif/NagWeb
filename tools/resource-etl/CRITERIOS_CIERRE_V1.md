@@ -37,3 +37,11 @@ Estos temas **no se eliminan de la visión original**: quedan para el desarrollo
 ## Reglas de ejecución para el próximo «Avanza»
 
 Ir directamente al primer bloqueo pendiente en el HEAD actual; realizar cambios agrupados, una verificación integral proporcional y preferiblemente un commit funcional. Si las pruebas quedan verdes, pasar a aceptación y entrega **sin reabrir alcance**. No reconstruir trabajo hecho, no más recuentos de etapas arbitrarios, no commits ceremoniales. No hacer merges, no desplegar Vercel, no modificar otros proyectos.
+
+## Cierre técnico comprobado (16/10/2026)
+
+- **Código estable de referencia:** `dfcd35edf072b6f4f6362374db0c94691137aec9` (rama exclusiva `feat/resource-etl-v1`).
+- **CI integral:** https://github.com/decrackpichon-gif/NagWeb/actions/runs/38777181423 — `success`. Aprobados los cuatro trabajos: Self test, Chromium Linux, Chromium Windows y Windows smoke. Las capturas/informes están adjuntos a esa ejecución. El doble clic SVG, selección sin alterar ancho/historial, menú contextual y recorridos reales ya superan ambos Chromium.
+- **Catálogo:** `Resource Vault Verified Browse Index` success https://github.com/decrackpichon-gif/NagWeb/actions/runs/38749871198 . Índice publicado con 6762 recursos, 6041 clasificados como nativos por sus adaptadores y 721 de consulta/código; no se recompilaron ni cambiaron sus cinco snapshots.
+- **Resultado:** **V1.0 técnicamente validada y candidata de entrega.** No hay bloqueantes automáticos conocidos. La revisión manual breve en Windows por el usuario, según la guía, sigue pendiente: sin ella no afirmar «aceptación manual completada» ni publicar tag/merge/despliegue como definitivo.
+- **Instrucciones y límites de la candidata:** `docs/contexto/NAGWEB_05_ENTREGA_V1.0.md`. No añadir funcionalidades mientras se realiza aceptación; si se confirma, declarar V1.0 entregada en la misma rama y, si se pide, crear etiqueta específica `NAGWEB-05-v1.0` sin mezclar proyectos.

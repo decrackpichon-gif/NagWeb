@@ -433,3 +433,11 @@ Se recuperaron de los **importadores reales** las direcciones de 17 proveedores 
 - El test separa la verificación del manejador `Alt+Enter` (evento de teclado sobre el botón en Windows, atajo físico en Linux) de la activación accesible estándar con `Enter` que funciona sin ese atajo. El botón anuncia `aria-keyshortcuts="Alt+Enter"`.
 - CSSShake recibe una comprobación visual de `animation-name` en Hover/Siempre, y los diez nombres upstream se prueban como variantes nativas tanto en Hover como en Siempre. Las nuevas variantes no auditadas siguen siendo «Solo código».
 - La guía `NAGWEB_05_GUIA_PRUEBA_Y_ALCANCE.md` documenta prueba manual y la diferencia entre el hito estable y el objetivo completo. No declarar Windows aprobado hasta revisar la CI del commit final. Sin deploy Vercel ni merges.
+
+## Cierre técnico comprobado (16/10/2026)
+
+- **Código estable de referencia:** `dfcd35edf072b6f4f6362374db0c94691137aec9` (rama exclusiva `feat/resource-etl-v1`).
+- **CI integral:** https://github.com/decrackpichon-gif/NagWeb/actions/runs/38777181423 — `success`. Aprobados los cuatro trabajos: Self test, Chromium Linux, Chromium Windows y Windows smoke. Las capturas/informes están adjuntos a esa ejecución. El doble clic SVG, selección sin alterar ancho/historial, menú contextual y recorridos reales ya superan ambos Chromium.
+- **Catálogo:** `Resource Vault Verified Browse Index` success https://github.com/decrackpichon-gif/NagWeb/actions/runs/38749871198 . Índice publicado con 6762 recursos, 6041 clasificados como nativos por sus adaptadores y 721 de consulta/código; no se recompilaron ni cambiaron sus cinco snapshots.
+- **Resultado:** **V1.0 técnicamente validada y candidata de entrega.** No hay bloqueantes automáticos conocidos. La revisión manual breve en Windows por el usuario, según la guía, sigue pendiente: sin ella no afirmar «aceptación manual completada» ni publicar tag/merge/despliegue como definitivo.
+- **Instrucciones y límites de la candidata:** `docs/contexto/NAGWEB_05_ENTREGA_V1.0.md`. No añadir funcionalidades mientras se realiza aceptación; si se confirma, declarar V1.0 entregada en la misma rama y, si se pide, crear etiqueta específica `NAGWEB-05-v1.0` sin mezclar proyectos.
