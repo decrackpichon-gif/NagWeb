@@ -71,7 +71,9 @@ function selectElement(id,add){
 }
 function selectKey(id,key,render){
  var e=element(id),k=e&&frames(e).find(function(k){return k.id===key;});if(!k)return;
- selectElement(id,false);selected={element:id,key:key};D.scrub(storySec(e).id,k.at/100);
+ selectElement(id,false);selected={element:id,key:key};
+ // Elegir un keyframe significa editar ESE momento, no el diseño base.
+ canvasMode='moment';saveCanvasMode();D.scrub(storySec(e).id,k.at/100);syncCanvasTools();
  if(render!==false){renderPane();var b=pane.querySelector('[data-sd-key="'+key+'"]');if(b)b.focus({preventScroll:true});}
 }
 function bounds(list,index){return[index?list[index-1].at+.1:0,index<list.length-1?list[index+1].at-.1:100];}
@@ -254,6 +256,9 @@ pane.addEventListener('click',function(ev){
  if(scrubSurface&&!ev.target.closest('[data-sd-key],[data-sd-edge]')){
   var rr=scrubSurface.getBoundingClientRect(),pct=M.clamp((ev.clientX-rr.left)/Math.max(1,rr.width),0,1);
   D.scrub(storySec().id,pct);
+  // Hacer clic en la línea de tiempo prepara la edición visual por momento.
+  // En ausencia de keyframe exacto, el siguiente gesto crea uno a ese porcentaje.
+  if(canvasMode!=='moment'){canvasMode='moment';saveCanvasMode();renderPane();syncCanvasTools();}
   return;
  }
  var dockBtn=ev.target.closest('[data-story-tl-dock]');

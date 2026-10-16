@@ -88,7 +88,7 @@ export async function runReleaseSmoke(page){
    transfer.items.add(new File([data],'respaldo-v1.json',{type:'application/json'}));
    input.files=transfer.files;input.dispatchEvent(new Event('change',{bubbles:true}));
   },exported.files[0].text);
-  await page.waitForFunction(()=>document.getElementById('toast').textContent==='Proyecto abierto.');
+  await page.waitForFunction(()=>document.getElementById('toast').textContent.startsWith('Proyecto abierto:'));
   const imported=await page.evaluate(()=>JSON.parse(JSON.stringify(project)));
   // El importador normaliza campos opcionales de proyectos antiguos y nuevos.
   // La igualdad relevante en V1.0 es la del contenido y la estructura, no
