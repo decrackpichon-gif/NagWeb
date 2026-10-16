@@ -77,6 +77,43 @@ export async function runReportedEditorSmoke(page){
   assert.match(unsaved.button,/Descargar respaldo/);
   assert.equal(unsaved.repaired,true);
   assert.equal(unsaved.stillVisible,false,'aviso desaparece tras guardar exitosamente');
+
+  // Incidencias #3 y #4: todas las capas del Hero (texto/foto) se ordenan
+  // desde inspector, y móvil puede tener otro orden y restablecerlo.
+  const layers=await page.evaluate(()=>{
+   const actor=mkEl('widget',{id:'qa-hero-layer-order',wk:'layeredhero',wp:{title:'NAGWEB',eyebrow:'PRUEBA',sub:'Capas',texts:[{text:'Otra línea',style:'body'}]}});
+   sec().elements.push(actor);
+   curEl=sec().elements.length-1;selection=[actor.id];secFocus=false;curPane='elements';
+   renderPane();
+   const pane=document.getElementById('pane'),box=pane.querySelector('[data-hero-layers]');
+   if(!box)throw Error('No aparece Capas del Hero en inspector');
+   const names=[...box.querySelectorAll('[data-hero-layer]')].map(n=>n.dataset.heroLayer);
+   const move=(from,to)=>{
+    const src=box.querySelector('[data-hero-layer="'+from+'"]'),
+     dest=box.querySelector('[data-hero-layer="'+to+'"]'),transfer=new DataTransfer();
+    src.dispatchEvent(new DragEvent('dragstart',{bubbles:true,dataTransfer:transfer}));
+    dest.dispatchEvent(new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer:transfer}));
+   };
+   move('layer-1','title');
+   const desktop={image:actor.wp.__parts['layer-1']?.z,title:actor.wp.__parts.title?.z};
+   const temp=document.createElement('template');
+   temp.innerHTML=SCW.kinds.layeredhero.markup(actor.wp,{edit:false});
+   const exportTextZ=temp.content.querySelector('[data-wpart="title"]')?.style.getPropertyValue('--nw-z');
+   viewMobile=true;renderPane();
+   const mob=document.querySelector('#pane [data-hero-layers]'),mobileNames=[...mob.children].map(n=>n.dataset.heroLayer);
+   const src=mob.querySelector('[data-hero-layer="title"]'),dest=mob.querySelector('[data-hero-layer="layer-1"]'),transfer=new DataTransfer();
+   src.dispatchEvent(new DragEvent('dragstart',{bubbles:true,dataTransfer:transfer}));
+   dest.dispatchEvent(new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer:transfer}));
+   const mobile={image:actor.wp.__partsMobile['layer-1']?.z,title:actor.wp.__partsMobile.title?.z};
+   document.querySelector('#pane [data-hero-reset-order]').click();
+   const reset={image:actor.wp.__partsMobile['layer-1']?.z,title:actor.wp.__partsMobile.title?.z};
+   return{names,desktop,exportTextZ,mobile,mobileNames,reset};
+  });
+  assert.ok(layers.names.includes('text-extra-0')&&layers.names.includes('eyebrow'),'lista incluye textos adicionales');
+  assert.ok(layers.desktop.image>layers.desktop.title,'imagen puede quedar sobre texto en desktop');
+  assert.equal(Number(layers.exportTextZ),layers.desktop.title,'exportación conserva orden de textos');
+  assert.ok(layers.mobile.title>layers.mobile.image,'orden móvil independiente');
+  assert.equal(layers.reset.image,undefined);assert.equal(layers.reset.title,undefined);
   console.log('Incidencias 1/2/7: Shift escala texto, dos arrastres A-B-C, alerta de cuota y recuperación OK');
  } finally {
   await page.evaluate(prev=>{
