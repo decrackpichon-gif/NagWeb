@@ -17676,8 +17676,8 @@ ${edit ? `
 })();
 <\/script>${modulesJS(usedKinds, usesShader, edit)}${lgUsed(allSecs) ? lgRuntimeJS() : ''}${!edit && p._inEditor ? `
 <script>document.addEventListener('keydown',function(e){var c=e.ctrlKey||e.metaKey;if((e.key==='Escape'&&!document.querySelector('.sc-modal:not(.is-closed)'))||(c&&(e.key==='p'||e.key==='P'))){e.preventDefault();parent.postMessage({sc:true,type:'key',key:e.key,code:e.code,ctrl:c,shift:e.shiftKey,alt:e.altKey},'*');}});<\/script>` : ''}${!edit && p.customBody ? '\n' + p.customBody : ''}
-</body>
-</html>`;
+<\/body>
+<\/html>`;
 }
 
 /* ============================== UI ============================== */
