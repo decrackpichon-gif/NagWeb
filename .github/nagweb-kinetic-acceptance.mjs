@@ -41,6 +41,42 @@ export async function runKineticAcceptanceSmoke(page){
   assert.ok(Math.abs(parseFloat(res.at75.trackX)-parseFloat(res.at25.trackX))>100,'Cinta '+mode+' recorre tarjetas');
   await page.evaluate(()=>document.querySelector('#nw-accept-public').remove());
  }
+
+ // Historia sticky tiene exactamente el mismo error de geometría en Lienzo libre:
+ // su widget absoluto no debe salirse mientras avanzan sus tres capítulos.
+ for(const mode of ['flow','free']){
+  await page.evaluate(mode=>{
+   const actor=mkEl('widget',{id:'nw-accept-sticky-story',wk:'scrollstory',w:100,x:50,y:50,wp:{length:300}});
+   const scene=mkSection({id:'nw-accept-story-scene',layout:mode,height:100,elements:[actor]});
+   const tail=mkSection({id:'nw-accept-story-tail',height:120,elements:[mkEl('heading',{text:'Última escena'})]});
+   const frame=document.createElement('iframe');frame.id='nw-accept-story-public';
+   frame.style.cssText='width:1000px;height:600px;border:0;display:block';
+   frame.srcdoc=generateSite({...flattenPage(page()),sections:[scene,tail]},false,false,false);
+   document.body.append(frame);
+  },mode);
+  await page.waitForFunction(()=>!!document.querySelector('#nw-accept-story-public')?.contentDocument?.querySelector('.nw-story-sticky'),{timeout:20000});
+  const samples=await page.evaluate(async()=>{
+   const frame=document.querySelector('#nw-accept-story-public'),w=frame.contentWindow,d=frame.contentDocument,
+    root=d.querySelector('.nw-story'),sticky=d.querySelector('.nw-story-sticky');
+   let samples=[];
+   for(const progress of [.25,.5,.75]){
+    const r=root.getBoundingClientRect(),start=w.scrollY+r.top,span=Math.max(1,r.height-w.innerHeight);
+    w.scrollTo(0,start+span*progress);
+    await new Promise(done=>w.requestAnimationFrame(()=>w.requestAnimationFrame(done)));
+    const box=sticky.getBoundingClientRect(),active=d.querySelectorAll('.nw-story-step.is-active');
+    samples.push({progress,top:box.top,rootHeight:root.getBoundingClientRect().height,
+     chapter:active.length,scrolled:w.scrollY});
+   }
+   return{samples,documentHeight:d.documentElement.scrollHeight};
+  });
+  for(const result of samples.samples){
+   assert.ok(Math.abs(result.top)<24,'Historia '+mode+' permanece visible en '+result.progress);
+   assert.equal(result.chapter,1,'Historia '+mode+' presenta un capítulo activo');
+  }
+  assert.ok(samples.documentHeight>2000,'Historia '+mode+' conserva pista de scroll');
+  console.log('Historia sticky '+mode+': capítulos y fijación del escenario OK');
+  await page.evaluate(()=>document.querySelector('#nw-accept-story-public').remove());
+ }
  await page.evaluate(()=>{
   const w=mkEl('widget',{id:'nw-accept-collage',wk:'editorialcollage',w:90,wp:{label:'Portfolio',caption:'Tres imágenes'}});
   const sc=mkSection({id:'nw-accept-collage-scene',layout:'flow',elements:[w]});
