@@ -7,6 +7,7 @@ import {runStorytellingSmoke} from './nagweb-storytelling-smoke.mjs';
 import {runCompositionSmoke} from './nagweb-composition-smoke.mjs';
 import {runEditorPartsSmoke} from './nagweb-editor-parts-smoke.mjs';
 import {runReleaseSmoke} from './nagweb-release-smoke.mjs';
+import {runReportedEditorSmoke} from './nagweb-editor-reported-smoke.mjs';
 import {runKineticAcceptanceSmoke} from './nagweb-kinetic-acceptance.mjs';
 import {runHistorySmoke} from './nagweb-history-smoke.mjs';
 import {runLegacySmoke} from './nagweb-legacy-smoke.mjs';
@@ -224,6 +225,7 @@ if(Math.abs(workspaceState.rightWidth-savedInspectorWidth)>3) throw new Error('I
 await page.click('.nw-dock-toggle.left');
 
 await runKineticAcceptanceSmoke(page);
+await runReportedEditorSmoke(page);
 await runReleaseSmoke(page);
 await runMotionStreamPlacementSmoke(page);
 await runMotionStreamSmoke(page);
