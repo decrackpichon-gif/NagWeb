@@ -441,3 +441,9 @@ Se recuperaron de los **importadores reales** las direcciones de 17 proveedores 
 - **Catálogo:** `Resource Vault Verified Browse Index` success https://github.com/decrackpichon-gif/NagWeb/actions/runs/38749871198 . Índice publicado con 6762 recursos, 6041 clasificados como nativos por sus adaptadores y 721 de consulta/código; no se recompilaron ni cambiaron sus cinco snapshots.
 - **Resultado:** **V1.0 técnicamente validada y candidata de entrega.** No hay bloqueantes automáticos conocidos. La revisión manual breve en Windows por el usuario, según la guía, sigue pendiente: sin ella no afirmar «aceptación manual completada» ni publicar tag/merge/despliegue como definitivo.
 - **Instrucciones y límites de la candidata:** `docs/contexto/NAGWEB_05_ENTREGA_V1.0.md`. No añadir funcionalidades mientras se realiza aceptación; si se confirma, declarar V1.0 entregada en la misma rama y, si se pide, crear etiqueta específica `NAGWEB-05-v1.0` sin mezclar proyectos.
+
+## Aceptación Windows simplificada (16/10/2026)
+
+- Se preparó el iniciador de doble clic `PROBAR_NAGWEB_05_WINDOWS.bat` y un servidor HTTP local sin npm (`tools/resource-etl/src/editor-acceptance-server.mjs`) para que la prueba manual del editor integrado no requiera comandos, Live Server ni Vercel. Requiere Node 20+ y el ZIP completo de la rama.
+- El selftest de HTTP se integra en `npm test` para Linux y Windows CI. Esta herramienta no modifica el código del editor ni el Vault persistente; la CI anterior validó el editor en `dfcd35e`. Revisar la CI de este nuevo commit antes de confirmar también el iniciador.
+- **Sigue pendiente exclusivamente la aceptación manual representativa del usuario**, descrita en `NAGWEB_05_ENTREGA_V1.0.md`. No declarar cierre final ni publicar tag hasta recibirla; no añadir recursos nuevos como requisito.

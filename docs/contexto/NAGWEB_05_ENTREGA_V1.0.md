@@ -10,18 +10,16 @@
 - **Última publicación comprobada del índice derivado:** https://github.com/decrackpichon-gif/NagWeb/actions/runs/38749871198 (`success`).
 - **Separación:** `resource-vault-data` almacena los snapshots de catálogo y no debe fusionarse con la rama de código. El uso de la Biblioteca puede descargar del Vault al abrir un recurso por primera vez.
 
-## Cómo abrir el editor integrado en Windows
+## Cómo abrir el editor integrado en Windows (doble clic)
 
-1. En **GitHub Desktop**, seleccionar el repositorio `NagWeb` y cambiar a la rama **`feat/resource-etl-v1`**. Hacer **Fetch origin** / **Pull origin** hasta tener el último commit de esta rama, y elegir **Repository → Open in Command Prompt** (o abrir una terminal en la raíz de `NagWeb`).
-2. Comprobar que está instalado **Node.js**: ejecutar `node --version`. Si no se reconoce, instalar Node.js desde https://nodejs.org/ . No se necesita Python.
-3. Desde la **carpeta raíz de NagWeb**, ejecutar:
+1. Descargá el ZIP completo de la [rama exclusiva feat/resource-etl-v1](https://github.com/decrackpichon-gif/NagWeb/archive/refs/heads/feat/resource-etl-v1.zip), descomprimilo y abrí la carpeta extraída. Si ya usás GitHub Desktop, podés simplemente cambiar a esa rama y hacer Pull.
+2. Verificá que tenés **Node.js 20 o posterior** instalado. Si falta, descargalo de https://nodejs.org/ (no hace falta npm install, Live Server ni Python).
+3. **Doble clic en `PROBAR_NAGWEB_05_WINDOWS.bat`**, ubicado junto al `index.html`. Esperá a que se abra el navegador predeterminado. Si no se abre, copiá la dirección `http://127.0.0.1:8000/` que muestra la ventana (el programa elige el siguiente puerto libre cuando 8000 está ocupado).
+4. Dejá la ventana del servidor abierta, creá una escena en NagWeb y pulsá **Biblioteca**. Al terminar, cerrá la ventana del servidor.
 
-   ```powershell
-   npx --yes http-server . -a 127.0.0.1 -p 8000 -c-1
-   ```
+El iniciador solamente sirve archivos desde tu computadora en `127.0.0.1`; no descarga librerías, no despliega Vercel ni modifica proyectos. No abras `index.html` con doble clic directamente (`file://`): el editor necesita HTTP para módulos e iframes.
 
-   La primera ejecución de `npx` puede descargar el pequeño servidor desde npm. Mantener esa terminal abierta mientras se prueba. Si el puerto está ocupado, sustituir `8000` por `8001`.
-4. Abrir **http://127.0.0.1:8000/** en Chrome o Edge. Elegir/crear una escena, y usar el botón **Biblioteca de recursos** para abrir la integración. No abrir `index.html` mediante `file://`: requiere HTTP para módulos, iframe y caché.
+**Alternativa sin el nuevo iniciador:** desde la raíz del repositorio, `npx --yes http-server . -a 127.0.0.1 -p 8000 -c-1`. Requiere descarga de `http-server` la primera vez.
 
 ## Aceptación manual mínima (una sola pasada)
 

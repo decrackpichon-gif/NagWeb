@@ -9,7 +9,7 @@
   "scripts": {
     "ingest": "node src/cli.mjs",
     "dry-run": "node src/cli.mjs --dry-run",
-    "test": "node src/selftest.mjs && node src/heroicons-selftest.mjs && node src/browse-lucide-selftest.mjs && node src/latest-search-selftest.mjs && node src/vault-refresh-selftest.mjs && node src/provider-lazy-selftest.mjs && node src/uiverse-shards-selftest.mjs && node src/editor-availability-selftest.mjs && node src/quick-preview-selftest.mjs && node src/offline-cache-selftest.mjs && node src/offline-shell-selftest.mjs",
+    "test": "node src/selftest.mjs && node src/heroicons-selftest.mjs && node src/browse-lucide-selftest.mjs && node src/latest-search-selftest.mjs && node src/vault-refresh-selftest.mjs && node src/provider-lazy-selftest.mjs && node src/uiverse-shards-selftest.mjs && node src/editor-availability-selftest.mjs && node src/quick-preview-selftest.mjs && node src/offline-cache-selftest.mjs && node src/offline-shell-selftest.mjs && node src/editor-acceptance-server-selftest.mjs",
     "test:browser": "node src/resource-browser-smoke.mjs",
     "vault": "node src/vault-cli.mjs",
     "vault:all": "node src/vault-cli.mjs --sources=lucide,heroicons,shadcn,magicui,motion-primitives,animxyz,threejs,hyperui,uiverse,csshake,magic-css,spinkit,glsl-noise --all",
