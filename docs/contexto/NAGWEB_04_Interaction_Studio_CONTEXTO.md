@@ -139,3 +139,12 @@ Se agregó navegación visual al constructor experimental: zoom 25–250 %, enca
 ### Avance V1.0 · Corrección de persistencia del personaje
 
 Implementado guardado de fuente embebida y restauración del renderer al importar la escena. El modelo mantiene el esquema V1. Se eliminó dependencia de blob URL para personaje y se añadieron guardas generacionales para evitar reemplazos por cargas antiguas; una carga/importación inválida conserva el proyecto existente. La prueba de navegador debe incluir recarga real y comparación del JSON íntegro, opciones de motor e influencia. Siguiente objetivo **único**: comprobar GitHub Actions y entregar kit V1.0 portable; solicitar test humano del candidato sin ampliar funcionalidades.
+
+
+### Candidato V1.0 · persistencia integral comprobada (16/10/2026)
+
+Commit funcional `4be94dd1cbfeebcba09a74af1930a465fe3527c3`: los recursos del personaje se guardan en `scene.character.source` como data URI portable. Aplicar proyecto desde JSON rehidrata análisis, textura y renderer, tamaño, preset, objetos y opciones de influencia. Una fuente inválida conserva la escena existente; se descartan cargas asíncronas obsoletas.
+
+GitHub Actions https://github.com/decrackpichon-gif/NagWeb/actions/runs/38905031406: SUCCESS, modelo, navegador Chromium (incluye cambio de imagen, exportación, recarga de página, reimportación y comprobación de identidad del JSON), y kit de prueba. El artefacto `interaction-studio-test-kit` ID `12048555244` se descargó como ZIP y pasó verificación de integridad (22 archivos). Para entrega del chat se expuso `NAGWEB_04_Interaction_Studio_V1_Candidato.zip`.
+
+**Estado:** candidata V1.0 lista para aceptación manual, NO declarar final todavía. Única validación pendiente: usuario carga su propio personaje (p. ej. `ponjita.png`), mueve el mouse, crea/modifica una escena, exporta el JSON a archivo local y vuelve a abrir el Composer importándolo. Confirmar movimiento fluido, ausencia de defectos graves y persistencia de imagen. Si pasa, se puede cerrar V1.0 sin nuevas funciones ni mejoras opcionales. No merge con estable ni despliegue Vercel salvo autorización.
