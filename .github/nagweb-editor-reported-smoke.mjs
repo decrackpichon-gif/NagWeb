@@ -114,6 +114,27 @@ export async function runReportedEditorSmoke(page){
   assert.equal(Number(layers.exportTextZ),layers.desktop.title,'exportación conserva orden de textos');
   assert.ok(layers.mobile.title>layers.mobile.image,'orden móvil independiente');
   assert.equal(layers.reset.image,undefined);assert.equal(layers.reset.title,undefined);
+  const sceneReset=await page.evaluate(()=>{
+   const actor=sec().elements.find(e=>e.id==='qa-hero-layer-order');
+   const img=sec().elements.find(e=>e.id==='qa-image-repeat');
+   const desktopX=img.x;
+   const original=JSON.stringify(actor.wp.__parts);
+   img.mobile={x:86,y:41};
+   actor.wp.__partsMobile={title:{x:20,y:0,r:0,s:1},'layer-1':{z:90,x:0,y:0,r:0,s:1}};
+   sec().mobile={height:175};
+   renderPane();
+   const btn=document.querySelector('#pane [data-act="mob-reset-all"]');
+   if(!btn)throw Error('No aparece restaurar diseño celular de toda la escena');
+   btn.click();
+   return{scene:sec().mobile,img:img.mobile,parts:actor.wp.__partsMobile,desktopX,
+    currentX:img.x,sameDesktop:JSON.stringify(actor.wp.__parts)===original};
+  });
+  assert.deepEqual(sceneReset.scene,{},'restaurar escena móvil quita ajustes de escena');
+  assert.deepEqual(sceneReset.img,{},'restaurar escena móvil quita posiciones de elementos');
+  assert.deepEqual(sceneReset.parts,{},'restaurar escena móvil quita posiciones y órdenes internos del Hero');
+  assert.equal(sceneReset.currentX,sceneReset.desktopX,'restaurar móvil conserva coordenadas de computadora');
+  assert.equal(sceneReset.sameDesktop,true,'restaurar móvil conserva capas del Hero en computadora');
+  console.log('Incidencias 3/4: capas de imágenes/textos, orden móvil y restauración de escena completa OK');
   console.log('Incidencias 1/2/7: Shift escala texto, dos arrastres A-B-C, alerta de cuota y recuperación OK');
  } finally {
   await page.evaluate(prev=>{
