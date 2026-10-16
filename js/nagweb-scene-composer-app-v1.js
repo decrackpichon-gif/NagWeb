@@ -1,6 +1,6 @@
 (function(){'use strict';
 var q=id=>document.getElementById(id),E=NAGWEB_INTERACTION_ENGINE,A=NAGWEB_INTERACTION_ASSET_PREP,I=NAGWEB_INTERACTION_INFLUENCE,V3=NAGWEB_ORGANIC_MESH,V4=NAGWEB_ORGANIC_ADAPTIVE_CURVE,S=NAGWEB_SCENE_COMPOSER,V=NAGWEB_SCENE_COMPOSER_VIEW;
-var stage=q('stage'),canvas=q('characterCanvas'),leader=q('leader'),work=q('work'),stageSpace=q('stageSpace'),interactionSpace=q('interactionSpace'),field=null,renderer=null,src=new Image(),srcUrl=null;
+var stage=q('stage'),canvas=q('characterCanvas'),leader=q('leader'),work=q('work'),stageSpace=q('stageSpace'),interactionSpace=q('interactionSpace'),field=null,renderer=null,loadGeneration=0,activeSource='';
 var zoom=1,spaceDown=false,pan=null;
 function clamp(v,a,b){return Math.min(b,Math.max(a,v));}
 function measureView(){
@@ -120,13 +120,90 @@ ids.forEach(id=>ui[id].addEventListener(['range','checkbox'].includes(ui[id].typ
 document.querySelectorAll('.add').forEach(b=>b.onclick=()=>view.add(b.dataset.type,{x:b.dataset.type==='background'?0:140+view.scene.elements.length*20,y:b.dataset.type==='background'?0:130+view.scene.elements.length*18}));
 q('duplicate').onclick=()=>view.selected&&view.duplicate(view.selected);q('remove').onclick=()=>view.selected&&view.remove(view.selected);
 q('imageFile').onchange=function(){var f=this.files&&this.files[0],id=view.selected;if(!f||!id)return;var r=new FileReader();r.onload=()=>view.update(id,{src:String(r.result)});r.readAsDataURL(f)};
-q('exportScene').onclick=()=>q('sceneJson').value=S.serialize(view.scene);q('applyScene').onclick=()=>{try{view.setScene(S.deserialize(q('sceneJson').value));syncChar()}catch(e){stat('ERROR JSON · '+e.message)}};
+q('exportScene').onclick=()=>q('sceneJson').value=S.serialize(view.scene);
+q('applyScene').onclick=async()=>{
+  try{
+    var project=S.deserialize(q('sceneJson').value);
+    await restoreProject(project);
+  }catch(e){stat('ERROR al importar · '+e.message);}
+};
 function syncChar(){q('characterSize').value=view.scene.character.size;q('characterPreset').value=view.scene.character.preset;q('globalRadius').value=view.scene.character.influenceRadius}
 q('characterSize').oninput=function(){view.setScene(S.setCharacter(view.scene,{size:+this.value}));if(renderer)renderer.setOptions({length:+this.value})};
 q('characterPreset').onchange=function(){view.setScene(S.setCharacter(view.scene,{preset:this.value}));if(renderer)renderer.setOptions({adaptivePreset:this.value})};
 q('globalRadius').oninput=function(){view.setScene(S.setCharacter(view.scene,{influenceRadius:+this.value}))};
 var fallback='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="360" height="620"><ellipse cx="180" cy="92" rx="58" ry="72" fill="#ffd07a"/><path d="M122 84q58-88 116 0v22H122z" fill="#f6f0e7"/><path d="M102 176q78-52 156 0l34 185q-24 84-112 90-88-6-112-90z" fill="#d93118"/><path d="M145 178q35 44 70 0l16 262h-102z" fill="#ef4a2d"/></svg>');
-async function prep(){stat('Analizando personaje…');var an=await A.analyzeImage(src,{maxDimension:512}),p=A.createProfile(an,{leadEnd:'right',cropPadding:.015}),prepared=await V3.prepareAsset(src,an,{profile:p,paddingRatio:.015});if(renderer)renderer.destroy();renderer=V4.createRenderer({leader:follower,canvas:canvas,area:interactionSpace,image:prepared.canvas,length:view.scene.character.size,adaptivePreset:view.scene.character.preset,antiFold:true});api.renderer=renderer;view.render()}
-q('characterFile').onchange=function(){var f=this.files&&this.files[0];if(!f)return;if(srcUrl)URL.revokeObjectURL(srcUrl);srcUrl=URL.createObjectURL(f);src.onload=()=>prep().catch(e=>stat('ERROR · '+e.message));src.src=srcUrl};
-var api=window.__NAGWEB_SCENE_COMPOSER__={view:view,follower:follower,renderer:null,field:null,get zoom(){return zoom;},setZoom:setZoom,fitZoom:fitZoom,stageCoords:stageCoords,get scene(){return view.scene}};syncChar();view.render();src.onload=()=>prep().catch(e=>stat('ERROR · '+e.message));src.src=fallback;
+// Keep image bytes in the version-1 scene document. blob: URLs cannot survive reloads.
+function validSource(value){
+  return typeof value==='string'&&/^data:image\/(?:png|jpeg|webp|gif|svg\+xml)(?:;[^,]*)?,/i.test(value);
+}
+function readCharacter(file){
+  return new Promise((resolve,reject)=>{
+    if(!file||!file.type.startsWith('image/'))return reject(new Error('Seleccioná un archivo de imagen'));
+    var r=new FileReader();
+    r.onerror=()=>reject(new Error('No se pudo leer el archivo'));
+    r.onload=()=>resolve(String(r.result));
+    r.readAsDataURL(file);
+  });
+}
+function decodeCharacter(source){
+  if(!validSource(source))return Promise.reject(new Error('Imagen no portable: cargá un PNG, WebP, JPG o SVG válido'));
+  return new Promise((resolve,reject)=>{
+    var image=new Image();
+    image.onload=()=>resolve(image);
+    image.onerror=()=>reject(new Error('No se pudo abrir la imagen del personaje'));
+    image.src=source;
+  });
+}
+// One generation covers decoding, silhouette analysis and WebGL preparation.
+// No outdated operation can replace the current scene or renderer.
+async function restoreProject(next,requested){
+  const project=S.normalizeScene(next),source=project.character.source||fallback;
+  const generation=requested??++loadGeneration;
+  project.character.source=source;
+  stat('Preparando personaje del proyecto…');
+  try{
+    if(source!==activeSource||!renderer){
+      const image=await decodeCharacter(source);
+      if(generation!==loadGeneration)return false;
+      const analysis=await A.analyzeImage(image,{maxDimension:512});
+      if(generation!==loadGeneration)return false;
+      const profile=A.createProfile(analysis,{leadEnd:'right',cropPadding:.015});
+      const prepared=await V3.prepareAsset(image,analysis,{profile:profile,paddingRatio:.015});
+      if(generation!==loadGeneration)return false;
+      if(renderer){renderer.destroy();renderer=null;api.renderer=null;}
+      renderer=V4.createRenderer({leader:follower,canvas:canvas,area:interactionSpace,image:prepared.canvas,
+        length:project.character.size,adaptivePreset:project.character.preset,antiFold:true});
+      api.renderer=renderer;
+      activeSource=source;
+    }else{
+      // Existing texture and engine stay alive when only options or objects changed.
+      renderer.setOptions({length:project.character.size,adaptivePreset:project.character.preset});
+    }
+    if(generation!==loadGeneration)return false;
+    view.setScene(project);
+    syncChar();
+    if(renderer)renderer.measure();
+    if(field)field.measure();
+    stat('Proyecto listo · personaje y '+project.elements.length+' elementos recuperados');
+    return true;
+  }catch(e){
+    if(generation===loadGeneration){stat('ERROR · '+e.message);throw e;}
+    return false;
+  }
+}
+q('characterFile').onchange=async function(){
+  const file=this.files&&this.files[0];
+  if(!file)return;
+  const token=++loadGeneration;
+  try{
+    const source=await readCharacter(file);
+    if(token!==loadGeneration)return;
+    await restoreProject(S.setCharacter(view.scene,{source:source}),token);
+  }catch(e){if(token===loadGeneration)stat('ERROR al cargar personaje · '+e.message);}
+};
+var api=window.__NAGWEB_SCENE_COMPOSER__={view:view,follower:follower,renderer:null,field:null,
+  get zoom(){return zoom;},setZoom:setZoom,fitZoom:fitZoom,stageCoords:stageCoords,
+  get activeSource(){return activeSource;},restoreProject:restoreProject,get scene(){return view.scene}};
+syncChar();view.render();
+void restoreProject(S.setCharacter(view.scene,{source:fallback})).catch(e=>stat('ERROR inicial · '+e.message));
 })();

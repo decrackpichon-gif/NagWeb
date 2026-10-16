@@ -62,3 +62,7 @@ Anotar especialmente:
 - si la influencia sobre el texto se siente demasiado fuerte o débil.
 
 No hacer merge del PR #2. Este kit es sólo QA.
+
+## Scene Composer V1.0 · prueba de guardado integral
+
+Desde `experiments/scene-composer-v1.html` se puede cargar un personaje transparente, componer una escena, pulsar **Actualizar** para copiar el JSON (guardar el texto en un archivo `.json`), cerrar y volver a abrir el laboratorio y pegarlo en el campo JSON para pulsar **Aplicar**. El documento contiene la imagen del personaje y las imágenes de elementos como datos embebidos; puede crecer según el tamaño de los recursos. El personaje debe reaparecer con el preset, tamaño y radio de interacción previamente guardados. Usar imágenes con silueta transparente fiable para el motor orgánico. No usar una URL `blob:` como fuente al editar manualmente el JSON; no se conserva entre sesiones.

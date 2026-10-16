@@ -152,6 +152,87 @@ try{
  await page.mouse.move(stage.x+300,stage.y+200,{steps:8});await new Promise(r=>setTimeout(r,500));
  const moved=await page.$$eval('.item[data-reactive="1"]',els=>els.some(el=>el.style.translate&&el.style.translate!=='0.00px 0.00px'));
  assert.equal(moved,true,'at least one scene object should react to character');
+
+ // A full-project save must restore the image bytes, preset and response controls
+ // even after a completely fresh page load. A failed import must not destroy work.
+ const portableSvg='<svg xmlns="http://www.w3.org/2000/svg" width="160" height="280"><ellipse cx="80" cy="65" rx="45" ry="55" fill="#f5c25d"/><path d="M38 121Q80 102 122 121L132 255H28Z" fill="#2b87d1"/></svg>';
+ await page.evaluate(svg=>{
+   const file=new File([svg],'test-personaje.svg',{type:'image/svg+xml'});
+   const input=document.querySelector('#characterFile'),dt=new DataTransfer();
+   dt.items.add(file);input.files=dt.files;input.dispatchEvent(new Event('change',{bubbles:true}));
+ },portableSvg);
+ await page.waitForFunction(()=>__NAGWEB_SCENE_COMPOSER__.scene.character.source.startsWith('data:image/svg+xml;base64,')&&__NAGWEB_SCENE_COMPOSER__.activeSource===__NAGWEB_SCENE_COMPOSER__.scene.character.source,{timeout:15000});
+ await page.$eval('#characterSize',el=>{el.value='480';el.dispatchEvent(new Event('input',{bubbles:true}));});
+ await page.select('#characterPreset','creature');
+ await page.$eval('#globalRadius',el=>{el.value='235';el.dispatchEvent(new Event('input',{bubbles:true}));});
+ await page.click('.add[data-type="image"]');
+ const imageNode=await page.evaluate(()=>{
+   const api=__NAGWEB_SCENE_COMPOSER__,selected=api.view.selected;
+   api.view.update(selected,{src:api.scene.character.source});
+   return api.scene.elements.find(e=>e.id===selected).src;
+ });
+ assert.ok(imageNode.startsWith('data:image/svg+xml;base64,'));
+ await page.click('#exportScene');
+ const completeJson=await page.$eval('#sceneJson',el=>el.value);
+ const savedProject=JSON.parse(completeJson);
+ assert.equal(savedProject.character.size,480);
+ assert.equal(savedProject.character.preset,'creature');
+ assert.equal(savedProject.character.influenceRadius,235);
+ assert.ok(savedProject.character.source.startsWith('data:image/svg+xml;base64,'));
+ assert.ok(savedProject.elements.some(x=>x.type==='image'&&x.src===savedProject.character.source));
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.waitForFunction(()=>__NAGWEB_SCENE_COMPOSER__?.renderer&&__NAGWEB_SCENE_COMPOSER__?.field,{timeout:15000});
+ await page.$eval('#sceneJson',(el,json)=>{el.value=json;},completeJson);
+ await page.click('#applyScene');
+ await page.waitForFunction(source=>__NAGWEB_SCENE_COMPOSER__?.activeSource===source&&__NAGWEB_SCENE_COMPOSER__.scene.character.preset==='creature', {timeout:15000}, savedProject.character.source);
+ const restored=await page.evaluate(()=>({
+   json:NAGWEB_SCENE_COMPOSER.serialize(__NAGWEB_SCENE_COMPOSER__.scene),
+   options:__NAGWEB_SCENE_COMPOSER__.renderer.options,
+   field:__NAGWEB_SCENE_COMPOSER__.field.options,
+   targetCount:__NAGWEB_SCENE_COMPOSER__.field.targetCount,
+   status:document.querySelector('#status').textContent
+ }));
+ assert.deepEqual(JSON.parse(restored.json),savedProject,'fresh session restores the entire scene and embedded assets');
+ assert.equal(restored.options.length,480);
+ assert.equal(restored.options.adaptivePreset,'creature');
+ assert.equal(restored.field.radius,235);
+ assert.ok(restored.targetCount>=3);
+ assert.match(restored.status,/Proyecto listo/);
+ const savedBeforeBad=restored.json;
+ const badProject={...savedProject,character:{...savedProject.character,source:'blob:expired-url'}};
+ await page.$eval('#sceneJson',(el,json)=>{el.value=json;},JSON.stringify(badProject));
+ await page.click('#applyScene');
+ await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('ERROR'),{timeout:5000});
+ assert.equal(await page.evaluate(()=>NAGWEB_SCENE_COMPOSER.serialize(__NAGWEB_SCENE_COMPOSER__.scene)),savedBeforeBad,
+   'bad imported character must not alter current scene');
+ // Competing file loads: only the most recent project may be installed.
+ const racing=await page.evaluate(async()=>{
+   const api=__NAGWEB_SCENE_COMPOSER__,prep=NAGWEB_INTERACTION_ASSET_PREP,real=prep.analyzeImage;
+   let delayed=null;
+   try{
+     prep.analyzeImage=(image,options)=>{
+       if(image instanceof HTMLCanvasElement)return real(image,options);
+       if(image.src.includes('old_color'))return new Promise(resolve=>{delayed=()=>real(image,options).then(resolve);});
+       return real(image,options);
+     };
+     const oldSvg='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="90" height="180"><path d="M30 10H60V170H30Z" fill="old_color"/></svg>');
+     const newSvg='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="90" height="180"><path d="M30 10H60V170H30Z" fill="#24b08c"/></svg>');
+     // Use the real decoding pipeline but delay the old analysis.
+     const oldPromise=api.restoreProject(NAGWEB_SCENE_COMPOSER.setCharacter(api.scene,{source:oldSvg}));
+     const until=performance.now()+2500;
+     while(!delayed&&performance.now()<until)await new Promise(r=>setTimeout(r,30));
+     const newPromise=api.restoreProject(NAGWEB_SCENE_COMPOSER.setCharacter(api.scene,{source:newSvg}));
+     const installed=await newPromise;
+     if(delayed)delayed();
+     await oldPromise;
+     return {installed,latest:api.scene.character.source===newSvg,active:api.activeSource===newSvg,delayed:!!delayed};
+   }finally{prep.analyzeImage=real;}
+ });
+ assert.equal(racing.delayed,true);
+ assert.equal(racing.installed,true);
+ assert.equal(racing.latest,true);
+ assert.equal(racing.active,true);
+
  assert.equal(errors.length,0,errors.join('\n'));
  fs.mkdirSync('/tmp/nagweb-interaction-experimental',{recursive:true});await page.screenshot({path:'/tmp/nagweb-interaction-experimental/scene-composer-v1.png',fullPage:true});
  console.log('NagWeb Scene Composer V1 browser smoke: PASS');

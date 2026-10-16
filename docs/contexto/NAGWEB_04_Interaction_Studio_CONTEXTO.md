@@ -135,3 +135,7 @@ Se agregó navegación visual al constructor experimental: zoom 25–250 %, enca
 **Camino mínimo:** siguiente «Avanza» corrige persistencia de personaje y rehidratación real; una pasada integral de QA y kit final; única evaluación humana visual si hace falta, luego cierre. No generar nuevas microetapas ni porcentajes de avance inventados.
 
 **Descarga:** el enlace anterior al artefacto GitHub no abrió para el usuario. La run 38265721797 conserva su artefacto ZIP sin expirar, recuperado y comprobado. Entregar archivos mediante enlace de descarga verificado en el chat, no únicamente URLs directas a artefactos sujetos a permisos/vencimiento.
+
+### Avance V1.0 · Corrección de persistencia del personaje
+
+Implementado guardado de fuente embebida y restauración del renderer al importar la escena. El modelo mantiene el esquema V1. Se eliminó dependencia de blob URL para personaje y se añadieron guardas generacionales para evitar reemplazos por cargas antiguas; una carga/importación inválida conserva el proyecto existente. La prueba de navegador debe incluir recarga real y comparación del JSON íntegro, opciones de motor e influencia. Siguiente objetivo **único**: comprobar GitHub Actions y entregar kit V1.0 portable; solicitar test humano del candidato sin ampliar funcionalidades.

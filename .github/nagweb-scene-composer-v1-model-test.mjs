@@ -62,6 +62,8 @@ scene=S.setCharacter(scene,{preset:'creature',size:500,influenceRadius:240,influ
 assert.equal(scene.character.preset,'creature');
 assert.equal(scene.character.size,500);
 assert.equal(scene.character.influenceRadius,240);
+assert.equal(S.setCharacter(scene,{source:'data:image/png;base64,AA=='}).character.source,'data:image/png;base64,AA==');
+assert.equal(S.deserialize(S.serialize(S.setCharacter(scene,{source:'data:image/png;base64,AA=='}))).character.source,'data:image/png;base64,AA==');
 
 scene=S.setStage(scene,{width:1440,height:900,background:'#09090d'});
 assert.equal(scene.stage.width,1440);
