@@ -357,6 +357,8 @@ var SD_CSS=[
 '.nw-sd-active.free .nw-sd-stage{padding:0}',
 '.nw-sd-active.free .nw-sd-stage>.inner{position:absolute;inset:0}',
 '.nw-uc [data-nw-sd-el],[data-nw-sd-el]{translate:calc(var(--nw-sd-x,0px) + var(--nw-uc-dx,0px)) calc(var(--nw-sd-y,0px) + var(--nw-uc-dy,0px));scale:calc(var(--nw-sd-scale,1) * var(--nw-uc-scale,1));rotate:var(--nw-sd-rot,0deg);opacity:calc(var(--nw-sd-base-opacity,1) * var(--nw-sd-opacity,1))!important;filter:var(--nw-sd-base-filter,blur(0px)) blur(var(--nw-sd-blur,0px));will-change:translate,scale,rotate,opacity,filter}',
+'/* The camera world is structural: its front plane must not intercept layers at negative Z. */',
+'[data-nw-camera-world]{pointer-events:none}[data-nw-camera-world]>.el,[data-nw-camera-world]>.container-box{pointer-events:auto}',
 '.nw-uc>[data-nw-sd-el]{transition:none!important}',
 '.nw-uc [data-nw-sd-el]{transition:none!important}',
 '@media(prefers-reduced-motion:reduce){[data-nw-sd-el]{transition:none!important}}'

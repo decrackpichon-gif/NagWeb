@@ -118,6 +118,23 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),beforeDemo.frames,'Undo restores camera path');
   console.log('PASS real editor offline sample: three reusable planes, five stops, zero external assets, one Undo');
   console.log('PASS real editor journey: text/image/text depths, five waypoints, camera crossing, one Undo');
+  // Large workspace uses the very same scene, selection and Director controls.
+  await page.locator('[data-camera-space-open]').click();
+  const workspaceBefore=await page.evaluate(()=>({data:JSON.stringify(sec()),undo:history.length}));
+  await page.locator('[data-camera-map-expand]').click();
+  const wide=await page.locator('[data-camera-map]').boundingBox();
+  assert.ok(wide.width>700&&wide.height>500,'Expanded map has usable workspace dimensions: '+JSON.stringify(wide));
+  await page.locator('[data-camera-map-plane]').selectOption('side');
+  assert.equal(await page.locator('[data-camera-map-wide]').count(),1,'Wide layout survives inspector rerenders');
+  await page.locator('[data-camera-space-seek]').fill('37.5');
+  await page.waitForFunction(()=>Math.abs(NAGWEB_SCROLL_DIRECTOR.progress(sec().id)-37.5)<.01);
+  assert.equal(await page.locator('[data-camera-space-progress]').textContent(),'37.5%','Wide slider shares the Director progress');
+  await page.screenshot({path:'work/camera-workspace.png'});
+  await page.locator('[data-camera-map-expand]').focus();await page.keyboard.press('Escape');
+  assert.equal(await page.locator('[data-camera-map-wide]').count(),0,'Escape returns to compact panel');
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec())),workspaceBefore.data,'Layout navigation never edits scene data');
+  assert.equal(await page.evaluate(()=>history.length),workspaceBefore.undo,'Layout navigation never creates Undo steps');
+  console.log('PASS wide spatial workspace: dimensions, views, Escape and unchanged authored scene');
   assert.deepEqual(errors,[]);
   console.log('PASS isolated Chromium spatial map: real pointer movement, DOM X, cleanup, one Undo and camera isolation');
  }finally{await browser.close();}

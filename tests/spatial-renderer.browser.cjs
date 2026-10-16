@@ -4,12 +4,12 @@ const {chromium}=require('playwright');
 (async()=>{
 const browser=await chromium.launch({...(process.env.NAGWEB_BROWSER?{executablePath:process.env.NAGWEB_BROWSER}:{}),headless:true,args:['--enable-unsafe-swiftshader']});
 fs.mkdirSync('work',{recursive:true});
-const vendors=process.env.NAGWEB_TEST_VENDOR_DIR,source=file=>fs.readFileSync(vendors?path.join(vendors,file):require.resolve({'three.cjs':'three/build/three.js','GLTFLoader.js':'three/examples/js/loaders/GLTFLoader.js','gsap.js':'gsap/dist/gsap.js','ScrollTrigger.js':'gsap/dist/ScrollTrigger.js'}[file]));
+const vendors=process.env.NAGWEB_TEST_VENDOR_DIR,names=['CopyShader.js','LuminosityHighPassShader.js','EffectComposer.js','RenderPass.js','ShaderPass.js','UnrealBloomPass.js','GLTFLoader.js','ScrollTrigger.js','gsap.js','three.cjs'],source=file=>fs.readFileSync(vendors?path.join(vendors,file):require.resolve(file==='three.cjs'?'three/build/three.js':file==='gsap.js'||file==='ScrollTrigger.js'?'gsap/dist/'+file:'three/examples/js/'+(file==='GLTFLoader.js'?'loaders/':/Shader.js$/.test(file)?'shaders/':'postprocessing/')+file));
 try{
 const page=await browser.newPage({viewport:{width:1000,height:800}}),errors=[];
 page.on('pageerror',e=>{errors.push(e.message);console.error('PAGE ERROR',e.message);});
 await page.route('https://**/*',route=>{
- const u=route.request().url(),file=/three(?:\.min)?\.js/.test(u)?'three.cjs':/GLTFLoader/.test(u)?'GLTFLoader.js':/ScrollTrigger/.test(u)?'ScrollTrigger.js':/gsap.min/.test(u)?'gsap.js':null;
+ const u=route.request().url(),file=/three(?:\.min)?\.js/.test(u)?'three.cjs':/GLTFLoader/.test(u)?'GLTFLoader.js':/ScrollTrigger/.test(u)?'ScrollTrigger.js':/gsap.min/.test(u)?'gsap.js':names.includes(u.split('/').at(-1))?u.split('/').at(-1):null;
  return file?route.fulfill({contentType:'text/javascript',body:source(file)}):route.abort();
 });
 await page.goto('file:///'+path.resolve('index.html').replaceAll('\\','/'));
@@ -19,7 +19,7 @@ const generated=await page.evaluate(()=>{
  const bin=new Float32Array([-1,-1,0,1,-1,0,0,1,0]);const json={asset:{version:'2.0'},scene:0,scenes:[{nodes:[0]}],nodes:[{mesh:0}],meshes:[{name:'realGLB',primitives:[{attributes:{POSITION:0}}]}],buffers:[{byteLength:bin.byteLength}],bufferViews:[{buffer:0,byteOffset:0,byteLength:bin.byteLength}],accessors:[{bufferView:0,componentType:5126,count:3,type:'VEC3',min:[-1,-1,0],max:[1,1,0]}]};
  let j=JSON.stringify(json);while(j.length%4)j+=' ';const bytes=new Uint8Array(12+8+j.length+8+bin.byteLength),v=new DataView(bytes.buffer);v.setUint32(0,0x46546c67,true);v.setUint32(4,2,true);v.setUint32(8,bytes.length,true);v.setUint32(12,j.length,true);v.setUint32(16,0x4e4f534a,true);bytes.set(new TextEncoder().encode(j),20);v.setUint32(20+j.length,bin.byteLength,true);v.setUint32(24+j.length,0x004e4942,true);bytes.set(new Uint8Array(bin.buffer),28+j.length);
  p.assets.models=[{id:'triangle',format:'glb',data:btoa(String.fromCharCode(...bytes))}];
- return {edit:generateSite(structuredClone(p),true,false,false),exported:generateSite(structuredClone(p),false,false,false)};
+ p.sections[0].elements.push(mkEl('heading',{id:'real-heading',text:'CAMARA ESPACIAL',x:70,y:50,w:60,fs:60,sdCameraDepth:-150,sdEnter:'none'}));const result={edit:generateSite(structuredClone(p),true,false,false),exported:generateSite(structuredClone(p),false,false,false)};p.bloom=true;p.bloomStrength=1.2;result.bloom=generateSite(structuredClone(p),false,false,false);return result;
 });
 for(const [mode,html] of Object.entries(generated)){
  errors.length=0;
@@ -52,6 +52,21 @@ for(const [mode,html] of Object.entries(generated)){
  await page.emulateMedia({reducedMotion:'no-preference'});
  await page.setViewportSize({width:1000,height:800});
  await page.evaluate(()=>{window.__NAG_SCROLL_DIRECTOR.space.set(0);window.__test3D.tick();});
+
+ // A real generated heading uses CSS centering and the Director's additive
+ // depth animation. Synthetic test rectangles alone cannot verify this bridge.
+ const authored=await page.evaluate(()=>{
+  const d=window.__test3D,n=document.querySelector('[data-id="real-heading"]');
+  window.__NAG_SCROLL_DIRECTOR.space.set(0);d.tick();
+  const clip=n.style.clipPath,w=n.offsetWidth,h=n.offsetHeight,ctx=document.createElement('canvas').getContext('2d'),p=clip?new Path2D(clip.slice(6,-2)):null;
+  const rect=n.getBoundingClientRect(),hit=(x)=>{const t=document.elementFromPoint(rect.left+rect.width*x,rect.top+rect.height/2);return t===n||n.contains(t);};
+  return {clip:!!clip,center:p&&ctx.isPointInPath(p,w/2,h/2),edge:p&&ctx.isPointInPath(p,10,h/2),centerHit:hit(.5),edgeHit:hit(.05),text:n.textContent};
+ });
+ assert.equal(authored.clip,true,JSON.stringify(authored));assert.equal(authored.center,false,'Generated heading is clipped behind the model');
+ assert.equal(authored.edge,true,'Generated heading keeps uncovered parts');assert.equal(authored.centerHit,false,'Covered text cannot capture pointer input');
+ if(mode!=='edit')assert.equal(authored.edgeHit,true,'Visible text remains interactive '+JSON.stringify(authored));
+ assert.ok(authored.text.includes('CAMARA ESPACIAL'));
+ console.log('PASS '+mode+': real authored HTML, shared CSS centering and clipped hit testing');
 
  // Real GPU depth prepass. An opaque DOM surface in front of a box punches
  // only the covered WebGL pixels, while the original DOM stays selectable.
@@ -231,8 +246,8 @@ for(const [mode,html] of Object.entries(generated)){
    window.__NAG_SCROLL_DIRECTOR.space.set(0);d.tick();
    const a=g.userData.anchorEl,div=document.createElement('p');
    div.dataset.nwSdEl='1';div.textContent='Texto detrás del modelo';
-   div.style.cssText='position:absolute;left:'+(a.offsetLeft+a.offsetWidth/2-4)+'px;top:'+
-     (a.offsetTop+a.offsetHeight/2-4)+'px;width:8px;height:8px;margin:0;background:white';
+   div.style.cssText='position:absolute;left:'+(a.offsetLeft-4)+'px;top:'+
+     (a.offsetTop-4)+'px;width:8px;height:8px;margin:0;background:white';
    div.__nwSpatialPose={x:0,y:0,z:-150,scale:100,opacity:1,rotate:0,rotateX:0,rotateY:0};
    world.appendChild(div);d.adapter.connect(api,[stage]);d.tick();
    const behind=div.classList.contains('nw-spatial-inverse-occluded');
@@ -246,7 +261,53 @@ for(const [mode,html] of Object.entries(generated)){
   assert.equal(inverse.front,false,'HTML reappears when brought in front of 3D');
   assert.equal(inverse.sameText,true,'Text stays editable DOM, without rasterizing');
   assert.equal(inverse.samePose,true,'Existing keyframe pose data is not mutated');
-  console.log('PASS inverse 3D to HTML conservative full coverage: depth and DOM restoration');
+  console.log('PASS inverse 3D to HTML GPU full coverage: depth and DOM restoration');
+ }
+
+ {
+  const partial=await page.evaluate(()=>{
+   const d=window.__test3D,g=d.objects[0],api=window.__testCameraApi,stage=g.userData.anchorEl.closest('.nw-sd-stage'),world=stage.querySelector('[data-nw-camera-world]');
+   window.__NAG_SCROLL_DIRECTOR.space.set(0);d.tick();
+   const a=g.userData.anchorEl,nodes=[];
+   for(let i=0;i<14;i++){
+    const n=document.createElement('button');n.dataset.nwSdEl='1';n.textContent='Texto editable '+i;
+    n.style.cssText='position:absolute;left:'+(a.offsetLeft-220)+'px;top:'+(a.offsetTop-60)+'px;width:440px;height:120px;padding:0;border:0;margin:0;background:white;translate:0 0 -150px';
+    n.__nwSpatialPose={x:0,y:0,z:-150,scale:100,opacity:1,rotate:0,rotateX:0,rotateY:0};world.appendChild(n);nodes.push(n);
+   }
+   let reads=0;const read=d.renderer.readRenderTargetPixels;d.renderer.readRenderTargetPixels=function(){reads++;return read.apply(this,arguments);};
+   d.adapter.connect(api,[stage]);d.tick();
+   function samples(n){const path=n.style.clipPath;if(!path)return{left:true,center:true,right:true,path:false};const ctx=document.createElement('canvas').getContext('2d'),p=new Path2D(path.slice(6,-2));return {left:ctx.isPointInPath(p,15,60),center:ctx.isPointInPath(p,220,60),right:ctx.isPointInPath(p,425,60),path:true};}
+   const first=samples(nodes[0]),last=samples(nodes[13]),readOnce=reads;
+   d.tick();const staticReads=reads-readOnce;
+   const oldPose=g.userData.anchorEl.__nwSpatialPose;
+   g.userData.anchorEl.__nwSpatialPose=Object.assign({},oldPose,{x:600});d.tick();
+   const moved=samples(nodes[13]);
+   g.userData.anchorEl.__nwSpatialPose=oldPose;d.tick();const back=samples(nodes[13]);
+   const mesh=g.children.find(n=>n.isMesh),oldGeometry=mesh.geometry,oldMaterial=mesh.material;
+   mesh.geometry=new THREE.RingGeometry(.65,1,48);mesh.material=new THREE.MeshBasicMaterial({side:THREE.DoubleSide});d.tick();
+   const hole=samples(nodes[13]);
+   mesh.geometry.dispose();mesh.material.dispose();mesh.geometry=oldGeometry;mesh.material=oldMaterial;
+   d.tick();
+   let failures=0;d.renderer.readRenderTargetPixels=function(){failures++;throw new Error('injected GPU readback failure');};
+   g.userData.anchorEl.__nwSpatialPose=Object.assign({},oldPose,{x:1});d.tick();
+   const failureRestored=nodes.every(n=>!n.style.clipPath&&!n.classList.contains('nw-spatial-inverse-occluded'));
+   d.tick();const failureAttempts=failures;g.userData.anchorEl.__nwSpatialPose=oldPose;
+   d.adapter.destroy();const restored=nodes.every(n=>!n.style.clipPath&&!n.classList.contains('nw-spatial-inverse-occluded'));
+   nodes.forEach(n=>n.remove());d.renderer.readRenderTargetPixels=read;d.adapter.connect(api,[stage]);d.tick();
+   return{first,last,moved,back,hole,staticReads,readOnce,restored,failureRestored,failureAttempts};
+  });
+  assert.equal(partial.first.path,true,JSON.stringify(partial));
+  assert.equal(partial.first.center,false,'Only covered pixels are clipped');
+  assert.equal(partial.first.left,true,'Left HTML remains visible');assert.equal(partial.first.right,true,'Right HTML remains visible');
+  assert.deepEqual(partial.last,partial.first,'The fourteenth layer receives identical composition');
+  assert.equal(partial.staticReads,0,'Unchanged poses reuse the mask without GPU readback');
+  assert.equal(partial.moved.center,true,'First render after object movement uses current world matrices');
+  assert.equal(partial.back.center,false,'Reverse scrub restores the same mask immediately');
+  assert.equal(partial.hole.center,true,'A geometric hole exposes the HTML behind it');
+  assert.equal(partial.failureRestored,true,'Readback failure restores the original DOM');
+  assert.equal(partial.failureAttempts,1,'Failed readback is not retried every frame');
+  assert.equal(partial.restored,true,'Destroy restores authored clipping and visibility');
+  console.log('PASS partial inverse: 14 layers, cache, same-frame motion, geometric hole, GPU failure recovery and cleanup');
  }
 
  await page.screenshot({path:'work/spatial-'+mode+'.png'});

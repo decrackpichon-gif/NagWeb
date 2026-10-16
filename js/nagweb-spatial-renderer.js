@@ -234,67 +234,133 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
   });
  }
 
- // Conservative inverse: only hide complete rectangular HTML footprints
- // when opaque WebGL geometry is strictly in front at every probe. We do not
- // synthesize a partial mask from sparse rays or alter the authored DOM.
+ // Inverse composition uses the same opaque geometry and camera as the color
+ // pass. A depth texture is sampled in each HTML plane's local coordinates.
+ // The resulting clip preserves real DOM and browser hit testing; there is no
+ // sparse-ray whole-element guess, second clock, or first-N layer cutoff.
  function discoverInverseLayers(row){
   if(typeof row.stage.querySelectorAll!=='function')return;
-  var world=row.stage.querySelector('[data-nw-camera-world]');
-  if(!world)return;
+  var world=row.stage.querySelector('[data-nw-camera-world]');if(!world)return;
   Array.from(row.stage.querySelectorAll('[data-nw-sd-el]')).forEach(function(node){
    if(!node||!node.style||!node.offsetWidth||!node.offsetHeight||
       row.objects.some(function(g){return g.userData.anchorEl===node;})||
-      node.style.transform&&node.style.transform!=='none')return;
+      node.style.transform&&node.style.transform!=='none'||
+      node.classList&&node.classList.contains('container-box'))return;
    var nested=node.parentElement!==world;
    if(nested&&!depthParentUsable(node,world))return;
-   // Do not hide authored 3D containers or interactive editor anchors.
-   if(node.classList&&node.classList.contains('container-box'))return;
-   row.inverseLayers.push({node:node,world:world,nested:nested,quad:new T.Object3D()});
+   row.inverseLayers.push({node:node,world:world,nested:nested,quad:new T.Object3D(),
+    clip:node.style.getPropertyValue?node.style.getPropertyValue('clip-path'):'',
+    priority:node.style.getPropertyPriority?node.style.getPropertyPriority('clip-path'):'',key:null,path:null});
   });
   if(!row.inverseLayers.length||inverseStyle||typeof document==='undefined'||!document.head)return;
   inverseStyle=document.createElement('style');
   inverseStyle.textContent='.nw-spatial-inverse-occluded{visibility:hidden!important;pointer-events:none!important}';
   document.head.appendChild(inverseStyle);
  }
+ function resetInverse(row){
+  row.inverseLayers.forEach(function(q){
+   if(q.node.classList)q.node.classList.remove('nw-spatial-inverse-occluded');
+   if(q.applied&&q.node.style.setProperty){
+    if(q.clip)q.node.style.setProperty('clip-path',q.clip,q.priority);
+    else q.node.style.removeProperty('clip-path');
+   }
+   q.applied=false;
+  });
+ }
+ function inverseResources(row){
+  if(row.inverseGPU)return row.inverseGPU;
+  if(!renderer.readRenderTargetPixels||!renderer.getRenderTarget)return null;
+  var depth=new T.WebGLRenderTarget(1,1,{minFilter:T.NearestFilter,magFilter:T.NearestFilter}),
+    mask=new T.WebGLRenderTarget(1,1,{minFilter:T.NearestFilter,magFilter:T.NearestFilter,depthBuffer:false}),
+    geometry=new T.PlaneGeometry(2,2),material=new T.ShaderMaterial({
+     uniforms:{depthMap:{value:depth.texture},clipMatrix:{value:new T.Matrix4()},nearFar:{value:new T.Vector2(.1,100000)}},
+     vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}',
+     fragmentShader:'\n#include <packing>\nvarying vec2 vUv;uniform sampler2D depthMap;uniform mat4 clipMatrix;uniform vec2 nearFar;void main(){vec4 c=clipMatrix*vec4(vUv-.5,0.,1.);vec3 p=c.xyz/c.w;float visible=1.;if(c.w>0.&&abs(p.x)<=1.&&abs(p.y)<=1.&&abs(p.z)<=1.){float d=unpackRGBAToDepth(texture2D(depthMap,p.xy*.5+.5));float front=-perspectiveDepthToViewZ(d,nearFar.x,nearFar.y);float plane=-perspectiveDepthToViewZ(p.z*.5+.5,nearFar.x,nearFar.y);if(front+.5<plane)visible=0.;}gl_FragColor=vec4(vec3(visible),1.);}',
+     depthTest:false,depthWrite:false,blending:T.NoBlending});
+  var gpu={depth:depth,mask:mask,geometry:geometry,material:material,quad:new T.Mesh(geometry,material),
+   camera:new T.Camera(),scene:new T.Scene(),proxies:new Map(),key:null,reads:0,pixels:0};
+  row.inverseGPU=gpu;return gpu;
+ }
+ function disposeInverse(row){
+  resetInverse(row);var gpu=row.inverseGPU;if(!gpu)return;
+  gpu.depth.dispose();gpu.mask.dispose();gpu.geometry.dispose();gpu.material.dispose();
+  gpu.proxies.forEach(function(p){p.material.dispose();});gpu.proxies.clear();row.inverseGPU=null;
+  row.inverseLayers.forEach(function(q){q.key=null;q.path=null;});
+ }
  function fullInverseOcclusion(row){
-  var layers=row.inverseLayers;if(!layers||!layers.length)return;
-  layers.forEach(function(q){if(q.node.classList)q.node.classList.remove('nw-spatial-inverse-occluded');});
-  if(!row.state||!row.stage.isConnected)return;
-  var solids=[];
+  if(!row.state||!row.inverseLayers.length||row.inverseFailed)return;
+  var gpu=inverseResources(row);if(!gpu)return;
+  var solids=[],keyParts=[];
   row.objects.forEach(function(g){
    if(!g.userData.holder||!g.userData.holder.visible||g.userData.spatialOpacity<.999)return;
-   g.traverse(function(m){
-    if(!m.isMesh||!m.visible||!m.geometry||!m.material)return;
-    var materials=Array.isArray(m.material)?m.material:[m.material];
-    if(materials.some(function(mat){return !mat||!mat.visible||mat.transparent||
-     +mat.opacity<.999||+mat.alphaTest>0||mat.alphaMap;}))return;
+   // place() changed the holder since the preceding render. Ray/pixel queries
+   // must consume this pose immediately, including every descendant GLB mesh.
+   g.userData.holder.updateWorldMatrix(true,true);
+   g.traverseVisible(function(m){
+    if(!m.isMesh||m.isSkinnedMesh||m.morphTargetInfluences&&m.morphTargetInfluences.length||!m.geometry||!m.material||!m.layers.test(row.camera.layers))return;
+    var mats=Array.isArray(m.material)?m.material:[m.material];
+    if(mats.some(function(mat){return !mat||!mat.visible||mat.transparent||+mat.opacity<.999||+mat.alphaTest>0||mat.alphaMap||mat.displacementMap||mat.wireframe||mat.clippingPlanes&&mat.clippingPlanes.length||mat.isShaderMaterial;}))return;
+    var side=mats[0].side;
+    if(mats.some(function(mat){return mat.side!==side;}))return;
+    var proxy=gpu.proxies.get(m);
+    if(!proxy){proxy=new T.Mesh(m.geometry,new T.MeshDepthMaterial({depthPacking:T.RGBADepthPacking,side:side}));proxy.matrixAutoUpdate=false;gpu.proxies.set(m,proxy);gpu.scene.add(proxy);}
+    proxy.geometry=m.geometry;if(proxy.material.side!==side){proxy.material.side=side;proxy.material.needsUpdate=true;}proxy.matrix.copy(m.matrixWorld);proxy.visible=true;
     solids.push(m);
+    keyParts.push(m.uuid,side,m.geometry.uuid,m.geometry.attributes.position&&m.geometry.attributes.position.version,m.geometry.index&&m.geometry.index.version,m.geometry.drawRange.start,m.geometry.drawRange.count,m.matrixWorld.elements.join(','));
    });
   });
+  gpu.proxies.forEach(function(p,m){p.visible=solids.indexOf(m)>=0;});
   if(!solids.length)return;
   row.camera.updateMatrixWorld(true);
-  var origin=row.camera.getWorldPosition(new T.Vector3()),ray=new T.Raycaster(),points=[-.49,-.25,0,.25,.49];
-  layers.slice(0,12).forEach(function(q){
-   var node=q.node,pose=node.__nwSpatialPose;
-   if(!node.isConnected||!pose||+pose.opacity<.999||
-      (typeof window.getComputedStyle==='function'&&window.getComputedStyle(node).visibility==='hidden')||!Number.isFinite(+pose.z)||
-      !Number.isFinite(+pose.scale)||+pose.scale<=0)return;
-   if(!placeDepthQuad(row,q,pose,q.quad))return;
-   q.quad.updateMatrixWorld(true);
-   var covered=true,count=0;
-   for(var yi=0;yi<points.length&&covered;yi++)for(var xi=0;xi<points.length;xi++){
-    var p=q.quad.localToWorld(new T.Vector3(points[xi],points[yi],0)),
-      delta=p.clone().sub(origin),distance=delta.length();
-    if(!Number.isFinite(distance)||distance<=1){covered=false;break;}
-    ray.set(origin,delta.normalize());
-    ray.near=0;ray.far=distance-.5;
-    var hits=ray.intersectObjects(solids,false);
-    count++;
-    if(!hits.length){covered=false;break;}
+  var w=Math.max(1,row.stage.clientWidth),h=Math.max(1,row.stage.clientHeight),factor=Math.min(1,1024/Math.max(w,h)),dw=Math.max(1,Math.round(w*factor)),dh=Math.max(1,Math.round(h*factor)),
+    viewProjection=new T.Matrix4().multiplyMatrices(row.camera.projectionMatrix,row.camera.matrixWorldInverse);
+  keyParts.push(dw,dh,viewProjection.elements.join(','));var depthKey=keyParts.join('|');
+  var state={target:renderer.getRenderTarget(),viewport:renderer.getViewport(new T.Vector4()),scissor:renderer.getScissor(new T.Vector4()),scissorTest:renderer.getScissorTest(),autoClear:renderer.autoClear,color:renderer.getClearColor(new T.Color()),alpha:renderer.getClearAlpha()};
+  try{
+   renderer.autoClear=true;renderer.setScissorTest(false);
+   if(gpu.key!==depthKey){
+    gpu.depth.setSize(dw,dh);renderer.setRenderTarget(gpu.depth);renderer.setClearColor(0xffffff,1);renderer.clear();renderer.render(gpu.scene,row.camera);gpu.key=depthKey;
    }
-   if(covered&&count===points.length*points.length&&node.classList)
-    node.classList.add('nw-spatial-inverse-occluded');
-  });
+   gpu.material.uniforms.nearFar.value.set(row.camera.near,row.camera.far);
+   var sharedMasks=new Map();
+   row.inverseLayers.forEach(function(q){
+    var node=q.node,pose=node.__nwSpatialPose,cs=window.getComputedStyle(node);
+    if(!node.isConnected||!pose||+pose.opacity<=0||cs.display==='none'||cs.visibility==='hidden'||
+       cs.clipPath&&cs.clipPath!=='none'||cs.maskImage&&cs.maskImage!=='none'||
+       node.style.transform&&node.style.transform!=='none'||!Number.isFinite(+pose.z)||!Number.isFinite(+pose.scale)||+pose.scale<=0||!placeDepthQuad(row,q,pose,q.quad))return;
+    q.quad.updateMatrixWorld(true);
+    var nw=node.offsetWidth,nh=node.offsetHeight,mf=Math.min(1,256/Math.max(nw,nh)),mw=Math.max(1,Math.ceil(nw*mf)),mh=Math.max(1,Math.ceil(nh*mf)),
+      matrix=new T.Matrix4().multiplyMatrices(viewProjection,q.quad.matrixWorld),key=depthKey+'|'+matrix.elements.join(',')+'|'+nw+','+nh;
+    var shared=sharedMasks.get(key);if(shared){q.key=key;q.hidden=shared.hidden;q.path=shared.path;}
+    if(q.key!==key){
+     gpu.mask.setSize(mw,mh);gpu.material.uniforms.clipMatrix.value.copy(matrix);
+     renderer.setRenderTarget(gpu.mask);renderer.setClearColor(0xffffff,1);renderer.clear();renderer.render(gpu.quad,gpu.camera);
+     var pixels=new Uint8Array(mw*mh*4);renderer.readRenderTargetPixels(gpu.mask,0,0,mw,mh,pixels);gpu.reads++;gpu.pixels+=mw*mh;
+     // Merge identical spans vertically: clip-path respects hit testing as well
+     // as painting, unlike a CSS mask-image. Pixel precision is bounded explicitly.
+     var path=[],active=new Map(),count=0;
+     function emit(r){var x=r.x*nw/mw,y=r.y*nh/mh,rw=r.w*nw/mw,rh=r.h*nh/mh;path.push('M'+x.toFixed(3)+' '+y.toFixed(3)+'h'+rw.toFixed(3)+'v'+rh.toFixed(3)+'h'+(-rw).toFixed(3)+'z');}
+     for(var y=0;y<mh;y++){
+      var next=new Map(),x=0;
+      while(x<mw){if(pixels[((mh-1-y)*mw+x)*4]<128){x++;continue;}var start=x;
+       while(x<mw&&pixels[((mh-1-y)*mw+x)*4]>=128){count++;x++;}
+       var id=start+':'+x,r=active.get(id)||{x:start,y:y,w:x-start,h:0};r.h++;next.set(id,r);
+      }
+      active.forEach(function(r,id){if(!next.has(id))emit(r);});active=next;
+     }
+     active.forEach(emit);q.hidden=count===0;q.path=count===mw*mh?null:'path("'+path.join('')+'")';q.key=key;
+    }
+    sharedMasks.set(key,{hidden:q.hidden,path:q.path});
+    if(q.hidden){node.classList.add('nw-spatial-inverse-occluded');}
+    else if(q.path){node.style.setProperty('clip-path',q.path,'important');q.applied=true;}
+   });
+  }catch(error){
+   // Fail visibly open, release resources, and retry only after reconnect.
+   disposeInverse(row);row.inverseFailed=true;
+   if(typeof console!=='undefined')console.warn('NagWeb: partial occlusion unavailable',error);
+  }finally{
+   renderer.setRenderTarget(state.target);renderer.setViewport(state.viewport);renderer.setScissor(state.scissor);renderer.setScissorTest(state.scissorTest);renderer.setClearColor(state.color,state.alpha);renderer.autoClear=state.autoClear;
+  }
  }
 
  function updateOccluders(row){
@@ -332,6 +398,18 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
   var node=o.node;
   if(!node||!node.offsetWidth||!node.offsetHeight)return false;
    var world=o.world,w=node.offsetWidth,h=node.offsetHeight,mesh=quad;
+   // Authored NagWeb elements already carry CSS centering, origin, hover and
+   // the Director's paused additive transform. Read that evaluated matrix once
+   // through the existing hierarchy bridge rather than adding the pose twice.
+   if(window.DOMMatrix&&node.classList&&node.classList.contains('el')&&node.style.getPropertyValue&&node.style.getPropertyValue('--nw-sd-scale')!==''){
+    if(o.nested&&!depthParentUsable(node,world))return false;
+    var css=parentSpace({userData:{anchorEl:node}},row,true,true);
+    if(!css||css.opacity<=0||Math.abs(css.matrix.determinant())<1e-10)return false;
+    mesh.matrixAutoUpdate=false;
+    mesh.matrix.copy(css.matrix).multiply(new T.Matrix4().makeTranslation(w/2,-h/2,0)).multiply(new T.Matrix4().makeScale(w,h,1));
+    mesh.matrix.decompose(mesh.position,mesh.quaternion,mesh.scale);mesh.matrixWorldNeedsUpdate=true;return true;
+   }
+
    var rotation=new T.Euler(-(+pose.rotateX||0)*Math.PI/180,(+pose.rotateY||0)*Math.PI/180,
      -(+pose.rotate||0)*Math.PI/180,'ZXY'),scale=pose.scale/100;
    if(o.nested){
@@ -368,10 +446,10 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
   var world=node.closest&&node.closest('[data-nw-camera-world]');
   return {world:world,x:world?(world.offsetLeft||0)+(row.stage.clientLeft||0):0,y:world?(world.offsetTop||0)+(row.stage.clientTop||0):0};
  }
- function parentSpace(g,row,force){
+ function parentSpace(g,row,force,includeSelf){
   var node=g.userData.anchorEl;
   if(!force&&(!node.hasAttribute||!node.hasAttribute('data-nw-spatial-parent')))return null;
-  var chain=[],n=node.parentElement,world=node.closest('[data-nw-camera-world]');
+  var chain=[],n=includeSelf?node:node.parentElement,world=node.closest('[data-nw-camera-world]');
   while(n&&n!==world&&n!==row.stage&&chain.length<8){chain.unshift(n);n=n.parentElement;}
   if(!world||n!==world)return{opacity:0,matrix:new T.Matrix4()};
   var matrix=new T.Matrix4(),opacity=1;
@@ -486,13 +564,14 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
    renderer.autoClear=false;
    lightSources.forEach(function(light){light.visible=false;});
    rows.forEach(function(row){
-    if(!row.state||!row.stage.isConnected){if(row.bloom){row.bloom.dispose();row.bloom=null;}return;}
+    if(!row.state||!row.stage.isConnected){if(row.bloom){row.bloom.dispose();row.bloom=null;}disposeInverse(row);return;}
     var r=row.stage.getBoundingClientRect(),W=renderer.domElement.clientWidth,H=renderer.domElement.clientHeight;
-    if(r.bottom<=0||r.top>=H||r.right<=0||r.left>=W||!r.width||!r.height){if(row.bloom){row.bloom.dispose();row.bloom=null;}return;}
+    if(r.bottom<=0||r.top>=H||r.right<=0||r.left>=W||!r.width||!r.height){if(row.bloom){row.bloom.dispose();row.bloom=null;}disposeInverse(row);return;}
     rows.forEach(function(other){other.rig.visible=false;other.occluders.forEach(function(o){o.mesh.visible=false;});});
     syncLights(row,lightVisible);row.rig.visible=true;
     roots.forEach(function(g){g.visible=false;});
     row.objects.forEach(function(g){place(g,row);visible[objects.indexOf(g)]=g.userData.holder.visible;});
+    resetInverse(row);
     updateOccluders(row);
     fullInverseOcclusion(row);
     renderer.setViewport(r.left,H-r.bottom,r.width,r.height);
@@ -514,7 +593,7 @@ function createSpatialRenderer(T,renderer,scene,objects,lightSources,options){
    gizmos.forEach(function(g){g.node.visible=g.visible;});
   }
  }
- function destroy(){rows.forEach(function(row){row.inverseLayers.forEach(function(q){if(q.node.classList)q.node.classList.remove('nw-spatial-inverse-occluded');});row.occluders.forEach(function(o){scene.remove(o.mesh);if(o.texture)o.texture.dispose();o.mesh.geometry.dispose();o.mesh.material.dispose();});row.unbind();row.objects.forEach(function(g){delete g.userData.nwPreviewOffZ;delete g.userData.nwPreviewBaseTransform;});if(row.bloom)row.bloom.dispose();row.materials.forEach(function(copies){copies.forEach(function(m){m.dispose();});});row.objects.forEach(function(g){delete g.userData.spatialOpacity;delete g.userData.spatialParent;g.userData.holder.matrixAutoUpdate=true;g.userData.holder.rotation.x=0;g.userData.holder.rotation.y=0;});scene.remove(row.rig);});rows=[];if(inverseStyle){if(inverseStyle.parentNode)inverseStyle.parentNode.removeChild(inverseStyle);inverseStyle=null;}}
+ function destroy(){rows.forEach(function(row){disposeInverse(row);row.inverseLayers.forEach(function(q){if(q.node.classList)q.node.classList.remove('nw-spatial-inverse-occluded');});row.occluders.forEach(function(o){scene.remove(o.mesh);if(o.texture)o.texture.dispose();o.mesh.geometry.dispose();o.mesh.material.dispose();});row.unbind();row.objects.forEach(function(g){delete g.userData.nwPreviewOffZ;delete g.userData.nwPreviewBaseTransform;});if(row.bloom)row.bloom.dispose();row.materials.forEach(function(copies){copies.forEach(function(m){m.dispose();});});row.objects.forEach(function(g){delete g.userData.spatialOpacity;delete g.userData.spatialParent;g.userData.holder.matrixAutoUpdate=true;g.userData.holder.rotation.x=0;g.userData.holder.rotation.y=0;});scene.remove(row.rig);});rows=[];if(inverseStyle){if(inverseStyle.parentNode)inverseStyle.parentNode.removeChild(inverseStyle);inverseStyle=null;}}
  function view(g){
   var row=rows.find(function(r){return r.objects.indexOf(g)>=0;})||lightRow(g);
   if(!row||!row.state)return null;

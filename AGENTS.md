@@ -11,6 +11,7 @@ Determinar la rama de trabajo ACTUAL y leer exclusivamente su ficha en `docs/con
 | `feat/storytelling-engine-v2` | 01 Editor principal | `docs/contexto/NAGWEB_01_Editor_Principal_CONTEXTO.md` |
 | `internal-motion-lab` | 02 Motion Lab | `docs/contexto/NAGWEB_02_Motion_Lab_CONTEXTO.md` |
 | `feat/scroll-camera-v1` | 03 Cámara 3D | `docs/contexto/NAGWEB_03_Camara_3D_CONTEXTO.md` |
+| `feat/scroll-camera-finish-v1` | 03 Cámara 3D, cierre aislado autorizado | La misma ficha y `docs/camera-finish-v1.md`; no mezclar avances de la rama original |
 | `feat/interaction-engine-v1` | 04 Interaction Studio estable | `docs/contexto/NAGWEB_04_Interaction_Studio_CONTEXTO.md` |
 | `feat/interaction-engine-experimental-v1` | 04 Interaction Studio experimental | Consultar `docs/interaction-engine-experimental-v1.md` y el contexto de 04 en la rama estable; no fusionar ramas |
 | `feat/resource-etl-v1` | 05 Biblioteca de recursos | `docs/contexto/NAGWEB_05_Biblioteca_de_Recursos_CONTEXTO.md` |
