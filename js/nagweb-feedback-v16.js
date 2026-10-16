@@ -588,6 +588,19 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
   scwBoot('__nwKineticStrip16Parts','.nw-ks',function(el){
    var track=el.querySelector('.nw-ks-track'),clip=el.querySelector('.nw-ks-clip'),busy=0;
    if(!track||!clip)return;
+   // Lienzo libre no extendía su altura por widgets absolutos.
+   // Reservar el recorrido sticky y mantener la posición de las otras piezas.
+   var wrapper=el.closest('.el.wdg.wk-kineticstrip'),
+       inner=wrapper&&wrapper.parentElement,scene=inner&&inner.parentElement;
+   if(inner&&inner.classList.contains('inner')&&scene&&scene.classList.contains('free')){
+    var originalVH=Math.max(1,parseFloat(scene.style.minHeight)||100);
+    Array.prototype.forEach.call(inner.children,function(node){
+     if(node===wrapper||!node.classList.contains('el'))return;
+     var y=Number(node.getAttribute('data-y'));
+     if(node.hasAttribute('data-y')&&isFinite(y))
+      node.style.top=(originalVH*y/100).toFixed(3)+'vh';
+    });
+   }
    function upd(){
     busy=0;var r=el.getBoundingClientRect(),span=Math.max(1,r.height-innerHeight),
      p=Math.max(0,Math.min(1,-r.top/span)),
@@ -599,6 +612,10 @@ function storyPartCSS(e,n){return partTransformCSS(e,n,'100vh');}
   });
  }
  adapt('kineticstrip',stripParts,720,'.nw-ks-sticky',stripMarkup,
+  // El sticky necesita que el lienzo reserve la altura real de la cinta.
+  '.sc.free:has(> .inner > .el.wk-kineticstrip){min-height:0!important;display:block}'+
+  '.sc.free:has(> .inner > .el.wk-kineticstrip)>.inner{position:relative!important;inset:auto!important;display:block!important;width:100%!important;max-width:none!important}'+
+  '.sc.free:has(> .inner > .el.wk-kineticstrip)>.inner>.el.wk-kineticstrip{position:relative!important;left:auto!important;top:auto!important;transform:none!important;width:100%!important;margin:0!important}'+
   '.nw-ks [data-wpart]{translate:var(--nw-tx,0px) var(--nw-ty,0px);scale:var(--nw-ps,1);rotate:var(--nw-pr,0deg)}'+
   '.nw-ks .nw-ks-card{rotate:calc((var(--i) - 3)*var(--tilt)*.22 + var(--nw-pr,0deg))}'+
   '.nw-ks .nw-ks-card:hover{scale:calc(var(--nw-ps,1)*1.025)}'+

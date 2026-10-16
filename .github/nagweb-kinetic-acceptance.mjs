@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict';
 // Acceptance probe on the exact published HTML. Measures sticky geometry
 // and checks that Collage doesn't expose authoring gestures publicly.
 export async function runKineticAcceptanceSmoke(page){
@@ -32,6 +33,12 @@ export async function runKineticAcceptanceSmoke(page){
    return{at0,at25,at50,at75,documentHeight:doc.documentElement.scrollHeight,viewport:win.innerHeight,ancestors};
   });
   console.log('Diagnóstico cinta '+mode+' '+JSON.stringify(res));
+  assert.ok(res.documentHeight>res.viewport+2100,'Escena '+mode+' reserva recorrido vertical');
+  for(const p of [res.at25,res.at50,res.at75]){
+   assert.ok(Math.abs(p.top)<24,'Cinta '+mode+' permanece visible al '+p.f+': '+p.top);
+   assert.ok(Math.abs(Number(p.progress)-p.f)<.05,'Avance horizontal en '+mode);
+  }
+  assert.ok(Math.abs(parseFloat(res.at75.trackX)-parseFloat(res.at25.trackX))>100,'Cinta '+mode+' recorre tarjetas');
   await page.evaluate(()=>document.querySelector('#nw-accept-public').remove());
  }
  await page.evaluate(()=>{
@@ -54,5 +61,9 @@ export async function runKineticAcceptanceSmoke(page){
    isEdit:!!w.SC_EDIT,cssTranslate:w.getComputedStyle(n).translate};
  });
  console.log('Diagnóstico collage público '+JSON.stringify(collage));
+ assert.equal(collage.deltaX,0,'Collage público no arrastra fotos en X');
+ assert.equal(collage.deltaY,0,'Collage público no arrastra fotos en Y');
+ assert.equal(collage.draggable,false);
+ assert.equal(collage.isEdit,false);
  await page.evaluate(()=>document.querySelector('#nw-accept-collage-public').remove());
 }
