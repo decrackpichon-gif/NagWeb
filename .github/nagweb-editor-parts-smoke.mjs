@@ -488,7 +488,7 @@ export async function runEditorPartsSmoke(page){
     initialPosition:d.defaultView.getComputedStyle(title).position,
     subY:newHero.querySelector('.nw-lh-copy [data-wpart="sub"]').getBoundingClientRect().top};
   });
-  assert.equal(originalFloatingBounds.initialPosition,'static','el título comienza dentro de la columna');
+  assert.ok(['static','relative'].includes(originalFloatingBounds.initialPosition),'el título comienza dentro de la columna, no como elemento absoluto');
   await fire('[data-nw-part="title"]');
   const releaseAvailable=await page.evaluate(()=>{
    const d=document.querySelector('#preview').contentDocument;
