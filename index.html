@@ -14625,12 +14625,33 @@ function compBanner(){
     <span>${v ? 'Lo que cambies acá se guarda solo en esta variante.' : 'Lo que cambies acá se aplica a todas las copias de este componente.'}</span></div>`;
 }
 
+// El guardado local puede fallar si imágenes enormes llenan la cuota.
+ // Jamás ocultar ese fallo tras un aviso que desaparece al cabo de 3 s.
+function showSaveFailure(){
+  var bar=document.getElementById('nw-save-warning');
+  if(!bar){
+    bar=document.createElement('div');bar.id='nw-save-warning';bar.setAttribute('role','alert');
+    bar.style.cssText='position:fixed;z-index:60000;bottom:0;left:0;right:0;padding:14px 18px;background:#451b25;color:white;font:600 14px/1.5 system-ui;display:flex;align-items:center;gap:14px;flex-wrap:wrap;box-shadow:0 -4px 24px #0007';
+    var label=document.createElement('span');label.style.flex='1';label.textContent='NO SE PUDO GUARDAR. Si recargás, podés perder los cambios. Descargá un respaldo JSON ahora (probablemente haya imágenes muy pesadas).';bar.appendChild(label);
+    var btn=document.createElement('button');btn.type='button';btn.textContent='Descargar respaldo JSON';
+    btn.style.cssText='border:2px solid white;background:white;color:#451b25;border-radius:7px;padding:9px 12px;font:700 13px system-ui;cursor:pointer';
+    btn.onclick=function(){blobDownload(new Blob([JSON.stringify(project)],{type:'application/json'}),'nagweb-respaldo-urgente.json');};
+    bar.appendChild(btn);document.body.appendChild(bar);
+  }
+}
 function saveProject(){
   syncComponents();
-  try{ localStorage.setItem(STORE_KEY, JSON.stringify(project)); }
-  catch(e){ if(!storageWarned){ storageWarned = true;
-    toast('El proyecto ya no entra en el navegador. Usá "Guardar proyecto" para bajarlo como .json.'); } }
-  if(typeof maybeAutoVersion === 'function') maybeAutoVersion();
+  try{
+    localStorage.setItem(STORE_KEY,JSON.stringify(project));
+    storageWarned=false;
+    var bar=document.getElementById('nw-save-warning');if(bar)bar.remove();
+    if(typeof maybeAutoVersion==='function')maybeAutoVersion();
+    return true;
+  }catch(e){
+    storageWarned=true;
+    showSaveFailure();
+    return false;
+  }
 }
 
 /* ---- deshacer / rehacer ---- */
@@ -17116,7 +17137,7 @@ ${edit ? `
       node.addEventListener('pointerdown', function(ev){
         if(ev.button === 2) return;
         if(node.isContentEditable || ped) return;
-        if(ev.shiftKey){ ev.preventDefault(); ev.stopPropagation(); post({ type:'select', id:node.dataset.id, add:true }); return; }
+        if(ev.shiftKey && !(ev.target.dataset && ev.target.dataset.handle)){ ev.preventDefault(); ev.stopPropagation(); post({ type:'select', id:node.dataset.id, add:true }); return; }
         if(node.classList.contains('sc-locked')){ ev.preventDefault(); ev.stopPropagation(); if(selId !== node.dataset.id){ post({ type:'select', id:node.dataset.id }); select(node.dataset.id); } showTip('Capa bloqueada: desbloqueala en Capas o con Ctrl+Shift+L.'); setTimeout(hideTip, 1500); return; }
         if(ev.target.dataset && ev.target.dataset.handle) return grab(ev, node, ev.target.dataset.handle);
         grab(ev, node, 'move');
@@ -17139,7 +17160,9 @@ ${edit ? `
       var cy = node.getBoundingClientRect().top + node.getBoundingClientRect().height / 2;
       var out = { x:x0, y:y0, w:w0, rot:r0 };
       var h0 = node.offsetHeight, wpx0 = node.offsetWidth;
-
+      var textScale = /^(heading|paragraph|label)$/.test(node.classList.contains('hd')?'heading':node.classList.contains('pg')?'paragraph':node.classList.contains('lbl')?'label':'');
+      var font0 = parseFloat(getComputedStyle(node).fontSize) || 16;
+      var shifted = false;
       function move(e){
         var dx = (e.clientX - sx) / rect.width * 100, dy = (e.clientY - sy) / rect.height * 100;
         if(handle === 'move'){
@@ -17150,9 +17173,21 @@ ${edit ? `
           node.style.left = out.x + '%'; node.style.top = out.y + '%';
           showTip('x ' + out.x.toFixed(1) + '%  ·  y ' + out.y.toFixed(1) + '%');
         } else if(handle === 'size'){
+          // Normal: sólo caja. Shift + arrastrar: caja y tipografía
+          // proporcionalmente, sin distorsionar el ancho/alto original.
+          var scaleText = textScale && (e.shiftKey || ev.shiftKey);
           out.w = snap(clamp(w0 + dx * 2, 5, 100), 1);
+          if(scaleText){
+            shifted=true;
+            out.customSize = Math.round(font0 * out.w / Math.max(1,w0) * 10) / 10;
+            out._exactSize = true;
+            node.style.fontSize = out.customSize + 'px';
+          }else if(shifted){
+            delete out.customSize;delete out._exactSize;
+            node.style.fontSize = font0 + 'px';shifted=false;
+          }
           node.style.width = out.w + '%';
-          showTip('ancho ' + out.w.toFixed(0) + '%');
+          showTip(scaleText ? 'cuadro y texto ' + Math.round(out.w/Math.max(1,w0)*100) + '%' : 'ancho ' + out.w.toFixed(0) + '%');
         } else if(handle === 'h'){
           var nh = Math.max(8, Math.round(h0 + (e.clientY - sy)));
           if(SNAP) nh = Math.round(nh / 4) * 4;
@@ -17169,7 +17204,12 @@ ${edit ? `
         window.removeEventListener('pointermove', move);
         window.removeEventListener('pointerup', up);
         hideTip();
-        post({ type:'change', id:id, x:out.x, y:out.y, w:out.w, rot:out.rot, h:out.h, ratio:out.ratio });
+        // No dejar data-x/y/w/rot desactualizados después del primer drag:
+        // el siguiente grab debe partir de B, nunca de la posición original A.
+        node.dataset.x = String(out.x); node.dataset.y = String(out.y);
+        node.dataset.w = String(out.w); node.dataset.rot = String(out.rot);
+        post({ type:'change', id:id, x:out.x, y:out.y, w:out.w, rot:out.rot, h:out.h, ratio:out.ratio,
+          customSize:out.customSize, exactSize:out._exactSize });
       }
       window.addEventListener('pointermove', move);
       window.addEventListener('pointerup', up);
@@ -17772,6 +17812,10 @@ window.addEventListener('message', ev => {
     put('x', round1(d.x)); put('y', round1(d.y)); put('w', round1(d.w)); put('rot', Math.round(d.rot));
     if(d.h != null) put('h', Math.round(d.h));
     if(d.ratio != null) put('ratio', Math.round(d.ratio * 1000) / 1000);
+    if(d.customSize != null && isFinite(d.customSize) && ['heading','paragraph','label'].includes(e.type)){
+      put('customSize', Math.max(1, Math.round(d.customSize*10)/10));
+      put('_exactSize', !!d.exactSize);
+    }
   } else if(d.type === 'change3d'){
     snapshot();
     put('offX', round2(d.offX)); put('offY', round2(d.offY));
@@ -19257,8 +19301,11 @@ $('file-json').addEventListener('change', ev => {
         pg && Array.isArray(pg.sections) && pg.sections.length && pg.sections.every(s =>
           s && Array.isArray(s.elements)))) throw 0;
       project = p; curPage = 0; curSec = 0; curEl = 0; selection = [];
-      renderPages(); refresh(); renderPreview();
-      toast('Proyecto abierto.');
+      history=[];future=[];
+      renderPages();renderScenes();renderPane();renderPreview();
+      var persisted=saveProject();
+      toast(persisted ? 'Proyecto abierto: '+page().name+' ('+project.pages.length+' páginas).'
+         : 'Proyecto abierto EN MEMORIA, pero NO se guardó. Descargá un respaldo antes de cerrar.');
     }catch(e){ toast('Ese archivo no parece un proyecto de Scrollcraft.'); }
   };
   r.readAsText(file);
