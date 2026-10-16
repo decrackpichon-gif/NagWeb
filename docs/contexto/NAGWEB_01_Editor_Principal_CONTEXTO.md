@@ -158,6 +158,8 @@ Editor **visual y profesional** para construir sitios y narrativas inmersivas co
 - Regresión integrada en `.github/nagweb-editor-parts-smoke.mjs`: recursos reales, selección de partes, interacción del puntero, persistencia, serialización y edición móvil representativa. Comprobar el estado de <https://github.com/decrackpichon-gif/NagWeb/actions/runs/38687596223> antes de dar el bloque por validado.
 - Próximo foco: tratar por separado los mockups y creativos que combinan gestos del puntero con transformaciones autorales, evitando que un efecto sobrescriba la pose manual, y consolidar defectos transversales cuando aparezcan en las pruebas.
 
+**Registro detallado recuperado de los siete fallos:** [`NAGWEB_01_ACEPTACION_MANUAL_2026-10-16.md`](NAGWEB_01_ACEPTACION_MANUAL_2026-10-16.md). No solicitar nuevamente los resultados ni dar por aceptado el Editor hasta resolverlos.
+
 ## Estado de aceptación V1.0: NO ACEPTADA (16/10/2026)
 
 **Corrección importante a la declaración anterior de «V1.0 terminada»:** el usuario ejecutó el checklist de siete flujos principales, **marcó los siete como fallidos y detalló las razones** en campos interactivos. Estos datos nunca fueron transmitidos al asistente porque el formulario sólo retenía estado local; además se perdió cuando cambió la conversación. **No se conocen las descripciones originales y no se deben inventar**. El usuario quedó obligado injustamente a repetir trabajo. Esta pérdida de reportes es una falla del asistente.
