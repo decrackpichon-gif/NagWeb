@@ -17235,8 +17235,11 @@ ${edit ? `
       var cy = node.getBoundingClientRect().top + node.getBoundingClientRect().height / 2;
       var out = { x:x0, y:y0, w:w0, rot:r0 };
       var h0 = node.offsetHeight, wpx0 = node.offsetWidth;
-      var textScale = /^(heading|paragraph|label)$/.test(node.classList.contains('hd')?'heading':node.classList.contains('pg')?'paragraph':node.classList.contains('lbl')?'label':'');
+      var textScale = node.classList.contains('hd') || node.classList.contains('pg') || node.classList.contains('lbl') || node.classList.contains('btn3');
       var font0 = parseFloat(getComputedStyle(node).fontSize) || 16;
+      var richSpans = node.classList.contains('rich') ? Array.from(node.querySelectorAll(':scope > span')) : [];
+      var richFonts0 = richSpans.map(function(n){return parseFloat(getComputedStyle(n).fontSize)||font0;});
+      var richStyles0 = richSpans.map(function(n){return n.style.fontSize;});
       var shifted = false;
       function move(e){
         var dx = (e.clientX - sx) / rect.width * 100, dy = (e.clientY - sy) / rect.height * 100;
@@ -17257,9 +17260,15 @@ ${edit ? `
             out.customSize = Math.round(font0 * out.w / Math.max(1,w0) * 10) / 10;
             out._exactSize = true;
             node.style.fontSize = out.customSize + 'px';
+            if(richSpans.length)out.runSizes=richSpans.map(function(n,i){
+              var sz=Math.max(1,Math.round(richFonts0[i]*out.w/Math.max(1,w0)*10)/10);
+              n.style.fontSize=sz+'px';return sz;
+            });
           }else if(shifted){
-            delete out.customSize;delete out._exactSize;
-            node.style.fontSize = font0 + 'px';shifted=false;
+            delete out.customSize;delete out._exactSize;delete out.runSizes;
+            node.style.fontSize = font0 + 'px';
+            richSpans.forEach(function(n,i){n.style.fontSize=richStyles0[i];});
+            shifted=false;
           }
           node.style.width = out.w + '%';
           showTip(scaleText ? 'cuadro y texto ' + Math.round(out.w/Math.max(1,w0)*100) + '%' : 'ancho ' + out.w.toFixed(0) + '%');
@@ -17284,7 +17293,7 @@ ${edit ? `
         node.dataset.x = String(out.x); node.dataset.y = String(out.y);
         node.dataset.w = String(out.w); node.dataset.rot = String(out.rot);
         post({ type:'change', id:id, x:out.x, y:out.y, w:out.w, rot:out.rot, h:out.h, ratio:out.ratio,
-          customSize:out.customSize, exactSize:out._exactSize });
+          customSize:out.customSize, exactSize:out._exactSize, runSizes:out.runSizes });
       }
       window.addEventListener('pointermove', move);
       window.addEventListener('pointerup', up);
@@ -17887,9 +17896,13 @@ window.addEventListener('message', ev => {
     put('x', round1(d.x)); put('y', round1(d.y)); put('w', round1(d.w)); put('rot', Math.round(d.rot));
     if(d.h != null) put('h', Math.round(d.h));
     if(d.ratio != null) put('ratio', Math.round(d.ratio * 1000) / 1000);
-    if(d.customSize != null && isFinite(d.customSize) && ['heading','paragraph','label'].includes(e.type)){
+    if(d.customSize != null && isFinite(d.customSize) && ['heading','paragraph','label','button'].includes(e.type)){
       put('customSize', Math.max(1, Math.round(d.customSize*10)/10));
       put('_exactSize', !!d.exactSize);
+    }
+    if(Array.isArray(d.runSizes) && e.richMode && Array.isArray(view.runs) &&
+      d.runSizes.length===view.runs.length && d.runSizes.every(n=>Number.isFinite(n)&&n>0)){
+      put('runs',view.runs.map((run,i)=>Object.assign({},run,{customSize:Math.round(d.runSizes[i]*10)/10,_exactSize:true})));
     }
   } else if(d.type === 'change3d'){
     snapshot();

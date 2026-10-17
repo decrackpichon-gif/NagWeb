@@ -179,6 +179,12 @@ Editor **visual y profesional** para construir sitios y narrativas inmersivas co
 - Regresiones combinadas: Historia sticky y Hero con Director activo; tamaño y giro por tiradores en 50%, manteniendo 0%, 100% y diseño base sin cambios. Sin motores paralelos ni mezcla de ramas.
 - Esta implementación requiere CI y aceptación manual antes de llamar aceptada a la V1.0.
 
+## Redimensionado proporcional consistente (16/10/2026)
+
+- En Diseño base, el tirador del Director reconoce **Shift + arrastrar**, sin Alt. En modo Momento mantiene la edición de escala del keyframe.
+- El editor principal también escala el texto en botones y todos los tramos de tipografía enriquecida. Los tamaños exactos se escriben en el proyecto para conservarse tras guardar, reabrir o publicar.
+- Pruebas de regresión añadidas para botón y texto rico, así como Shift sin Alt dentro del Director. **Pendiente aceptación manual V1.0**.
+
 ## Estado de aceptación V1.0: NO ACEPTADA (16/10/2026)
 
 **Corrección importante a la declaración anterior de «V1.0 terminada»:** el usuario ejecutó el checklist de siete flujos principales, **marcó los siete como fallidos y detalló las razones** en campos interactivos. Estos datos nunca fueron transmitidos al asistente porque el formulario sólo retenía estado local; además se perdió cuando cambió la conversación. **No se conocen las descripciones originales y no se deben inventar**. El usuario quedó obligado injustamente a repetir trabajo. Esta pérdida de reportes es una falla del asistente.

@@ -11,8 +11,11 @@ export async function runReportedEditorSmoke(page){
   await page.evaluate(()=>{
    const p=mkEl('image',{id:'qa-image-repeat',x:25,y:32,w:22});
    const t=mkEl('heading',{id:'qa-heading-scale',x:58,y:52,w:30,text:'Título para escalar'});
+    const btn=mkEl('button',{id:'qa-button-scale',x:28,y:72,w:24,text:'Botón escalable'});
+    const rich=mkEl('heading',{id:'qa-rich-scale',x:62,y:85,w:26,richMode:true,runs:[
+      {text:'Primera',customSize:27,_exactSize:true},{text:' Segunda',customSize:18,_exactSize:true}]});
    project.pages=[{id:nid(),name:'QA manual',slug:'qa-manual',sections:[
-    mkSection({id:'qa-free',name:'Prueba libre',layout:'free',height:160,elements:[p,t]})]}];
+    mkSection({id:'qa-free',name:'Prueba libre',layout:'free',height:160,elements:[p,t,btn,rich]})]}];
    curPage=0;curSec=0;curEl=0;selection=[];secFocus=true;viewMobile=false;
    saveProject();renderPages();renderPreview();
   });
@@ -61,6 +64,22 @@ export async function runReportedEditorSmoke(page){
   assert.ok(proportional.after.w>proportional.before.w,'Shift aumenta ancho de caja');
   assert.ok(proportional.after.font>proportional.before.font,'Shift aumenta letra proporcionalmente');
   await page.waitForFunction(()=>project.pages[0].sections[0].elements[1].customSize>0);
+   const buttonScale=await drag('qa-button-scale',60,0,true,true);
+   assert.ok(buttonScale.after.font>buttonScale.before.font,'Shift escala texto del botón');
+   await page.waitForFunction(()=>sec().elements.find(e=>e.id==='qa-button-scale')._exactSize===true);
+   const initialRich=await page.evaluate(()=>{
+     const doc=document.querySelector('#preview').contentDocument,n=doc.querySelector('[data-id="qa-rich-scale"]');
+     return [...n.querySelectorAll(':scope > span')].map(el=>parseFloat(doc.defaultView.getComputedStyle(el).fontSize));
+   });
+   await drag('qa-rich-scale',50,0,true,true);
+   await page.waitForFunction(()=>sec().elements.find(e=>e.id==='qa-rich-scale').runs?.[0]?._exactSize===true);
+   const savedRich=await page.evaluate(()=>{
+     const current=sec().elements.find(e=>e.id==='qa-rich-scale');
+     const saved=JSON.parse(localStorage.getItem(STORE_KEY)).pages[0].sections[0].elements.find(e=>e.id===current.id);
+     return{live:current.runs.map(x=>x.customSize),disk:saved.runs.map(x=>x.customSize)};
+   });
+   assert.ok(savedRich.live.every((n,i)=>n>initialRich[i]),'Shift escala fragmentos de texto rico');
+   assert.deepEqual(savedRich.disk,savedRich.live,'los fragmentos se guardan con tamaño exacto');
 
   const unsaved=await page.evaluate(()=>{
    const native=Storage.prototype.setItem;

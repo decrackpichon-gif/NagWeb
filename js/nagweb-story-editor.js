@@ -417,20 +417,29 @@ function syncCanvasTools(){
   var q=target();if(!q)return;ev.preventDefault();ev.stopPropagation();
   var r=q.n.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dist0=Math.max(12,Math.hypot(ev.clientX-cx,ev.clientY-cy));
   var at=atNow(storyContext(q.s,q.e)),state=currentMomentState(q.e,q.s,at),bw=Math.max(5,+viewValue(q.e,'w',60)),font0=parseFloat(w.getComputedStyle(q.n).fontSize)||16;
-  var text=/^(heading|paragraph|label|button)$/.test(q.e.type),proportional=canvasMode==='moment'||(text&&ev.altKey&&ev.shiftKey),last=1,moved=false,restore=rememberStyles(q.n,['--nw-sd-scale','width','font-size']);
+  var text=/^(heading|paragraph|label|button)$/.test(q.e.type),proportional=canvasMode==='moment'||(text&&ev.shiftKey),last=1,moved=false,restore=rememberStyles(q.n,['--nw-sd-scale','width','font-size']);
+   var runSpans=q.e.richMode?Array.from(q.n.querySelectorAll(':scope > span')):[];
+   var runFont0=runSpans.map(function(n){return parseFloat(w.getComputedStyle(n).fontSize)||font0;});
+   var restoreRuns=runSpans.map(function(n){return rememberStyles(n,['font-size']);});
+   var restoreAll=function(){restore();restoreRuns.forEach(function(fn){fn();});};
   function mv(e2){last=Math.max(.08,Math.min(8,Math.hypot(e2.clientX-cx,e2.clientY-cy)/dist0));moved=Math.abs(last-1)>.005;
    if(canvasMode==='moment'){q.n.style.setProperty('--nw-sd-scale',(state.scale*last/100).toFixed(4));}
-   else{q.n.style.width=Math.max(5,Math.min(100,bw*last))+'%';if(proportional&&text)q.n.style.fontSize=(font0*last)+'px';}
+   else{q.n.style.width=Math.max(5,Math.min(100,bw*last))+'%';
+    if(proportional&&text){q.n.style.fontSize=(font0*last)+'px';
+     runSpans.forEach(function(n,i){n.style.fontSize=(runFont0[i]*last)+'px';});
+    }}
    draw();
   }
-  function up(event){w.removeEventListener('pointermove',mv);w.removeEventListener('pointerup',up);w.removeEventListener('pointercancel',up);if(event.type==='pointercancel'||!moved){restore();return;}
+  function up(event){w.removeEventListener('pointermove',mv);w.removeEventListener('pointerup',up);w.removeEventListener('pointercancel',up);if(event.type==='pointercancel'||!moved){restoreAll();return;}
    if(canvasMode==='moment')commitMomentState(q.e,storyContext(q.s,q.e),at,state,{scale:state.scale*last});
    else{
     var patch={w:Math.round(Math.max(5,Math.min(100,bw*last))*10)/10};
     var scaleRuns=null;
     if(proportional&&text){
-     var baseSize=+viewValue(q.e,'customSize',0);patch.customSize=Math.round((baseSize>0?baseSize*last:font0*last)*10)/10;
-     if(q.e.richMode&&Array.isArray(q.e.runs))scaleRuns=function(){q.e.runs.forEach(function(run){if(+run.customSize)run.customSize=Math.round(run.customSize*last*10)/10;});};
+     patch.customSize=Math.round(font0*last*10)/10;patch._exactSize=true;
+     if(q.e.richMode&&Array.isArray(q.e.runs)&&q.e.runs.length===runSpans.length){
+      patch.runs=q.e.runs.map(function(run,i){return Object.assign({},run,{customSize:Math.round(runFont0[i]*last*10)/10,_exactSize:true});});
+     }
     }
     basePatch(q,patch,scaleRuns);
    }
