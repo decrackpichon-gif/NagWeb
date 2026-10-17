@@ -1963,7 +1963,7 @@ try {
   await expect(libraryFrame.locator('[data-resource-id="heroicons:x-mark"]')).toBeVisible();
   // Lightweight browse-index geometry paints a real icon thumbnail without
   // loading the full source bundle or a remote image.
-  const thumbnail=libraryFrame.locator('[data-resource-id="heroicons:x-mark"] [data-icon-thumbnail] svg');
+  const thumbnail=libraryFrame.locator('[data-resource-id="heroicons:x-mark"] + .card-visual-surface [data-icon-thumbnail] svg');
   await expect(thumbnail.locator("path")).toHaveCount(1);
   await expect(thumbnail.locator("path")).toHaveAttribute("d","M6 18 18 6M6 6l12 12");
   await libraryFrame.locator('[data-resource-id="heroicons:x-mark"]').click();
@@ -2010,7 +2010,7 @@ try {
   await libraryFrame.getByLabel("Proveedor",{exact:true}).selectOption("lucide");
   const cameraCard=libraryFrame.locator('[data-resource-id="lucide:camera"]');
   await expect(cameraCard).toBeVisible();
-  const lucidePreview=cameraCard.locator("[data-icon-thumbnail] svg");
+  const lucidePreview=libraryFrame.locator('[data-resource-id="lucide:camera"] + .card-visual-surface [data-icon-thumbnail] svg');
   await expect(lucidePreview.locator("path")).toHaveCount(1);
   await expect(lucidePreview.locator("circle")).toHaveCount(1);
   await expect(lucidePreview.locator("circle")).toHaveAttribute("r","3");
