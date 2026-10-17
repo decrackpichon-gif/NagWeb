@@ -355,7 +355,7 @@ function fillSelect(select, items) {
 }
 
 // Published metadata reflects only validated native editor adapters.
-const nativeModes = ["svg","uiverse-html","spinkit-html","magic-css","csshake","motion-preset"].filter
+const nativeModes = ["svg","uiverse-html","spinkit-html","magic-css","csshake","motion-preset"].filter(
   kind=>canInsertInEditor(kind,hostKinds ? [...hostKinds] : null));
 function currentFilters() {
   return {
