@@ -14,6 +14,10 @@ Este repositorio contiene cinco frentes **independientes** del mismo producto. L
 
 Para **NAGWEB 05**, el contrato específico y finito de cierre está en `tools/resource-etl/CRITERIOS_CIERRE_V1.md`. **Antes de implementar un nuevo recurso o animación, revisar el bloqueo de aceptación existente**: CI Chromium Windows, recorrido completo y entrega. No extender V1.0 para integrar las familias que hoy son «solo código» si ya están claramente identificadas.
 
+## Criterio universal de aceptación real (16/10/2026)
+
+**Nueva orden expresa del usuario:** aplicar el [protocolo canónico de recuperación y aceptación](https://github.com/decrackpichon-gif/NagWeb/blob/main/POLITICA_DESARROLLO_V1_PRIMERO.md) a todos los frentes, incluido este. Conservar y recuperar lo que realmente funcionaba en la rama correcta antes de reemplazar; corregir fallos del recorrido esencial y no sumar opciones para simular progreso. Probar el **mismo ZIP, iniciador, servidor, rutas, navegador y flujo hasta persistencia/exportación** que usará la persona. CI verde significa *candidato técnico*, no *V1.0 aceptada*: esta requiere confirmación real de uso del usuario. Si reporta un fallo, anular la declaración de cierre y diagnosticar ese paso antes de exigir nuevas pruebas, sin repetir toda la batería. Documentar el bloqueo, las pruebas reales y SHA. No hacer merges ni despliegues Vercel.
+
 ## Identificar el frente antes de editar
 
 Determinar la rama de trabajo ACTUAL y leer exclusivamente su ficha en `docs/contexto/`, además de sus documentos técnicos:
