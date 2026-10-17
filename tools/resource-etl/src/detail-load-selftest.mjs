@@ -25,7 +25,8 @@ const context = {
   renderEditableControls(resource) { rendered.push(resource.id); el.customize.hidden = false; }, updateApplyReadiness() {},
   mainArtifact: resource => ({ content: resource.id + " code" }), badge: value => value,
   isLottieLivePreview: () => false, isCssShakeLivePreview: () => false,
-  isMagicCssLivePreview: () => false, hasUiverseCssAnimation: () => false
+  isMagicCssLivePreview: () => false, hasUiverseCssAnimation: () => false,
+  illustrativePreviewDoc: resource => "Esquema de categoría de " + resource.id
 };
 runInNewContext(loader + redraw + replay, context);
 const resource = id => ({ id, title: id, runtime: {} });
@@ -96,7 +97,8 @@ previews.get("preview-failure").reject(new Error("renderer unavailable"));
 await previewFailure;
 assert.equal(context.selectedResource.id, "preview-failure");
 assert.equal(el.code.textContent, "preview-failure code");
-assert.equal(el.preview.hidden, true);
+assert.equal(el.preview.hidden, false, "A failed real preview shows an identified schema rather than a blank");
+assert.match(el.preview.srcdoc, /Esquema de categoría/);
 
 // Refresh the real index loader against select elements that clear removed options.
 const makeSelect = value => ({

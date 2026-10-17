@@ -1082,7 +1082,7 @@ async function openDetail(id) {
     el.preview.hidden = false;
     el.preview.srcdoc = doc;
     el.previewNote.textContent = illustrated
-      ? "Esquema ilustrativo. No reproduce este recurso ni sus cambios: requiere un visor específico."
+      ? (previewError ? "No pude generar la vista previa: " + previewError + ". Se muestra un esquema, no el recurso real." : "Esquema ilustrativo. No reproduce este recurso ni sus cambios: requiere un visor específico.")
       : isLottie
       ? "Velocidad y repetición cambian sin reiniciar. La reproducción automática controla inicio y pausa."
       : isCssShake
