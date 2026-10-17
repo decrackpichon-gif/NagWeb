@@ -459,3 +459,13 @@ Se recuperaron de los **importadores reales** las direcciones de 17 proveedores 
 - **Causa comprobada en código:** `editor-acceptance-server.mjs` atendía `/tools/resource-etl/resource-browser/` como directorio en vez de `resource-browser/index.html`; el smoke original sólo comprobaba la raíz y módulos sueltos, no la ruta real del botón.
 - **Corrección puntual:** resolver URLs de directorio terminadas en `/` a `index.html`, sin modificar editor, catálogo ni adaptadores; ampliación de `editor-acceptance-server-selftest.mjs` para pedir exactamente la URL del iframe y sus recursos CSS/JS. El resultado de CI de este cambio debe verificarse por commit, y todavía requiere aceptación manual del usuario.
 - **Regla de QA para el cierre:** no tratar el éxito de pruebas con servidores/fixtures alternativos como prueba de que el iniciador real abre la Biblioteca; comprobar la ruta con el servidor que se entrega.
+
+## Estado de aceptación tras el error de apertura (16/10/2026)
+
+**Estado actual: V1.0 NO ACEPTADA todavía.** El usuario intentó la entrega de Windows y el botón «Biblioteca» devolvió «Archivo no encontrado». Se confirmó que el iniciador local introducido en `ef63cb9` servía la URL de carpeta como archivo y provocaba HTTP 404; **no fue pérdida de los recursos ni razón para reconstruir el editor**. La ruta se corrigió en `bd43e68`; se reparó la sintaxis del nuevo test en `4ab8e7c`.
+
+- **QA real verificada del código corregido:** [Resource ETL CI 38988545920](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38988545920) = **success**, 4/4 jobs (Self test, Chromium Linux, Chromium Windows, Windows smoke). El selftest del iniciador consulta exactamente `/tools/resource-etl/resource-browser/?hostOrigin=...`, verifica el HTML de Biblioteca y archivos CSS/JS. No confundir este smoke HTTP y los Chromium con aceptación humana en el mismo equipo.
+- **Única comprobación de usuario requerida antes de cualquier nueva declaración de «listo»:** actualizar la rama `feat/resource-etl-v1` (GitHub Desktop Pull o ZIP actual completo, evitando una copia antigua); abrir `PROBAR_NAGWEB_05_WINDOWS.bat`, entrar a una escena y pulsar «Biblioteca». Confirmar que carga la interfaz real, no «Archivo no encontrado». **No exigir repetir el resto del recorrido** si este paso aún falla.
+- Si abre, continuar con los pasos mínimos de aceptación ya documentados en esta guía, sin inventar nuevas funcionalidades. Si no abre, registrar el error exacto y corregirlo antes de otro ZIP.
+- No crear tag, merge, deploy ni declarar V1.0 aceptada antes de confirmación del usuario. Rige la [política universal](https://github.com/decrackpichon-gif/NagWeb/blob/main/POLITICA_DESARROLLO_V1_PRIMERO.md).
+

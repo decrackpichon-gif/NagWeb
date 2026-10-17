@@ -1,6 +1,6 @@
 # NAGWEB 05 | Biblioteca de recursos · Entrega candidata V1.0
 
-**Estado a 16/10/2026: V1.0 técnicamente aprobada, lista para aceptación manual y entrega.** La CI integral está verde en Windows y Linux. No confundir esto con haber observado personalmente la ejecución en la computadora del usuario.
+**Estado a 16/10/2026: candidata técnica tras corregir un bloqueo de apertura; NO ACEPTADA manualmente.** La CI integral está verde en Windows y Linux. No confundir esto con haber observado personalmente la ejecución en la computadora del usuario.
 
 - **Frente:** NAGWEB 05 | Biblioteca de recursos, único frente tratado aquí.
 - **Repositorio:** https://github.com/decrackpichon-gif/NagWeb
@@ -9,6 +9,15 @@
 - **Pruebas verificadas (los cuatro trabajos `success`):** https://github.com/decrackpichon-gif/NagWeb/actions/runs/38777181423 . Contiene informes y capturas de Chromium Linux y Windows, más Self test y Windows smoke.
 - **Última publicación comprobada del índice derivado:** https://github.com/decrackpichon-gif/NagWeb/actions/runs/38749871198 (`success`).
 - **Separación:** `resource-vault-data` almacena los snapshots de catálogo y no debe fusionarse con la rama de código. El uso de la Biblioteca puede descargar del Vault al abrir un recurso por primera vez.
+
+## Estado de aceptación tras el error de apertura (16/10/2026)
+
+**Estado actual: V1.0 NO ACEPTADA todavía.** El usuario intentó la entrega de Windows y el botón «Biblioteca» devolvió «Archivo no encontrado». Se confirmó que el iniciador local introducido en `ef63cb9` servía la URL de carpeta como archivo y provocaba HTTP 404; **no fue pérdida de los recursos ni razón para reconstruir el editor**. La ruta se corrigió en `bd43e68`; se reparó la sintaxis del nuevo test en `4ab8e7c`.
+
+- **QA real verificada del código corregido:** [Resource ETL CI 38988545920](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38988545920) = **success**, 4/4 jobs (Self test, Chromium Linux, Chromium Windows, Windows smoke). El selftest del iniciador consulta exactamente `/tools/resource-etl/resource-browser/?hostOrigin=...`, verifica el HTML de Biblioteca y archivos CSS/JS. No confundir este smoke HTTP y los Chromium con aceptación humana en el mismo equipo.
+- **Única comprobación de usuario requerida antes de cualquier nueva declaración de «listo»:** actualizar la rama `feat/resource-etl-v1` (GitHub Desktop Pull o ZIP actual completo, evitando una copia antigua); abrir `PROBAR_NAGWEB_05_WINDOWS.bat`, entrar a una escena y pulsar «Biblioteca». Confirmar que carga la interfaz real, no «Archivo no encontrado». **No exigir repetir el resto del recorrido** si este paso aún falla.
+- Si abre, continuar con los pasos mínimos de aceptación ya documentados en esta guía, sin inventar nuevas funcionalidades. Si no abre, registrar el error exacto y corregirlo antes de otro ZIP.
+- No crear tag, merge, deploy ni declarar V1.0 aceptada antes de confirmación del usuario. Rige la [política universal](https://github.com/decrackpichon-gif/NagWeb/blob/main/POLITICA_DESARROLLO_V1_PRIMERO.md).
 
 ## Cómo abrir el editor integrado en Windows (doble clic)
 
