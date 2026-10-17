@@ -12,7 +12,7 @@ export async function runEditorPartsSmoke(page){
   '<div data-wpart="layer-1" style="width:200px;height:120px">Fondo</div>'+ 
   '<div data-wpart="layer-2" style="width:160px;height:96px">Imagen</div>'+
   '<p data-wpart="text-extra-0" data-nw-listobj="texts" data-nw-row="0" data-nw-key="text">Texto original</p></section></div>'+
-  '<div class="el wdg" data-id="test-story"><section class="nw-story">'+
+  '<div class="el wdg" data-id="test-story" data-nw-sd-el="1"><section class="nw-story">'+
   '<button data-nw-story-ch="1" class="on">1</button><button data-nw-story-ch="2">2</button>'+
   '<button data-nw-story-ch="3">3</button><button data-nw-story-part="media">Imagen</button>'+
   '<button data-nw-story-live="1">Seguir scroll</button>'+
@@ -77,6 +77,30 @@ export async function runEditorPartsSmoke(page){
   assert.ok(Math.abs(storyScale-1.7)<.02,'la imagen sticky respeta el escalado guardado');
   const expected={hero:'layer-2',chapter:'2',step:'2',media:'media-2',manual:true};
   assert.deepEqual(await inspect(),expected);
+  // Director activo en Momento no puede capturar las piezas de Historia/Hero.
+  await page.evaluate(()=>{
+    window.__oldStoryEnabled=sec().sdEnabled;sec().sdEnabled=true;
+    NAGWEB_STORY_EDITOR.setCanvasMode('moment');
+    document.querySelector('#preview').contentDocument.querySelector('[data-id="test-hero"]').setAttribute('data-nw-sd-el','1');
+  });
+  await fire('[data-nw-story-ch="3"]');await fire('[data-nw-story-part="media"]');
+  const coexist=await page.evaluate(()=>{
+    const d=document.querySelector('#preview').contentDocument,st=d.querySelector('.nw-story');
+    return{mode:NAGWEB_STORY_EDITOR.canvasMode(),chapter:st.__nwStoryChapter,
+      media:d.querySelector('.nw-story .nw-part-edit-active')?.dataset.wpart,
+      handles:d.querySelectorAll('.nw-wpart-h').length,
+      keyframes:(sec().elements.find(e=>e.id==='test-story').sdKeyframes||[]).length};
+  });
+  assert.deepEqual(coexist,{mode:'moment',chapter:3,media:'media-3',handles:2,keyframes:0},
+    'Director no roba el cambio de capítulo y la edición interna');
+  await select('test-hero');await fire('[data-nw-part="layer-1"]');
+  assert.deepEqual(await toolPart(),{part:'layer-1',handles:2},'también respeta capas Hero');
+  await page.evaluate(()=>{
+    sec().sdEnabled=window.__oldStoryEnabled;delete window.__oldStoryEnabled;
+    NAGWEB_STORY_EDITOR.setCanvasMode('base');
+  });
+  await select('test-hero');await fire('[data-nw-part="layer-2"]');
+  await select('test-story');await fire('[data-nw-story-ch="2"]');await fire('[data-nw-story-part="media"]');
   await load(2);
   assert.deepEqual(await inspect(),expected,'reconstruir iframe conserva selección');
   assert.deepEqual(await toolPart(),{part:'media-2',handles:2},'reconstruir iframe conserva además los tiradores');

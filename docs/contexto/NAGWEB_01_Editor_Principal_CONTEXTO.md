@@ -173,6 +173,12 @@ Editor **visual y profesional** para construir sitios y narrativas inmersivas co
 - Se añadió regresión de navegador: documento con recurso mayor de 6 MB, guardado, F5 y recuperación. **La V1.0 continúa pendiente de aceptación manual**. Si el navegador bloquea todas las bases o se agota la cuota de IndexedDB, descargar el respaldo JSON.
 - No se cambian otros frentes, ni se publica en Vercel.
 
+## Director y edición interna sin conflictos (16/10/2026)
+
+- Con «Momento de la escena» activo, el Director deja pasar los eventos destinados a botones de capítulo, barras de partes, tiradores y textos/campos internos de un widget. El fondo del widget conserva el gesto normal del Director.
+- Regresiones combinadas: Historia sticky y Hero con Director activo; tamaño y giro por tiradores en 50%, manteniendo 0%, 100% y diseño base sin cambios. Sin motores paralelos ni mezcla de ramas.
+- Esta implementación requiere CI y aceptación manual antes de llamar aceptada a la V1.0.
+
 ## Estado de aceptación V1.0: NO ACEPTADA (16/10/2026)
 
 **Corrección importante a la declaración anterior de «V1.0 terminada»:** el usuario ejecutó el checklist de siete flujos principales, **marcó los siete como fallidos y detalló las razones** en campos interactivos. Estos datos nunca fueron transmitidos al asistente porque el formulario sólo retenía estado local; además se perdió cuando cambió la conversación. **No se conocen las descripciones originales y no se deben inventar**. El usuario quedó obligado injustamente a repetir trabajo. Esta pérdida de reportes es una falla del asistente.

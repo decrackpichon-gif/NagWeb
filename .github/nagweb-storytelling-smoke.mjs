@@ -139,6 +139,43 @@ export async function runStorytellingSmoke(page){
  assert.equal(isolated.find(k=>k.at===100).x,200);
  assert.ok(isolated.some(k=>Math.abs(k.at-50)<.11));
 
+ // Tamaño y giro por mouse en 50%: sin editar base ni momentos vecinos.
+ const beforePose=await page.evaluate(()=>{
+  const e=sec().elements[0],ks=NAGWEB_STORY_EDITOR.frames(e);
+  return{zero:ks.find(k=>k.at===0),mid:ks.find(k=>Math.abs(k.at-50)<.11),
+    last:ks.find(k=>k.at===100),base:[e.x,e.y,e.w,e.rot]};
+ });
+ await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('story-scene',.5));
+ previewHandle=await page.$('#preview');previewFrame=await previewHandle.contentFrame();
+ await previewFrame.evaluate(()=>{
+  const h=document.querySelector('.nw-story-transform-h.size'),n=document.querySelector('[data-id="story-text"]'),
+    r=h.getBoundingClientRect(),b=n.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2,cx=b.left+b.width/2,cy=b.top+b.height/2;
+  h.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,clientX:x,clientY:y,button:0,pointerId:57}));
+  window.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,clientX:cx+(x-cx)*1.25,clientY:cy+(y-cy)*1.25,button:0,pointerId:57}));
+  window.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,clientX:cx+(x-cx)*1.25,clientY:cy+(y-cy)*1.25,button:0,pointerId:57}));
+ });
+ await page.waitForFunction(()=>NAGWEB_STORY_EDITOR.frames(sec().elements[0]).find(k=>Math.abs(k.at-50)<.11)?.scale>125);
+ previewHandle=await page.$('#preview');previewFrame=await previewHandle.contentFrame();
+ await previewFrame.evaluate(()=>{
+  const h=document.querySelector('.nw-story-transform-h.rot'),n=document.querySelector('[data-id="story-text"]'),
+    r=h.getBoundingClientRect(),b=n.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2,
+    cx=b.left+b.width/2,cy=b.top+b.height/2,d=Math.hypot(x-cx,y-cy),a=Math.atan2(y-cy,x-cx)+Math.PI/4;
+  h.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,clientX:x,clientY:y,button:0,pointerId:58}));
+  window.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,clientX:cx+d*Math.cos(a),clientY:cy+d*Math.sin(a),button:0,pointerId:58}));
+  window.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,clientX:cx+d*Math.cos(a),clientY:cy+d*Math.sin(a),button:0,pointerId:58}));
+ });
+ await page.waitForFunction(()=>NAGWEB_STORY_EDITOR.frames(sec().elements[0]).find(k=>Math.abs(k.at-50)<.11)?.rotate>45);
+ const afterPose=await page.evaluate(()=>{
+  const e=sec().elements[0],ks=NAGWEB_STORY_EDITOR.frames(e);
+  return{zero:ks.find(k=>k.at===0),mid:ks.find(k=>Math.abs(k.at-50)<.11),
+    last:ks.find(k=>k.at===100),base:[e.x,e.y,e.w,e.rot]};
+ });
+ assert.ok(afterPose.mid.scale>beforePose.mid.scale,'escalar 50%');
+ assert.ok(afterPose.mid.rotate>beforePose.mid.rotate+20,'girar 50%');
+ assert.deepEqual(afterPose.zero,beforePose.zero,'pose 0% intacta');
+ assert.deepEqual(afterPose.last,beforePose.last,'pose 100% intacta');
+ assert.deepEqual(afterPose.base,beforePose.base,'diseño base intacto');
+
  // En Diseño base el drag vuelve a modificar la geometría general, sin tocar keyframes.
  await page.click('[data-story-canvas-mode="base"]');
  const framesBeforeBase=await page.evaluate(()=>JSON.stringify(NAGWEB_STORY_EDITOR.frames(sec().elements[0])));

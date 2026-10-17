@@ -389,8 +389,14 @@ function syncCanvasTools(){
  }
  doc.addEventListener('pointerdown',function(ev){
   var streamTarget=target();if(ev.button===0&&streamTarget&&streamTarget.e.nwMotionInstance&&proceduralTemplate(streamTarget.e.nwMotionInstance.template)&&ev.target.closest('.nw-story-transform-h.size')){resizeStream(ev,streamTarget);return;}
-  if(canvasMode!=='moment'||ev.button===2||ev.target.closest('.nw-story-transform-h'))return;
+  if(canvasMode!=='moment'||ev.button!==0||ev.target.closest('.nw-story-transform-h'))return;
   var node=ev.target.closest&&ev.target.closest('.el[data-id]');if(!node||!node.hasAttribute('data-nw-sd-el')||node.classList.contains('sc-locked'))return;
+  // Mover el widget completo pertenece al Director; sus controles internos
+  // conservan su propia selección, arrastre y transformación.
+  if(node.classList.contains('wdg')&&ev.target.closest(
+    '.nw-edit-partbar,.nw-wpart-h,.nw-wpart-reset,.nw-wpart-action,'+
+    '[data-wpart],[data-wfield],[data-nw-listobj],[contenteditable]'
+  ))return;
   var id=node.dataset.id,found=typeof findEl==='function'&&findEl(id);if(!found)return;
   var s=page().sections[found[0]],e=s&&s.elements[found[1]];if(!s||!storyEnabled(s,e)||!M.eligible(e,s))return;
   if(ev.shiftKey)return; // conserva selección múltiple
