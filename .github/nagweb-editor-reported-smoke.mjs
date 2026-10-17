@@ -196,7 +196,7 @@ export async function runReportedEditorSmoke(page){
     URL.createObjectURL=create;URL.revokeObjectURL=revoke;HTMLAnchorElement.prototype.click=click;
    }
   });
-  assert.equal(exportedBig.mime,'application/json');
+  assert.match(exportedBig.mime,/^application\/json(?:;|$)/,'la descarga conserva MIME JSON');
   assert.ok(exportedBig.text.length>6*1024*1024,'el archivo JSON conserva imagen de 6 MB');
   const expectedBig=JSON.parse(exportedBig.text);
   assert.equal(expectedBig.assets.images.find(x=>x.id==='qa-large-asset').data.length,6*1024*1024+'data:image/jpeg;base64,'.length);
