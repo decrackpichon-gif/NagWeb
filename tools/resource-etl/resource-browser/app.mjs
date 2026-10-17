@@ -7,6 +7,7 @@ import { canInsertInEditor } from "../src/runtime/editor-availability.mjs";
 import { canQuickPreview, offlineQuickPreviewDoc } from "../src/runtime/quick-preview.mjs";
 import { realCardPreviewEligible, schematicMarkup, illustrativePreviewDoc, buildMotionNativePreview } from "../src/preview/visual-previews.mjs";
 import { buildHyperUiBrowserPreview } from "../src/preview/hyperui-browser-preview.mjs";
+import { buildGlslNoisePreview, isVerifiedNoiseShader } from "../src/preview/glsl-noise-browser-preview.mjs";
 import { FAVORITES_KEY, MAX_FAVORITES, getOptionalStorage, readFavorites, toggleFavorite, saveFavorites } from "../src/runtime/favorites.mjs";
 import { describeEditableControls } from "../src/runtime/editable-controls.mjs";
 import { readSavedCustomization, saveSavedCustomization, deleteSavedCustomization } from "../src/runtime/saved-customizations.mjs";
@@ -150,17 +151,24 @@ function drainCardPreviews(){
       try{
         const resource=await vault.getResource(node.dataset.autoPreviewId);
         if(!resource || !resource.license?.verified)throw Error("Fuente no verificada");
-        const doc=await previewDoc(resource);
+        const shader=isVerifiedNoiseShader(resource);
+        const doc=await previewDoc(resource,{}, {thumbnail:shader});
         if(!doc)throw Error("Sin renderizador autónomo");
         // Card thumbnails must be inert: never execute arbitrary third-party
         // scripts inside 48 independently loaded gallery iframes.
-        const inert=new DOMParser().parseFromString(doc,"text/html");
-        for(const script of inert.querySelectorAll("script,iframe,object,embed")) script.remove();
-        const safe=offlineQuickPreviewDoc("<!doctype html>"+inert.documentElement.outerHTML);
+        let safe;
+        if(shader){
+          // Fixed NagWeb renderer only, with verified shader as GLSL data.
+          safe=doc;
+        }else{
+          const inert=new DOMParser().parseFromString(doc,"text/html");
+          for(const script of inert.querySelectorAll("script,iframe,object,embed")) script.remove();
+          safe=offlineQuickPreviewDoc("<!doctype html>"+inert.documentElement.outerHTML);
+        }
         if(generation!==cardPreviewGeneration||!node.isConnected)return;
         const frame=document.createElement("iframe");
         frame.title="Muestra visual de "+(resource.title||resource.id);
-        frame.setAttribute("sandbox","");
+        frame.setAttribute("sandbox",shader?"allow-scripts":"");
         frame.setAttribute("referrerpolicy","no-referrer");
         frame.setAttribute("loading","lazy");
         frame.srcdoc=safe;
@@ -473,7 +481,7 @@ function cssVarStyle(resource, values = {}) {
     .join(";");
 }
 
-async function previewDoc(resource, values = {}) {
+async function previewDoc(resource, values = {}, {thumbnail=false} = {}) {
   const renderer = resource.runtime?.renderer;
   const provider = resource.source?.provider;
 
@@ -490,6 +498,7 @@ async function previewDoc(resource, values = {}) {
     return buildHyperUiBrowserPreview(resource,values,
       {stylesheet:cssResource?.license?.verified ? stylesheet?.content : null});
   }
+  if (renderer === "nagweb-glsl-snippet") return buildGlslNoisePreview(resource,{thumbnail});
   if (renderer === "nagweb-motion-native") return buildMotionNativePreview(resource, values);
 
   if (renderer === "nagweb-svg") {
@@ -1089,8 +1098,9 @@ async function openDetail(id) {
   const isLottie = isLottieLivePreview(resource);
   const isCssShake = isCssShakeLivePreview(resource);
   const isMagicCss = isMagicCssLivePreview(resource);
+  const isGlsl = isVerifiedNoiseShader(resource);
   el.preview.setAttribute("sandbox",
-    doc && (isLottie || isMagicCss || isCssShake) ? "allow-scripts" : "");
+    doc && (isLottie || isMagicCss || isCssShake || isGlsl) ? "allow-scripts" : "");
   const uiverseAnimated = hasUiverseCssAnimation(resource);
   el.previewReplay.hidden = illustrated || !(isCssShake || isMagicCss || uiverseAnimated);
   if (doc) {
@@ -1099,6 +1109,8 @@ async function openDetail(id) {
     el.preview.srcdoc = doc;
     el.previewNote.textContent = illustrated
       ? (previewError ? "No pude generar la vista previa: " + previewError + ". Se muestra un esquema, no el recurso real." : "Esquema ilustrativo. No reproduce este recurso ni sus cambios: requiere un visor específico.")
+      : isGlsl
+      ? "Visualización WebGL de la función GLSL original. Es código de ruido, no una escena ni un material listo para insertar."
       : isLottie
       ? "Velocidad y repetición cambian sin reiniciar. La reproducción automática controla inicio y pausa."
       : isCssShake
@@ -1336,7 +1348,7 @@ async function redrawEditablePreview({ retainRecoveryUndo = false } = {}) {
     Object.keys(selectedValues).length === Object.keys(values).length &&
     Object.entries(values).every(([id, value]) => selectedValues[id] === value)
   ) {
-    el.preview.setAttribute("sandbox", "");
+    el.preview.setAttribute("sandbox", isVerifiedNoiseShader(resource) ? "allow-scripts" : "");
     el.preview.hidden = false;
     el.previewFallback.hidden = true;
     const animated = hasUiverseCssAnimation(resource);

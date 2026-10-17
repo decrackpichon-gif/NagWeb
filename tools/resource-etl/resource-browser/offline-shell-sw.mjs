@@ -3,7 +3,7 @@
 import { PUBLIC_MODULES, BROWSER_SHELL_FILES } from "../src/preview/public-browser-assets.mjs";
 
 const CACHE_PREFIX = "nagweb-resource-browser-shell-";
-const CACHE_NAME = CACHE_PREFIX + "v4";
+const CACHE_NAME = CACHE_PREFIX + "v5";
 const BROWSER_ROOT = new URL("./", self.location.href);
 const ALLOWED = new Set([
   ...BROWSER_SHELL_FILES.map(file => new URL(file, BROWSER_ROOT).href),
