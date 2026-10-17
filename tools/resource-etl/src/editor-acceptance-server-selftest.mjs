@@ -37,10 +37,10 @@ try {
   libraryUrl.searchParams.set("hostOrigin", new URL(base).origin);
   const library = await fetch(libraryUrl);
   assert.equal(library.status, 200, "La Biblioteca integrada debe abrir, no devolver 404");
-  assert.match(library.headers.get("content-type"), /^text\\/html/);
+  assert.match(library.headers.get("content-type"), /^text\/html/);
   const libraryHtml = await library.text();
-  assert.match(libraryHtml, /<h1>Biblioteca de recursos<\\/h1>/);
-  assert.match(libraryHtml, /\\.\\/app\\.mjs/);
+  assert.match(libraryHtml, /<h1>Biblioteca de recursos<\/h1>/);
+  assert.match(libraryHtml, /\.\/app\.mjs/);
   for (const asset of ["styles.css", "app.mjs", "offline-shell-sw.mjs", "../src/runtime/persistent-vault-client.mjs"]) {
     const assetResponse = await fetch(new URL(asset, libraryUrl));
     assert.equal(assetResponse.status, 200, `Archivo faltante en Biblioteca: ${asset}`);
