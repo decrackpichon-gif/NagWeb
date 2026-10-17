@@ -12,6 +12,16 @@ Este repositorio contiene cinco frentes **independientes** del mismo producto. L
 - Conservar calidad, seguridad y pruebas necesarias. Mover mejoras opcionales al backlog V1.1+, **sin impedir la entrega**.
 - Leer la **[política universal canónica](https://github.com/decrackpichon-gif/NagWeb/blob/main/POLITICA_DESARROLLO_V1_PRIMERO.md)**, aplicable a todos los proyectos actuales y futuros salvo cambio expreso del usuario.
 
+## Criterio universal de aceptación real (16/10/2026)
+
+**Orden expresa del usuario para todos los proyectos NagWeb, incluyendo esta rama:** aplicar la [política canónica de recuperación y aceptación](https://github.com/decrackpichon-gif/NagWeb/blob/main/POLITICA_DESARROLLO_V1_PRIMERO.md) antes de declarar, probar o entregar cualquier V1.0.
+
+- **Conservar y recuperar lo que ya funcionaba** en el HEAD/historial de la rama específica. No sustituir la implementación con un prototipo simplificado, no reconstruir lo que existe y no fusionar otras ramas para «salvar» la versión.
+- **No confundir 4/4 CI verde con una aplicación que sirve**: verificar el artefacto, ruta y servidor que efectivamente se pide al usuario abrir (incluidos ZIP/batch, rutas internas, recursos/iframes) y el flujo esencial hasta guardar, reabrir y exportar. Mocks y tests paralelos no sustituyen ese recorrido.
+- **Estado declarado:** error funcional conocido = «no aceptada/bloqueada»; CI + flujo automático = «candidata técnica»; solo aceptación explícita de uso real del usuario = «V1.0 aceptada». Un texto histórico de «terminado» no anula un fallo posterior.
+- Si el usuario reporta una captura o problema, diagnosticar y corregir esa causa concreta **antes** de pedir un nuevo recorrido completo; luego solicitar una prueba focalizada. Evitar tareas infinitas, controles nuevos y cierres ceremoniales.
+- Mantener este criterio en la ficha del frente; responder a cada «Avanza» con cambio real, pruebas reales (entorno y alcance), SHA, pendientes y acción mínima del usuario. No modificar código de otros frentes, desplegar Vercel, mergear ni crear tags automáticamente.
+
 ## Identificar el frente antes de editar
 
 Determinar la rama de trabajo ACTUAL y leer exclusivamente su ficha en `docs/contexto/`, además de sus documentos técnicos:
