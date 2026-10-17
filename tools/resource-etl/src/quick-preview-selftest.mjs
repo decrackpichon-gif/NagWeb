@@ -38,9 +38,9 @@ const nativeMotion={
   })}]
 };
 const nativeDoc=buildMotionNativePreview(nativeMotion,{duration:1.25,delay:0.3,ease:"linear"});
-assert.match(nativeDoc,/translateZ\\(-300px\\)/);
-assert.match(nativeDoc,/translateZ\\(0px\\)/);
-assert.match(nativeDoc,/1\\.25s linear 0\\.3s infinite alternate/);
+assert.ok(nativeDoc.includes("translateZ(-300px)"));
+assert.ok(nativeDoc.includes("translateZ(0px)"));
+assert.ok(nativeDoc.includes("1.25s linear 0.3s infinite alternate"));
 assert.match(nativeDoc,/prefers-reduced-motion/);
 assert.match(nativeDoc,/default-src 'none'/);
 assert.doesNotMatch(nativeDoc,/<script/);
