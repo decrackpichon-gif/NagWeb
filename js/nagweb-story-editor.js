@@ -395,6 +395,7 @@ function syncCanvasTools(){
   // conservan su propia selección, arrastre y transformación.
   if(node.classList.contains('wdg')&&ev.target.closest(
     '.nw-edit-partbar,.nw-wpart-h,.nw-wpart-reset,.nw-wpart-action,'+
+    '[data-nw-part],[data-nw-story-ch],[data-nw-story-part],[data-nw-story-live],'+
     '[data-wpart],[data-wfield],[data-nw-listobj],[contenteditable]'
   ))return;
   var id=node.dataset.id,found=typeof findEl==='function'&&findEl(id);if(!found)return;
