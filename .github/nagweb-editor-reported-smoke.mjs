@@ -178,6 +178,74 @@ export async function runReportedEditorSmoke(page){
   assert.equal(recovered.title,'QA archivo grande recuperable','F5 trae la versión reciente');
   assert.ok(recovered.size>6*1024*1024,'recurso grande intacto luego de F5');
   assert.equal(recovered.warning,false,'copia durable válida no alerta falsamente');
+
+  // Recorrido completo que faltaba: usar el botón visible para DESCARGAR
+  // un archivo grande, reemplazar el proyecto y abrir ese mismo JSON.
+  const exportedBig=await page.evaluate(async()=>{
+   const blobs=[],create=URL.createObjectURL,revoke=URL.revokeObjectURL,
+     click=HTMLAnchorElement.prototype.click;
+   URL.createObjectURL=blob=>{blobs.push(blob);return 'blob:qa-big-'+blobs.length;};
+   URL.revokeObjectURL=()=>{};
+   HTMLAnchorElement.prototype.click=function(){};
+   try{
+    document.getElementById('btn-export').click();
+    await Promise.resolve();
+    if(blobs.length!==1)throw Error('El botón no descargó un único JSON');
+    return{mime:blobs[0].type,text:await blobs[0].text()};
+   }finally{
+    URL.createObjectURL=create;URL.revokeObjectURL=revoke;HTMLAnchorElement.prototype.click=click;
+   }
+  });
+  assert.equal(exportedBig.mime,'application/json');
+  assert.ok(exportedBig.text.length>6*1024*1024,'el archivo JSON conserva imagen de 6 MB');
+  const expectedBig=JSON.parse(exportedBig.text);
+  assert.equal(expectedBig.assets.images.find(x=>x.id==='qa-large-asset').data.length,6*1024*1024+'data:image/jpeg;base64,'.length);
+
+  await page.evaluate(()=>{
+   project=starterProject();project.title='QA proyecto previo recuperable';
+   curPage=0;curSec=0;curEl=0;selection=[];history=[];future=[];
+   saveProject();renderPages();renderScenes();renderPane();renderPreview();
+  });
+  await page.evaluate(()=>lastSavePromise);
+  await page.evaluate(data=>{
+   const input=document.getElementById('file-json'),transfer=new DataTransfer();
+   transfer.items.add(new File([data],'proyecto-pesado.json',{type:'application/json'}));
+   input.files=transfer.files;input.dispatchEvent(new Event('change',{bubbles:true}));
+  },exportedBig.text);
+  await page.waitForFunction(()=>project.title==='QA archivo grande recuperable'
+   &&project.assets.images.some(x=>x.id==='qa-large-asset'),{timeout:30000});
+  const importedBig=await page.evaluate(async()=>{
+   await lastSavePromise;
+   return{title:project.title,asset:project.assets.images.find(x=>x.id==='qa-large-asset').data.length,
+    canUndo:history.length===1 && JSON.parse(history[0]).title==='QA proyecto previo recuperable',
+    message:document.getElementById('toast').textContent};
+  });
+  assert.ok(importedBig.asset>6*1024*1024,'JSON importado retiene recurso completo');
+  assert.ok(importedBig.canUndo,'abrir JSON permite recuperar el proyecto anterior');
+  assert.match(importedBig.message,/Proyecto abierto:/);
+  await page.evaluate(()=>undo());
+  assert.equal(await page.evaluate(()=>project.title),'QA proyecto previo recuperable',
+   'Ctrl+Z recupera el proyecto anterior al importado');
+  await page.evaluate(()=>redo());
+  assert.equal(await page.evaluate(()=>project.title),'QA archivo grande recuperable',
+   'Rehacer vuelve al proyecto pesado importado');
+  await page.evaluate(()=>lastSavePromise);
+  // Un archivo ilegible nunca puede destruir el documento actual.
+  const beforeBad=await page.evaluate(()=>({title:project.title,undo:history.length}));
+  await page.evaluate(()=>{
+   const input=document.getElementById('file-json'),transfer=new DataTransfer();
+   transfer.items.add(new File(['{json-incorrecto'],'roto.json',{type:'application/json'}));
+   input.files=transfer.files;input.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+  await page.waitForFunction(()=>document.getElementById('toast').textContent.includes('no parece un proyecto'));
+  const afterBad=await page.evaluate(()=>({title:project.title,undo:history.length}));
+  assert.deepEqual(afterBad,beforeBad,'JSON inválido no reemplaza proyecto ni historial');
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>window.NAGWEB_AUTOSAVE_READY===true &&
+   project.title==='QA archivo grande recuperable',{timeout:30000});
+  assert.ok(await page.evaluate(()=>project.assets.images.find(x=>x.id==='qa-large-asset').data.length>6*1024*1024),
+   'JSON pesado importado sobrevive a F5');
+  console.log('Incidencia 7: exportación real, importación de JSON >6MB, Deshacer/Rehacer, archivo inválido y F5 OK');
   console.log('Incidencia 7: guardado y recuperación tras F5 de proyecto grande OK');
   console.log('Incidencias 3/4: capas de imágenes/textos, orden móvil y restauración de escena completa OK');
   console.log('Incidencias 1/2/7: Shift escala texto, dos arrastres A-B-C, alerta de cuota y recuperación OK');

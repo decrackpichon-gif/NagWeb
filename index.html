@@ -19435,12 +19435,15 @@ $('file-json').addEventListener('change', ev => {
       if(!p || !Array.isArray(p.pages) || !p.pages.length || !p.pages.every(pg =>
         pg && Array.isArray(pg.sections) && pg.sections.length && pg.sections.every(s =>
           s && Array.isArray(s.elements)))) throw 0;
+      // Un JSON válido reemplaza el documento abierto: conservar una vía
+      // de regreso antes del cambio, incluso si IndexedDB no está disponible.
+      saveVersion('Antes de importar un proyecto JSON', false);
+      history=[JSON.stringify(project)];future=[];
       project = p; curPage = 0; curSec = 0; curEl = 0; selection = [];
-      history=[];future=[];
       renderPages();renderScenes();renderPane();renderPreview();
       const persisted=saveProject(),importedName=page().name,importedPages=project.pages.length;
       lastSavePromise.then(durable=>toast(persisted||durable
-        ? 'Proyecto abierto: '+importedName+' ('+importedPages+' páginas).'
+        ? 'Proyecto abierto: '+importedName+' ('+importedPages+' páginas). Ctrl+Z recupera el anterior.'
         : 'Proyecto abierto EN MEMORIA, pero NO se guardó. Descargá un respaldo antes de cerrar.'));
     }catch(e){ toast('Ese archivo no parece un proyecto de Scrollcraft.'); }
   };
