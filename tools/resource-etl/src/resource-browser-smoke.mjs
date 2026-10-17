@@ -257,6 +257,11 @@ try {
     // isolated frame, never auto-fetches 48 card details, and can be closed.
     const spinnerCard=frame.locator('[data-quick-preview-id="'+spinkit.id+'"]');
     await expect(spinnerCard).toHaveCount(1);
+    // Every card starts with a visual; visible supported cards automatically load real CSS.
+    await expect(frame.locator('[data-resource-id="magicui:reference"] + .card-visual-surface [data-visual-schematic]')).toHaveCount(1);
+    await expect(frame.frameLocator('[data-auto-preview-id="'+css.id+'"] iframe').locator("button.card")).toBeVisible();
+    await expect(frame.locator('[data-auto-preview-id="'+css.id+'"] iframe')).toHaveAttribute("sandbox","");
+
     await spinnerCard.click();
     await expect(frame.frameLocator('[data-quick-preview-id="'+spinkit.id+'"] + [data-quick-preview-panel] iframe').locator(".sk-plane")).toBeVisible();
     await spinnerCard.click();

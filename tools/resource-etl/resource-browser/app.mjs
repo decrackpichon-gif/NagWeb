@@ -5,6 +5,7 @@ import { defaultEditableValues } from "../src/runtime/instance.mjs";
 import { createLatestSearch } from "../src/runtime/latest-search.mjs";
 import { canInsertInEditor } from "../src/runtime/editor-availability.mjs";
 import { canQuickPreview, offlineQuickPreviewDoc } from "../src/runtime/quick-preview.mjs";
+import { realCardPreviewEligible, schematicMarkup, illustrativePreviewDoc, buildMotionNativePreview } from "../src/preview/visual-previews.mjs";
 import { FAVORITES_KEY, MAX_FAVORITES, getOptionalStorage, readFavorites, toggleFavorite, saveFavorites } from "../src/runtime/favorites.mjs";
 import { describeEditableControls } from "../src/runtime/editable-controls.mjs";
 import { readSavedCustomization, saveSavedCustomization, deleteSavedCustomization } from "../src/runtime/saved-customizations.mjs";
@@ -109,6 +110,66 @@ function closeQuickPreview() {
   }
   quickPreviewTile = null;
 }
+// Automatic real samples only for visible cards, at most two at once.
+// Search changes invalidate all queued/in-flight updates. Never fetch 6762 details.
+let cardPreviewGeneration=0;
+let cardObserver=null;
+let cardPreviewQueue=[];
+let cardPreviewActive=0;
+function resetCardPreviews(){
+  cardPreviewGeneration++;
+  cardObserver?.disconnect();
+  cardObserver=null;
+  cardPreviewQueue=[];
+}
+function observeCardPreviews(){
+  const generation=cardPreviewGeneration;
+  const nodes=[...el.grid.querySelectorAll("[data-auto-preview-id]")];
+  if (typeof IntersectionObserver!=="function"){
+    for (const node of nodes.slice(0,4)) cardPreviewQueue.push({node,generation});
+    drainCardPreviews();
+    return;
+  }
+  cardObserver=new IntersectionObserver(entries=>{
+    for (const entry of entries){
+      if(!entry.isIntersecting)continue;
+      cardObserver?.unobserve(entry.target);
+      cardPreviewQueue.push({node:entry.target,generation});
+    }
+    drainCardPreviews();
+  },{rootMargin:"120px 0px",threshold:0.01});
+  for(const node of nodes)cardObserver.observe(node);
+}
+function drainCardPreviews(){
+  while(cardPreviewActive<2 && cardPreviewQueue.length){
+    const {node,generation}=cardPreviewQueue.shift();
+    if(generation!==cardPreviewGeneration||!node.isConnected)continue;
+    cardPreviewActive++;
+    (async()=>{
+      try{
+        const resource=await vault.getResource(node.dataset.autoPreviewId);
+        if(!resource || !resource.license?.verified)throw Error("Fuente no verificada");
+        const doc=await previewDoc(resource);
+        if(!doc)throw Error("Sin renderizador autónomo");
+        const safe=offlineQuickPreviewDoc(doc);
+        if(generation!==cardPreviewGeneration||!node.isConnected)return;
+        const frame=document.createElement("iframe");
+        frame.title="Muestra visual de "+(resource.title||resource.id);
+        frame.setAttribute("sandbox","");
+        frame.setAttribute("referrerpolicy","no-referrer");
+        frame.setAttribute("loading","lazy");
+        frame.srcdoc=safe;
+        node.replaceChildren(frame);
+        node.classList.add("is-real-preview");
+      }catch(error){
+        if(generation!==cardPreviewGeneration||!node.isConnected)return;
+        const label=node.querySelector(".card-visual-label");
+        if(label)label.textContent="Esquema de categoría";
+      }
+    })().finally(()=>{cardPreviewActive--;drainCardPreviews()});
+  }
+}
+
 function paintFavoriteButton(button,id) {
   const chosen = favorites.has(id);
   button.disabled = !id;
@@ -320,6 +381,7 @@ const resultSearch = createLatestSearch(
     },
     onResult: result => {
   closeQuickPreview();
+  resetCardPreviews();
   el.resultCount.textContent =
     `${result.total.toLocaleString("es-AR")} resultados`;
   const page = result.total ? Math.floor(result.offset / result.limit) + 1 : 0;
@@ -333,7 +395,7 @@ const resultSearch = createLatestSearch(
       <button type="button" class="resource-card" data-resource-id="${esc(item.id)}">
         <span class="provider">${esc(item.provider)}</span>
         <span class="editor-use-note" data-editor-use-label="${nativeModes.includes(item.editorUse) ? "available" : "code"}">${nativeModes.includes(item.editorUse) ? "Se puede insertar" : "Explorar y copiar código"}</span>
-        ${iconThumbnail(item)}
+        <span class="card-visual-space" aria-hidden="true"></span>
         <h3>${esc(item.title || item.name || item.id)}</h3>
         <p>${esc(item.description || item.searchText || item.id)}</p>
         <span class="card-foot">
@@ -341,6 +403,10 @@ const resultSearch = createLatestSearch(
           ${badge(item.kind)}
         </span>
       </button>
+      <div class="card-visual-surface" aria-hidden="true" ${realCardPreviewEligible(item) ? `data-auto-preview-id="${esc(item.id)}"` : ""}>
+        ${iconThumbnail(item) || schematicMarkup(item)}
+        <span class="card-visual-label">${iconThumbnail(item) ? "Vector real" : realCardPreviewEligible(item) ? "Cargando muestra real…" : "Esquema de categoría"}</span>
+      </div>
       ${canQuickPreview(item) ? `
         <button type="button" class="secondary quick-preview-toggle"
           data-quick-preview-id="${esc(item.id)}"
@@ -361,6 +427,7 @@ const resultSearch = createLatestSearch(
 
   el.empty.hidden = result.total !== 0;
   el.grid.hidden = result.total === 0;
+  observeCardPreviews();
     },
     onError: () => {
       el.resultCount.textContent = "No pude actualizar los resultados.";
@@ -410,6 +477,8 @@ async function previewDoc(resource, values = {}) {
       playerUrl: new URL("./vendor/lottie_light.min.js", import.meta.url).href
     });
   }
+
+  if (renderer === "nagweb-motion-native") return buildMotionNativePreview(resource, values);
 
   if (renderer === "nagweb-svg") {
     const artifact = (resource.artifacts || []).find(
@@ -999,18 +1068,22 @@ async function openDetail(id) {
   try { doc = await previewDoc(resource, selectedValues); }
   catch (error) { previewError = error?.message || String(error); }
   if (!isCurrent() || previewRequest !== previewRevision) return;
+  const illustrated = !doc;
+  if (illustrated) doc = illustrativePreviewDoc(resource);
   const isLottie = isLottieLivePreview(resource);
   const isCssShake = isCssShakeLivePreview(resource);
   const isMagicCss = isMagicCssLivePreview(resource);
   el.preview.setAttribute("sandbox",
     doc && (isLottie || isMagicCss || isCssShake) ? "allow-scripts" : "");
   const uiverseAnimated = hasUiverseCssAnimation(resource);
-  el.previewReplay.hidden = !doc || !(isCssShake || isMagicCss || uiverseAnimated);
+  el.previewReplay.hidden = illustrated || !(isCssShake || isMagicCss || uiverseAnimated);
   if (doc) {
     el.previewFallback.hidden = true;
     el.preview.hidden = false;
     el.preview.srcdoc = doc;
-    el.previewNote.textContent = isLottie
+    el.previewNote.textContent = illustrated
+      ? "Esquema ilustrativo. No reproduce este recurso ni sus cambios: requiere un visor específico."
+      : isLottie
       ? "Velocidad y repetición cambian sin reiniciar. La reproducción automática controla inicio y pausa."
       : isCssShake
         ? "Compará Hover y Siempre sin reiniciar. La pausa se conserva al cambiar de modo."
@@ -1240,6 +1313,8 @@ async function redrawEditablePreview({ retainRecoveryUndo = false } = {}) {
     }
     return;
   }
+  const illustrated = !doc;
+  if (illustrated) doc = illustrativePreviewDoc(resource);
   if (
     doc && request === previewRevision && el.detail.open && selectedResource === resource &&
     Object.keys(selectedValues).length === Object.keys(values).length &&
@@ -1249,8 +1324,10 @@ async function redrawEditablePreview({ retainRecoveryUndo = false } = {}) {
     el.preview.hidden = false;
     el.previewFallback.hidden = true;
     const animated = hasUiverseCssAnimation(resource);
-    el.previewReplay.hidden = !animated;
-    el.previewNote.textContent = animated
+    el.previewReplay.hidden = illustrated || !animated;
+    el.previewNote.textContent = illustrated
+      ? "Esquema ilustrativo. Los cambios no se pueden reproducir sin el visor específico."
+      : animated
       ? "Podés volver a reproducir las animaciones CSS. Los efectos Hover se activan al pasar el cursor."
       : "Preview segura generada desde nuestra copia persistente.";
     el.preview.srcdoc = doc;

@@ -184,3 +184,40 @@ pre{white-space:pre-wrap;word-break:break-word;background:#090b0e;border:1px sol
   text-align:center;font-size:12px;line-height:1.4}
 .quick-preview-panel[hidden]{display:none}
 .quick-preview-panel iframe{display:block;width:100%;height:164px;border:0;background:#f4f5f7}
+
+
+/* Visual-first catalog. Previews are outside the card button for valid HTML.
+   Transparent surface lets the entire resource card remain easy to click. */
+.resource-tile .resource-card{min-height:300px;justify-content:flex-start}
+.resource-card .card-visual-space{display:block;height:148px;flex:0 0 148px;margin-top:8px}
+.resource-tile .card-visual-surface{position:absolute;top:61px;left:13px;right:44px;height:140px;
+  border:1px solid #38424d;border-radius:11px;background:#eef2f7;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;pointer-events:none;isolation:isolate}
+.card-visual-surface iframe{border:0;width:100%;height:100%;display:block;background:#f3f5f7}
+.card-visual-label{position:absolute;bottom:5px;left:6px;z-index:1;color:#263446;
+  background:#f9fbf5e8;border:1px solid #dbe2eb;border-radius:5px;
+  padding:2px 5px;font-size:9px;letter-spacing:.01em;line-height:1.2}
+.card-visual-surface.is-real-preview .card-visual-label{display:none}
+.card-visual-surface .icon-thumb{display:grid;width:100%;height:100%;margin:0;border:0;
+  background:#edf1f8;color:#233853;place-items:center}
+.card-visual-surface .icon-thumb svg{width:74px;height:74px}
+.visual-schematic{display:flex;align-items:center;justify-content:center;width:100%;height:100%;position:relative;
+  background:linear-gradient(140deg,#e1e9f4,#f9fbff);overflow:hidden}
+.visual-schematic i{position:absolute;display:block;box-sizing:border-box}
+.s-orbit{width:100px;height:75px;border:3px solid #89a9cc;border-radius:50%;transform:rotate(-28deg)}
+.s-square{width:58px;height:58px;background:linear-gradient(135deg,#4b7bce,#76c7b9);
+  border-radius:14px;box-shadow:0 9px 18px #2c527040;transform:rotate(-12deg)}
+.s-trail{width:40px;height:4px;background:#8faacb;top:18px;right:18px;border-radius:8px}
+.s-wave{width:175px;height:100px;background:radial-gradient(ellipse at 20% 50%,#3c5dd8,transparent 65%),
+  radial-gradient(ellipse at 80% 55%,#61dec1,transparent 65%);transform:rotate(-15deg)}
+.s-wave.second{transform:rotate(42deg);opacity:.55}
+.s-cube{width:68px;height:68px;border:4px solid #6080bd;transform:rotate(-23deg) skew(7deg,7deg);border-radius:6px}
+.s-cube.small{width:40px;height:40px;border-color:#7ccbbb;transform:translate(25px,-12px) rotate(14deg)}
+.s-layout{height:84px;width:140px;border:5px solid #84a5c8;border-radius:12px;background:white;
+  box-shadow:0 8px 20px #6684a040}
+.s-layout-side{height:60px;width:28px;border-radius:5px;background:#bed3e6;left:calc(50% - 60px)}
+.s-layout-dot{height:18px;width:45px;border-radius:20px;background:#6bbfa2;transform:translate(27px,20px)}
+.s-dots{width:13px;height:13px;border-radius:50%;background:#628dd8;box-shadow:30px 0 #64bda9,-30px 0 #7dbdd6}
+.s-code-line{height:12px;width:104px;border-radius:10px;background:#7597bf;transform:translateY(-16px)}
+.s-code-line.short{width:64px;background:#83c1b2;transform:translate(-20px,14px)}
+@media(max-width:520px){.resource-tile .card-visual-surface{right:44px}}

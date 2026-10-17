@@ -469,3 +469,10 @@ Se recuperaron de los **importadores reales** las direcciones de 17 proveedores 
 - Si abre, continuar con los pasos mínimos de aceptación ya documentados en esta guía, sin inventar nuevas funcionalidades. Si no abre, registrar el error exacto y corregirlo antes de otro ZIP.
 - No crear tag, merge, deploy ni declarar V1.0 aceptada antes de confirmación del usuario. Rige la [política universal](https://github.com/decrackpichon-gif/NagWeb/blob/main/POLITICA_DESARROLLO_V1_PRIMERO.md).
 
+
+## Vista visual por defecto para todo el catálogo (17/10/2026)
+
+- Pedido de aceptación real del usuario: las fichas solo-texto no permiten reconocer los recursos; las tarjetas deben mostrar una representación visual sin botón y los ajustes de recursos reproducibles deben verse en el detalle.
+- Solución: SVG inline real cuando el índice ya aporta geometría; HTML/CSS Uiverse y SpinKit, Magic.css y CSSShake, más presets AnimXYZ, se muestran automáticamente **solo al entrar al área visible**, con máximo dos lecturas de detalle concurrentes y iframe sin permisos de red ni scripts de origen. No se precargan 6762 ítems.
+- Para tipos que necesitan React, Three.js, GLSL u otro renderer aún no implementado se muestra **esquema de categoría rotulado como tal**, nunca una falsa ejecución del recurso. AnimXYZ presets nativos usan sus tracks JSON reales para una mini animación CSS y vista de detalle personalizable en duración, demora y curva. El catálogo fuente, licencias, posibilidad de inserción y ramas ajenas no cambian.
+- La prueba de navegador verifica muestra real sin clic y esquema claramente separado de recurso no insertable. Revisar la CI de este commit; el usuario todavía debe confirmar visualmente la experiencia real, no llamar V1.0 aceptada por el código.
