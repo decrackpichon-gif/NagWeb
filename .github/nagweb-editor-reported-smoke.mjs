@@ -134,6 +134,31 @@ export async function runReportedEditorSmoke(page){
   assert.deepEqual(sceneReset.parts,{},'restaurar escena móvil quita posiciones y órdenes internos del Hero');
   assert.equal(sceneReset.currentX,sceneReset.desktopX,'restaurar móvil conserva coordenadas de computadora');
   assert.equal(sceneReset.sameDesktop,true,'restaurar móvil conserva capas del Hero en computadora');
+  // Reproducir un proyecto con imagen mayor a la cuota típica de localStorage.
+  const largeSave=await page.evaluate(async()=>{
+    project.title='QA archivo grande recuperable';
+    project.assets=project.assets||{images:[],models:[]};
+    project.assets.images.push({id:'qa-large-asset',name:'foto-grande.jpg',
+      data:'data:image/jpeg;base64,'+'A'.repeat(6*1024*1024)});
+    const local=saveProject(),durable=await lastSavePromise;
+    const record=await autosaveRead();
+    return{local,durable,stored:record&&record.data.includes('qa-large-asset'),
+      size:record&&record.data.length};
+  });
+  assert.ok(largeSave.size>6*1024*1024,'archivo de prueba supera 6MB');
+  assert.equal(largeSave.durable,true,'IndexedDB confirma guardado completo');
+  assert.equal(largeSave.stored,true,'respaldo conserva los recursos');
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>window.NAGWEB_AUTOSAVE_READY===true,{timeout:30000});
+  const recovered=await page.evaluate(()=>{
+    const image=project.assets.images.find(x=>x.id==='qa-large-asset');
+    return{title:project.title,size:image&&image.data.length,
+      warning:!!document.getElementById('nw-save-warning')};
+  });
+  assert.equal(recovered.title,'QA archivo grande recuperable','F5 trae la versión reciente');
+  assert.ok(recovered.size>6*1024*1024,'recurso grande intacto luego de F5');
+  assert.equal(recovered.warning,false,'copia durable válida no alerta falsamente');
+  console.log('Incidencia 7: guardado y recuperación tras F5 de proyecto grande OK');
   console.log('Incidencias 3/4: capas de imágenes/textos, orden móvil y restauración de escena completa OK');
   console.log('Incidencias 1/2/7: Shift escala texto, dos arrastres A-B-C, alerta de cuota y recuperación OK');
  } finally {

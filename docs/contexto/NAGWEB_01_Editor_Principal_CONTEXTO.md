@@ -160,6 +160,14 @@ Editor **visual y profesional** para construir sitios y narrativas inmersivas co
 
 **Registro detallado recuperado de los siete fallos:** [`NAGWEB_01_ACEPTACION_MANUAL_2026-10-16.md`](NAGWEB_01_ACEPTACION_MANUAL_2026-10-16.md). No solicitar nuevamente los resultados ni dar por aceptado el Editor hasta resolverlos.
 
+## Guardado durable de proyectos grandes (16/10/2026)
+
+- LocalStorage sigue como ruta rápida, pero una copia íntegra de cada guardado se escribe en una base IndexedDB independiente del historial de versiones. Si localStorage agota su cuota, el editor muestra el estado pendiente y confirma mediante la base durable; si fallan ambos, conserva una alerta persistente con descarga inmediata de JSON.
+- Al iniciar, se compara la fecha de guardado local y durable; si la durable es más reciente se restaura antes de habilitar edición, sin sobrescribir el proyecto con un borrador antiguo. Escrituras durables serializadas para evitar regresiones por carreras.
+- Importar JSON espera la confirmación de guardado durable antes de afirmar que el proyecto quedó almacenado.
+- Se añadió regresión de navegador: documento con recurso mayor de 6 MB, guardado, F5 y recuperación. **La V1.0 continúa pendiente de aceptación manual**. Si el navegador bloquea todas las bases o se agota la cuota de IndexedDB, descargar el respaldo JSON.
+- No se cambian otros frentes, ni se publica en Vercel.
+
 ## Estado de aceptación V1.0: NO ACEPTADA (16/10/2026)
 
 **Corrección importante a la declaración anterior de «V1.0 terminada»:** el usuario ejecutó el checklist de siete flujos principales, **marcó los siete como fallidos y detalló las razones** en campos interactivos. Estos datos nunca fueron transmitidos al asistente porque el formulario sólo retenía estado local; además se perdió cuando cambió la conversación. **No se conocen las descripciones originales y no se deben inventar**. El usuario quedó obligado injustamente a repetir trabajo. Esta pérdida de reportes es una falla del asistente.

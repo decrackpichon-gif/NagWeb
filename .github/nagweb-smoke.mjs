@@ -98,6 +98,7 @@ page.on('pageerror',e=>pageErrors.push(String(e&&e.stack||e)));
 
 await page.goto(process.env.NAGWEB_SMOKE_URL||'http://127.0.0.1:4173/index.html',{waitUntil:'domcontentloaded',timeout:60000});
 await page.waitForFunction(()=>window.NAGWEB_FEEDBACK16===1 && !!window.NAGWEB_UNIVERSAL && !!window.NAGWEB_SCROLL_DIRECTOR,{timeout:30000});
+await page.waitForFunction(()=>window.NAGWEB_AUTOSAVE_READY===true,{timeout:30000});
 await page.waitForSelector('#preview',{timeout:30000});
 await page.waitForFunction(()=>{
  const f=document.querySelector('#preview');

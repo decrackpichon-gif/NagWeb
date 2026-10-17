@@ -14520,6 +14520,57 @@ function loadProject(){
   return null;
 }
 let storageWarned = false;
+// Respaldo del proyecto completo para imágenes que superan la cuota de localStorage.
+const AUTOSAVE_STAMP_KEY=STORE_KEY+'.savedAt';
+const AUTOSAVE_DB_NAME='nagweb-editor-autosave-v1';
+let autosaveBootReady=false,autosaveSequence=0,autosaveClock=0;
+let lastSavePromise=Promise.resolve(true),autosaveDBPromise=null;
+window.NAGWEB_AUTOSAVE_READY=false;
+function autosaveDatabase(){
+  if(!autosaveDBPromise)autosaveDBPromise=new Promise((resolve,reject)=>{
+    try{
+      if(!window.indexedDB)throw Error('IndexedDB no disponible');
+      const req=indexedDB.open(AUTOSAVE_DB_NAME,1);
+      req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains('current'))req.result.createObjectStore('current');};
+      req.onsuccess=()=>resolve(req.result);
+      req.onerror=()=>reject(req.error||Error('IndexedDB no disponible'));
+      req.onblocked=()=>reject(Error('Base de datos bloqueada'));
+    }catch(err){reject(err);}
+  });
+  return autosaveDBPromise;
+}
+function autosaveRead(){
+  return autosaveDatabase().then(db=>new Promise((resolve,reject)=>{
+    const tx=db.transaction('current','readonly'),req=tx.objectStore('current').get('latest');
+    req.onsuccess=()=>resolve(req.result||null);
+    req.onerror=()=>reject(req.error);tx.onabort=()=>reject(tx.error);
+  }));
+}
+function autosaveWrite(record){
+  return autosaveDatabase().then(db=>new Promise((resolve,reject)=>{
+    const tx=db.transaction('current','readwrite');
+    tx.objectStore('current').put(record,'latest');
+    tx.oncomplete=()=>resolve(true);
+    tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
+  }));
+}
+function autosaveRestorable(p){
+  return !!(p&&Array.isArray(p.pages)&&p.pages.length&&p.pages.every(pg=>
+    pg&&Array.isArray(pg.sections)&&pg.sections.length&&pg.sections.every(s=>s&&Array.isArray(s.elements))));
+}
+function restoreSavedProject(){
+  return autosaveRead().then(record=>{
+    let localStamp=0;
+    try{localStamp=Number(localStorage.getItem(AUTOSAVE_STAMP_KEY))||0;}catch(_){}
+    if(!record||!record.data||!(record.ts>localStamp))return false;
+    const restored=migrate(JSON.parse(record.data));
+    if(!autosaveRestorable(restored))throw Error('Respaldo dañado');
+    project=restored;curPage=0;curSec=0;curEl=0;selection=[];history=[];future=[];
+    renderPages();renderScenes();renderPane();renderPreview();
+    return true;
+  });
+}
+
 /* ===================== COMPONENTES CON VARIANTES =====================
    Un componente es una escena "original" guardada en el proyecto. Cada escena
    que lo usa es una copia vinculada: si editás cualquier copia, el cambio viaja
@@ -14625,33 +14676,57 @@ function compBanner(){
     <span>${v ? 'Lo que cambies acá se guarda solo en esta variante.' : 'Lo que cambies acá se aplica a todas las copias de este componente.'}</span></div>`;
 }
 
-// El guardado local puede fallar si imágenes enormes llenan la cuota.
- // Jamás ocultar ese fallo tras un aviso que desaparece al cabo de 3 s.
-function showSaveFailure(){
-  var bar=document.getElementById('nw-save-warning');
+// Mantener respaldo en IndexedDB, incluso cuando localStorage se llena.
+function showSaveFailure(pending){
+  let bar=document.getElementById('nw-save-warning');
   if(!bar){
     bar=document.createElement('div');bar.id='nw-save-warning';bar.setAttribute('role','alert');
     bar.style.cssText='position:fixed;z-index:60000;bottom:0;left:0;right:0;padding:14px 18px;background:#451b25;color:white;font:600 14px/1.5 system-ui;display:flex;align-items:center;gap:14px;flex-wrap:wrap;box-shadow:0 -4px 24px #0007';
-    var label=document.createElement('span');label.style.flex='1';label.textContent='NO SE PUDO GUARDAR. Si recargás, podés perder los cambios. Descargá un respaldo JSON ahora (probablemente haya imágenes muy pesadas).';bar.appendChild(label);
-    var btn=document.createElement('button');btn.type='button';btn.textContent='Descargar respaldo JSON';
+    const label=document.createElement('span');label.style.flex='1';bar.appendChild(label);
+    const btn=document.createElement('button');btn.type='button';btn.textContent='Descargar respaldo JSON';
     btn.style.cssText='border:2px solid white;background:white;color:#451b25;border-radius:7px;padding:9px 12px;font:700 13px system-ui;cursor:pointer';
-    btn.onclick=function(){blobDownload(new Blob([JSON.stringify(project)],{type:'application/json'}),'nagweb-respaldo-urgente.json');};
+    btn.onclick=()=>blobDownload(new Blob([JSON.stringify(project)],{type:'application/json'}),'nagweb-respaldo-urgente.json');
     bar.appendChild(btn);document.body.appendChild(bar);
   }
+  bar.querySelector('span').textContent=pending
+    ? 'Guardando un proyecto grande en el navegador… No cierres esta pestaña hasta que termine.'
+    : 'NO SE PUDO GUARDAR. Si recargás, podés perder los cambios. Descargá un respaldo JSON ahora.';
 }
 function saveProject(){
   syncComponents();
+  if(!autosaveBootReady)return true; // No pisar un respaldo antes de recuperarlo.
+  let data;
+  try{data=JSON.stringify(project);}catch(_){storageWarned=true;showSaveFailure(false);return false;}
+  const stamp=autosaveClock=Math.max(Date.now(),autosaveClock+1);
+  const revision=++autosaveSequence;
+  let localSaved=false;
   try{
-    localStorage.setItem(STORE_KEY,JSON.stringify(project));
-    storageWarned=false;
-    var bar=document.getElementById('nw-save-warning');if(bar)bar.remove();
+    localStorage.setItem(STORE_KEY,data);
+    localSaved=true;
+    try{localStorage.setItem(AUTOSAVE_STAMP_KEY,String(stamp));}catch(_){}
+  }catch(_){}
+  storageWarned=!localSaved;
+  if(localSaved){
+    const bar=document.getElementById('nw-save-warning');if(bar)bar.remove();
     if(typeof maybeAutoVersion==='function')maybeAutoVersion();
-    return true;
-  }catch(e){
-    storageWarned=true;
-    showSaveFailure();
-    return false;
-  }
+  }else showSaveFailure(true);
+  // Una única cola asegura que la última edición llegue después de las anteriores.
+  lastSavePromise=lastSavePromise.catch(()=>false)
+    .then(()=>autosaveWrite({ts:stamp,data}))
+    .then(()=>{
+      if(revision===autosaveSequence&&!localSaved){
+        storageWarned=false;
+        const bar=document.getElementById('nw-save-warning');if(bar)bar.remove();
+        if(typeof maybeAutoVersion==='function')maybeAutoVersion();
+      }
+      return true;
+    },()=>{
+      if(revision===autosaveSequence&&!localSaved){
+        storageWarned=true;showSaveFailure(false);
+      }
+      return false;
+    });
+  return localSaved;
 }
 
 /* ---- deshacer / rehacer ---- */
@@ -19350,9 +19425,10 @@ $('file-json').addEventListener('change', ev => {
       project = p; curPage = 0; curSec = 0; curEl = 0; selection = [];
       history=[];future=[];
       renderPages();renderScenes();renderPane();renderPreview();
-      var persisted=saveProject();
-      toast(persisted ? 'Proyecto abierto: '+page().name+' ('+project.pages.length+' páginas).'
-         : 'Proyecto abierto EN MEMORIA, pero NO se guardó. Descargá un respaldo antes de cerrar.');
+      const persisted=saveProject(),importedName=page().name,importedPages=project.pages.length;
+      lastSavePromise.then(durable=>toast(persisted||durable
+        ? 'Proyecto abierto: '+importedName+' ('+importedPages+' páginas).'
+        : 'Proyecto abierto EN MEMORIA, pero NO se guardó. Descargá un respaldo antes de cerrar.'));
     }catch(e){ toast('Ese archivo no parece un proyecto de Scrollcraft.'); }
   };
   r.readAsText(file);
@@ -22915,6 +22991,23 @@ async function agentSend(){
 /*/EXT*/
 layoutFrame();
 renderPages(); refresh(false); renderPreview();
+(function(){
+  const shield=document.createElement('div');
+  shield.id='nw-autosave-boot';
+  shield.style.cssText='position:fixed;inset:0;z-index:61000;display:grid;place-items:center;background:var(--bg,#151515);color:var(--ink,#fff);font:600 15px system-ui;';
+  shield.textContent='Recuperando tu proyecto…';
+  document.body.appendChild(shield);
+  restoreSavedProject().then(recovered=>{
+    if(recovered)toast('Proyecto recuperado del guardado local seguro.');
+  }).catch(()=>{
+    // Cuando IndexedDB no está disponible, seguir con localStorage.
+  }).finally(()=>{
+    autosaveBootReady=true;
+    window.NAGWEB_AUTOSAVE_READY=true;
+    shield.remove();
+    saveProject();
+  });
+})();
 </script>
 <script src="js/creatives-v14-batch5.js"></script>
 <script src="js/nagweb-v14-direction.js"></script>
