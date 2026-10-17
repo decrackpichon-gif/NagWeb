@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { editorUseOf, canInsertInEditor } from "./runtime/editor-availability.mjs";
-import { transformMagicCssEffect,transformCssShakeRuntime,transformCssShakeEffect } from "./light-transformers.mjs";
+import { transformMagicCssEffect,transformAnimXyzPreset,transformCssShakeRuntime,transformCssShakeEffect } from "./light-transformers.mjs";
 import {CSSSHAKE_EFFECTS} from "./extractors/csshake.mjs";
-import { validatedMagicCssEffect,validatedCssEffect,validSavedMagicEffect } from "./runtime/nagweb-magic-css-effect.mjs";
+import { validatedMagicCssEffect,validatedCssEffect,validSavedMagicEffect,compileVerifiedAnimXyzPreset } from "./runtime/nagweb-magic-css-effect.mjs";
 import { transformSpinKitLoader } from "./light-transformers.mjs";
 import { buildResourceApplyEnvelope } from "./runtime/resource-apply-bridge.mjs";
 const svg={
@@ -120,3 +120,25 @@ for(const variant of CSSSHAKE_EFFECTS){
 const unknown=transformCssShakeEffect({raw:completeRaw,effect:{name:"shake-unknown",className:"shake-unknown"}});
 assert.equal(editorUseOf(unknown),"code","New upstream CSSShake variants remain copy-only until audited");
 console.log("Native editor availability: 10 CSSShake variants (hover and constant), SVG, HTML, Magic.css, license and provider validation OK.");
+
+
+const xyz=transformAnimXyzPreset({preset:{name:"flip-right",tracks:[{property:"rotateY",from:90,to:0}]},
+  commit:"offline-smoke",repository:"https://github.com/animxyz/animxyz"});
+assert.equal(editorUseOf(xyz),"motion-preset");
+assert.equal(canInsertInEditor("motion-preset",["motion-preset"]),true);
+assert.equal(canInsertInEditor("motion-preset",["svg"]),false);
+assert.equal(editorUseOf({...xyz,license:{verified:false}}),"code");
+const xyzEnvelope=buildResourceApplyEnvelope(xyz,{values:{duration:1.5,delay:0.3,ease:"ease-in"}});
+assert.equal(xyzEnvelope.descriptor.kind,"motion-preset");
+const xyzEffect=validatedCssEffect(xyzEnvelope);
+assert.equal(xyzEffect.id,xyz.id);
+assert.equal(xyzEffect.provider,"magic-css");
+assert.ok(xyzEffect.css.includes("rotateY(90deg)"));
+assert.ok(xyzEffect.css.includes("@keyframes nwAnimxyzflip_rightFrames"));
+assert.equal(xyzEffect.values.duration,1.5);
+assert.equal(validSavedMagicEffect(xyzEffect),true);
+assert.equal(compileVerifiedAnimXyzPreset({...xyzEnvelope.descriptor.payload.preset,
+  tracks:[{property:"x",from:"calc(1px)",to:0}]},xyz.id),null);
+assert.throws(()=>validatedCssEffect({...xyzEnvelope,descriptor:{...xyzEnvelope.descriptor,
+  payload:{preset:{...xyzEnvelope.descriptor.payload.preset,tracks:[{property:"opacity",from:2,to:1}]}}}}),/Preset AnimXYZ/);
+console.log("Verified AnimXYZ tracks, CSS FX and persistence checks OK.");
