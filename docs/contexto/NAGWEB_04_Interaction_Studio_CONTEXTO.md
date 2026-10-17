@@ -1,5 +1,10 @@
 # NAGWEB 04 | Interaction Studio (contexto para rama experimental)
 
+## Criterio universal de aceptación real (16/10/2026)
+
+**Decisión posterior a todos los estados históricos de V1.0:** seguir la [política de recuperación y aceptación](https://github.com/decrackpichon-gif/NagWeb/blob/main/POLITICA_DESARROLLO_V1_PRIMERO.md). Para **NAGWEB 04 | Interaction Studio (experimental)**, preservar avances reales de esta rama; cualquier fallo reportado del flujo principal deja el frente *no aceptado*, incluso con CI verde o una entrega técnica histórica. Validar el mismo mecanismo de apertura y artefacto que recibe el usuario y el ciclo de interacción, edición, recarga y exportación antes de declarar *V1.0 aceptada* tras confirmación real. No reconstruir ni mezclar ramas ni fabricar tareas opcionales. **Este cambio documental no constituye una auditoría funcional ni aceptación manual.**
+
+
 > **Ficha de continuidad de producto, decisiones y referencias.** Actualizada 11/10/2026 a partir de documentos y ramas comprobadas. No reemplaza el código ni el historial Git. Toda cifra de estado es una **fotografía** y hay que verificar cambios posteriores.
 
 **ATENCIÓN: copia de continuidad para la rama experimental.** Esta rama de trabajo es `feat/interaction-engine-experimental-v1`, no la rama estable de esta ficha. Primero leer `docs/interaction-engine-experimental-v1.md` y comprobar su HEAD y pruebas. No fusionar la experimental con la estable ni con main. Las referencias al HEAD estable que aparecen abajo son antecedentes, no el estado de la rama experimental.

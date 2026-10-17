@@ -1,5 +1,10 @@
 # NagWeb Interaction Engine · Experimental V1
 
+## Criterio universal de aceptación real (16/10/2026)
+
+**Decisión posterior a todos los estados históricos de V1.0:** seguir la [política de recuperación y aceptación](https://github.com/decrackpichon-gif/NagWeb/blob/main/POLITICA_DESARROLLO_V1_PRIMERO.md). Para **NAGWEB 04 | Interaction Studio (experimental)**, preservar avances reales de esta rama; cualquier fallo reportado del flujo principal deja el frente *no aceptado*, incluso con CI verde o una entrega técnica histórica. Validar el mismo mecanismo de apertura y artefacto que recibe el usuario y el ciclo de interacción, edición, recarga y exportación antes de declarar *V1.0 aceptada* tras confirmación real. No reconstruir ni mezclar ramas ni fabricar tareas opcionales. **Este cambio documental no constituye una auditoría funcional ni aceptación manual.**
+
+
 ## Directiva máxima de producción: versión 1.0 primero (15/10/2026)
 
 **Decisión general del usuario, prioritaria también para este frente:** terminar una V1.0 **estable, funcional y entregable**, en el menor tiempo y con la menor cantidad de trabajo innecesario. Congelar el alcance en el recorrido esencial, resolver bloqueantes reales de manera transversal, ejecutar la comprobación final pertinente y **cerrar la versión**. No proponer nuevas funciones, recursos, efectos, opciones, controles ni tareas de pulido no bloqueantes antes del cierre; registrarlas como V1.1+.
