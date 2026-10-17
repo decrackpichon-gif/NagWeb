@@ -906,6 +906,20 @@ try {
   // target an old iframe document on Windows.
   await expect(page.frameLocator("#preview").locator('html[data-nagweb-resource-edit-ready="1"]'))
     .toBeAttached();
+  // A bound document may still be in its first layout pass. The native
+  // resource edit command deliberately refuses stale vector dimensions.
+  // Ensure the current canvas has measurable geometry BEFORE the gesture.
+  await expect.poll(()=>page.evaluate(id=>{
+    const element=sec().elements.find(e=>e.id===id);
+    const doc=preview.contentDocument;
+    const node=doc?.querySelector('[data-id="'+id+'"]');
+    if(!element||!node||doc?.readyState==="loading" ||
+       node.closest(".sc")?.dataset.id!==sec()?.id)return false;
+    const width=Number.parseFloat(doc.defaultView.getComputedStyle(node).width);
+    return node.getClientRects().length>0&&width>0&&
+      Math.abs(Number(node.dataset.w)-vget(element,"w"))<.001 &&
+      Math.abs(doc.documentElement.clientWidth-frameW())<=1;
+  },inserted.element.id),{timeout:15000}).toBe(true);
   const svgClickTarget=page.frameLocator("#preview").locator(`[data-id="${inserted.element.id}"] svg`);
   await expect(svgClickTarget).toBeVisible();
   await svgClickTarget.dblclick();
