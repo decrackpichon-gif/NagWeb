@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { canQuickPreview, offlineQuickPreviewDoc } from "./runtime/quick-preview.mjs";
 import { buildMotionNativePreview, realCardPreviewEligible, schematicMarkup, illustrativePreviewDoc } from "./preview/visual-previews.mjs";
+import { isVerifiedNoiseShader, buildGlslNoisePreview } from "./preview/glsl-noise-browser-preview.mjs";
 
 assert.equal(canQuickPreview({provider:"uiverse",editorUse:"uiverse-html"}),true);
 assert.equal(canQuickPreview({provider:"uiverse",editorUse:"code"}),false);
@@ -52,3 +53,29 @@ assert.equal(realCardPreviewEligible({provider:"magicui",editorUse:"code"}),fals
 assert.match(schematicMarkup({kind:"react-component"}),/data-visual-schematic/);
 assert.match(illustrativePreviewDoc({kind:"react-component"}),/no vista real del recurso/);
 console.log("Visual-first cards: genuine native motion + honest schematic previews OK");
+
+const noise={
+  id:"glsl-noise:classic:2d",
+  source:{provider:"glsl-noise"},
+  license:{verified:true},
+  runtime:{renderer:"nagweb-glsl-snippet",entryArtifactId:"shader",
+    setup:{family:"classic",dimension:"2d",exportedSymbol:"cnoise"}},
+  artifacts:[{id:"shader",role:"source",format:"glsl",content:
+    "// Source GLSL, not an HTML-based placeholder.\n"+
+    "float cnoise(vec2 p){return sin(p.x)*cos(p.y);}\n"+
+    "#pragma glslify: export(cnoise)"}]
+};
+assert.equal(isVerifiedNoiseShader(noise),true);
+assert.equal(buildGlslNoisePreview({...noise,license:{verified:false}}),null);
+assert.equal(buildGlslNoisePreview({...noise,id:"glsl-noise:classic:4d"}),null);
+const noiseCard=buildGlslNoisePreview(noise,{thumbnail:true});
+assert.match(noiseCard,/float cnoise/);
+assert.match(noiseCard,/gl\.drawArrays/);
+assert.match(noiseCard,/img-src data:/);
+assert.match(noiseCard,/script-src 'unsafe-inline'/);
+assert.match(noiseCard,/const still=true/);
+assert.match(buildGlslNoisePreview(noise),/const still=false/);
+assert.equal(realCardPreviewEligible(noise),true);
+assert.equal(buildGlslNoisePreview({...noise,artifacts:[{...noise.artifacts[0],
+  content:noise.artifacts[0].content+"\n<script>alert(1)</script>"}]}),null);
+console.log("GLSL WebGL previews: original code, CSP and script separation OK");

@@ -6,7 +6,7 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { gzipSync } from "node:zlib";
 import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
-import { transformUiverseComponent, transformSpinKitLoader, transformMagicCssEffect, transformAnimXyzPreset, transformHyperUiRuntime, transformHyperUiBlock, transformCssShakeRuntime, transformCssShakeEffect } from "./light-transformers.mjs";
+import { transformUiverseComponent, transformSpinKitLoader, transformMagicCssEffect, transformAnimXyzPreset, transformHyperUiRuntime, transformHyperUiBlock, transformGlslNoise, transformCssShakeRuntime, transformCssShakeEffect } from "./light-transformers.mjs";
 import { normalizeHeroiconOutline } from "./extractors/heroicons.mjs";
 import { transformHeroiconOutline } from "./heroicons-transformer.mjs";
 import { browseHeroiconPaths } from "./snapshot/browse-icon-paths.mjs";
@@ -81,6 +81,13 @@ const hyperui=transformHyperUiBlock({
     darkAnalysis:null
   }
 });
+const glslShader=transformGlslNoise({
+  repository:"https://github.com/hughsk/glsl-noise",commit:"offline-smoke",
+  item:{path:"classic/2d.glsl",sha:"test",
+    exportedSymbol:"cnoise",code:"// A test shader function with its actual sampled GLSL expression.\n"+
+    "float cnoise(vec2 p) {float v=sin(p.x*1.7)*cos(p.y*2.3);return v;}\n"+
+    "#pragma glslify: export(cnoise)"}
+});
 const shakeSource={repository:"https://github.com/elrumordelaluz/csshake",commit:"offline-smoke",
  packageJson:{version:"1.6"},scss:"// fixture",effects:[{name:"shake",className:"shake"}],
  css:".shake{display:inherit}.shake:hover,.shake.shake-constant{animation:shake .5s infinite}@keyframes shake{from{transform:translate(0)}to{transform:translate(2px)}}"};
@@ -114,7 +121,7 @@ const codeOnly = {
   runtime:{renderer:"nagweb-react",entryArtifactId:"react"},
   artifacts:[{id:"react",role:"component",format:"tsx",content:"export default function Demo() { return <div>Demo</div>; }"}]
 };
-const resources = [icon, css, spinkit, magicCss, animxyz, hyperRuntime, hyperui, csshakeRuntime, csshake, heroicon, lucideCamera, codeOnly];
+const resources = [icon, css, spinkit, magicCss, animxyz, hyperRuntime, hyperui, glslShader, csshakeRuntime, csshake, heroicon, lucideCamera, codeOnly];
 const zip = data => gzipSync(JSON.stringify(data));
 const index = zip({ format: "nagweb-resource-browse-index", resourceCount: resources.length,
   resources: resources.map(r => ({ id: r.id, title: r.title, family: r.family, kind: r.kind, provider: r.source.provider,
@@ -287,6 +294,27 @@ try {
     await frame.getByRole("button",{name:"Cerrar",exact:true}).click();
     report.scenarios.push({browser:"HyperUI source HTML with verified Tailwind CSS in card and detail",
       width,status:"passed",realStyles:true,offline:true,noRemoteScripts:true});
+    const glslCard=frame.locator('[data-resource-id="'+glslShader.id+'"]');
+    await glslCard.scrollIntoViewIfNeeded();
+    const glslStage=frame.frameLocator('[data-auto-preview-id="'+glslShader.id+'"] iframe');
+    await expect(frame.locator('[data-auto-preview-id="'+glslShader.id+'"] iframe'))
+      .toHaveAttribute("sandbox","allow-scripts",{timeout:15000});
+    await expect(glslStage.locator("body[data-glsl-status]")).toBeVisible({timeout:15000});
+    const cardStatus=await glslStage.locator("body").getAttribute("data-glsl-status");
+    if(cardStatus==="rendered"){
+      await expect(glslStage.locator('img[alt="Valores reales de GLSL"]')).toHaveAttribute("src",/^data:image\/png/);
+    }else{
+      assert.equal(cardStatus,"unavailable");
+      await expect(glslStage.locator("[data-shader-message]")).toBeVisible();
+    }
+    await glslCard.click();
+    const glslDetail=frame.frameLocator("[data-preview]");
+    await expect(frame.locator("[data-preview]")).toHaveAttribute("sandbox","allow-scripts");
+    await expect(glslDetail.locator("body[data-glsl-status]")).toBeVisible({timeout:15000});
+    await expect(frame.locator("[data-preview-note]")).toContainText("función GLSL original");
+    await frame.getByRole("button",{name:"Cerrar",exact:true}).click();
+    report.scenarios.push({browser:"GLSL original function sampled with offline WebGL",
+      width,status:"passed",realGPU:cardStatus==="rendered",offline:true,sandboxed:true});
     // Explicit quick preview uses the real HTML/CSS in a sandboxed, network-
     // isolated frame, never auto-fetches 48 card details, and can be closed.
     const spinnerCard=frame.locator('[data-quick-preview-id="'+spinkit.id+'"]');
