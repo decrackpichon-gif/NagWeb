@@ -6,7 +6,7 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { gzipSync } from "node:zlib";
 import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
-import { transformUiverseComponent, transformSpinKitLoader, transformMagicCssEffect, transformCssShakeRuntime, transformCssShakeEffect } from "./light-transformers.mjs";
+import { transformUiverseComponent, transformSpinKitLoader, transformMagicCssEffect, transformAnimXyzPreset, transformCssShakeRuntime, transformCssShakeEffect } from "./light-transformers.mjs";
 import { normalizeHeroiconOutline } from "./extractors/heroicons.mjs";
 import { transformHeroiconOutline } from "./heroicons-transformer.mjs";
 import { browseHeroiconPaths } from "./snapshot/browse-icon-paths.mjs";
@@ -63,6 +63,9 @@ const magicCss=transformMagicCssEffect({
   item:{name:"puffIn",category:"magic_effects",path:"puffIn.scss",
     code:".puffIn{animation-name:puffIn}@keyframes puffIn{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}"}
 });
+const animxyz=transformAnimXyzPreset({preset:{name:"flip-right",tracks:[
+  {property:"rotateY",from:90,to:0}]},
+  commit:"offline-smoke",repository:"https://github.com/animxyz/animxyz"});
 const shakeSource={repository:"https://github.com/elrumordelaluz/csshake",commit:"offline-smoke",
  packageJson:{version:"1.6"},scss:"// fixture",effects:[{name:"shake",className:"shake"}],
  css:".shake{display:inherit}.shake:hover,.shake.shake-constant{animation:shake .5s infinite}@keyframes shake{from{transform:translate(0)}to{transform:translate(2px)}}"};
@@ -96,7 +99,7 @@ const codeOnly = {
   runtime:{renderer:"nagweb-react",entryArtifactId:"react"},
   artifacts:[{id:"react",role:"component",format:"tsx",content:"export default function Demo() { return <div>Demo</div>; }"}]
 };
-const resources = [icon, css, spinkit, magicCss, csshakeRuntime, csshake, heroicon, lucideCamera, codeOnly];
+const resources = [icon, css, spinkit, magicCss, animxyz, csshakeRuntime, csshake, heroicon, lucideCamera, codeOnly];
 const zip = data => gzipSync(JSON.stringify(data));
 const index = zip({ format: "nagweb-resource-browse-index", resourceCount: resources.length,
   resources: resources.map(r => ({ id: r.id, title: r.title, family: r.family, kind: r.kind, provider: r.source.provider,
@@ -1794,6 +1797,53 @@ try {
   assert.deepEqual(await page.evaluate(()=>sec().elements.map(e=>e.nwMagicCss?.id||null)),[null,null,null]);
   report.scenarios.push({editor:"Magic.css multi-selection across heading and SVG",
     status:"passed",atomicHistory:true,undoRedo:true,persistence:true,export:true,noCollateral:true});
+
+
+  // AnimXYZ animates original content, not a placeholder box. Verify the
+  // real NagWeb canvas, CSS computed by Chromium, persistence and export.
+  await page.evaluate(()=>{
+    Object.assign(sec(),{layout:"free",elements:[mkEl("heading",{
+      name:"Texto con AnimXYZ",text:"Texto editable",size:"xl",
+      x:46,y:43,w:58,rot:8,anim:"none"
+    })]});
+    selection=[sec().elements[0].id];curEl=0;secFocus=false;refresh();
+  });
+  const xyzBefore=await page.evaluate(()=>structuredClone(sec().elements[0]));
+  await page.getByRole("button",{name:"Biblioteca de recursos",exact:true}).click();
+  if(await libraryFrame.locator("[data-detail]").evaluate(n=>n.open))
+    await libraryFrame.getByRole("button",{name:"Cerrar",exact:true}).click();
+  const xyzCard=libraryFrame.locator('[data-resource-id="'+animxyz.id+'"]');
+  await expect(xyzCard.locator('[data-editor-use-label="available"]')).toBeVisible();
+  await xyzCard.click();
+  await expect(libraryFrame.getByRole("button",{name:"Aplicar animación al elemento",exact:true})).toBeEnabled();
+  await libraryFrame.getByRole("button",{name:"Aplicar animación al elemento",exact:true}).click();
+  await expect(libraryFrame.locator("[data-apply-status]")).toContainText("aplicada y guardada");
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  const xyzAfter=await page.evaluate(()=>structuredClone(sec().elements[0]));
+  for(const key of ["id","text","x","y","w","rot"])assert.equal(xyzAfter[key],xyzBefore[key]);
+  assert.equal(xyzAfter.nwMagicCss.id,animxyz.id);
+  const xyzInner=page.frameLocator("#preview").locator('[data-id="'+xyzAfter.id+'"] .nw-magic-inner');
+  await expect(xyzInner).toHaveCSS("animation-name","nwAnimxyzflip_rightFrames");
+  const xyzExport=await page.evaluate(()=>generateSite(flattenPage(page()),false,true,false));
+  assert.match(xyzExport,/@keyframes nwAnimxyzflip_rightFrames/);
+  assert.match(xyzExport,/rotateY\(90deg\)/);
+  assert.match(xyzExport,/prefers-reduced-motion:reduce/);
+  await page.evaluate(()=>{sec().elements[0].text="Puedo editar el texto";refresh();});
+  await expect(page.frameLocator("#preview").locator('[data-id="'+xyzAfter.id+'"]')).toContainText("Puedo editar el texto");
+  await expect(page.getByRole("button",{name:"Personalizar animación seleccionada",exact:true})).toBeEnabled();
+  await page.getByRole("button",{name:"Personalizar animación seleccionada",exact:true}).click();
+  await libraryFrame.locator("[data-detail]").waitFor({state:"visible"});
+  await expect(libraryFrame.getByRole("button",{name:"Guardar animación",exact:true})).toBeEnabled();
+  await libraryFrame.getByRole("button",{name:"Guardar animación",exact:true}).click();
+  await expect(libraryFrame.locator("[data-apply-status]")).toContainText("actualizada y guardada");
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  await page.reload();
+  assert.equal(await page.evaluate(()=>sec().elements[0].nwMagicCss.id),animxyz.id);
+  assert.equal(await page.evaluate(()=>sec().elements[0].text),"Puedo editar el texto");
+  assert.match(await page.evaluate(()=>generateSite(flattenPage(page()),false,true,false)),
+    /@keyframes nwAnimxyzflip_rightFrames/);
+  report.scenarios.push({editor:"AnimXYZ: apply motion, edit text and settings, export, reload",
+    status:"passed",noPlaceholder:true,portableCss:true});
 
   // CSSShake: verified Vault CSS, apply, editable Hover/Constant and offline export.
   await page.evaluate(()=>{
