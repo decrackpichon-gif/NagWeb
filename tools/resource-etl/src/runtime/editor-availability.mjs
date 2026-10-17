@@ -1,3 +1,4 @@
+import { compileVerifiedAnimXyzPreset } from "./nagweb-magic-css-effect.mjs";
 // A concise, conservative declaration of what this NagWeb editor can insert.
 // This is about tested native SVG and vetted isolated HTML, NOT every
 // theoretical descriptor supported by the generic ETL adapter registry.
@@ -5,6 +6,11 @@ export function editorUseOf(resource) {
   if (!resource?.license?.verified) return "code";
   const renderer = resource.runtime?.renderer;
   const entry = resource.artifacts?.find(a => a.id === resource.runtime?.entryArtifactId);
+  if (renderer==="nagweb-motion-native" && resource.source?.provider==="animxyz" &&
+      entry?.role==="animation-data" && entry.format==="json" &&
+      typeof entry.content==="string" && entry.content.length<=20000){
+    try{if(compileVerifiedAnimXyzPreset(JSON.parse(entry.content),resource.id))return "motion-preset";}catch{}
+  }
   if (renderer === "nagweb-svg" && entry?.role === "icon-data" &&
       entry.format === "svg" && typeof entry.content === "string" &&
       entry.content.trimStart().startsWith("<svg")) return "svg";
@@ -44,7 +50,7 @@ export function editorUseOf(resource) {
 }
 
 export function canInsertInEditor(editorUse, supportedKinds = null) {
-  if (editorUse !== "svg" && editorUse !== "uiverse-html" && editorUse !== "spinkit-html" && editorUse !== "magic-css" && editorUse !== "csshake") return false;
+  if (editorUse !== "svg" && editorUse !== "uiverse-html" && editorUse !== "spinkit-html" && editorUse !== "magic-css" && editorUse !== "csshake" && editorUse !== "motion-preset") return false;
   if (!supportedKinds) return true;
   return supportedKinds.includes(editorUse) ||
     ((editorUse === "uiverse-html" || editorUse === "spinkit-html") && supportedKinds.includes("html"));

@@ -246,7 +246,7 @@ const editParams = new URLSearchParams(location.search);
 // Optional UI hint: absent means a generic host with unrestricted adapters.
 const hostKindsText = applyTarget ? editParams.get("hostKinds") : null;
 const hostKinds = hostKindsText === null ? null :
-  new Set(hostKindsText.split(",").filter(kind => /^(?:svg|uiverse-html|spinkit-html|magic-css|csshake|html|react|threejs|css-inline-effect|css-class-effect|lottie)$/.test(kind)));
+  new Set(hostKindsText.split(",").filter(kind => /^(?:svg|uiverse-html|spinkit-html|magic-css|csshake|html|react|threejs|css-inline-effect|css-class-effect|lottie|motion-preset)$/.test(kind)));
 const editResourceId = applyTarget ? editParams.get("editResource") : null;
 const editSession = editResourceId ? editParams.get("editSession") : null;
 const editKind = editSession ? editParams.get("editKind") : null;
@@ -351,7 +351,7 @@ function fillSelect(select, items) {
 }
 
 // Published metadata reflects only validated native editor adapters.
-const nativeModes = ["svg","uiverse-html","spinkit-html","magic-css","csshake"].filter(
+const nativeModes = ["svg","uiverse-html","spinkit-html","magic-css","csshake","motion-preset"].filter
   kind=>canInsertInEditor(kind,hostKinds ? [...hostKinds] : null));
 function currentFilters() {
   return {
@@ -361,7 +361,7 @@ function currentFilters() {
     kinds: el.kind.value || undefined,
     editorUses: el.editorUse.value === "available" ? nativeModes
       : el.editorUse.value === "code"
-        ? ["code",...["svg","uiverse-html","spinkit-html","magic-css","csshake"].filter(kind=>!nativeModes.includes(kind))]
+        ? ["code",...["svg","uiverse-html","spinkit-html","magic-css","csshake","motion-preset"].filter(kind=>!nativeModes.includes(kind))]
         : undefined,
     ids: el.favoriteOnly.checked ? [...favorites] : undefined,
     offset,
@@ -631,7 +631,7 @@ el.preview.addEventListener("load", () => {
 
 function updateApplyReadiness(resource) {
   el.apply.disabled = true;
-  if(!editSession) el.apply.textContent = ["magic-css","csshake"].includes(resource?.source?.provider)
+  if(!editSession) el.apply.textContent = ["magic-css","csshake","animxyz"].includes(resource?.source?.provider)
     ? "Aplicar animación al elemento" : "Aplicar en NagWeb";
   if (editResourceId && (!editSession || resource?.id !== editResourceId || !Object.keys(editInitialValues).length)) {
     el.applyStatus.textContent = "Volvé a abrir la personalización desde el ícono seleccionado en NagWeb.";
@@ -677,6 +677,10 @@ function updateApplyReadiness(resource) {
   const acceptsAutonomousHtml = prepared.descriptor.kind === "html" &&
     ((hostKinds?.has("uiverse-html") && resource.source?.provider === "uiverse") ||
       (hostKinds?.has("spinkit-html") && resource.source?.provider === "spinkit"));
+  if(prepared.descriptor.kind==="motion-preset" && hostKinds && !hostKinds.has("motion-preset")){
+    el.applyStatus.textContent="Seleccioná un texto, botón, imagen u otro elemento compatible en el lienzo y después abrí la Biblioteca.";
+    return;
+  }
   if (hostKinds && !hostKinds.has(prepared.descriptor.kind) && !acceptsAutonomousHtml && !acceptsMagicCss && !acceptsCssShake) {
     el.applyStatus.textContent = hostKinds.has("svg")
       ? "Este editor admite SVG y HTML/CSS autónomo verificado. Este recurso todavía no se puede insertar, pero podés explorar y copiar su código."

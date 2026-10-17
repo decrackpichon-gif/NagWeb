@@ -225,7 +225,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     // Advertise this editor's current native insertion capability.
     // The receiver still validates the actual SVG for each request.
     url.searchParams.set("hostKinds", "svg,uiverse-html,spinkit-html" +
-      (magicTargetAtOpen || ["magic-css","csshake"].includes(context?.kind) ? ",magic-css,csshake" : ""));
+      (magicTargetAtOpen || ["magic-css","csshake"].includes(context?.kind) ? ",magic-css,csshake,motion-preset" : ""));
     if (context) {
       url.searchParams.set("editResource", context.resourceId);
       url.searchParams.set("editSession", context.session);
@@ -354,7 +354,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
       pending.add(message.requestId);
       let inserted = false;
       try {
-        if (["css-inline-effect","css-effect"].includes(message.descriptor?.kind)) {
+        if (["css-inline-effect","css-effect","motion-preset"].includes(message.descriptor?.kind)) {
           const effect=validatedCssEffect(message);
           const requested=["magic-css","csshake"].includes(editContext?.kind)
             ? [{id:editContext.elementId,fingerprint:editContext.fingerprint}]
@@ -399,7 +399,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
           result=buildResourceApplyResult(message,{status:"applied",
             message:editContext ? "Animación actualizada y guardada."
               : targets.length===1 ? "Animación aplicada y guardada en el elemento seleccionado."
-              : `Animación Magic.css aplicada y guardada en ${targets.length} elementos.`});
+              : `Animación aplicada y guardada en ${targets.length} elementos.`});
         } else {
         const isNativeHtml = message.descriptor?.kind === "html";
         const isolated = isNativeHtml ? prepareUiverseSandboxHtml(message) : null;
