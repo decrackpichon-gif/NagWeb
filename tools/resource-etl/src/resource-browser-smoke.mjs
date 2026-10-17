@@ -6,7 +6,7 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { gzipSync } from "node:zlib";
 import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
-import { transformUiverseComponent, transformSpinKitLoader, transformMagicCssEffect, transformAnimXyzPreset, transformCssShakeRuntime, transformCssShakeEffect } from "./light-transformers.mjs";
+import { transformUiverseComponent, transformSpinKitLoader, transformMagicCssEffect, transformAnimXyzPreset, transformHyperUiRuntime, transformHyperUiBlock, transformCssShakeRuntime, transformCssShakeEffect } from "./light-transformers.mjs";
 import { normalizeHeroiconOutline } from "./extractors/heroicons.mjs";
 import { transformHeroiconOutline } from "./heroicons-transformer.mjs";
 import { browseHeroiconPaths } from "./snapshot/browse-icon-paths.mjs";
@@ -66,6 +66,21 @@ const magicCss=transformMagicCssEffect({
 const animxyz=transformAnimXyzPreset({preset:{name:"flip-right",tracks:[
   {property:"rotateY",from:90,to:0}]},
   commit:"offline-smoke",repository:"https://github.com/animxyz/animxyz"});
+const hyperCss='.bg-black{background-color:rgb(17,51,85)}.text-white{color:rgb(255,255,255)}'+
+  '.rounded-lg{border-radius:12px}'+'/*verified-css*/'.repeat(105);
+const hyperRuntime=transformHyperUiRuntime({
+  repository:"https://github.com/markmead/hyperui",commit:"offline-smoke",
+  componentCss:hyperCss,componentJs:"// shared helper"
+});
+const hyperui=transformHyperUiBlock({
+  repository:"https://github.com/markmead/hyperui",commit:"offline-smoke",
+  item:{collection:"application",group:"buttons",index:1,key:"application/buttons/1",
+    light:{path:"public/examples/application/buttons/1.html",sha:"111111"},
+    dark:null,
+    lightAnalysis:{body:'<button class="bg-black text-white rounded-lg">HyperUI Real</button>',codeOnly:true},
+    darkAnalysis:null
+  }
+});
 const shakeSource={repository:"https://github.com/elrumordelaluz/csshake",commit:"offline-smoke",
  packageJson:{version:"1.6"},scss:"// fixture",effects:[{name:"shake",className:"shake"}],
  css:".shake{display:inherit}.shake:hover,.shake.shake-constant{animation:shake .5s infinite}@keyframes shake{from{transform:translate(0)}to{transform:translate(2px)}}"};
@@ -99,7 +114,7 @@ const codeOnly = {
   runtime:{renderer:"nagweb-react",entryArtifactId:"react"},
   artifacts:[{id:"react",role:"component",format:"tsx",content:"export default function Demo() { return <div>Demo</div>; }"}]
 };
-const resources = [icon, css, spinkit, magicCss, animxyz, csshakeRuntime, csshake, heroicon, lucideCamera, codeOnly];
+const resources = [icon, css, spinkit, magicCss, animxyz, hyperRuntime, hyperui, csshakeRuntime, csshake, heroicon, lucideCamera, codeOnly];
 const zip = data => gzipSync(JSON.stringify(data));
 const index = zip({ format: "nagweb-resource-browse-index", resourceCount: resources.length,
   resources: resources.map(r => ({ id: r.id, title: r.title, family: r.family, kind: r.kind, provider: r.source.provider,
@@ -256,6 +271,22 @@ try {
     await page.goto(`http://127.0.0.1:${server.address().port}/host`);
     const frame = page.frameLocator('iframe[title="Biblioteca de prueba"]');
     await frame.locator('[data-resource-id="smoke:icon"]').waitFor();
+    // A HyperUI card and detail use its own mirrored HTML and Tailwind CSS.
+    // The preview is a real styled element, not a repeated category schematic.
+    const hyperCard=frame.locator('[data-resource-id="'+hyperui.id+'"]');
+    await hyperCard.scrollIntoViewIfNeeded();
+    const hyperStage=frame.frameLocator('[data-auto-preview-id="'+hyperui.id+'"] iframe');
+    await expect(hyperStage.getByRole("button",{name:"HyperUI Real"})).toBeVisible({timeout:15000});
+    await expect(hyperStage.getByRole("button",{name:"HyperUI Real"}))
+      .toHaveCSS("background-color","rgb(17, 51, 85)");
+    await hyperCard.click();
+    const hyperDetail=frame.frameLocator('[data-preview]');
+    await expect(hyperDetail.getByRole("button",{name:"HyperUI Real"})).toBeVisible();
+    await expect(hyperDetail.getByRole("button",{name:"HyperUI Real"}))
+      .toHaveCSS("background-color","rgb(17, 51, 85)");
+    await frame.getByRole("button",{name:"Cerrar",exact:true}).click();
+    report.scenarios.push({browser:"HyperUI source HTML with verified Tailwind CSS in card and detail",
+      width,status:"passed",realStyles:true,offline:true,noRemoteScripts:true});
     // Explicit quick preview uses the real HTML/CSS in a sandboxed, network-
     // isolated frame, never auto-fetches 48 card details, and can be closed.
     const spinnerCard=frame.locator('[data-quick-preview-id="'+spinkit.id+'"]');
