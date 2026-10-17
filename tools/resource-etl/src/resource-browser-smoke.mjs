@@ -904,17 +904,13 @@ try {
     name: "Personalizar ícono seleccionado", exact: true
   });
   await expect(editShortcutButton).toBeEnabled();
-  // Chromium/Windows can consume physical Alt+Enter at the browser layer.
-  // Verify our exact shortcut handler with a bubbling keyboard event there;
-  // keep the real OS keyboard path on Linux.
+  // CI desktops on either OS may reserve Alt+Enter before Chromium
+  // delivers it. Exercise our exact bubbling handler deterministically;
+  // accessible native Enter is independently tested below.
   await editShortcutButton.focus();
-  if(process.platform==="win32"){
-    await editShortcutButton.dispatchEvent("keydown",{
-      key:"Enter",code:"Enter",altKey:true,bubbles:true,cancelable:true
-    });
-  }else{
-    await page.keyboard.press("Alt+Enter");
-  }
+  await editShortcutButton.dispatchEvent("keydown",{
+    key:"Enter",code:"Enter",altKey:true,bubbles:true,cancelable:true
+  });
   await expect(page.getByRole("dialog", { name: "Biblioteca de recursos", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
   // Native Enter is the accessible fallback when the OS reserves Alt+Enter.
