@@ -34,9 +34,13 @@ Esta regla **prevalece sobre prioridades antiguas de expansión** de esta ficha,
 
 **Regla operativa:** ante «Avanza», trabajar en A o B y avanzar hacia el cierre. No introducir un bloque C por mejoras opcionales. Consultar siempre el HEAD antes de modificar; esta fotografía de CI no reemplaza el estado actual.
 
-## Estado de entrega: Cámara 3D V1.0 lista (15/10/2026)
+## Estado actual: candidato técnico, pendiente de aceptación real (17/10/2026)
 
-**V1.0 terminada dentro del alcance cerrado anteriormente definido.** Se cerró el bloqueante de la oclusión inversa experimental preservando su implementación pero desactivándola por defecto, sin alterar el uso esencial de HTML real ni las máscaras HTML→WebGL admitidas. No se requirió introducir nuevos efectos, herramientas ni controles.
+La revisión del 17/10 confirma que el runtime no cambió desde `3088025`, cuyas pruebas Chromium/WebGL se verificaron directamente en GitHub. Las suites locales de cámara, runtime, editor, Three r128, proyección, interacción y timing aprobaron. No hay un bloqueo funcional nuevo demostrado; no se modifica el motor ni se amplía alcance. No se pudo repetir Chromium local por descarga inválida del navegador. Falta validar el acceso real del paquete y aceptación del usuario. Ver [entrega y prueba manual](../NAGWEB_03_CAMARA_3D_V1_0_ENTREGA.md). Rama local separada autorizada: `fix/camera-v1-stable-20261017`; no subir cambios externos sin aprobación.
+
+### Registro histórico del 15/10 (no constituye aceptación vigente)
+
+**Estado técnico declarado el 15/10, sustituido por el criterio de candidato técnico indicado arriba.** Se cerró el bloqueante de la oclusión inversa experimental preservando su implementación pero desactivándola por defecto, sin alterar el uso esencial de HTML real ni las máscaras HTML→WebGL admitidas. No se requirió introducir nuevos efectos, herramientas ni controles.
 
 **Fuente de verdad de la entrega:** código en `feat/scroll-camera-v1` commit [`3088025f9de18c1c13f937f760cba48064f193da`](https://github.com/decrackpichon-gif/NagWeb/commit/3088025f9de18c1c13f937f760cba48064f193da), anterior a este commit documental.
 

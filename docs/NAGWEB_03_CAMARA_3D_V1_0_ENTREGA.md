@@ -1,6 +1,6 @@
 # NAGWEB 03 | Cámara 3D · Entrega V1.0
 
-**Estado:** V1.0 estable y utilizable **en su rama exclusiva**, dentro del alcance cerrado acordado el 15/10/2026.
+**Estado actual (17/10/2026): candidato técnico de V1.0, pendiente de aceptación real del usuario.** El alcance permanece cerrado; no hay nuevos bloqueos funcionales demostrados. Las pruebas automáticas no equivalen a aceptación manual.
 
 - **Repositorio:** https://github.com/decrackpichon-gif/NagWeb
 - **Rama:** `feat/scroll-camera-v1`
@@ -17,7 +17,7 @@ La opción de cámara **«Crear ejemplo completo»** genera una escena reutiliza
 ## Cómo acceder y usar esta versión sin desplegarla
 
 1. Abrir [la rama de Cámara 3D en GitHub](https://github.com/decrackpichon-gif/NagWeb/tree/feat/scroll-camera-v1). Elegir **Code → Download ZIP**, descomprimir y conservar la estructura del proyecto.
-2. Abrir el `index.html` del repositorio en un navegador moderno. Las pruebas de Chromium funcionan con `file://`; si un navegador restringe archivos locales, abrir la carpeta con un servidor estático local, por ejemplo Live Server.
+2. Servir la carpeta completa mediante un servidor estático local y abrir su `index.html` (por ejemplo, `http://localhost:4173/index.html`). No abrir archivos de `js/` ni copiar el HTML a otra carpeta. La prueba histórica de cámara usó servidor HTTP; otras pruebas espaciales usaron `file://` con dependencias interceptadas para fixtures. Estas últimas no certifican el ZIP descargado sin conexión ni la carga real de proveedores externos.
 3. En el editor, entrar a **Lienzo libre** y a las herramientas de **Cámara 3D**. Usar «Crear ejemplo completo» para empezar, o usar textos, imágenes y modelos propios.
 4. Ajustar los elementos y los encuadres de la cámara; recorrer el Director de Scroll y comprobar la vista previa.
 5. Usar el guardado del proyecto y, para respaldo transferible, la función **Guardar proyecto** en JSON. Exportar el sitio desde la opción de exportación del editor; conservar los recursos locales que requiera la exportación. El guardado automático en navegador no sustituye un respaldo JSON para trasladar equipos.
@@ -39,4 +39,25 @@ Esto es una V1.0 dentro de su **alcance finito**, no una promesa de oclusión un
 
 ## Cierre
 
-Se declara **NAGWEB 03 | Cámara 3D V1.0 lista para utilizar desde la rama**. No se integró con los otros frentes ni se publicó en Vercel. Solo reabrir V1.0 ante una regresión real del flujo esencial, pérdida de datos o defecto crítico demostrado; las mejoras y expansiones pertenecen a versiones posteriores.
+Se conserva como **candidato técnico**. Para aceptar V1.0 falta comprobar el acceso real del paquete en el equipo del usuario y recibir su confirmación. No se integró con los otros frentes ni se publicó en Vercel. No se agregan funciones opcionales para cerrar esta aceptación.
+
+
+## Aceptación manual breve y finita
+
+Sobre la carpeta completa servida por HTTP:
+
+1. Crear una escena de **Lienzo libre**, activar **Director de Scroll → Cámara 3D** y pulsar **Crear ejemplo completo**. Deben aparecer dos textos y una imagen, con cinco encuadres.
+2. Recorrer **0/25/50/75/100 %**; volver al mismo porcentaje debe recuperar el mismo encuadre. Cambiar X/Y/Z y un ángulo de un encuadre, luego Deshacer: debe recuperar el estado anterior.
+3. Añadir una forma 3D o importar un GLB, mantener su anclaje activo y mover su posición/profundidad y giro. Comprobar que acompaña la cámara sin desaparecer ni alterar su recorrido.
+4. Guardar proyecto JSON, recargar y recuperar el proyecto. Textos, imagen, modelo y encuadres deben conservarse.
+5. Exportar HTML, abrirlo con el mismo servidor y recorrerlo por scroll. Comparar los encuadres con la vista previa.
+
+Si falla un paso, informar ese número y una captura; corregir ese fallo antes de pedir repetir la aceptación. No hace falta evaluar efectos avanzados ni modelos complejos para aceptar el alcance mínimo.
+
+## Revisión del 17/10/2026
+
+- Base revisada: `92a0572`; código, suites y workflows idénticos a `3088025` (comparación Git sin diferencias en `index.html`, `js/`, `tests/` y `.github/`).
+- Verificados directamente los registros de [integración espacial](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38774758571): GLB real en preview/exportado, gestos, proyección con posición y orientación, Director, persistencia/recarga/exportación, resize y movimiento reducido aprobados. Es evidencia histórica del mismo runtime, no una ejecución nueva.
+- Ejecutados localmente con Node 24 y Three r128: modelo de cámara, runtime exportado, editor/mapa, renderer, proyección, interacción y timing; todos aprobados.
+- No se repitió Chromium local: el navegador no está instalado y la descarga de Playwright devolvió un ZIP inválido. No se afirma validación nueva del acceso real ni de hardware físico.
+- Cambio preparado únicamente documental; sin cambios de motor, segundo progreso, merge, push ni publicación. La oclusión inversa experimental permanece desactivada. La composición parcial universal GLB→HTML sigue fuera de V1.0.
