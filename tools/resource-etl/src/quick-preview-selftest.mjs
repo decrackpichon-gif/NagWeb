@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { canQuickPreview, offlineQuickPreviewDoc } from "./runtime/quick-preview.mjs";
+import { buildMotionNativePreview, realCardPreviewEligible, schematicMarkup, illustrativePreviewDoc } from "./preview/visual-previews.mjs";
 
 assert.equal(canQuickPreview({provider:"uiverse",editorUse:"uiverse-html"}),true);
 assert.equal(canQuickPreview({provider:"uiverse",editorUse:"code"}),false);
@@ -24,3 +25,30 @@ assert.match(fallback,/real sample/);
 assert.throws(()=>offlineQuickPreviewDoc(""),/no tiene un documento seguro/);
 assert.throws(()=>offlineQuickPreviewDoc("x".repeat(2_000_001)),/no tiene un documento seguro/);
 console.log("NagWeb explicitly loaded Uiverse live card preview, strict CSP, no-fetch fallback and eligibility: OK");
+
+const nativeMotion={
+  id:"animxyz:preset:back",
+  title:"Back",
+  source:{provider:"animxyz"},
+  license:{verified:true},
+  runtime:{renderer:"nagweb-motion-native"},
+  artifacts:[{role:"animation-data",format:"json",content:JSON.stringify({
+    schema:"nagweb-motion-preset/0.1",duration:0.5,delay:0,ease:"ease",
+    tracks:[{property:"z",from:-300,to:0}]
+  })}]
+};
+const nativeDoc=buildMotionNativePreview(nativeMotion,{duration:1.25,delay:0.3,ease:"linear"});
+assert.match(nativeDoc,/translateZ\\(-300px\\)/);
+assert.match(nativeDoc,/translateZ\\(0px\\)/);
+assert.match(nativeDoc,/1\\.25s linear 0\\.3s infinite alternate/);
+assert.match(nativeDoc,/prefers-reduced-motion/);
+assert.match(nativeDoc,/default-src 'none'/);
+assert.doesNotMatch(nativeDoc,/<script/);
+assert.equal(buildMotionNativePreview({...nativeMotion,license:{verified:false}}),null);
+assert.equal(buildMotionNativePreview({...nativeMotion,runtime:{renderer:"nagweb-react"}}),null);
+assert.equal(realCardPreviewEligible({provider:"animxyz",id:"animxyz:preset:back"}),true);
+assert.equal(realCardPreviewEligible({provider:"animxyz",id:"animxyz:core"}),false);
+assert.equal(realCardPreviewEligible({provider:"magicui",editorUse:"code"}),false);
+assert.match(schematicMarkup({kind:"react-component"}),/data-visual-schematic/);
+assert.match(illustrativePreviewDoc({kind:"react-component"}),/no vista real del recurso/);
+console.log("Visual-first cards: genuine native motion + honest schematic previews OK");
