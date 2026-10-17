@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "name": "all",
-  "generatedAt": "2026-10-17T04:57:43.081Z",
+  "generatedAt": "2026-10-17T05:08:06.172Z",
   "resourceCount": 6762,
   "providers": [
     "animxyz",
@@ -47,9 +47,9 @@
   ],
   "uncompressedBytes": 37963241,
   "compressedBytes": 4697869,
-  "compressedSha256": "cc7796ed2263ae74544078c91584c876daa61d02aaa98d28604d8309634e1bed",
+  "compressedSha256": "00c5abf4a21ef2a5daf222146977fbfe0b3492f7ab0201c9db90f68645863e1a",
   "browseIndexBytes": 498620,
-  "browseIndexSha256": "8ffd9e1ad2c1cbd45f081f0bc0395247ccfdca355f90261f0f4b80281fb602d2",
+  "browseIndexSha256": "d4520f62917232099b789997bc3fff3d9192db03163768574d30edbf93de7bfb",
   "files": {
     "library": "library.json.gz",
     "browseIndex": "browse-index.json.gz"
