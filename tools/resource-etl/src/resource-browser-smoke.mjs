@@ -1875,6 +1875,17 @@ try {
     /@keyframes nwAnimxyzflip_rightFrames/);
   report.scenarios.push({editor:"AnimXYZ: apply motion, edit text and settings, export, reload",
     status:"passed",noPlaceholder:true,portableCss:true});
+  // A previewable effect isn't applicable to an empty selection.
+  await page.evaluate(()=>{selection=[];curEl=-1;refresh();});
+  await page.getByRole("button",{name:"Biblioteca de recursos",exact:true}).click();
+  if(await libraryFrame.locator("[data-detail]").evaluate(n=>n.open))
+    await libraryFrame.getByRole("button",{name:"Cerrar",exact:true}).click();
+  await libraryFrame.locator('[data-resource-id="'+animxyz.id+'"]').click();
+  await expect(libraryFrame.getByRole("button",{name:"Aplicar animación al elemento",exact:true})).toBeDisabled();
+  await expect(libraryFrame.locator("[data-apply-status]")).toContainText("Seleccioná un texto");
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  report.scenarios.push({editor:"AnimXYZ without selection: safe guidance instead of fake insertion",status:"passed"});
+
 
   // CSSShake: verified Vault CSS, apply, editable Hover/Constant and offline export.
   await page.evaluate(()=>{
