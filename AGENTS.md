@@ -12,6 +12,10 @@ Este repositorio contiene cinco frentes **independientes** del mismo producto. L
 - Conservar calidad, seguridad y pruebas necesarias. Mover mejoras opcionales al backlog V1.1+, **sin impedir la entrega**.
 - Leer la **[política universal canónica](https://github.com/decrackpichon-gif/NagWeb/blob/main/POLITICA_DESARROLLO_V1_PRIMERO.md)**, aplicable a todos los proyectos actuales y futuros salvo cambio expreso del usuario.
 
+## Criterio universal de aceptación real (16/10/2026)
+
+**Nueva orden expresa del usuario:** aplicar el [protocolo canónico de recuperación y aceptación](https://github.com/decrackpichon-gif/NagWeb/blob/main/POLITICA_DESARROLLO_V1_PRIMERO.md) a todos los frentes, incluido este. Conservar y recuperar lo que realmente funcionaba en la rama correcta antes de reemplazar; corregir fallos del recorrido esencial y no sumar opciones para simular progreso. Probar el **mismo ZIP, iniciador, servidor, rutas, navegador y flujo hasta persistencia/exportación** que usará la persona. CI verde significa *candidato técnico*, no *V1.0 aceptada*: esta requiere confirmación real de uso del usuario. Si reporta un fallo, anular la declaración de cierre y diagnosticar ese paso antes de exigir nuevas pruebas, sin repetir toda la batería. Documentar el bloqueo, las pruebas reales y SHA. No hacer merges ni despliegues Vercel.
+
 ## Identificar el frente antes de editar
 
 Determinar la rama de trabajo ACTUAL y leer exclusivamente su ficha en `docs/contexto/`, además de sus documentos técnicos:
