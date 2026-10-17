@@ -26,6 +26,7 @@ const context = {
   mainArtifact: resource => ({ content: resource.id + " code" }), badge: value => value,
   isLottieLivePreview: () => false, isCssShakeLivePreview: () => false,
   isMagicCssLivePreview: () => false, hasUiverseCssAnimation: () => false,
+  isVerifiedNoiseShader: () => false,
   illustrativePreviewDoc: resource => "Esquema de categoría de " + resource.id
 };
 runInNewContext(loader + redraw + replay, context);
