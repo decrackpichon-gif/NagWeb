@@ -1,5 +1,10 @@
 # NAGWEB 02 | Motion Lab
 
+## Criterio universal de aceptación real (16/10/2026)
+
+**Nueva decisión del usuario, posterior a cualquier declaración anterior de «V1.0 cerrada».** Consultar la [política universal de recuperación y aceptación](https://github.com/decrackpichon-gif/NagWeb/blob/main/POLITICA_DESARROLLO_V1_PRIMERO.md). Para **NAGWEB 02 | Motion Lab**, preservar el código y las funciones que ya servían, corregir fallos reales del uso principal antes que agregar tareas y probar el **mismo acceso/paquete/servidor/navegador** que recibe el usuario junto al ciclo de edición, guardado/recarga y exportación relevante. Una CI verde significa a lo sumo *candidata técnica*; la V1.0 no está **aceptada** hasta que haya una aceptación de uso real confirmada. Toda falla observada posteriormente deja el estado *no aceptada* hasta corregir la causa; no repetir sin razón la validación íntegra ni rehacer trabajo. Esta política no cambia la identidad de la rama ni autoriza mezclas, Vercel o merges. **No se afirma por este cambio documental haber auditado o aceptado manualmente este frente.**
+
+
 > **Ficha de continuidad de producto, decisiones y referencias.** Actualizada 11/10/2026 a partir de documentos y ramas comprobadas. No reemplaza el código ni el historial Git. Toda cifra de estado es una **fotografía** y hay que verificar cambios posteriores.
 
 ## Estado de entrega V1.0 — 16/10/2026
