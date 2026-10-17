@@ -151,7 +151,11 @@ function drainCardPreviews(){
         if(!resource || !resource.license?.verified)throw Error("Fuente no verificada");
         const doc=await previewDoc(resource);
         if(!doc)throw Error("Sin renderizador autónomo");
-        const safe=offlineQuickPreviewDoc(doc);
+        // Card thumbnails must be inert: never execute arbitrary third-party
+        // scripts inside 48 independently loaded gallery iframes.
+        const inert=new DOMParser().parseFromString(doc,"text/html");
+        for(const script of inert.querySelectorAll("script,iframe,object,embed")) script.remove();
+        const safe=offlineQuickPreviewDoc("<!doctype html>"+inert.documentElement.outerHTML);
         if(generation!==cardPreviewGeneration||!node.isConnected)return;
         const frame=document.createElement("iframe");
         frame.title="Muestra visual de "+(resource.title||resource.id);
