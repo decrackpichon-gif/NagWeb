@@ -60,6 +60,14 @@ export async function runCompositionSmoke(page){
   const x=parseFloat(child?.style.getPropertyValue('--nw-sd-x')||'');
   return p>6&&Number.isFinite(x)&&Math.abs(x-p*2)<.6;
  },{polling:'raf',timeout:10000});
+ // Primero comprobar playback en marcha (arriba). Después fijar el scrub
+ // para que la aserción final no mezcle cuadros al terminar la reproducción.
+ await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('compose-scene',.25));
+ await page.waitForFunction(()=>{
+  const p=NAGWEB_SCROLL_DIRECTOR.progress('compose-scene');
+  const el=document.querySelector('#preview')?.contentDocument?.querySelector('[data-id="compose-child"]');
+  return Math.abs(p-25)<.1 && el && Math.abs(parseFloat(el.style.getPropertyValue('--nw-sd-x'))-50)<.6;
+ },{polling:'raf',timeout:10000});
  const play=await page.evaluate(()=>({p:NAGWEB_SCROLL_DIRECTOR.progress('compose-scene'),x:parseFloat(document.querySelector('#preview').contentDocument.querySelector('[data-id="compose-child"]').style.getPropertyValue('--nw-sd-x'))}));
  near(play.x,play.p*2,1);
  await page.evaluate(()=>{NAGWEB_SCROLL_DIRECTOR.live('compose-scene');const w=document.querySelector('#composition-export').contentWindow;w.__NAG_SCROLL_DIRECTOR['compose-scene'].live();const n=w.document.querySelector('[data-id="compose-scene"]');w.scrollTo(0,n.getBoundingClientRect().top+w.scrollY+(n.offsetHeight-w.innerHeight)*.5);});
