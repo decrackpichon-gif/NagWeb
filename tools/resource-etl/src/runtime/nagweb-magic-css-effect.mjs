@@ -82,16 +82,19 @@ export function validatedAnimXyzEffect(envelope){
     v.duration<0.05||v.duration>5||typeof v.delay!=="number"||!Number.isFinite(v.delay)||
     v.delay<0||v.delay>5||!EASINGS.has(v.ease))
     throw Error("Preset AnimXYZ o parámetros de animación no válidos.");
-  return {id:resource.id,provider:"magic-css",className:compiled.className,
+  return {id:"magic-css:nagweb-animxyz-"+resource.id.slice("animxyz:preset:".length),
+    sourceResourceId:resource.id,provider:"magic-css",className:compiled.className,
     css:compiled.css,values:{duration:v.duration,delay:v.delay,easing:v.ease,
       ease:v.ease,iterations:1},license:structuredClone(resource.license)};
 }
 export function validSavedAnimXyzEffect(fx){
-  if(!fx?.id?.startsWith("animxyz:preset:")||fx.provider!=="magic-css"||
+  if(!fx?.sourceResourceId?.startsWith("animxyz:preset:")||
+    fx.id!=="magic-css:nagweb-animxyz-"+fx.sourceResourceId.slice("animxyz:preset:".length)||
+    fx.provider!=="magic-css"||
     fx.license?.verified!==true||!/^nwAnimxyz[a-z0-9_-]{1,65}$/.test(fx.className)||
     typeof fx.css!=="string"||fx.css.length>10000||
     !safeMagicCss(fx.css,fx.className))return false;
-  const name=fx.id.slice("animxyz:preset:".length),v=fx.values;
+  const name=fx.sourceResourceId.slice("animxyz:preset:".length),v=fx.values;
   return fx.className==="nwAnimxyz"+name.replaceAll("-","_")&&
     fx.css.includes("@keyframes "+fx.className+"Frames")&&
     typeof v?.duration==="number"&&v.duration>=0.05&&v.duration<=5&&
@@ -129,7 +132,7 @@ export function isMagicTarget(element){
 }
 export function validSavedMagicEffect(fx){
   const v=fx?.values;
-  if(fx?.id?.startsWith("animxyz:preset:"))return validSavedAnimXyzEffect(fx);
+  if(fx?.sourceResourceId?.startsWith("animxyz:preset:"))return validSavedAnimXyzEffect(fx);
   if(fx?.provider==="csshake")return fx.id==="csshake:"+fx.className &&
     fx.license?.verified===true && safeCssShake(fx.css,fx.className) &&
     ["hover","constant"].includes(v?.trigger);

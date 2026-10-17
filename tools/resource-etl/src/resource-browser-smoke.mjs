@@ -1852,7 +1852,8 @@ try {
   await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
   const xyzAfter=await page.evaluate(()=>structuredClone(sec().elements[0]));
   for(const key of ["id","text","x","y","w","rot"])assert.equal(xyzAfter[key],xyzBefore[key]);
-  assert.equal(xyzAfter.nwMagicCss.id,animxyz.id);
+  assert.equal(xyzAfter.nwMagicCss.sourceResourceId,animxyz.id);
+  assert.equal(xyzAfter.nwMagicCss.id,"magic-css:nagweb-animxyz-flip-right");
   const xyzInner=page.frameLocator("#preview").locator('[data-id="'+xyzAfter.id+'"] .nw-magic-inner');
   await expect(xyzInner).toHaveCSS("animation-name","nwAnimxyzflip_rightFrames");
   const xyzExport=await page.evaluate(()=>generateSite(flattenPage(page()),false,true,false));
@@ -1869,7 +1870,7 @@ try {
   await expect(libraryFrame.locator("[data-apply-status]")).toContainText("actualizada y guardada");
   await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
   await page.reload();
-  assert.equal(await page.evaluate(()=>sec().elements[0].nwMagicCss.id),animxyz.id);
+  assert.equal(await page.evaluate(()=>sec().elements[0].nwMagicCss.sourceResourceId),animxyz.id);
   assert.equal(await page.evaluate(()=>sec().elements[0].text),"Puedo editar el texto");
   assert.match(await page.evaluate(()=>generateSite(flattenPage(page()),false,true,false)),
     /@keyframes nwAnimxyzflip_rightFrames/);

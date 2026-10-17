@@ -241,7 +241,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     if (!element) return;
     if (element.nwMagicCss?.id) {
       openLibrary({kind:element.nwMagicCss.provider,session:crypto.randomUUID(),
-        resourceId:element.nwMagicCss.id,elementId:element.id,
+        resourceId:element.nwMagicCss.sourceResourceId||element.nwMagicCss.id,elementId:element.id,
         pageId:page().id,sceneId:sec().id,values:structuredClone(element.nwMagicCss.values),
         fingerprint:JSON.stringify(element)});
       return;
@@ -364,7 +364,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
           if(targets.some(e=>!isMagicTarget(e)))
             throw Error("La selección contiene elementos que no admiten esta animación.");
           if(editContext) {
-            if(editContext.kind!==effect.provider || editContext.resourceId!==effect.id ||
+            if(editContext.kind!==effect.provider || editContext.resourceId!==(effect.sourceResourceId||effect.id) ||
               message.editSession!==editContext.session || page().id!==editContext.pageId ||
               sec().id!==editContext.sceneId || JSON.stringify(targets[0])!==editContext.fingerprint)
               throw Error("La sesión de edición de la animación ya no está vigente.");
