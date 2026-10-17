@@ -6,6 +6,7 @@ import { createLatestSearch } from "../src/runtime/latest-search.mjs";
 import { canInsertInEditor } from "../src/runtime/editor-availability.mjs";
 import { canQuickPreview, offlineQuickPreviewDoc } from "../src/runtime/quick-preview.mjs";
 import { realCardPreviewEligible, schematicMarkup, illustrativePreviewDoc, buildMotionNativePreview } from "../src/preview/visual-previews.mjs";
+import { buildHyperUiBrowserPreview } from "../src/preview/hyperui-browser-preview.mjs";
 import { FAVORITES_KEY, MAX_FAVORITES, getOptionalStorage, readFavorites, toggleFavorite, saveFavorites } from "../src/runtime/favorites.mjs";
 import { describeEditableControls } from "../src/runtime/editable-controls.mjs";
 import { readSavedCustomization, saveSavedCustomization, deleteSavedCustomization } from "../src/runtime/saved-customizations.mjs";
@@ -482,6 +483,13 @@ async function previewDoc(resource, values = {}) {
     });
   }
 
+  if (provider === "hyperui" && renderer === "nagweb-html-tailwind" &&
+      resource.id !== "hyperui:runtime") {
+    const cssResource=await vault.getResource("hyperui:runtime");
+    const stylesheet=cssResource?.artifacts?.find(a=>a.role==="stylesheet"&&a.format==="css");
+    return buildHyperUiBrowserPreview(resource,values,
+      {stylesheet:cssResource?.license?.verified ? stylesheet?.content : null});
+  }
   if (renderer === "nagweb-motion-native") return buildMotionNativePreview(resource, values);
 
   if (renderer === "nagweb-svg") {

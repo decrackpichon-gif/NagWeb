@@ -30,6 +30,7 @@ export const PUBLIC_MODULES = Object.freeze([
   "preview/csshake-browser-preview.mjs",
   "preview/magiccss-browser-preview.mjs",
   "preview/visual-previews.mjs",
+  "preview/hyperui-browser-preview.mjs",
   "preview/css-playback-controls.mjs",
   "preview/public-browser-assets.mjs"
 ]);

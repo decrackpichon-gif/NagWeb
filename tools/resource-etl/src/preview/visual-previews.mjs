@@ -30,7 +30,8 @@ export function visualFamily(item) {
 export function realCardPreviewEligible(item) {
   const provider = item?.provider || item?.source?.provider;
   const use = item?.editorUse;
-  return (provider === "uiverse" && use === "uiverse-html") ||
+  return (provider === "hyperui" && item?.id !== "hyperui:runtime" && String(item?.id||"").startsWith("hyperui:")) ||
+    (provider === "uiverse" && use === "uiverse-html") ||
     (provider === "spinkit" && use === "spinkit-html") ||
     (provider === "magic-css" && use === "magic-css") ||
     (provider === "csshake" && use === "csshake") ||
