@@ -102,16 +102,19 @@ jobs:
             throw Error("Heroicons previews regressed");
           const lucide=index.resources.filter(r=>r.provider==="lucide" && r.previewShapes?.length).length;
           if(lucide<1800)throw Error("Lucide previews regressed: "+lucide);
-          const native=index.resources.filter(r=>["svg","uiverse-html","spinkit-html","magic-css","csshake"].includes(r.editorUse));
+          const native=index.resources.filter(r=>["svg","uiverse-html","spinkit-html","magic-css","csshake","motion-preset"].includes(r.editorUse));
           const code=index.resources.filter(r=>r.editorUse==="code");
-          if(native.length!==6041 || code.length!==721 ||
+          const motion=native.filter(r=>r.editorUse==="motion-preset");
+          if(!motion.length || motion.some(r=>r.provider!=="animxyz" || !r.id.startsWith("animxyz:preset:")))
+            throw Error("AnimXYZ native presets were not verified");
+          if(native.length!==6041+motion.length || code.length!==721-motion.length ||
              native.filter(r=>r.editorUse==="svg").length!==2193 ||
              native.filter(r=>r.editorUse==="uiverse-html").length!==3761 ||
              native.filter(r=>r.editorUse==="spinkit-html").length!==12 ||
              native.filter(r=>r.editorUse==="magic-css").length!==65 ||
              native.filter(r=>r.editorUse==="csshake").length!==10)
             throw Error("Native/copy-only coverage disagrees with real editor adapters");
-          if (native.some(r=>!(["lucide","heroicons","uiverse","spinkit","magic-css","csshake"].includes(r.provider))) ||
+          if (native.some(r=>!(["lucide","heroicons","uiverse","spinkit","magic-css","csshake","animxyz"].includes(r.provider))) ||
               code.some(r=>r.provider==="heroicons" || r.provider==="lucide" || r.provider==="uiverse" || r.provider==="spinkit" || r.provider==="magic-css" || (r.provider==="csshake" && r.id!=="csshake:runtime")))
             throw Error("Unexpected native classification by provider");
           const shards=after.detailShards?.uiverse;
@@ -134,5 +137,5 @@ jobs:
             echo "Indexes already match"
             exit 0
           fi
-          git -C "$DIR" commit -m "data: classify verified CSSShake effects for native canvas"
+          git -C "$DIR" commit -m "data: classify verified AnimXYZ native FX presets"
           git -C "$DIR" push origin HEAD:refs/heads/resource-vault-data
