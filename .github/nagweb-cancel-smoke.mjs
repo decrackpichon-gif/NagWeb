@@ -14,6 +14,12 @@ export async function runCancelSmoke(page){
   await page.waitForFunction(()=>document.querySelector('#preview')?.contentDocument?.querySelector('.nw-story-transform-h.size'));
   for(const [mode,gesture] of [['moment','move'],['moment','size'],['moment','rot'],['base','size'],['base','rot'],['moment','tiny']]){
    await page.evaluate(mode=>{NAGWEB_STORY_EDITOR.setCanvasMode(mode);NAGWEB_SCROLL_DIRECTOR.scrub('cancel-scene',.5);},mode);
+   // Esperar el iframe reconstruido antes de medir el gesto visual.
+   await page.waitForFunction(gesture=>{
+    const d=document.querySelector('#preview')?.contentDocument;
+    return !!(d?.querySelector('[data-id="cancel-text"]') &&
+      ((gesture==='move'||gesture==='tiny')||d.querySelector('.nw-story-transform-h.'+gesture)));
+   },{timeout:20000},gesture);
    const before=await state();
    const visual=await page.evaluate(gesture=>{
     const d=document.getElementById('preview').contentDocument,w=d.defaultView,n=d.querySelector('[data-id="cancel-text"]');
