@@ -150,6 +150,7 @@ export async function runReportedEditorSmoke(page){
   assert.equal(largeSave.stored,true,'respaldo conserva los recursos');
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>window.NAGWEB_AUTOSAVE_READY===true,{timeout:30000});
+  await page.evaluate(()=>lastSavePromise); // Guardado grande puede seguir pendiente tras F5.
   const recovered=await page.evaluate(()=>{
     const image=project.assets.images.find(x=>x.id==='qa-large-asset');
     return{title:project.title,size:image&&image.data.length,
