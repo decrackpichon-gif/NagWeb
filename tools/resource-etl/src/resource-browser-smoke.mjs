@@ -259,6 +259,9 @@ try {
     await expect(spinnerCard).toHaveCount(1);
     // Every card starts with a visual; visible supported cards automatically load real CSS.
     await expect(frame.locator('[data-resource-id="magicui:reference"] + .card-visual-surface [data-visual-schematic]')).toHaveCount(1);
+    const autoSample=frame.locator('[data-auto-preview-id="'+css.id+'"]');
+    await autoSample.scrollIntoViewIfNeeded();
+    await expect(autoSample.locator("iframe")).toHaveCount(1, {timeout:15000});
     await expect(frame.frameLocator('[data-auto-preview-id="'+css.id+'"] iframe').locator("button.card")).toBeVisible();
     await expect(frame.locator('[data-auto-preview-id="'+css.id+'"] iframe')).toHaveAttribute("sandbox","");
 
