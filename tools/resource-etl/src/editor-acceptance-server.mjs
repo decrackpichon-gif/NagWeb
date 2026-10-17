@@ -35,7 +35,10 @@ function localFile(rawUrl) {
   if (requested.includes("\\") || requested.includes("\0") || !requested.startsWith("/")) return null;
   const segments = requested.split("/").filter(Boolean);
   if (segments.some(segment => segment.startsWith(".") || segment === "..")) return null;
-  const absolute = path.resolve(repoRoot, ...segments, segments.length ? "" : "index.html");
+  // The editor opens /tools/resource-etl/resource-browser/ (a directory URL).
+  // Resolve directory URLs to their index.html, not to the directory inode.
+  // Keep the trailing slash in the browser so relative CSS/JS modules resolve.
+  const absolute = path.resolve(repoRoot, ...segments, requested.endsWith("/") ? "index.html" : "");
   if (!absolute.startsWith(repoRoot + path.sep)) return null;
   return absolute;
 }

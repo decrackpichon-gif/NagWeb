@@ -447,3 +447,10 @@ Se recuperaron de los **importadores reales** las direcciones de 17 proveedores 
 - Se preparó el iniciador de doble clic `PROBAR_NAGWEB_05_WINDOWS.bat` y un servidor HTTP local sin npm (`tools/resource-etl/src/editor-acceptance-server.mjs`) para que la prueba manual del editor integrado no requiera comandos, Live Server ni Vercel. Requiere Node 20+ y el ZIP completo de la rama.
 - El selftest de HTTP se integra en `npm test` para Linux y Windows CI. Esta herramienta no modifica el código del editor ni el Vault persistente; la CI anterior validó el editor en `dfcd35e`. Revisar la CI de este nuevo commit antes de confirmar también el iniciador.
 - **Sigue pendiente exclusivamente la aceptación manual representativa del usuario**, descrita en `NAGWEB_05_ENTREGA_V1.0.md`. No declarar cierre final ni publicar tag hasta recibirla; no añadir recursos nuevos como requisito.
+
+## Bloqueo real de apertura local y corrección (16/10/2026)
+
+- **Fallo reportado por el usuario con captura:** al pulsar «Biblioteca» en el editor servido con el iniciador de Windows, el iframe mostraba «Archivo no encontrado». La V1.0 **no está aceptada**, aunque la CI anterior estaba verde.
+- **Causa comprobada en código:** `editor-acceptance-server.mjs` atendía `/tools/resource-etl/resource-browser/` como directorio en vez de `resource-browser/index.html`; el smoke original sólo comprobaba la raíz y módulos sueltos, no la ruta real del botón.
+- **Corrección puntual:** resolver URLs de directorio terminadas en `/` a `index.html`, sin modificar editor, catálogo ni adaptadores; ampliación de `editor-acceptance-server-selftest.mjs` para pedir exactamente la URL del iframe y sus recursos CSS/JS. El resultado de CI de este cambio debe verificarse por commit, y todavía requiere aceptación manual del usuario.
+- **Regla de QA para el cierre:** no tratar el éxito de pruebas con servidores/fixtures alternativos como prueba de que el iniciador real abre la Biblioteca; comprobar la ruta con el servidor que se entrega.

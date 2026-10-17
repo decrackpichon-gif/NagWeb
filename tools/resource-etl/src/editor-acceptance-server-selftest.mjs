@@ -31,6 +31,21 @@ try {
   assert.match(module.headers.get("content-type"), /^text\/javascript/);
   assert.match(await module.text(), /NAGWEB_RESOURCE_APPLY_PROTOCOL/);
 
+  // Regression: match the actual iframe URL opened by the editor's Biblioteca button.
+  // Previously this returned 404 because the server attempted to stat a directory.
+  const libraryUrl = new URL("../tools/resource-etl/resource-browser/", base + "js/nagweb-resource-library.mjs");
+  libraryUrl.searchParams.set("hostOrigin", new URL(base).origin);
+  const library = await fetch(libraryUrl);
+  assert.equal(library.status, 200, "La Biblioteca integrada debe abrir, no devolver 404");
+  assert.match(library.headers.get("content-type"), /^text\\/html/);
+  const libraryHtml = await library.text();
+  assert.match(libraryHtml, /<h1>Biblioteca de recursos<\\/h1>/);
+  assert.match(libraryHtml, /\\.\\/app\\.mjs/);
+  for (const asset of ["styles.css", "app.mjs", "offline-shell-sw.mjs", "../src/runtime/persistent-vault-client.mjs"]) {
+    const assetResponse = await fetch(new URL(asset, libraryUrl));
+    assert.equal(assetResponse.status, 200, `Archivo faltante en Biblioteca: ${asset}`);
+  }
+
   const head = await fetch(base + "index.html", { method: "HEAD" });
   assert.equal(head.status, 200);
   assert.ok(Number(head.headers.get("content-length")) > 0);
@@ -39,7 +54,7 @@ try {
   assert.equal((await fetch(base + ".git/config")).status, 403);
   assert.equal((await fetch(base + "missing-acceptance-file.xyz")).status, 404);
   assert.equal((await fetch(base, { method: "POST" })).status, 405);
-  console.log("Inicio local NagWeb 05: HTTP, módulos, HEAD y accesos bloqueados OK");
+  console.log("Inicio local NagWeb 05: HTTP, Biblioteca integrada, módulos, HEAD y accesos bloqueados OK");
 } finally {
   child.kill();
 }
