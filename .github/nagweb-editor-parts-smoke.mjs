@@ -21,7 +21,7 @@ export async function runEditorPartsSmoke(page){
   '<i data-wpart="media-2" data-nw-story-media="2"></i><i data-wpart="media-3" data-nw-story-media="3"></i>'+
   '</section></div></body></html>';
  async function load(n){
-  await page.evaluate(html=>{document.querySelector('#preview').srcdoc=html;},markup(n));
+  await page.evaluate(html=>{clearTimeout(previewTimer);document.querySelector('#preview').srcdoc=html;},markup(n));
   await page.waitForFunction(n=>{
    const f=document.querySelector('#preview');
    return f.contentDocument?.body?.dataset.partsRun===String(n)&&f.contentWindow?.__nwFeedback16Editors===1&&!!f.contentDocument?.__nwCanvasPartAPI;
@@ -1691,6 +1691,8 @@ export async function runEditorPartsSmoke(page){
     names:['swatch-0','swatch-1','swatch-2','swatch-3','brand','tagline','sample']}
   ]){
    await page.evaluate(c=>{
+    // El fixture es sintético: no permitir que un renderPreview encolado lo borre.
+    clearTimeout(previewTimer);
     const d=document.querySelector('#preview').contentDocument;
     d.querySelectorAll('.el.wdg[data-id^="test-typ-"]').forEach(n=>n.remove());
     const e=mkEl('widget',{id:c.id,kind:c.kind,wp:c.wp});sec().elements.push(e);
