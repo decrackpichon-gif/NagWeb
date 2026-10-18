@@ -34,6 +34,7 @@ export const PUBLIC_MODULES = Object.freeze([
   "preview/visual-previews.mjs",
   "preview/hyperui-browser-preview.mjs",
   "preview/glsl-noise-browser-preview.mjs",
+  "preview/native-three-browser-preview.mjs",
   "preview/css-playback-controls.mjs",
   "preview/public-browser-assets.mjs"
 ]);

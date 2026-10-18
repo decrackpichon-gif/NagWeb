@@ -8,6 +8,7 @@ import { canQuickPreview, offlineQuickPreviewDoc } from "../src/runtime/quick-pr
 import { realCardPreviewEligible, schematicMarkup, illustrativePreviewDoc, buildMotionNativePreview } from "../src/preview/visual-previews.mjs";
 import { buildHyperUiBrowserPreview } from "../src/preview/hyperui-browser-preview.mjs";
 import { buildGlslNoisePreview, isVerifiedNoiseShader } from "../src/preview/glsl-noise-browser-preview.mjs";
+import { buildNativeThreePreview } from "../src/preview/native-three-browser-preview.mjs";
 import { FAVORITES_KEY, MAX_FAVORITES, getOptionalStorage, readFavorites, toggleFavorite, saveFavorites } from "../src/runtime/favorites.mjs";
 import { describeEditableControls } from "../src/runtime/editable-controls.mjs";
 import { readSavedCustomization, saveSavedCustomization, deleteSavedCustomization } from "../src/runtime/saved-customizations.mjs";
@@ -595,6 +596,7 @@ async function previewDoc(resource, values = {}, {thumbnail=false} = {}) {
     return buildHyperUiBrowserPreview(resource,values,
       {stylesheet:cssResource?.license?.verified ? stylesheet?.content : null});
   }
+  if (isNativeThreeGeometryResource(resource)) return buildNativeThreePreview(resource,values);
   if (renderer === "nagweb-glsl-snippet") return buildGlslNoisePreview(resource,{thumbnail});
   if (renderer === "nagweb-motion-native") return buildMotionNativePreview(resource, values);
 
@@ -1190,6 +1192,24 @@ async function openDetail(id) {
   el.code.textContent = artifact?.content || JSON.stringify(resource.runtime || {}, null, 2);
   el.copyCode.disabled = !artifact?.content;
 
+  // Show the actual shape that "Insertar geometría 3D editable" creates.
+  // The original upstream screenshot still appears on its catalog card.
+  const nativeGeometry=nativeThreeGeometrySpec(resource);
+  if(nativeGeometry){
+    const rendered=buildNativeThreePreview(resource,selectedValues);
+    if(rendered){
+      el.preview.setAttribute("sandbox","allow-scripts");
+      el.previewFallback.hidden=true;
+      el.preview.hidden=false;
+      el.previewReplay.hidden=true;
+      el.preview.removeAttribute?.("src");
+      el.preview.srcdoc=rendered;
+      el.previewNote.textContent="Vista WebGL del objeto 3D editable que vas a insertar: solo su "+
+        nativeGeometry.label+". Podés arrastrarlo para girar y cambiar la velocidad antes de insertar. "+
+        "La captura de la tarjeta muestra la escena Three.js original. No reproduce toda la escena.";
+      return;
+    }
+  }
   const sourceScreenshot=officialThreeGallery.get(resource.id);
   if(sourceScreenshot && resource.source?.provider==="threejs" &&
       resource.license?.verified===true){
@@ -1483,13 +1503,16 @@ async function redrawEditablePreview({ retainRecoveryUndo = false } = {}) {
     Object.keys(selectedValues).length === Object.keys(values).length &&
     Object.entries(values).every(([id, value]) => selectedValues[id] === value)
   ) {
-    el.preview.setAttribute("sandbox", isVerifiedNoiseShader(resource) ? "allow-scripts" : "");
+    el.preview.setAttribute("sandbox", isVerifiedNoiseShader(resource) || isNativeThreeGeometryResource(resource) ? "allow-scripts" : "");
     el.preview.hidden = false;
     el.previewFallback.hidden = true;
     const animated = hasUiverseCssAnimation(resource);
     el.previewReplay.hidden = illustrated || !animated;
     el.previewNote.textContent = illustrated
       ? "Esquema ilustrativo. Los cambios no se pueden reproducir sin el visor específico."
+      : isNativeThreeGeometryResource(resource)
+      ? "Vista WebGL del objeto 3D editable: solo su "+nativeThreeGeometrySpec(resource).label+
+        ". Arrastrá para girar; la velocidad refleja el ajuste actual. No reproduce toda la escena."
       : animated
       ? "Podés volver a reproducir las animaciones CSS. Los efectos Hover se activan al pasar el cursor."
       : "Preview segura generada desde nuestra copia persistente.";
