@@ -2,84 +2,216 @@
   "format": "nagweb-compiled-react-gallery/1",
   "entries": {
     "magicui:android": {
-      "html": "react/magicui__android.html",
       "thumbnail": "thumbnails/magicui__android.png",
       "pngSha256": "76f679af102634cc032a2e6dafa75a0055153a0921c2215b77260465b0af6802"
     },
     "magicui:aurora-text": {
-      "html": "react/magicui__aurora-text.html",
       "thumbnail": "thumbnails/magicui__aurora-text.png",
       "pngSha256": "e7173fdfc6938f2ee6bcc69cf9ac9d173f10a7021f61c0b1ec993fbf43df57c0"
     },
     "magicui:code-comparison": {
-      "html": "react/magicui__code-comparison.html",
       "thumbnail": "thumbnails/magicui__code-comparison.png",
       "pngSha256": "36a0f3f7d4f22d36715ad8a0b8ded4cf3e2645d55cef00bd0fe70d9049c2e417"
     },
     "magicui:dot-pattern": {
-      "html": "react/magicui__dot-pattern.html",
       "thumbnail": "thumbnails/magicui__dot-pattern.png",
       "pngSha256": "af0ad01d08ca5865c5f5549b036a202fc15b53e4e2bc832be1f4d080c8639f8e"
     },
     "magicui:flickering-grid": {
-      "html": "react/magicui__flickering-grid.html",
       "thumbnail": "thumbnails/magicui__flickering-grid.png",
-      "pngSha256": "f10fe987c4bef2dc9c1d61af2c02050484202e9ea38626ab632f604173c0e606"
+      "pngSha256": "65886d563d5a716ff1bc79482f3ec4b9ec547bbe0fee1049612e883050bd0e3f"
     },
     "magicui:glyph-matrix": {
-      "html": "react/magicui__glyph-matrix.html",
       "thumbnail": "thumbnails/magicui__glyph-matrix.png",
-      "pngSha256": "018d41ab17939bd1930cbef19e97866cbcf55ca25149bc3a0ab8f00a4bf8cd59"
+      "pngSha256": "f226d895e15cc31dd97642ca8740727b4c4fc0bdff43837b5869951386128841"
+    },
+    "magicui:grid-pattern": {
+      "thumbnail": "thumbnails/magicui__grid-pattern.png",
+      "pngSha256": "4741621c0a10a2e10a96cc7d706b59263dfe280527a391a1a1c9a45dc62ee3d9"
+    },
+    "magicui:hero-video-dialog": {
+      "thumbnail": "thumbnails/magicui__hero-video-dialog.png",
+      "pngSha256": "0610a4160fd08aee9e00474d6da114c4a3fdc783f7bf09d9d9acc00611aeed46"
+    },
+    "magicui:interactive-grid-pattern": {
+      "thumbnail": "thumbnails/magicui__interactive-grid-pattern.png",
+      "pngSha256": "e88de744f58d71125666848dab7f78fe5e486dc809131f541bb318ed5159c451"
+    },
+    "magicui:lens": {
+      "thumbnail": "thumbnails/magicui__lens.png",
+      "pngSha256": "d5be8c85d92f97b530e5596ae13d00e9a65c07e4572d2b1446ca6763de651663"
+    },
+    "magicui:line-shadow-text": {
+      "thumbnail": "thumbnails/magicui__line-shadow-text.png",
+      "pngSha256": "fbcbab2132771b36bea825cdbd8ab87e74951738f1741f22321610a7618a407c"
+    },
+    "magicui:magic-card": {
+      "thumbnail": "thumbnails/magicui__magic-card.png",
+      "pngSha256": "34fa96733fa72e40e448538a58eb4961b857f71a9307d20f68e3f97ed9e274cf"
+    },
+    "magicui:marquee": {
+      "thumbnail": "thumbnails/magicui__marquee.png",
+      "pngSha256": "e147e96726f4719ede776b718325c2baf645346370cb0434951c3b1cbdc0135e"
+    },
+    "magicui:meteors": {
+      "thumbnail": "thumbnails/magicui__meteors.png",
+      "pngSha256": "e49d7d5cbb779901025e8985103dbf91e72f8ad6acc547231e91b7a23ff8b4c1"
+    },
+    "magicui:morphing-text": {
+      "thumbnail": "thumbnails/magicui__morphing-text.png",
+      "pngSha256": "e5d60b7ffc0e9835967d13c4ec924f3aabeebb6822a6f871f520734a00cf69c9"
+    },
+    "magicui:neon-gradient-card": {
+      "thumbnail": "thumbnails/magicui__neon-gradient-card.png",
+      "pngSha256": "e772b48fd58e5df83e30d2ab5fddd4e67f073c7b6d4aac37518d0927a4bf40ac"
+    },
+    "magicui:scroll-progress": {
+      "thumbnail": "thumbnails/magicui__scroll-progress.png",
+      "pngSha256": "11e0f898e22f3660a0016252753447bfed4658b6d9291bc3e84bf23351c392e5"
+    },
+    "magicui:smooth-cursor": {
+      "thumbnail": "thumbnails/magicui__smooth-cursor.png",
+      "pngSha256": "e7173fdfc6938f2ee6bcc69cf9ac9d173f10a7021f61c0b1ec993fbf43df57c0"
     },
     "motion-primitives:accordion": {
-      "html": "react/motion-primitives__accordion.html",
       "thumbnail": "thumbnails/motion-primitives__accordion.png",
       "pngSha256": "22914ef5fa05e07415d9a43890ca1b23a2cd45bb35dbfffe538557c60578f515"
     },
     "motion-primitives:animated-background": {
-      "html": "react/motion-primitives__animated-background.html",
       "thumbnail": "thumbnails/motion-primitives__animated-background.png",
       "pngSha256": "3cb761e523c32e4edec881d624b109f4802501caec9c9acc49e81416e5c174c6"
     },
     "motion-primitives:animated-group": {
-      "html": "react/motion-primitives__animated-group.html",
       "thumbnail": "thumbnails/motion-primitives__animated-group.png",
       "pngSha256": "b0aa9f45f028434a28e859e28c88452ffbcacbeef821b879d42e9d80f7f1d458"
     },
     "motion-primitives:animated-number": {
-      "html": "react/motion-primitives__animated-number.html",
       "thumbnail": "thumbnails/motion-primitives__animated-number.png",
       "pngSha256": "585178cfaf36c9bfe96d485a7795027b6f44f1df4dd74f2be799a7dd2b230ed7"
     },
+    "motion-primitives:border-trail": {
+      "thumbnail": "thumbnails/motion-primitives__border-trail.png",
+      "pngSha256": "fd63724b29138ad5319dbd3265ead9b2661346b6598df9f052a780166661d9c4"
+    },
+    "motion-primitives:carousel": {
+      "thumbnail": "thumbnails/motion-primitives__carousel.png",
+      "pngSha256": "fbd14a0557e390d39eab4bfa4e85fda135a533fa8f372103bc7ae2523e39df41"
+    },
+    "motion-primitives:cursor": {
+      "thumbnail": "thumbnails/motion-primitives__cursor.png",
+      "pngSha256": "71b1920ae1d3eeddaa15ef6ab9e1cfeeef770a7cd20fdfb89ac51a4849917a49"
+    },
+    "motion-primitives:disclosure": {
+      "thumbnail": "thumbnails/motion-primitives__disclosure.png",
+      "pngSha256": "47398a419a3dd5036983be8ca5387a6dccf7d42b4fd29a5c85cb78dbdd32b6c5"
+    },
+    "motion-primitives:glow-effect": {
+      "thumbnail": "thumbnails/motion-primitives__glow-effect.png",
+      "pngSha256": "e7173fdfc6938f2ee6bcc69cf9ac9d173f10a7021f61c0b1ec993fbf43df57c0"
+    },
+    "motion-primitives:image-comparison": {
+      "thumbnail": "thumbnails/motion-primitives__image-comparison.png",
+      "pngSha256": "b7b6a48539d62364087d46f15e43698c8bdf262ca0a40019da1d441aa62e2066"
+    },
+    "motion-primitives:in-view": {
+      "thumbnail": "thumbnails/motion-primitives__in-view.png",
+      "pngSha256": "bc1c4d62532b927d5bad2d4b689df0a47a80d2c327e597f73f919081dd1737cd"
+    },
+    "motion-primitives:infinite-slider": {
+      "thumbnail": "thumbnails/motion-primitives__infinite-slider.png",
+      "pngSha256": "9863128a6787a0345e8ed97d95cb57df9038af8a169a6a50d3cca2a45c74243f"
+    },
+    "motion-primitives:magnetic": {
+      "thumbnail": "thumbnails/motion-primitives__magnetic.png",
+      "pngSha256": "a9275d8071521df49b469898968539cc883417b8517378f63a10c6958d59160d"
+    },
+    "motion-primitives:morphing-popover": {
+      "thumbnail": "thumbnails/motion-primitives__morphing-popover.png",
+      "pngSha256": "4eaa8691958abd705c41559022b42d00c40136cb8a5092c8ac356463383d1261"
+    },
+    "motion-primitives:sliding-number": {
+      "thumbnail": "thumbnails/motion-primitives__sliding-number.png",
+      "pngSha256": "585178cfaf36c9bfe96d485a7795027b6f44f1df4dd74f2be799a7dd2b230ed7"
+    },
     "shadcn:accordion": {
-      "html": "react/shadcn__accordion.html",
       "thumbnail": "thumbnails/shadcn__accordion.png",
       "pngSha256": "8ec8786e3a8318c4cdf367bfac123daea463ef6469bd0f0b68f762873380fb98"
     },
     "shadcn:alert": {
-      "html": "react/shadcn__alert.html",
       "thumbnail": "thumbnails/shadcn__alert.png",
       "pngSha256": "a1fdc21199c0cf4f2029f5dc5b23bad2145f62e830ef631334cd0d424e5e3c4d"
     },
     "shadcn:alert-dialog": {
-      "html": "react/shadcn__alert-dialog.html",
       "thumbnail": "thumbnails/shadcn__alert-dialog.png",
       "pngSha256": "77379dc38f8919adc3b771b068ae3be481be5c1f6a9c6e5dd7767e8fd5a9ddb5"
     },
     "shadcn:aspect-ratio": {
-      "html": "react/shadcn__aspect-ratio.html",
       "thumbnail": "thumbnails/shadcn__aspect-ratio.png",
       "pngSha256": "cc803d731928bb874274030b283ff04f0e6ddb26d02124f726b01f5aa38e2d8d"
     },
     "shadcn:avatar": {
-      "html": "react/shadcn__avatar.html",
       "thumbnail": "thumbnails/shadcn__avatar.png",
       "pngSha256": "5876baff2173b5213adac54a1088bc7025a9e2c0c9c88bec0b05693df1303375"
     },
     "shadcn:badge": {
-      "html": "react/shadcn__badge.html",
       "thumbnail": "thumbnails/shadcn__badge.png",
       "pngSha256": "865bfb72ec8bbb16c01486034d3d17a0847ef12154391fc2fe356b7be5f03cb8"
+    },
+    "shadcn:breadcrumb": {
+      "thumbnail": "thumbnails/shadcn__breadcrumb.png",
+      "pngSha256": "9997d6754b4fcb1d1e996beead05a00bf994a8412915b25c2cbbf446c13c8320"
+    },
+    "shadcn:button": {
+      "thumbnail": "thumbnails/shadcn__button.png",
+      "pngSha256": "595b4550e5e8f72e6fa369022f7ba6117ede9ad2c8c75d92682c7d51f6d7c5ca"
+    },
+    "shadcn:button-group": {
+      "thumbnail": "thumbnails/shadcn__button-group.png",
+      "pngSha256": "38bfce047a78184da0010ea5642b2bd755c6e97fdd970cbdd2d176d53f78f33b"
+    },
+    "shadcn:calendar": {
+      "thumbnail": "thumbnails/shadcn__calendar.png",
+      "pngSha256": "a31c603b25f45b0e27c86f344c3ef403c03ab6f4d56d8c79042821a75f29aca4"
+    },
+    "shadcn:card": {
+      "thumbnail": "thumbnails/shadcn__card.png",
+      "pngSha256": "8b234b535e891806e8332842f16d0b4483ab175a77647a5d10bb70b633f2cbd8"
+    },
+    "shadcn:carousel": {
+      "thumbnail": "thumbnails/shadcn__carousel.png",
+      "pngSha256": "cda0867101595ae9fb5d265a10ddd1b139d86c63c03dd9e647e4680bc77e8b23"
+    },
+    "shadcn:chart": {
+      "thumbnail": "thumbnails/shadcn__chart.png",
+      "pngSha256": "86d3fdce115e9a3a9645c0786344771ad09b30deecceae09adf5934d79490282"
+    },
+    "shadcn:checkbox": {
+      "thumbnail": "thumbnails/shadcn__checkbox.png",
+      "pngSha256": "d2a4a21b775621411b9bc9534812aed684bf275f8f1d2730d7f42c9a69b00107"
+    },
+    "shadcn:collapsible": {
+      "thumbnail": "thumbnails/shadcn__collapsible.png",
+      "pngSha256": "fd9ad012cfdded7b4dcf39f7434f595e3dec5ec4c2f475773131eea3babb46c8"
+    },
+    "shadcn:command": {
+      "thumbnail": "thumbnails/shadcn__command.png",
+      "pngSha256": "fb3f75598f3c4aa5901f5bea9f9d1d86a9e7e910bd7b7305ed97e6bdbc81fb9f"
+    },
+    "shadcn:context-menu": {
+      "thumbnail": "thumbnails/shadcn__context-menu.png",
+      "pngSha256": "9b8aa67ad03192cba8818cc5e7ef398967b9ae02c417782f73240e01830179aa"
+    },
+    "shadcn:dialog": {
+      "thumbnail": "thumbnails/shadcn__dialog.png",
+      "pngSha256": "9ba19691a11fdfe4b58d4173bc5150e866a53d750b8c1bf9c244a159e4671e69"
+    },
+    "shadcn:drawer": {
+      "thumbnail": "thumbnails/shadcn__drawer.png",
+      "pngSha256": "e84e874f9c34e35b6963e814a29ef83d4ece84bca0c47be74c43b1d2392dac0a"
+    },
+    "shadcn:dropdown-menu": {
+      "thumbnail": "thumbnails/shadcn__dropdown-menu.png",
+      "pngSha256": "5b6caac78f3166fb33095494bc67e6bfc9a75b7a5d7bee76458d02f191b4974b"
     }
   }
 }
