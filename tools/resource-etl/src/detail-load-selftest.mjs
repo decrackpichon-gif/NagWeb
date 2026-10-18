@@ -28,6 +28,7 @@ const context = {
   isMagicCssLivePreview: () => false, hasUiverseCssAnimation: () => false,
   isVerifiedNoiseShader: () => false,
   compiledReactGallery: new Map(),
+  officialThreeGallery: new Map(),
   illustrativePreviewDoc: resource => "Esquema de categoría de " + resource.id
 };
 runInNewContext(loader + redraw + replay, context);

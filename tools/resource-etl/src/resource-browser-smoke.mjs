@@ -32,6 +32,22 @@ const threeScript = await readFile(path.join(threeRoot, "build", "three.min.js")
 const output = path.resolve(process.argv.find(arg => arg.startsWith("--out="))?.slice(6) || "browser-smoke-results");
 await mkdir(output, { recursive: true });
 
+const threeGalleryRoot=path.join(root,"resource-browser","three-previews");
+const threeGallery=JSON.parse(await readFile(path.join(threeGalleryRoot,"manifest.json"),"utf8"));
+assert.equal(threeGallery.format,"nagweb-threejs-source-gallery/1");
+assert.equal(threeGallery.sourceCommit,"e9a8a1264c58150907230122ac17f5760a1ebab1");
+const sceneEntries=Object.entries(threeGallery.entries||{});
+assert.equal(sceneEntries.length,281,"All mirrored Three.js scenes have source screenshots");
+for(const [id,entry] of sceneEntries){
+  assert.match(id,/^threejs:example:[a-z0-9_-]+$/);
+  assert.equal(entry.image,"screenshots/"+id.slice("threejs:example:".length)+".jpg");
+  const bytes=await readFile(path.join(threeGalleryRoot,entry.image));
+  assert.equal(bytes.subarray(0,3).toString("hex"),"ffd8ff");
+  assert.equal(bytes.subarray(-2).toString("hex"),"ffd9");
+  assert.equal(createHash("sha256").update(bytes).digest("hex"),entry.sha256);
+}
+console.log("Three.js gallery:",sceneEntries.length,"verified original examples from pinned source revision.");
+
 const galleryRoot=path.join(root,"resource-browser","react-previews");
 const gallery=JSON.parse(await readFile(path.join(galleryRoot,"manifest.json"),"utf8"));
 assert.equal(gallery.format,"nagweb-compiled-react-gallery/1");
@@ -149,7 +165,16 @@ const reactGalleryFixture={
   artifacts:[{id:"react",role:"component",format:"tsx",
     content:"export function Android(){return <div>Android component</div>}"}]
 };
-const resources = [icon, css, spinkit, magicCss, animxyz, hyperRuntime, hyperui, glslShader, csshakeRuntime, csshake, heroicon, lucideCamera, codeOnly, reactGalleryFixture];
+const threeSceneFixture={
+  id:"threejs:example:css3d_orthographic",title:"Three.js · CSS3D Orthographic",
+  family:"3d",kind:"code-scene",source:{provider:"threejs"},
+  license:{id:"MIT",verified:true},
+  runtime:{renderer:"three",entryArtifactId:"scene-source"},
+  artifacts:[{id:"scene-source",role:"source",format:"html",
+    content:"<html><body><script type=module>import * as THREE from 'three';</script></body></html>"}]
+};
+assert.ok(threeGallery.entries[threeSceneFixture.id]);
+const resources = [icon, css, spinkit, magicCss, animxyz, hyperRuntime, hyperui, glslShader, csshakeRuntime, csshake, heroicon, lucideCamera, codeOnly, reactGalleryFixture, threeSceneFixture];
 const zip = data => gzipSync(JSON.stringify(data));
 const index = zip({ format: "nagweb-resource-browse-index", resourceCount: resources.length,
   resources: resources.map(r => ({ id: r.id, title: r.title, family: r.family, kind: r.kind, provider: r.source.provider,
@@ -343,6 +368,25 @@ try {
     await frame.getByRole("button",{name:"Cerrar",exact:true}).click();
     report.scenarios.push({browser:"GLSL original function sampled with offline WebGL",
       width,status:"passed",realGPU:cardStatus==="rendered",offline:true,sandboxed:true});
+    // Each Three.js thumbnail comes from the exact ORIGINAL git revision
+    // whose source code is mirrored in our Vault. No remote URL or JS runtime.
+    const threeCard=frame.locator('[data-resource-id="'+threeSceneFixture.id+'"]');
+    const threeSurface=frame.locator('[data-resource-id="'+threeSceneFixture.id+'"] + .card-visual-surface');
+    await threeCard.scrollIntoViewIfNeeded();
+    await expect(threeSurface).toHaveClass(/is-three-preview/,{timeout:15000});
+    const threeImg=threeSurface.locator("img");
+    await expect(threeImg).toBeVisible();
+    await expect.poll(()=>threeImg.evaluate(el=>el.complete&&el.naturalWidth>0)).toBe(true);
+    await threeCard.click();
+    await expect(frame.locator("[data-preview]")).toHaveAttribute("sandbox","");
+    await expect(frame.locator("[data-preview-note]")).toContainText("Captura oficial del ejemplo Three.js");
+    const threeDetail=frame.frameLocator("[data-preview]").getByRole("img",
+      {name:"Captura oficial del ejemplo Three.js"});
+    await expect(threeDetail).toBeVisible();
+    await expect.poll(()=>threeDetail.evaluate(el=>el.complete&&el.naturalWidth>0)).toBe(true);
+    await frame.getByRole("button",{name:"Cerrar",exact:true}).click();
+    report.scenarios.push({browser:"Pinned real Three.js screenshot on card and detail",
+      width,status:"passed",sourceMatched:true,static:true,noRemoteJS:true});
     // React thumbnails are screenshots of previously compiled original
     // components. They must load on the CARD and DETAIL, without any React JS.
     const reactCard=frame.locator('[data-resource-id="magicui:android"]');
