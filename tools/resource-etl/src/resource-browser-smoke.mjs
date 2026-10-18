@@ -121,7 +121,12 @@ const codeOnly = {
   runtime:{renderer:"nagweb-react",entryArtifactId:"react"},
   artifacts:[{id:"react",role:"component",format:"tsx",content:"export default function Demo() { return <div>Demo</div>; }"}]
 };
-const resources = [icon, css, spinkit, magicCss, animxyz, hyperRuntime, hyperui, glslShader, csshakeRuntime, csshake, heroicon, lucideCamera, codeOnly];
+const reactGalleryFixture={
+  ...codeOnly,id:"magicui:android",title:"Android · React",
+  artifacts:[{id:"react",role:"component",format:"tsx",
+    content:"export function Android(){return <div>Android component</div>}"}]
+};
+const resources = [icon, css, spinkit, magicCss, animxyz, hyperRuntime, hyperui, glslShader, csshakeRuntime, csshake, heroicon, lucideCamera, codeOnly, reactGalleryFixture];
 const zip = data => gzipSync(JSON.stringify(data));
 const index = zip({ format: "nagweb-resource-browse-index", resourceCount: resources.length,
   resources: resources.map(r => ({ id: r.id, title: r.title, family: r.family, kind: r.kind, provider: r.source.provider,
@@ -315,6 +320,25 @@ try {
     await frame.getByRole("button",{name:"Cerrar",exact:true}).click();
     report.scenarios.push({browser:"GLSL original function sampled with offline WebGL",
       width,status:"passed",realGPU:cardStatus==="rendered",offline:true,sandboxed:true});
+    // React thumbnails are screenshots of previously compiled original
+    // components. They must load on the CARD and DETAIL, without any React JS.
+    const reactCard=frame.locator('[data-resource-id="magicui:android"]');
+    const reactThumb=frame.locator('[data-resource-id="magicui:android"] + .card-visual-surface img');
+    await reactCard.scrollIntoViewIfNeeded();
+    await expect(reactThumb).toBeVisible({timeout:15000});
+    await expect.poll(()=>reactThumb.evaluate(img=>img.complete&&img.naturalWidth>0)).toBe(true);
+    await expect(frame.locator('[data-resource-id="magicui:android"] + .card-visual-surface'))
+      .toHaveClass(/is-react-preview/);
+    await reactCard.click();
+    await expect(frame.locator("[data-preview]")).toHaveAttribute("sandbox","");
+    await expect(frame.locator("[data-preview-note]")).toContainText("estática");
+    const reactDetail=frame.frameLocator("[data-preview]").getByRole("img",
+      {name:"Captura real del componente React compilado"});
+    await expect(reactDetail).toBeVisible();
+    await expect.poll(()=>reactDetail.evaluate(img=>img.complete&&img.naturalWidth>0)).toBe(true);
+    await frame.getByRole("button",{name:"Cerrar",exact:true}).click();
+    report.scenarios.push({browser:"real audited React screenshot on card and detail",
+      width,status:"passed",compiled:true,thumbnailLoaded:true,noReactExecution:true});
     // Explicit quick preview uses the real HTML/CSS in a sandboxed, network-
     // isolated frame, never auto-fetches 48 card details, and can be closed.
     const spinnerCard=frame.locator('[data-quick-preview-id="'+spinkit.id+'"]');
