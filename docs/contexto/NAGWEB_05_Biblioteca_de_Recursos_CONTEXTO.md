@@ -523,3 +523,10 @@ Se recuperaron de los **importadores reales** las direcciones de 17 proveedores 
 - Se incrementó la selección inicial auditada del publicador de 6+6+4 a **hasta 20 componentes por proveedor**: Magic UI, Shadcn y Motion Primitives. La cifra final debe leerse del manifiesto generado después de que termine GitHub Actions, ya que demos que fallen se excluyen. No declarar 60 disponibles antes de verificar el resultado.
 - Se agregó prueba Chromium de que el PNG de `magicui:android` aparece con dimensiones no nulas en la tarjeta y en el detalle dentro de su iframe sin permiso de scripts. La UI continúa marcando React como **explorar código**, no como recurso insertable; la captura es fiel pero estática y no reemplaza la animación real ni la edición en el lienzo.
 - Queda pendiente aceptación manual con GitHub Desktop, y visores/interacción nativa de las familias de código todavía no soportadas. No marcar V1.0 aceptada sin uso real.
+
+## Corrección de reapertura SVG durante refresco (18/10/2026)
+
+- Tras publicar 53 capturas React verificadas en el commit `70f2ce7`, la CI con navegador Windows alcanzó un fallo de reapertura de personalización de SVG: botón «Editar» habilitado, pero el modal no abrió tras el clic, mientras Chromium Linux, Self test y Windows smoke pasaron.
+- Se detectó una posible carrera de medidas entre el iframe `#preview` y `measureVector(element)`. En `js/nagweb-resource-library.mjs`, el control `Editar` **espera hasta 1800 ms** únicamente por la condición recuperable «lienzo se está actualizando», comprobando en cada ciclo que la escena, selección y objeto originales sigan siendo los mismos. No espera si el vector es ilegítimo ni edita otro recurso.
+- `resource-browser-smoke.mjs` incorpora un escenario que desajusta temporalmente el ancho de un vector y lo restablece tras 170 ms. Exige que un **único clic real** abra la Biblioteca una vez que las medidas son correctas, sin historial extra.
+- El último commit de código/test es `5278bab`. La CI completa del último commit debe consultarse antes de la entrega manual. Mantener V1.0 no aceptada hasta la prueba del usuario en Windows.
