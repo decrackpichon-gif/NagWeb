@@ -108,9 +108,16 @@ jobs:
           if(!motion.length || motion.some(r=>r.provider!=="animxyz" || !r.id.startsWith("animxyz:preset:")))
             throw Error("AnimXYZ native presets were not verified");
           const threeNative=native.filter(r=>r.editorUse==="three-native");
-          if(threeNative.length!==1 || threeNative[0].id!=="threejs:example:webgl_geometry_colors")
-            throw Error("Only the pinned Three.js geometry adaptation is native");
-          if(native.length!==6041+motion.length+1 || code.length!==721-motion.length-1 ||
+          const allowedNativeIds=new Set([
+              "threejs:example:webgl_geometry_colors",
+              "threejs:example:webgl_interactive_cubes",
+              "threejs:example:webgl_materials_envmaps_fasthdr"
+            ]);
+          if(threeNative.length!==allowedNativeIds.size ||
+             threeNative.some(r=>!allowedNativeIds.has(r.id)))
+            throw Error("Native Three.js adapters do not match the three source-verified geometries");
+          if(native.length!==6041+motion.length+allowedNativeIds.size ||
+             code.length!==721-motion.length-allowedNativeIds.size ||
              native.filter(r=>r.editorUse==="svg").length!==2193 ||
              native.filter(r=>r.editorUse==="uiverse-html").length!==3761 ||
              native.filter(r=>r.editorUse==="spinkit-html").length!==12 ||

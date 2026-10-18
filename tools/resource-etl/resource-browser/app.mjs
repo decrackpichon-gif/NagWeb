@@ -19,7 +19,7 @@ import { buildLottieBrowserPreview } from "../src/preview/lottie-browser-preview
 import { buildCssShakeBrowserPreview } from "../src/preview/csshake-browser-preview.mjs";
 import { buildMagicCssBrowserPreview } from "../src/preview/magiccss-browser-preview.mjs";
 import { prepareUiverseSandboxHtml } from "../src/runtime/nagweb-html-sandbox.mjs";
-import { isNativeThreeGeometryResource,threeNativeGeometryFromEnvelope } from "../src/runtime/nagweb-three-native.mjs";
+import { isNativeThreeGeometryResource,nativeThreeGeometrySpec,threeNativeGeometryFromEnvelope } from "../src/runtime/nagweb-three-native.mjs";
 import {
   buildResourceApplyEnvelope,
   resolveResourceApplyTarget,
@@ -1203,7 +1203,7 @@ async function openDetail(id) {
       '<style>html,body{margin:0;height:100%;background:#f8fafc;display:grid;place-items:center}img{max-width:100%;max-height:100%;object-fit:contain}</style>'+
       '</head><body><img alt="Captura oficial del ejemplo Three.js" src="'+sourceScreenshot.thumbnail+'"></body></html>';
     el.previewNote.textContent=isNativeThreeGeometryResource(resource)
-      ? "Captura oficial de la escena original. «Insertar geometría 3D editable» crea solo su icosaedro en el motor nativo de NagWeb, con color, material y movimiento editables. No reproduce toda la escena."
+      ? "Captura oficial de la escena original. «Insertar geometría 3D editable» crea solo su "+nativeThreeGeometrySpec(resource).label+" en el motor nativo de NagWeb, con color, material y movimiento editables. No reproduce toda la escena."
       : "Captura oficial del ejemplo Three.js, obtenida de la revisión original del código. Es estática; el código 3D todavía no se ejecuta ni se inserta desde esta ficha.";
     return;
   }

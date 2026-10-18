@@ -418,7 +418,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
           if(!saved||JSON.stringify(saved)!==JSON.stringify(element))
             throw Error("El objeto 3D se insertó, pero no se pudo verificar que esté guardado.");
           result=buildResourceApplyResult(message,{status:"applied",
-            message:"Icosaedro 3D insertado y guardado. Editá color, material, movimiento y tamaño desde el inspector. Es una adaptación, no toda la escena original."});
+            message:"Objeto 3D "+native.shape+" insertado y guardado. Editá color, material, movimiento y tamaño desde el inspector. Es una adaptación, no toda la escena original."});
         } else {
         const isNativeHtml = message.descriptor?.kind === "html";
         const isolated = isNativeHtml ? prepareUiverseSandboxHtml(message) : null;
