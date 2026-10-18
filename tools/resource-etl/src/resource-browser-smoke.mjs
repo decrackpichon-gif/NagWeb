@@ -1126,6 +1126,7 @@ try {
     // The previous dialog close can trigger a debounced redraw. Wait for
     // the CURRENT SVG and the CURRENT scene before the real toolbar click.
     if(await button.getAttribute("aria-label")==="Personalizar ícono seleccionado"){
+      const selectedVectorId=await page.evaluate(()=>selection.length===1?selection[0]:null);
       await expect.poll(()=>page.evaluate(id=>{
         const element=sec().elements.find(e=>e.id===id),doc=preview.contentDocument;
         const node=doc?.querySelector('.el[data-id="'+id+'"]');
@@ -1136,7 +1137,7 @@ try {
            Number(node.dataset.w)!==vget(element,"w"))return false;
         const width=Number.parseFloat(doc.defaultView.getComputedStyle(node).width);
         return node.getClientRects().length>0&&width>0;
-      },inserted.element.id),{timeout:15000}).toBe(true);
+      },selectedVectorId),{timeout:15000}).toBe(true);
 
     }
     await expect(button).toBeEnabled();
