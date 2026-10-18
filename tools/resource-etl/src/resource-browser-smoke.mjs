@@ -2294,6 +2294,10 @@ try {
   await expect(libraryFrame.locator("[data-preview-note]")).toContainText("adaptación");
   await expect(libraryFrame.getByRole("button",{name:"Insertar geometría 3D editable",exact:true}))
     .toBeEnabled();
+  const speedInput=libraryFrame.getByLabel("Velocidad del giro",{exact:true});
+  await expect(speedInput).toBeVisible();
+  await speedInput.fill("1.5");
+  await speedInput.dispatchEvent("input");
   const lengthBefore=await page.evaluate(()=>sec().elements.length);
   await libraryFrame.getByRole("button",{name:"Insertar geometría 3D editable",exact:true}).click();
   await expect(libraryFrame.locator("[data-apply-status]")).toContainText("insertado y guardado");
@@ -2308,6 +2312,7 @@ try {
   assert.equal(geometry.type,"shape3d");
   assert.equal(geometry.shape,"icosa");
   assert.equal(geometry.dragRotate,true);
+  assert.equal(geometry.amount,1.5);
   assert.equal(geometry.nwResource.id,nativeThreeScene.id);
   assert.equal(geometry.nwResource.sourceCommit,threeGallery.sourceCommit);
   assert.equal(nativeScene.saved.pages[0].sections[0].elements
