@@ -38,7 +38,7 @@ if(selected.length<5 || !selected.some(r=>r.id.startsWith("magicui:")) ||
 await rm(out,{recursive:true,force:true});
 for(const name of ["react","runtime","thumbnails"])await mkdir(path.join(out,name),{recursive:true});
 const runtimeJs=await readFile(path.join(base,"previews/runtime/tailwindcss-browser.js"),"utf8");
-const inlineScript=text=>"<script>"+text.replace(/<\\/script/gi,"<\\\\/script")+"</script>";
+const inlineScript=text=>"<script>"+text.replace(/<\/script/gi,"<\\/script")+"</script>";
 // An opaque iframe cannot load sibling <script src> files under CSP 'self'.
 // Inline *only* the already audited, compiled JS and the local Tailwind runtime.
 // This is an autonomous offline HTML preview with no external script requests.
