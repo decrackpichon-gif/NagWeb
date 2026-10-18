@@ -1,0 +1,102 @@
+name: Resource ETL React Gallery
+
+on:
+  push:
+    branches:
+      - feat/resource-etl-v1
+    paths:
+      - ".github/workflows/resource-react-gallery.yml"
+      - "tools/resource-etl/src/preview/publish-react-gallery.mjs"
+      - "tools/resource-etl/src/preview/react-compiler.mjs"
+      - "tools/resource-etl/src/preview/recipes.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: resource-react-gallery-publisher
+  cancel-in-progress: false
+
+jobs:
+  build-real-react-previews:
+    name: Compile, render and publish audited offline React previews
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    steps:
+      - name: Checkout exclusive NAGWEB 05 branch
+        uses: actions/checkout@v4
+        with:
+          ref: feat/resource-etl-v1
+          fetch-depth: 1
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install EXISTING preview compiler dependencies
+        working-directory: tools/resource-etl
+        run: npm install --no-package-lock --no-audit --no-fund
+
+      - name: Install Chromium for real offline screenshots
+        working-directory: tools/resource-etl
+        run: npx playwright install --with-deps chromium
+
+      - name: Compile real shadcn Magic UI and Motion Primitives from upstream verified code
+        working-directory: tools/resource-etl
+        run: >-
+          node src/vault-cli.mjs
+          --sources=shadcn,magicui,motion-primitives
+          --limit=23
+          --out=react-gallery-build
+          --react-previews
+          --react-preview-limit=69
+
+      - name: Publish only components that render in the opaque sandbox
+        working-directory: tools/resource-etl
+        run: >-
+          node src/preview/publish-react-gallery.mjs
+          --vault=react-gallery-build
+          --out=resource-browser/react-previews
+
+      - name: Inspect output
+        shell: bash
+        run: |
+          node --input-type=module - <<'NODE'
+          import {readFile,stat} from 'node:fs/promises';
+          const root='tools/resource-etl/resource-browser/react-previews/';
+          const manifest=JSON.parse(await readFile(root+'manifest.json','utf8'));
+          if(manifest.format!=='nagweb-compiled-react-gallery/1')throw Error('Wrong manifest');
+          if(Object.keys(manifest.entries).length<5)throw Error('Too few working previews');
+          for(const [id,entry] of Object.entries(manifest.entries)){
+            if(!/^(shadcn|magicui|motion-primitives):/.test(id))throw Error('Unexpected provider');
+            if(!(await stat(root+entry.thumbnail)).isFile() ||
+               !(await stat(root+entry.html)).isFile())throw Error('Missing preview');
+          }
+          console.log('Verified React sample count:',Object.keys(manifest.entries).length);
+          NODE
+
+      - name: Save preview report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: react-gallery-audit
+          path: |
+            tools/resource-etl/react-gallery-build/react-preview-audit.json
+            tools/resource-etl/resource-browser/react-previews/manifest.json
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Commit only precompiled preview assets to same branch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/resource-etl/resource-browser/react-previews
+          if git diff --cached --quiet; then
+            echo "React gallery unchanged"
+            exit 0
+          fi
+          git commit -m "assets(resource-etl): audited React bundles and real browser thumbnails [skip ci]"
+          git push origin HEAD:refs/heads/feat/resource-etl-v1
