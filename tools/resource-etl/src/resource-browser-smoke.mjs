@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { readFile, mkdir, writeFile } from "node:fs/promises";
+import { readFile, readdir, mkdir, writeFile } from "node:fs/promises";
 import { gzipSync } from "node:zlib";
 import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
@@ -31,6 +31,29 @@ const threeRoot = process.env.NAGWEB_THREE_ROOT || path.dirname(require.resolve(
 const threeScript = await readFile(path.join(threeRoot, "build", "three.min.js"));
 const output = path.resolve(process.argv.find(arg => arg.startsWith("--out="))?.slice(6) || "browser-smoke-results");
 await mkdir(output, { recursive: true });
+
+const galleryRoot=path.join(root,"resource-browser","react-previews");
+const gallery=JSON.parse(await readFile(path.join(galleryRoot,"manifest.json"),"utf8"));
+assert.equal(gallery.format,"nagweb-compiled-react-gallery/1");
+const realReactEntries=Object.entries(gallery.entries||{});
+assert.ok(realReactEntries.length>=50 && realReactEntries.length<=69,
+  "At least 50 real React previews must be published before the browser smoke");
+assert.deepEqual((await readdir(galleryRoot)).sort(),["manifest.json","thumbnails"],
+  "No executable React JavaScript or duplicate runtime may ship to the Library");
+const galleryCounts={};
+for(const [id,entry] of realReactEntries){
+  const provider=id.split(":")[0];
+  assert.ok(["magicui","shadcn","motion-primitives"].includes(provider));
+  galleryCounts[provider]=(galleryCounts[provider]||0)+1;
+  assert.match(entry.thumbnail||"",/^thumbnails\/[a-z0-9._-]+\.png$/);
+  assert.equal(entry.html,undefined,"Static React gallery must not promise executable previews");
+  const bytes=await readFile(path.join(galleryRoot,entry.thumbnail));
+  assert.equal(bytes.subarray(0,8).toString("hex"),"89504e470d0a1a0a");
+  assert.equal(createHash("sha256").update(bytes).digest("hex"),entry.pngSha256);
+}
+for(const count of Object.values(galleryCounts))assert.ok(count>=12);
+console.log("React verified PNG gallery:",realReactEntries.length,"cards, no JS shipped.");
+
 const icon = {
   id: "smoke:icon", title: "Ícono de prueba", family: "icon", kind: "svg",
   source: { provider: "smoke" }, license: { id: "MIT", name: "MIT", verified: true },
