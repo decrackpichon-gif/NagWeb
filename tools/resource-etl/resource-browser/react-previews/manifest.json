@@ -1,4 +1,85 @@
 {
   "format": "nagweb-compiled-react-gallery/1",
-  "entries": {}
+  "entries": {
+    "magicui:android": {
+      "html": "react/magicui__android.html",
+      "thumbnail": "thumbnails/magicui__android.png",
+      "pngSha256": "76f679af102634cc032a2e6dafa75a0055153a0921c2215b77260465b0af6802"
+    },
+    "magicui:aurora-text": {
+      "html": "react/magicui__aurora-text.html",
+      "thumbnail": "thumbnails/magicui__aurora-text.png",
+      "pngSha256": "e7173fdfc6938f2ee6bcc69cf9ac9d173f10a7021f61c0b1ec993fbf43df57c0"
+    },
+    "magicui:code-comparison": {
+      "html": "react/magicui__code-comparison.html",
+      "thumbnail": "thumbnails/magicui__code-comparison.png",
+      "pngSha256": "36a0f3f7d4f22d36715ad8a0b8ded4cf3e2645d55cef00bd0fe70d9049c2e417"
+    },
+    "magicui:dot-pattern": {
+      "html": "react/magicui__dot-pattern.html",
+      "thumbnail": "thumbnails/magicui__dot-pattern.png",
+      "pngSha256": "af0ad01d08ca5865c5f5549b036a202fc15b53e4e2bc832be1f4d080c8639f8e"
+    },
+    "magicui:flickering-grid": {
+      "html": "react/magicui__flickering-grid.html",
+      "thumbnail": "thumbnails/magicui__flickering-grid.png",
+      "pngSha256": "f10fe987c4bef2dc9c1d61af2c02050484202e9ea38626ab632f604173c0e606"
+    },
+    "magicui:glyph-matrix": {
+      "html": "react/magicui__glyph-matrix.html",
+      "thumbnail": "thumbnails/magicui__glyph-matrix.png",
+      "pngSha256": "018d41ab17939bd1930cbef19e97866cbcf55ca25149bc3a0ab8f00a4bf8cd59"
+    },
+    "motion-primitives:accordion": {
+      "html": "react/motion-primitives__accordion.html",
+      "thumbnail": "thumbnails/motion-primitives__accordion.png",
+      "pngSha256": "22914ef5fa05e07415d9a43890ca1b23a2cd45bb35dbfffe538557c60578f515"
+    },
+    "motion-primitives:animated-background": {
+      "html": "react/motion-primitives__animated-background.html",
+      "thumbnail": "thumbnails/motion-primitives__animated-background.png",
+      "pngSha256": "3cb761e523c32e4edec881d624b109f4802501caec9c9acc49e81416e5c174c6"
+    },
+    "motion-primitives:animated-group": {
+      "html": "react/motion-primitives__animated-group.html",
+      "thumbnail": "thumbnails/motion-primitives__animated-group.png",
+      "pngSha256": "b0aa9f45f028434a28e859e28c88452ffbcacbeef821b879d42e9d80f7f1d458"
+    },
+    "motion-primitives:animated-number": {
+      "html": "react/motion-primitives__animated-number.html",
+      "thumbnail": "thumbnails/motion-primitives__animated-number.png",
+      "pngSha256": "585178cfaf36c9bfe96d485a7795027b6f44f1df4dd74f2be799a7dd2b230ed7"
+    },
+    "shadcn:accordion": {
+      "html": "react/shadcn__accordion.html",
+      "thumbnail": "thumbnails/shadcn__accordion.png",
+      "pngSha256": "8ec8786e3a8318c4cdf367bfac123daea463ef6469bd0f0b68f762873380fb98"
+    },
+    "shadcn:alert": {
+      "html": "react/shadcn__alert.html",
+      "thumbnail": "thumbnails/shadcn__alert.png",
+      "pngSha256": "a1fdc21199c0cf4f2029f5dc5b23bad2145f62e830ef631334cd0d424e5e3c4d"
+    },
+    "shadcn:alert-dialog": {
+      "html": "react/shadcn__alert-dialog.html",
+      "thumbnail": "thumbnails/shadcn__alert-dialog.png",
+      "pngSha256": "77379dc38f8919adc3b771b068ae3be481be5c1f6a9c6e5dd7767e8fd5a9ddb5"
+    },
+    "shadcn:aspect-ratio": {
+      "html": "react/shadcn__aspect-ratio.html",
+      "thumbnail": "thumbnails/shadcn__aspect-ratio.png",
+      "pngSha256": "cc803d731928bb874274030b283ff04f0e6ddb26d02124f726b01f5aa38e2d8d"
+    },
+    "shadcn:avatar": {
+      "html": "react/shadcn__avatar.html",
+      "thumbnail": "thumbnails/shadcn__avatar.png",
+      "pngSha256": "5876baff2173b5213adac54a1088bc7025a9e2c0c9c88bec0b05693df1303375"
+    },
+    "shadcn:badge": {
+      "html": "react/shadcn__badge.html",
+      "thumbnail": "thumbnails/shadcn__badge.png",
+      "pngSha256": "865bfb72ec8bbb16c01486034d3d17a0847ef12154391fc2fe356b7be5f03cb8"
+    }
+  }
 }
