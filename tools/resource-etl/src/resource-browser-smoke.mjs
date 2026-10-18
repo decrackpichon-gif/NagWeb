@@ -2296,8 +2296,11 @@ try {
     .toBeEnabled();
   const speedInput=libraryFrame.getByLabel("Velocidad del giro",{exact:true});
   await expect(speedInput).toBeVisible();
-  await speedInput.fill("1.5");
-  await speedInput.dispatchEvent("input");
+  await speedInput.evaluate(input=>{
+    input.value="1.5";
+    input.dispatchEvent(new Event("input",{bubbles:true}));
+  });
+  await expect(speedInput).toHaveValue("1.5");
   const lengthBefore=await page.evaluate(()=>sec().elements.length);
   await libraryFrame.getByRole("button",{name:"Insertar geometría 3D editable",exact:true}).click();
   await expect(libraryFrame.locator("[data-apply-status]")).toContainText("insertado y guardado");
