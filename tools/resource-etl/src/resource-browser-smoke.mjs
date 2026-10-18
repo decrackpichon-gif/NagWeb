@@ -6,7 +6,7 @@ import { readFile, readdir, mkdir, writeFile } from "node:fs/promises";
 import { gzipSync } from "node:zlib";
 import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
-import { transformUiverseComponent, transformSpinKitLoader, transformMagicCssEffect, transformAnimXyzPreset, transformHyperUiRuntime, transformHyperUiBlock, transformGlslNoise, transformCssShakeRuntime, transformCssShakeEffect } from "./light-transformers.mjs";
+import { transformUiverseComponent, transformSpinKitLoader, transformMagicCssEffect, transformAnimXyzPreset, transformHyperUiRuntime, transformHyperUiBlock, transformGlslNoise, transformThreeCodeScene, transformCssShakeRuntime, transformCssShakeEffect } from "./light-transformers.mjs";
 import { normalizeHeroiconOutline } from "./extractors/heroicons.mjs";
 import { transformHeroiconOutline } from "./heroicons-transformer.mjs";
 import { browseHeroiconPaths } from "./snapshot/browse-icon-paths.mjs";
@@ -174,7 +174,15 @@ const threeSceneFixture={
     content:"<html><body><script type=module>import * as THREE from 'three';</script></body></html>"}]
 };
 assert.ok(threeGallery.entries[threeSceneFixture.id]);
-const resources = [icon, css, spinkit, magicCss, animxyz, hyperRuntime, hyperui, glslShader, csshakeRuntime, csshake, heroicon, lucideCamera, codeOnly, reactGalleryFixture, threeSceneFixture];
+const nativeThreeScene=transformThreeCodeScene({
+  repository:"https://github.com/mrdoob/three.js",
+  commit:threeGallery.sourceCommit,
+  item:{path:"examples/webgl_geometry_colors.html",sha:"smoke-tested",
+    html:"<html><title>three.js webgl - geometry - vertex colors</title><script type=\"module\">import * as THREE from 'three'; const g = new THREE.IcosahedronGeometry(1.5,0);</script></html>",
+    analysis:{imports:["three"],codeOnly:true,reasons:[]}}
+});
+assert.equal(editorUseOf(nativeThreeScene),"three-native");
+const resources = [icon, css, spinkit, magicCss, animxyz, hyperRuntime, hyperui, glslShader, csshakeRuntime, csshake, heroicon, lucideCamera, codeOnly, reactGalleryFixture, threeSceneFixture, nativeThreeScene];
 const zip = data => gzipSync(JSON.stringify(data));
 const index = zip({ format: "nagweb-resource-browse-index", resourceCount: resources.length,
   resources: resources.map(r => ({ id: r.id, title: r.title, family: r.family, kind: r.kind, provider: r.source.provider,
@@ -2273,6 +2281,64 @@ try {
   await expect(page.locator(".amenu")).toHaveCount(0);
   report.scenarios.push({editor:"app menu submenu hover and removal",
     status:"passed",noUncaughtExceptions:true});
+
+  // Native geometry adaptation of the pinned Three.js IcosahedronGeometry.
+  // Unlike the original Three.js screenshot, THIS is editable in NagWeb.
+  await page.getByRole("button",{name:"Biblioteca de recursos",exact:true}).click();
+  if(await libraryFrame.locator("[data-detail]").evaluate(node=>node.open))
+    await libraryFrame.getByRole("button",{name:"Cerrar",exact:true}).click();
+  await libraryFrame.getByRole("button",{name:"Limpiar filtros",exact:true}).click();
+  const threeNativeCard=libraryFrame.locator('[data-resource-id="'+nativeThreeScene.id+'"]');
+  await expect(threeNativeCard.locator('[data-editor-use-label="available"]')).toBeVisible();
+  await threeNativeCard.click();
+  await expect(libraryFrame.locator("[data-preview-note]")).toContainText("adaptación");
+  await expect(libraryFrame.getByRole("button",{name:"Insertar geometría 3D editable",exact:true}))
+    .toBeEnabled();
+  const lengthBefore=await page.evaluate(()=>sec().elements.length);
+  await libraryFrame.getByRole("button",{name:"Insertar geometría 3D editable",exact:true}).click();
+  await expect(libraryFrame.locator("[data-apply-status]")).toContainText("insertado y guardado");
+  const nativeScene=await page.evaluate(()=>({
+    elements:structuredClone(sec().elements.filter(e=>e.nwResource?.kind==="three-native")),
+    count:sec().elements.length,selection:[...selection],
+    saved:JSON.parse(localStorage.getItem(STORE_KEY))
+  }));
+  assert.equal(nativeScene.count,lengthBefore+1);
+  assert.equal(nativeScene.elements.length,1);
+  const geometry=nativeScene.elements[0];
+  assert.equal(geometry.type,"shape3d");
+  assert.equal(geometry.shape,"icosa");
+  assert.equal(geometry.dragRotate,true);
+  assert.equal(geometry.nwResource.id,nativeThreeScene.id);
+  assert.equal(geometry.nwResource.sourceCommit,threeGallery.sourceCommit);
+  assert.equal(nativeScene.saved.pages[0].sections[0].elements
+    .find(e=>e.id===geometry.id)?.shape,"icosa");
+  assert.deepEqual(nativeScene.selection,[geometry.id]);
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  await expect(page.frameLocator("#preview").locator('.obj-anchor[data-id="'+geometry.id+'"]'))
+    .toBeAttached();
+  const exportedNative=await page.evaluate(()=>generateSite(flattenPage(page()),false,true,false));
+  assert.match(exportedNative,/"shape":"icosa"/);
+  // Existing NagWeb shape inspector, undo stack and HTML export remain native.
+  await page.evaluate(id=>{
+    const element=sec().elements.find(e=>e.id===id);
+    snapshot();element.color="#22bbcc";element.amount=2;
+    refresh();
+  },geometry.id);
+  const changedNative=await page.evaluate(id=>({
+    element:sec().elements.find(e=>e.id===id),
+    markup:generateSite(flattenPage(page()),false,true,false)
+  }),geometry.id);
+  assert.equal(changedNative.element.color,"#22bbcc");
+  assert.equal(changedNative.element.amount,2);
+  assert.match(changedNative.markup,/#22bbcc/i);
+  await page.reload();
+  const persistedNative=await page.evaluate(id=>
+    sec().elements.find(e=>e.id===id),geometry.id);
+  assert.equal(persistedNative?.color,"#22bbcc");
+  assert.equal(persistedNative?.shape,"icosa");
+  report.scenarios.push({editor:"Pinned Three.js geometry adapted to genuine NagWeb 3D",
+    status:"passed",oneNativeObject:true,editableMaterial:true,export:true,persistent:true,
+    originalSceneReproduction:false});
 
   await context.close();
   assert.deepEqual(report.errors, [], "Browser must not emit uncaught errors or external requests");
