@@ -1,5 +1,1132 @@
 {
   "format": "nagweb-threejs-source-gallery/1",
-  "sourceCommit": "",
-  "entries": {}
+  "sourceRepository": "https://github.com/mrdoob/three.js",
+  "sourceCommit": "e9a8a1264c58150907230122ac17f5760a1ebab1",
+  "images": 281,
+  "entries": {
+    "threejs:example:css3d_orthographic": {
+      "image": "screenshots/css3d_orthographic.jpg",
+      "sha256": "c3d79683e7a0bb94502aa3263dc88becee11d56ad68586d9304816c641557891"
+    },
+    "threejs:example:css3d_mixed": {
+      "image": "screenshots/css3d_mixed.jpg",
+      "sha256": "7afd724a34b281c1a9d02c1bbae16f16cc92002bd238e226980da93dcd2289e8"
+    },
+    "threejs:example:css3d_sandbox": {
+      "image": "screenshots/css3d_sandbox.jpg",
+      "sha256": "67b06ef99f9f71251f131920bd19a9d760b80b8b173a7de8a1386f772a715ce0"
+    },
+    "threejs:example:css3d_youtube": {
+      "image": "screenshots/css3d_youtube.jpg",
+      "sha256": "d8eda4b039b894918db7a4554fc54c08f3bf13b198188bc7f51c82771f3302bc"
+    },
+    "threejs:example:misc_animation_keys": {
+      "image": "screenshots/misc_animation_keys.jpg",
+      "sha256": "684049f433046c2552c1875434afe2aba4a091aa13abc5855d744db0a2fccf75"
+    },
+    "threejs:example:css3d_periodictable": {
+      "image": "screenshots/css3d_periodictable.jpg",
+      "sha256": "ebe3ba72a8373b1ac0262f87a1b14fe594f011fa5bef5a9fd2f19a408fdd9772"
+    },
+    "threejs:example:misc_boxselection": {
+      "image": "screenshots/misc_boxselection.jpg",
+      "sha256": "5157920d9b60b68b0c9bf58ca0219051c53e704bd9913339f9bc8bdd36536f0e"
+    },
+    "threejs:example:misc_animation_groups": {
+      "image": "screenshots/misc_animation_groups.jpg",
+      "sha256": "3ae9d0e097c8ca9839141bed408b292cf5af8eeb8a57a58c213607bdb3faa9db"
+    },
+    "threejs:example:misc_controls_drag": {
+      "image": "screenshots/misc_controls_drag.jpg",
+      "sha256": "6015b6507b9ab3847f9c83534c983378bd5a0c72585098ce0f63e0e297c0da5d"
+    },
+    "threejs:example:misc_controls_map": {
+      "image": "screenshots/misc_controls_map.jpg",
+      "sha256": "9b7e88009514cf41ec988e8f9b7b58edf4ae0cfd6ed2203b4978160bc5953c75"
+    },
+    "threejs:example:misc_controls_orbit": {
+      "image": "screenshots/misc_controls_orbit.jpg",
+      "sha256": "fae93ae16be78b16ba61e4c7d329de8fc4e8b28b808dff9c76be5a49a38bc7e6"
+    },
+    "threejs:example:misc_controls_pointerlock": {
+      "image": "screenshots/misc_controls_pointerlock.jpg",
+      "sha256": "a28afaadddbefe456fb3fb55d118ef3442c78826bd6ca6e7c5f09817a65cbc1c"
+    },
+    "threejs:example:misc_exporter_gcode": {
+      "image": "screenshots/misc_exporter_gcode.jpg",
+      "sha256": "978fa83aed8e511c31fc3bded442d1ecb4e78b6cf014183ad16998c9c0d8b7c3"
+    },
+    "threejs:example:misc_exporter_draco": {
+      "image": "screenshots/misc_exporter_draco.jpg",
+      "sha256": "4535c78511447f2ac0a0f134d8205d430c57c3cbe17d5d813d482d9a86a01159"
+    },
+    "threejs:example:misc_controls_trackball": {
+      "image": "screenshots/misc_controls_trackball.jpg",
+      "sha256": "54ec9c9f9176664a8fa85e13243fe45b85dbcd2b7445d109c967a659933f89da"
+    },
+    "threejs:example:misc_raycaster_helper": {
+      "image": "screenshots/misc_raycaster_helper.jpg",
+      "sha256": "d32844ddf4b8935dca5dbdfa05f307a9746c03d9e3196fd1834aaee9adad4a5e"
+    },
+    "threejs:example:physics_ammo_instancing": {
+      "image": "screenshots/physics_ammo_instancing.jpg",
+      "sha256": "539b29ce86fda94c2e01dfac780da632a67e79c863a023beb3b661b3feb98e81"
+    },
+    "threejs:example:physics_jolt_instancing": {
+      "image": "screenshots/physics_jolt_instancing.jpg",
+      "sha256": "d39fd6039cc83476c0948a49ad4534f1f189352f6e9e18265fb78bd30672287f"
+    },
+    "threejs:example:misc_uv_tests": {
+      "image": "screenshots/misc_uv_tests.jpg",
+      "sha256": "c71d800f2306655dc219e307776e13f6975f59a2d587e0cb32af78ef54986cb9"
+    },
+    "threejs:example:physics_rapier_joints": {
+      "image": "screenshots/physics_rapier_joints.jpg",
+      "sha256": "6073aa3a3e030031aac1021a25f818d8d59229546920f3ca0539c98c21c950e3"
+    },
+    "threejs:example:physics_rapier_instancing": {
+      "image": "screenshots/physics_rapier_instancing.jpg",
+      "sha256": "6f0c6736543794fde9fd9d18ae77ef25583aa3ca0a698df59d2fba21ce16e67f"
+    },
+    "threejs:example:svg_lines": {
+      "image": "screenshots/svg_lines.jpg",
+      "sha256": "ef7dee19d6d6de1afe34265713ea5dbebdc740f3baf6df9c917e215c936b3b07"
+    },
+    "threejs:example:webgl_buffergeometry": {
+      "image": "screenshots/webgl_buffergeometry.jpg",
+      "sha256": "3b41e632ab668b7012d8f2310d141322fbe3e737facc236c665119700f6b2ddd"
+    },
+    "threejs:example:webgl_batch_lod_bvh": {
+      "image": "screenshots/webgl_batch_lod_bvh.jpg",
+      "sha256": "fe08da766f6aa9bdd30f839a787ad13ca4cb615fe8cd633280717d1a2208985e"
+    },
+    "threejs:example:webgl_buffergeometry_drawrange": {
+      "image": "screenshots/webgl_buffergeometry_drawrange.jpg",
+      "sha256": "998a71ea3a7bf7060ab1c1cdc997e92df124b43fabf893135dd54b9df8abd01e"
+    },
+    "threejs:example:webgl_buffergeometry_glbufferattribute": {
+      "image": "screenshots/webgl_buffergeometry_glbufferattribute.jpg",
+      "sha256": "e463eef90d12b17cf9d4facc6f2f0d0789bc13a8c393dfaeeb1dd24ffd88e882"
+    },
+    "threejs:example:webgl_buffergeometry_attributes_none": {
+      "image": "screenshots/webgl_buffergeometry_attributes_none.jpg",
+      "sha256": "3d3f94adb8c80b039caef33caf88821b2ff67f2a16fed7dc9411290ed020635c"
+    },
+    "threejs:example:webgl_buffergeometry_indexed": {
+      "image": "screenshots/webgl_buffergeometry_indexed.jpg",
+      "sha256": "a7c73573471c63d4694941b398462a6c41dfe33d8e16c50a3a5292630e99d8a3"
+    },
+    "threejs:example:webgl_buffergeometry_instancing": {
+      "image": "screenshots/webgl_buffergeometry_instancing.jpg",
+      "sha256": "cf334438167ec626b686294773cd3e3427b367f3a47b20eb5a19470e7ef7b746"
+    },
+    "threejs:example:webgl_buffergeometry_lines": {
+      "image": "screenshots/webgl_buffergeometry_lines.jpg",
+      "sha256": "3e834b42aea09823ea3591bb0252b56908b7d2f8cef8ddc54c8e9a2668a25c42"
+    },
+    "threejs:example:webgl_buffergeometry_lines_indexed": {
+      "image": "screenshots/webgl_buffergeometry_lines_indexed.jpg",
+      "sha256": "9bf9df0436c29fd3640ea5edf8a04282df34fd105381dbc1997b5d4f5814b840"
+    },
+    "threejs:example:webgl_buffergeometry_points": {
+      "image": "screenshots/webgl_buffergeometry_points.jpg",
+      "sha256": "a184e1603f754cc275436fd23d5e2e04da3f5e942d39ae0c68f421002865106e"
+    },
+    "threejs:example:webgl_buffergeometry_points_interleaved": {
+      "image": "screenshots/webgl_buffergeometry_points_interleaved.jpg",
+      "sha256": "43292a5885f590e4f7179670ec8cfa15d2e6e42b3af0eb50724b3a9656a0529f"
+    },
+    "threejs:example:webgl_buffergeometry_rawshader": {
+      "image": "screenshots/webgl_buffergeometry_rawshader.jpg",
+      "sha256": "35c36353561e13707d3d18ea00bdb6f7783fc4b70ee5dc776badb888ced78a89"
+    },
+    "threejs:example:webgl_buffergeometry_uint": {
+      "image": "screenshots/webgl_buffergeometry_uint.jpg",
+      "sha256": "3b01534ca7a4b9c065afd15d51c461dde1348814bb1bc8d5a4be0c9671d2addb"
+    },
+    "threejs:example:webgl_buffergeometry_selective_draw": {
+      "image": "screenshots/webgl_buffergeometry_selective_draw.jpg",
+      "sha256": "eb63cca5b9a79cd92414436cd2b3ec750ff6ec95a251ae1ca082c391d90d6b9a"
+    },
+    "threejs:example:webgl_camera": {
+      "image": "screenshots/webgl_camera.jpg",
+      "sha256": "613a31edd1ea126d966f5db7a4a394e493649c23a71a0f331ed43f2b741b4ebc"
+    },
+    "threejs:example:webgl_camera_array": {
+      "image": "screenshots/webgl_camera_array.jpg",
+      "sha256": "faf46b3c234df02be02b176d692a5886782558c4cb2ea3b85a909f035766c9ea"
+    },
+    "threejs:example:webgl_clipping": {
+      "image": "screenshots/webgl_clipping.jpg",
+      "sha256": "3ef9407c95331ddf1b90be94f3b5987d00931f24bcb7a617e5391019fee91bcc"
+    },
+    "threejs:example:webgl_clipping_intersection": {
+      "image": "screenshots/webgl_clipping_intersection.jpg",
+      "sha256": "e8f019acc2e4e0d0589592721ea30f9c1e973b9f51844705228cfc0c2b4fa062"
+    },
+    "threejs:example:webgl_clipculldistance": {
+      "image": "screenshots/webgl_clipculldistance.jpg",
+      "sha256": "dad54c53ed42c905a24238a4f36a0b6214a92cb2492869c778037d06c5a942a8"
+    },
+    "threejs:example:webgl_clipping_stencil": {
+      "image": "screenshots/webgl_clipping_stencil.jpg",
+      "sha256": "a94357ad5ed64472d945fe593a2e4d9d45eefd45d0a09300ab757376e82d5122"
+    },
+    "threejs:example:webgl_clipping_advanced": {
+      "image": "screenshots/webgl_clipping_advanced.jpg",
+      "sha256": "13e740ca7e54374a08eda8c7f152a1373c13f88a67f28649c22f48730fc92b70"
+    },
+    "threejs:example:webgl_depth_texture": {
+      "image": "screenshots/webgl_depth_texture.jpg",
+      "sha256": "81c5429f3865dc96b01c0048ee0667ad3cfaaabbc62399a15ad20d211d5b113f"
+    },
+    "threejs:example:webgl_effects_ascii": {
+      "image": "screenshots/webgl_effects_ascii.jpg",
+      "sha256": "5e07314e53b5f8dbbc6895434820f9c2bf4b1bec4d4e67817ccd5ac16b1a907e"
+    },
+    "threejs:example:webgl_effects_anaglyph": {
+      "image": "screenshots/webgl_effects_anaglyph.jpg",
+      "sha256": "550961f5230cee730a96932fd31a37620326fdf565d3a6f7f347e92aaf2ade81"
+    },
+    "threejs:example:webgl_framebuffer_texture": {
+      "image": "screenshots/webgl_framebuffer_texture.jpg",
+      "sha256": "eea44d6a993239c0a96a27a9a21e719f833925a305cf1dd2a10da7d96155fbb7"
+    },
+    "threejs:example:webgl_geometry_csg": {
+      "image": "screenshots/webgl_geometry_csg.jpg",
+      "sha256": "28e8e714398123948c031b0003c9617e45ba9f326c997449215d7d807a9503ed"
+    },
+    "threejs:example:webgl_furnace_test": {
+      "image": "screenshots/webgl_furnace_test.jpg",
+      "sha256": "4fb8cd0bd6c8770dd69fc7507a222f8b75db3f819ef610039952d495045b73d9"
+    },
+    "threejs:example:webgl_geometry_colors": {
+      "image": "screenshots/webgl_geometry_colors.jpg",
+      "sha256": "17d4683ce368265d2f2da8b724b99998770ce12eee375ebedf79007ad73d11f7"
+    },
+    "threejs:example:webgl_geometry_extrude_shapes": {
+      "image": "screenshots/webgl_geometry_extrude_shapes.jpg",
+      "sha256": "8fab23dabef8090e3d01d7318e3cbf3ddfdb4167a70a674085a334b2db6c2d88"
+    },
+    "threejs:example:webgl_geometry_extrude_splines": {
+      "image": "screenshots/webgl_geometry_extrude_splines.jpg",
+      "sha256": "de1a2bd9379719837597f91237240cf0001cc5507b83e71022404e2ce0b41e20"
+    },
+    "threejs:example:webgl_geometry_spline_editor": {
+      "image": "screenshots/webgl_geometry_spline_editor.jpg",
+      "sha256": "13a8d7650e0a13913f8c60a2dc5db369f2444322702dabffb422737deba387c1"
+    },
+    "threejs:example:webgl_geometry_terrain": {
+      "image": "screenshots/webgl_geometry_terrain.jpg",
+      "sha256": "e6e5b1379eccd7066e016773da998cebeae821088841ebe0bd8307e4ea24ebf0"
+    },
+    "threejs:example:webgl_gpgpu_birds": {
+      "image": "screenshots/webgl_gpgpu_birds.jpg",
+      "sha256": "70b47f4edc7efc8a80dac7a4197933367f7ce0dfdf9b90b37d3b256dc4350286"
+    },
+    "threejs:example:webgl_effects_parallaxbarrier": {
+      "image": "screenshots/webgl_effects_parallaxbarrier.jpg",
+      "sha256": "239f48c4506c90349cd9786167fc0cf290263421d8184a9f473defc480c9e471"
+    },
+    "threejs:example:webgl_gpgpu_protoplanet": {
+      "image": "screenshots/webgl_gpgpu_protoplanet.jpg",
+      "sha256": "2e19b35356970e875a7c885c900b4fe9ce81acf988930b9604cc4628544489da"
+    },
+    "threejs:example:webgl_instancing_raycast": {
+      "image": "screenshots/webgl_instancing_raycast.jpg",
+      "sha256": "559a45f975a203aec4d4f688bf0dca292d65f56a37c176c544c877f1591ad12e"
+    },
+    "threejs:example:webgl_geometry_terrain_raycast": {
+      "image": "screenshots/webgl_geometry_terrain_raycast.jpg",
+      "sha256": "9816ed57e79e2076796c881b3513ccf2bd1e91337699c00ceefcd75e2adf52fa"
+    },
+    "threejs:example:webgl_geometry_text": {
+      "image": "screenshots/webgl_geometry_text.jpg",
+      "sha256": "ce2b4fefe0679c91b6142e73b712b37642a3e71e4fa43cd4859016ac927a9f39"
+    },
+    "threejs:example:webgl_interactive_buffergeometry": {
+      "image": "screenshots/webgl_interactive_buffergeometry.jpg",
+      "sha256": "7a31cedae2bab0446543d20f79c0902289055872e2fe338e8300bcc395499c78"
+    },
+    "threejs:example:webgl_interactive_cubes": {
+      "image": "screenshots/webgl_interactive_cubes.jpg",
+      "sha256": "2fe9baf328a13d03f7018d962aee36a0ff88d799f1bf4e16899e0c6b03551ac7"
+    },
+    "threejs:example:webgl_interactive_lines": {
+      "image": "screenshots/webgl_interactive_lines.jpg",
+      "sha256": "813313e56cce9c9571c44d71ddddfbd9641f96c566b34d46cec59299855ecdaf"
+    },
+    "threejs:example:webgl_interactive_cubes_ortho": {
+      "image": "screenshots/webgl_interactive_cubes_ortho.jpg",
+      "sha256": "ffc13ee1a5a210220f914a7a00cab5bfe5cdaa87fc0258c7cb98429e96f75d62"
+    },
+    "threejs:example:webgl_interactive_cubes_gpu": {
+      "image": "screenshots/webgl_interactive_cubes_gpu.jpg",
+      "sha256": "da1b57a0f0330bf411e3699eab2c26177cb6e1ddda0f11ac2d76f5476676d6f8"
+    },
+    "threejs:example:webgl_interactive_raycasting_points": {
+      "image": "screenshots/webgl_interactive_raycasting_points.jpg",
+      "sha256": "c8dd94dd57a76edf40c559382a3575246068da6b3851c5314c31f5e7b04c3fe3"
+    },
+    "threejs:example:webgl_lightprobe": {
+      "image": "screenshots/webgl_lightprobe.jpg",
+      "sha256": "d3839c89ee9a6d3c38bfc68294250d81c0bd972f6ec5482a9547ab7067725bab"
+    },
+    "threejs:example:webgl_lightprobes": {
+      "image": "screenshots/webgl_lightprobes.jpg",
+      "sha256": "91b37d6da492f4f106fac1aefdcef0cf3f019af57e98c4a43b687f91b76c60d4"
+    },
+    "threejs:example:webgl_lightprobes_complex": {
+      "image": "screenshots/webgl_lightprobes_complex.jpg",
+      "sha256": "866cb05e6ecc0b2adeec294e6f187e1e0072d1e1d3dbbe89077537ef2af8ebbe"
+    },
+    "threejs:example:webgl_lights_spotlights": {
+      "image": "screenshots/webgl_lights_spotlights.jpg",
+      "sha256": "415ca7baee331f6c0f2b575437a556ef2da51c9110336a49885c78ac76a4b602"
+    },
+    "threejs:example:webgl_lightprobe_cubecamera": {
+      "image": "screenshots/webgl_lightprobe_cubecamera.jpg",
+      "sha256": "1407ac7f9fd8f9564314ff29c41885c3da4c44599ccfd7394e5d0e33facfd2ab"
+    },
+    "threejs:example:webgl_lightprobes_sponza": {
+      "image": "screenshots/webgl_lightprobes_sponza.jpg",
+      "sha256": "fff67045783b42b46fc93240ba66480254864e70959a8cef8076b1d19fc3b8f0"
+    },
+    "threejs:example:webgl_lights_sunlight": {
+      "image": "screenshots/webgl_lights_sunlight.jpg",
+      "sha256": "59847d9eff934bcd7a9d4bb33a4514c463983de3de4d9181ddff7bb24eb9ad28"
+    },
+    "threejs:example:webgl_lines_dashed": {
+      "image": "screenshots/webgl_lines_dashed.jpg",
+      "sha256": "b00cab645c8b7c12a0b3e3352d24206cd52e2d337c2d58036c57115fc8b8a8fb"
+    },
+    "threejs:example:webgl_lines_colors": {
+      "image": "screenshots/webgl_lines_colors.jpg",
+      "sha256": "972f83656e055af1eaf704c1fae0038381e621a601fecff3ec3586cbf3c489be"
+    },
+    "threejs:example:webgl_lines_fat": {
+      "image": "screenshots/webgl_lines_fat.jpg",
+      "sha256": "d515fa657a20b8a86f8f118b03db0157f479390ae8f589a2c5a1dbd0625677e4"
+    },
+    "threejs:example:webgl_lights_rectarealight": {
+      "image": "screenshots/webgl_lights_rectarealight.jpg",
+      "sha256": "5ae826316724bbe36b24b32b82cef53d3c5b0a87513aa328708e7c60b2d1242a"
+    },
+    "threejs:example:webgl_loader_3dm": {
+      "image": "screenshots/webgl_loader_3dm.jpg",
+      "sha256": "d7f5856dca7b12f8b357e4cbaf2745e4e31de66706dcbd9c06f3136ffbb9375b"
+    },
+    "threejs:example:webgl_loader_3mf": {
+      "image": "screenshots/webgl_loader_3mf.jpg",
+      "sha256": "ec2ce449570d489d0274133442793cd3e9dbbef0fd8f82587a0e74b238673afa"
+    },
+    "threejs:example:webgl_lines_fat_raycasting": {
+      "image": "screenshots/webgl_lines_fat_raycasting.jpg",
+      "sha256": "9183653836fe93d53881d295ebb279128988781c2e3b369f6e1c97df04d6fbba"
+    },
+    "threejs:example:webgl_loader_3mf_materials": {
+      "image": "screenshots/webgl_loader_3mf_materials.jpg",
+      "sha256": "a72e7f83b2079b7a3ea28fe44c4564e4cdcbd4b230877aeeb128b5c2e53de540"
+    },
+    "threejs:example:webgl_loader_amf": {
+      "image": "screenshots/webgl_loader_amf.jpg",
+      "sha256": "d56a712ab283b5a6dac1c4b66edf43b6edbca66609d1a903d1b24064b2925cf3"
+    },
+    "threejs:example:webgl_loader_bvh": {
+      "image": "screenshots/webgl_loader_bvh.jpg",
+      "sha256": "d5a93ecf3c82fc34a80a1a4e4a95968b71d739c22c9687a178ef4af8ae47a9f9"
+    },
+    "threejs:example:webgl_lines_fat_wireframe": {
+      "image": "screenshots/webgl_lines_fat_wireframe.jpg",
+      "sha256": "bfb73dfd5527136651eeaa530424b2c35c82e654d5de0fec4350798f7df397f7"
+    },
+    "threejs:example:webgl_loader_fbx": {
+      "image": "screenshots/webgl_loader_fbx.jpg",
+      "sha256": "63dc76e6ca2b3324460f13e5d9a00cb279e4dc858f244c9339e3929d4e01ce2b"
+    },
+    "threejs:example:webgl_loader_ifc": {
+      "image": "screenshots/webgl_loader_ifc.jpg",
+      "sha256": "c09e0333d7ed008c3bef97d0a58a1b939cae1dfc425b334802a3d184c4eb2d49"
+    },
+    "threejs:example:webgl_loader_draco": {
+      "image": "screenshots/webgl_loader_draco.jpg",
+      "sha256": "da553c234a42e1876056e30dbe871a16e9ebd706a139c7922be888d7b97e7e41"
+    },
+    "threejs:example:webgl_loader_gcode": {
+      "image": "screenshots/webgl_loader_gcode.jpg",
+      "sha256": "ec74f3c401fb4f56e798397f9fbd2d8c09a8b84fa47c37704793568fba255044"
+    },
+    "threejs:example:webgl_loader_mdd": {
+      "image": "screenshots/webgl_loader_mdd.jpg",
+      "sha256": "e901da1ab22ed6e806b3577c52914aada9b817605b862cb4cd9b2d2c2823a5d5"
+    },
+    "threejs:example:webgl_loader_kmz": {
+      "image": "screenshots/webgl_loader_kmz.jpg",
+      "sha256": "7eef73c05f5b3506450598bae7b50830e47a300450572ba8f0909770907527dd"
+    },
+    "threejs:example:webgl_loader_nrrd": {
+      "image": "screenshots/webgl_loader_nrrd.jpg",
+      "sha256": "a1ae8d64b320c9175274c8d75c06af4710aac3c8883f644dfed50c11e7f512e4"
+    },
+    "threejs:example:webgl_loader_gltf_animation_pointer": {
+      "image": "screenshots/webgl_loader_gltf_animation_pointer.jpg",
+      "sha256": "595116dad5b081e962a5a19357e0d93f7172a2cb30caad9a0ecc9c88c29b9424"
+    },
+    "threejs:example:webgl_loader_pdb": {
+      "image": "screenshots/webgl_loader_pdb.jpg",
+      "sha256": "0b4ec423b27706a8f637643de0a6b60e26b5ccf323b5c6887ec819533f6be769"
+    },
+    "threejs:example:webgl_loader_texture_dds": {
+      "image": "screenshots/webgl_loader_texture_dds.jpg",
+      "sha256": "095494daa6cba3fded64388bf28482e50686b63d79e89725755c91c7724d0442"
+    },
+    "threejs:example:webgl_loader_texture_ktx2": {
+      "image": "screenshots/webgl_loader_texture_ktx2.jpg",
+      "sha256": "164f3c9a7c95cc8ed2b669ddc544ca4e00106d77922131e2e6048a46ec55c5d6"
+    },
+    "threejs:example:webgl_loader_texture_ktx": {
+      "image": "screenshots/webgl_loader_texture_ktx.jpg",
+      "sha256": "7f7ec7d3cb3fd3f57c545cc12bd37c8c37a353bd0955e37d913ae62aa7af5627"
+    },
+    "threejs:example:webgl_loader_texture_tga": {
+      "image": "screenshots/webgl_loader_texture_tga.jpg",
+      "sha256": "f21f8a924744d7677162379b5cd021bbdf3a982337923ffa323ea0409e174d8e"
+    },
+    "threejs:example:webgl_loader_texture_pvrtc": {
+      "image": "screenshots/webgl_loader_texture_pvrtc.jpg",
+      "sha256": "abdffc570ab702728c231b67d35499d044d30a15c2e67a5fa8ae310a42b7a321"
+    },
+    "threejs:example:webgl_loader_texture_tiff": {
+      "image": "screenshots/webgl_loader_texture_tiff.jpg",
+      "sha256": "52ecfef5531327e2f3d14e2f671406c1ce806e8a31f25a0a99c29aad5eb8434c"
+    },
+    "threejs:example:webgl_loader_vrml": {
+      "image": "screenshots/webgl_loader_vrml.jpg",
+      "sha256": "199f53d7f170a5399239949e5606b59c6980f056c8bfd2901263914e0f09b121"
+    },
+    "threejs:example:webgl_materials_texture_canvas": {
+      "image": "screenshots/webgl_materials_texture_canvas.jpg",
+      "sha256": "37e3eec1163263f67c03d2747fffabe01520fc3576471728d0b4e9b2c649e76a"
+    },
+    "threejs:example:webgl_materials_cubemap_mipmaps": {
+      "image": "screenshots/webgl_materials_cubemap_mipmaps.jpg",
+      "sha256": "c91daa6c35aa5fa1e58af5bde39b91c115ab3a1fe2bdf9f4baca83cafeeb477a"
+    },
+    "threejs:example:webgl_materials_envmaps_fasthdr": {
+      "image": "screenshots/webgl_materials_envmaps_fasthdr.jpg",
+      "sha256": "11d27f4e54523a0c766cb09468ba7c0319edaaca261047b7bf373d4de7b7eb05"
+    },
+    "threejs:example:webgl_lod": {
+      "image": "screenshots/webgl_lod.jpg",
+      "sha256": "f86acee72fa93413dac4454699317f2f5811962cb482e271eb5d3258f9ca77f2"
+    },
+    "threejs:example:webgl_loader_vox": {
+      "image": "screenshots/webgl_loader_vox.jpg",
+      "sha256": "118bcb1ae3ee13b48f5835c58e3dfbda637dac84ae2bc292dee214100daccede"
+    },
+    "threejs:example:webgl_materials_alphahash": {
+      "image": "screenshots/webgl_materials_alphahash.jpg",
+      "sha256": "6876b9abe5ab901b032f14a5ee17b5058214c1d89991621ab99b0ed02b1db802"
+    },
+    "threejs:example:webgl_loader_xyz": {
+      "image": "screenshots/webgl_loader_xyz.jpg",
+      "sha256": "4ed777462246930ee0b341017489e3d5503e6f566c37fdedd9e96db9d7456286"
+    },
+    "threejs:example:webgl_materials_video_webcam": {
+      "image": "screenshots/webgl_materials_video_webcam.jpg",
+      "sha256": "5e6610b637547d3862da114731812de613e30291c32a4653b680096e7d95e2b4"
+    },
+    "threejs:example:webgl_math_obb": {
+      "image": "screenshots/webgl_math_obb.jpg",
+      "sha256": "7b3b5601d8a8b9759dd3a440d119e88779b6027f2579edd7e4877aa06cb335d4"
+    },
+    "threejs:example:webgl_math_orientation_transform": {
+      "image": "screenshots/webgl_math_orientation_transform.jpg",
+      "sha256": "867e901de6ee85abc54d4b3e802b6c19a8f9aebead70b7ce95e8e34c28af6b86"
+    },
+    "threejs:example:webgl_mesh_batch": {
+      "image": "screenshots/webgl_mesh_batch.jpg",
+      "sha256": "e97892923c6a26988f7deae876fde6f3bfaf439a2ed76c8d664d8f7c5fa860c8"
+    },
+    "threejs:example:webgl_mirror": {
+      "image": "screenshots/webgl_mirror.jpg",
+      "sha256": "bae4937b319fa14e07a65c51e8bc0d4dfce0bab65bfba646523b6f8ea9203c42"
+    },
+    "threejs:example:webgl_multiple_elements_text": {
+      "image": "screenshots/webgl_multiple_elements_text.jpg",
+      "sha256": "986382dcb95c3764259956ce054ea5ba965d4d8e3a62dea8cf9b74d38a75a06b"
+    },
+    "threejs:example:webgl_multiple_elements": {
+      "image": "screenshots/webgl_multiple_elements.jpg",
+      "sha256": "39333c157832f08926865e6e89c8f082bb699d326e237286554ce50efe9ea479"
+    },
+    "threejs:example:webgl_multiple_scenes_comparison": {
+      "image": "screenshots/webgl_multiple_scenes_comparison.jpg",
+      "sha256": "4ec0c6d1a4f860711b096cadd99c4c8c55a054ea29f7f788953bd8e644e05dc7"
+    },
+    "threejs:example:webgl_multiple_views": {
+      "image": "screenshots/webgl_multiple_views.jpg",
+      "sha256": "d1ff357f9e2458bfc0675cf7fe57db036b1d59ea4e8af08158aace202b3d6356"
+    },
+    "threejs:example:webgl_points_waves": {
+      "image": "screenshots/webgl_points_waves.jpg",
+      "sha256": "8cb11e718493ea17531432b8c9bf0b5e3f094c322a0c2a45020a0246a1ea256d"
+    },
+    "threejs:example:webgl_portal": {
+      "image": "screenshots/webgl_portal.jpg",
+      "sha256": "5e12c1f926afbffeb139f3b772d3d47c512838ebf14146045e2293cd586c697b"
+    },
+    "threejs:example:webgl_multisampled_renderbuffers": {
+      "image": "screenshots/webgl_multisampled_renderbuffers.jpg",
+      "sha256": "5be42bd0383826cf45c3e77337775912f0294e2cb42ddb16acbe2223c436e13c"
+    },
+    "threejs:example:webgl_postprocessing": {
+      "image": "screenshots/webgl_postprocessing.jpg",
+      "sha256": "537b2e6e803dd3bbd0a961f3a7b62eaa19c87a35034e90bf1e722cf688e3f97a"
+    },
+    "threejs:example:webgl_postprocessing_afterimage": {
+      "image": "screenshots/webgl_postprocessing_afterimage.jpg",
+      "sha256": "c0c4ea66c42505250730ea1cc7fe034e1c9aaadeb7ad053bf598bcfc3db6b1ab"
+    },
+    "threejs:example:webgl_postprocessing_fxaa": {
+      "image": "screenshots/webgl_postprocessing_fxaa.jpg",
+      "sha256": "97bb07446fc3c877abb5d6928def4810021df28503e9004de69eb68dac031225"
+    },
+    "threejs:example:webgl_postprocessing_dof": {
+      "image": "screenshots/webgl_postprocessing_dof.jpg",
+      "sha256": "1505836a2ee602d01ae24f6a326e223df875ec5e87b093d571ed00041d35c173"
+    },
+    "threejs:example:webgl_morphtargets": {
+      "image": "screenshots/webgl_morphtargets.jpg",
+      "sha256": "2fd8d94acd50ee1c5630e7e3c2a4ad29f2d8ed46e27bb8227fbb116cfeb6f7cc"
+    },
+    "threejs:example:webgl_postprocessing_glitch": {
+      "image": "screenshots/webgl_postprocessing_glitch.jpg",
+      "sha256": "29c44455ba8481d7fc331851587706f53f4a25619f46041bfa8211675210a523"
+    },
+    "threejs:example:webgl_postprocessing_sao": {
+      "image": "screenshots/webgl_postprocessing_sao.jpg",
+      "sha256": "6753c5f70ffd1b75dd946ed632597733a1f0ed338ae286fe645726ede30e83e5"
+    },
+    "threejs:example:webgl_postprocessing_sobel": {
+      "image": "screenshots/webgl_postprocessing_sobel.jpg",
+      "sha256": "50500e83daabc649eb1483eb87192780dc36a40134938d038ac1832d4db19ed3"
+    },
+    "threejs:example:webgl_postprocessing_ssaa": {
+      "image": "screenshots/webgl_postprocessing_ssaa.jpg",
+      "sha256": "2c8cc23d0ba2e4f96f9325f5d2ad2bbaccaa028d384c5edec88093c4108cad0a"
+    },
+    "threejs:example:webgl_postprocessing_procedural": {
+      "image": "screenshots/webgl_postprocessing_procedural.jpg",
+      "sha256": "1a901224d6486f6cb4c460aaa1659a188869e58b7cf8a57c87c71a07f85f2ec8"
+    },
+    "threejs:example:webgl_postprocessing_rgb_halftone": {
+      "image": "screenshots/webgl_postprocessing_rgb_halftone.jpg",
+      "sha256": "b186c0c8ae47c62a33554ab1f4ea9e6c144e50d818cdd014e565f208ebde6acf"
+    },
+    "threejs:example:webgl_postprocessing_ssao": {
+      "image": "screenshots/webgl_postprocessing_ssao.jpg",
+      "sha256": "2cf54a6cf0923dfa7b8a574b2e1099051db3507a55a6556e1c3db614b77d661e"
+    },
+    "threejs:example:webgl_postprocessing_ssr": {
+      "image": "screenshots/webgl_postprocessing_ssr.jpg",
+      "sha256": "2314b5a47c5c5b540db44bb4174451ffb6bab5419cec8858bbab92b48c67f834"
+    },
+    "threejs:example:webgl_postprocessing_transition": {
+      "image": "screenshots/webgl_postprocessing_transition.jpg",
+      "sha256": "0c7e95828e6146530c920fe3e46de7f9bbb55f78557515decfe35dba348acad7"
+    },
+    "threejs:example:webgl_read_float_buffer": {
+      "image": "screenshots/webgl_read_float_buffer.jpg",
+      "sha256": "1bc5555e5131851b0624caaf3194edf410b318824920f807ee315ce69be241b2"
+    },
+    "threejs:example:webgl_rendertarget_texture2darray": {
+      "image": "screenshots/webgl_rendertarget_texture2darray.jpg",
+      "sha256": "3eb7dd1fe93aa01e4d1d6c8343f8e4d1c2283e13c0598df65e0e072c6e3eaccb"
+    },
+    "threejs:example:webgl_reversed_depth_buffer": {
+      "image": "screenshots/webgl_reversed_depth_buffer.jpg",
+      "sha256": "3b41f1c1e9e7665dd063aa940df83533fea343f7f75f8b78d0b1b10ed038c339"
+    },
+    "threejs:example:webgl_raycaster_sprite": {
+      "image": "screenshots/webgl_raycaster_sprite.jpg",
+      "sha256": "fffff34f94a73ebdc72d4e34129ebcd91d14e14d8717dde489f4e6555ec9e477"
+    },
+    "threejs:example:webgl_rtt": {
+      "image": "screenshots/webgl_rtt.jpg",
+      "sha256": "0ef2f81bf0267a6bb04c6e54ea8cf14b019d61911afb7e6f69f7231d5af3c308"
+    },
+    "threejs:example:webgl_postprocessing_unreal_bloom_selective": {
+      "image": "screenshots/webgl_postprocessing_unreal_bloom_selective.jpg",
+      "sha256": "c2349d9a238b9340d0be5fb8b6aab35cb95fd1263b2faba09a561e1c3fb0080b"
+    },
+    "threejs:example:webgl_shaders_sky": {
+      "image": "screenshots/webgl_shaders_sky.jpg",
+      "sha256": "12c2caa0382ace0131a65205b6c6cb33672fca5c5a3f3478add55083e517e913"
+    },
+    "threejs:example:webgl_shadow_contact": {
+      "image": "screenshots/webgl_shadow_contact.jpg",
+      "sha256": "e5cd60c50902e5e1c81c4ba8d38b88ec23325218efacb5a138b5feb5d9b101d2"
+    },
+    "threejs:example:webgl_shadowmap_pcss": {
+      "image": "screenshots/webgl_shadowmap_pcss.jpg",
+      "sha256": "a0a2ece6eb044e96bdd5bff2b2ae2a26ef567b9e461f6c392e04a567703050f8"
+    },
+    "threejs:example:webgl_shadowmap_vsm": {
+      "image": "screenshots/webgl_shadowmap_vsm.jpg",
+      "sha256": "e5715738ff61836f5ad27a021afc833b9ddf2c705b1dbde21fa8056a3536e6aa"
+    },
+    "threejs:example:webgl_shadowmap_csm": {
+      "image": "screenshots/webgl_shadowmap_csm.jpg",
+      "sha256": "5b8e8a516c690e89f2cfdc2963862f6c0fd7f000ecf4cc2eb31acf91c58b4dcc"
+    },
+    "threejs:example:webgl_shadowmap_viewer": {
+      "image": "screenshots/webgl_shadowmap_viewer.jpg",
+      "sha256": "1eaf9986ba8d2563ec98ef2aa9e70be6ee01554f9ae0b47dc80f88a2113cd1b0"
+    },
+    "threejs:example:webgl_shadowmap_pointlight": {
+      "image": "screenshots/webgl_shadowmap_pointlight.jpg",
+      "sha256": "f95082ad3da267e992b86dc65cd48bd494c12ca43f4bddcc4bc755baf126c52a"
+    },
+    "threejs:example:webgl_shader": {
+      "image": "screenshots/webgl_shader.jpg",
+      "sha256": "e59bc555db6628e39aa0f81cc6e7b31336e676b485a648803e073b57dd2e5b4e"
+    },
+    "threejs:example:webgl_shadowmesh": {
+      "image": "screenshots/webgl_shadowmesh.jpg",
+      "sha256": "e4f48ec54eef1ca27f06f08f350c00d058ae6521dc35ca1778fca0b0a4f2c1a7"
+    },
+    "threejs:example:webgl_simple_gi": {
+      "image": "screenshots/webgl_simple_gi.jpg",
+      "sha256": "36b90471a259be6c34963ee74b05b23a26a857b128660855d601faca8fe6e36d"
+    },
+    "threejs:example:webgl_test_memory": {
+      "image": "screenshots/webgl_test_memory.jpg",
+      "sha256": "ab554be4cf69aa5ff25206514d4e53dc2e0a85eab3a5fb5ab7d3fddcadad5a42"
+    },
+    "threejs:example:webgl_test_memory2": {
+      "image": "screenshots/webgl_test_memory2.jpg",
+      "sha256": "4d45d9c173eef95289c3afd46dfbab89b98be9ded6ebda789190ffc280b95219"
+    },
+    "threejs:example:webgl_texture2darray": {
+      "image": "screenshots/webgl_texture2darray.jpg",
+      "sha256": "3eb7dd1fe93aa01e4d1d6c8343f8e4d1c2283e13c0598df65e0e072c6e3eaccb"
+    },
+    "threejs:example:webgl_texture2darray_compressed": {
+      "image": "screenshots/webgl_texture2darray_compressed.jpg",
+      "sha256": "fa4c70491ceabdc5f92f2da8e66592da0300372c8603d7007016c166bb3f86ea"
+    },
+    "threejs:example:webgl_texture3d_partialupdate": {
+      "image": "screenshots/webgl_texture3d_partialupdate.jpg",
+      "sha256": "361a83a23a96b54e53701977f40ee295aa6ff6db37db4ece4a0c072e2439fc1c"
+    },
+    "threejs:example:webgl_texture2darray_layerupdate": {
+      "image": "screenshots/webgl_texture2darray_layerupdate.jpg",
+      "sha256": "cd031b526dcdda8a07b045a98f089a4c2368223e7c3330c4233ea7392b587da3"
+    },
+    "threejs:example:webgl_tsl_shadowmap": {
+      "image": "screenshots/webgl_tsl_shadowmap.jpg",
+      "sha256": "ff8f2ed72fa3dc41bfa82655d99bc857891b5a68aea22e7bd4c078181eb46f8d"
+    },
+    "threejs:example:webgl_volume_cloud": {
+      "image": "screenshots/webgl_volume_cloud.jpg",
+      "sha256": "db26da85f5ce9739470b170e59b769bcac44957766dec10e09843d666853ee7a"
+    },
+    "threejs:example:webgl_ubo_arrays": {
+      "image": "screenshots/webgl_ubo_arrays.jpg",
+      "sha256": "461c2c44eecefae7cf63c4374ed68d167529d3ad2ef812c3c14ef3cc8ec36bdf"
+    },
+    "threejs:example:webgl_volume_perlin": {
+      "image": "screenshots/webgl_volume_perlin.jpg",
+      "sha256": "550ad552daccc292e8e034bff79b4e952a43c3a4e2d281b6ec63db781d2e78d0"
+    },
+    "threejs:example:webgl_worker_offscreencanvas": {
+      "image": "screenshots/webgl_worker_offscreencanvas.jpg",
+      "sha256": "9d3e3e1348b44bbc3d3d3a41e3f66d98714b93329380c3f83ccebd94b5ab6c51"
+    },
+    "threejs:example:webgl_volume_instancing": {
+      "image": "screenshots/webgl_volume_instancing.jpg",
+      "sha256": "c8a113f4943dbf63e4b52c1621b34422f542edbaae751ce50cea47f28a48034a"
+    },
+    "threejs:example:webgpu_clipping_stencil": {
+      "image": "screenshots/webgpu_clipping_stencil.jpg",
+      "sha256": "840ced699f1d21a820fbf025112f0e81619e2dade33f0d0b588445bc6be03a7a"
+    },
+    "threejs:example:webgpu_clipping": {
+      "image": "screenshots/webgpu_clipping.jpg",
+      "sha256": "7001235300c23e223755d5581e6257923dbee10667476f4eb74f66f4b599a6eb"
+    },
+    "threejs:example:webgpu_centroid_sampling": {
+      "image": "screenshots/webgpu_centroid_sampling.jpg",
+      "sha256": "498876c6014f744513093163ffe61fdc9b64fc10f898bc3d8b9e0c3566f0b40f"
+    },
+    "threejs:example:webgpu_camera_array": {
+      "image": "screenshots/webgpu_camera_array.jpg",
+      "sha256": "d11b438aa098a48a9c46eb6d15015d67e363a9644dddf9c566f0b94bc46847ec"
+    },
+    "threejs:example:webgpu_camera": {
+      "image": "screenshots/webgpu_camera.jpg",
+      "sha256": "db97a2a6a8f16442b1f44a6003c20f23a5252273ec2a993438f205e6f258dfb3"
+    },
+    "threejs:example:webgpu_compile_async": {
+      "image": "screenshots/webgpu_compile_async.jpg",
+      "sha256": "227a2ec34fb69b6593b8cf9d3a6bcfb66a2a10c4a76639f19267a62c21fbf00f"
+    },
+    "threejs:example:webgpu_compute_birds": {
+      "image": "screenshots/webgpu_compute_birds.jpg",
+      "sha256": "f2abaf1df1417fd7a1f1d0e43085ac3b1f6ab7c00bedfaf87f8fed992132b736"
+    },
+    "threejs:example:webgpu_compute_points": {
+      "image": "screenshots/webgpu_compute_points.jpg",
+      "sha256": "3ef63dba6414fc53c0ed125c3a51f19195da4e752c9e8e2c58f71afbde595a44"
+    },
+    "threejs:example:webgpu_compute_particles_snow": {
+      "image": "screenshots/webgpu_compute_particles_snow.jpg",
+      "sha256": "14f169dd36e684a366380f2b3d9b8f080b92e299a87bd4e896ae06afbc8c9dfe"
+    },
+    "threejs:example:webgpu_compute_reduce": {
+      "image": "screenshots/webgpu_compute_reduce.jpg",
+      "sha256": "4990e4dd87a055d178f30c590cb70de7b2c2d99cfb81872ffe746617268bc5e9"
+    },
+    "threejs:example:webgpu_compute_sort_bitonic": {
+      "image": "screenshots/webgpu_compute_sort_bitonic.jpg",
+      "sha256": "81490e64dd93432070c73acc8800cd1ded8f879acef22a9e48a011d0b9d6ea06"
+    },
+    "threejs:example:webgpu_compute_texture_3d": {
+      "image": "screenshots/webgpu_compute_texture_3d.jpg",
+      "sha256": "a4002c23180108deb2931965a5ba4a7c1fb44daa247b0522d7bcc7f4bd5f65d9"
+    },
+    "threejs:example:webgpu_compute_texture_pingpong": {
+      "image": "screenshots/webgpu_compute_texture_pingpong.jpg",
+      "sha256": "b262a69b82f44aec1af09c292e40c50253e70690ac26038d1f7ebcb9fd039a79"
+    },
+    "threejs:example:webgpu_compute_texture": {
+      "image": "screenshots/webgpu_compute_texture.jpg",
+      "sha256": "50c172ad8c9923093c1b114ae087c28b4956b3be2104078e5ad992c207671f2c"
+    },
+    "threejs:example:webgpu_custom_fog_scattering": {
+      "image": "screenshots/webgpu_custom_fog_scattering.jpg",
+      "sha256": "5b3b4b3a5a93495e44015cdf403f98e9f0aa9997cfce83bc51d1311720ad93a8"
+    },
+    "threejs:example:webgpu_custom_fog": {
+      "image": "screenshots/webgpu_custom_fog.jpg",
+      "sha256": "fd1474d96f1fe89052b113d8e3203fec0f25c63ffbfe321a95f714cf93e4dd74"
+    },
+    "threejs:example:webgpu_depth_texture": {
+      "image": "screenshots/webgpu_depth_texture.jpg",
+      "sha256": "720f5c6479697a4af43da8411229f59dd92cbed1de51bcc30ab071bf95a72999"
+    },
+    "threejs:example:webgpu_compute_particles": {
+      "image": "screenshots/webgpu_compute_particles.jpg",
+      "sha256": "938e04a5fa87a036d6c2746dec45d73c8ec5dda1780ed5401a8ed92a06e66c8a"
+    },
+    "threejs:example:webgpu_fog_height": {
+      "image": "screenshots/webgpu_fog_height.jpg",
+      "sha256": "bcdbb6b65ebf2d7480b5e066cfc752c994fbb2d93f86b1ce64decc53ac801d46"
+    },
+    "threejs:example:webgpu_gaussian_splat": {
+      "image": "screenshots/webgpu_gaussian_splat.jpg",
+      "sha256": "61ef0f41d39c0bd2393802f3e24ab3144efa0807c6c2fb5d7fcd166bb9f016d7"
+    },
+    "threejs:example:webgpu_furnace_test": {
+      "image": "screenshots/webgpu_furnace_test.jpg",
+      "sha256": "4fb8cd0bd6c8770dd69fc7507a222f8b75db3f819ef610039952d495045b73d9"
+    },
+    "threejs:example:webgpu_generator_city": {
+      "image": "screenshots/webgpu_generator_city.jpg",
+      "sha256": "e3128ff7cc557c7ac452fbdeb4b53eb79eecc8bb383bd695a8a6f3172e87a408"
+    },
+    "threejs:example:webgpu_geometry_loft": {
+      "image": "screenshots/webgpu_geometry_loft.jpg",
+      "sha256": "2e87f1375a32fd36939e5e293de1c46e497f0c2981d2b3c9d5513c51ddeb4579"
+    },
+    "threejs:example:webgpu_generator_building": {
+      "image": "screenshots/webgpu_generator_building.jpg",
+      "sha256": "0b096a4ff0c3b65aa1171585519d21ecf4b3fe3fc9533dc6be8cf49397392daf"
+    },
+    "threejs:example:webgpu_hdr": {
+      "image": "screenshots/webgpu_hdr.jpg",
+      "sha256": "ddeb423ca6eef6e7e9bdc697732ec6af14f7a2ec4c27e31f87b73f46145b35e8"
+    },
+    "threejs:example:webgpu_instance_path": {
+      "image": "screenshots/webgpu_instance_path.jpg",
+      "sha256": "a1230e758fabb33225ae7b9bd78801828914ac35542800210a3d3218c04755ea"
+    },
+    "threejs:example:webgpu_lightprobe": {
+      "image": "screenshots/webgpu_lightprobe.jpg",
+      "sha256": "ae9a0fc5e425b5fb7599af550646026c9075a85b39ceb635e7a4d3ecab38ac71"
+    },
+    "threejs:example:webgpu_instance_points": {
+      "image": "screenshots/webgpu_instance_points.jpg",
+      "sha256": "ee3ff171329900bddf362e00379661ec7f7e2bfaaebb4b8dfd6aff8b06e4b94b"
+    },
+    "threejs:example:webgpu_instance_uniform": {
+      "image": "screenshots/webgpu_instance_uniform.jpg",
+      "sha256": "3971da1ddae5d7f4d619c2e33ccbc0d76cecc6e6423ee4a3e4b50dc59f1c1325"
+    },
+    "threejs:example:webgpu_lightprobe_cubecamera": {
+      "image": "screenshots/webgpu_lightprobe_cubecamera.jpg",
+      "sha256": "78a6adb869e6986efa66eb2d99d8d4c9ce08fddb8206819b5799d84241809ffc"
+    },
+    "threejs:example:webgpu_lights_clustered": {
+      "image": "screenshots/webgpu_lights_clustered.jpg",
+      "sha256": "7403a96749e4ca5f27e21dd2df530359c23c3d9f06fb78a4c245f5380e5234b1"
+    },
+    "threejs:example:webgpu_lightprobes_sponza": {
+      "image": "screenshots/webgpu_lightprobes_sponza.jpg",
+      "sha256": "cce53fd89a7e0748e3e3b142f5069c30d6b112531751dfc00a9b54f7fd3008bf"
+    },
+    "threejs:example:webgpu_lightprobes_complex": {
+      "image": "screenshots/webgpu_lightprobes_complex.jpg",
+      "sha256": "4a82dc5b43815047ea1bee80275f93baf62fc5f8cae5799fd638ec7e93131e37"
+    },
+    "threejs:example:webgpu_lightprobes": {
+      "image": "screenshots/webgpu_lightprobes.jpg",
+      "sha256": "a6278fe6ddceecea1c1fac2f75500853fd50ff7d8abb139ae728c73049a682fd"
+    },
+    "threejs:example:webgpu_lights_ies_spotlight": {
+      "image": "screenshots/webgpu_lights_ies_spotlight.jpg",
+      "sha256": "951c7c5666f2b409f05aabaa56ae2599b7e7e3325fe9882daf83ca136145269e"
+    },
+    "threejs:example:webgpu_lights_rectarealight": {
+      "image": "screenshots/webgpu_lights_rectarealight.jpg",
+      "sha256": "a916468208a4d25d22a2bf60c907e73e470dcd45ddfc2bbf8ad121d24821b1a6"
+    },
+    "threejs:example:webgpu_lights_sunlight": {
+      "image": "screenshots/webgpu_lights_sunlight.jpg",
+      "sha256": "19f6c21091c709eccb61e73254c1091560608e35cf0ba9f3a68b200e68656dcb"
+    },
+    "threejs:example:webgpu_lines_fat": {
+      "image": "screenshots/webgpu_lines_fat.jpg",
+      "sha256": "f7f1fb2911b884ae174e62fa5a1e19ad18dac00e85a88ab6f746781634c4ac99"
+    },
+    "threejs:example:webgpu_lights_dynamic": {
+      "image": "screenshots/webgpu_lights_dynamic.jpg",
+      "sha256": "cb7d539b01d7b5b2f9c4389419ebc1e36eab253d2544f7787b6d26f91d5b7893"
+    },
+    "threejs:example:webgpu_lines_fat_wireframe": {
+      "image": "screenshots/webgpu_lines_fat_wireframe.jpg",
+      "sha256": "cdadd1e70a07ca696f5eb3c423bb3010aafe940c172067ebf39efbae6eba58ec"
+    },
+    "threejs:example:webgpu_lines_fat_raycasting": {
+      "image": "screenshots/webgpu_lines_fat_raycasting.jpg",
+      "sha256": "9e7243bf0c10a728a95d40b55ed123deb3be0f02b4d721de009615210051fb1f"
+    },
+    "threejs:example:webgpu_loader_texture_ktx2": {
+      "image": "screenshots/webgpu_loader_texture_ktx2.jpg",
+      "sha256": "a678be48e56bf4503fbb4e990dd7998a6e85becd450140bd708150f124487893"
+    },
+    "threejs:example:webgpu_materials_alphahash": {
+      "image": "screenshots/webgpu_materials_alphahash.jpg",
+      "sha256": "f829e21581c120e633aa52e3c5ce5a83990f44808512403a74be02a2d6c91c7b"
+    },
+    "threejs:example:webgpu_materials_arrays": {
+      "image": "screenshots/webgpu_materials_arrays.jpg",
+      "sha256": "3fc9b747fc0bb8a0f4a2a423be0003f7c328682dd5ed64e2be134c9a45b35c43"
+    },
+    "threejs:example:webgpu_materials_basic": {
+      "image": "screenshots/webgpu_materials_basic.jpg",
+      "sha256": "8f641ae3fef82ea430491ecc20f2b2af82a19f282d8277c15dcc43a5e5be6dc4"
+    },
+    "threejs:example:webgpu_lights_custom": {
+      "image": "screenshots/webgpu_lights_custom.jpg",
+      "sha256": "68864145526facd0fda4505057e1b94bf59fac17db225b6d5f5b9e4b16b426ce"
+    },
+    "threejs:example:webgpu_materials_cubemap_mipmaps": {
+      "image": "screenshots/webgpu_materials_cubemap_mipmaps.jpg",
+      "sha256": "e290c3689f7d7a214f02db0b702556c5caf4ae92bf1b8961498abdfacb66e344"
+    },
+    "threejs:example:webgpu_morphtargets": {
+      "image": "screenshots/webgpu_morphtargets.jpg",
+      "sha256": "a5bef5c2c43f7ead2ed8f414fe6f41dcaf8b478d557c796d019f685cf4d5746e"
+    },
+    "threejs:example:webgpu_materials_retroreflection": {
+      "image": "screenshots/webgpu_materials_retroreflection.jpg",
+      "sha256": "2e8588816bd06d39f1626bccb55637e29e09b40cd7e9221e50a88ceb974a95ed"
+    },
+    "threejs:example:webgpu_materials_node_proxy": {
+      "image": "screenshots/webgpu_materials_node_proxy.jpg",
+      "sha256": "973c344af76b951ac9596837209d9b17ce4f85006582b674bedbd986fcc686cc"
+    },
+    "threejs:example:webgpu_mesh_batch": {
+      "image": "screenshots/webgpu_mesh_batch.jpg",
+      "sha256": "32bcf5ba24da056ec6973fe55da58cfc5bd5054732408c1232e97fc542575ad0"
+    },
+    "threejs:example:webgpu_multiple_elements": {
+      "image": "screenshots/webgpu_multiple_elements.jpg",
+      "sha256": "aa72344684af8570b8a23006629802bd9c35de61385a7f6eb077a4fb4638bcfb"
+    },
+    "threejs:example:webgpu_multiple_canvas": {
+      "image": "screenshots/webgpu_multiple_canvas.jpg",
+      "sha256": "ffa4acd71c29d6651d6e790250a32f2e6c47e3f02fbbf40e67cb46698f1d7cfd"
+    },
+    "threejs:example:webgpu_multisampled_renderbuffers": {
+      "image": "screenshots/webgpu_multisampled_renderbuffers.jpg",
+      "sha256": "375be5a03f0703ec8fa9559e21bd359c5998b9b0a2e6fec83602e644bbd7b6f3"
+    },
+    "threejs:example:webgpu_oit": {
+      "image": "screenshots/webgpu_oit.jpg",
+      "sha256": "49203b2ff8cee5831800ed57a1976934a873e2c7a028388aebe3ec8c9dcf1439"
+    },
+    "threejs:example:webgpu_occlusion": {
+      "image": "screenshots/webgpu_occlusion.jpg",
+      "sha256": "4339aff293c1139ffae78eba1c7d810c6a452e324f012a398d7bc1e1afcc325d"
+    },
+    "threejs:example:webgpu_postprocessing_bloom_selective": {
+      "image": "screenshots/webgpu_postprocessing_bloom_selective.jpg",
+      "sha256": "bb68d10a8e1c877d6c2e73a5607465b011b5e825e887d02fa8446d88ed8d47ce"
+    },
+    "threejs:example:webgpu_postprocessing_anamorphic": {
+      "image": "screenshots/webgpu_postprocessing_anamorphic.jpg",
+      "sha256": "d17c39c9bdedcd3e79092c5e78d534de5a022dcbccc1e283bbdf307e74ddc3e0"
+    },
+    "threejs:example:webgpu_performance_renderbundle": {
+      "image": "screenshots/webgpu_performance_renderbundle.jpg",
+      "sha256": "2f954cbf54ac3e0e2264b3bed32ff8076c8fef0c23ac513c93565aa9cf353954"
+    },
+    "threejs:example:webgpu_postprocessing": {
+      "image": "screenshots/webgpu_postprocessing.jpg",
+      "sha256": "fc07ed1d44654be65834fdda2066a5c48a1e74c09468c0f832972b3dcccc85c0"
+    },
+    "threejs:example:webgpu_postprocessing_ca": {
+      "image": "screenshots/webgpu_postprocessing_ca.jpg",
+      "sha256": "c3df4e56d24a00f36f15683593a12b44e7e7ea9207fe7aa7feb65acc24f62bd5"
+    },
+    "threejs:example:webgpu_postprocessing_direct": {
+      "image": "screenshots/webgpu_postprocessing_direct.jpg",
+      "sha256": "01c41728cb9a57a096189ac4297000bf24bffefc66cd58df23076589fe893986"
+    },
+    "threejs:example:webgpu_postprocessing_ssgi_ballpool": {
+      "image": "screenshots/webgpu_postprocessing_ssgi_ballpool.jpg",
+      "sha256": "8391a3fc5e2afe10b508a5add41a6c65b55f34855c2bff946627629adc7deaf9"
+    },
+    "threejs:example:webgpu_postprocessing_ssaa": {
+      "image": "screenshots/webgpu_postprocessing_ssaa.jpg",
+      "sha256": "76423b6edbe2e458acbd613c8d176437ca13cb5d0501c3da058c5bc98e530137"
+    },
+    "threejs:example:webgpu_postprocessing_fxaa": {
+      "image": "screenshots/webgpu_postprocessing_fxaa.jpg",
+      "sha256": "59b3f54ea9422a5461b2de4b5bea06c7c68fdbac95ca9693ad00d02f75eec7bd"
+    },
+    "threejs:example:webgpu_postprocessing_radial_blur": {
+      "image": "screenshots/webgpu_postprocessing_radial_blur.jpg",
+      "sha256": "a07821ad41c2ae336064c905efd2f5a144252453f6a09f5b8feb8e8aa2ca7caf"
+    },
+    "threejs:example:webgpu_postprocessing_dof": {
+      "image": "screenshots/webgpu_postprocessing_dof.jpg",
+      "sha256": "4e38af218c5aa9ece3182bdd654882a957f255d387f147bf4c15fe5ca0d142ad"
+    },
+    "threejs:example:webgpu_postprocessing_ssgi": {
+      "image": "screenshots/webgpu_postprocessing_ssgi.jpg",
+      "sha256": "df81d6d098be97959d031ac3f1260c85df071f5afccecc94ab617e91fc04ca21"
+    },
+    "threejs:example:webgpu_postprocessing_transition": {
+      "image": "screenshots/webgpu_postprocessing_transition.jpg",
+      "sha256": "f18f370f1698c71b567190a167994b830629302c83d3350dab83465a89603a0b"
+    },
+    "threejs:example:webgpu_procedural_texture": {
+      "image": "screenshots/webgpu_procedural_texture.jpg",
+      "sha256": "9ee285bca4496c74ec8ea3fd408ddf80e9e4f1b0ee10bb71bd9fc71191ce4577"
+    },
+    "threejs:example:webgpu_rendertarget_2d-array_3d": {
+      "image": "screenshots/webgpu_rendertarget_2d-array_3d.jpg",
+      "sha256": "1a54c10da6477a7816eb4f7e9cfad0fe427e30c8ff35b83467ff66d2ce678682"
+    },
+    "threejs:example:webgpu_reversed_depth_buffer": {
+      "image": "screenshots/webgpu_reversed_depth_buffer.jpg",
+      "sha256": "4850296318ab920217c1fb324829504739d124418f1bb851305cf2514b869e91"
+    },
+    "threejs:example:webgpu_shadow_contact": {
+      "image": "screenshots/webgpu_shadow_contact.jpg",
+      "sha256": "7332b72c71a20a6a9ea018788c45adb622e6c9d76c28a5ddc7c7389de80e1531"
+    },
+    "threejs:example:webgpu_shadowmap_csm": {
+      "image": "screenshots/webgpu_shadowmap_csm.jpg",
+      "sha256": "eee68367d80f5f58e8f934258417633e7ea0a7eff268fee59e7734b468b5a94d"
+    },
+    "threejs:example:webgpu_shadowmap_array": {
+      "image": "screenshots/webgpu_shadowmap_array.jpg",
+      "sha256": "806ac42577278bffbdc9279059c4b8caa8b91e66da074c443e7dec01dba1ac52"
+    },
+    "threejs:example:webgpu_shadowmap": {
+      "image": "screenshots/webgpu_shadowmap.jpg",
+      "sha256": "3759905622c255175cf15a9a982236c27f2d9214db6ab0a0f03f8922e554a5cd"
+    },
+    "threejs:example:webgpu_shadertoy": {
+      "image": "screenshots/webgpu_shadertoy.jpg",
+      "sha256": "1130bce324437b42aa62238a9e823f1978b139e2d0b36233ceddf3985fe7be7e"
+    },
+    "threejs:example:webgpu_shadowmap_vsm": {
+      "image": "screenshots/webgpu_shadowmap_vsm.jpg",
+      "sha256": "ade81b7554d3b520bddb65ec1296c8bb02df844d210ba563d9dfc7377b1aa7e0"
+    },
+    "threejs:example:webgpu_shadowmap_pointlight": {
+      "image": "screenshots/webgpu_shadowmap_pointlight.jpg",
+      "sha256": "de97a73f33911474cfed79db33ff569c809a0fdce61dc903c613a5211f75ad0b"
+    },
+    "threejs:example:webgpu_sky": {
+      "image": "screenshots/webgpu_sky.jpg",
+      "sha256": "a769a908e6f4ffec295c6df5de253dc10f0c632f1dd1815ad2c42ceb5de6b870"
+    },
+    "threejs:example:webgpu_storage_buffer": {
+      "image": "screenshots/webgpu_storage_buffer.jpg",
+      "sha256": "04750e4f75c83900652d071cedf33962477b1f445097457ba9cb6aecc6232c68"
+    },
+    "threejs:example:webgpu_texturegather": {
+      "image": "screenshots/webgpu_texturegather.jpg",
+      "sha256": "3d8d205a140880c7adc13d8ca280eb44273b711227bfdde9515017a4211e83e9"
+    },
+    "threejs:example:webgpu_test_memory": {
+      "image": "screenshots/webgpu_test_memory.jpg",
+      "sha256": "dbd30818ba0deb38780c5674c7a54fbce4ccd01ab7aa567992dd1d210be69c9d"
+    },
+    "threejs:example:webgpu_textures_2d-array_compressed": {
+      "image": "screenshots/webgpu_textures_2d-array_compressed.jpg",
+      "sha256": "ce3d150103aeaf602f24b70473efc7368be9f70da92e2d946b1c2eddf2e6f768"
+    },
+    "threejs:example:webgpu_tsl_galaxy": {
+      "image": "screenshots/webgpu_tsl_galaxy.jpg",
+      "sha256": "a1a24c9b540b4c7b2533ece090a8a18fbe44efd80f9f52ea992e5cc763d26313"
+    },
+    "threejs:example:webgpu_struct_drawindirect": {
+      "image": "screenshots/webgpu_struct_drawindirect.jpg",
+      "sha256": "7174da1f30cba9079abd55cf0bd9b5d14fada95bbd140ca90ce1a06e29d5bb21"
+    },
+    "threejs:example:webgpu_tsl_compute_attractors_particles": {
+      "image": "screenshots/webgpu_tsl_compute_attractors_particles.jpg",
+      "sha256": "bd7c3ef66e9eff61e00a8d9270be2cec66aebc1fdb2894780b4d6583486167eb"
+    },
+    "threejs:example:webgpu_tsl_raging_sea": {
+      "image": "screenshots/webgpu_tsl_raging_sea.jpg",
+      "sha256": "45aeaec67957f7119648fe76f45435bd39bf1842e4514e89eff653f555285160"
+    },
+    "threejs:example:webgpu_textures_2d-array": {
+      "image": "screenshots/webgpu_textures_2d-array.jpg",
+      "sha256": "11fc02e9177eccf267194ba6b28c537e22cc35925555f2accb85018ab96bacdc"
+    },
+    "threejs:example:webgpu_volume_cloud": {
+      "image": "screenshots/webgpu_volume_cloud.jpg",
+      "sha256": "4f1568901ec519ff70e7d35d654856fe0bc8dfd935378db063df263c380b2ead"
+    },
+    "threejs:example:webgpu_tsl_transpiler": {
+      "image": "screenshots/webgpu_tsl_transpiler.jpg",
+      "sha256": "ae2a76794a5e89a1fa71f245f61a59261b3185a2789b45729df52a4e928316ae"
+    },
+    "threejs:example:webgpu_volume_lighting_rectarea": {
+      "image": "screenshots/webgpu_volume_lighting_rectarea.jpg",
+      "sha256": "610185a290e6a78490aa675935aece521b6e25b8dfecc304bc54b25af1bc9f7f"
+    },
+    "threejs:example:webgpu_volume_fire": {
+      "image": "screenshots/webgpu_volume_fire.jpg",
+      "sha256": "abdffc570ab702728c231b67d35499d044d30a15c2e67a5fa8ae310a42b7a321"
+    },
+    "threejs:example:webgpu_volume_perlin": {
+      "image": "screenshots/webgpu_volume_perlin.jpg",
+      "sha256": "d354ef3dd3722345f67e0f2811e1452b90246d53756534a8e3241d2c5d09992c"
+    },
+    "threejs:example:webgpu_vxgi": {
+      "image": "screenshots/webgpu_vxgi.jpg",
+      "sha256": "f96fabdcde93ef164e9d33c2063139c8c78510b08b8162469150511f635ab6c7"
+    },
+    "threejs:example:webgpu_tsl_vfx_linkedparticles": {
+      "image": "screenshots/webgpu_tsl_vfx_linkedparticles.jpg",
+      "sha256": "31002a026c2d34019ad35520a29b9217b58a53ddf98b4e1175ed5a5f09a775b0"
+    },
+    "threejs:example:webgpu_xr_shadows": {
+      "image": "screenshots/webgpu_xr_shadows.jpg",
+      "sha256": "ddde835a19a4d8f6382ec2139d80f2ec3ad77955bbe6cb506156a5c9a37d29dc"
+    },
+    "threejs:example:webgpu_xr_rollercoaster": {
+      "image": "screenshots/webgpu_xr_rollercoaster.jpg",
+      "sha256": "4f5244591b3f383808dd2047f0022d8c0c28c9afab414f831ea9e3dd39719fc2"
+    },
+    "threejs:example:webxr_ar_camera_access": {
+      "image": "screenshots/webxr_ar_camera_access.jpg",
+      "sha256": "c74d63b78550b67bb15a76ee6c2fb405b690e59e3cffe650dd03e792f7d79bd7"
+    },
+    "threejs:example:webgpu_xr_cubes": {
+      "image": "screenshots/webgpu_xr_cubes.jpg",
+      "sha256": "997dff4c95624ce43deee9193bf4dbc838503481660ecff63d83bce73677c5b5"
+    },
+    "threejs:example:webxr_ar_cones": {
+      "image": "screenshots/webxr_ar_cones.jpg",
+      "sha256": "abdffc570ab702728c231b67d35499d044d30a15c2e67a5fa8ae310a42b7a321"
+    },
+    "threejs:example:webxr_ar_hittest": {
+      "image": "screenshots/webxr_ar_hittest.jpg",
+      "sha256": "abdffc570ab702728c231b67d35499d044d30a15c2e67a5fa8ae310a42b7a321"
+    },
+    "threejs:example:webgpu_vxgi_sponza": {
+      "image": "screenshots/webgpu_vxgi_sponza.jpg",
+      "sha256": "412f9f1e8c1b5445ae2836b8bcf90743543e166cc1e26b7d98e21efc0330b5bf"
+    },
+    "threejs:example:webxr_ar_plane_detection": {
+      "image": "screenshots/webxr_ar_plane_detection.jpg",
+      "sha256": "abdffc570ab702728c231b67d35499d044d30a15c2e67a5fa8ae310a42b7a321"
+    },
+    "threejs:example:webxr_vr_handinput": {
+      "image": "screenshots/webxr_vr_handinput.jpg",
+      "sha256": "1732a974e218ba75b81b6f9f627ba3f11d924b6240a24c8a90e010a7d19f2c7d"
+    },
+    "threejs:example:webxr_vr_handinput_pointerclick": {
+      "image": "screenshots/webxr_vr_handinput_pointerclick.jpg",
+      "sha256": "efb4b272cffb17f7d453d141ad480be419a79c45a359cd6a5462e481e15cdb78"
+    },
+    "threejs:example:webxr_vr_handinput_cubes": {
+      "image": "screenshots/webxr_vr_handinput_cubes.jpg",
+      "sha256": "1732a974e218ba75b81b6f9f627ba3f11d924b6240a24c8a90e010a7d19f2c7d"
+    },
+    "threejs:example:webxr_vr_handinput_profiles": {
+      "image": "screenshots/webxr_vr_handinput_profiles.jpg",
+      "sha256": "1732a974e218ba75b81b6f9f627ba3f11d924b6240a24c8a90e010a7d19f2c7d"
+    },
+    "threejs:example:webxr_vr_handinput_pointerdrag": {
+      "image": "screenshots/webxr_vr_handinput_pointerdrag.jpg",
+      "sha256": "f9dc11373fa0f8599c20ae3880993cb91d49c46c389cd14509b6043a73122b1e"
+    },
+    "threejs:example:webxr_vr_rollercoaster": {
+      "image": "screenshots/webxr_vr_rollercoaster.jpg",
+      "sha256": "0cf1456f7b47ad158dccb5073cf662a040d67c2ff56af14f373d3a7335b4c246"
+    },
+    "threejs:example:webxr_xr_cubes": {
+      "image": "screenshots/webxr_xr_cubes.jpg",
+      "sha256": "695a75c6016db5b141d8a147e46a56e2f69ca3ed9ad5512650974a3ba716be3b"
+    },
+    "threejs:example:webxr_xr_controls_transform": {
+      "image": "screenshots/webxr_xr_controls_transform.jpg",
+      "sha256": "10075a5a77e06ac3032be51bd53c52c8f54a8a2dbf2a03f0b745e75343201398"
+    },
+    "threejs:example:webxr_vr_teleport": {
+      "image": "screenshots/webxr_vr_teleport.jpg",
+      "sha256": "9454835458900c8205ce4020d2f6fb692ac28390fd0ab683a01f648cad2d152f"
+    },
+    "threejs:example:webxr_xr_dragging": {
+      "image": "screenshots/webxr_xr_dragging.jpg",
+      "sha256": "8adecbf4ce310d4b5615ef3c0ce5181801952d0eb8399ecd67956f6f73be7c4c"
+    },
+    "threejs:example:webxr_xr_dragging_custom_depth": {
+      "image": "screenshots/webxr_xr_dragging_custom_depth.jpg",
+      "sha256": "4dec49d02049df6a105ae0dc16777459a09c365d24b3cbab03d61655f76d8645"
+    },
+    "threejs:example:webxr_xr_haptics": {
+      "image": "screenshots/webxr_xr_haptics.jpg",
+      "sha256": "1efc15b6044fcb1d81804278b1a348cc4b84c2e8a3f74ef53ab3fc109d1f9e59"
+    },
+    "threejs:example:webxr_xr_ballshooter": {
+      "image": "screenshots/webxr_xr_ballshooter.jpg",
+      "sha256": "ed06c2e296cab51c4936d6a517badbd7726b02ed7f4071521ba73705bfacf719"
+    },
+    "threejs:example:webxr_xr_paint": {
+      "image": "screenshots/webxr_xr_paint.jpg",
+      "sha256": "195d82c89e7c7702f2ee7b94634de491123d66d8547dc2e56fafeb36ce5787b3"
+    },
+    "threejs:example:webxr_xr_marchingcubes": {
+      "image": "screenshots/webxr_xr_marchingcubes.jpg",
+      "sha256": "195d82c89e7c7702f2ee7b94634de491123d66d8547dc2e56fafeb36ce5787b3"
+    },
+    "threejs:example:webxr_xr_sculpt": {
+      "image": "screenshots/webxr_xr_sculpt.jpg",
+      "sha256": "0a41dbdc0f2089824e447865b080b87a17a6f6b490a4d678fb67084074f2d2bf"
+    }
+  }
 }
