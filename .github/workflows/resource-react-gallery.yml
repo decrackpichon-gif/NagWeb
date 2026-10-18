@@ -16,7 +16,7 @@ permissions:
 
 concurrency:
   group: resource-react-gallery-publisher
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build-real-react-previews:
