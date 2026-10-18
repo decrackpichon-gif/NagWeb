@@ -459,7 +459,7 @@ function fillSelect(select, items) {
 }
 
 // Published metadata reflects only validated native editor adapters.
-const nativeModes = ["svg","uiverse-html","spinkit-html","magic-css","csshake","motion-preset"].filter(
+const nativeModes = ["svg","uiverse-html","spinkit-html","magic-css","csshake","motion-preset","three-native"].filter(
   kind=>canInsertInEditor(kind,hostKinds ? [...hostKinds] : null));
 function currentFilters() {
   return {
@@ -469,7 +469,7 @@ function currentFilters() {
     kinds: el.kind.value || undefined,
     editorUses: el.editorUse.value === "available" ? nativeModes
       : el.editorUse.value === "code"
-        ? ["code",...["svg","uiverse-html","spinkit-html","magic-css","csshake","motion-preset"].filter(kind=>!nativeModes.includes(kind))]
+        ? ["code",...["svg","uiverse-html","spinkit-html","magic-css","csshake","motion-preset","three-native"].filter(kind=>!nativeModes.includes(kind))]
         : undefined,
     ids: el.favoriteOnly.checked ? [...favorites] : undefined,
     offset,
