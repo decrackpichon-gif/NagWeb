@@ -14,7 +14,7 @@ function argument(name) {
 }
 const base=path.resolve(argument("vault")||"react-gallery-build");
 const out=path.resolve(argument("out")||"resource-browser/react-previews");
-const counts={"magicui":6,"shadcn":6,"motion-primitives":4};
+const counts={"magicui":20,"shadcn":20,"motion-primitives":20};
 const safeId=id=>/^(?:magicui|shadcn|motion-primitives):[a-z0-9_-]+$/.test(id);
 const sha=bytes=>createHash("sha256").update(bytes).digest("hex");
 const catalog=JSON.parse(await readFile(path.join(base,"catalog.json"),"utf8"));
@@ -98,8 +98,7 @@ try{
       await stage.screenshot({path:path.join(out,image),animations:"allow",timeout:10000});
       const bytes=await readFile(path.join(out,image));
       if(bytes.length<1000)throw Error("Rendered thumbnail unexpectedly empty");
-      entries[id]={html:"react/"+name,thumbnail:image,
-        pngSha256:sha(bytes)};
+      entries[id]={thumbnail:image,pngSha256:sha(bytes)};
       console.log("Real React preview:",id,"PNG",bytes.length,"bytes");
     }catch(e){
       console.log("Deferred React rendering:",id,String(e.message).slice(0,250),"browser errors:",browserErrors.slice(-3));
@@ -107,13 +106,10 @@ try{
   }
 }finally{await browser.close();await new Promise(ok=>server.close(ok));}
 if(Object.keys(entries).length<5)throw Error("Fewer than five React previews rendered in the real opaque sandbox");
-const keep=new Set(Object.values(entries).map(e=>path.basename(e.html)));
-for(const row of selected) {
-  const name=path.basename(row.previewPath);
-  if(keep.has(name))continue;
-  await rm(path.join(out,"react",name),{force:true});
-  await rm(path.join(out,"react",name.replace(/\.html$/,".js")),{force:true});
-}
+// Do NOT ship compiled JavaScript. It was only needed by the CI screenshot
+// process and weighed ~29 MB for just 16 cards, while PNGs were ~200 KB.
+await rm(path.join(out,"react"),{recursive:true,force:true});
+await rm(path.join(out,"runtime"),{recursive:true,force:true});
 const manifest={format:"nagweb-compiled-react-gallery/1",entries};
 await writeFile(path.join(out,"manifest.json"),JSON.stringify(manifest,null,2)+"\n","utf8");
 console.log("Published audited, actually rendered React previews:",Object.keys(entries).length);

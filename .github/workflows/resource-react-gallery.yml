@@ -68,11 +68,13 @@ jobs:
           const root='tools/resource-etl/resource-browser/react-previews/';
           const manifest=JSON.parse(await readFile(root+'manifest.json','utf8'));
           if(manifest.format!=='nagweb-compiled-react-gallery/1')throw Error('Wrong manifest');
-          if(Object.keys(manifest.entries).length<5)throw Error('Too few working previews');
+          if(Object.keys(manifest.entries).length<30)throw Error('Fewer than 30 authentic React previews');
           for(const [id,entry] of Object.entries(manifest.entries)){
             if(!/^(shadcn|magicui|motion-primitives):/.test(id))throw Error('Unexpected provider');
-            if(!(await stat(root+entry.thumbnail)).isFile() ||
-               !(await stat(root+entry.html)).isFile())throw Error('Missing preview');
+            if(!(await stat(root+entry.thumbnail)).isFile())throw Error('Missing authentic React thumbnail');
+            if(entry.html)throw Error('Unexpected executable React HTML published');
+            const png=await readFile(root+entry.thumbnail);
+            if(png.subarray(0,8).toString('hex')!=='89504e470d0a1a0a')throw Error('Not a PNG');
           }
           console.log('Verified React sample count:',Object.keys(manifest.entries).length);
           NODE
@@ -88,12 +90,12 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
-      - name: Commit only precompiled preview assets to same branch
+      - name: Commit only authentic lightweight PNG thumbnails to same branch
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add tools/resource-etl/resource-browser/react-previews
+          git add -A tools/resource-etl/resource-browser/react-previews
           if git diff --cached --quiet; then
             echo "React gallery unchanged"
             exit 0

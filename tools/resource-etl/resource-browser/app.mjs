@@ -125,12 +125,8 @@ const REACT_GALLERY_ROOT = new URL("./react-previews/", import.meta.url);
 let compiledReactGallery = new Map();
 function safeCompiledReactEntry(id, value) {
   if (!/^(?:magicui|shadcn|motion-primitives):[a-z0-9_-]+$/.test(id) || !value) return null;
-  if (!/^react\/[a-z0-9._-]+\.html$/.test(value.html || "") ||
-      !/^thumbnails\/[a-z0-9._-]+\.png$/.test(value.thumbnail || "")) return null;
-  return {
-    html: new URL(value.html, REACT_GALLERY_ROOT).href,
-    thumbnail: new URL(value.thumbnail, REACT_GALLERY_ROOT).href
-  };
+  if(!/^thumbnails\/[a-z0-9._-]+\.png$/.test(value.thumbnail || ""))return null;
+  return {thumbnail:new URL(value.thumbnail,REACT_GALLERY_ROOT).href};
 }
 async function loadCompiledReactGallery(){
   try {
