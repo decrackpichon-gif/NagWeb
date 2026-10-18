@@ -53,8 +53,9 @@ for(const row of selected){
     throw Error("Unexpected compiled React HTML structure: "+row.id);
   const standalone=orig.replace(tailwindTag,inlineScript(runtimeJs))
     .replace(bundleTag,inlineScript(bundle));
-  if(standalone.includes(tailwindTag)||standalone.includes(bundleTag))
-    throw Error("Unresolved React preview script dependencies: "+row.id);
+  // The inlined audited runtime itself can contain HTML tag strings.
+  // Requiring both original tags above plus the real sandbox render below
+  // is more reliable than searching for those strings inside bundle source.
   await writeFile(path.join(out,"react",htmlName),standalone,"utf8");
 }
 // The screenshot runs against a real HTTP server and the same opaque iframe
