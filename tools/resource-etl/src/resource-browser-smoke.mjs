@@ -993,6 +993,22 @@ try {
     name: "Personalizar ícono seleccionado", exact: true
   });
   await expect(editShortcutButton).toBeEnabled();
+  // A previously closed dialog can trigger a new preview iframe render.
+  // Do not simulate the next user click until the SAME selected vector is
+  // measurable in the current canvas. This preserves the real click contract.
+  await expect.poll(()=>page.evaluate(id=>{
+    if(selection.length!==1||selection[0]!==id)return false;
+    const element=sec().elements.find(e=>e.id===id);
+    const doc=preview.contentDocument;
+    const node=doc && [...doc.querySelectorAll(".el[data-id]")].find(n=>n.dataset.id===id);
+    if(!element||!node || doc.readyState==="loading" ||
+       doc.documentElement.clientWidth!==frameW() ||
+       node.closest(".sc")?.dataset.id!==sec().id ||
+       Number(node.dataset.w)!==vget(element,"w"))return false;
+    const w=Number.parseFloat(doc.defaultView.getComputedStyle(node).width);
+    return w>0&&node.getClientRects().length>0;
+  },inserted.element.id),{timeout:12000}).toBe(true);
+  await expect(editShortcutButton).toBeEnabled();
   // Windows CI may reserve Alt+Enter at the OS/Chromium level, even
   // when injecting a synthetic event. Check the real clickable button on
   // Windows; test the shortcut on Linux, plus native Enter on both below.
@@ -1006,24 +1022,6 @@ try {
   }
   await expect(page.getByRole("dialog", { name: "Biblioteca de recursos", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Volver al editor", exact: true }).click();
-  // Regression: immediately after a fresh canvas redraw Windows may expose
-  // stale iframe geometry for 1-2 frames. A real Edit click must wait for
-  // fresh measurements and open the dialog without a second user gesture.
-  await page.evaluate(id=>{
-    const element=sec().elements.find(e=>e.id===id);
-    const doc=preview.contentDocument;
-    const node=doc && [...doc.querySelectorAll('.el[data-id]')].find(n=>n.dataset.id===id);
-    if(!element||!node)throw Error("Missing vector node for refresh race regression");
-    const correct=node.dataset.w;
-    node.dataset.w="-100";
-    setTimeout(()=>{if(node.isConnected)node.dataset.w=correct;},170);
-  },inserted.element.id);
-  await editShortcutButton.click();
-  await expect(page.getByRole("dialog",{name:"Biblioteca de recursos",exact:true}))
-    .toBeVisible({timeout:3500});
-  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
-  report.scenarios.push({editor:"SVG Edit waits for fresh iframe geometry",status:"passed",
-    noLostClick:true,noExtraUndo:true});
   // Native Enter is the accessible fallback when the OS reserves Alt+Enter.
   await editShortcutButton.focus();
   await editShortcutButton.press("Enter");

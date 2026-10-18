@@ -236,13 +236,9 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     dialog.showModal();
   };
   button.addEventListener("click", () => openLibrary(null));
-  editButton.addEventListener("click", async () => {
+  editButton.addEventListener("click", () => {
     const element = selectedLibraryElement();
-    if (!element) {
-      toast("Seleccioná el recurso en el lienzo para personalizarlo.");
-      syncEditButton();
-      return;
-    }
+    if (!element) return;
     if (element.nwMagicCss?.id) {
       openLibrary({kind:element.nwMagicCss.provider,session:crypto.randomUUID(),
         resourceId:element.nwMagicCss.sourceResourceId||element.nwMagicCss.id,elementId:element.id,
@@ -262,27 +258,8 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     let stroke = resolveColor(vget(element, "stroke"), project.styles);
     if (/^#[a-f\d]{3}$/i.test(stroke)) stroke = "#" + stroke.slice(1).split("").map(c => c+c).join("");
     let geometry;
-    const originalSceneId=sec()?.id;
-    const deadline=Date.now()+1800;
-    for (;;) {
-      if (dialog.open || sec()?.id!==originalSceneId ||
-          selection.length!==1 || selection[0]!==element.id ||
-          !sec().elements.includes(element)) return;
-      try {
-        geometry=measureVector(element);
-        break;
-      } catch(error) {
-        // A freshly refreshed iframe may expose old canvas geometry
-        // for a few frames. Never discard the user's Edit click for
-        // this recoverable condition; do not retry genuinely bad vectors.
-        const loading=String(error?.message||"").includes("lienzo se está actualizando");
-        if(!loading || Date.now()>=deadline) {
-          toast(error.message);
-          return;
-        }
-        await new Promise(resolve=>setTimeout(resolve,45));
-      }
-    }
+    try { geometry = measureVector(element); }
+    catch (error) { toast(error.message); return; }
     const values = { size: Math.round(geometry.width), stroke,
       strokeWidth: vget(element, "strokeWidth") };
     openLibrary({ session: crypto.randomUUID(), resourceId: element.nwResource.id,
