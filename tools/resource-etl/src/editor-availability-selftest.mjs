@@ -5,6 +5,7 @@ import {CSSSHAKE_EFFECTS} from "./extractors/csshake.mjs";
 import { validatedMagicCssEffect,validatedCssEffect,validSavedMagicEffect,compileVerifiedAnimXyzPreset } from "./runtime/nagweb-magic-css-effect.mjs";
 import { transformSpinKitLoader } from "./light-transformers.mjs";
 import { buildResourceApplyEnvelope } from "./runtime/resource-apply-bridge.mjs";
+import {isNativeThreeGeometryResource,threeNativeGeometryFromEnvelope,THREE_SOURCE_REVISION} from "./runtime/nagweb-three-native.mjs";
 const svg={
  id:"lucide:camera",source:{provider:"lucide"},license:{verified:true},
  runtime:{renderer:"nagweb-svg",entryArtifactId:"svg"},
@@ -143,3 +144,39 @@ assert.equal(compileVerifiedAnimXyzPreset({...xyzEnvelope.descriptor.payload.pre
 assert.throws(()=>validatedCssEffect({...xyzEnvelope,descriptor:{...xyzEnvelope.descriptor,
   payload:{preset:{...xyzEnvelope.descriptor.payload.preset,tracks:[{property:"opacity",from:2,to:1}]}}}}),/Preset AnimXYZ/);
 console.log("Verified AnimXYZ tracks, CSS FX and persistence checks OK.");
+
+const threeResource={
+ id:"threejs:example:webgl_geometry_colors",
+ source:{provider:"threejs",externalId:"examples/webgl_geometry_colors.html",commit:THREE_SOURCE_REVISION},
+ license:{id:"MIT",verified:true},
+ runtime:{type:"three",renderer:"three",entryArtifactId:"scene-source",setup:{codeOnly:true}},
+ artifacts:[{id:"scene-source",role:"source",format:"html",
+   content:"<html><script type=\"module\">const shape=new THREE.IcosahedronGeometry(1.5,0);</script></html>"}],
+ editableProps:[{id:"speed",defaultValue:1}]
+};
+assert.equal(isNativeThreeGeometryResource(threeResource),true);
+assert.equal(editorUseOf(threeResource),"three-native");
+assert.equal(canInsertInEditor("three-native",["three-native"]),true);
+assert.equal(canInsertInEditor("three-native",["svg"]),false);
+const geomEnvelope=buildResourceApplyEnvelope(threeResource,{values:{speed:1.75}});
+assert.equal(geomEnvelope.descriptor.kind,"three-native");
+const geomProps=threeNativeGeometryFromEnvelope(geomEnvelope);
+assert.equal(geomProps.shape,"icosa");
+assert.equal(geomProps.motion,"spin");
+assert.equal(geomProps.amount,1.75);
+assert.equal(geomProps.nwResource.id,threeResource.id);
+assert.equal(threeNativeGeometryFromEnvelope(
+  buildResourceApplyEnvelope(threeResource,{values:{speed:0}})).motion,"none");
+assert.equal(editorUseOf({...threeResource,license:{verified:false}}),"code");
+assert.equal(editorUseOf({...threeResource,id:"threejs:example:webgl_camera"}),"code");
+assert.equal(editorUseOf({...threeResource,source:{...threeResource.source,commit:"untrusted"}}),"code");
+assert.equal(editorUseOf({...threeResource,artifacts:[{...threeResource.artifacts[0],content:"<div>Nothing</div>"}]}),"code");
+for(const poison of [-1,5,"1",NaN]){
+ const envelope=buildResourceApplyEnvelope(threeResource,{values:{speed:poison}});
+ assert.throws(()=>threeNativeGeometryFromEnvelope(envelope),/velocidad 3D/);
+}
+assert.throws(()=>threeNativeGeometryFromEnvelope({...geomEnvelope,
+ resource:{...geomEnvelope.resource,sourceCommit:"wrong"}}),/verificada/);
+assert.throws(()=>threeNativeGeometryFromEnvelope({...geomEnvelope,
+ descriptor:{...geomEnvelope.descriptor,payload:{...geomEnvelope.descriptor.payload,shape:"model"}}}),/verificada/);
+console.log("Three.js pinned IcosahedronGeometry maps to verified native editable 3D with rejected source/values OK.");
