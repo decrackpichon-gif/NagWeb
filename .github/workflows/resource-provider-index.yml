@@ -102,19 +102,22 @@ jobs:
             throw Error("Heroicons previews regressed");
           const lucide=index.resources.filter(r=>r.provider==="lucide" && r.previewShapes?.length).length;
           if(lucide<1800)throw Error("Lucide previews regressed: "+lucide);
-          const native=index.resources.filter(r=>["svg","uiverse-html","spinkit-html","magic-css","csshake","motion-preset"].includes(r.editorUse));
+          const native=index.resources.filter(r=>["svg","uiverse-html","spinkit-html","magic-css","csshake","motion-preset","three-native"].includes(r.editorUse));
           const code=index.resources.filter(r=>r.editorUse==="code");
           const motion=native.filter(r=>r.editorUse==="motion-preset");
           if(!motion.length || motion.some(r=>r.provider!=="animxyz" || !r.id.startsWith("animxyz:preset:")))
             throw Error("AnimXYZ native presets were not verified");
-          if(native.length!==6041+motion.length || code.length!==721-motion.length ||
+          const threeNative=native.filter(r=>r.editorUse==="three-native");
+          if(threeNative.length!==1 || threeNative[0].id!=="threejs:example:webgl_geometry_colors")
+            throw Error("Only the pinned Three.js geometry adaptation is native");
+          if(native.length!==6041+motion.length+1 || code.length!==721-motion.length-1 ||
              native.filter(r=>r.editorUse==="svg").length!==2193 ||
              native.filter(r=>r.editorUse==="uiverse-html").length!==3761 ||
              native.filter(r=>r.editorUse==="spinkit-html").length!==12 ||
              native.filter(r=>r.editorUse==="magic-css").length!==65 ||
              native.filter(r=>r.editorUse==="csshake").length!==10)
             throw Error("Native/copy-only coverage disagrees with real editor adapters");
-          if (native.some(r=>!(["lucide","heroicons","uiverse","spinkit","magic-css","csshake","animxyz"].includes(r.provider))) ||
+          if (native.some(r=>!(["lucide","heroicons","uiverse","spinkit","magic-css","csshake","animxyz","threejs"].includes(r.provider))) ||
               code.some(r=>r.provider==="heroicons" || r.provider==="lucide" || r.provider==="uiverse" || r.provider==="spinkit" || r.provider==="magic-css" || (r.provider==="csshake" && r.id!=="csshake:runtime")))
             throw Error("Unexpected native classification by provider");
           const shards=after.detailShards?.uiverse;
