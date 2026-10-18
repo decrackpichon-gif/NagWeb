@@ -2294,7 +2294,7 @@ try {
   await expect(threeNativeCard).toBeVisible({timeout:15000});
   await expect(threeNativeCard.locator('[data-editor-use-label="available"]')).toBeVisible();
   await threeNativeCard.click();
-  await expect(libraryFrame.locator("[data-preview-note]")).toContainText("adaptación");
+  await expect(libraryFrame.locator("[data-preview-note]")).toContainText("No reproduce toda la escena.");
   await expect(libraryFrame.getByRole("button",{name:"Insertar geometría 3D editable",exact:true}))
     .toBeEnabled();
   const speedInput=libraryFrame.getByLabel("Velocidad del giro",{exact:true});
