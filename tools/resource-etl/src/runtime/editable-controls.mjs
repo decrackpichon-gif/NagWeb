@@ -1,4 +1,5 @@
 import { isSupportedHtmlCssProperty } from "./html-css-customization.mjs";
+import { isNativeThreeGeometryResource } from "./nagweb-three-native.mjs";
 import { isSupportedUiverseCssDimension } from "./uiverse-dimensions.mjs";
 import { isSupportedUiverseCssSpacing } from "./uiverse-spacing.mjs";
 import { isSupportedUiverseCssTypeBorder } from "./uiverse-type-borders.mjs";
@@ -16,6 +17,9 @@ import {
 
 // Build safe metadata-driven controls for pre-insert customization.
 export function describeEditableControls(resource) {
+  if(isNativeThreeGeometryResource(resource))
+    return [{id:"speed",label:"Velocidad del giro",kind:"range",
+      defaultValue:1,min:0,max:4,step:0.05}];
   const renderer = resource?.runtime?.renderer;
   if (![
     "nagweb-html-tailwind",
