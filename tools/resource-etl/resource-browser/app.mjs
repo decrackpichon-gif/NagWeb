@@ -118,6 +118,57 @@ let cardPreviewGeneration=0;
 let cardObserver=null;
 let cardPreviewQueue=[];
 let cardPreviewActive=0;
+
+// Built offline from the verified React compiler, NEVER from an arbitrary
+// webpage or live runtime transpiler. A missing gallery is a safe fallback.
+const REACT_GALLERY_ROOT = new URL("./react-previews/", import.meta.url);
+let compiledReactGallery = new Map();
+function safeCompiledReactEntry(id, value) {
+  if (!/^(?:magicui|shadcn|motion-primitives):[a-z0-9_-]+$/.test(id) || !value) return null;
+  if (!/^react\/[a-z0-9._-]+\.html$/.test(value.html || "") ||
+      !/^thumbnails\/[a-z0-9._-]+\.png$/.test(value.thumbnail || "")) return null;
+  return {
+    html: new URL(value.html, REACT_GALLERY_ROOT).href,
+    thumbnail: new URL(value.thumbnail, REACT_GALLERY_ROOT).href
+  };
+}
+async function loadCompiledReactGallery(){
+  try {
+    const response=await fetch(new URL("manifest.json",REACT_GALLERY_ROOT),{cache:"no-store"});
+    if(!response.ok)return;
+    const manifest=await response.json();
+    if(manifest?.format!=="nagweb-compiled-react-gallery/1" ||
+       !manifest.entries || typeof manifest.entries!=="object")return;
+    compiledReactGallery=new Map(Object.entries(manifest.entries)
+      .map(([id,value])=>[id,safeCompiledReactEntry(id,value)])
+      .filter(([,value])=>value));
+    updateReactCardThumbnails();
+  }catch { /* gallery may not have been generated yet; don't fake previews */ }
+}
+function updateReactCardThumbnails(){
+  for(const button of el.grid.querySelectorAll(".resource-card[data-resource-id]")){
+    const entry=compiledReactGallery.get(button.dataset.resourceId);
+    if(!entry)continue;
+    const surface=button.nextElementSibling;
+    if(!surface?.classList.contains("card-visual-surface"))continue;
+    const img=document.createElement("img");
+    img.alt="";img.loading="lazy";img.decoding="async";
+    img.src=entry.thumbnail;
+    img.addEventListener("error",()=>{
+      // A missing image should not leave a false claim of real preview.
+      surface.classList.remove("is-real-preview");
+      surface.replaceChildren();
+      const marker=document.createElement("span");
+      marker.className="card-visual-label";
+      marker.textContent="Muestra React no disponible";
+      surface.append(marker);
+    },{once:true});
+    surface.replaceChildren(img);
+    surface.classList.add("is-real-preview","is-react-preview");
+  }
+}
+void loadCompiledReactGallery();
+
 function resetCardPreviews(){
   cardPreviewGeneration++;
   cardObserver?.disconnect();
@@ -441,6 +492,7 @@ const resultSearch = createLatestSearch(
   el.empty.hidden = result.total !== 0;
   el.grid.hidden = result.total === 0;
   observeCardPreviews();
+  updateReactCardThumbnails();
     },
     onError: () => {
       el.resultCount.textContent = "No pude actualizar los resultados.";
@@ -1036,6 +1088,7 @@ async function openDetail(id) {
   el.detailBadges.innerHTML = "";
   el.copyId.disabled = true;
   el.copyCode.disabled = true;
+  el.preview.removeAttribute?.("src");
   el.preview.srcdoc = "";
   el.preview.hidden = false;
   el.previewNote.textContent = "Cargando vista previa…";
@@ -1088,6 +1141,19 @@ async function openDetail(id) {
   el.code.textContent = artifact?.content || JSON.stringify(resource.runtime || {}, null, 2);
   el.copyCode.disabled = !artifact?.content;
 
+  const compiledReact = compiledReactGallery.get(resource.id);
+  if(compiledReact){
+    // Run the original, audited bundle only in a script-enabled opaque
+    // sandbox. There is no "allow-same-origin", popups, forms or downloads.
+    el.preview.setAttribute("sandbox","allow-scripts");
+    el.previewFallback.hidden=true;
+    el.preview.hidden=false;
+    el.previewReplay.hidden=true;
+    el.preview.removeAttribute?.("srcdoc");
+    el.preview.src=compiledReact.html;
+    el.previewNote.textContent="Componente React compilado desde el código verificado. La demo es real; todavía no se inserta directamente en el lienzo.";
+    return;
+  }
   let doc, previewError;
   const previewRequest = ++previewRevision;
   try { doc = await previewDoc(resource, selectedValues); }
