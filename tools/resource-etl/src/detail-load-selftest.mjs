@@ -27,6 +27,7 @@ const context = {
   isLottieLivePreview: () => false, isCssShakeLivePreview: () => false,
   isMagicCssLivePreview: () => false, hasUiverseCssAnimation: () => false,
   isVerifiedNoiseShader: () => false,
+  compiledReactGallery: new Map(),
   illustrativePreviewDoc: resource => "Esquema de categoría de " + resource.id
 };
 runInNewContext(loader + redraw + replay, context);

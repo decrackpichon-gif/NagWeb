@@ -221,3 +221,9 @@ pre{white-space:pre-wrap;word-break:break-word;background:#090b0e;border:1px sol
 .s-code-line{height:12px;width:104px;border-radius:10px;background:#7597bf;transform:translateY(-16px)}
 .s-code-line.short{width:64px;background:#83c1b2;transform:translate(-20px,14px)}
 @media(max-width:520px){.resource-tile .card-visual-surface{right:44px}}
+
+/* Screenshots are generated from the actual audited React bundle.
+   No artificial category diagram is presented as a component preview. */
+.card-visual-surface.is-react-preview{background:#fff}
+.card-visual-surface.is-react-preview img{width:100%;height:100%;display:block;
+  object-fit:contain;object-position:center;background:#f8fafc}

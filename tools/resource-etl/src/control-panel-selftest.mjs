@@ -348,6 +348,7 @@ const searchContext = {
   closeQuickPreview() {},
   resetCardPreviews() {},
   observeCardPreviews() {},
+  updateReactCardThumbnails() {},
   vault: { search: () => new Promise((resolve, reject) => { resolveSearch = resolve; rejectSearch = reject; }) }
 };
 runInNewContext(source.slice(source.indexOf("const resultSearch ="), source.indexOf("function mainArtifact(")), searchContext);
