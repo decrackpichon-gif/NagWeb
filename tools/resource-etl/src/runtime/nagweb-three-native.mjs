@@ -14,7 +14,7 @@ export function isNativeThreeGeometryResource(resource){
     resource.runtime?.setup?.codeOnly===true &&
     art?.role==="source" && art.format==="html" &&
     typeof art.content==="string" &&
-    /new\\s+THREE\\.IcosahedronGeometry\\s*\\(/.test(art.content);
+    /new\s+THREE\.IcosahedronGeometry\s*\(/.test(art.content);
 }
 export function threeNativeGeometryFromEnvelope(envelope){
   const {resource,descriptor}=envelope||{};
