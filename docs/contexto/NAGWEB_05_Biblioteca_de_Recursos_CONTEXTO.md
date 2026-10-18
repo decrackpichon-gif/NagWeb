@@ -530,3 +530,9 @@ Se recuperaron de los **importadores reales** las direcciones de 17 proveedores 
 - Se detectó una posible carrera de medidas entre el iframe `#preview` y `measureVector(element)`. En `js/nagweb-resource-library.mjs`, el control `Editar` **espera hasta 1800 ms** únicamente por la condición recuperable «lienzo se está actualizando», comprobando en cada ciclo que la escena, selección y objeto originales sigan siendo los mismos. No espera si el vector es ilegítimo ni edita otro recurso.
 - `resource-browser-smoke.mjs` incorpora un escenario que desajusta temporalmente el ancho de un vector y lo restablece tras 170 ms. Exige que un **único clic real** abra la Biblioteca una vez que las medidas son correctas, sin historial extra.
 - El último commit de código/test es `5278bab`. La CI completa del último commit debe consultarse antes de la entrega manual. Mantener V1.0 no aceptada hasta la prueba del usuario en Windows.
+
+## Aclaración de QA tras la reapertura SVG (18/10/2026)
+
+- La solución experimental de reintento asíncrono de `Editar` (3067764) **se revirtió** en `0e41ea4` porque produjo un fallo en Chromium Linux. No atribuir ese cambio a la versión final ni decir que el clic asíncrono quedó implementado.
+- Se restauró exactamente el manejador original del editor, que era estable en Chromium Linux. El test del segundo gesto de edición ahora **espera a que el nuevo documento del lienzo tenga el mismo objeto seleccionado y las medidas actuales** antes de efectuar un clic real. Esto evita simular interacción durante una transición de iframe sin relajar las comprobaciones.
+- La galería React ligera publicada con 53 PNG y sin JavaScript compilado sigue conservada. Último ciclo de CI del parche `0e41ea4`: verificar en GitHub antes de afirmar 4/4.
