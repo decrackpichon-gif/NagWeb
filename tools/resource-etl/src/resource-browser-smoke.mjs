@@ -2288,7 +2288,10 @@ try {
   if(await libraryFrame.locator("[data-detail]").evaluate(node=>node.open))
     await libraryFrame.getByRole("button",{name:"Cerrar",exact:true}).click();
   await libraryFrame.getByRole("button",{name:"Limpiar filtros",exact:true}).click();
+  await libraryFrame.getByLabel("Proveedor",{exact:true}).selectOption("threejs");
+  await libraryFrame.getByLabel("Buscar",{exact:true}).fill("webgl_geometry_colors");
   const threeNativeCard=libraryFrame.locator('[data-resource-id="'+nativeThreeScene.id+'"]');
+  await expect(threeNativeCard).toBeVisible({timeout:15000});
   await expect(threeNativeCard.locator('[data-editor-use-label="available"]')).toBeVisible();
   await threeNativeCard.click();
   await expect(libraryFrame.locator("[data-preview-note]")).toContainText("adaptación");
