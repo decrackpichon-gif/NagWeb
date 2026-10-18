@@ -99,4 +99,7 @@ jobs:
             exit 0
           fi
           git commit -m "assets(resource-etl): audited React bundles and real browser thumbnails [skip ci]"
+          # Keep concurrent NAGWEB 05 commits; never overwrite branch history.
+          git fetch origin feat/resource-etl-v1
+          git rebase origin/feat/resource-etl-v1
           git push origin HEAD:refs/heads/feat/resource-etl-v1
