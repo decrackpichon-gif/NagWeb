@@ -99,11 +99,6 @@ try{
       const frame=page.frameLocator('iframe[title="Vista React verificada"]');
       const stage=frame.locator("#nagweb-preview-stage");
       await stage.waitFor({state:"visible",timeout:8000});
-      await page.waitForFunction(()=>{
-        const iframe=document.querySelector("iframe");
-        try{return !!iframe?.contentDocument?.querySelector("#nagweb-preview-stage > *")}
-        catch{return true;} // sandboxed iframe: use Playwright's frame locator below
-      },{timeout:1000}).catch(()=>{});
       await stage.locator(":scope > *").first().waitFor({state:"visible",timeout:8000});
       // Give the offline Tailwind browser compiler time to finish styling.
       await page.waitForTimeout(800);
