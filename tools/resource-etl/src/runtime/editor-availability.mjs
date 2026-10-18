@@ -1,9 +1,11 @@
 import { compileVerifiedAnimXyzPreset } from "./nagweb-magic-css-effect.mjs";
+import { isNativeThreeGeometryResource } from "./nagweb-three-native.mjs";
 // A concise, conservative declaration of what this NagWeb editor can insert.
 // This is about tested native SVG and vetted isolated HTML, NOT every
 // theoretical descriptor supported by the generic ETL adapter registry.
 export function editorUseOf(resource) {
   if (!resource?.license?.verified) return "code";
+  if(isNativeThreeGeometryResource(resource))return "three-native";
   const renderer = resource.runtime?.renderer;
   const entry = resource.artifacts?.find(a => a.id === resource.runtime?.entryArtifactId);
   if (renderer==="nagweb-motion-native" && resource.source?.provider==="animxyz" &&
@@ -50,7 +52,7 @@ export function editorUseOf(resource) {
 }
 
 export function canInsertInEditor(editorUse, supportedKinds = null) {
-  if (editorUse !== "svg" && editorUse !== "uiverse-html" && editorUse !== "spinkit-html" && editorUse !== "magic-css" && editorUse !== "csshake" && editorUse !== "motion-preset") return false;
+  if (editorUse !== "svg" && editorUse !== "uiverse-html" && editorUse !== "spinkit-html" && editorUse !== "magic-css" && editorUse !== "csshake" && editorUse !== "motion-preset" && editorUse !== "three-native") return false;
   if (!supportedKinds) return true;
   return supportedKinds.includes(editorUse) ||
     ((editorUse === "uiverse-html" || editorUse === "spinkit-html") && supportedKinds.includes("html"));

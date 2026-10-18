@@ -2,6 +2,7 @@ import { NAGWEB_RESOURCE_APPLY_PROTOCOL, NAGWEB_RESOURCE_APPLY_TYPE, buildResour
 import { svgElementProps } from "../tools/resource-etl/src/runtime/nagweb-svg-element.mjs";
 import { validatedCssEffect,isMagicTarget } from "../tools/resource-etl/src/runtime/nagweb-magic-css-effect.mjs";
 import { prepareUiverseSandboxHtml } from "../tools/resource-etl/src/runtime/nagweb-html-sandbox.mjs";
+import { threeNativeGeometryFromEnvelope } from "../tools/resource-etl/src/runtime/nagweb-three-native.mjs";
 
 const toolbar = document.querySelector(".tb-left");
 if (toolbar && !document.querySelector("[data-resource-library-open]")) {
@@ -224,7 +225,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     url.searchParams.set("hostOrigin", location.origin);
     // Advertise this editor's current native insertion capability.
     // The receiver still validates the actual SVG for each request.
-    url.searchParams.set("hostKinds", "svg,uiverse-html,spinkit-html" +
+    url.searchParams.set("hostKinds", "svg,uiverse-html,spinkit-html,three-native" +
       (magicTargetAtOpen || ["magic-css","csshake"].includes(context?.kind) ? ",magic-css,csshake,motion-preset" : ""));
     if (context) {
       url.searchParams.set("editResource", context.resourceId);
@@ -400,6 +401,24 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
             message:editContext ? "Animación actualizada y guardada."
               : targets.length===1 ? "Animación aplicada y guardada en el elemento seleccionado."
               : `Animación aplicada y guardada en ${targets.length} elementos.`});
+        } else if(message.descriptor?.kind==="three-native"){
+          if(editContext||message.editSession)
+            throw Error("Volvé a abrir la Biblioteca para insertar un objeto 3D.");
+          const native=threeNativeGeometryFromEnvelope(message);
+          if(!sec()||!Array.isArray(sec().elements))
+            throw Error("Seleccioná primero una escena de NagWeb.");
+          const previousScene=sec().id,existing=sec().elements.length;
+          const element=insertElement("shape3d",native,{parent:""});
+          inserted=true;
+          if(sec().id!==previousScene||sec().elements.length!==existing+1)
+            throw Error("La escena cambió durante la inserción 3D.");
+          const persisted=JSON.parse(localStorage.getItem(STORE_KEY)||"null");
+          const saved=persisted?.pages?.flatMap(p=>p.sections)
+            .flatMap(s=>s.elements).find(e=>e.id===element.id);
+          if(!saved||JSON.stringify(saved)!==JSON.stringify(element))
+            throw Error("El objeto 3D se insertó, pero no se pudo verificar que esté guardado.");
+          result=buildResourceApplyResult(message,{status:"applied",
+            message:"Icosaedro 3D insertado y guardado. Editá color, material, movimiento y tamaño desde el inspector. Es una adaptación, no toda la escena original."});
         } else {
         const isNativeHtml = message.descriptor?.kind === "html";
         const isolated = isNativeHtml ? prepareUiverseSandboxHtml(message) : null;

@@ -6,6 +6,7 @@ export const PUBLIC_MODULES = Object.freeze([
   "runtime/offline-vault-cache.mjs",
   "runtime/editor-availability.mjs",
   "runtime/nagweb-magic-css-effect.mjs",
+  "runtime/nagweb-three-native.mjs",
   "runtime/quick-preview.mjs",
   "runtime/latest-search.mjs",
   "runtime/favorites.mjs",

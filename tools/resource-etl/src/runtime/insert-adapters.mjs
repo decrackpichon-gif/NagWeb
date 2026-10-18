@@ -3,6 +3,7 @@ import {
   selectArtifact
 } from "./instance.mjs";
 import { htmlWithCustomStyle } from "./html-css-customization.mjs";
+import { isNativeThreeGeometryResource } from "./nagweb-three-native.mjs";
 import { effectiveUiverseEditableProps } from "./uiverse-colors.mjs";
 
 function cssVariableValues(resource, instance) {
@@ -178,6 +179,12 @@ export function buildInsertDescriptor(resource, options = {}) {
     };
   }
 
+  if (isNativeThreeGeometryResource(resource)) {
+    return {
+      version:"1.0",kind:"three-native",resourceId:resource.id,instance,
+      payload:{shape:"icosa",speed:instance.values.speed}
+    };
+  }
   if (resource.runtime?.type === "three") {
     const artifact = selectArtifact(resource, instance);
     return {
