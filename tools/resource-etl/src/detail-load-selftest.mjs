@@ -27,6 +27,9 @@ const context = {
   isLottieLivePreview: () => false, isCssShakeLivePreview: () => false,
   isMagicCssLivePreview: () => false, hasUiverseCssAnimation: () => false,
   isVerifiedNoiseShader: () => false,
+  nativeThreeGeometrySpec: () => null,
+  isNativeThreeGeometryResource: () => false,
+  buildNativeThreePreview: () => null,
   compiledReactGallery: new Map(),
   officialThreeGallery: new Map(),
   illustrativePreviewDoc: resource => "Esquema de categoría de " + resource.id
