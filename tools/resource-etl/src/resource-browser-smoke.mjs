@@ -2303,6 +2303,13 @@ try {
   await expect(threeNativeCard.locator('[data-editor-use-label="available"]')).toBeVisible();
   await threeNativeCard.click();
   await expect(libraryFrame.locator("[data-preview-note]")).toContainText("No reproduce toda la escena.");
+  const native3dPreview=libraryFrame.frameLocator("[data-preview]");
+  await expect(libraryFrame.locator("[data-preview]")).toHaveAttribute("sandbox","allow-scripts");
+  await expect(native3dPreview.locator('body[data-native-geometry="icosa"]')).toBeVisible();
+  await expect(native3dPreview.locator("canvas")).toBeVisible();
+  await expect.poll(()=>native3dPreview.locator("body").getAttribute("data-preview-status"),
+    {timeout:15000}).toMatch(/^(rendered|unavailable)$/);
+
   await expect(libraryFrame.getByRole("button",{name:"Insertar geometría 3D editable",exact:true}))
     .toBeEnabled();
   const speedInput=libraryFrame.getByLabel("Velocidad del giro",{exact:true});
@@ -2312,6 +2319,9 @@ try {
     input.dispatchEvent(new Event("input",{bubbles:true}));
   });
   await expect(speedInput).toHaveValue("1.5");
+  await expect(native3dPreview.locator('body[data-native-speed="1.5"]')).toBeVisible();
+  await expect(libraryFrame.locator("[data-preview-note]")).toContainText("velocidad");
+
   const lengthBefore=await page.evaluate(()=>sec().elements.length);
   await libraryFrame.getByRole("button",{name:"Insertar geometría 3D editable",exact:true}).click();
   await expect(libraryFrame.locator("[data-apply-status]")).toContainText("insertado y guardado");
@@ -2372,6 +2382,8 @@ try {
   await expect(cubeCard.locator('[data-editor-use-label="available"]')).toBeVisible();
   await cubeCard.click();
   await expect(libraryFrame.locator("[data-preview-note]")).toContainText("solo su cubo");
+  await expect(libraryFrame.frameLocator("[data-preview]").locator('body[data-native-geometry="box"]')).toBeVisible();
+
   await libraryFrame.getByRole("button",{name:"Insertar geometría 3D editable",exact:true}).click();
   await expect(libraryFrame.locator("[data-apply-status]")).toContainText("insertado y guardado");
   const cube=await page.evaluate(()=>structuredClone(

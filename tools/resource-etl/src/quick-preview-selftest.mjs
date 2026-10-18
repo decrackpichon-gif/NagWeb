@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { canQuickPreview, offlineQuickPreviewDoc } from "./runtime/quick-preview.mjs";
 import { buildMotionNativePreview, realCardPreviewEligible, schematicMarkup, illustrativePreviewDoc } from "./preview/visual-previews.mjs";
 import { isVerifiedNoiseShader, buildGlslNoisePreview } from "./preview/glsl-noise-browser-preview.mjs";
+import { buildNativeThreePreview } from "./preview/native-three-browser-preview.mjs";
 
 assert.equal(canQuickPreview({provider:"uiverse",editorUse:"uiverse-html"}),true);
 assert.equal(canQuickPreview({provider:"uiverse",editorUse:"code"}),false);
@@ -79,3 +80,33 @@ assert.equal(realCardPreviewEligible(noise),true);
 assert.equal(buildGlslNoisePreview({...noise,artifacts:[{...noise.artifacts[0],
   content:noise.artifacts[0].content+"\n<script>alert(1)</script>"}]}),null);
 console.log("GLSL WebGL previews: original code, CSP and script separation OK");
+
+const shapes=[
+  ["webgl_geometry_colors","Icosahedron","icosa"],
+  ["webgl_interactive_cubes","Box","box"],
+  ["webgl_materials_envmaps_fasthdr","Sphere","sphere"]
+];
+for(const [slug,constructor,shape] of shapes){
+  const three={
+    id:"threejs:example:"+slug,
+    source:{provider:"threejs",externalId:"examples/"+slug+".html",
+      commit:"e9a8a1264c58150907230122ac17f5760a1ebab1"},
+    license:{verified:true},
+    runtime:{type:"three",renderer:"three",setup:{codeOnly:true},entryArtifactId:"s"},
+    artifacts:[{id:"s",role:"source",format:"html",
+      content:"<html>new THREE."+constructor+"Geometry(1,1)</html>"}]
+  };
+  const doc=buildNativeThreePreview(three,{speed:2.5});
+  assert.ok(doc,"Preview actual native geometry "+shape);
+  assert.ok(doc.includes('data-native-geometry="'+shape+'"'));
+  assert.ok(doc.includes('data-native-speed="2.5"'));
+  assert.match(doc,/canvas role="img"/);
+  assert.match(doc,/WebGL no disponible/);
+  assert.match(doc,/default-src 'none'/);
+  assert.match(doc,/connect-src 'none'/);
+  assert.match(doc,/prefers-reduced-motion: reduce/);
+  assert.equal(buildNativeThreePreview({...three,license:{verified:false}}),null);
+  assert.equal(buildNativeThreePreview({...three,source:{...three.source,commit:"unverified"}}),null);
+  assert.ok(buildNativeThreePreview(three,{speed:100}).includes('data-native-speed="1"'));
+}
+console.log("Actual native 3D geometry previews: source-verified icosa, box, sphere; CSP, speed and safety OK");
