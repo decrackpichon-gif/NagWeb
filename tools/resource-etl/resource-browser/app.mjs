@@ -1143,15 +1143,18 @@ async function openDetail(id) {
 
   const compiledReact = compiledReactGallery.get(resource.id);
   if(compiledReact){
-    // Run the original, audited bundle only in a script-enabled opaque
-    // sandbox. There is no "allow-same-origin", popups, forms or downloads.
-    el.preview.setAttribute("sandbox","allow-scripts");
+    // The PNG was captured from the REAL source-compiled React component.
+    // No untrusted React JS executes in the user's Library frame.
+    el.preview.setAttribute("sandbox","");
     el.previewFallback.hidden=true;
     el.preview.hidden=false;
     el.previewReplay.hidden=true;
-    el.preview.removeAttribute?.("srcdoc");
-    el.preview.src=compiledReact.html;
-    el.previewNote.textContent="Componente React compilado desde el código verificado. La demo es real; todavía no se inserta directamente en el lienzo.";
+    el.preview.removeAttribute?.("src");
+    el.preview.srcdoc='<!doctype html><html><head><meta charset="utf-8">'+
+      '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src http: https:; style-src \'unsafe-inline\'">'+
+      '<style>html,body{margin:0;height:100%;background:#f8fafc;display:grid;place-items:center}img{max-width:100%;max-height:100%;object-fit:contain}</style>'+
+      '</head><body><img alt="Captura real del componente React compilado" src="'+compiledReact.thumbnail+'"></body></html>';
+    el.previewNote.textContent="Captura auténtica de React ejecutado y verificado. Es estática: animaciones, interacciones e inserción nativa siguen pendientes.";
     return;
   }
   let doc, previewError;

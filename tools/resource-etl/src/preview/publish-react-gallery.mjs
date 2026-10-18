@@ -37,29 +37,19 @@ if(selected.length<5 || !selected.some(r=>r.id.startsWith("magicui:")) ||
   throw Error("Not enough real, audited React previews; refusing a gallery of placeholders.");
 await rm(out,{recursive:true,force:true});
 for(const name of ["react","runtime","thumbnails"])await mkdir(path.join(out,name),{recursive:true});
-const runtimeJs=await readFile(path.join(base,"previews/runtime/tailwindcss-browser.js"),"utf8");
-const inlineScript=text=>"<script>"+text.replace(/<\/script/gi,"<\\/script")+"</script>";
-// An opaque iframe cannot load sibling <script src> files under CSP 'self'.
-// Inline *only* the already audited, compiled JS and the local Tailwind runtime.
-// This is an autonomous offline HTML preview with no external script requests.
+await copyFile(path.join(base,"previews/runtime/tailwindcss-browser.js"),
+  path.join(out,"runtime/tailwindcss-browser.js"));
+// Bundle and its local styles are executed in a temporary same-origin CI page.
+// Only rendered PNG captures are displayed to users, without executing React
+// in the Biblioteca's cross-origin-isolated iframe.
 for(const row of selected){
   const htmlName=path.basename(row.previewPath);
   const jsName=htmlName.replace(/\.html$/,".js");
-  const orig=await readFile(path.join(base,row.previewPath),"utf8");
-  const bundle=await readFile(path.join(base,"previews/react",jsName),"utf8");
-  const tailwindTag='<script src="../runtime/tailwindcss-browser.js"></script>';
-  const bundleTag='<script src="./'+jsName+'"></script>';
-  if(!orig.includes(tailwindTag)||!orig.includes(bundleTag))
-    throw Error("Unexpected compiled React HTML structure: "+row.id);
-  const standalone=orig.replace(tailwindTag,inlineScript(runtimeJs))
-    .replace(bundleTag,inlineScript(bundle));
-  // The inlined audited runtime itself can contain HTML tag strings.
-  // Requiring both original tags above plus the real sandbox render below
-  // is more reliable than searching for those strings inside bundle source.
-  await writeFile(path.join(out,"react",htmlName),standalone,"utf8");
+  await copyFile(path.join(base,row.previewPath),path.join(out,"react",htmlName));
+  await copyFile(path.join(base,"previews/react",jsName),path.join(out,"react",jsName));
 }
-// The screenshot runs against a real HTTP server and the same opaque iframe
-// sandbox used in NagWeb. A blank React mount NEVER qualifies as a thumbnail.
+// The screenshot runs against an actual HTTP-served, audited React bundle.
+// No invented category artwork qualifies as a React preview.
 const server=http.createServer(async(req,res)=>{
   let file;
   try{
@@ -93,14 +83,11 @@ try{
         if(new URL(route.request().url()).origin===origin)return route.continue();
         return route.abort();
       });
-      await page.setContent('<html><body style="margin:0">'+
-        '<iframe title="Vista React verificada" sandbox="allow-scripts" style="width:680px;height:460px;border:0" src="'+
-        origin+'/react/'+name+'"></iframe></body></html>');
-      const frame=page.frameLocator('iframe[title="Vista React verificada"]');
-      const stage=frame.locator("#nagweb-preview-stage");
+      await page.goto(origin+'/react/'+name,{waitUntil:"domcontentloaded"});
+      const stage=page.locator("#nagweb-preview-stage");
       await stage.waitFor({state:"visible",timeout:8000});
       await stage.locator(":scope > *").first().waitFor({state:"visible",timeout:8000});
-      // Give the offline Tailwind browser compiler time to finish styling.
+      // Wait for local Tailwind compilation before capturing actual output.
       await page.waitForTimeout(800);
       const content=await stage.innerText();
       if(content.includes("Preview recipe references missing export") || content.includes("Cannot read properties"))
