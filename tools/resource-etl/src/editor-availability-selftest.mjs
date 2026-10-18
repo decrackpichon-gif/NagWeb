@@ -180,3 +180,35 @@ assert.throws(()=>threeNativeGeometryFromEnvelope({...geomEnvelope,
 assert.throws(()=>threeNativeGeometryFromEnvelope({...geomEnvelope,
  descriptor:{...geomEnvelope.descriptor,payload:{...geomEnvelope.descriptor.payload,shape:"model"}}}),/verificada/);
 console.log("Three.js pinned IcosahedronGeometry maps to verified native editable 3D with rejected source/values OK.");
+
+// Add only geometries actually referenced by the pinned official source.
+// The adapter never claims that the full upstream demo was ported.
+for(const [slug,constructor,shape] of [
+  ["webgl_interactive_cubes","BoxGeometry","box"],
+  ["webgl_materials_envmaps_fasthdr","SphereGeometry","sphere"]
+]){
+  const resource={
+    ...threeResource,id:"threejs:example:"+slug,
+    source:{...threeResource.source,externalId:"examples/"+slug+".html"},
+    artifacts:[{...threeResource.artifacts[0],
+      content:'<html><script type="module">const mesh=new THREE.'+
+        constructor+'(1,16,16);</script></html>'}]
+  };
+  assert.equal(isNativeThreeGeometryResource(resource),true,slug);
+  assert.equal(editorUseOf(resource),"three-native",slug);
+  const envelope=buildResourceApplyEnvelope(resource,{values:{speed:2}});
+  assert.equal(envelope.descriptor.kind,"three-native");
+  assert.equal(envelope.descriptor.payload.shape,shape);
+  const adapted=threeNativeGeometryFromEnvelope(envelope);
+  assert.equal(adapted.shape,shape);
+  assert.equal(adapted.amount,2);
+  assert.equal(adapted.nwResource.id,resource.id);
+  assert.equal(threeNativeGeometryFromEnvelope(buildResourceApplyEnvelope(resource,{values:{speed:0}})).motion,"none");
+  assert.equal(editorUseOf({...resource,artifacts:[{...resource.artifacts[0],
+    content:"<html>No geometry</html>"}]}),"code");
+  assert.equal(editorUseOf({...resource,source:{...resource.source,commit:"untrusted"}}),"code");
+  assert.throws(()=>threeNativeGeometryFromEnvelope({...envelope,descriptor:{
+    ...envelope.descriptor,payload:{...envelope.descriptor.payload,shape:"icosa"}}}),/verificada/);
+}
+assert.equal(editorUseOf({...threeResource,id:"threejs:example:webgl_materials_texture_canvas"}),"code");
+console.log("Pinned Three.js BoxGeometry/SphereGeometry are native editable 3D, others remain code-only");

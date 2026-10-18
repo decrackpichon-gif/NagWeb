@@ -182,7 +182,15 @@ const nativeThreeScene=transformThreeCodeScene({
     analysis:{imports:["three"],codeOnly:true,reasons:[]}}
 });
 assert.equal(editorUseOf(nativeThreeScene),"three-native");
-const resources = [icon, css, spinkit, magicCss, animxyz, hyperRuntime, hyperui, glslShader, csshakeRuntime, csshake, heroicon, lucideCamera, codeOnly, reactGalleryFixture, threeSceneFixture, nativeThreeScene];
+const nativeCubeScene=transformThreeCodeScene({
+  repository:"https://github.com/mrdoob/three.js",
+  commit:threeGallery.sourceCommit,
+  item:{path:"examples/webgl_interactive_cubes.html",sha:"smoke-tested",
+    html:"<html><title>three.js webgl - interactive cubes</title><script type=\"module\">import * as THREE from 'three'; const g = new THREE.BoxGeometry();</script></html>",
+    analysis:{imports:["three"],codeOnly:true,reasons:[]}}
+});
+assert.equal(editorUseOf(nativeCubeScene),"three-native");
+const resources = [icon, css, spinkit, magicCss, animxyz, hyperRuntime, hyperui, glslShader, csshakeRuntime, csshake, heroicon, lucideCamera, codeOnly, reactGalleryFixture, threeSceneFixture, nativeThreeScene, nativeCubeScene];
 const zip = data => gzipSync(JSON.stringify(data));
 const index = zip({ format: "nagweb-resource-browse-index", resourceCount: resources.length,
   resources: resources.map(r => ({ id: r.id, title: r.title, family: r.family, kind: r.kind, provider: r.source.provider,
@@ -2350,6 +2358,32 @@ try {
   report.scenarios.push({editor:"Pinned Three.js geometry adapted to genuine NagWeb 3D",
     status:"passed",oneNativeObject:true,editableMaterial:true,export:true,persistent:true,
     originalSceneReproduction:false});
+
+  // One more ORIGINAL Three.js constructor, converted to the matching
+  // existing native box, editable with regular NagWeb controls.
+  await page.getByRole("button",{name:"Biblioteca de recursos",exact:true}).click();
+  if(await libraryFrame.locator("[data-detail]").evaluate(n=>n.open))
+    await libraryFrame.getByRole("button",{name:"Cerrar",exact:true}).click();
+  await libraryFrame.getByRole("button",{name:"Limpiar filtros",exact:true}).click();
+  await libraryFrame.getByLabel("Proveedor",{exact:true}).selectOption("threejs");
+  await libraryFrame.getByLabel("Buscar",{exact:true}).fill("webgl_interactive_cubes");
+  const cubeCard=libraryFrame.locator('[data-resource-id="'+nativeCubeScene.id+'"]');
+  await expect(cubeCard).toBeVisible({timeout:15000});
+  await expect(cubeCard.locator('[data-editor-use-label="available"]')).toBeVisible();
+  await cubeCard.click();
+  await expect(libraryFrame.locator("[data-preview-note]")).toContainText("solo su cubo");
+  await libraryFrame.getByRole("button",{name:"Insertar geometría 3D editable",exact:true}).click();
+  await expect(libraryFrame.locator("[data-apply-status]")).toContainText("insertado y guardado");
+  const cube=await page.evaluate(()=>structuredClone(
+    sec().elements.find(e=>e.nwResource?.id==="threejs:example:webgl_interactive_cubes")));
+  assert.equal(cube?.type,"shape3d");
+  assert.equal(cube?.shape,"box");
+  assert.equal(cube?.nwResource?.kind,"three-native");
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  assert.match(await page.evaluate(()=>generateSite(flattenPage(page()),false,true,false)),/"shape":"box"/);
+  report.scenarios.push({editor:"Official Three.js cubes adapted to editable NagWeb 3D",status:"passed",
+    sourceMatched:true,real3D:true});
+
 
   await context.close();
   assert.deepEqual(report.errors, [], "Browser must not emit uncaught errors or external requests");
