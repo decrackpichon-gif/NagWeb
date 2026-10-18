@@ -1,0 +1,80 @@
+name: Resource ETL Three.js Original Gallery
+
+on:
+  push:
+    branches: [feat/resource-etl-v1]
+    paths:
+      - ".github/workflows/resource-three-gallery.yml"
+      - "tools/resource-etl/src/preview/publish-threejs-gallery.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: resource-three-gallery-publisher
+  cancel-in-progress: true
+
+jobs:
+  verified-upstream-screenshots:
+    name: Mirror pinned Three.js example screenshots
+    runs-on: ubuntu-latest
+    timeout-minutes: 19
+    steps:
+      - name: Checkout NAGWEB 05 only
+        uses: actions/checkout@v4
+        with:
+          ref: feat/resource-etl-v1
+          fetch-depth: 1
+
+      - name: Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Import original screenshot for each mirrored source scene
+        working-directory: tools/resource-etl
+        run: >-
+          node src/preview/publish-threejs-gallery.mjs
+          --out=resource-browser/three-previews
+          --limit=281
+
+      - name: Verify matching filenames, JPEG signature and source commit
+        working-directory: tools/resource-etl
+        run: |
+          node --input-type=module - <<'NODE'
+          import {readFile,stat} from "node:fs/promises";
+          import {createHash} from "node:crypto";
+          const root="resource-browser/three-previews/";
+          const result=JSON.parse(await readFile(root+"manifest.json","utf8"));
+          if(result.format!=="nagweb-threejs-source-gallery/1"||
+             result.images<75||result.sourceCommit!=="e9a8a1264c58150907230122ac17f5760a1ebab1")
+            throw Error("Missing or unexpected pinned upstream screenshot manifest");
+          for(const [id,entry] of Object.entries(result.entries)){
+            const expected="screenshots/"+id.replace(/^threejs:example:/,"")+".jpg";
+            if(!/^threejs:example:[a-z0-9_-]+$/.test(id)||
+               entry.image!==expected)throw Error("Screenshot not tied to its original example");
+            const bytes=await readFile(root+entry.image);
+            if(!(await stat(root+entry.image)).isFile()||
+              bytes.subarray(0,3).toString("hex")!=="ffd8ff" ||
+              bytes.subarray(-2).toString("hex")!=="ffd9" ||
+              createHash("sha256").update(bytes).digest("hex")!==entry.sha256)
+              throw Error("JPEG source content failed verification: "+id);
+          }
+          console.log("Verified actual Three.js screenshots:",result.images);
+          NODE
+
+      - name: Publish only images and original source attribution in NAGWEB 05
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A tools/resource-etl/resource-browser/three-previews
+          if git diff --cached --quiet; then
+            echo "Source-matched gallery unchanged"
+            exit 0
+          fi
+          git commit -m "assets(resource-etl): original Three.js example screenshots from verified commit [skip ci]"
+          git fetch origin feat/resource-etl-v1
+          git rebase origin/feat/resource-etl-v1
+          git push origin HEAD:refs/heads/feat/resource-etl-v1
