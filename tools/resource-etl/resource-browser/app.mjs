@@ -165,6 +165,53 @@ function updateReactCardThumbnails(){
 }
 void loadCompiledReactGallery();
 
+
+// Static evidence from the SAME pinned Three.js revision as the mirrored code.
+// Original example screenshots, no executable third-party JavaScript.
+const THREE_GALLERY_ROOT=new URL("./three-previews/",import.meta.url);
+let officialThreeGallery=new Map();
+function validThreeEntry(id,value){
+  if(!/^threejs:example:[a-z0-9_-]+$/.test(id) || !value ||
+    !/^screenshots\/[a-z0-9_-]+\.jpg$/.test(value.image||""))return null;
+  if(value.image!=="screenshots/"+id.slice("threejs:example:".length)+".jpg")return null;
+  return {thumbnail:new URL(value.image,THREE_GALLERY_ROOT).href};
+}
+async function loadOfficialThreeGallery(){
+  try{
+    const response=await fetch(new URL("manifest.json",THREE_GALLERY_ROOT),{cache:"no-store"});
+    if(!response.ok)return;
+    const manifest=await response.json();
+    if(manifest?.format!=="nagweb-threejs-source-gallery/1" ||
+       !/^([a-f0-9]{40})$/.test(manifest.sourceCommit||"") ||
+       !manifest.entries||typeof manifest.entries!=="object")return;
+    officialThreeGallery=new Map(Object.entries(manifest.entries)
+      .map(([id,entry])=>[id,validThreeEntry(id,entry)])
+      .filter(([,entry])=>entry));
+    updateThreeCardThumbnails();
+  }catch{/* no gallery yet; never invent an image for a specific scene */}
+}
+function updateThreeCardThumbnails(){
+  for(const card of el.grid.querySelectorAll(".resource-card[data-resource-id]")){
+    const entry=officialThreeGallery.get(card.dataset.resourceId);
+    if(!entry)continue;
+    const surface=card.nextElementSibling;
+    if(!surface?.classList.contains("card-visual-surface"))continue;
+    const img=document.createElement("img");
+    img.alt="";img.loading="lazy";img.decoding="async";img.src=entry.thumbnail;
+    img.addEventListener("error",()=>{
+      surface.classList.remove("is-real-preview","is-three-preview");
+      surface.replaceChildren();
+      const note=document.createElement("span");
+      note.className="card-visual-label";
+      note.textContent="Captura original no disponible";
+      surface.append(note);
+    },{once:true});
+    surface.replaceChildren(img);
+    surface.classList.add("is-real-preview","is-three-preview");
+  }
+}
+void loadOfficialThreeGallery();
+
 function resetCardPreviews(){
   cardPreviewGeneration++;
   cardObserver?.disconnect();
@@ -489,6 +536,7 @@ const resultSearch = createLatestSearch(
   el.grid.hidden = result.total === 0;
   observeCardPreviews();
   updateReactCardThumbnails();
+  updateThreeCardThumbnails();
     },
     onError: () => {
       el.resultCount.textContent = "No pude actualizar los resultados.";
@@ -1137,6 +1185,21 @@ async function openDetail(id) {
   el.code.textContent = artifact?.content || JSON.stringify(resource.runtime || {}, null, 2);
   el.copyCode.disabled = !artifact?.content;
 
+  const sourceScreenshot=officialThreeGallery.get(resource.id);
+  if(sourceScreenshot && resource.source?.provider==="threejs" &&
+      resource.license?.verified===true){
+    el.preview.setAttribute("sandbox","");
+    el.previewFallback.hidden=true;
+    el.preview.hidden=false;
+    el.previewReplay.hidden=true;
+    el.preview.removeAttribute?.("src");
+    el.preview.srcdoc='<!doctype html><html lang="es"><head><meta charset="utf-8">'+
+      '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src http: https:; style-src \'unsafe-inline\'">'+
+      '<style>html,body{margin:0;height:100%;background:#f8fafc;display:grid;place-items:center}img{max-width:100%;max-height:100%;object-fit:contain}</style>'+
+      '</head><body><img alt="Captura oficial del ejemplo Three.js" src="'+sourceScreenshot.thumbnail+'"></body></html>';
+    el.previewNote.textContent="Captura oficial del ejemplo Three.js, obtenida de la revisión original del código. Es estática; el código 3D todavía no se ejecuta ni se inserta desde esta ficha.";
+    return;
+  }
   const compiledReact = compiledReactGallery.get(resource.id);
   if(compiledReact){
     // The PNG was captured from the REAL source-compiled React component.

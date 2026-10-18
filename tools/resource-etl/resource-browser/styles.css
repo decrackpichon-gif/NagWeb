@@ -227,3 +227,8 @@ pre{white-space:pre-wrap;word-break:break-word;background:#090b0e;border:1px sol
 .card-visual-surface.is-react-preview{background:#fff}
 .card-visual-surface.is-react-preview img{width:100%;height:100%;display:block;
   object-fit:contain;object-position:center;background:#f8fafc}
+
+/* Original screenshots from the pinned source Three.js revision, not mockups. */
+.card-visual-surface.is-three-preview{background:#101820}
+.card-visual-surface.is-three-preview img{width:100%;height:100%;display:block;
+  object-fit:cover;object-position:center}
