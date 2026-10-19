@@ -84,6 +84,9 @@ const el = {
   previewFallback: document.querySelector("[data-preview-fallback]"),
   previewNote: document.querySelector("[data-preview-note]"),
   previewReplay: document.querySelector("[data-preview-replay]"),
+  nativeCompare: document.querySelector("[data-native-compare]"),
+  nativeCompareEditable: document.querySelector("[data-native-compare-editable]"),
+  nativeCompareOriginal: document.querySelector("[data-native-compare-original]"),
   customize: document.querySelector("[data-customize]"),
   customizeTitle: document.querySelector("[data-customize-title]"),
   customizeControls: document.querySelector("[data-customize-controls]"),
@@ -1117,6 +1120,8 @@ function renderEditableControls(resource, { preserveGroups = false } = {}) {
 }
 
 async function openDetail(id) {
+  el.nativeCompare.hidden=true;
+  nativeCompareView="editable";
   const revision = ++detailRevision;
   previewRevision++;
   const isCurrent = () => revision === detailRevision && el.detail.open;
@@ -1195,6 +1200,7 @@ async function openDetail(id) {
   // Show the actual shape that "Insertar geometría 3D editable" creates.
   // The original upstream screenshot still appears on its catalog card.
   const nativeGeometry=nativeThreeGeometrySpec(resource);
+  if(nativeGeometry && officialThreeGallery.has(resource.id)) el.nativeCompare.hidden=false;
   if(nativeGeometry){
     const rendered=buildNativeThreePreview(resource,selectedValues);
     if(rendered){
@@ -1484,6 +1490,10 @@ async function redrawEditablePreview({ retainRecoveryUndo = false } = {}) {
     updateCssLivePreview(resource);
     return;
   }
+  if(isNativeThreeGeometryResource(resource) && nativeCompareView==="original"){
+    showNativeComparison("original");
+    return;
+  }
   const values = { ...selectedValues };
   const request = ++previewRevision;
   let doc;
@@ -1519,6 +1529,39 @@ async function redrawEditablePreview({ retainRecoveryUndo = false } = {}) {
     el.preview.srcdoc = doc;
   }
 }
+
+let nativeCompareView="editable";
+function showNativeComparison(view){
+  const resource=selectedResource;
+  if(!resource||!el.detail.open||el.nativeCompare.hidden ||
+     !nativeThreeGeometrySpec(resource))return;
+  const original=officialThreeGallery.get(resource.id);
+  if(!original)return;
+  nativeCompareView=view==="original"?"original":"editable";
+  el.nativeCompareEditable.setAttribute("aria-pressed",String(nativeCompareView==="editable"));
+  el.nativeCompareOriginal.setAttribute("aria-pressed",String(nativeCompareView==="original"));
+  el.previewReplay.hidden=true;
+  el.previewFallback.hidden=true;
+  el.preview.hidden=false;
+  el.preview.removeAttribute("src");
+  if(nativeCompareView==="original"){
+    el.preview.setAttribute("sandbox","");
+    el.preview.srcdoc='<!doctype html><html lang="es"><meta charset="utf-8">'+
+      '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src http: https:; style-src \'unsafe-inline\'">'+
+      '<style>html,body{height:100%;margin:0;background:#101820;display:grid;place-items:center}img{max-height:100%;max-width:100%;object-fit:contain}</style>'+
+      '<img alt="Escena original de Three.js" src="'+original.thumbnail+'">';
+    el.previewNote.textContent="Escena original de Three.js. Es una captura estática; Insertar crea solamente una geometría 3D editable, no esta escena completa.";
+  }else{
+    const doc=buildNativeThreePreview(resource,selectedValues);
+    if(!doc)return;
+    el.preview.setAttribute("sandbox","allow-scripts");
+    el.preview.srcdoc=doc;
+    el.previewNote.textContent="Objeto 3D que realmente vas a insertar: "+nativeThreeGeometrySpec(resource).label+
+      ". Arrastrá para girarlo. La velocidad responde al ajuste de personalización.";
+  }
+}
+el.nativeCompareEditable.addEventListener("click",()=>showNativeComparison("editable"));
+el.nativeCompareOriginal.addEventListener("click",()=>showNativeComparison("original"));
 
 el.previewReplay.addEventListener("click", async () => {
   const resource = selectedResource;
