@@ -566,3 +566,9 @@ Se recuperaron de los **importadores reales** las direcciones de 17 proveedores 
 - Los tres elementos son objetos `shape3d` del motor real del editor y se siguen editando, guardando y exportando desde ese motor. **No se afirma reproducir la demo completa de Three.js.**
 - El módulo se agregó al manifiesto de archivos públicos/offline; cambió versión del caché de shell `v5` a `v6`. Los tests unitarios comprueban fuente/commit/licencia/forma/velocidad/CSP; el Chromium smoke exige abrir la ficha, obtener lienzo WebGL o aviso real de falta de soporte, cambiar velocidad y luego **insertar, editar, guardar, exportar y recargar** un objeto 3D.
 - Pendiente: verificar la **CI completa del commit final** y la aceptación manual en Windows. No mezclar con otros proyectos ni desplegar Vercel.
+
+## Comparación honesta de escena original y geometría insertable (18/10/2026)
+
+- En las tres adaptaciones 3D nativas, la ficha permite alternar **«Objeto insertable · 3D»** (visor WebGL real arrastrable, con velocidad configurada) y **«Escena original · foto»** (captura oficial verificable de Three.js del commit fuente). Se explicita que NagWeb inserta únicamente icosaedro/cubo/esfera editables, nunca la escena completa del ejemplo.
+- El cambio de modo mantiene `iframe sandbox="allow-scripts"` solo para JavaScript fijo de NagWeb; la captura oficial usa `iframe sandbox=""` sin scripts. La comparación no afecta al botón de insertar, edición, persistencia ni exportación. Hay test de Chromium dedicado en `resource-browser-smoke.mjs`.
+- Estado de la CI de este cambio: pendiente de verificar; no declarar aceptada la V1.0 hasta aprobación y prueba manual en Windows.
