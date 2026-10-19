@@ -19429,7 +19429,7 @@ $('file-json').addEventListener('change', ev => {
   const file = ev.target.files[0];
   if(!file) return;
   const r = new FileReader();
-  r.onload = () => {
+  r.onload = async () => {
     try{
       const p = migrate(JSON.parse(String(r.result)));
       if(!p || !Array.isArray(p.pages) || !p.pages.length || !p.pages.every(pg =>
@@ -19437,13 +19437,16 @@ $('file-json').addEventListener('change', ev => {
           s && Array.isArray(s.elements)))) throw 0;
       // Un JSON válido reemplaza el documento abierto: conservar una vía
       // de regreso antes del cambio, incluso si IndexedDB no está disponible.
-      saveVersion('Antes de importar un proyecto JSON', false);
-      history=[JSON.stringify(project)];future=[];
+      const previousProject=JSON.stringify(project);
+      // Confirmar la versión anterior en disco antes de cambiar el documento.
+      const previousSaved=await saveVersion('Antes de importar un proyecto JSON', false);
+      history=[previousProject];future=[];
       project = p; curPage = 0; curSec = 0; curEl = 0; selection = [];
       renderPages();renderScenes();renderPane();renderPreview();
       const persisted=saveProject(),importedName=page().name,importedPages=project.pages.length;
       lastSavePromise.then(durable=>toast(persisted||durable
-        ? 'Proyecto abierto: '+importedName+' ('+importedPages+' páginas). Ctrl+Z recupera el anterior.'
+        ? 'Proyecto abierto: '+importedName+' ('+importedPages+' páginas). '+
+          (previousSaved ? 'Anterior disponible en Historial y Ctrl+Z.' : 'Ctrl+Z recupera el anterior; no se pudo guardar una versión previa.')
         : 'Proyecto abierto EN MEMORIA, pero NO se guardó. Descargá un respaldo antes de cerrar.'));
     }catch(e){ toast('Ese archivo no parece un proyecto de Scrollcraft.'); }
   };
@@ -21140,7 +21143,7 @@ function saveVersion(label, auto){
   const data = JSON.stringify(project);
   return vtx('readwrite', st => st.put({ id: Date.now() + '-' + Math.random().toString(36).slice(2, 7), ts: Date.now(), label: label || '', auto: !!auto, size: data.length, data }))
     .then(() => auto ? allVersions().then(list => { const autos = list.filter(v => v.auto); if(autos.length > 25) return vtx('readwrite', st => autos.slice(25).forEach(v => st.delete(v.id))); }) : null)
-    .catch(() => {});
+    .then(() => true, () => false);
 }
 let lastAutoVer = Date.now();
 function maybeAutoVersion(){ if(Date.now() - lastAutoVer > 4 * 60 * 1000){ lastAutoVer = Date.now(); saveVersion('Guardado automático', true); } }

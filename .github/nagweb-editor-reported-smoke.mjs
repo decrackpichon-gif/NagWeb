@@ -223,6 +223,12 @@ export async function runReportedEditorSmoke(page){
   assert.ok(importedBig.asset>6*1024*1024,'JSON importado retiene recurso completo');
   assert.ok(importedBig.canUndo,'abrir JSON permite recuperar el proyecto anterior');
   assert.match(importedBig.message,/Proyecto abierto:/);
+  const savedPrior=await page.evaluate(async()=>{
+   const versions=await allVersions();
+   return versions.some(v=>v.label==='Antes de importar un proyecto JSON'
+    &&JSON.parse(v.data).title==='QA proyecto previo recuperable');
+  });
+  assert.equal(savedPrior,true,'Historial conserva proyecto previo antes de importar');
   await page.evaluate(()=>undo());
   assert.equal(await page.evaluate(()=>project.title),'QA proyecto previo recuperable',
    'Ctrl+Z recupera el proyecto anterior al importado');
@@ -245,6 +251,12 @@ export async function runReportedEditorSmoke(page){
    project.title==='QA archivo grande recuperable',{timeout:30000});
   assert.ok(await page.evaluate(()=>project.assets.images.find(x=>x.id==='qa-large-asset').data.length>6*1024*1024),
    'JSON pesado importado sobrevive a F5');
+  const priorAfterReload=await page.evaluate(async()=>{
+   const versions=await allVersions();
+   return versions.some(v=>v.label==='Antes de importar un proyecto JSON'
+    &&JSON.parse(v.data).title==='QA proyecto previo recuperable');
+  });
+  assert.equal(priorAfterReload,true,'Historial conserva el proyecto anterior incluso después de F5');
   console.log('Incidencia 7: exportación real, importación de JSON >6MB, Deshacer/Rehacer, archivo inválido y F5 OK');
   console.log('Incidencia 7: guardado y recuperación tras F5 de proyecto grande OK');
   console.log('Incidencias 3/4: capas de imágenes/textos, orden móvil y restauración de escena completa OK');

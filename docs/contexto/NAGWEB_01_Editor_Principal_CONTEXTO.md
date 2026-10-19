@@ -191,6 +191,13 @@ Editor **visual y profesional** para construir sitios y narrativas inmersivas co
 - Si el JSON es inválido, no se reemplaza el documento ni su historial. Un nuevo proyecto importado sigue guardándose en IndexedDB cuando supera la cuota de almacenamiento local.
 - Se amplió la prueba automatizada de aceptación: botón real de exportación JSON con una imagen superior a 6 MB; reemplazar proyecto; abrir ese archivo; verificar archivo y modelo, Ctrl+Z, Rehacer, JSON inválido, F5 y persistencia. Es verificación técnica, **no aceptación manual**.
 
+## Respaldo confirmado antes de abrir un JSON (18/10/2026)
+
+- Antes de sustituir el documento por un JSON importado, el editor espera la escritura de la versión anterior en el Historial del navegador. Sigue habilitado Ctrl+Z para deshacer durante la sesión.
+- Si el historial falla, el aviso ya no promete recuperación persistente: explica que queda Ctrl+Z durante esa sesión.
+- Regresión añadida al recorrido de importación del JSON con imagen grande: comprobar que la versión anterior sigue en Historial después de F5.
+- La aceptación manual V1.0 continúa pendiente.
+
 ## Estado de aceptación V1.0: NO ACEPTADA (16/10/2026)
 
 **Corrección importante a la declaración anterior de «V1.0 terminada»:** el usuario ejecutó el checklist de siete flujos principales, **marcó los siete como fallidos y detalló las razones** en campos interactivos. Estos datos nunca fueron transmitidos al asistente porque el formulario sólo retenía estado local; además se perdió cuando cambió la conversación. **No se conocen las descripciones originales y no se deben inventar**. El usuario quedó obligado injustamente a repetir trabajo. Esta pérdida de reportes es una falla del asistente.
