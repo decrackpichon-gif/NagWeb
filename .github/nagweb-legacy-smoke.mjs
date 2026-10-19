@@ -17,6 +17,7 @@ const legacy={
 async function importJson(page,data){
  await page.evaluate(data=>{
   window.__legacyImportFinished=false;
+  document.getElementById('toast').textContent='Importación iniciada';
   const input=document.getElementById('file-json'),transfer=new DataTransfer();
   transfer.items.add(new File([data],'proyecto-anterior.json',{type:'application/json'}));
   input.files=transfer.files;
@@ -33,6 +34,7 @@ async function importJson(page,data){
  let valid=false;
  try{const p=JSON.parse(data);valid=!!(p&&(Array.isArray(p.pages)||Array.isArray(p.sections)));}catch(_){}
  if(valid){
+  await page.waitForFunction(()=>document.getElementById('toast')?.textContent.startsWith('Proyecto abierto:'),{timeout:20000});
   await page.waitForFunction(()=>project.pages?.[0]?.sections?.[0]?.id==='legacy-scene',{timeout:20000});
   await page.evaluate(()=>lastSavePromise);
  }else{
