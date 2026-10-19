@@ -32,7 +32,14 @@ async function importJson(page,data){
  // Lectura del archivo ≠ importación completada: ahora se espera el backup
  // previo en IndexedDB antes de reemplazar el documento.
  let valid=false;
- try{const p=JSON.parse(data);valid=!!(p&&(Array.isArray(p.pages)||Array.isArray(p.sections)));}catch(_){}
+ try{
+  const p=JSON.parse(data);
+  // El importador exige al menos una escena con una lista de elementos.
+  // No tratar un archivo estructuralmente inválido como importación exitosa.
+  if(Array.isArray(p.pages))valid=p.pages.length>0&&p.pages.every(pg=>
+   pg&&Array.isArray(pg.sections)&&pg.sections.length>0&&pg.sections.every(s=>s&&Array.isArray(s.elements)));
+  else if(Array.isArray(p.sections))valid=p.sections.length>0&&p.sections.every(s=>s&&Array.isArray(s.elements));
+ }catch(_){}
  if(valid){
   await page.waitForFunction(()=>document.getElementById('toast')?.textContent.startsWith('Proyecto abierto:'),{timeout:20000});
   await page.waitForFunction(()=>project.pages?.[0]?.sections?.[0]?.id==='legacy-scene',{timeout:20000});
