@@ -2322,6 +2322,23 @@ try {
   await expect(native3dPreview.locator('body[data-native-speed="1.5"]')).toBeVisible();
   await expect(libraryFrame.locator("[data-preview-note]")).toContainText("velocidad");
 
+  // Compare two DIFFERENT outcomes, never present the official full-scene
+  // photo as the native editable mesh that the button actually inserts.
+  const compare=libraryFrame.locator("[data-native-compare]");
+  await expect(compare).toBeVisible();
+  await libraryFrame.getByRole("button",{name:"Escena original · foto"}).click();
+  await expect(libraryFrame.locator("[data-preview]")).toHaveAttribute("sandbox","");
+  await expect(libraryFrame.locator("[data-preview-note]")).toContainText("captura estática");
+  await expect(libraryFrame.frameLocator("[data-preview]").getByRole("img",
+    {name:"Escena original de Three.js"})).toBeVisible();
+  await libraryFrame.getByRole("button",{name:"Objeto insertable · 3D"}).click();
+  await expect(libraryFrame.locator("[data-preview]")).toHaveAttribute("sandbox","allow-scripts");
+  await expect(libraryFrame.frameLocator("[data-preview]")
+    .locator('body[data-native-geometry="icosa"][data-native-speed="1.5"]')).toBeVisible();
+  await expect(libraryFrame.getByRole("button",{name:"Objeto insertable · 3D"}))
+    .toHaveAttribute("aria-pressed","true");
+  report.scenarios.push({editor:"Original Three.js scene vs truly insertable native 3D comparison",
+    status:"passed",honestPreview:true,safeSandbox:true});
   const lengthBefore=await page.evaluate(()=>sec().elements.length);
   await libraryFrame.getByRole("button",{name:"Insertar geometría 3D editable",exact:true}).click();
   await expect(libraryFrame.locator("[data-apply-status]")).toContainText("insertado y guardado");
