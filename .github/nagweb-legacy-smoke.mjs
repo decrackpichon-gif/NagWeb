@@ -28,6 +28,16 @@ async function importJson(page,data){
   try{input.dispatchEvent(new Event('change',{bubbles:true}));}finally{window.FileReader=Original;}
  },data);
  await page.waitForFunction(()=>window.__legacyImportFinished===true);
+ // Lectura del archivo ≠ importación completada: ahora se espera el backup
+ // previo en IndexedDB antes de reemplazar el documento.
+ let valid=false;
+ try{const p=JSON.parse(data);valid=!!(p&&(Array.isArray(p.pages)||Array.isArray(p.sections)));}catch(_){}
+ if(valid){
+  await page.waitForFunction(()=>project.pages?.[0]?.sections?.[0]?.id==='legacy-scene',{timeout:20000});
+  await page.evaluate(()=>lastSavePromise);
+ }else{
+  await page.waitForFunction(()=>document.getElementById('toast')?.textContent==='Ese archivo no parece un proyecto de Scrollcraft.',{timeout:20000});
+ }
 }
 
 export async function runLegacySmoke(page){
