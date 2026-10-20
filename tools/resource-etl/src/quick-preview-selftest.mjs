@@ -2,6 +2,13 @@ import assert from "node:assert/strict";
 import { canQuickPreview, offlineQuickPreviewDoc } from "./runtime/quick-preview.mjs";
 import { buildMotionNativePreview, realCardPreviewEligible, schematicMarkup, illustrativePreviewDoc } from "./preview/visual-previews.mjs";
 import { isVerifiedNoiseShader, buildGlslNoisePreview } from "./preview/glsl-noise-browser-preview.mjs";
+import { GLSL_NOISE_SOURCE_COMMIT, GLSL_NOISE_DEFAULTS, normalizeGlslNoiseValues } from "./runtime/glsl-noise-params.mjs";
+import { isNativeGlslNoiseResource, glslNoiseShaderFromEnvelope } from "./runtime/nagweb-glsl-noise-native.mjs";
+import { buildInsertDescriptor } from "./runtime/insert-adapters.mjs";
+import { editorUseOf, canInsertInEditor } from "./runtime/editor-availability.mjs";
+import { describeEditableControls } from "./runtime/editable-controls.mjs";
+import { buildNoiseShaderBlock, loadNoiseSources, adaptNoiseCode } from "./runtime/build-glsl-noise-shader-block.mjs";
+import { readFileSync } from "node:fs";
 import { buildNativeThreePreview } from "./preview/native-three-browser-preview.mjs";
 
 assert.equal(canQuickPreview({provider:"uiverse",editorUse:"uiverse-html"}),true);
@@ -70,7 +77,8 @@ assert.equal(isVerifiedNoiseShader(noise),true);
 assert.equal(buildGlslNoisePreview({...noise,license:{verified:false}}),null);
 assert.equal(buildGlslNoisePreview({...noise,id:"glsl-noise:classic:4d"}),null);
 const noiseCard=buildGlslNoisePreview(noise,{thumbnail:true});
-assert.match(noiseCard,/float cnoise/);
+assert.match(noiseCard,/float libNoise/,"Preview uses the exact function the editor embeds (symbol renamed to libNoise)");
+assert.doesNotMatch(noiseCard,/float cnoise/);
 assert.match(noiseCard,/gl\.drawArrays/);
 assert.match(noiseCard,/img-src data:/);
 assert.match(noiseCard,/script-src 'unsafe-inline'/);
@@ -143,3 +151,53 @@ import { buildMagicCssBrowserPreview } from "./preview/magiccss-browser-preview.
   assert.match(magicFull,/\.preview-loop:checked ~ main \.demo\.magictime\{animation-iteration-count:infinite!important\}/);
   console.log("Motion preset card samples loop, stay inert and keep detail controls OK");
 }
+
+// --- Native shader insertion (verified glsl-noise) ---
+{
+  const native={...noise,sourceCommit:GLSL_NOISE_SOURCE_COMMIT,source:{...noise.source,commit:GLSL_NOISE_SOURCE_COMMIT},
+    license:{...noise.license,id:"MIT",verified:true}};
+  assert.equal(isNativeGlslNoiseResource(native),true);
+  assert.equal(isNativeGlslNoiseResource(noise),false,"Unpinned revision is never native");
+  assert.equal(editorUseOf(native),"shader-native");
+  assert.equal(canInsertInEditor("shader-native",["svg","shader-native"]),true);
+  assert.equal(canInsertInEditor("shader-native",["svg"]),false);
+  const controls=describeEditableControls(native);
+  assert.deepEqual(controls.map(c=>c.id),["c1","c2","scale","contrast","speed","seed"]);
+  assert.equal(controls.filter(c=>c.kind==="color").length,2);
+  // Colours really reach the rendered program.
+  const a=buildGlslNoisePreview(native,{values:{c1:"#ff0000",c2:"#00ff00"}});
+  const b=buildGlslNoisePreview(native,{values:{c1:"#0000ff",c2:"#00ff00"}});
+  assert.notEqual(a,b,"Changing a colour changes the preview program");
+  assert.match(buildGlslNoisePreview(native,{values:{speed:2.5}}),/t\/1000\*2\.5000/);
+  assert.equal(JSON.stringify(normalizeGlslNoiseValues({scale:999,c1:"red"})),JSON.stringify(normalizeGlslNoiseValues({})));
+  const descriptor=buildInsertDescriptor(native,{values:{scale:2}});
+  assert.equal(descriptor.kind,"shader-native");
+  assert.equal(descriptor.payload.shaderId,"noise-classic-2d");
+  const envelope={resource:{id:native.id,provider:"glsl-noise",sourceCommit:GLSL_NOISE_SOURCE_COMMIT,license:native.license},descriptor};
+  const props=glslNoiseShaderFromEnvelope(envelope);
+  assert.equal(props.sid,"noise-classic-2d");
+  assert.equal(props.sp.scale,2);
+  for(const bad of [
+    {...envelope,resource:{...envelope.resource,sourceCommit:"deadbeef"}},
+    {...envelope,resource:{...envelope.resource,license:{...native.license,verified:false}}},
+    {...envelope,descriptor:{...descriptor,payload:{...descriptor.payload,shaderId:"noise-simplex-4d"}}},
+    {...envelope,descriptor:{...descriptor,instance:{...descriptor.instance,values:{...descriptor.instance.values,scale:99}}}},
+    {...envelope,descriptor:{...descriptor,payload:{...descriptor.payload,values:{...descriptor.payload.values,scale:3}}}}
+  ]) assert.throws(()=>glslNoiseShaderFromEnvelope(bad));
+  // A resource never carries GLSL into the project: the props are ids and numbers only.
+  assert.doesNotMatch(JSON.stringify(props),/void main|float /);
+}
+// Generated editor block: up to date, pinned checksums, and the shim matches index.html.
+{
+  const html=readFileSync(new URL("../../../index.html",import.meta.url),"utf8");
+  const block=buildNoiseShaderBlock(loadNoiseSources());
+  assert.ok(html.includes(block),"index.html embeds the generated noise block");
+  assert.equal((block.match(/R\(\{id:/g)||[]).length,9);
+  const {SCSHADER_GLSL_SHIM}=await import("./runtime/glsl-noise-params.mjs");
+  for(const [name,code] of Object.entries(SCSHADER_GLSL_SHIM)){
+    const first=code.split("\n")[0].replace(/\s+/g,"");
+    assert.ok(html.replace(/\s+/g,"").includes(first),"SCShader helper "+name+" is unchanged in index.html");
+  }
+  assert.match(adaptNoiseCode("#pragma glslify: export(snoise)\nfloat snoise(vec2 v){}","snoise"),/float libNoise\(/);
+}
+console.log("Native GLSL shader tests passed.");

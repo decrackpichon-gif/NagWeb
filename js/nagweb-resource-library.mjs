@@ -2,6 +2,7 @@ import { NAGWEB_RESOURCE_APPLY_PROTOCOL, NAGWEB_RESOURCE_APPLY_TYPE, buildResour
 import { svgElementProps } from "../tools/resource-etl/src/runtime/nagweb-svg-element.mjs";
 import { validatedCssEffect,isMagicTarget } from "../tools/resource-etl/src/runtime/nagweb-magic-css-effect.mjs";
 import { prepareUiverseSandboxHtml } from "../tools/resource-etl/src/runtime/nagweb-html-sandbox.mjs";
+import { glslNoiseShaderFromEnvelope } from "../tools/resource-etl/src/runtime/nagweb-glsl-noise-native.mjs";
 import { threeNativeGeometryFromEnvelope } from "../tools/resource-etl/src/runtime/nagweb-three-native.mjs";
 
 const toolbar = document.querySelector(".tb-left");
@@ -225,7 +226,7 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
     url.searchParams.set("hostOrigin", location.origin);
     // Advertise this editor's current native insertion capability.
     // The receiver still validates the actual SVG for each request.
-    url.searchParams.set("hostKinds", "svg,uiverse-html,spinkit-html,three-native" +
+    url.searchParams.set("hostKinds", "svg,uiverse-html,spinkit-html,three-native,shader-native" +
       (magicTargetAtOpen || ["magic-css","csshake"].includes(context?.kind) ? ",magic-css,csshake,motion-preset" : ""));
     if (context) {
       url.searchParams.set("editResource", context.resourceId);
@@ -401,6 +402,27 @@ if (toolbar && !document.querySelector("[data-resource-library-open]")) {
             message:editContext ? "Animación actualizada y guardada."
               : targets.length===1 ? "Animación aplicada y guardada en el elemento seleccionado."
               : `Animación aplicada y guardada en ${targets.length} elementos.`});
+        } else if(message.descriptor?.kind==="shader-native"){
+          if(editContext||message.editSession)
+            throw Error("Volvé a abrir la Biblioteca para insertar un shader.");
+          const native=glslNoiseShaderFromEnvelope(message);
+          if(!window.SCShader?.defs?.some(d=>d.id===native.sid))
+            throw Error("Este editor no tiene cargado el shader «"+native.sid+"».");
+          if(!sec()||!Array.isArray(sec().elements))
+            throw Error("Seleccioná primero una escena de NagWeb.");
+          const previousScene=sec().id,existing=sec().elements.length;
+          native.w=sec().layout==="flow"?100:60;
+          const element=insertElement("shader",native,{parent:""});
+          inserted=true;
+          if(sec().id!==previousScene||sec().elements.length!==existing+1)
+            throw Error("La escena cambió durante la inserción del shader.");
+          const persisted=JSON.parse(localStorage.getItem(STORE_KEY)||"null");
+          const saved=persisted?.pages?.flatMap(p=>p.sections)
+            .flatMap(s=>s.elements).find(e=>e.id===element.id);
+          if(!saved||JSON.stringify(saved)!==JSON.stringify(element))
+            throw Error("El shader se insertó, pero no se pudo verificar que esté guardado.");
+          result=buildResourceApplyResult(message,{status:"applied",
+            message:"Shader insertado y guardado. Editá colores, escala y movimiento desde el inspector."});
         } else if(message.descriptor?.kind==="three-native"){
           if(editContext||message.editSession)
             throw Error("Volvé a abrir la Biblioteca para insertar un objeto 3D.");

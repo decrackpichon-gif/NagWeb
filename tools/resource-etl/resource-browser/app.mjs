@@ -20,6 +20,7 @@ import { buildLottieBrowserPreview } from "../src/preview/lottie-browser-preview
 import { buildCssShakeBrowserPreview } from "../src/preview/csshake-browser-preview.mjs";
 import { buildMagicCssBrowserPreview } from "../src/preview/magiccss-browser-preview.mjs";
 import { prepareUiverseSandboxHtml } from "../src/runtime/nagweb-html-sandbox.mjs";
+import { isNativeGlslNoiseResource, glslNoiseShaderFromEnvelope } from "../src/runtime/nagweb-glsl-noise-native.mjs";
 import { isNativeThreeGeometryResource,nativeThreeGeometrySpec,threeNativeGeometryFromEnvelope } from "../src/runtime/nagweb-three-native.mjs";
 import {
   buildResourceApplyEnvelope,
@@ -379,7 +380,7 @@ const editParams = new URLSearchParams(location.search);
 // Optional UI hint: absent means a generic host with unrestricted adapters.
 const hostKindsText = applyTarget ? editParams.get("hostKinds") : null;
 const hostKinds = hostKindsText === null ? null :
-  new Set(hostKindsText.split(",").filter(kind => /^(?:svg|uiverse-html|spinkit-html|magic-css|csshake|html|react|threejs|three-native|css-inline-effect|css-class-effect|lottie|motion-preset)$/.test(kind)));
+  new Set(hostKindsText.split(",").filter(kind => /^(?:svg|uiverse-html|spinkit-html|magic-css|csshake|html|react|threejs|three-native|css-inline-effect|css-class-effect|lottie|motion-preset|shader-native)$/.test(kind)));
 const editResourceId = applyTarget ? editParams.get("editResource") : null;
 const editSession = editResourceId ? editParams.get("editSession") : null;
 const editKind = editSession ? editParams.get("editKind") : null;
@@ -484,7 +485,7 @@ function fillSelect(select, items) {
 }
 
 // Published metadata reflects only validated native editor adapters.
-const nativeModes = ["svg","uiverse-html","spinkit-html","magic-css","csshake","motion-preset","three-native"].filter(
+const nativeModes = ["svg","uiverse-html","spinkit-html","magic-css","csshake","motion-preset","three-native","shader-native"].filter(
   kind=>canInsertInEditor(kind,hostKinds ? [...hostKinds] : null));
 function currentFilters() {
   return {
@@ -494,7 +495,7 @@ function currentFilters() {
     kinds: el.kind.value || undefined,
     editorUses: el.editorUse.value === "available" ? nativeModes
       : el.editorUse.value === "code"
-        ? ["code",...["svg","uiverse-html","spinkit-html","magic-css","csshake","motion-preset","three-native"].filter(kind=>!nativeModes.includes(kind))]
+        ? ["code",...["svg","uiverse-html","spinkit-html","magic-css","csshake","motion-preset","three-native","shader-native"].filter(kind=>!nativeModes.includes(kind))]
         : undefined,
     ids: el.favoriteOnly.checked ? [...favorites] : undefined,
     offset,
@@ -621,7 +622,7 @@ async function previewDoc(resource, values = {}, {thumbnail=false} = {}) {
       {stylesheet:cssResource?.license?.verified ? stylesheet?.content : null});
   }
   if (isNativeThreeGeometryResource(resource)) return buildNativeThreePreview(resource,values);
-  if (renderer === "nagweb-glsl-snippet") return buildGlslNoisePreview(resource,{thumbnail});
+  if (renderer === "nagweb-glsl-snippet") return buildGlslNoisePreview(resource,{thumbnail,values});
   if (renderer === "nagweb-motion-native") return buildMotionNativePreview(resource, values);
 
   if (renderer === "nagweb-svg") {
@@ -776,7 +777,7 @@ el.preview.addEventListener("load", () => {
 
 function updateApplyReadiness(resource) {
   el.apply.disabled = true;
-  if(!editSession) el.apply.textContent = isNativeThreeGeometryResource(resource) ? "Insertar geometría 3D editable" : ["magic-css","csshake","animxyz"].includes(resource?.source?.provider)
+  if(!editSession) el.apply.textContent = isNativeThreeGeometryResource(resource) ? "Insertar geometría 3D editable" : isNativeGlslNoiseResource(resource) ? "Insertar shader editable" : ["magic-css","csshake","animxyz"].includes(resource?.source?.provider)
     ? "Aplicar animación al elemento" : "Aplicar en NagWeb";
   if (editResourceId && (!editSession || resource?.id !== editResourceId || !Object.keys(editInitialValues).length)) {
     el.applyStatus.textContent = "Volvé a abrir la personalización desde el ícono seleccionado en NagWeb.";
@@ -831,6 +832,10 @@ function updateApplyReadiness(resource) {
       ? "Este editor admite SVG y HTML/CSS autónomo verificado. Este recurso todavía no se puede insertar, pero podés explorar y copiar su código."
       : "Este editor todavía no admite insertar este tipo de recurso. Podés explorarlo y copiar su código.";
     return;
+  }
+  if(prepared.descriptor.kind==="shader-native"){
+    try{glslNoiseShaderFromEnvelope(prepared);}
+    catch(error){el.applyStatus.textContent=error.message;return;}
   }
   if(prepared.descriptor.kind==="three-native"){
     try{threeNativeGeometryFromEnvelope(prepared);}
@@ -1298,7 +1303,9 @@ async function openDetail(id) {
     el.previewNote.textContent = illustrated
       ? (previewError ? "No pude generar la vista previa: " + previewError + ". Se muestra un esquema, no el recurso real." : "Esquema ilustrativo. No reproduce este recurso ni sus cambios: requiere un visor específico.")
       : isGlsl
-      ? "Visualización WebGL de la función GLSL original. Es código de ruido, no una escena ni un material listo para insertar."
+      ? (isNativeGlslNoiseResource(resource)
+        ? "Así se va a ver el shader que insertes en NagWeb: mismos colores y ajustes. Podés cambiarlos y volver a editarlos después en el inspector."
+        : "Visualización WebGL de la función GLSL original. Es código de ruido, no una escena ni un material listo para insertar.")
       : isLottie
       ? "Velocidad y repetición cambian sin reiniciar. La reproducción automática controla inicio y pausa."
       : isCssShake

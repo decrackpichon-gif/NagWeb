@@ -7,6 +7,8 @@ export const PUBLIC_MODULES = Object.freeze([
   "runtime/editor-availability.mjs",
   "runtime/nagweb-magic-css-effect.mjs",
   "runtime/nagweb-three-native.mjs",
+  "runtime/nagweb-glsl-noise-native.mjs",
+  "runtime/glsl-noise-params.mjs",
   "runtime/quick-preview.mjs",
   "runtime/latest-search.mjs",
   "runtime/favorites.mjs",

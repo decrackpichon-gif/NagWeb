@@ -4,6 +4,7 @@ import {
 } from "./instance.mjs";
 import { htmlWithCustomStyle } from "./html-css-customization.mjs";
 import { nativeThreeGeometrySpec } from "./nagweb-three-native.mjs";
+import { glslNoiseEditorShaderId, isNativeGlslNoiseResource, normalizeGlslNoiseValues } from "./nagweb-glsl-noise-native.mjs";
 import { effectiveUiverseEditableProps } from "./uiverse-colors.mjs";
 
 function cssVariableValues(resource, instance) {
@@ -159,6 +160,16 @@ export function buildInsertDescriptor(resource, options = {}) {
         registryDependencies: resource.runtime?.registryDependencies || [],
         props: instance.values,
         requiresCompileSandbox: true
+      }
+    };
+  }
+
+  if (renderer === "nagweb-glsl-snippet" && isNativeGlslNoiseResource(resource)) {
+    return {
+      version: "1.0", kind: "shader-native", resourceId: resource.id, instance,
+      payload: {
+        shaderId: glslNoiseEditorShaderId(resource),
+        values: normalizeGlslNoiseValues(instance.values)
       }
     };
   }

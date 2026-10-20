@@ -3,6 +3,7 @@ import http from "node:http";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { readFile, readdir, mkdir, writeFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
@@ -127,6 +128,12 @@ const glslShader=transformGlslNoise({
     "float cnoise(vec2 p) {float v=sin(p.x*1.7)*cos(p.y*2.3);return v;}\n"+
     "#pragma glslify: export(cnoise)"}
 });
+const noiseSourcesForSmoke=JSON.parse(readFileSync(new URL("./runtime/glsl-noise-sources.json",import.meta.url),"utf8"));
+const nativeNoiseItem=noiseSourcesForSmoke.items["simplex:3d"];
+const nativeGlslShader=transformGlslNoise({
+  repository:"https://github.com/hughsk/glsl-noise",commit:noiseSourcesForSmoke.sourceCommit,
+  item:{path:"simplex/3d.glsl",sha:"pinned-smoke",exportedSymbol:nativeNoiseItem.symbol,code:nativeNoiseItem.code}
+});
 const shakeSource={repository:"https://github.com/elrumordelaluz/csshake",commit:"offline-smoke",
  packageJson:{version:"1.6"},scss:"// fixture",effects:[{name:"shake",className:"shake"}],
  css:".shake{display:inherit}.shake:hover,.shake.shake-constant{animation:shake .5s infinite}@keyframes shake{from{transform:translate(0)}to{transform:translate(2px)}}"};
@@ -190,7 +197,7 @@ const nativeCubeScene=transformThreeCodeScene({
     analysis:{imports:["three"],codeOnly:true,reasons:[]}}
 });
 assert.equal(editorUseOf(nativeCubeScene),"three-native");
-const resources = [icon, css, spinkit, magicCss, animxyz, hyperRuntime, hyperui, glslShader, csshakeRuntime, csshake, heroicon, lucideCamera, codeOnly, reactGalleryFixture, threeSceneFixture, nativeThreeScene, nativeCubeScene];
+const resources = [icon, css, spinkit, magicCss, animxyz, hyperRuntime, hyperui, glslShader, nativeGlslShader, csshakeRuntime, csshake, heroicon, lucideCamera, codeOnly, reactGalleryFixture, threeSceneFixture, nativeThreeScene, nativeCubeScene];
 const zip = data => gzipSync(JSON.stringify(data));
 const index = zip({ format: "nagweb-resource-browse-index", resourceCount: resources.length,
   resources: resources.map(r => ({ id: r.id, title: r.title, family: r.family, kind: r.kind, provider: r.source.provider,
@@ -2426,6 +2433,62 @@ try {
   assert.match(await page.evaluate(()=>generateSite(flattenPage(page()),false,true,false)),/"shape":"box"/);
   report.scenarios.push({editor:"Official Three.js cubes adapted to editable NagWeb 3D",status:"passed",
     sourceMatched:true,real3D:true});
+
+
+  // glsl-noise (pinned revision) is a REAL, editable NagWeb shader: preview with the chosen
+  // colours, insert, edit in the inspector, export and reload.
+  await page.getByRole("button",{name:"Biblioteca de recursos",exact:true}).click();
+  if(await libraryFrame.locator("[data-detail]").evaluate(n=>n.open))
+    await libraryFrame.getByRole("button",{name:"Cerrar",exact:true}).click();
+  await libraryFrame.getByRole("button",{name:"Limpiar filtros",exact:true}).click();
+  await libraryFrame.getByLabel("Proveedor",{exact:true}).selectOption("glsl-noise");
+  const shaderCard=libraryFrame.locator('[data-resource-id="'+nativeGlslShader.id+'"]');
+  await expect(shaderCard).toBeVisible({timeout:15000});
+  await expect(shaderCard.locator('[data-editor-use-label="available"]')).toBeVisible();
+  await shaderCard.click();
+  const shaderPreview=libraryFrame.frameLocator("[data-preview]");
+  await expect(libraryFrame.locator("[data-preview]")).toHaveAttribute("sandbox","allow-scripts");
+  await expect(shaderPreview.locator("body[data-glsl-status]")).toBeVisible({timeout:15000});
+  await expect(libraryFrame.locator("[data-preview-note]")).toContainText("que insertes en NagWeb");
+  await expect(libraryFrame.getByRole("button",{name:"Insertar shader editable",exact:true})).toBeEnabled();
+  await libraryFrame.getByLabel("Color 1",{exact:true}).evaluate(input=>{
+    input.value="#aa2244";input.dispatchEvent(new Event("input",{bubbles:true}));
+  });
+  await libraryFrame.getByLabel("Escala",{exact:true}).evaluate(input=>{
+    input.value="2";input.dispatchEvent(new Event("input",{bubbles:true}));
+  });
+  await libraryFrame.getByRole("button",{name:"Insertar shader editable",exact:true}).click();
+  await expect(libraryFrame.locator("[data-apply-status]")).toContainText("Shader insertado y guardado");
+  const shaderEl=await page.evaluate(()=>structuredClone(
+    sec().elements.find(e=>e.nwResource?.kind==="shader-native")));
+  assert.equal(shaderEl?.type,"shader");
+  assert.equal(shaderEl.sid,"noise-simplex-3d");
+  assert.equal(shaderEl.sp.c1,"#aa2244");
+  assert.equal(shaderEl.sp.scale,2);
+  assert.equal(shaderEl.nwResource.id,nativeGlslShader.id);
+  assert.doesNotMatch(JSON.stringify(shaderEl),/void main|float /,"GLSL text is never stored in the project");
+  await page.getByRole("button",{name:"Volver al editor",exact:true}).click();
+  // The editor really compiles the shader (not a placeholder).
+  const compiled=await page.evaluate(()=>{
+    const d=window.SCShader.get("noise-simplex-3d");
+    const c=document.createElement("canvas");c.width=c.height=32;
+    const gl=c.getContext("webgl");
+    return {def:!!d,gl:!!gl,name:d&&d.name};
+  });
+  assert.equal(compiled.def,true);
+  assert.equal(compiled.name,"Ruido simplex 3D");
+  const shaderExport=await page.evaluate(()=>generateSite(flattenPage(page()),false,true,false));
+  assert.match(shaderExport,/scs-noise-src|libNoise/);
+  assert.match(shaderExport,/Ashima Arts|Stefan Gustavson/);
+  await page.evaluate(id=>{
+    const e=sec().elements.find(x=>x.id===id);snapshot();e.sp.c2="#112233";refresh();
+  },shaderEl.id);
+  await page.reload();
+  const persistedShader=await page.evaluate(id=>sec().elements.find(e=>e.id===id),shaderEl.id);
+  assert.equal(persistedShader?.sp.c2,"#112233");
+  assert.equal(persistedShader?.sid,"noise-simplex-3d");
+  report.scenarios.push({editor:"glsl-noise inserted as a genuine editable NagWeb shader",
+    status:"passed",preview:true,export:true,persistent:true,noGlslInProject:true});
 
 
   await context.close();

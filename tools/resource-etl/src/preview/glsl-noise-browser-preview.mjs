@@ -1,5 +1,9 @@
 // Real offline WebGL visualization of the SOURCE GLSL function. Script code
 // is owned by NagWeb, never supplied by the shader or a remote endpoint.
+import {
+  normalizeGlslNoiseValues, adaptNoiseCode, noiseMainGlsl, SCSHADER_GLSL_SHIM,
+  GLSL_NOISE_GRAIN_DEFAULT, hexToRgb01, rgb01ToLab
+} from "../runtime/glsl-noise-params.mjs";
 const FAMILIES=Object.freeze({classic:"cnoise",periodic:"pnoise",simplex:"snoise"});
 const DIMENSIONS=new Set(["2d","3d","4d"]);
 export function isVerifiedNoiseShader(resource){
@@ -11,7 +15,7 @@ export function isVerifiedNoiseShader(resource){
       a.id===resource.runtime.entryArtifactId&&a.role==="source"&&a.format==="glsl"&&
       typeof a.content==="string"&&a.content.length>100&&a.content.length<=20000);
 }
-export function buildGlslNoisePreview(resource,{thumbnail=false}={}){
+export function buildGlslNoisePreview(resource,{thumbnail=false,values={}}={}){
   if(!isVerifiedNoiseShader(resource))return null;
   const setup=resource.runtime.setup,artifact=resource.artifacts.find(a=>a.id===resource.runtime.entryArtifactId);
   const code=artifact.content,name=setup.exportedSymbol,arity=Number(setup.dimension[0]);
@@ -21,20 +25,23 @@ export function buildGlslNoisePreview(resource,{thumbnail=false}={}){
   // "#define F4 0.309..." (used by simplex 4D). Any other directive is rejected.
   const constant=/^\s*#define\s+[A-Za-z_]\w*\s+[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?\s*$/;
   if(glsl.split("\n").some(line=>/^\s*#/.test(line)&&!constant.test(line))||/<\s*\/\s*script/i.test(glsl))return null;
-  const position=arity===2?"vec2(p)":arity===3?"vec3(p,uTime*.28)":
-    "vec4(p,cos(uTime*.28)*1.8,sin(uTime*.28)*1.8)";
-  const rep=setup.family==="periodic"?",vec"+arity+"(8.0)":"";
+  const v=normalizeGlslNoiseValues(values);
+  const c1=rgb01ToLab(hexToRgb01(v.c1)),c2=rgb01ToLab(hexToRgb01(v.c2));
+  const f=n=>Number(n).toFixed(6);
+  const vec=c=>"vec3("+c.map(f).join(",")+")";
+  // Same fragment program as the NagWeb editor's SCShader definition: identical main(),
+  // helper functions and Lab colour mixing. Only the uniforms are inlined as constants.
   const shader=[
-    "precision highp float;uniform vec2 uResolution;uniform float uTime;",
-    glsl,
-    "void main(){",
-    "vec2 uv=gl_FragCoord.xy/max(uResolution,vec2(1.0));",
-    "vec2 p=(uv-.5)*vec2(uResolution.x/uResolution.y,1.)*7.;",
-    "p+=vec2(uTime*.12,0.);",
-    "float n="+name+"("+position+rep+");",
-    "float v=clamp(.5+.5*n,0.,1.);",
-    "gl_FragColor=vec4(mix(vec3(.08,.16,.37),vec3(.65,.94,.80),v),1.);}"
+    "precision highp float;uniform vec2 uRes;uniform float uTime;",
+    "const vec3 u_c1L="+vec(c1)+";const vec3 u_c2L="+vec(c2)+";",
+    "const float u_scale="+f(v.scale)+";const float u_contrast="+f(v.contrast)+";",
+    "const float u_seed="+f(v.seed)+";const float u_grain="+f(GLSL_NOISE_GRAIN_DEFAULT)+";",
+    "vec2 P(){return (gl_FragCoord.xy-.5*uRes)/min(uRes.x,uRes.y);}",
+    SCSHADER_GLSL_SHIM.hash12,SCSHADER_GLSL_SHIM.toSrgb,SCSHADER_GLSL_SHIM.fromLab,SCSHADER_GLSL_SHIM.fin,
+    adaptNoiseCode(glsl,name),
+    noiseMainGlsl(setup.family,setup.dimension)
   ].join("\n");
+  const speed=Number(v.speed).toFixed(4);
   const encoded=JSON.stringify(shader).replace(/</g,"\\u003c");
   // Dynamic shader source is an escaped JS string, not executable JS.
   const script=[
@@ -54,12 +61,12 @@ export function buildGlslNoisePreview(resource,{thumbnail=false}={}){
     "gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);",
     "const at=gl.getAttribLocation(p,'aPosition');gl.enableVertexAttribArray(at);",
     "gl.vertexAttribPointer(at,2,gl.FLOAT,false,0,0);",
-    "const resolution=gl.getUniformLocation(p,'uResolution'),clock=gl.getUniformLocation(p,'uTime');",
+    "const resolution=gl.getUniformLocation(p,'uRes'),clock=gl.getUniformLocation(p,'uTime');",
     "const still="+(thumbnail?"true":"false")+"||matchMedia('(prefers-reduced-motion: reduce)').matches;",
     "function draw(t){const w=Math.min(512,Math.max(120,canvas.clientWidth||320));",
     "const h=Math.min(320,Math.max(90,canvas.clientHeight||200));",
     "if(w!==canvas.width||h!==canvas.height){canvas.width=w;canvas.height=h;}",
-    "gl.viewport(0,0,w,h);gl.uniform2f(resolution,w,h);gl.uniform1f(clock,still?0:t/1000);",
+    "gl.viewport(0,0,w,h);gl.uniform2f(resolution,w,h);gl.uniform1f(clock,still?0:t/1000*"+speed+");",
     "gl.drawArrays(gl.TRIANGLE_STRIP,0,4);document.body.dataset.glslStatus='rendered';",
     "if(still){const img=document.createElement('img');img.alt='Valores reales de GLSL';",
     "img.src=canvas.toDataURL('image/png');canvas.replaceWith(img);",

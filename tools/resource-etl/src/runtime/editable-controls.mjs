@@ -1,5 +1,6 @@
 import { isSupportedHtmlCssProperty } from "./html-css-customization.mjs";
 import { isNativeThreeGeometryResource } from "./nagweb-three-native.mjs";
+import { isNativeGlslNoiseResource, GLSL_NOISE_PARAMS } from "./nagweb-glsl-noise-native.mjs";
 import { isSupportedUiverseCssDimension } from "./uiverse-dimensions.mjs";
 import { isSupportedUiverseCssSpacing } from "./uiverse-spacing.mjs";
 import { isSupportedUiverseCssTypeBorder } from "./uiverse-type-borders.mjs";
@@ -20,6 +21,11 @@ export function describeEditableControls(resource) {
   if(isNativeThreeGeometryResource(resource))
     return [{id:"speed",label:"Velocidad del giro",kind:"range",
       defaultValue:1,min:0,max:4,step:0.05}];
+  if (isNativeGlslNoiseResource(resource))
+    return Object.entries(GLSL_NOISE_PARAMS).map(([id, spec]) => spec.type === "color"
+      ? { id, label: spec.label, kind: "color", defaultValue: spec.default }
+      : { id, label: spec.label, kind: "range", defaultValue: spec.default,
+          min: spec.min, max: spec.max, step: spec.step });
   const renderer = resource?.runtime?.renderer;
   if (![
     "nagweb-html-tailwind",
