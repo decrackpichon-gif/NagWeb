@@ -79,6 +79,14 @@ assert.match(buildGlslNoisePreview(noise),/const still=false/);
 assert.equal(realCardPreviewEligible(noise),true);
 assert.equal(buildGlslNoisePreview({...noise,artifacts:[{...noise.artifacts[0],
   content:noise.artifacts[0].content+"\n<script>alert(1)</script>"}]}),null);
+// Simplex 4D ships "#define F4 <number>": numeric constants are safe, other directives are not.
+const withLine=line=>({...noise,artifacts:[{...noise.artifacts[0],
+  content:noise.artifacts[0].content.replace("float cnoise",line+"\nfloat cnoise")}]});
+assert.match(buildGlslNoisePreview(withLine("#define F4 0.309016994374947451")),/#define F4 0\.309016994374947451/,
+  "Numeric constants keep simplex 4D previewable");
+for(const unsafe of ["#define X foo(1)","#include \"other.glsl\"","#ifdef GL_ES","#version 300 es","#define Y 1 + 2"]){
+  assert.equal(buildGlslNoisePreview(withLine(unsafe)),null,"Rejects preprocessor line: "+unsafe);
+}
 console.log("GLSL WebGL previews: original code, CSP and script separation OK");
 
 const shapes=[
@@ -110,3 +118,28 @@ for(const [slug,constructor,shape] of shapes){
   assert.ok(buildNativeThreePreview(three,{speed:100}).includes('data-native-speed="1"'));
 }
 console.log("Actual native 3D geometry previews: source-verified icosa, box, sphere; CSP, speed and safety OK");
+
+// Motion-preset card thumbnails: one large centred sample that loops by itself, inert and control-free.
+import { buildCssShakeBrowserPreview } from "./preview/csshake-browser-preview.mjs";
+import { buildMagicCssBrowserPreview } from "./preview/magiccss-browser-preview.mjs";
+{
+  const shake={id:"csshake:shake",title:"Shake",source:{provider:"csshake"},
+    runtime:{renderer:"nagweb-css-class-effect"},
+    artifacts:[{role:"animation-data",content:'{"className":"shake"}'}]};
+  const thumb=buildCssShakeBrowserPreview(shake,{}, {stylesheet:".shake{animation:x 1s}",thumbnail:true});
+  assert.match(thumb,/class="demo shake shake-constant"/,"Card sample loops on its own (cards cannot be hovered)");
+  assert.match(thumb,/script-src 'none'/);
+  assert.doesNotMatch(thumb,/<script|preview-pause|Siempre/,"No controls, scripts or two-panel comparison in a card");
+  const full=buildCssShakeBrowserPreview(shake,{}, {stylesheet:".shake{animation:x 1s}"});
+  assert.match(full,/preview-pause/,"The detail view keeps its playback controls");
+  const magic={id:"magic-css:bling:puffIn",title:"Puff In",source:{provider:"magic-css"},
+    runtime:{renderer:"nagweb-css-inline-effect",setup:{baseClass:"magictime",className:"puffIn"}},
+    artifacts:[{role:"stylesheet",content:".puffIn{animation-name:puffIn}"}]};
+  const magicThumb=buildMagicCssBrowserPreview(magic,{}, {thumbnail:true});
+  assert.match(magicThumb,/animation-iteration-count:infinite!important/);
+  assert.doesNotMatch(magicThumb,/<script|preview-pause|loop-preview/);
+  const magicFull=buildMagicCssBrowserPreview(magic,{iterations:1});
+  assert.match(magicFull,/id="loop-preview" type="checkbox" checked/,"Detail loops by default, with an off switch");
+  assert.match(magicFull,/\.preview-loop:checked ~ main \.demo\.magictime\{animation-iteration-count:infinite!important\}/);
+  console.log("Motion preset card samples loop, stay inert and keep detail controls OK");
+}

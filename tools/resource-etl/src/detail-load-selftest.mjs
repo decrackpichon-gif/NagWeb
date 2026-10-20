@@ -30,7 +30,7 @@ el.nativeCompare = { hidden: true };
 el.nativeCompareEditable = makeToggle();
 el.nativeCompareOriginal = makeToggle();
 const context = {
-  el, detailRevision: 0, previewRevision: 0, previewReplayRevision: 0, selectedResource: null, selectedValues: {},
+  el, previewBlankNavigation: false, detailRevision: 0, previewRevision: 0, previewReplayRevision: 0, selectedResource: null, selectedValues: {},
   editResourceId: null, editInitialValues: {}, rememberCategories() {},
   synchronizeFavorites() {}, synchronizeConfirmedApplyNotice() {}, updateSavedCustomizationUi() {},
   vault: { getResource(id) { const gate = deferred(); resources.set(id, gate); return gate.promise; } },

@@ -17,7 +17,10 @@ export function buildGlslNoisePreview(resource,{thumbnail=false}={}){
   const code=artifact.content,name=setup.exportedSymbol,arity=Number(setup.dimension[0]);
   if(!new RegExp("\\bfloat\\s+"+name+"\\s*\\(\\s*vec"+arity+"\\b").test(code))return null;
   const glsl=code.replace(/^\s*#pragma\s+glslify:\s*export\((?:snoise|cnoise|pnoise)\)\s*$/gm,"");
-  if(/^\s*#/m.test(glsl)||/<\s*\/\s*script/i.test(glsl))return null;
+  // The only preprocessor lines accepted are plain numeric constants such as
+  // "#define F4 0.309..." (used by simplex 4D). Any other directive is rejected.
+  const constant=/^\s*#define\s+[A-Za-z_]\w*\s+[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?\s*$/;
+  if(glsl.split("\n").some(line=>/^\s*#/.test(line)&&!constant.test(line))||/<\s*\/\s*script/i.test(glsl))return null;
   const position=arity===2?"vec2(p)":arity===3?"vec3(p,uTime*.28)":
     "vec4(p,cos(uTime*.28)*1.8,sin(uTime*.28)*1.8)";
   const rep=setup.family==="periodic"?",vec"+arity+"(8.0)":"";

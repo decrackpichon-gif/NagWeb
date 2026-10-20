@@ -17,7 +17,7 @@ function escapeHtml(value) {
 export function buildCssShakeBrowserPreview(
   resource,
   values = {},
-  { stylesheet } = {}
+  { stylesheet, thumbnail = false } = {}
 ) {
   if (
     resource?.source?.provider !== "csshake" ||
@@ -50,6 +50,22 @@ export function buildCssShakeBrowserPreview(
   // Never let CSS content break out of its style element.
   const safeStylesheet = stylesheet.replaceAll("<", "\\3C ");
   const escapedResourceId = JSON.stringify(resource.id).replaceAll("<", "\\u003c");
+  if (thumbnail) {
+    // Card thumbnail: ONE large centred sample that loops by itself. Cards cannot
+    // receive the cursor (pointer-events:none), so the effect must not depend on
+    // hover and must not be a one-shot. Pure CSS, no scripts, no controls.
+    return `<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; script-src 'none'; connect-src 'none'; object-src 'none'; frame-src 'none'">
+<style>${safeStylesheet}</style>
+<style>
+html,body{height:100%;margin:0;overflow:hidden;background:#f4f5f7}
+body{display:grid;place-items:center}
+.demo{box-sizing:border-box;max-width:86%;padding:20px 26px;border:1px solid #dae0e7;border-radius:14px;background:#fff;box-shadow:0 12px 26px #0002;font:750 18px system-ui,sans-serif;color:#1b2630;text-align:center}
+@media(prefers-reduced-motion:reduce){.demo{animation:none!important}}
+</style></head><body><div class="demo ${name} shake-constant">${title}</div></body></html>`;
+  }
   return `<!doctype html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">

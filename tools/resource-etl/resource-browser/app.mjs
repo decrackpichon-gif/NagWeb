@@ -241,6 +241,20 @@ function observeCardPreviews(){
   },{rootMargin:"120px 0px",threshold:0.01});
   for(const node of nodes)cardObserver.observe(node);
 }
+const CARD_DESIGN_WIDTH=720;
+function fitCardFrame(node,frame,designWidth){
+  const apply=()=>{
+    const width=node.clientWidth,height=node.clientHeight;
+    if(!(width>0)||!(height>0))return;
+    const scale=Math.min(1,width/designWidth);
+    node.classList.add("is-scaled-preview");
+    frame.style.width=designWidth+"px";
+    frame.style.height=Math.ceil(height/scale)+"px";
+    frame.style.transform="scale("+scale+")";
+  };
+  apply();
+  if(typeof ResizeObserver==="function")new ResizeObserver(apply).observe(node);
+}
 function drainCardPreviews(){
   while(cardPreviewActive<2 && cardPreviewQueue.length){
     const {node,generation}=cardPreviewQueue.shift();
@@ -251,7 +265,7 @@ function drainCardPreviews(){
         const resource=await vault.getResource(node.dataset.autoPreviewId);
         if(!resource || !resource.license?.verified)throw Error("Fuente no verificada");
         const shader=isVerifiedNoiseShader(resource);
-        const doc=await previewDoc(resource,{}, {thumbnail:shader});
+        const doc=await previewDoc(resource,{}, {thumbnail:true});
         if(!doc)throw Error("Sin renderizador autónomo");
         // Card thumbnails must be inert: never execute arbitrary third-party
         // scripts inside 48 independently loaded gallery iframes.
@@ -262,6 +276,10 @@ function drainCardPreviews(){
         }else{
           const inert=new DOMParser().parseFromString(doc,"text/html");
           for(const script of inert.querySelectorAll("script,iframe,object,embed")) script.remove();
+          // A card is a small window: never show scrollbars inside it.
+          const fit=inert.createElement("style");
+          fit.textContent="html,body{overflow:hidden!important}";
+          inert.head.append(fit);
           safe=offlineQuickPreviewDoc("<!doctype html>"+inert.documentElement.outerHTML);
         }
         if(generation!==cardPreviewGeneration||!node.isConnected)return;
@@ -273,6 +291,9 @@ function drainCardPreviews(){
         frame.srcdoc=safe;
         node.replaceChildren(frame);
         node.classList.add("is-real-preview");
+        // Wide page blocks (HyperUI) are laid out at desktop width and shrunk to fit
+        // the card, instead of being squeezed into ~220px where they overlap.
+        if(resource.source?.provider==="hyperui")fitCardFrame(node,frame,CARD_DESIGN_WIDTH);
       }catch(error){
         if(generation!==cardPreviewGeneration||!node.isConnected)return;
         const label=node.querySelector(".card-visual-label");
@@ -627,7 +648,7 @@ async function previewDoc(resource, values = {}, {thumbnail=false} = {}) {
   }
 
   if (renderer === "nagweb-css-inline-effect") {
-    return buildMagicCssBrowserPreview(resource, values);
+    return buildMagicCssBrowserPreview(resource, values, { thumbnail });
   }
 
   if (renderer === "nagweb-css-class-effect") {
@@ -635,7 +656,7 @@ async function previewDoc(resource, values = {}, {thumbnail=false} = {}) {
     const runtime = dependency ? await vault.getResource(dependency) : null;
     const style = (runtime?.artifacts || []).find((item) => item.role === "stylesheet");
     return buildCssShakeBrowserPreview(resource, values, {
-      stylesheet: style?.content
+      stylesheet: style?.content, thumbnail
     });
   }
 
@@ -749,6 +770,7 @@ if (typeof ResizeObserver !== "undefined") {
 }
 updatePreviewViewport();
 el.preview.addEventListener("load", () => {
+  previewBlankNavigation = false;
   updateCssLivePreview(selectedResource);
 });
 
@@ -1146,6 +1168,7 @@ async function openDetail(id) {
   el.copyCode.disabled = true;
   el.preview.removeAttribute?.("src");
   el.preview.srcdoc = "";
+  previewBlankNavigation = true;
   el.preview.hidden = false;
   el.previewNote.textContent = "Cargando vista previa…";
   el.previewReplay.hidden = true;
@@ -1253,6 +1276,10 @@ async function openDetail(id) {
   const previewRequest = ++previewRevision;
   try { doc = await previewDoc(resource, selectedValues); }
   catch (error) { previewError = error?.message || String(error); }
+  // Chromium can drop a srcdoc navigation issued while the previous (blank) srcdoc
+  // navigation is still in flight, leaving an empty frame. Cached resources resolve
+  // within ~10ms, so serialize the two navigations before assigning the real document.
+  await settleBlankPreviewNavigation();
   if (!isCurrent() || previewRequest !== previewRevision) return;
   const illustrated = !doc;
   if (illustrated) doc = illustrativePreviewDoc(resource);
@@ -1290,6 +1317,21 @@ async function openDetail(id) {
   }
 }
 
+// True from the moment openDetail blanks the frame until that blank document loads.
+let previewBlankNavigation = false;
+async function settleBlankPreviewNavigation() {
+  if (!previewBlankNavigation || typeof el.preview.addEventListener !== "function") return;
+  await new Promise(resolve => {
+    const done = () => {
+      clearTimeout(timer);
+      el.preview.removeEventListener("load", done);
+      resolve();
+    };
+    const timer = setTimeout(done, 600);
+    el.preview.addEventListener("load", done, { once: true });
+  });
+  previewBlankNavigation = false;
+}
 async function refreshIndex({ allowOfflineFallback = false } = {}) {
   if (el.refresh.disabled) return false;
   el.refresh.disabled = true;

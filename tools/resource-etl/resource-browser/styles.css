@@ -239,3 +239,7 @@ pre{white-space:pre-wrap;word-break:break-word;background:#090b0e;border:1px sol
   border-radius:8px;background:#172431;color:#d5e7f1;cursor:pointer}
 .native-compare-controls button[aria-pressed="true"]{background:#33658a;border-color:#76aac8;color:white}
 .native-compare-controls button:focus-visible{outline:2px solid #84caff;outline-offset:2px}
+
+/* Wide blocks are rendered at desktop width and scaled down to the card. */
+.card-visual-surface.is-scaled-preview{display:block}
+.card-visual-surface.is-scaled-preview iframe{transform-origin:0 0;max-width:none;flex:none}
