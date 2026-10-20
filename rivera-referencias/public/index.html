@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Banco de referencias de diseño para la identidad de Rivera. Trabajos profesionales, recursos gráficos y lecturas para los cuatro atributos.">
+<meta name="theme-color" content="#163b30"><title>Rivera — Banco de referencias</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#catalogo">Ir a las referencias</a>
+<div class="mobile-bar"><a href="./" class="mobile-logo">rivera<span>↗</span></a><button id="menu" aria-expanded="false" aria-controls="sidebar">Explorar ☰</button></div>
+<aside id="sidebar" class="sidebar">
+ <a href="./" class="brand" aria-label="Rivera, inicio">rivera<span>↗</span></a>
+ <p class="brand-caption">ARCHIVO DE DISEÑO<br>MARCA CIUDAD · URUGUAY</p>
+ <nav aria-label="Biblioteca">
+  <p class="nav-label">TU BANCO DE REFERENCIAS</p>
+  <button class="nav-item active" data-mode="all"><span>▦ &nbsp; Explorar todo</span><span id="nav-total">—</span></button>
+  <button class="nav-item" data-mode="priority"><span>↗ &nbsp; Para empezar</span><span id="nav-priority">—</span></button>
+  <button class="nav-item" data-mode="favorites"><span>♡ &nbsp; Mis favoritos</span><span id="nav-favorites">0</span></button>
+ </nav>
+ <div class="side-section"><p class="nav-label">SEGÚN EL MOODBOARD</p>
+  <button class="mood" data-mood="editorial"><span class="mood-symbol editorial-symbol">◒</span><span>Editorial y modular<small>Grabados, fotos y geometría</small></span></button>
+  <button class="mood" data-mood="fluid"><span class="mood-symbol fluid-symbol">〰</span><span>Fluido y conectado<small>Recorridos, gestos y encuentros</small></span></button>
+ </div>
+ <div class="side-section"><label class="nav-label" for="attribute">ATRIBUTOS DE RIVERA</label>
+  <select id="attribute"><option value="">Los cuatro atributos</option><option>Natural</option><option>En Auge</option><option>Transfronteriza</option><option>Interconectada</option></select>
+ </div>
+ <div class="sidebar-bottom"><span class="status-dot"></span> Un archivo para seguir construyendo<p>Mirar, comparar y encontrar<br>un lenguaje propio para Rivera.</p><button id="about-open">Sobre esta selección ↗</button></div>
+</aside>
+<main>
+ <header class="topline"><span>RIVERA CONECTADA <span class="slash">/</span> INVESTIGACIÓN VISUAL</span><button id="share">Copiar enlace ↗</button></header>
+ <section class="hero" aria-labelledby="hero-title">
+  <div><p class="eyebrow">REFERENCIAS QUE SE CONVIERTEN EN IDEAS</p><h1 id="hero-title">Un archivo para<br><em>conectar miradas.</em></h1><p class="intro">Identidades, tramas, ilustraciones y formas de contar un territorio.<br>Una selección para construir el sistema gráfico de Rivera.</p><div class="hero-meta"><span><strong id="total">—</strong> trabajos</span><span><strong>4</strong> atributos</span><span>Actualizado · 20 OCT 2026</span></div></div>
+  <div id="hero-collage" class="hero-collage" aria-hidden="true"><div class="hero-stamp">MIRAR<br>PARA<br>CREAR <span>↗</span></div></div>
+ </section>
+ <section class="catalog" id="catalogo" aria-label="Catálogo de referencias">
+  <div class="catalog-tools"><div class="search-wrap"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Buscá un trabajo, estudio o recurso…" aria-label="Buscar referencias"><kbd>/</kbd></div><label class="source-filter"><span class="sr-only">Plataforma</span><select id="platform"><option value="">Todas las fuentes</option><option value="behance">Con Behance</option><option value="official">Estudios e instituciones</option></select></label><label><span class="sr-only">Orden</span><select id="sort"><option value="curated">Orden de selección</option><option value="az">Nombre A–Z</option><option value="studio">Por estudio</option></select></label></div>
+  <div class="resource-label">QUÉ RECURSO QUERÉS MIRAR</div><div class="chips" id="tags" role="group" aria-label="Filtrar por recurso gráfico"></div>
+  <div class="results-line"><div><h2 id="section-title">Todas las referencias</h2><p id="result-count" role="status" aria-live="polite">Cargando selección…</p></div><button id="clear" hidden>Limpiar filtros ×</button></div>
+  <div id="active-filters" class="active-filters"></div>
+  <div id="grid" class="grid"></div>
+  <div id="empty" class="empty" hidden><span>↗</span><h3>No encontramos coincidencias.</h3><p>Probá con otro recurso o limpiá los filtros.</p><button id="empty-clear">Ver toda la selección</button></div>
+  <div class="load-wrap"><button id="load-more" hidden>Ver más referencias <span>↓</span></button></div>
+  <p class="favorites-note" id="favorites-note" hidden>Los favoritos se guardan en este navegador y dispositivo.</p>
+ </section>
+ <footer><div class="footer-word">rivera<span>↗</span></div><p>Banco de referencias · Equipo de identidad de marca ciudad<br>Imágenes y trabajos: sus autorías originales. Lecturas para Rivera: análisis de diseño.</p><a href="#">Volver arriba ↑</a></footer>
+</main>
+<dialog id="detail" aria-labelledby="detail-title"><div class="detail-top"><span id="detail-index"></span><button class="close" id="detail-close" aria-label="Cerrar ficha">×</button></div><div class="detail-layout"><div class="detail-visual"><div class="main-image-wrap"><img id="detail-image" src="" alt=""><button id="image-prev" class="image-arrow prev" aria-label="Imagen anterior">←</button><button id="image-next" class="image-arrow next" aria-label="Imagen siguiente">→</button><button id="image-zoom" class="zoom-button" aria-label="Ampliar imagen">⤢</button></div><div id="thumbnails" class="thumbnails"></div><p class="image-caption">Vista del trabajo original · Créditos en la fuente</p></div><div class="detail-copy"><p id="detail-studio" class="eyebrow"></p><h2 id="detail-title"></h2><div id="detail-tags" class="detail-tags"></div><p id="detail-description" class="detail-description"></p><div class="reading"><span>01 / QUÉ MIRAR</span><p id="detail-look"></p></div><div class="reading rivera-reading"><span>02 / PARA RIVERA</span><p id="detail-rivera"></p><div id="detail-attributes"></div></div><p class="interpretation">La relación con Rivera es una propuesta de lectura, no una intención atribuida al estudio.</p><div class="detail-actions"><a id="detail-source" target="_blank" rel="noopener noreferrer">Ver proyecto completo ↗</a><a id="detail-behance" target="_blank" rel="noopener noreferrer" hidden>Ver en Behance ↗</a><button id="detail-favorite">♡ Guardar favorito</button></div><p class="verified">Fuente consultada · 20 de octubre de 2026</p></div></div></dialog>
+<dialog id="zoom-dialog" aria-label="Imagen ampliada"><button class="close" id="zoom-close" aria-label="Cerrar imagen ampliada">×</button><img id="zoom-image" src="" alt=""></dialog>
+<dialog id="about" aria-labelledby="about-title"><button class="close" id="about-close" aria-label="Cerrar información">×</button><p class="eyebrow">CRITERIO DE SELECCIÓN</p><h2 id="about-title">Referencias para tomar decisiones.</h2><p>Este banco reúne proyectos de estudios, instituciones y publicaciones de diseño, seleccionados por su relación con los moodboards de Rivera.</p><p><strong>Editorial y modular:</strong> ilustración naturalista, fotografía, bloques de color, grillas y tipografía de gran presencia.</p><p><strong>Fluido y conectado:</strong> líneas continuas, bucles, enlaces, formas orgánicas y gestos de encuentro.</p><p>Los filtros y las notas proponen maneras de observar cada caso. Un mismo trabajo puede aportar a varios atributos. La selección incluye identidades de distintas épocas; no presupone que todas sigan vigentes hoy.</p><p>Las vistas previas corresponden a los trabajos citados. Las imágenes conservan sus autorías y no constituyen recursos gráficos propios de Rivera. Los enlaces llevan al contexto y a los créditos completos.</p><p class="muted">Favoritos: se guardan localmente. El botón «Copiar enlace» conserva los filtros compartibles. La misma dirección principal reúne las futuras ampliaciones del banco.</p></dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+<script src="data.js"></script><script src="app.js"></script>
+</body></html>
