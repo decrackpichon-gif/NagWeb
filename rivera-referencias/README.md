@@ -39,3 +39,7 @@ La configuración `git.deploymentEnabled: false` evita despliegues automáticos 
 `public/index.html` se puede abrir directamente porque los datos están en un archivo JavaScript local. Para una vista equivalente a producción, servir la carpeta `public/` con un servidor estático. No hay dependencias que instalar.
 
 Los favoritos pertenecen al navegador y dispositivo; no son una selección compartida del equipo. «Copiar enlace» conserva filtros y búsquedas en la URL. Las fichas admiten enlaces directos con el parámetro `ref`.
+
+## Corrección de acceso a todas las referencias · 20/10/2026
+
+Se eliminó la paginación que mostraba sólo 18 tarjetas. El catálogo completo se presenta al entrar; las imágenes siguen cargándose de forma diferida. Se agregó «Referencias de este chat» con los nueve casos de la primera selección: Kew, Garden Museum, Natural History Museum, Buff, Pen Store, Mind, Stride, Porto y MIT Media Lab. La navegación principal limpia filtros previos para evitar que «Explorar todo» mantenga resultados ocultos. Conservar todos los casos del chat al ampliar el banco.
