@@ -14,7 +14,8 @@ function argument(name) {
 }
 const base=path.resolve(argument("vault")||"react-gallery-build");
 const out=path.resolve(argument("out")||"resource-browser/react-previews");
-const counts={"magicui":20,"shadcn":20,"motion-primitives":20};
+// All verified components that render are published (vault has 68 / 54 / 33).
+const counts={"magicui":80,"shadcn":80,"motion-primitives":80};
 const safeId=id=>/^(?:magicui|shadcn|motion-primitives):[a-z0-9_-]+$/.test(id);
 const sha=bytes=>createHash("sha256").update(bytes).digest("hex");
 const catalog=JSON.parse(await readFile(path.join(base,"catalog.json"),"utf8"));

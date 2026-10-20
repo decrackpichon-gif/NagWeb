@@ -22,7 +22,7 @@ jobs:
   build-real-react-previews:
     name: Compile, render and publish audited offline React previews
     runs-on: ubuntu-latest
-    timeout-minutes: 28
+    timeout-minutes: 60
     steps:
       - name: Checkout exclusive NAGWEB 05 branch
         uses: actions/checkout@v4
@@ -48,10 +48,10 @@ jobs:
         run: >-
           node src/vault-cli.mjs
           --sources=shadcn,magicui,motion-primitives
-          --limit=23
+          --limit=80
           --out=react-gallery-build
           --react-previews
-          --react-preview-limit=69
+          --react-preview-limit=240
 
       - name: Publish only components that render in the opaque sandbox
         working-directory: tools/resource-etl
