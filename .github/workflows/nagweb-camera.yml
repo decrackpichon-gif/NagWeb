@@ -1,0 +1,34 @@
+name: NagWeb camera smoke
+
+on:
+  push:
+    branches:
+      - feat/scroll-camera-v1
+  workflow_dispatch:
+
+jobs:
+  camera-browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser driver
+        run: npm install --no-save puppeteer-core
+      - name: Start static server
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/nagweb-http.log 2>&1 &
+          echo $! > /tmp/nagweb-http.pid
+          sleep 2
+      - name: Run camera smoke
+        run: node .github/nagweb-camera-smoke.mjs
+      - name: Save camera visual checks
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scroll-camera-visuals
+          path: /tmp/nagweb-camera-visuals
+          if-no-files-found: ignore
+          retention-days: 7

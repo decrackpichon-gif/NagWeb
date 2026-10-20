@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html><head><script src="js/nagweb-spatial-bloom.js"></script><script src="js/nagweb-spatial-renderer.js"></script><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* ===== Scrollcraft 1.3 · variantes agrupadas en Creativos e Interactivos + Baúl de Recuerdos ===== */
 .ip-tile{position:relative;cursor:pointer}
 .ip-tile .ip-vault-btn{position:absolute;right:8px;top:8px;width:27px;height:27px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(12,12,16,.76);color:#d9d9e2;display:grid;place-items:center;opacity:0;transform:translateY(-2px);transition:opacity .15s,transform .15s,background .15s,color .15s,border-color .15s;z-index:3;backdrop-filter:blur(8px);padding:0}
@@ -15566,7 +15566,7 @@ function generateSite(p, edit, external, mobileView){
     outline:1.5px dashed rgba(120,180,255,.75);outline-offset:0;border-radius:10px}
   .sc .el.obj-anchor.sc-sel,.sc.free .el.obj-anchor.sc-sel{outline:1.5px solid #FFD34A}
   .sc-proxy-light{border-color:rgba(255,211,74,.85);border-radius:50%}
-  .sc-proxy.sc-sel{border-style:solid;border-color:#FFD34A}
+  .sc-proxy.sc-sel{border-style:solid;border-color:#FFD34A;z-index:43}
   .sc-h{position:absolute;width:13px;height:13px;background:#5B8CFF;border:2px solid #fff;border-radius:4px;z-index:44}
   .sc-h.br{right:-7px;bottom:-7px;cursor:nwse-resize}
   .sc-h.rot{left:50%;top:-26px;margin-left:-6px;border-radius:50%;background:#FFD34A;cursor:grab}
@@ -15912,7 +15912,7 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
   var INERTIA = ${INERTIA ? 'true' : 'false'};
   var CURSOR = ${CURSOR ? 'true' : 'false'};
   var BLOOM = ${BLOOM ? 'true' : 'false'};
-  var BLOOM_STRENGTH = ${p.bloomStrength || 1.2};
+  var BLOOM_STRENGTH = ${p.bloomStrength != null && p.bloomStrength !== '' && Number.isFinite(+p.bloomStrength) ? Math.max(0,+p.bloomStrength) : 1.2};
   var SECS = ${data};
   var OBJS = ${objData};
   var LIGHTS = ${lightData};
@@ -16018,6 +16018,7 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
   /* ===================== escena ===================== */
   var canvas = document.getElementById('scene');
   var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+  var disposed3D = false, disposedResources = new WeakSet(), retiredMaterials = [];
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.outputEncoding = THREE.sRGBEncoding;
@@ -16359,7 +16360,7 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
      el sitio, pero las superficies metálicas y pulidas lo reflejan. Se arma con
      formas simples (un fondo degradé y paneles de luz tipo softbox), así no hay
      que descargar ninguna imagen HDRI. */
-  var ENV_CACHE = {}, pmrem = null;
+  var ENV_CACHE = {}, envTargets = [], pmrem = null;
   function envGradient(top, mid, bot){
     var g = new THREE.SphereGeometry(50, 48, 24);
     var pos = g.attributes.position, cols = [], ct = new THREE.Color(top), cm = new THREE.Color(mid), cb = new THREE.Color(bot), c = new THREE.Color();
@@ -16408,7 +16409,8 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
       envPanel(sc, 30, 2, 0, -2, -22, '#FFFFFF', 1.2);
     }
     if(!pmrem) pmrem = new THREE.PMREMGenerator(renderer);
-    var tex = pmrem.fromScene(sc, .02).texture;
+    var target = pmrem.fromScene(sc, .02), tex = target.texture;
+    envTargets.push(target);
     sc.traverse(function(n){ if(n.geometry) n.geometry.dispose(); if(n.material) n.material.dispose(); });
     ENV_CACHE[kind] = tex;
     return tex;
@@ -16451,7 +16453,23 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
     return g;
   }
 
+  function disposeResource(resource){
+    if(!resource || !resource.dispose || disposedResources.has(resource)) return;
+    disposedResources.add(resource);resource.dispose();
+  }
+  function disposeMaterial(material){
+    (Array.isArray(material) ? material : [material]).forEach(function(mt){
+      if(!mt) return;
+      Object.keys(mt).forEach(function(key){if(mt[key] && mt[key].isTexture) disposeResource(mt[key]);});
+      disposeResource(mt);
+    });
+  }
+  function disposeTree(root){
+    if(!root) return;
+    root.traverse(function(n){disposeResource(n.geometry);disposeMaterial(n.material);});
+  }
   function fitGLTF(gltf, o, group){
+    if(disposed3D){(gltf.scenes || [gltf.scene]).forEach(disposeTree);return;}
     var root = gltf.scene;
     var box = new THREE.Box3().setFromObject(root);
     var size = box.getSize(new THREE.Vector3()).length() || 1;
@@ -16459,7 +16477,7 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
     root.position.sub(center);
     root.scale.setScalar(3.2 / size);
     if(!o.keepMat){
-      root.traverse(function(n){ if(n.isMesh) n.material = matFor(o); });
+      root.traverse(function(n){ if(n.isMesh){retiredMaterials.push(n.material);n.material = matFor(o);} });
     } else {
       root.traverse(function(n){
         if(!n.isMesh || !n.material) return;
@@ -16479,18 +16497,18 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
   function loadModel(o, group){
     var m = MODELS[o.modelId];
     if(!m){ group.add(new THREE.Mesh(new THREE.IcosahedronGeometry(1.4,0), matFor(o))); return; }
-    var fallback = function(){ group.add(new THREE.Mesh(new THREE.IcosahedronGeometry(1.4,0), matFor(o))); };
+    var fallback = function(){ if(!disposed3D) group.add(new THREE.Mesh(new THREE.IcosahedronGeometry(1.4,0), matFor(o))); };
 
     if(m.url){
       if(m.f === 'obj'){
         fetch(m.url).then(function(r){ return r.text(); })
-          .then(function(txt){ group.add(new THREE.Mesh(parseOBJ(txt), matFor(o))); })
+          .then(function(txt){ if(!disposed3D) group.add(new THREE.Mesh(parseOBJ(txt), matFor(o))); })
           .catch(fallback);
         return;
       }
       if(m.f === 'stl'){
         fetch(m.url).then(function(r){ return r.arrayBuffer(); })
-          .then(function(buf){ group.add(new THREE.Mesh(parseSTL(buf), matFor(o))); })
+          .then(function(buf){ if(!disposed3D) group.add(new THREE.Mesh(parseSTL(buf), matFor(o))); })
           .catch(fallback);
         return;
       }
@@ -16605,12 +16623,31 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
   var lightObjs = LIGHTS.map(function(o){
     var lt = buildLight(o);
     lt.userData.o = o;
+    lt.userData.sectionId = SECS[o.sec].id;
+    lt.userData.sectionOffsetY = -o.sec * SPACING;
     lt.userData.baseX = o.offX;
     lt.userData.baseY = -o.sec * SPACING + o.offY;
     lt.userData.baseZ = o.offZ;
     lt.position.set(lt.userData.baseX, lt.userData.baseY, lt.userData.baseZ);
     scene.add(lt);
     return lt;
+  });
+
+  var createBloom = (${window.NAGWEB_CREATE_SPATIAL_BLOOM.toString()});
+  var spatial3D = (${window.NAGWEB_CREATE_SPATIAL_RENDERER.toString()})(THREE, renderer, scene, objects, scene.children.filter(function(n){return n.isLight;}), {bloom:BLOOM,strength:BLOOM_STRENGTH,createBloom:createBloom});
+  function connectSpatial3D(ev){
+    if(disposed3D) return;
+    spatial3D.connect(ev.detail.camera, ev.detail.stages);
+  }
+  window.addEventListener('nagweb:spatial-ready', connectSpatial3D);
+  window.addEventListener('pagehide', function(ev){
+    if(ev.persisted || disposed3D) return;
+    disposed3D=true;gsap.ticker.remove(tick);
+    window.removeEventListener('resize', resize3D);
+    window.removeEventListener('nagweb:spatial-ready', connectSpatial3D);
+    spatial3D.destroy();
+    if(legacyBloom){legacyBloom.dispose();legacyBloom=null;}
+    disposeTree(scene);retiredMaterials.forEach(disposeMaterial);envTargets.forEach(disposeResource);disposeResource(pmrem);renderer.dispose();
   });
 
   /* la cámara viaja de sección en sección, siguiendo el camino que definiste
@@ -16884,6 +16921,7 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
   if(animate){
     objects.forEach(function(g){
       var o = g.userData.o, amt = o.amount, secEl = sections[o.sec];
+      if(o.nwSpatialDirected && g.userData.holder) return;
       var afterHorizontal = o.sec > 0 && SECS[o.sec - 1].layout === 'horizontal';
       var start = afterHorizontal ? 'top 72%' : 'top bottom';
 
@@ -16956,19 +16994,7 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
   }` : ''}
 
   /* ===================== resplandor (bloom) ===================== */
-  var composer = null;
-  if(BLOOM){
-    try{
-      var renderPass = new THREE.RenderPass(scene, camera);
-      var bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), BLOOM_STRENGTH, .4, .15);
-      var copyPass = new THREE.ShaderPass(THREE.CopyShader);
-      copyPass.renderToScreen = true;
-      composer = new THREE.EffectComposer(renderer);
-      composer.addPass(renderPass);
-      composer.addPass(bloomPass);
-      composer.addPass(copyPass);
-    }catch(e){ composer = null; }
-  }
+  var legacyBloom = BLOOM ? createBloom(THREE, renderer, scene, camera, BLOOM_STRENGTH) : null;
 
   /* ===================== girar objetos con el mouse ===================== */
   /* Girar con el mouse: el lienzo 3D está DETRÁS de la página, así que los clics
@@ -16976,7 +17002,7 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
      cae sobre un objeto giratorio, lo tomamos nosotros. */
   var spinStep = null;
   if(DRAGGABLE.length && !EDIT){
-    var dragTarget = null, dragLX = 0, dragLY = 0, dragLT = 0, dragAvg = 16;
+    var dragTarget = null, dragPointer = null, dragLX = 0, dragLY = 0, dragLT = 0, dragAvg = 16;
     DRAGGABLE.forEach(function(g){ g.userData.spinVX = 0; g.userData.spinVY = 0; });
     function dragParams(g){
       var o = g.userData.o;
@@ -16987,7 +17013,9 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
     var lastSpin = performance.now();
     spinStep = function(){
       var now = performance.now(), dt = Math.min(now - lastSpin, 50); lastSpin = now;
+      if(dragTarget && spatial3D.owns(dragTarget) && !spatial3D.interactive(dragTarget)) endDrag({pointerId:dragPointer,type:'pointercancel'});
       DRAGGABLE.forEach(function(g){
+        if(spatial3D.owns(g) && !spatial3D.interactive(g)){g.userData.spinVX=0;g.userData.spinVY=0;return;}
         if(g === dragTarget) return;
         var vx = g.userData.spinVX, vy = g.userData.spinVY;
         if(!vx && !vy) return;
@@ -17004,37 +17032,23 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
     };
     /* se agarra el objeto si el puntero cae dentro de su silueta aproximada
        (así también funciona con formas con agujeros, anillos o nubes de puntos) */
-    var _pb = new THREE.Box3(), _ps = new THREE.Sphere(), _pc = new THREE.Vector3(), _pe = new THREE.Vector3(), _pr = new THREE.Vector3();
     function pickDraggable(cx, cy){
-      camera.updateMatrixWorld();
-      _pr.set(1, 0, 0).applyQuaternion(camera.quaternion);
-      var best = null, bestD = Infinity, W = window.innerWidth, H = window.innerHeight;
-      DRAGGABLE.forEach(function(g){
-        if(!g.visible || (g.userData.holder && !g.userData.holder.visible)) return;
-        _pb.setFromObject(g); if(_pb.isEmpty()) return;
-        _pb.getBoundingSphere(_ps);
-        _pc.copy(_ps.center).project(camera);
-        if(_pc.z > 1) return;
-        _pe.copy(_ps.center).addScaledVector(_pr, _ps.radius).project(camera);
-        var sx = (_pc.x * .5 + .5) * W, sy = (-_pc.y * .5 + .5) * H;
-        var rad = Math.abs((_pe.x - _pc.x) * .5 * W) * .85;
-        var d = Math.hypot(cx - sx, cy - sy);
-        if(d <= rad && d < bestD){ bestD = d; best = g; }
-      });
-      return best;
+      return spatial3D.pick(DRAGGABLE, cx, cy, camera);
     }
     function overInteractive(t){ return t && t.closest && t.closest('a,button,input,textarea,select,[data-magnetic]'); }
-    window.addEventListener('pointerdown', function(ev){
-      if(overInteractive(ev.target)) return;
+    function spinDown(ev){
+      if(ev.button !== 0 || dragTarget || overInteractive(ev.target)) return;
       var hit = pickDraggable(ev.clientX, ev.clientY);
       if(!hit) return;
-      dragTarget = hit; dragLX = ev.clientX; dragLY = ev.clientY; dragLT = performance.now();
+      dragTarget = hit; dragPointer = ev.pointerId; dragLX = ev.clientX; dragLY = ev.clientY; dragLT = performance.now();
       hit.userData.spinVX = 0; hit.userData.spinVY = 0; dragAvg = 16;
       ev.preventDefault();
       if(!CURSOR) document.documentElement.style.cursor = 'grabbing';
-    }, { passive:false });
-    window.addEventListener('pointermove', function(ev){
+    }
+    function spinMove(ev){
       if(dragTarget){
+        if(spatial3D.owns(dragTarget) && !spatial3D.interactive(dragTarget)){endDrag({pointerId:dragPointer,type:'pointercancel'});return;}
+        if(ev.pointerId !== dragPointer) return;
         var pr = dragParams(dragTarget), now = performance.now(), dt = Math.max(now - dragLT, 1);
         var ry = pr.axis === 'x' ? 0 : (ev.clientX - dragLX) * pr.sens;
         var rx = pr.axis === 'y' ? 0 : (ev.clientY - dragLY) * pr.sens;
@@ -17051,29 +17065,40 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
       if(!CURSOR && ev.pointerType === 'mouse'){
         document.documentElement.style.cursor = (!overInteractive(ev.target) && pickDraggable(ev.clientX, ev.clientY)) ? 'grab' : '';
       }
-    });
-    function endDrag(){
-      if(!dragTarget) return;
+    }
+    function endDrag(ev){
+      if(!dragTarget || (ev && ev.pointerId !== dragPointer)) return;
       /* si lo mantuviste quieto un momento antes de soltar, no sale disparado */
       if(performance.now() - dragLT > Math.max(90, dragAvg * 3)){ dragTarget.userData.spinVX = 0; dragTarget.userData.spinVY = 0; }
-      if(dragParams(dragTarget).inertia <= 0){ dragTarget.userData.spinVX = 0; dragTarget.userData.spinVY = 0; }
-      dragTarget = null;
+      if(!ev || ev.type === 'pointercancel' || dragParams(dragTarget).inertia <= 0){ dragTarget.userData.spinVX = 0; dragTarget.userData.spinVY = 0; }
+      dragTarget = null; dragPointer = null;
       lastSpin = performance.now();
       if(!CURSOR) document.documentElement.style.cursor = '';
     }
-    window.addEventListener('pointerup', endDrag);
-    window.addEventListener('pointercancel', endDrag);
+    function blurSpin(){endDrag();DRAGGABLE.forEach(function(g){g.userData.spinVX=0;g.userData.spinVY=0;});}
+    function hideSpin(ev){
+      blurSpin();
+      if(ev.persisted) return;
+      window.removeEventListener('pointerdown',spinDown);window.removeEventListener('pointermove',spinMove);
+      window.removeEventListener('pointerup',endDrag);window.removeEventListener('pointercancel',endDrag);
+      window.removeEventListener('blur',blurSpin);window.removeEventListener('pagehide',hideSpin);spinStep=null;
+    }
+    window.addEventListener('pointerdown',spinDown,{passive:false});window.addEventListener('pointermove',spinMove);
+    window.addEventListener('pointerup',endDrag);window.addEventListener('pointercancel',endDrag);
+    window.addEventListener('blur',blurSpin);window.addEventListener('pagehide',hideSpin);
   }
 
   /* ===================== render ===================== */
   var clock = new THREE.Clock();
   function tick(){
+    if(disposed3D) return;
     var t = clock.getElapsedTime();
     camera.updateMatrixWorld();
-    objects.forEach(function(g){ if(g.userData.holder) placeAnchored(g); });
+    objects.forEach(function(g){ if(g.userData.holder && !spatial3D.owns(g)) placeAnchored(g); });
     if(spinStep) spinStep();
     objects.forEach(function(g){
       var o = g.userData.o;
+      if(o.nwSpatialDirected && g.userData.holder) return;
       if(animate && o.motion !== 'still' && o.motion !== 'spin' && o.motion !== 'tumble' && o.motion !== 'flip') g.rotation.y += .0016;
       g.position.y = o.motion === 'wave' ? g.position.y : (g.userData.baseY + (animate ? Math.sin(t*.6 + o.sec)*.12 : 0));
       if(o.shape === 'wave'){
@@ -17089,18 +17114,24 @@ ${modalsHTML ? modalsHTML + '\n' : ''}${navHTML ? navHTML + '\n' : ''}${p.progre
         }
       }
     });
+    spatial3D.render(function(){
+      if(legacyBloom){
+        renderer.clear();
+        try{legacyBloom.render(window.innerWidth, window.innerHeight);}catch(_){legacyBloom.dispose();legacyBloom=null;renderer.render(scene,camera);}
+      }else renderer.render(scene, camera);
+    });
     if(EDIT) syncProxies();
-    if(composer) composer.render();
-    else renderer.render(scene, camera);
   }
 
-  window.addEventListener('resize', function(){
+  function resize3D(){
+    if(disposed3D) return;
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
-    if(composer){ composer.setSize(window.innerWidth, window.innerHeight); }
+    // Bloom buffers resize lazily on the next render using current pixel ratio.
     ScrollTrigger.refresh();
-  });
+  }
+  window.addEventListener('resize', resize3D);
 
   /* ===================== modo diseño (no se exporta) ===================== */
   var proxies = [];
@@ -17224,6 +17255,9 @@ ${edit ? `
       var relTo = node.classList.contains('obj-anchor') ? node.parentElement
         : ((node.parentElement && node.parentElement.closest('.container-box')) || node.closest('.sc') || node.closest('.sc-fixed-layer'));
       var rect = relTo.getBoundingClientRect();
+      var anchorObject = objects.find(function(g){return g.userData.anchorEl === node && spatial3D.owns(g);});
+      var anchorStart = anchorObject ? spatial3D.anchorPoint(anchorObject,ev.clientX,ev.clientY) : null;
+      if(anchorObject && !anchorStart) return;
       var x0 = parseFloat(node.dataset.x), y0 = parseFloat(node.dataset.y);
       var w0 = parseFloat(node.dataset.w), r0 = parseFloat(node.dataset.rot) || 0;
       var sx = ev.clientX, sy = ev.clientY;
@@ -17239,6 +17273,12 @@ ${edit ? `
         if(Math.abs(e.clientX - sx) < 1 && Math.abs(e.clientY - sy) < 1) return;
         changed = true;
         var dx = (e.clientX - sx) / rect.width * 100, dy = (e.clientY - sy) / rect.height * 100;
+        if(anchorObject&&!spatial3D.interactive(anchorObject)){up();return;}
+        if(anchorObject&&e.pointerId!==ev.pointerId)return;
+        if(anchorStart){
+          var point = spatial3D.anchorPoint(anchorObject,e.clientX,e.clientY);if(!point)return;
+          dx = (point.x-anchorStart.x)/relTo.clientWidth*100;dy = -(point.y-anchorStart.y)/relTo.clientHeight*100;
+        }
         if(handle === 'move'){
           if(!free){ showTip(inAutoLayout(node) ? 'Está en un auto layout: se acomoda solo. Cambiá el orden arrastrándolo en la lista de elementos (columna derecha).'
                                                 : 'Esta sección usa la disposición apilada. Cambiala a "lienzo libre" en Sección, o metela dentro de un contenedor.'); return; }
@@ -17262,25 +17302,41 @@ ${edit ? `
           showTip('rotación ' + out.rot + '°');
         }
       }
-      function up(){
+      function finishAnchor(){up();}
+      function up(e){
+        if(anchorObject&&e&&e.pointerId!==ev.pointerId)return;
         window.removeEventListener('pointermove', move);
         window.removeEventListener('pointerup', up);
+        window.removeEventListener('pointercancel', up);window.removeEventListener('blur',finishAnchor);
         hideTip();
         if(changed) post({ type:'change', id:id, x:out.x, y:out.y, w:out.w, rot:out.rot, h:out.h, ratio:out.ratio });
       }
       window.addEventListener('pointermove', move);
       window.addEventListener('pointerup', up);
+      if(anchorObject){window.addEventListener('pointercancel',up);window.addEventListener('blur',finishAnchor);}
     }
 
     /* --- objetos 3D y luces: se manipulan con un recuadro flotante --- */
-    objects.filter(function(g){ return !g.userData.holder; }).concat(lightObjs).forEach(function(g){
+    objects.concat(lightObjs).forEach(function(g){
       var isLight = g.userData.o.type === 'light3d';
       var node = document.createElement('div');
       node.className = 'sc-proxy' + (isLight ? ' sc-proxy-light' : '');
+      node.dataset.id = g.userData.o.id;
+      var anchor = g.userData.holder ? g.userData.anchorEl : null;
+      if(anchor){node.style.display='none';node.style.boxSizing='border-box';}
       document.body.appendChild(node);
-      proxies.push({ id:g.userData.o.id, node:node, g:g });
+      proxies.push({ id:g.userData.o.id, node:node, g:g, anchor:anchor, anchorVisibility:anchor?anchor.style.visibility:'' });
 
       node.addEventListener('pointerdown', function(ev){
+        if(anchor){
+          if(ev.button!==0||!spatial3D.owns(g))return;
+          var handle=(ev.target.dataset&&ev.target.dataset.handle)||'move';
+          var picked=handle==='move'?spatial3D.pick(objects.filter(function(q){return spatial3D.owns(q);}),ev.clientX,ev.clientY,camera):null;
+          var target=picked?picked.userData.anchorEl:anchor;
+          if(ev.shiftKey){ev.preventDefault();ev.stopPropagation();post({type:'select',id:target.dataset.id,add:true});return;}
+          if(target.classList.contains('sc-locked')){ev.preventDefault();ev.stopPropagation();post({type:'select',id:target.dataset.id});select(target.dataset.id);return;}
+          grab(ev,target,handle);return;
+        }
         ev.preventDefault();
         var o = g.userData.o;
         if(ev.shiftKey){ post({ type:'select', id:o.id, add:true }); return; }
@@ -17289,6 +17345,9 @@ ${edit ? `
 
         var sx = ev.clientX, sy = ev.clientY;
         var ox = o.offX, oy = o.offY, sc0 = o.scale || 1, in0 = o.intensity || 1;
+        var spatialLight = isLight ? spatial3D.view(g) : null;
+        var lightStart = spatialLight ? spatial3D.lightPoint(g, sx, sy) : null;
+        if(spatialLight && !lightStart) return;
         var dist = camera.position.z - g.position.z;
         var visH = 2 * Math.tan(25 * Math.PI / 180) * Math.max(dist, .5);
         var perPx = visH / window.innerHeight;
@@ -17306,11 +17365,16 @@ ${edit ? `
               showTip('tamaño ' + out.scale.toFixed(2) + '×');
             }
           } else {
-            out.offX = ox + (e.clientX - sx) * perPx;
-            out.offY = oy - (e.clientY - sy) * perPx;
+            if(lightStart){
+              var point = spatial3D.lightPoint(g, e.clientX, e.clientY);if(!point) return;
+              out.offX = ox + point.x - lightStart.x;out.offY = oy + point.y - lightStart.y;
+            }else{
+              out.offX = ox + (e.clientX - sx) * perPx;
+              out.offY = oy - (e.clientY - sy) * perPx;
+            }
             if(SNAP){ out.offX = Math.round(out.offX * 4) / 4; out.offY = Math.round(out.offY * 4) / 4; }
-            g.userData.baseX = out.offX; g.userData.baseY = -o.sec * 7 + out.offY;
-            g.position.x = out.offX;
+            g.userData.baseX = out.offX; g.userData.baseY = -o.sec * SPACING + out.offY;
+            g.position.x = out.offX;if(isLight) g.position.y = g.userData.baseY;
             showTip('x ' + out.offX.toFixed(2) + '  ·  y ' + out.offY.toFixed(2));
           }
         }
@@ -17326,17 +17390,42 @@ ${edit ? `
       });
     });
 
-    var v3 = new THREE.Vector3();
+    var v3 = new THREE.Vector3(),proxyBox=new THREE.Box3(),proxyPoint=new THREE.Vector3();
+    function anchorProxyBounds(g,v){
+      if(!spatial3D.interactive(g))return null;
+      proxyBox.setFromObject(g);if(proxyBox.isEmpty())return null;
+      var left=Infinity,top=Infinity,right=-Infinity,bottom=-Infinity;
+      [proxyBox.min.x,proxyBox.max.x].forEach(function(x){[proxyBox.min.y,proxyBox.max.y].forEach(function(y){[proxyBox.min.z,proxyBox.max.z].forEach(function(z){
+        proxyPoint.set(x,y,z).project(v.camera);
+        if(!Number.isFinite(proxyPoint.x)||!Number.isFinite(proxyPoint.y)||proxyPoint.z<-1||proxyPoint.z>1)return;
+        var px=v.rect.left+(proxyPoint.x*.5+.5)*v.rect.width,py=v.rect.top+(-proxyPoint.y*.5+.5)*v.rect.height;
+        left=Math.min(left,px);right=Math.max(right,px);top=Math.min(top,py);bottom=Math.max(bottom,py);
+      });});});
+      left=Math.max(0,v.rect.left,left);right=Math.min(window.innerWidth,v.rect.left+v.rect.width,right);
+      top=Math.max(0,v.rect.top,top);bottom=Math.min(window.innerHeight,v.rect.top+v.rect.height,bottom);
+      return right>left&&bottom>top?{left:left,top:top,width:right-left,height:bottom-top}:null;
+    }
     syncProxies = function(){
       var h = window.innerHeight, w = window.innerWidth;
       proxies.forEach(function(pr){
         var g = pr.g;
-        v3.copy(g.position).project(camera);
-        var px = (v3.x * .5 + .5) * w, py = (-v3.y * .5 + .5) * h;
+        var spatialView = spatial3D.view(g), proxyCamera = spatialView ? spatialView.camera : camera;
+        if(pr.anchor){
+          var active=spatial3D.owns(g)&&!!spatialView;
+          pr.anchor.style.visibility=active?'hidden':pr.anchorVisibility;
+          var bounds=active?anchorProxyBounds(g,spatialView):null;
+          pr.node.style.display=bounds?'block':'none';
+          if(bounds){pr.node.style.left=bounds.left+'px';pr.node.style.top=bounds.top+'px';pr.node.style.width=bounds.width+'px';pr.node.style.height=bounds.height+'px';}
+          return;
+        }
+        var proxyRect = spatialView ? spatialView.rect : {left:0,top:0,width:w,height:h};
+        if(spatialView && spatialView.object) spatialView.object.getWorldPosition(v3);else v3.copy(g.position);
+        v3.project(proxyCamera);
+        var px = proxyRect.left + (v3.x * .5 + .5) * proxyRect.width, py = proxyRect.top + (-v3.y * .5 + .5) * proxyRect.height;
         var dist = Math.max(camera.position.z - g.position.z, .5);
         var visH = 2 * Math.tan(25 * Math.PI / 180) * dist;
-        var size = Math.max(46, (3.4 * g.scale.x / visH) * h);
-        var vis = v3.z < 1 && py > -size && py < h + size;
+        var size = spatialView ? 46 : Math.max(46, (3.4 * g.scale.x / visH) * h);
+        var vis = v3.z >= -1 && v3.z < 1 && py > -size && py < h + size && (!spatialView || (proxyRect.bottom > 0 && proxyRect.top < h));
         pr.node.style.display = vis ? 'block' : 'none';
         pr.node.style.width = size + 'px';
         pr.node.style.height = size + 'px';
@@ -17626,8 +17715,9 @@ ${edit ? `
     /* --- menú contextual, zoom con Ctrl + rueda, reglas, enlaces --- */
     document.addEventListener('contextmenu', function(ev){
       ev.preventDefault();
-      var n = ev.target.closest && ev.target.closest('.el[data-id]');
-      post({ type:'ctx', x:ev.clientX, y:ev.clientY, id: n ? n.dataset.id : '' });
+      var n = ev.target.closest && ev.target.closest('.el[data-id],.sc-proxy[data-id]');
+      var pr = proxies.find(function(p){return p.node===n;}),picked=pr&&pr.anchor?spatial3D.pick(objects.filter(function(g){return spatial3D.owns(g);}),ev.clientX,ev.clientY,camera):null;
+      post({ type:'ctx', x:ev.clientX, y:ev.clientY, id:picked?picked.userData.o.id:(n?n.dataset.id:'') });
     });
     window.addEventListener('wheel', function(ev){
       if(ev.ctrlKey || ev.metaKey){ ev.preventDefault(); post({ type:'zoomwheel', dy:ev.deltaY }); }
@@ -22869,6 +22959,7 @@ renderPages(); refresh(false); renderPreview();
 <script src="js/nagweb-feedback-v15.js"></script>
 <script src="js/nagweb-workspace-v16.js"></script>
 <script src="js/nagweb-story-model.js"></script>
+<script src="js/nagweb-scroll-camera.js"></script>
 <script src="js/nagweb-scroll-director-v16.js"></script>
 <script src="js/nagweb-story-editor.js"></script>
 <script src="js/nagweb-behaviors-v2.js"></script>

@@ -1,0 +1,1112 @@
+# Cámara de escena: pista, mapa espacial y planos de profundidad
+
+Rama: `feat/scroll-camera-v1`.
+Base: `feat/storytelling-engine-v2` en `ed98713506b669bed1f0fedaf5731594880ff577`.
+No integrar automáticamente con main, Motion Lab ni interaction-engine.
+
+En el panel de escena, activar Director de scroll y luego Cámara 3D.
+La cámara está apagada por defecto; apagarla conserva todos los encuadres.
+Elegir un momento con Previsualizar momento y pulsar Agregar encuadre aquí.
+Seleccionar su punto ◆ en la pista para editar X/Y/Z, orientación, porcentaje
+y ritmo hacia el siguiente. La pista tiene clic para recorrer y una barra
+accesible para elegir el progreso. Arrastrar un punto cambia su momento al
+soltarlo; Escape, cancelación del puntero o pérdida de captura anulan el gesto
+sin guardar cambios. Las flechas ajustan 1%; Shift + flecha ajusta 10%.
+Un arrastre confirmado produce una sola entrada de deshacer.
+Orientación: inclinar arriba/abajo (X), mirar izquierda/derecha (Y) y girar
+el horizonte (Z). Los ángulos admiten vueltas completas: 0 → 360 recorre
+una vuelta, sin acortar el recorrido. Cada ángulo se limita a ±3600°.
+Al agregar un encuadre se captura también su orientación interpolada.
+Los encuadres antiguos usan orientación cero, conservando su movimiento.
+Los encuadres se ordenan por porcentaje. No se permite reemplazar otro encuadre
+al moverlo a un porcentaje ocupado. Se conservan al menos dos encuadres.
+Los proyectos de la primera etapa conservan sus posiciones inicial/final hasta
+la primera edición, cuando se convierten automáticamente al formato múltiple.
+X positivo desplaza la cámara a la derecha, Y hacia abajo y Z hacia delante.
+Se usa el mismo progreso del Director, también en exportación. Cada tramo
+puede tener su propio ritmo; los antiguos encuadres heredan el del Director.
+Movimiento reducido deja la cámara y la profundidad fija en posición neutral.
+
+## Pausas, copias y recorridos rápidos
+Abrir Pausas y recorridos rápidos. Mantener este encuadre crea una copia con
+la misma posición y orientación al final de una permanencia (en porcentaje
+del recorrido). El tramo queda quieto; los encuadres posteriores no cambian de
+momento. Se rechaza una permanencia que alcance otro encuadre o supere 100%.
+Copiar encuadre al momento actual duplica el seleccionado en el porcentaje
+elegido con la barra. No sobrescribe un encuadre existente.
+Hay cuatro recorridos: Acercamiento con pausa, Viaje lateral, Ascenso y descanso,
+y Visita con profundidad. Se elige uno y se pulsa Aplicar recorrido: reemplaza
+solo los encuadres de cámara, conserva los elementos y sus animaciones, y crea
+una entrada de Deshacer. Los puntos del recorrido siguen editables.
+
+## Mapa del recorrido
+Abrir el panel plegable Mapa del recorrido. La vista Desde arriba muestra X/Z;
+De frente muestra X/Y. Elegir el encuadre desde la pista y arrastrar el punto
+resaltado. El mapa se ajusta al alcance del recorrido después de guardar.
+Se cambia solamente la posición de ese encuadre; momento, orientación, ritmo
+y los demás encuadres se conservan. La línea muestra la conexión entre puntos.
+El cambio se confirma al soltar, con una sola entrada de deshacer. Escape,
+cancelación del puntero o pérdida de captura cancelan el gesto. Las flechas
+mueven 25 px y Shift + flecha 100 px. Las coordenadas siguen editables por número.
+El mapa es una proyección del recorrido, no una previsualización de los objetos.
+El círculo indica la posición actual durante la reproducción o el scroll;
+el rombo es el encuadre seleccionado para editar. Debajo se muestran porcentaje
+y coordenadas actuales. La línea se actualiza durante el arrastre y vuelve al
+estado original si se cancela. Movimiento reducido también neutraliza el cursor.
+
+## Profundidad fija por elemento
+Con la cámara activada, seleccionar un texto, imagen u otro elemento suelto
+y ajustar Profundidad fija (px) en Momento en la historia. Negativo aleja,
+cero conserva el plano y positivo acerca. Se suma al Z animado del elemento.
+Desactivar la cámara conserva el valor guardado pero deja de aplicarlo.
+Los planos usan la perspectiva común de la cámara, evitando sumar otra
+perspectiva individual. Los elementos fuera de este modo mantienen el
+comportamiento anterior. Los planos se limitan a ±4000 px.
+En Lienzo libre también incluye contenedores raíz, incluidos los universales:
+su profundidad se aplica a todo el conjunto, conservando la jerarquía interna.
+El runtime los coloca dentro del mundo de cámara sin modificar los estilos
+de posición y tamaño ni los datos guardados. Al apagar la cámara, la siguiente
+previsualización/exportación vuelve al markup original.
+En escenas apiladas admite contenedores raíz tanto con distribución automática
+(stackDir) como absolutos. Los de flujo permanecen dentro de .inner; los absolutos
+que estén junto a .inner se incorporan al mundo de cámara conservando hijos,
+estilos de posición y jerarquía.
+No incluye profundidad fija independiente para hijos de contenedores, elementos
+fijos, composiciones MotionLab ni objetos Three.js. Los hijos conservan, sin embargo,
+sus animaciones Z/rotateX/rotateY del Story Model dentro del mismo mundo de cámara:
+el contenedor raíz usa preserve-3d y esos hijos reutilizan la perspectiva compartida,
+evitando sumar una segunda perspective(). La combinación ya se verifica en Chromium
+con preview/export y matrices 3D reales.
+
+Implementación aislada en js/nagweb-scroll-camera.js; hooks mínimos en el
+Director y una etiqueta script en index.html. No se modifica story-editor,
+Motion Lab ni los motores de personajes. Resolver estos hooks al integrar.
+
+Alcance: cámara CSS 2.5D sobre .inner, hasta 128 encuadres, sin reloj adicional.
+El mapa espacial y la compatibilidad con efectos 2.5D ya se verifican en Chromium,
+incluida la exportación real. No constituye una cámara Three.js: no rota ni traslada la
+cámara WebGL. Sin embargo, los objetos Three.js vinculados con NAGWEB_3D_ANCHOR sí
+siguen la cámara de escena porque su posición se recalcula desde el rectángulo DOM
+transformado. El Director fuerza además un refresh de esas anclas dentro del mismo
+paint de cámara para que el scrub manual no tenga un frame de retraso. Los contenedores raíz admitidos
+se incorporan a .inner; el resto de nodos externos permanece fuera de la cámara. La cámara puede acercarse hasta atravesar el plano.
+
+Verificación: node .github/nagweb-camera-model-test.mjs y
+node .github/nagweb-depth-model-test.mjs. Se verifican neutralidad, opt-in,
+recorrido, signos, serialización de fábrica, movimiento reducido, segmentos,
+edición independiente, cambio de momento, colisiones, borrado e historial.
+La orientación usa el orden inverso Rz(-Z) Ry(-Y) Rx(-X) T(-x,-y,z);
+las pruebas cubren además arrastre, cancelación, Escape, colisiones, pérdida
+de captura, clic y barra de progreso; giro sin traslación, vueltas completas y orientación neutra
+con movimiento reducido.
+La prueba de navegador en Chromium cubre layout, interacción del mapa, edición por
+teclado, exportación y matrices 3D reales. La suite completa de NagWeb también pasó
+con esta cámara activa.
+vercel.json desactiva despliegues Git para feat/scroll-camera-v1.
+No desplegar manualmente hasta que el usuario lo solicite.
+
+Pruebas adicionales: profundidad por elemento, suma con Z animado, selección
+de capas admitidas, perspectiva compartida, JSON y conservación al desactivar.
+
+Pruebas de contenedores: traslado de raíz a mundo de cámara en Lienzo libre y
+escenas apiladas, conservación de hijos y estilos de posición, contexto preserve-3d,
+exclusiones, fábrica exportada y edición aislada.
+
+Pruebas del mapa: proyección X/Z y X/Y, límites, ejes independientes,
+transacción de arrastre, Escape, teclado y fábrica exportada.
+
+## Verificación de la tanda de herramientas
+`node .github/nagweb-camera-runtime-test.mjs` carga el Director real, obtiene
+su script exportado y lo ejecuta en un entorno aislado con un DOM simulado.
+Cubre paridad preview/export, cálculo del progreso a partir del scroll,
+mensajes del editor, permanencias, planos de profundidad, contenedores,
+herencia de perspectiva 2.5D, movimiento reducido y comportamiento con cámara desactivada. No renderiza
+CSS ni verifica layout o interacción real del navegador. Las pruebas del
+modelo cubren también pausas, copias, recorridos y cursor del mapa.
+
+## Escenas apiladas y preparación del recorrido
+Las pruebas cubren profundidad compartida en contenedores con auto layout y
+absolutos, conservación de jerarquía y estilos, reubicación de raíces absolutas,
+restauración desde JSON y exclusión de raíces no admitidas. Las escenas
+horizontales no activan esta cámara.
+El runtime prepara el track de cámara una vez por escena y reutiliza sus
+fotogramas normalizados en cada paint. Los resultados coinciden con el
+cálculo anterior, evitando repetir esa preparación durante la reproducción.
+
+## Adaptación opcional a pantallas angostas
+Adaptar recorrido al ancho está apagado por defecto. Al activarlo, el ancho
+de referencia (1000 px por defecto, configurable entre 320 y 2400) define la
+escala. Por debajo de ese ancho se reducen X/Y/Z de cámara, la perspectiva
+compartida y la profundidad Z de los planos admitidos en la misma proporción.
+Los ángulos conservan sus valores. Por encima no se amplifica el recorrido.
+Los datos guardados y el mapa usan las coordenadas del ancho de referencia.
+Las animaciones X/Y de los elementos y las capas excluidas siguen usando sus
+valores originales. No sustituye los ajustes de diseño móvil de la app.
+El runtime recalcula esta escala al cambiar el ancho, conservando un momento
+pausado. Volver al primer encuadre navega al primer punto sin cambiar el proyecto.
+Pruebas: exportación con ancho angosto, resize en pausa, perspectiva neutral,
+opción desactivada, serialización, ángulos estables y navegación sin historial.
+El workflow `.github/workflows/nagweb-camera.yml` ejecuta un smoke específico de
+cámara (modelo + runtime + Chromium) sin disparar Vercel y conserva capturas como
+artefactos temporales.
+
+## Puente con objetos Three.js anclados
+La cámara CSS y la cámara de Three.js siguen siendo sistemas distintos. Un objeto 3D
+con anclaje activo usa NAGWEB_3D_ANCHOR para proyectar la posición de su ancla DOM al
+mundo WebGL. Como esa ancla vive dentro del mundo de cámara, getBoundingClientRect()
+ya contiene el movimiento visual de la cámara y el objeto 3D acompaña ese recorrido.
+La prueba de navegador comprueba el cambio de rectángulo, la nueva posición proyectada,
+la limpieza del binding y el refresh sin esperar al siguiente requestAnimationFrame.
+La adaptación a ancho angosto ya se verifica en Chromium redimensionando la misma
+exportación pausada de 1000 px a 390 px: X/Y/Z de cámara, perspectiva y profundidad
+de capas se escalan en vivo, los ángulos permanecen estables y los datos guardados no
+se modifican. El smoke guarda además una captura mobile.
+
+
+## Trayectoria curva opcional
+La cámara conserva `Por tramos` como comportamiento compatible por defecto. El modo
+`Curva suave` convierte las posiciones XYZ de los mismos encuadres en una trayectoria
+Catmull-Rom continua, sin cambiar el timing existente de los ángulos ni los easings.
+Los encuadres siguen siendo puntos exactos de paso y dos posiciones consecutivas
+idénticas conservan una permanencia real. El mapa espacial muestra muestras de la
+curva efectiva en vez de unir únicamente los puntos con segmentos rectos.
+
+Esta primera versión toma de las referencias de edición de cámara la idea de separar
+la trayectoria espacial de la orientación. La parametrización uniforme por longitud
+de arco, la orientación por punto de interés y el damping dependiente de deltaTime
+quedan como evoluciones separadas para no mezclar tres cambios de comportamiento en
+una sola etapa.
+
+
+## Orientación por punto de mirada
+La orientación conserva `Ángulos manuales` como modo compatible por defecto. El
+modo opcional `Mirar hacia` separa la posición de cámara del objetivo visual:
+`sdCameraFrames` sigue describiendo dónde está la cámara y
+`sdCameraLookFrames` describe qué punto XYZ mira en cada momento.
+
+La trayectoria del objetivo tiene timing y modo de interpolación propios
+(`sdCameraLookPathMode`: por tramos o curva suave), por lo que puede cambiar de
+dirección en momentos distintos a los encuadres de posición. Pitch y yaw se calculan
+desde cámara → objetivo; el giro del horizonte (roll) continúa usando el ángulo manual
+del encuadre. Volver a Ángulos manuales conserva los objetivos guardados.
+
+Al activar Mirar hacia por primera vez, NagWeb genera objetivos delante de cada
+encuadre a partir de la orientación manual existente para evitar empezar desde datos
+vacíos. El mapa espacial muestra la trayectoria del objetivo con línea punteada y su
+posición actual con un punto sólido. Preview y exportación usan el mismo cálculo.
+
+Reduced motion sigue neutralizando toda la cámara, y la adaptación responsive no
+cambia los ángulos porque cámara y objetivo comparten la misma escala espacial.
+La prueba Chromium cubre UI, trayectoria independiente y matriz exportada.
+
+
+## Edición espacial de objetivos de mirada
+Con `Mirar hacia` activo, el mapa espacial muestra el objetivo seleccionado como
+un control `●` independiente del encuadre `◆`. El objetivo puede arrastrarse en
+las vistas X/Z y X/Y sin modificar la posición de cámara ni los otros ejes.
+
+El arrastre es transaccional: durante el gesto solo cambia la previsualización del
+mapa; al soltar se guarda una única operación de Deshacer. Escape o pérdida de captura
+cancelan el gesto sin tocar el proyecto. Las flechas desplazan 25 px y Shift + flecha
+100 px, incluso cuando el mapa amplía automáticamente su rango por coordenadas grandes.
+La trayectoria punteada se recalcula en vivo mientras se arrastra el objetivo.
+
+La prueba de Chromium cubre teclado, arrastre real con Pointer Events, un único undo y
+cancelación con Escape.
+
+
+## Mirar un elemento
+Cada objetivo `●` puede seguir siendo un `Punto XYZ` manual o vincularse a un
+elemento raíz compatible del **Lienzo libre**. El vínculo se guarda por `targetId`;
+no se hornean coordenadas de pantalla.
+
+En la primera versión son elegibles los elementos raíz que ya pertenecen al mundo de
+cámara. Se excluyen elementos anidados, fijos, modales, instancias MotionLab,
+`shape3d`, `light3d` y otros nodos fuera del plano de cámara. Esta limitación hace
+que la conversión espacial sea determinista antes de ampliar el sistema a jerarquías.
+
+La posición objetivo parte del centro authored del elemento (X/Y porcentual respecto
+del centro de la escena), suma su profundidad fija y, en cada progreso, suma también
+sus keyframes X/Y/Z del Director. Por eso la cámara puede seguir un elemento que se
+mueve durante la narración. Preview y exportación resuelven esas coordenadas usando el
+tamaño de referencia de la escena, de modo que el LookAt conserva su dirección al
+adaptarse a pantallas angostas.
+
+Mientras un `●` está vinculado, sus campos XYZ manuales se ocultan y el control del
+mapa queda bloqueado. Al volver a `Punto XYZ`, se conserva el último XYZ como punto
+editable. Si el elemento vinculado deja de existir o deja de ser elegible, el runtime
+usa ese XYZ guardado como respaldo en vez de romper la cámara.
+
+La prueba de Chromium vincula un título desde la UI, verifica que sus keyframes X/Z
+cambien el yaw de cámara, compara la matriz exportada y repite el cálculo a ancho
+responsive.
+
+
+## Selección directa y bloqueo por eje
+El mapa espacial ya no obliga a volver a la pista temporal para cambiar de punto.
+Los círculos SVG de los encuadres y objetivos son seleccionables directamente; además,
+un clic cerca de un punto busca el keyframe espacial más próximo dentro de una zona de
+captura. Si varios puntos coinciden, clics sucesivos ciclan entre los puntos superpuestos.
+
+Los controles seleccionados `◆` y `●` conservan el arrastre libre. Mantener Shift
+durante el arrastre bloquea el gesto al eje dominante, siguiendo una convención de
+editores 2D/3D: X o Z en vista superior, X o Y en vista frontal. Un clic sin movimiento
+sobre un control seleccionado también permite ciclar a otro punto que esté debajo.
+
+Las flechas siguen moviendo 25 px y Shift + flecha 100 px. Escape cancela el gesto y
+cada arrastre confirmado crea una sola operación de Deshacer. La prueba Chromium cubre
+selección física de círculos SVG, puntos coincidentes, Shift-arrastre y el cursor de
+posición actual cuando se superpone a un keyframe.
+
+
+## Tensión por tramo de la curva
+En `Curva suave`, cada encuadre salvo el último puede controlar la forma XYZ del
+tramo que sale de él mediante `Tensión hacia el siguiente (%)`.
+
+El valor `0%` reproduce exactamente la curva Catmull-Rom que ya usaba NagWeb, por
+lo que los proyectos existentes conservan su recorrido sin cambios. Los valores
+positivos reducen las tangentes del tramo y hacen que la curva se ajuste más entre
+los dos encuadres; `+100%` deja las tangentes del tramo en cero. Los valores
+negativos aumentan esas tangentes y producen una trayectoria más suelta. El rango se
+limita a -100..100.
+
+La tensión solo modifica la posición espacial X/Y/Z del tramo que parte del
+encuadre seleccionado. No cambia el momento del keyframe, sus ángulos, su easing ni
+los demás tramos. Los encuadres siguen siendo puntos exactos de paso y las
+permanencias con posiciones idénticas siguen siendo pausas reales.
+
+El mapa espacial vuelve a muestrear la curva al modificar la tensión. Preview y
+exportación usan la misma interpolación. Cambiar temporalmente a `Por tramos` no
+elimina la tensión guardada; al volver a `Curva suave` reaparece el mismo valor.
+
+Las pruebas cubren compatibilidad exacta de 0%, límites, tensión positiva/negativa,
+historial del editor, actualización del mapa y matriz 3D real en la exportación de
+Chromium.
+
+
+## Vista de tangente de salida
+En `Curva suave`, el mapa muestra para el encuadre seleccionado una tangente de
+salida `◯` unida al `◆` por una línea punteada. No es una aproximación visual:
+la posición del círculo corresponde al control Hermite/Bezier equivalente de la
+misma tangente que usa el interpolador espacial.
+
+Con tensión `0%`, la tangente representa exactamente el Catmull-Rom histórico.
+Al aumentar la tensión se retrae hacia el encuadre y en `+100%` coincide con él.
+Con tensión negativa se alarga. Una permanencia real no muestra tangente de salida,
+porque ese tramo mantiene la misma posición.
+
+El mapa incluye las tangentes en su cálculo de escala para evitar recortarlas cuando
+la curva es más suelta. Durante el arrastre del `◆`, la tangente se recalcula y se
+mantiene unida al encuadre. En modo `Por tramos` no se muestra.
+
+Esta primera etapa es solo visual. La edición continúa mediante el campo de tensión;
+la siguiente etapa puede convertir el `◯` en handle arrastrable sin cambiar el
+modelo matemático.
+
+
+## Edición directa de la tangente
+La tangente `◯` del encuadre seleccionado ya es interactiva. Arrastrarla no crea
+otro punto XYZ: el movimiento del mouse se proyecta sobre la dirección matemática de
+la tangente y se convierte en un único valor de tensión del tramo entre -100 y +100.
+
+Acercar el handle al `◆` aumenta la tensión; alejarlo reduce la tensión y alarga la
+curva. El círculo continúa representando el control Hermite real, por lo que su
+posición coincide con la forma que usa preview y exportación.
+
+El gesto es transaccional. Mientras se arrastra se actualizan en vivo el handle, la
+línea de tangente, el valor numérico y la curva del mapa, pero el proyecto se guarda
+una sola vez al soltar. Cada gesto confirmado crea una sola entrada de Deshacer.
+Escape, pointer cancel y pérdida de captura restauran el valor original sin modificar
+el historial.
+
+El handle también acepta teclado: flechas ajustan 5 puntos de tensión, Shift + flecha
+20 puntos y Home restaura 0. En +100% la tangente coincide con el `◆`; el encuadre
+queda por encima en el orden visual, por lo que la posición de cámara sigue siendo
+arrastrable y la tensión puede liberarse desde el campo numérico o teclado.
+
+Las pruebas cubren la conversión handle → tensión, clamps, arrastre físico en Chromium,
+un único undo y cancelación con Escape.
+
+
+## Inserción directa sobre la trayectoria
+El mapa espacial permite crear un nuevo encuadre `◆` con doble clic sobre la
+trayectoria de cámara. NagWeb proyecta el clic contra los tramos muestreados del
+recorrido, encuentra el punto visual más cercano y recupera su momento narrativo
+`at`. El nuevo keyframe captura la pose XYZ y orientación que tenía la cámara en
+ese instante, además del easing del tramo de origen.
+
+La captura admite una tolerancia de 14 px respecto de la trayectoria. Antes de crear
+un punto, una zona más pequeña de 8 px alrededor de cada keyframe existente tiene
+prioridad: un doble clic allí selecciona el `◆` existente en lugar de crear un
+vecino casi duplicado. El porcentaje final se redondea a 0,1%, igual que el resto de
+la pista de cámara.
+
+La operación crea una sola entrada de Deshacer y selecciona inmediatamente el nuevo
+encuadre para editarlo. Se mantiene el límite de 128 keyframes. Borrar el punto recién
+insertado restaura los datos originales del recorrido.
+
+En Curva suave, el punto se captura exactamente sobre la trayectoria existente en el
+momento de inserción. Al convertirse en un nuevo control de la spline, su presencia
+puede recalcular las tangentes vecinas, igual que al agregar un nodo nuevo a una curva.
+Las pruebas verifican la búsqueda proyectada, captura XYZ, prevención de duplicados,
+historial, interacción física por doble clic en Chromium y restauración tras borrar.
+
+
+## Inserción directa en la trayectoria de mirada
+Con `Mirar hacia` activo, la línea punteada del objetivo tiene una zona de captura
+invisible más ancha. Un doble clic sobre esa trayectoria crea un nuevo objetivo
+`●` en el momento narrativo correspondiente, sin confundirlo con la línea de cámara.
+
+La regla del mapa queda diferenciada visualmente:
+- doble clic sobre la trayectoria normal: nuevo `◆` de cámara;
+- doble clic sobre la trayectoria punteada: nuevo `●` de mirada.
+
+NagWeb proyecta el clic sobre la trayectoria de mirada, recupera su `at`, resuelve
+la posición XYZ real del objetivo en ese instante y crea un punto manual. Si el
+recorrido provenía de elementos vinculados, el nuevo punto no hereda automáticamente
+el `targetId`: captura la posición resuelta como XYZ para evitar vínculos implícitos.
+
+La misma protección anti-duplicados usa 8 px alrededor de los objetivos existentes
+y 14 px de tolerancia para la trayectoria. La operación crea una sola entrada de
+Deshacer, selecciona el nuevo objetivo y respeta el límite de 128 puntos.
+
+Las pruebas cubren inserción manual, captura XYZ, prevención de duplicados, historial,
+zona de hit ampliada y doble clic físico sobre la línea punteada en Chromium.
+
+
+## Handles de entrada y salida
+En `Curva suave`, un encuadre intermedio seleccionado expone dos controles de forma:
+`◁` para la entrada desde el tramo anterior y `▷` para la salida hacia el tramo
+siguiente.
+
+No se agregó un segundo formato de curva. Ambos handles representan exactamente los
+controles Hermite/Bezier equivalentes del Catmull-Rom ya usado por NagWeb. La salida
+`▷` conserva la semántica histórica de `tension` del keyframe seleccionado. La
+entrada `◁` edita esa misma propiedad en el keyframe anterior, porque la tensión se
+guarda por tramo.
+
+Esto permite que un mismo `◆` tenga longitudes de entrada y salida distintas sin
+romper proyectos previos ni migrar datos. El primer encuadre no tiene entrada; el
+último no tiene salida. Las permanencias reales siguen sin dibujar un handle para un
+tramo sin movimiento.
+
+Arrastrar cada handle actualiza únicamente su tramo. La operación es transaccional:
+un gesto confirmado crea una sola entrada de Deshacer y Escape cancela sin guardar.
+Cada handle mantiene los atajos existentes: flechas cambian la tensión 5 puntos,
+Shift + flecha 20 y Home restaura 0.
+
+Las pruebas verifican paridad exacta del handle de salida anterior, fórmula entrante,
+independencia entre entrada/salida, historial y arrastre físico en Chromium.
+
+
+## Controles numéricos de entrada y salida
+Cuando un `◆` está en Curva suave, el panel expone la misma separación que el mapa:
+
+- `Entrada desde el anterior (%)` controla el handle `◁` y modifica la tensión
+  guardada en el keyframe anterior.
+- `Salida hacia el siguiente (%)` controla el handle `▷` y modifica la tensión
+  guardada en el keyframe seleccionado.
+
+Editar la entrada mantiene seleccionado el `◆` actual. Esto evita el salto de foco
+al keyframe anterior y permite trabajar entrada/salida como propiedades visuales del
+mismo encuadre aunque internamente la tensión siga almacenándose por tramo.
+
+Los límites siguen siendo -100..100, con pasos de 5. El primer keyframe solo muestra
+salida y el último solo entrada. Los valores permanecen sincronizados con el arrastre
+de handles, el historial y la curva renderizada.
+
+Las pruebas verifican que el campo de entrada modifica exclusivamente el tramo
+anterior, conserva el keyframe seleccionado y no altera la salida.
+
+
+## Handles Bézier libres
+Cada lado de un `◆` en Curva suave puede pasar de `Automática` a `Libre`
+de forma independiente. El cambio es opt-in: los proyectos existentes siguen usando
+Catmull-Rom exactamente como antes mientras no se libere ningún handle.
+
+Al activar `Libre`, NagWeb captura la posición actual del control automático como
+un vector relativo al encuadre. Por eso activar el modo no altera la trayectoria.
+A partir de ahí, el handle puede moverse libremente en el plano visible del mapa:
+X/Z en vista superior y X/Y en vista frontal. Cambiar de vista permite editar las
+tres dimensiones sin introducir un segundo editor 3D.
+
+Los datos libres se guardan como offsets relativos al keyframe:
+`curveInDX/DY/DZ` y `curveOutDX/DY/DZ`, acompañados por
+`curveInFree` o `curveOutFree`. Al mover el `◆`, sus controles libres se
+desplazan con él.
+
+Un tramo solo pasa a interpolación Bézier cúbica explícita cuando su salida o su
+entrada están en modo Libre. Si ambos lados siguen automáticos, NagWeb mantiene la
+implementación Catmull-Rom histórica sin cambiar su resultado. Si solo un lado es
+libre, el otro control se deriva automáticamente de la misma tangente/tensión de
+antes.
+
+El arrastre libre es transaccional, admite Shift para bloquear el eje dominante,
+Escape para cancelar y flechas para mover el handle en el plano actual. Cada gesto
+confirmado crea una sola entrada de Deshacer.
+
+Preview y exportación usan los mismos controles Bézier. Las pruebas verifican:
+compatibilidad exacta al activar Libre, dirección libre real, JSON round-trip,
+independencia entre entrada/salida, exportación Chromium y retorno a Automática.
+
+
+## Vectores numéricos de handles libres
+Cuando una entrada o salida está en modo `Libre`, el panel muestra sus tres
+componentes relativas al encuadre: X, Y y Z en píxeles.
+
+Los valores son exactamente los mismos offsets que usa el motor Bézier
+(`curveInDX/DY/DZ` y `curveOutDX/DY/DZ`). No existe una copia paralela de
+estado: escribir un valor mueve el handle y recalcula la curva; arrastrar el handle
+actualiza los campos numéricos después de confirmar el gesto.
+
+En vista superior X/Z, cambiar Y modifica la curva 3D aunque no altere esa proyección
+del mapa. En vista frontal X/Y ocurre lo equivalente con Z. Los tres valores siguen
+disponibles siempre para edición precisa independientemente de la vista activa.
+
+Cada edición numérica crea una sola entrada de Deshacer, conserva seleccionado el
+mismo `◆` y aplica límites de -4000..4000 px por componente. Volver el handle a
+`Automática` oculta estos campos y recupera la tangente derivada de Catmull-Rom.
+
+Las pruebas cubren edición numérica, sincronización mouse/campos, proyección X/Z,
+historial y conservación del keyframe seleccionado.
+
+
+## Curvas Bézier independientes para Mirar hacia
+La trayectoria del objetivo de mirada `●` puede usar la misma edición de curva que
+la posición de cámara `◆`, pero ambos recorridos siguen siendo independientes.
+
+En `Trayectoria de mirada > Curva suave`, los objetivos XYZ manuales intermedios
+muestran handles de entrada y salida. Cada lado puede permanecer en `Automática`
+(Catmull-Rom + tensión por tramo) o pasar a `Libre`, donde se guarda un control
+Bézier relativo al propio `●`.
+
+Activar `Libre` captura primero el control automático equivalente, por lo que el
+cambio de modo no mueve la trayectoria. El tramo solo pasa a Bézier cúbico explícito
+cuando una de sus puntas es libre. Volver a `Automática` elimina el vector libre y
+restaura exactamente la curva derivada de Catmull-Rom.
+
+Los vectores libres de mirada usan las mismas propiedades relativas
+`curveInDX/DY/DZ` y `curveOutDX/DY/DZ`, pero viven dentro de
+`sdCameraLookFrames`; no comparten estado con los encuadres de cámara. El panel
+muestra X/Y/Z para edición precisa y el mapa permite arrastre en X/Z o X/Y,
+Shift para bloquear el eje dominante, Escape para cancelar y flechas para mover
+25 px (100 px con Shift).
+
+Los objetivos vinculados a elementos mantienen tangentes automáticas. Esto evita
+congelar un vector libre contra una referencia cuyo centro puede moverse por sus
+propios keyframes. Para diseñar libremente esa trayectoria, se cambia primero el
+objetivo a `Punto XYZ`.
+
+Preview y exportación resuelven la misma trayectoria de mirada. Las pruebas en
+Chromium cubren activación sin salto, edición numérica, arrastre físico, historial,
+sincronización de campos, cambio real de orientación y paridad de la matriz
+exportada.
+
+## Renderizado real de objetos anclados (micro-etapa 2026-10-09)
+
+El renderizador de producción está en el HTML generado por `generateSite` de
+`index.html`: `build` crea el Group común que recibe formas o modelos, y
+`loadModel`/`fitGLTF` cargan GLB usando Three.js r128. El anclaje genérico
+`NAGWEB_3D_ANCHOR` no era el responsable de dibujar esos objetos.
+
+`js/nagweb-spatial-renderer.js` conecta ahora esos Groups mediante
+`bindThreeCamera` al evento `nagweb:spatial-camera`. El Director anuncia las
+stages habilitadas al terminar su instalación (`nagweb:spatial-ready`). La pose
+inicial se recupera del caché del puente; no requiere mover el scroll. El tercer
+argumento opcional de `bindThreeCamera(stage, camera, onState)` recibe también
+esa pose inicial, y los eventos de stages hijas no modifican cámaras padre.
+
+Cada stage tiene una PerspectiveCamera propia en unidades CSS px. El centro del
+ancla se toma de `offsetLeft/offsetTop` y se coloca respecto del centro de la
+stage, con el plano base en `z = -cssPerspective`. La escala deriva del ancho del
+ancla y del radio nativo. El objeto conserva su posición cuando cambia la pose;
+no se vuelve a proyectar sobre un rectángulo DOM transformado. Un GLB cargado
+asíncronamente conserva el mismo Group y se mide cuando tiene geometría.
+
+El ticker de renderizado existente dibuja una pasada por stage visible, con
+viewport y scissor, y restaura visibilidad y estado del renderer incluso ante
+excepciones. No lee scroll ni evalúa progreso: el Director sigue siendo su único
+dueño. La cámara GSAP anterior se usa exclusivamente para la pasada histórica.
+El picking para girar objetos utiliza la cámara y viewport correspondientes.
+Los bindings se liberan al reconectar y al abandonar definitivamente la página;
+se conservan durante pagehide persistido para permitir bfcache.
+
+El puente vuelve a publicar si cambia el tamaño de la stage, aunque la pose no
+cambie. Esto evita dejar FOV/aspect desactualizados después de un resize.
+
+### Validación reproducible
+
+Requiere Node, Three.js 0.128.0, GSAP 3.12.5 y Playwright 1.62.1 para las pruebas;
+no agrega dependencias al sitio exportado. En un entorno de prueba separado:
+
+```sh
+npm install --prefix work/test-deps --no-save three@0.128.0 gsap@3.12.5 playwright@1.62.1
+# Agregar work/test-deps/node_modules a NODE_PATH para ambas pruebas.
+node tests/spatial-renderer.integration.cjs
+node tests/spatial-renderer.browser.cjs
+```
+
+Playwright necesita Chromium instalado. `NAGWEB_BROWSER` permite indicar el
+Chrome/Chromium local. La prueba de integración también acepta la ruta al build
+UMD r128 de Three.js como primer argumento. Opcionalmente,
+`NAGWEB_TEST_VENDOR_DIR` apunta a un directorio con `three.cjs`, `GLTFLoader.js`,
+`gsap.js` y `ScrollTrigger.js`; la prueba del navegador los sirve localmente.
+
+Pruebas realizadas: geometrías/cámaras reales, replay inicial, aislamiento entre
+stages, GLB mínimo real a través de GLTFLoader, diseño y exportación generados,
+scrub manual 0→100%, resize sin cambio de pose, reduced-motion, offscreen,
+reconexión/teardown, restauración ante excepción y sintaxis de scripts inline.
+La prueba del navegador usa WebGL de Chrome con SwiftShader. Las capturas y HTML
+de prueba se guardan en `work/` y no se versionan.
+
+### Límites de esta micro-etapa
+
+- Participan `shape3d` con `anchor:true` de escenas con cámara espacial habilitada.
+  Objetos sin ancla, escenas sin cámara, horizontales y luces conservan su ruta
+  anterior. No se añade una cámara global para todo el sitio.
+- Los objetos espaciales se dibujan después del composer existente: no reciben
+  bloom. Las luces de escena todavía no convierten sus posiciones/distancias a
+  unidades CSS px; la iluminación no tiene paridad completa.
+- Se conserva la orientación/movimiento local del Group y el tamaño del ancla.
+  No se integra aún su timing individual, ni se añaden objetos 3D como objetivos
+  de «Mirar hacia». El marco DOM de edición permanece en coordenadas del diseño.
+- No se implementa oclusión mutua DOM/WebGL ni se valida aquí la combinación con
+  transiciones de escena, inercia, todos los materiales, modelos externos o
+  hardware móvil. Los GLB con animaciones siguen el comportamiento anterior.
+- Esta etapa no despliega en Vercel ni modifica main. `vercel.json` mantiene
+  deshabilitados los despliegues de `feat/scroll-camera-v1`.
+
+## Actualización: iluminación espacial
+
+La micro-etapa siguiente integra presets y luces personalizadas con las mismas
+unidades y cámara de cada stage, y corrige sus controles de edición. Los límites
+sobre luces de la primera etapa quedan reemplazados por el alcance documentado
+en [Luces de escenas espaciales v1](spatial-lights-v1.md). Las limitaciones de
+bloom, objetos sin ancla y oclusión DOM/WebGL continúan vigentes.
+
+## Actualización: bloom espacial
+
+La micro-etapa siguiente añade el resplandor a formas y GLB de cada stage,
+con transparencia y recorte por escena. El límite de bloom de las etapas
+anteriores queda reemplazado por [Bloom de escenas espaciales v1](spatial-bloom-v1.md).
+El Director mantiene el control exclusivo del progreso. Continúan los límites
+de objetos sin ancla, oclusión DOM/WebGL, timing individual y validación móvil.
+
+## Actualización: interacción de objetos espaciales
+
+La etapa siguiente alinea el picking del giro con las cámaras y recortes de
+cada stage, y convierte los gestos de mover/redimensionar anclas desde el plano
+del objeto. El alcance y las pruebas quedan en
+[Interacción de objetos con cámara espacial v1](spatial-interaction-v1.md).
+El Director mantiene el control exclusivo del progreso. Los marcos siguen siendo
+DOM, ahora proyectados desde los bounds 3D de las anclas espaciales; no se añade
+oclusión mutua con WebGL.
+
+## Actualización: timing individual de objetos espaciales
+
+Las formas y GLB anclados ahora reciben su pose y opacidad evaluadas por el
+Director, con entrada/salida y keyframes. El alcance y los límites quedan en
+[Timing individual de objetos espaciales v1](spatial-timing-v1.md), que reemplaza
+la limitación de timing propio de las etapas anteriores. La herencia de grupos,
+el desenfoque individual y la combinación con transiciones de escena siguen
+pendientes. No se añade otro dueño del progreso.
+
+## Actualización: herencia de contenedores libres
+
+Las formas y GLB anclados dentro de contenedores libres comunes ahora heredan
+su layout, transformación y opacidad, con arrastre local en diseño. El alcance,
+las pruebas y las diferencias pendientes de proyección CSS/Three quedan en
+[Herencia de contenedores para objetos 3D v1](spatial-hierarchy-v1.md).
+Reemplaza ese límite para contenedores libres admitidos; las instancias de
+movimiento y los contenedores especiales siguen fuera del alcance.
+
+## Actualización: proyección CSS / Three
+
+CSS y Three ahora comparten el ojo y el orden de giro de cámara. Se corrigen
+también el giro exclusivo de horizonte y la escala doble de desplazamientos
+Three en el modo adaptable. Las escenas con rotación cambian su encuadre CSS
+para coincidir con la vista espacial; no se modifican los encuadres guardados.
+Pruebas, compatibilidad y límites en
+[Proyección compartida CSS / Three v1](spatial-projection-v1.md).
+
+## Actualización: origen del mundo CSS y validación agrupada
+
+El renderizador incluye el offset del mundo CSS para las anclas que viven
+en él, conservando bordes/scroll y composición de los padres. La regresión
+cubre forma y GLB reales. Se agrega un comando único de pruebas por grupos
+para evitar repeticiones innecesarias. Alcance y resultados en
+[Origen de layout de anclas espaciales](spatial-layout-v1.md).
+
+
+## Orientar la cámara con el mouse en la vista previa (2026-10-11)
+
+En **Ángulos manuales**, el panel **Cámara 3D** incluye
+**Orientar cámara con mouse en vista 3D**. El modo es opcional y no cambia
+la orientación de los proyectos existentes. Una vez activado, arrastrar
+dentro de la escena permite girar la cámara horizontal (yaw) y verticalmente
+(pitch), con respuesta inmediata tanto del mundo CSS como de los objetos
+Three.js. Mantener **Shift** bloquea el eje secundario. Se guarda **un solo
+keyframe del instante actual al soltar**, con una sola entrada de Deshacer.
+**Escape**, cancelación del puntero o salida de la vista previa antes del
+guardado restauran el encuadre anterior sin escribir datos. Escape también
+permite salir del modo antes de iniciar el gesto.
+
+El modo **Mirar hacia** no expone este arrastre: su orientación continúa
+determinada por los puntos de mirada y por el apuntado a objetos 3D, sin
+cambios silenciosos de modo. El giro del horizonte (roll) se edita con su
+campo existente. No se incorpora aquí movimiento XYZ ni manipulación
+volumétrica de objetos.
+
+La vista previa usa temporalmente el método paint existente, que comparte
+la cámara CSS y Three con el evento nagweb:spatial-camera; el Director de
+Scroll continúa siendo el **único** controlador del progreso. El runtime
+restablece la pose original en cancelaciones y después de guardar. No se
+escriben keyframes durante el arrastre ni se instala un reloj adicional.
+
+Regresión integrada en tests/spatial-focus-map.integration.cjs y ejecutada
+por .github/nagweb-spatial-smoke.cjs dentro del grupo editor; cubre
+previsualización CSS, persistencia de un solo cambio, Escape, Shift
+y limpieza de listeners. No se modifica main ni se despliega a Vercel.
+
+
+## Trasladar la cámara XYZ desde la vista previa (11/10/2026)
+
+El panel **Cámara 3D** ofrece **Mover cámara XYZ en vista 3D**.
+Este modo de edición activa un control flotante sobre la escena, fuera del
+mundo transformado: **↔ X**, **↕ Y**, **↕ Z** y **✥ X/Y**.
+Arrastrar cualquier control previsualiza en vivo la posición de la cámara
+en CSS y Three.js, sin tocar el modelo ni crear keyframes intermedios.
+En X, mover a la derecha aumenta X; en Y, bajar aumenta Y;
+en Z, arrastrar hacia arriba avanza en profundidad (Z positiva).
+El plano X/Y permite mover ambos ejes simultáneamente.
+
+**Shift** reduce la sensibilidad al 20 % para ajustar con precisión.
+El control tiene soporte de teclado: las flechas desplazan el eje elegido
+en pasos de 10 px de pantalla (2 px con Shift); cada acción de teclado
+crea una entrada propia de Deshacer. Un único arrastre confirmado crea
+un único keyframe en el porcentaje actual del Director y una única
+entrada de Deshacer. **Escape** o cancelación del puntero restauran la
+pose sin guardar y cierran la herramienta. También se limpia el modo
+cuando la vista previa se recarga o se activa el control de orientación.
+
+La herramienta funciona tanto con **Ángulos manuales** como con
+**Mirar hacia**. En este último caso, la previsualización recalcula el
+ángulo hacia el objetivo de mirada ya existente al mover la cámara,
+pero guarda **solo XYZ**: no sobrescribe keyframes de mirada ni cambia
+el modo. Respeta el escalado responsive y los límites XYZ existentes,
+así como la interpolación determinista del Director 0→1. El modo se
+activa explícitamente en el editor. No instala controles de edición
+en el sitio exportado ni agrega otro motor de progreso.
+
+Cobertura automatizada: `tests/spatial-focus-map.integration.cjs`,
+incluido en el smoke espacial. Se prueban ejes individuales,
+movimiento plano, precisión, límites, actualización visual,
+modo Mirar hacia, Deshacer único, teclado, cancelación y
+liberación de eventos/overlay. Pendiente: validación manual visual
+de estos controles en una vista previa real de navegador,
+antes de ampliar el sistema a objetos 3D.
+
+
+## Ajustar la profundidad Z de un objeto 3D desde la escena (11/10/2026)
+
+Los objetos `shape3d` **anclados** y elegibles ya se desplazan
+en X/Y desde su marco de selección proyectado, según
+`docs/spatial-interaction-v1.md`. Esta mejora **no reemplaza** ese
+mecanismo: agrega la edición visual de su posición en profundidad.
+
+Desde **Cámara 3D → Mapa del recorrido → Inspeccionar objeto**,
+seleccionar el modelo o forma 3D y pulsar
+**Ajustar profundidad Z en vista 3D**. Aparece un asa **↕ Z** próxima al
+pivote proyectado de ese objeto en la vista previa real, no en
+coordenadas supuestas del lienzo. Arrastrar hacia arriba aumenta la
+profundidad positiva (acerca el objeto); hacia abajo lo aleja.
+100 px de arrastre representan 1 unidad de la propiedad existente
+`offZ`; mantener **Shift** permite ajuste fino al 20 %. Con el foco
+en el asa, ↑/↓ ajustan 0,1 unidades (Shift: 0,02).
+
+Durante el gesto, el renderizador WebGL aplica un `offZ` **temporal**
+a ese objeto, sin editar los datos del proyecto ni escribir otro
+progreso de scroll. Tanto las anclas directas como los objetos anidados
+en contenedores libres compatibles usan la misma conversión existente
+`offZ / unit`. En la confirmación se guarda `element.offZ` una sola
+vez, con una sola operación de **Deshacer**. **Escape** o
+`pointercancel` restauran el valor anterior sin guardar. El asa se
+desmonta al terminar, al cambiar la selección o al recargar el iframe.
+Las transformaciones X/Y, rotaciones del GLB, keyframes del Director,
+cámara y punto de enfoque permanecen intactos.
+
+El asa se posiciona usando `NAGWEB_SPATIAL_SCREEN_POINT`, que proyecta
+el pivote del holder desde la cámara compartida de Three.js y rechaza
+objetos invisibles, fuera de recorte o de otra sección. La actualización
+temporal usa `NAGWEB_SPATIAL_PREVIEW_DEPTH`: rechaza valores inválidos,
+aisla por sección/ID y se limpia al desconectar el renderer. Son
+funciones puente para la vista previa same-origin del editor, **no**
+activan por sí solas gestos en sitios exportados.
+
+Cobertura: `tests/spatial-focus-map.integration.cjs` valida el panel,
+guardado, Deshacer, Escape, teclas, Shift, limpieza y aislamiento de
+keyframes; `tests/spatial-interaction.integration.cjs` contiene
+aserciones con geometría Three real para pivote proyectado, conversión
+de unidades `offZ`, aislamiento y restauración. Estas últimas pruebas
+y la validación visual Chromium deben confirmarse al ejecutarse en un
+entorno con Three y navegador instalados.
+
+
+## Giro y tamaño de modelos 3D directamente en la vista previa (11/10/2026)
+
+Los elementos `shape3d` anclados mantienen su movimiento X/Y existente
+en el editor y el nuevo control de profundidad `offZ`. Además, el
+inspector de objetos de **Cámara 3D** incorpora **Girar y escalar 3D
+con mouse**: sobre la escena aparece un control con tres asas:
+
+- **↔ Giro Y:** arrastrar horizontalmente para orientar izquierda/derecha.
+- **↕ Giro X:** arrastrar verticalmente para inclinar arriba/abajo.
+- **⤢ Tamaño:** arrastrar hacia arriba para agrandar o abajo para achicar.
+
+**Shift** reduce la sensibilidad al 20 %. Las flechas ajustan el asa
+enfocada. **Escape**, cancelación del puntero y recarga de la vista
+previa eliminan el cambio temporal sin guardarlo. Cada gesto confirmado
+genera **un solo Deshacer y un solo guardado**. El control queda fuera
+del mundo CSS transformado; se posiciona a partir del pivote realmente
+proyectado por la cámara WebGL compartida.
+
+### Separación entre colocación base y animación
+
+Estas asas modifican tres campos opcionales del objeto:
+`nwSpatialRotateX`, `nwSpatialRotateY` (grados) y
+`nwSpatialScale` (porcentaje, 10–500 %). La ausencia de los campos
+equivale a giro **0°** y escala **100 %**, preservando proyectos
+anteriores.
+
+**No son keyframes nuevos**: representan la colocación *base* del
+modelo, a la que se suma el giro y se multiplica el tamaño que **ya
+evalúa el Director de Scroll**. Así, un modelo puede quedar girado y
+agrandado de manera estática y seguir ejecutando su movimiento
+narrativo existente, sin un segundo reloj o interpolador.
+
+El renderizador aplica la misma composición a objetos anclados
+directamente y a las jerarquías libres admitidas, conservando los
+ángulos ZXY, su escala normalizada y la rotación local interactiva del
+modelo. Durante el gesto se usa una transformación temporal,
+aislada por identificador y sección mediante
+`NAGWEB_SPATIAL_PREVIEW_BASE_TRANSFORM`. La geometría y los datos
+del proyecto no cambian hasta confirmar. La herramienta no instala
+manejadores de mouse en el sitio publicado.
+
+**Pruebas incorporadas:** en
+`tests/spatial-focus-map.integration.cjs`, cancelación, límites,
+precisión, teclas, un solo Deshacer, aislamiento de la cámara y de
+las animaciones del objeto. En
+`tests/spatial-interaction.integration.cjs`, aserciones con
+Three.js real para el giro/escala del holder, restauración,
+compatibilidad con objetos anteriores, composición con el tamaño
+animado y aislamiento entre secciones. Las comprobaciones aisladas
+del editor pasaron; las pruebas con Three y el navegador real siguen
+pendientes de ejecución confirmada.
+
+
+## Convivencia y fiabilidad de las herramientas de la vista previa (11/10/2026)
+
+Se revisó el flujo combinado de **orientar cámara**, **elegir un punto real de
+un GLB**, **desplazar cámara XYZ**, **ajustar Z del objeto** y **girar/escalar
+el modelo**. Esta actualización no agrega otro motor de animación ni inventa
+controles de transformación duplicados.
+
+- Los modos de selección de superficie y orientación de cámara se excluyen
+  mutuamente: activar uno desarma los listeners del otro.
+- La elección de un punto de superficie se cancela automáticamente cuando
+  se recarga la vista previa. Ya no quedan listeners colgados de un iframe
+  anterior. El Escape y los clics siguen funcionando como antes.
+- Cambiar el elemento inspeccionado, incluso haciendo clic sobre su símbolo
+  en el mapa, cierra inmediatamente los controles flotantes del objeto
+  anterior. También se limpian al desactivar la cámara, cambiar de escena
+  o volver a renderizar el inspector con una selección incompatible.
+- Confirmar un giro/tamaño deja de provocar un retorno momentáneo a la
+  pose previa. El adaptador de Three.js **promueve de forma atómica**
+  el valor temporal a su **copia en memoria** del objeto del iframe y
+  elimina el override transitorio, mientras el editor guarda el mismo
+  valor en el proyecto y prepara la nueva vista. Un cambio cancelado
+  sigue limpiando el override **sin** modificar el objeto ni generar
+  Deshacer. Esta promoción no escribe datos en la página publicada ni
+  agrega un reloj o una trayectoria independiente.
+
+### Nuevas regresiones
+
+\`tests/spatial-focus-map.integration.cjs\` cubre conjuntamente
+cambio de selección en el mapa, exclusividad de los modos, recarga
+del iframe, cancelación y continuidad visual del valor confirmado.
+En evaluación aislada del JS real de editor + modelo, **192
+comprobaciones pasaron**.
+
+\`tests/spatial-interaction.integration.cjs\` comprueba la promoción
+de la transformación en el holder real de Three sin override
+residual ni salto de rotación. Además,
+\`tests/spatial-interaction.browser.cjs\` incorpora una escena real
+con un GLB mínimo, WebGL, el Director en 50 %, transformación
+temporal/confirmada y limpieza del tamaño. **Estas pruebas de
+Three/Chromium quedaron agregadas, pero no se ejecutaron ni se
+confirmó CI en este entorno:** faltan el paquete Three.js y los
+fixtures del repositorio en el entorno accesible. La ejecución de
+browser con gestos reales sobre todas las asas sigue siendo la
+verificación prioritaria antes de integrar.
+
+
+## Edición visual integrada comprobada con GitHub Actions (11/10/2026)
+
+El ajuste Z de un objeto `shape3d` conserva ahora su posición visual
+al guardar: `NAGWEB_SPATIAL_PREVIEW_DEPTH(id, value, sectionId, true)`
+promueve `offZ` en la copia temporal del modelo del iframe y elimina
+el override transitorio. Se mantiene la edición real del proyecto con
+un solo historial de Deshacer, y cancelar sigue restaurando el valor
+anterior. Es el mismo contrato de confirmación usado para giro y escala.
+
+La prueba existente `tests/camera-current-moment.browser.cjs` ahora
+abre el editor real y su iframe en **Chromium**, selecciona una forma
+3D WebGL visible, arrastra los controles de **Giro Y y profundidad Z**,
+comprueba el valor guardado, un Deshacer por gesto, **Undo** real, la
+cancelación de escala con **Escape** y que la trayectoria de la
+cámara sigue intacta. Los desplazamientos se cotejan con los eventos
+`clientX/clientY` **dentro del iframe**: su zoom visual puede producir
+distancias diferentes a los píxeles físicos de la ventana principal.
+
+Las pruebas integradas del renderizador también verifican que el valor
+Z confirmado conserve la posición del holder Three sin saltos de
+fotograma ni override residual; otras pruebas con un **GLB cargado
+realmente** ejercitan el puente de cámara, su escala y rotación.
+
+**Verificación real confirmada en GitHub Actions:**
+
+- [Integración espacial aprobada, 39 comprobaciones agrupadas](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38195782867).
+  Su registro incluye `PASS browser 3D gizmos: real pointer yaw/Z, live WebGL, one Undo, Escape and camera isolation`.
+- [Prueba de cámara aprobada](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38195782863).
+- Regresión aislada de `tests/spatial-focus-map.integration.cjs`:
+  **194 aserciones aprobadas** antes de la ejecución integrada.
+
+La primera ejecución de la nueva prueba de navegador detectó que
+el zoom del iframe hacía errónea una expectativa de 30 grados
+por 50 píxeles físicos. El test se corrigió para verificar
+las coordenadas internas recibidas por el editor; **no se
+modificó la sensibilidad de la herramienta para satisfacer el test**.
+La ejecución posterior aprobó toda la suite.
+
+Alcance no comprobado: interacción táctil en hardware físico,
+dispositivos móviles reales y ergonomía con modelos GLB complejos.
+No hubo despliegue a Vercel ni merge de ramas.
+
+
+## Editar espacio 3D · Cámara y objetos en un mismo mapa (12/10/2026)
+
+Primer avance tras analizar la grabación de uso real del 12/10/2026.
+**No se creó un editor/renderer paralelo**, y el Director 0→1 conserva el
+control exclusivo de la animación.
+
+- En el panel de Cámara 3D aparece el acceso inmediato
+  **«◈ Editar espacio 3D · Ver cámara y objetos»**, que abre el mapa del
+  recorrido dentro de la escena y muestra sus objetos. No es una
+  ventana independiente ni una aplicación nueva.
+- En **Lienzo libre**, «Mapa del recorrido · Cámara y objetos» ya no
+  descarta silenciosamente los elementos posteriores al número 16.
+  Se conservan sus marcadores y hay una lista de capas desplazable,
+  con etiquetas, tipos (texto, imagen, contenedor, modelo 3D) y Z
+  ordenada para identificar qué está más adelante en el mundo.
+  El mapa etiqueta directamente un subconjunto acotado a 48 para
+  reducir la superposición; la lista mantiene todos los objetos
+  elegibles. Hacer clic en una capa sincroniza su inspector y los
+  controles existentes de modelado.
+- El inspector incorpora **«Profundidad del objeto · Z»**,
+  con deslizador y número accesible. Usa la coordenada Z actual que
+  calcula el puente de cámara para el porcentaje de scroll que se está
+  inspeccionando. Para texto e imágenes, modifica únicamente
+  `sdCameraDepth`; para `shape3d` anclado, convierte el desplazamiento
+  del mundo a la unidad existente `offZ`. Respeta los topes de cada
+  campo, crea una única entrada de Deshacer por cambio confirmado y
+  conserva los keyframes animados. No duplica ni migra el modelo de
+  datos, no altera el recorrido de cámara y no instala un segundo reloj.
+- Se forzó contraste legible (texto oscuro / fondo blanco) en los
+  campos numéricos propios del inspector de cámara, incluso si el
+  tema actual utiliza estilos globales que heredan gris claro.
+- Incluye una breve ayuda desplegable para hacer un recorrido
+  **texto → foto → texto**: ejemplo Z −300, 200, 700 y camera Z
+  −900 → 1300, con los elementos centrados X/Y. Es orientativa y
+  **no altera ni genera escenas automáticamente**.
+
+**Límites explícitos:** el mapa usa los mismos objetivos de posición
+XYZ ya disponibles, por lo que requiere «Lienzo libre» y sólo dibuja
+las huellas aproximadas, no los contornos finales ni la oclusión.
+En otras disposiciones se muestra una indicación para elegir
+Lienzo libre en vez de inventar posiciones. Aún no hay drag
+directo de planos HTML sobre el mapa; el desplazamiento de
+profundidad se edita mediante deslizador/campo, mientras que
+los modelos 3D conservan sus propias asas en la vista previa.
+La perspectiva y oclusión HTML/WebGL avanzadas, la validación visual
+de atravesar un plano y el preset autónomo de tres capas siguen
+pendientes.
+
+**Pruebas:** `tests/spatial-focus-map.integration.cjs` comprueba
+una escena con **22 objetos** (sin el tope histórico de 16),
+acceso al mapa, selección desde la lista, cambios de profundidad
+de HTML y GLB, Deshacer y no alteración de keyframes. La suite
+aislada pasa **210 comprobaciones**. En
+`tests/camera-current-moment.browser.cjs` se agregó la verificación
+con el editor real de apertura, selección y campo Z legible, edición
+HTML y Undo. El resultado de CI debe confirmarse por separado.
+
+**CI confirmada** para el último código: [Integración espacial Chromium/WebGL, 39 comprobaciones agrupadas, aprobada](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38280115962) y [smoke de cámara aprobado](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38280115942). El navegador ejecutó y aprobó el acceso «Editar espacio», la lista HTML/3D, el contraste de Z, el cambio HTML y Deshacer. La prueba anterior había detectado una recarga asíncrona del iframe después de Undo; el test ahora espera que concluya antes de iniciar el gesto siguiente. Esto no implica haber validado el preset autónomo ni la oclusión parcial, que siguen pendientes.
+
+
+## Edición directa de objetos en el mapa espacial (12/10/2026)
+
+El mapa de Cámara 3D ya muestra anclas de texto, imágenes y modelos
+Three.js (en **Lienzo libre**). Ahora el marcador de cada objeto se
+puede **arrastrar** con el mouse o con un puntero táctil compatible,
+y también admite **flechas del teclado**. La vista seleccionada define
+los ejes editables: superior X/Z, frontal X/Y y lateral Z/Y.
+
+- El arrastre representa la posición mediante la misma proyección
+  `C.mapPoint` y `C.mapSpec` que utiliza el editor para sus
+  encuadres. Shift bloquea el eje menos desplazado. En vista
+  ampliada, arrastrar un objeto tiene prioridad sobre desplazar
+  el mapa.
+- La conversión inversa conserva el modelo de datos: edita `x/y`
+  como porcentajes del lienzo, `sdCameraDepth` para los planos HTML
+  y `offZ` para objetos `shape3d` anclados. Se compone con
+  los keyframes ya evaluados y **no crea otro motor ni otro reloj**.
+- Se representa la posición propuesta sobre el marcador **sin
+  modificar el proyecto durante el gesto**. Sólo al soltar se
+  guardan los cambios en un snapshot de Deshacer; Escape o
+  pointercancel recuperan el punto original. Las flechas mueven
+  25 unidades por pulsación, o 5 con Shift, siempre sobre los ejes
+  que corresponden a la vista del mapa.
+- Los marcadores ahora son controles enfocables, con etiquetas
+  accesibles y un indicador de arrastre. La lista e inspector de
+  objetos existentes se mantienen sincronizados.
+- En el mapa siguen representándose **anclas y contornos
+  aproximados**, no las superficies geométricas reales, ni las
+  oclusiones de HTML/WebGL. La vista previa completa se actualiza
+  al confirmar el gesto; el marcador se actualiza durante el
+  arrastre.
+
+**Validación:** `tests/spatial-focus-map.integration.cjs` incorpora
+arrastres de un GLB (X y Z) y un texto HTML (Y), vista superior y
+frontal, teclado Z con Shift, Escape, limpieza de listeners,
+Deshacer y conservación de todos los keyframes. Suite aislada:
+**233 comprobaciones PASS**. Se añadió a
+`tests/camera-current-moment.browser.cjs` una prueba de
+puntero real en el mapa de Chromium para edición del X de una
+capa DOM y Undo. Verificar por separado su ejecución CI.
+
+**Pendiente prioritario:** vista espacial verdaderamente amplia
+con manipuladores adecuados para composiciones complejas;
+escena de demostración reutilizable del recorrido
+texto → fotografía → texto; oclusión y recorte correcto al
+atravesar planos y pruebas de accesibilidad/táctil reales.
+
+**Superposición de marcadores:** al entrar con «Editar espacio 3D» se activa explícitamente el **modo de edición de objetos**. El SVG de anclas recibe prioridad de interacción sobre los controles HTML de waypoints, y los símbolos de objetos se dibujan por encima de los puntos de cámara dentro del mapa. Hay un conmutador «Editando objetos · Volver a cámara» para recuperar la interacción con waypoints sin salir del mapa. El conmutador solo aparece en escenas que realmente contienen objetivos espaciales. Esto evita que un texto situado junto al encuadre de cámara resulte imposible de seleccionar; la prueba de navegador con mouse real determina si se logró corregir el solapamiento. Suite aislada: **237 comprobaciones PASS**.
+
+
+## Gestos 3D compartidos y QA independiente (13/10/2026)
+
+Se investigó el arrastre de objetos que funcionaba en regresión aislada
+pero podía perder eventos del mouse durante una secuencia de pruebas que
+incluía ediciones en el iframe, Escape y Undo.
+
+**Corrección transversal:**
+- Los arrastres de marcadores HTML y Three en el mapa utilizan una
+  superficie transparente temporal sobre el documento del editor para
+  impedir que otro iframe reciba el movimiento mientras la operación
+  está activa. El control se retira al guardar, cancelar y terminar.
+- Un helper de liberación de captura se utiliza en el cierre de cuatro
+  tipos de herramienta: orientación de cámara, profundidad de modelo,
+  giro/tamaño de modelo y traslación XYZ. En particular, cancelar con
+  Escape no deja el puntero capturado dentro de un iframe viejo.
+- Se mantienen intactos los campos \`x/y\`, \`sdCameraDepth\`, \`offZ\`,
+  keyframes y el Director determinista 0→1.
+
+**Pruebas eficientemente separadas:**
+- \`tests/spatial-map-drag.browser.cjs\` comprueba en Chromium real
+  selección, mouse, desplazamiento de HTML, un Undo, liberación de la
+  superficie y conservación del recorrido de cámara, sin efectos de
+  pruebas previas. En la ejecución CI
+  [38431845915](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38431845915)
+  el caso aislado pasó; el conjunto global de aquel commit falló por
+  una prueba duplicada al final de una sesión muy extensa.
+- \`tests/camera-current-moment.browser.cjs\` conserva el flujo amplio de
+  keyframes, controles 3D, profundidades, Undo y vista previa, pero
+  ya no repite el arrastre cubierto por el test independiente.
+- \`.github/nagweb-spatial-smoke.cjs\` ejecuta primero la prueba corta,
+  luego el grupo editor y, cuando están verdes, todos los grupos de
+  WebGL, matemáticas, luces y sintaxis. Ante el primer error, detiene
+  la corrida en lugar de consumir minutos en tareas redundantes.
+- Suite aislada de modelos/editor: **251 aserciones aprobadas**.
+  La CI global del commit final debe verificarse con su ejecución.
+
+**Límite aún abierto:** la secuencia artificial de muchas operaciones
+de preview, cancelaciones y Undo acumuladas llegó a perder movimientos
+del puntero en la última parte de una prueba larga. Esto requiere
+verificación específica de resiliencia bajo sesiones extensas; no debe
+confundirse con una falla reproducible del arrastre aislado, pero
+tampoco darse por solucionado sólo por separar las pruebas. No se
+hicieron despliegues Vercel ni merges.
+
+
+## Recorrido editable «Viaje entre capas» (13/10/2026)
+
+Primer flujo cinematográfico **de un solo clic**, integrado en Cámara 3D dentro
+de escenas **Lienzo libre**, sin otro motor o progreso paralelo.
+
+- El panel muestra **«Viaje entre capas · Texto → Imagen → Texto»**.
+  Requiere tres elementos elegibles ya existentes en ese orden. Mientras
+  falten, el botón está deshabilitado y explica qué incorporar; **no
+  descarga imágenes ni inventa assets**.
+- Al ejecutar **«Preparar recorrido entre capas»**, se colocan sus
+  coordenadas base X/Y en 50/50 y Z a -300, 200 y 700 px con
+  perspectiva de referencia 1000 px (adaptación acotada según la
+  perspectiva de la escena). Se muestran durante todo el recorrido
+  para que el crecimiento aparente provenga del movimiento de cámara,
+  en vez de aplicar escalas artificiales.
+- La cámara recibe cinco encuadres editables en 0/25/50/75/100 %,
+  con Z -900/-240/270/780/1300 px a escala de referencia,
+  trayectoria lineal y ángulos manuales sin giro. La longitud mínima
+  del scroll sube a 480 vh. El usuario puede seguir editando todas
+  estas variables con el inspector y el mapa ya implementados.
+- La operación **no crea ni elimina objetos**, no cambia los
+  keyframes de animación de elementos y no toca modelos GLB no
+  seleccionados. Sí modifica coordenadas, visibilidad temporal y
+  trayectoria de la escena para los tres planos. Todo se realiza
+  como **una única acción de Deshacer** y un guardado.
+- El mapa pasa a superior X/Z, selecciona el primer texto y activa
+  la edición de objetos. El Director vuelve al progreso 0 %.
+
+**Pruebas implementadas:** el planificador puro y el editor real se
+prueban con tres capas en orden, cinco encuadres, conservación de
+objetos y keyframes ajenos, un único snapshot/guardado, cruce de
+las tres Z y Deshacer. La regresión aislada alcanzó **282
+aserciones aprobadas**. Una prueba de Chromium fue añadida en
+`tests/spatial-map-drag.browser.cjs`; la ejecución de CI debe
+verificarse antes de afirmar que el navegador pasó.
+
+**Límite importante:** este es un punto de partida para una escena
+con recursos propios, no el preset autónomo con tres recursos de muestra.
+No implementa todavía oclusión parcial DOM/WebGL; no garantiza que
+movimientos secundarios/keyframes previamente creados en los
+elementos seleccionados no se superpongan visualmente al viaje.
+La siguiente fase debe centrarse en perspectiva, recorte al atravesar
+planos y controles visuales de duración/waypoints a partir de pruebas
+reales, no en sumar otro motor.
+
+
+## Cruce del ojo de perspectiva: planos HTML paralelos (14/10/2026)
+
+El Director oculta un plano raíz DOM, sin inclinación 3D, cuando la suma de su profundidad evaluada y el avance Z de la cámara llega al ojo de perspectiva CSS. Además desactiva sus eventos de puntero y restaura el valor de visibilidad inline original al volver delante del ojo. Se utiliza la pose ya calculada por el Director; no hay un segundo reloj ni un nuevo keyframe. Contenedores y planos inclinados conservan el clipping nativo del navegador, sin imponerles un criterio de centro que recortaría geometría visible.
+
+**Alcance y límite:** esto corrige únicamente el estado de un plano paralelo completamente detrás del ojo, no resuelve oclusión parcial DOM/WebGL, intersecciones de elementos rotados ni la composición volumétrica compleja. Validar el paso visual con una escena texto → foto → texto en Chromium y verificar que las reglas CSS externas de visibilidad no cambien el comportamiento en proyectos reales. El cambio de código se comprobó sintácticamente; la CI de cámara/espacial debe registrarse como aprobada sólo después de su conclusión.
+
+### Validación de cruce de plano paralelo (14/10/2026)
+La decisión de ocultar un plano DOM paralelo al quedar detrás del ojo se centraliza en `parallelPlaneBehindEye` de la API de cámara, que recibe la pose de cámara y la del elemento ya evaluadas por el Director. La regresión comprueba el umbral de recorte, profundidades compuestas, vista adaptable, exclusión de objetos externos y conservación de planos/cámaras inclinados. Se evita duplicar la fórmula en el runtime y en los tests. No aborda intersecciones parciales de geometría o oclusión HTML/WebGL.
+
+
+## Recorrido autocontenido para aprender Cámara 3D (14/10/2026)
+
+La opción «Crear ejemplo completo» inserta tres elementos editables (título, paisaje vectorial SVG incrustado, título) y genera el mismo recorrido de cinco encuadres que «Preparar recorrido entre capas». La imagen de ejemplo es un recurso de muestra, **no una fotografía**, y puede sustituirse por una propia. No utiliza servidores ni descarga recursos. Al generar la muestra se preservan todos los elementos anteriores de la escena; se añade únicamente la terna nueva y se aplica el plan calculado explícitamente para sus IDs, aunque existan otros textos/imágenes previamente. Todo ocurre dentro de una única operación Deshacer/guardado. Esta opción trabaja en la escena actual de Lienzo libre y no crea una página o sección aparte.
+
+**Pruebas añadidas:** planificador sin mutación, imagen incrustada, IDs únicos, cinco encuadres, tres elementos nuevos y objetos anteriores intactos, snapshot único; flujo de editor Chromium con creación y un único Undo. El Director sigue siendo dueño del progreso 0→1 y no hay otro reloj. **Pendiente:** verificar calidad visual del recorrido en escena final y recorte parcial real DOM/WebGL; el SVG es demostrativo, no sustituye recursos fotográficos de producción.

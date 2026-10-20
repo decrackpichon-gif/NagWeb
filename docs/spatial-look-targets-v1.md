@@ -1,0 +1,98 @@
+# Objetivos de mirada para modelos 3D anclados
+
+## Alcance
+
+La cámara del Director de Scroll puede seleccionar objetos `shape3d` con anclaje activo (`anchor !== false`) como objetivos en **Mirar hacia** y en el inspector del mapa. Incluye formas nativas y modelos GLB que comparten ese tipo. El botón «Apuntar cámara a este objeto acá» usa la lógica existente: enlaza el objetivo en el instante actual; si ese instante ya tiene un keyframe, lo actualiza; si falta, crea uno. Las acciones siguen siendo reversibles con Deshacer.
+
+En el mapa, los objetos 3D se identifican con la marca ⬡. El contorno dibujado representa el tamaño del **ancla**, no los vértices, la oclusión ni la silueta real del GLB. El objetivo apunta al **pivote del ancla**, no a la parte más visible de la malla.
+
+## Conversión espacial
+
+La cámara CSS y el adaptador Three.js usan convenciones Z opuestas:
+
+- El adaptador coloca el holder WebGL en `z3 = -perspective + offZ × (height/(12 tan 25°)) + directorZ`, en unidades equivalentes a CSS px. En la dirección vertical, Y de Three invierte el signo de Y del diseño.
+- El punto de mirada del Director usa `cameraZ = perspective - offZ × (height/(12 tan 25°)) - directorZ`; X/Y proceden del ancla en porcentaje, alrededor del centro de la stage, más el movimiento de los keyframes del Director.
+- La conversión depende del tamaño de referencia calculado por el runtime. Los cambios de escala responsive continúan siendo responsabilidad del puente de cámara existente.
+- El tipo `shape3d` **no** entra en `layers` ni en el contenedor CSS de cámara. Sólo se hace elegible como objetivo, evitando una segunda transformación.
+
+Las coordenadas se evalúan con `NAGWEB_STORY_MODEL` en el mismo porcentaje del Director, sin crear otro reloj.
+
+## Casos protegidos
+
+Se excluyen los 3D sin ancla, anidados, fijos, modales, instancias MotionLab y escenas fuera del Lienzo libre; `light3d` sigue excluido. Los objetivos tradicionales de HTML mantienen su profundidad y animación anteriores. Si el modelo deja de existir, la trayectoria vuelve al XYZ guardado en el objetivo.
+
+## Verificación y límites
+
+Se agregaron casos para elegibilidad y exclusión CSS, Z real del renderizador (con offZ), XYZ animados, conversión a coordenadas Three.js, interpolación de mirada y recuperación de XYZ. El smoke de navegador comprueba que un 3D se vea en el mapa, pueda elegirse, vinculase en un keyframe y deshacerse.
+
+Esta etapa **no** agrega detección del centro geométrico real o dinámico del GLB, seguimiento de huesos o morphs, oclusión HTML/WebGL ni selección de puntos dentro de una malla. La distancia del inspector hasta el 3D se refiere al pivote del ancla. Las pruebas nuevas están añadidas al repositorio, pero requieren correr la suite Chromium en un entorno con dependencias y fixture real para dar por validada la experiencia de punta a punta.
+
+No se despliega en Vercel ni se integra a `main`.
+
+## Punto de enfoque ajustable en un objetivo 3D
+
+El modelo puede tener un pivote técnico que no coincida con el lugar al que conviene mirar (por ejemplo, el torso de un personaje en vez del rostro).
+
+Con **Mirar hacia** y un objetivo `shape3d` anclado seleccionado, el panel de cámara ofrece **Enfoque X/Y/Z (px)**. Son desplazamientos del punto de mirada relativos al pivote del modelo, sin trasladar ni modificar su geometría:
+
+- X positivo: mirar más a la derecha.
+- Y negativo: mirar más arriba.
+- Z positivo: aumenta la coordenada Z del enfoque; no significa necesariamente acercarse a la cámara.
+
+Cada keyframe de mirada puede conservar un desplazamiento distinto, con interpolación a través de la trayectoria de mirada existente. El punto ajustado sigue el movimiento de los keyframes del modelo y se refleja en el mapa. Los tres valores están limitados a ±4000 px, se normalizan y forman parte del mismo historial de Deshacer. Los proyectos antiguos sin desplazamientos no cambian.
+
+Al editar el enfoque, su posición absoluta actual también queda guardada como respaldo XYZ si el modelo desaparece. Al elegir otro objetivo se restablecen los desplazamientos a cero para evitar arrastrar el ajuste de un modelo ajeno. Al pasar de un modelo a **Punto XYZ**, el sistema guarda el punto ajustado efectivo del instante seleccionado y elimina el vínculo: no salta otra vez al pivote.
+
+Se agregaron pruebas de modelo y smoke de navegador para offsets XYZ, interpolación, conservación de proyectos antiguos, cambio de mirada, edición sin tocar el GLB, desvinculación sin salto y Deshacer. El código y los tests fueron revisados sintácticamente; el smoke completo en Chromium queda pendiente de ejecución.
+
+El ajuste desplaza el **punto de mirada** en el sistema de coordenadas de la escena, no rota ese offset según los huesos o la orientación local de una malla animada. Para seguir la cara de un personaje con animaciones esqueléticas habría que añadir un ancla por hueso o por nodo GLB.
+
+## Edición visual del punto de enfoque desde el mapa
+
+En **Mirar hacia**, seleccioná un objetivo `shape3d` anclado. El punto `●` del mapa espacial queda habilitado: **arrastralo** para desplazar el enfoque sin desvincular el modelo ni mover su malla. La línea violeta une el **pivote del ancla** con el **punto enfocado**. Esta es una vista por proyecciones, no un selector de caras o polígonos del GLB.
+
+- **De frente (X/Y):** ajusta el enfoque a la derecha/izquierda y arriba/abajo.
+- **Desde arriba (X/Z):** ajusta desplazamiento lateral y profundidad.
+- **De costado (Z/Y):** ajusta profundidad y altura.
+- Mantener **Shift** durante el arrastre restringe el movimiento al eje dominante.
+- Con foco en el `●`, las **flechas** desplazan 25 px; **Shift + flecha**, 100 px.
+- **Escape** cancela el gesto sin guardar.
+- Un arrastre confirmado guarda **un solo Deshacer** al soltar. Los movimientos de previsualización no guardan cambios intermedios.
+
+Los ajustes se guardan como `focusOffsetX/Y/Z` en el **keyframe del objetivo**. La trayectoria de la cámara, el modelo GLB y sus animaciones permanecen intactos. Los objetivos vinculados a elementos HTML normales siguen bloqueados, como antes. La precisión parte del desplazamiento respecto del modelo: no redondeamos su coordenada absoluta, que puede ser decimal en Three.js.
+
+### Comprobación
+
+```sh
+node tests/spatial-focus-map.integration.cjs
+```
+
+Esta prueba aislada, sin paquetes externos, cubre teclado en las tres proyecciones, arrastre, historial, cancelación con Escape, exclusión de HTML vinculado y estabilidad del modelo. También se agregaron casos al smoke de Chromium `.github/nagweb-camera-browser-smoke.mjs` para validar el gesto en navegador real. **El navegador completo todavía no fue ejecutado desde este chat.**
+
+**Límite:** no se elige todavía un vértice/píxel del modelo 3D con raycasting en la vista de perspectiva; se modifica la ubicación del foco proyectada en mapas 2D. Tampoco se incorpora rotación local de offsets con huesos de GLB.
+
+
+## Apuntado directo sobre la superficie de un GLB
+
+En el inspector de objetos de la cámara, un \`shape3d\` anclado admite ahora
+**Elegir punto en vista 3D**. Elegí el objeto, activá esa herramienta y hacé clic
+sobre su superficie en la vista previa del editor. **Escape** cancela.
+Un clic fuera del modelo no guarda nada. El raycast se restringe a la escena y
+al objeto seleccionado, a geometría visible, a la profundidad cercana/lejana
+y al recorte de la vista; a diferencia del picking de arrastre, no simula
+una superficie con esferas aproximadas (los agujeros siguen siendo agujeros).
+
+El punto real de Three se convierte a XYZ del Director, con escala responsive
+e inversión de Y/Z. En **Mirar hacia**, se crea o actualiza un keyframe
+vinculado a ese modelo, con \`focusOffsetX/Y/Z\` y respaldo XYZ. Se mantiene
+Deshacer y la posterior edición en mapas 2D; no se mueve el modelo ni se agrega
+un segundo progreso. Con orientación manual se guarda el giro hacia el punto,
+sin cambiar de modo. La exportación conserva su comportamiento: no habilita
+la herramienta de edición en sitios publicados. Se usa exclusivamente un
+listener temporal en el iframe same-origin de la vista previa.
+
+Límites: no hay oclusión HTML/WebGL entre superficies, selección por huesos
+o deformaciones morph. Los offsets guardados siguen relativos al pivote
+estático del objeto. La regresión de intersección real/recorte y el flujo de
+enfoque/deshacer/cancelación se agregaron a las pruebas de interacción y de
+mapa de enfoque que ya ejecuta el CI espacial agrupado.

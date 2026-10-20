@@ -39,6 +39,7 @@ import {runMotionDropSmoke} from './nagweb-motion-drop-smoke.mjs';
 import {runMotionStreamSmoke} from './nagweb-motion-stream-smoke.mjs';
 import {runMotionStreamPlacementSmoke} from './nagweb-motion-stream-placement-smoke.mjs';
 import {runMotionIsoOrbitSmoke} from './nagweb-motion-iso-orbit-smoke.mjs';
+import {runCameraBrowserSmoke} from './nagweb-camera-browser-smoke.mjs';
 
 const feedbackSource=fs.readFileSync(new URL('../js/nagweb-feedback-v16.js',import.meta.url),'utf8');
 const directorSource=fs.readFileSync(new URL('../js/nagweb-scroll-director-v16.js',import.meta.url),'utf8');
@@ -220,6 +221,7 @@ if(workspaceState.leftToggles!==1||workspaceState.rightToggles!==1) throw new Er
 if(Math.abs(workspaceState.rightWidth-savedInspectorWidth)>3) throw new Error('Inspector width did not survive reload: '+JSON.stringify({workspaceState,savedInspectorWidth}));
 await page.click('.nw-dock-toggle.left');
 
+await runCameraBrowserSmoke(page);
 await runMotionStreamPlacementSmoke(page);
 await runMotionStreamSmoke(page);
 await runMotionStreamPlacementSmoke(page,'iso-orbit');

@@ -1,0 +1,178 @@
+# NAGWEB 03 | Cámara 3D
+
+## Criterio universal de aceptación real (16/10/2026)
+
+**Decisión posterior a todos los estados históricos de V1.0:** seguir la [política de recuperación y aceptación](https://github.com/decrackpichon-gif/NagWeb/blob/main/POLITICA_DESARROLLO_V1_PRIMERO.md). Para **NAGWEB 03 | Cámara 3D**, preservar avances reales de esta rama; cualquier fallo reportado del flujo principal deja el frente *no aceptado*, incluso con CI verde o una entrega técnica histórica. Validar el mismo mecanismo de apertura y artefacto que recibe el usuario y el ciclo de interacción, edición, recarga y exportación antes de declarar *V1.0 aceptada* tras confirmación real. No reconstruir ni mezclar ramas ni fabricar tareas opcionales. **Este cambio documental no constituye una auditoría funcional ni aceptación manual.**
+
+
+> **Ficha de continuidad de producto, decisiones y referencias.** Actualizada 11/10/2026 a partir de documentos y ramas comprobadas. No reemplaza el código ni el historial Git. Toda cifra de estado es una **fotografía** y hay que verificar cambios posteriores.
+
+## Directiva máxima de producción: versión 1.0 primero (15/10/2026)
+
+**Decisión general del usuario, prioritaria también para este frente:** terminar una V1.0 **estable, funcional y entregable**, en el menor tiempo y con la menor cantidad de trabajo innecesario. Congelar el alcance en el recorrido esencial, resolver bloqueantes reales de manera transversal, ejecutar la comprobación final pertinente y **cerrar la versión**. No proponer nuevas funciones, recursos, efectos, opciones, controles ni tareas de pulido no bloqueantes antes del cierre; registrarlas como V1.1+.
+
+Esta regla **prevalece sobre prioridades antiguas de expansión** de esta ficha, sin derogar funcionalidades comprometidas que resulten imprescindibles para una V1.0 útil. Consultar la [política universal de desarrollo](https://github.com/decrackpichon-gif/NagWeb/blob/main/POLITICA_DESARROLLO_V1_PRIMERO.md). No mezclar ramas ni adelantar merges o despliegues sin autorización.
+
+## Alcance cerrado de Cámara 3D V1.0 (15/10/2026)
+
+**Contrato de producto:** permitir que una persona construya y exporte un recorrido espacial editable con cámara, texto, imagen y un modelo 3D, controlado exclusivamente por el Director de Scroll 0→1. Las funciones implementadas se conservan; no se exigen nuevas modalidades, efectos ni paneles antes de entregar.
+
+**Incluido en V1.0, utilizando lo ya programado:**
+1. Crear/editar en **Lienzo libre** una escena con texto, imagen y objeto GLB o forma 3D; visualizar y ajustar posición/profundidad y encuadre con las herramientas ya existentes.
+2. Crear o modificar un recorrido de cámara XYZ/orientación con keyframes, navegar por el mapa/vista previa y reproducir el mismo estado de manera determinista desde el Director 0→1. El ejemplo «Crear ejemplo completo» puede servir para iniciar, no debe ser un flujo separado.
+3. Conservar contenido y acciones: selección, edición, **Deshacer**, guardado/recuperación y exportación HTML; que el sitio exportado reproduzca el recorrido sin depender del editor.
+4. Perspectiva y recorte **correctos para la escena mínima admitida**, incluyendo paso texto→imagen→texto y un modelo 3D integrado. No aceptar una V1.0 si el recorrido normal rompe geometrías, salta entre fotogramas, deja texto incorrectamente oculto o pierde información.
+5. Comportamiento estable de sus operaciones esenciales, sin regresiones críticas de cámara, edición, persistencia o recursos; respetar movimiento reducido. Comprobarlo con las suites ya disponibles y una prueba final de principio a fin en editor y exportado.
+
+**Bloqueante verificado en el código actual:** HEAD funcional anterior `e8b035789dc4b96af92f6fdb0dbf567e1ee22db9` tiene [smoke de cámara aprobado](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38688685580), pero la [integración espacial falló](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38688685663) al exigir ocultamiento completo de HTML detrás de geometría 3D. Corregir el fallo real o limitar con un fallback seguro la parte experimental para que no introduzca errores en el recorrido principal. No dar por verde el HEAD por la existencia de pruebas históricas aprobadas.
+
+**Explícitamente posterior a V1.0 (sin borrar implementaciones previas):** oclusión WebGL→HTML **parcial por píxel para cualquier geometría**, sombras/refraction/bloom perfeccionados, jerarquías CSS arbitrarias, composiciones complejas, nuevos controles, vistas, presets, animaciones, recursos, mejoras cosméticas y optimizaciones sin impacto comprobado en el uso esencial. Las variantes visuales complejas no representables con precisión pueden declararse limitadas en V1.0 si la ruta básica es fiable y no muestran resultados engañosos. Este aplazamiento no permite descartar funcionalidades esenciales ya acordadas ni ocultar fallos dentro del caso mínimo admitido.
+
+**Camino de cierre (máximo dos entregas técnicas, salvo fallo real imprevisto):**
+- **A. Estabilización y corrección final:** resolver la regresión de integración espacial y cualquier defecto probado en el flujo mínimo; no desarrollar nuevas capacidades.
+- **B. Validación integral y entrega:** ejecutar una única batería pertinente, verificar editor→Deshacer/guardar→reabrir→exportar→recorrer 0/25/50/75/100% en navegador y comprobar que el resultado es fiel. Documentar restricciones concretas, señalar versión V1.0 lista cuando los criterios se cumplan y proporcionar instrucciones de uso/entrega desde la rama, sin merge o despliegue automático.
+
+**Regla operativa:** ante «Avanza», trabajar en A o B y avanzar hacia el cierre. No introducir un bloque C por mejoras opcionales. Consultar siempre el HEAD antes de modificar; esta fotografía de CI no reemplaza el estado actual.
+
+## Estado de entrega: Cámara 3D V1.0 lista (15/10/2026)
+
+**V1.0 terminada dentro del alcance cerrado anteriormente definido.** Se cerró el bloqueante de la oclusión inversa experimental preservando su implementación pero desactivándola por defecto, sin alterar el uso esencial de HTML real ni las máscaras HTML→WebGL admitidas. No se requirió introducir nuevos efectos, herramientas ni controles.
+
+**Fuente de verdad de la entrega:** código en `feat/scroll-camera-v1` commit [`3088025f9de18c1c13f937f760cba48064f193da`](https://github.com/decrackpichon-gif/NagWeb/commit/3088025f9de18c1c13f937f760cba48064f193da), anterior a este commit documental.
+
+**Validación final completa y verde:**
+- [NagWeb camera smoke #38774758688](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38774758688): **success**.
+- [NagWeb spatial integration #38774758571](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38774758571): **success; 41 checks**, con navegador Chromium y WebGL real.
+- Nueva aceptación real de V1.0: Deshacer → persistir en localStorage → recargar editor → preservar capas y keyframes → generar HTML. Incluye el ejemplo de tres capas y cinco encuadres; pruebas adicionales comprueban reproducción con Director y GLB exportado.
+- El commit documental no modifica runtime ni altera el resultado de la CI.
+
+**Entrega y uso:** [`docs/NAGWEB_03_CAMARA_3D_V1_0_ENTREGA.md`](../NAGWEB_03_CAMARA_3D_V1_0_ENTREGA.md) contiene alcance, pasos de acceso desde la rama, comprobaciones y limitaciones. La rama no se fusiona a `main`, no hay despliegue Vercel ni release público automático.
+
+**V1.1+ (no bloqueante para V1.0):** oclusión inversa WebGL→HTML parcial y universal, contenedores CSS arbitrarios, efectos adicionales y optimizaciones no relacionadas con fallos del uso mínimo. No reinterpretar estas ideas como defectos de V1.0.
+
+## Identidad inmutable y ramas
+
+- Proyecto: **NAGWEB 03 | Cámara 3D**.
+- Producto general: **NagWeb**, repositorio [https://github.com/decrackpichon-gif/NagWeb](https://github.com/decrackpichon-gif/NagWeb).
+- Rama propia de desarrollo: [`feat/scroll-camera-v1`](https://github.com/decrackpichon-gif/NagWeb/tree/feat/scroll-camera-v1).
+- HEAD de referencia (10/10/2026): [`78d0328250a44fd4b334a767ddf9df141b25858c`](https://github.com/decrackpichon-gif/NagWeb/commit/78d0328250a44fd4b334a767ddf9df141b25858c). **Puede cambiar** mientras otros chats trabajan.
+- Existen ramas auxiliares de curvas y mapas (`feat/scroll-camera-*`). No sustituir la rama principal sin revisar diferencias y autorización.
+
+## Documentación técnica ya existente en GitHub
+
+- [`docs/scroll-camera-v1.md`](https://github.com/decrackpichon-gif/NagWeb/blob/feat/scroll-camera-v1/docs/scroll-camera-v1.md)
+- [`docs/research-wishlist-scroll-camera.md`](https://github.com/decrackpichon-gif/NagWeb/blob/feat/scroll-camera-v1/docs/research-wishlist-scroll-camera.md)
+- [`docs/camera-current-moment-v1.md`](https://github.com/decrackpichon-gif/NagWeb/blob/feat/scroll-camera-v1/docs/camera-current-moment-v1.md)
+- [`docs/spatial-projection-v1.md`](https://github.com/decrackpichon-gif/NagWeb/blob/feat/scroll-camera-v1/docs/spatial-projection-v1.md)
+- [`docs/spatial-interaction-v1.md`](https://github.com/decrackpichon-gif/NagWeb/blob/feat/scroll-camera-v1/docs/spatial-interaction-v1.md)
+- [`docs/spatial-timing-v1.md`](https://github.com/decrackpichon-gif/NagWeb/blob/feat/scroll-camera-v1/docs/spatial-timing-v1.md)
+- [`docs/spatial-hierarchy-v1.md`](https://github.com/decrackpichon-gif/NagWeb/blob/feat/scroll-camera-v1/docs/spatial-hierarchy-v1.md)
+- [`docs/spatial-layout-v1.md`](https://github.com/decrackpichon-gif/NagWeb/blob/feat/scroll-camera-v1/docs/spatial-layout-v1.md)
+- [`docs/spatial-lights-v1.md`](https://github.com/decrackpichon-gif/NagWeb/blob/feat/scroll-camera-v1/docs/spatial-lights-v1.md)
+- [`docs/spatial-bloom-v1.md`](https://github.com/decrackpichon-gif/NagWeb/blob/feat/scroll-camera-v1/docs/spatial-bloom-v1.md)
+
+Esos documentos **ya existen** en sus ramas y suelen tener muchos más detalles de implementación. Consultarlos antes de planificar. Esta ficha agrega el contexto de producto, las referencias y la política de continuidad que faltaban.
+
+## Objetivo final
+
+Cámara espacial narrativa de NagWeb para desplazamientos y encuadres XYZ, orientación, lookAt, puntos, curvas, tangentes, edición desde mapa superior/frontal y uso de objetos WebGL anclados en escenas DOM. **Director de Scroll 0→1 sigue siendo el único dueño del progreso**. No introducir Lenis, GSAP ScrollTrigger ni Theatre.js como motor alternativo.
+
+## Trabajo y decisiones conocidos
+
+- Mapa X/Z y X/Y, edición visual de recorridos, cámara/objetivo independientes, ajustes de trayectoria, keyframes y vista previa.
+- Comparaciones A/B, análisis de cobertura **proyectada 2D**, no visibilidad volumétrica real 3D.
+- Integración espacial con Three/WebGL, anclajes de objetos 3D, interacción, timing, jerarquías de contenedores y proyección CSS/Three documentadas en la rama.
+- Último commit verificado (`78d0328...`): liberación correcta de renderer y prevención de cargas tardías al terminar la página. Revisión de CI de cámara y espacial registrada como exitosa en la recuperación anterior.
+- Continuidad 11/10/2026: se incorporó la elección de un punto real de superficie en modelos GLB desde la vista previa, enlazado al enfoque del Director. En Ángulos manuales se añadió orientación visual con mouse en la vista previa, actualización CSS/Three durante el arrastre, Shift para bloquear eje, Escape para cancelar y una sola operación de Deshacer al soltar. No reemplaza la manipulación XYZ volumétrica pendiente; Mirar hacia conserva su editor de objetivos propio. Documentación: `docs/spatial-look-targets-v1.md` y `docs/scroll-camera-v1.md`. Las pruebas aisladas del editor pasaron; confirmar CI integrada por separado.
+- Continuidad 11/10/2026 (siguiente avance): controles de traslación visual **X/Y/Z + plano XY** sobre la vista previa, disponibles también en modo **Mirar hacia**. Previsualizan CSS y Three.js, soportan sensibilidad reducida con Shift, Escape para cancelar, teclado con flechas y guardado de un solo keyframe/snapshot al soltar. El Director sigue dueño del progreso. Prueba aislada del editor: 97 comprobaciones aprobadas en evaluación JS de la suite `tests/spatial-focus-map.integration.cjs`; CI completa y prueba manual de navegador aún no confirmadas. Siguiente objetivo: probar la UX visual y evolucionar a manipulación espacial de objetos 3D sin interferir con el Editor principal.
+- Continuidad 11/10/2026 (objeto 3D): se confirmó que los marcos proyectados del editor ya permiten mover y redimensionar anclas 3D en X/Y. En vez de duplicar esa función, se añadió un asa Z proyectada junto al pivote del objeto seleccionado, para editar la propiedad existente `offZ` arrastrando en la vista previa, con Shift, teclado, Escape y un único Deshacer al guardar. El renderizador ofrece un override temporal aislado por objeto y sección, sin tocar la geometría ni el progreso 0→1. Ver `docs/scroll-camera-v1.md`. La regresión aislada del editor pasó 128 comprobaciones; se agregaron aserciones de Three a `tests/spatial-interaction.integration.cjs`, pero falta ejecutarlas en un entorno con `three` y validar la UI visual en Chromium. Próxima prioridad: prueba real del gesto y sincronización con selección/marco; después evaluar rotación/escala de objetos desde la escena sin reconstruir funciones del Editor principal.
+- Continuidad 11/10/2026 (rotación y escala): se implementó **Girar y escalar 3D con mouse** para los objetos `shape3d` anclados: asas Giro Y, Giro X y Tamaño junto al pivote proyectado, previsualización WebGL, Shift, flechas, Escape y un único Deshacer/guardado al terminar. En lugar de invadir los keyframes existentes del Director, se guardan los ajustes de **colocación base** `nwSpatialRotateX`, `nwSpatialRotateY`, `nwSpatialScale`, que se componen con los movimientos ya evaluados 0→1; defaults 0°/100% conservan proyectos anteriores. Tests aislados del editor: **166 comprobaciones aprobadas**. Se agregaron más aserciones para ejecutar con Three.js real, pero CI completa y prueba visual Chromium todavía no confirmadas. No hubo merge ni despliegue. Próxima prioridad: verificación real de Three/WebGL y flujo de edición antes de sumar nuevos modos o efectos.
+
+- Continuidad 11/10/2026 (estabilización conjunta): se corrigió la convivencia entre herramientas de Cámara 3D y objetos 3D: orientación y picking GLB se excluyen, recargas del iframe limpian el picking, cambio de selección en inspector/mapa desarma las asas anteriores, y la confirmación de giro/tamaño promueve el valor al modelo temporal del renderer sin salto visual ni override residual. No se agregaron nuevos controles ni relojes. Suite aislada editor/modelo: **192 comprobaciones aprobadas**. Se agregaron pruebas de Three y navegador para el modelo GLB y el Director 0→1, **no ejecutadas en Chromium/Three real en este entorno**. Documentación: \`docs/scroll-camera-v1.md\`; último avance implementado en \`feat/scroll-camera-v1\`. Próximo paso: ejecutar/verificar las suites espaciales y Chromium con fixtures, corregir cualquier fallo de navegador/GLB que aparezca y probar UX antes de integrar; evitar más funcionalidades especulativas.
+
+- Continuidad 11/10/2026 (prueba integrada real): se confirmó mediante **GitHub Actions** que la suite espacial con Three.js r128, modelo GLB y navegador Chromium sí funciona: [ejecución aprobada, 39 comprobaciones agrupadas](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38195782867); también [smoke de cámara aprobado](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38195782863). Se corrigió el guardado Z para promover `offZ` al modelo temporal WebGL sin dejar un override residual, igual que el giro/tamaño. La prueba `tests/camera-current-moment.browser.cjs` ahora verifica gestos reales sobre asas de giro Y y Z, Undo, Escape y aislamiento del Director; PASÓ en Chromium. Regresión aislada: **194 aserciones aprobadas**. Una primera ejecución falló por medir píxeles del contenedor exterior en lugar de coordenadas internas del iframe escalado; el test se corrigió usando `clientX/clientY` verdaderos sin alterar la herramienta. Próximo objetivo: refinar UX según una revisión visual/usuario y probar escenarios complejos de GLB, dispositivos táctiles y rendimiento; no agregar controles redundantes ni mezclar ramas. Sin despliegue Vercel ni merge.
+
+- **Nuevo brief UX aportado 12/10/2026 (propuesta, no código aprobado):** grabación privada `Grabación de pantalla 2026-10-12 125329.mp4` (3:03) de uso real del editor; usuario no encuentra referencias de objetos útiles en «Mapa del recorrido», no descubre el movimiento Z de textos/fotos/3D, necesita que la cámara atraviese planos progresivos texto→foto→texto por perspectiva, y reporta números gris claro sobre campos blancos ilegibles. Objetivo: storytelling por scroll de nivel Awwwards con control de waypoints/cámara/objetos, editor visual sin Three.js manual y oclusión DOM/WebGL correcta. Referencias: https://www.apple.com/airpods-pro/ ; https://www.moooi.com/en/a-life-extraordinary ; https://chartogne-taillet.com/fr ; https://lusion.co/ ; https://darkroom.engineering/backrooms ; The Goonies Webflow/Joseph Berry (URL por confirmar). Capturas Wappalyzer son pistas, no identifican automáticamente motor de cada efecto. **Propuesta documentada:** [`docs/camara-3d-propuesta-ux-storytelling.md`](../camara-3d-propuesta-ux-storytelling.md), con interfaz, arquitectura, criterios de aceptación y fases de oclusión. Prioridad sugerida: contrastes + espacio editable + mapa de objetos + profundidad unificada y recorrido demostrable; verificar compatibilidad con `sdCameraDepth`, `offZ`, mapa actual en Lienzo libre y Director 0→1. No mezclar ramas ni subir video privado.
+
+- **Avance 12/10/2026 (primer editor espacial orientado al usuario):** en `feat/scroll-camera-v1`, `js/nagweb-scroll-camera.js` incorpora botón «Editar espacio 3D · Ver cámara y objetos», abre el mapa real y muestra guías de TODOS los objetos elegibles del Lienzo libre (antes limitados a 16), lista scrollable etiquetada y ordenada por coordenada Z, selección sincronizada, y un único editor Z (slider+número) que conserva `sdCameraDepth` para texto/HTML e `offZ` para `shape3d` anclados. La conversión usa `C.elementTarget`, respetando Director 0→1, límites y keyframes anteriores; un cambio confirmado crea sólo un snapshot. Se arregló contraste de números de cámara y se añadió guía del recorrido Texto→Foto→Texto con Z de ejemplo, **sin crear una escena ni modificar elementos automáticamente**. Suite aislada: **210 comprobaciones PASS**; prueba real agregada en `tests/camera-current-moment.browser.cjs` para apertura, capas mixtas, contraste, Z HTML/Undo (consultar CI de commit de código). Documentación: `docs/scroll-camera-v1.md`. Limitaciones asumidas: guías sólo en Lienzo libre, footprint aproximado, sin drag de planos DOM directamente en mapa ni oclusión DOM/WebGL real. Próximo objetivo: diseño viewport espacial completo, manipulación directa unificada, caso de muestra verdaderamente autónomo y verificación perspectiva/paso por planos. No hacer despliegue ni merge sin autorización.
+
+- **Verificación de cierre 12/10/2026:** [Integración espacial en Chromium y Three.js: PASS, 39 comprobaciones agrupadas](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38280115962), incluyendo acceso real a «Editar espacio», lista de capas mixtas HTML/3D, contraste de campo Z, edición de profundidad HTML, Undo y aislamiento de los keyframes de cámara; [smoke de cámara PASS](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38280115942). Prueba aislada de editor/modelo PASS, 210 aserciones. La primera corrida del nuevo test en navegador había capturado una carrera de recarga de iframe tras Undo; se ajustó la sincronización de esa prueba y la ejecución repetida aprobó. Sin Vercel manual ni merges. El usuario no necesita intervenir todavía.
+
+- **Avance 12/10/2026 (mapa espacial interactivo):** los marcadores de objetos HTML e instancias `shape3d` del mapa del recorrido, en Lienzo libre, ya admiten arrastre por puntero y movimiento por flechas en las vistas X/Z, X/Y y Z/Y. Usa la proyección existente del mapa y convierte la nueva posición a `x/y` del lienzo, `sdCameraDepth` de HTML y `offZ` de Three, sin crear otro motor ni modificar keyframes de scroll. Shift restringe el arrastre a un eje; Escape cancela; un gesto completo crea sólo un Deshacer; los marcadores son enfocables y cambian de posición visual antes del guardado. Se corrigió la prioridad de interacción de objetos al usar Shift con zoom. **233 comprobaciones aisladas aprobadas**, nueva prueba de mouse real en Chromium agregada a `tests/camera-current-moment.browser.cjs`; verificar CI según el último commit de código. Detalles en `docs/scroll-camera-v1.md`. Faltan mapa grande / vista espacial independiente, preset real texto→foto→texto, oclusión HTML/WebGL y prueba visual de dispositivo real. Ningún merge/despliegue manual.
+
+- **Continuidad 13/10/2026 (macrocorrección de arrastres):** se introdujo una superficie de puntero temporal que preserva el gesto de edición espacial frente a iframes, y se corrigió la liberación de captura en los cuatro controles 3D al cancelar/cambiar herramienta. El arrastre HTML/3D y Undo pasan en Chromium **aislado**; suite JS/editor **251 aserciones PASS**. Se separaron pruebas de gestos para detectar fallos antes de recorrer todo WebGL; runner ahora hace fail-fast. La prueba extensa que acumulaba numerosos gestos perdía eventos en su fase final: no se declara completamente resuelto ese escenario hasta validar una sesión real prolongada. Referencia técnica: `docs/scroll-camera-v1.md`, sección «Gestos 3D compartidos y QA independiente». CI final del commit de código: revisar; sin merge ni Vercel.
+
+- **Hito 13/10/2026 | recorrido cinematográfico armado con recursos de la escena:** botón «Viaje entre capas · Texto → Imagen → Texto» en el panel Cámara 3D, para escenas de Lienzo libre con tres elementos en ese orden. Planificador puro y aplicación atómica: centra los tres planos, asigna Z -300/200/700 escalada a la perspectiva, activa visibilidad durante 0–100 % y crea cinco encuadres editables de cámara que atraviesan los planos. Mantiene el Director como único controlador y los keyframes previos de cada objeto sin tocarlos, conserva modelos GLB ajenos, y requiere un solo snapshot de Deshacer. Se abre el mapa en modo objetos. Suite aislada con 282 aserciones PASS; prueba de editor real Chromium añadida a `tests/spatial-map-drag.browser.cjs` y pendiente de consultar CI. Documentación técnica: `docs/scroll-camera-v1.md`. Limitaciones: necesita textos/foto existentes; no hay demo autónoma ni oclusión DOM/WebGL parcial; revisar el comportamiento de keyframes secundarios en la escena. No desplegar Vercel por este avance.
+
+## Próximas prioridades (revisar con HEAD actual)
+
+- Leer las limitaciones documentadas en `docs/scroll-camera-v1.md` y los subdocumentos espaciales para decidir una mejora útil; algunos antiguos pendientes ya fueron resueltos.
+- Priorizar calidad de edición/encuadre, pruebas de modelo GLB real, sincronía de perspectiva CSS-WebGL, rendimiento y objetos animados, evitando repetir trabajo hecho.
+- Evaluar curvas más naturales y suavizados **secundarios** sin perder determinismo del Director. No aplicar sin revisión el parche histórico de hardening.
+
+### Repositorios y referencias EXACTAS enviadas por el usuario
+- **Dollycurve:** https://github.com/jtydhr88/dollycurve  
+  Propósito: Editor visual de curvas de cámara y manipulación espacial; usar ideas UX, no reemplazar el Director de Scroll
+- **Theatre.js:** https://github.com/theatre-js/theatre  
+  Propósito: Herramientas de timeline y animación visual como referencia de interfaz, no usar como motor alternativo
+- **Three-CurveEditor:** https://github.com/felixmariotto/three-CurveEditor  
+  Propósito: Edición de curvas, puntos y handles 3D
+- **Three.js Journey / Scroll based animation:** https://threejs-journey.com/lessons/scroll-based-animation  
+  Propósito: Arquitectura de escena WebGL ligada al scroll
+- **Codrops / scroll reactive gallery:** https://tympanus.net/codrops/2026/03/09/building-a-scroll-reactive-3d-gallery-with-three-js-velocity-and-mood-based-backgrounds/  
+  Propósito: Respuesta visual a velocidad, damping posterior a la pose, estado target/current
+- **ThreeJS_Animation_Scroll:** https://github.com/SRCarlo/ThreeJS_Animation_Scroll  
+  Propósito: Estados/poses espaciales ligados al recorrido
+- **CodeSandbox scroll controls camera paths 1:** https://codesandbox.io/s/scrollcontrols-gltf-scroll-range-camera-paths-04h1c  
+  Propósito: Prueba de caminos de cámara y CatmullRomCurve3
+- **CodeSandbox scroll controls camera paths 2:** https://codesandbox.io/s/scrollcontrols-gltf-scroll-range-j836i  
+  Propósito: Prueba de recorrido por scroll y CatmullRomCurve3
+
+### Archivos históricos de cámara recuperados
+- `materiales_recuperados/nagweb-camera-hardening.patch`, copia original accesible; **no aplicarlo ciegamente** porque puede estar ya integrado, superado o parcialmente incorporado.
+- Biblioteca de esta cuenta: `Texto pegado(3).txt` (documento técnico de cámara completo, incluido en `fuentes_originales`), `Informe_visual_camara_3D_NagWeb_2026-10-08.pdf`, `Recreaciones_visuales_NagWeb_Camara_3D.zip`.
+- Todas las referencias sirven de investigación de UI/matemática. **NO introducir un segundo progreso de scroll:** Director de Scroll 0→1 es dueño de la animación. Damping/reacciones secundarias solo después de la pose determinista. Diferenciar objetos 3D reales de overlays CSS. No suponer que los enlaces de sandboxes siguen activos sin verificarlos.
+
+## Reglas para continuar sin pérdida ni duplicación
+
+- **Fuente de verdad del código:** el HEAD de la rama propia en GitHub, no este documento, ni el título de un chat, ni un ZIP histórico. Comprobar HEAD, últimos cambios y CI antes de editar.
+- **Fuente de verdad del contexto de producto:** este archivo y las referencias originales; registrar cambios de requisitos y enlaces nuevos aquí al cerrar una etapa, sin inventar información histórica.
+- No renombrar los cinco frentes ni cruzar desarrollos. No escribir en `main`, fusionar ramas, desplegar en Vercel ni cambiar a Work por iniciativa propia. Antes de un push, tener en cuenta CI y cualquier autodeploy.
+- No hacer auditorías repetidas e infinitas ni microetapas artificiales. Tras la primera comprobación, elegir trabajo de mayor impacto; implementar, verificar con pruebas relevantes y entregar un resultado concreto con el commit SHA o explicar qué lo bloqueó.
+- No declarar exitosas pruebas no ejecutadas ni inferir completitud de porcentajes o cantidad de commits.
+- Si hace falta un original (video, HAR, captura, ZIP, imagen), buscarlo por el nombre exacto en la Biblioteca de archivos o pedir solo ese archivo. **El enlace o el nombre del archivo no equivale a tener su contenido visual.**
+- Mantener cambios técnicos separados, preferentemente sin sobrescribir archivos compartidos en paralelo. La integración entre frentes se planificará y aprobará aparte.
+- Al recibir `Avanza`, continuar el desarrollo **de este único proyecto**, no responder solo con otro plan. Entregar: resultado, prueba, commit, pendiente más importante, y si el usuario tiene que hacer algo.
+
+
+## Actualización y trazabilidad
+
+- Este documento se debe **actualizar cuando cambien objetivos, decisiones, enlaces o bloqueos importantes**. Mantener URLs completas, fecha y, si se conoce, procedencia de cada referencia.
+- El README/commit de la rama conserva detalles técnicos. Este documento conserva el **por qué, qué y con qué referencias**.
+- No agregar aquí capturas o HAR con tokens; los originales se mantienen en archivos privados con nombre, nunca como copia indiscriminada al repositorio público.
+- Documento versionado en esta rama. Actualizarlo con decisiones relevantes y nuevos enlaces, sin disparar despliegues manuales innecesarios.
+- Para comenzar un nuevo chat: indicar el identificador del proyecto, esta rama y la ruta de esta ficha en GitHub; pedir lectura del HEAD y documentación técnica. Adjuntar originales solo si son necesarios. El inventario global es opcional.
+## Política permanente de despliegues (12/10/2026)
+
+**Vercel se usa solo si el usuario solicita expresamente una publicación.** Esta rama tiene `vercel.json` con `git.deploymentEnabled: false` para evitar que commits, pruebas, documentación y actualizaciones de datos consuman Deployment Storage. Ejecutar QA local o en GitHub Actions, sin llamar a Vercel como parte de un avance normal. No quitar ni cambiar esa configuración, tampoco en ramas derivadas, salvo autorización explícita. `[skip ci]` no bloquea Vercel. No eliminar despliegues existentes ni modificar el proyecto de Vélez Data. Mantener esta decisión cuando se actualice el contexto.
+
+- **14/10/2026 | Revisión por momentos del viaje entre capas:** confirmado en HEAD que el sistema global de arrastre y el preset de cinco encuadres estaban implementados y contaban con integración espacial Chromium exitosa en [Actions 38502661470](https://github.com/decrackpichon-gif/NagWeb/actions/runs/38502661470); no reconstruirlos. Se agregaron al panel de Cámara 3D controles para recorrer los momentos 0/25/50/75/100% usando el `scrub` existente del Director, sin guardar ni modificar keyframes o agregar reloj. Regresión aislada: **290 aserciones aprobadas**. Pendiente: valorar el paso visual a través de planos HTML y oclusión 3D con una escena completa de composición. No hubo despliegue Vercel ni merge.
+
+- **14/10/2026 | Demostración editable sin archivos externos:** el panel Cámara 3D incorpora «Crear ejemplo completo», que añade a la escena actual de Lienzo libre dos títulos editables y una imagen vectorial SVG autocontenida, y usa el planificador existente de cinco encuadres (texto → imagen → texto). No necesita que el usuario prepare elementos, no elimina recursos anteriores ni altera sus keyframes y se revierte con un solo Deshacer. Se incorporaron pruebas aisladas y Chromium; consultar CI del commit antes de declararlas aprobadas. La imagen es una **ilustración de ejemplo**, no una foto, y la función no crea una nueva escena. Próxima prioridad: experiencia visual de paso a través de planos y oclusión HTML/WebGL, vista espacial amplia, pruebas de escena real. Referencia: `docs/scroll-camera-v1.md`.
+
+
+- **14/10/2026 | Recorte de planos inclinados al atravesarlos:** extendida en `feat/scroll-camera-v1` la utilidad de cruce del ojo para considerar el ancho, alto, escala y rotaciones X/Y de planos raíz HTML. Se oculta el plano entero solo cuando sus cuatro esquinas cruzaron el ojo, evitando eliminarlo prematuramente durante una intersección parcial; se conserva el clipping nativo para geometría/cámara complejas. Regresión matemática y prueba de hit testing Chromium añadidas a las suites existentes, consultar resultado CI del commit. Pendiente: oclusión parcial DOM/WebGL y correctitud general de cámaras giradas. Sin nuevos relojes ni cambios a otros frentes.
+
+- **14/10/2026 | Bloque 01, primera oclusión espacial GPU:** se agrega al adaptador Three una pasada de profundidad sin color para superficies raíz HTML completamente opacas y simples. La oclusión parcial del objeto 3D se resuelve por píxel en el depth buffer, sin reemplazar el DOM real y sin otro reloj; se omiten superficies transparentes o compuestas que puedan generar máscaras incorrectas. Incluye prueba Chromium del framebuffer, estados opacos/translúcidos y desmontaje. Pendiente ampliar cobertura a imágenes alpha, contenedores/transformaciones y compatibilidad bloom antes de considerar completo el bloque de renderizado. Ver `docs/spatial-projection-v1.md` y CI del commit.
+
+- **14/10/2026 | Bloque 01, canal alfa de imágenes:** la profundidad compartida WebGL admite además superficies IMG PNG/WebP/SVG incrustadas, opacas y transparentes, con `alphaTest` real y carga de textura posterior a la imagen. Se preserva el DOM, sin segunda animación. Descartar casos remotos o visualmente complejos evita máscaras falsas; el renderer libera texturas al cambiar la fuente o reconectar. Tests de Three + Chromium con máscara PNG mitad visible/mitad transparente añadidos. Pendientes: clipping/radios, capas anidadas y bloom; revisar CI de commit. Detalle en `docs/spatial-projection-v1.md`.
+
+- **15/10/2026 | Bloque 01, máscaras CSS consolidadas:** el adaptador de profundidad acepta bordes redondeados por esquina, recortes `inset/circle/ellipse` sencillos y encaje `object-fit` de imágenes con canal alfa mediante una máscara GPU única. No modifica el DOM ni el Director. El coste de máscaras se controla mediante caché por estilo/fuente/tamaño y un lienzo acotado, con liberación de texturas previas. El motor conserva exclusiones para CSS y jerarquías no representables con fidelidad; **no está resuelta** la oclusión inversa GLB → HTML. Se agregó regresión visual Chromium por píxel, verificar CI del commit antes de declarar el avance aprobado. Documentación: `docs/spatial-projection-v1.md`.
+
+- **15/10/2026 | Bloque 01, profundidad en contenedores 3D:** los elementos HTML dentro de contenedores `container-box` compatibles reutilizan la matriz de ancestría del renderer que ya usan los modelos GLB. La máscara HTML → WebGL ahora puede acompañar la traslación/rotación del padre; se excluyen ancestros que aplanan, recortan o tienen opacidad parcial, evitando falsos ocultamientos. Añadidas pruebas de matrices y Chromium; consultar CI del commit antes de informar aprobación. Pendiente oclusión recíproca WebGL → HTML, clipping avanzado y estrés de composiciones reales.
+
+- **15/10/2026 | Bloque 01, oclusión inversa de elemento completo:** raycasting con cámara Three ya sincronizada para ocultar temporalmente HTML solo si la geometría opaca ocupa los 25 puntos de muestreo del elemento (hasta 12 elementos por escena). Mantiene DOM, Director y keyframes; al adelantar HTML o reconectar restaura visibilidad. Es **conservador y no parcial**, no reemplaza la composición HTML/WebGL definitiva. Nueva regresión real Chromium para cubrir/apartar el objeto 3D. Ver `docs/spatial-projection-v1.md` y comprobar CI.
+
+- **15/10/2026 | Bloque 01, robustez inversa:** sincronizadas matrices de mundo de modelos y cámara antes de raycasting inverso; corregida la escritura redundante de clases CSS en cada frame y el estado al salir del viewport. Se reutilizan resultados cuando las matrices y planos no cambian, con exclusión de geometrías deformables. Prueba Chromium añadida para no reescribir clases de texto oculto durante scrubbing estático. Sigue pendiente la máscara parcial real GLB → HTML; mantener las exclusiones de geometrías no opacas.
+
+- **15/10/2026 | Decisión V1.0, cierre de regresión inversa:** se identificó CI espacial roja en `e8b0357` por el test de HTML cubierto por GLB. La oclusión parcial/inversa WebGL→HTML no es fiable con WebGL debajo del DOM. Se preserva el código pero se desactiva **por defecto** en V1.0, con una opción interna solo para experimentación futura; el recorrido mínimo conserva HTML semántico y máscaras HTML→WebGL compatibles. La prueba de navegador se cambia para asegurar ausencia de ocultamientos experimentales y mutaciones. Revisar CI antes de declarar lista la versión. No convertir composición avanzada en nuevo bloqueante para V1.0.
