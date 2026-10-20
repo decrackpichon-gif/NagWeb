@@ -16,6 +16,19 @@ const resources = new Map(), previews = new Map(), rendered = [];
 const el = Object.fromEntries(["customize", "customizeControls", "apply", "applyStatus", "detailTitle", "detailId", "preview", "previewReplay", "previewFallback", "undoCustomization", "code", "detailProvider", "detailDescription", "detailLicense", "detailAuthor", "detailControls", "detailArtifacts", "detailBadges", "copyId", "copyCode", "previewNote"].map(key => [key, { textContent: "", replaceChildren() {}, setAttribute() {} }]));
 el.detail = { open: false, showModal() { this.open = true; } };
 el.previewReplay.addEventListener = (type, handler) => { el.previewReplay[type] = handler; };
+// Native 3D comparison controls: app.mjs registers click handlers on them while building the UI.
+const makeToggle = () => {
+  const attributes = {};
+  return {
+    hidden: true, attributes, handlers: {},
+    setAttribute(name, value) { attributes[name] = value; },
+    addEventListener(type, handler) { this.handlers[type] = handler; },
+    click() { return this.handlers.click(); }
+  };
+};
+el.nativeCompare = { hidden: true };
+el.nativeCompareEditable = makeToggle();
+el.nativeCompareOriginal = makeToggle();
 const context = {
   el, detailRevision: 0, previewRevision: 0, previewReplayRevision: 0, selectedResource: null, selectedValues: {},
   editResourceId: null, editInitialValues: {}, rememberCategories() {},
@@ -240,3 +253,48 @@ assert.equal(el.detailTitle.textContent, "No encontré el recurso");
 assert.equal(el.copyId.disabled, true);
 assert.equal(el.copyCode.disabled, true);
 assert.equal(el.preview.hidden, true);
+
+// Native 3D comparison: switch between the insertable WebGL object and the static upstream photo.
+{
+  const sandboxes = [];
+  el.preview.setAttribute = (name, value) => { if (name === "sandbox") sandboxes.push(value); };
+  el.preview.removeAttribute = () => {};
+  context.nativeThreeGeometrySpec = candidate => candidate.id === "native-3d" ? { label: "Esfera" } : null;
+  context.buildNativeThreePreview = () => "native webgl preview";
+  context.officialThreeGallery.set("native-3d", { thumbnail: "https://example.test/original.png" });
+  context.selectedResource = { id: "native-3d" };
+  context.selectedValues = {};
+  el.detail.open = true;
+  el.nativeCompare.hidden = false;
+  el.previewReplay.hidden = false;
+
+  el.nativeCompareOriginal.click();
+  assert.equal(el.nativeCompareOriginal.attributes["aria-pressed"], "true");
+  assert.equal(el.nativeCompareEditable.attributes["aria-pressed"], "false");
+  assert.equal(sandboxes.at(-1), "", "The static upstream photo runs with a fully opaque sandbox");
+  assert.match(el.preview.srcdoc, /https:\/\/example\.test\/original\.png/);
+  assert.doesNotMatch(el.preview.srcdoc, /<script/i, "The original-scene view never carries scripts");
+  assert.match(el.previewNote.textContent, /captura estática/);
+  assert.equal(el.previewReplay.hidden, true, "Replay is meaningless for the static photo");
+
+  el.nativeCompareEditable.click();
+  assert.equal(el.nativeCompareEditable.attributes["aria-pressed"], "true");
+  assert.equal(el.nativeCompareOriginal.attributes["aria-pressed"], "false");
+  assert.equal(sandboxes.at(-1), "allow-scripts", "Only the fixed NagWeb WebGL viewer may run scripts, never with same-origin");
+  assert.equal(el.preview.srcdoc, "native webgl preview");
+  assert.match(el.previewNote.textContent, /Esfera/);
+
+  // The comparison is inert for resources without a verified native adapter, a hidden control or a closed modal.
+  const before = el.preview.srcdoc;
+  context.selectedResource = { id: "code-only" };
+  el.nativeCompareOriginal.click();
+  assert.equal(el.preview.srcdoc, before, "Resources without a native adapter ignore the comparison");
+  context.selectedResource = { id: "native-3d" };
+  el.nativeCompare.hidden = true;
+  el.nativeCompareOriginal.click();
+  assert.equal(el.preview.srcdoc, before, "A hidden comparison control cannot switch the preview");
+  el.nativeCompare.hidden = false;
+  el.detail.open = false;
+  el.nativeCompareOriginal.click();
+  assert.equal(el.preview.srcdoc, before, "A closed modal cannot be repainted by the comparison");
+}

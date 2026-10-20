@@ -357,7 +357,8 @@ try {
       .toHaveCSS("background-color","rgb(17, 51, 85)");
     await hyperCard.click();
     const hyperDetail=frame.frameLocator('[data-preview]');
-    await expect(hyperDetail.getByRole("button",{name:"HyperUI Real"})).toBeVisible();
+    // Same budget as the card above: the detail frame compiles Tailwind from scratch.
+    await expect(hyperDetail.getByRole("button",{name:"HyperUI Real"})).toBeVisible({timeout:15000});
     await expect(hyperDetail.getByRole("button",{name:"HyperUI Real"}))
       .toHaveCSS("background-color","rgb(17, 51, 85)");
     await frame.getByRole("button",{name:"Cerrar",exact:true}).click();
@@ -1128,9 +1129,22 @@ try {
     await loaded;
   }, inserted.element.id);
   const editButton = page.getByRole("button", { name: "Personalizar ícono seleccionado", exact: true });
+  // undo()/redo() render the canvas immediately AND schedule a second debounced
+  // render (refresh -> schedulePreview, 480ms). A click landing inside that second
+  // document swap is legitimately refused by the product guard ("El lienzo se está
+  // actualizando"). Flush the pending debounce and wait for the real iframe load so
+  // the click models a user acting on a settled canvas, with no fixed sleeps.
+  const settleCanvas = () => page.evaluate(() => new Promise((resolve, reject) => {
+    const watchdog = setTimeout(() => reject(new Error(
+      "The editor preview did not settle before reopening customization")), 12000);
+    preview.addEventListener("load", () => { clearTimeout(watchdog); resolve(); }, { once: true });
+    clearTimeout(previewTimer);
+    renderPreview();
+  }));
   const reopenCustomization = async button => {
     const iframe = page.locator('iframe[title="Biblioteca de recursos de NagWeb"]');
     const previous = await iframe.getAttribute("src");
+    await settleCanvas();
     await button.click();
     await expect(page.getByRole("dialog", { name: "Biblioteca de recursos", exact: true })).toBeVisible();
     const target = await iframe.getAttribute("src");
