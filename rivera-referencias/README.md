@@ -16,36 +16,34 @@ Galería estática de referencias para el equipo de identidad de marca ciudad de
 
 Este banco es independiente de los cinco frentes de NagWeb. No modificar `main`, las ramas de los editores ni los otros proyectos de Vercel. No requiere servicios externos, credenciales en el frontend ni pagos de API.
 
-## Contenido publicado el 20/10/2026
+## Catálogo y clasificación · 20/10/2026
 
-80 referencias profesionales y 34 trabajos con enlace Behance, incluidos los nueve casos originales. Vistas previas optimizadas y almacenadas junto al sitio, con atribución y enlaces a las fuentes en cada ficha. Se descartaron fichas que no permitían mostrar aplicaciones útiles.
+98 referencias profesionales, 215 vistas previas locales y 45 trabajos con enlace Behance. Esta actualización suma 18 casos y conserva los 80 anteriores con sus IDs y favoritos.
 
-Dos categorías de moodboard: editorial y modular / fluido y conectado. Once recursos gráficos, cuatro atributos de Rivera, búsqueda, filtro de fuentes, orden por estudio y nombre, fichas con galería ampliable y favoritos guardados localmente en el navegador.
+Cada trabajo tiene una o más categorías en tres ejes:
 
-Las asociaciones con Rivera son análisis propio. Las obras son de sus autores. Una referencia histórica no implica que la identidad siga vigente. No presentar las imágenes como assets originales o licenciados para la marca Rivera.
+- Según el moodboard: Editorial y modular / Fluido y conectado.
+- Recurso gráfico: Ilustración naturalista, Formas orgánicas, Líneas y recorridos, Enlaces y encuentros, Geometría modular, Tramas y patrones, Expansión y ondas, Tipografía, Fotografía, Collage y Texturas.
+- Atributos de Rivera: Natural, En Auge, Transfronteriza e Interconectada.
+
+Las tarjetas muestran el moodboard y todos sus atributos; las fichas muestran la clasificación completa y las notas Qué mirar / Para Rivera. Se pueden combinar filtros, buscar, ordenar por estudio y guardar favoritos localmente.
+
+La navegación está pensada para el equipo de diseño. No volver a crear secciones basadas en el chat o la fecha de incorporación. Los antiguos enlaces `?view=chat` y `?view=new` abren el catálogo completo. No eliminar sus proyectos. Escribir siempre Rivera con mayúscula inicial en los rótulos de marca.
+
+Las asociaciones con Rivera son análisis propio. Las obras conservan sus autorías y fuentes. Las referencias históricas y los conceptos profesionales se identifican cuando corresponde.
 
 ## Actualizar manteniendo la misma URL
 
-1. Leer el HEAD actual de esta rama, este README y los archivos de `public/`.
-2. Ampliar `public/data.js` y añadir imágenes a `public/assets/`. Cada ficha contiene id estable, título, estudio, fuente, descripción, qué mirar, propuesta para Rivera, etiquetas, atributos, moodboards e imágenes con URL de origen.
-3. Validar las imágenes reales, IDs, enlaces y flujo de búsqueda → filtro → ficha → galería. Comprobar favoritos después de recargar si se cambia su código.
-4. Guardar solamente los cambios de `rivera-referencias/` en esta rama.
-5. Cuando el usuario lo pida, desplegar el commit exacto en producción en el mismo proyecto de Vercel. Usar su dominio de producción; no entregar como URL permanente un deployment con hash.
+1. Leer el HEAD actual de la rama exclusiva y este README.
+2. Ampliar public/data.js y public/assets/ sin borrar los casos previos. Cada ficha debe incluir id estable, título, estudio, fuente real, descripción, qué mirar, propuesta para Rivera, moodboards, recursos, atributos e imágenes con su procedencia exacta.
+3. Verificar IDs, clasificación e imágenes. Si se modifica la interfaz, comprobar un recorrido de filtros y una ficha. No repetir pruebas ya resueltas sin un cambio que lo justifique.
+4. Guardar solamente los cambios de rivera-referencias/ en rivera/banco-referencias.
+5. Desplegar el commit exacto en el mismo proyecto Vercel cuando el usuario pida publicar. Conservar https://rivera-banco-referencias.vercel.app/.
 
-La configuración `git.deploymentEnabled: false` evita despliegues automáticos e innecesarios. Las actualizaciones se publican explícitamente en el mismo proyecto cuando el usuario las solicita. No crear un proyecto o URL nuevos para cada ampliación.
+La configuración git.deploymentEnabled:false evita despliegues automáticos. No crear otro proyecto o URL para las ampliaciones.
 
 ## Uso local
 
-`public/index.html` se puede abrir directamente porque los datos están en un archivo JavaScript local. Para una vista equivalente a producción, servir la carpeta `public/` con un servidor estático. No hay dependencias que instalar.
+Servir public/ como carpeta estática. Los datos se cargan desde un JavaScript local y las imágenes están en public/assets/. No hay dependencias que instalar.
 
-Los favoritos pertenecen al navegador y dispositivo; no son una selección compartida del equipo. «Copiar enlace» conserva filtros y búsquedas en la URL. Las fichas admiten enlaces directos con el parámetro `ref`.
-
-## Corrección de acceso a todas las referencias · 20/10/2026
-
-Se eliminó la paginación que mostraba sólo 18 tarjetas. El catálogo completo se presenta al entrar; las imágenes siguen cargándose de forma diferida. Se agregó «Referencias de este chat» con los nueve casos de la primera selección: Kew, Garden Museum, Natural History Museum, Buff, Pen Store, Mind, Stride, Porto y MIT Media Lab. La navegación principal limpia filtros previos para evitar que «Explorar todo» mantenga resultados ocultos. Conservar todos los casos del chat al ampliar el banco.
-
-## Ampliación de la biblioteca · 20/10/2026
-
-33 casos nuevos; catálogo total de 80 referencias, 181 vistas previas y 34 trabajos con Behance. Se incorporaron estudios como COLLINS, Porto Rocha, Base Design, Mucho, Studio Feixen, TwoPoints.Net, DIA, SNASK, Bureau Borsche, BUCK, AKQA y otros. Los casos de botánica, ilustración y packaging amplían el eje Natural.
-
-La sección «Nuevas incorporaciones» corresponde a esta tanda y se abre con `?view=new`. Todas las referencias anteriores se conservan, con sus IDs y favoritos. Los proyectos conceptuales se identifican como tales en el título.
+Los favoritos pertenecen al navegador y dispositivo. Copiar enlace conserva filtros y búsqueda; el parámetro ref abre una ficha directamente.

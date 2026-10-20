@@ -1,5 +1,643 @@
 window.REFERENCES = [
   {
+    "id": "ekos-cacau-tatil",
+    "title": "Natura Ekos Cacau",
+    "studio": "Tátil + Winny Tapajós · Brasil",
+    "url": "https://site.tatil.com.br/pt-br/case/natura-ekos-cacau",
+    "description": "Relanzamiento que integra fotografía del cacao e ilustraciones de la artista amazónica Winny Tapajós.",
+    "lookAt": "La convivencia entre detalle fotográfico, color cálido y representación gráfica del fruto.",
+    "rivera": "Unir mirada documental y lenguaje ilustrado para comunicar origen, biodiversidad y vínculo con una región.",
+    "tags": [
+      "naturalista",
+      "fotografia",
+      "collage",
+      "texturas"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "priority": false,
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "images": [
+      {
+        "src": "assets/r3-n-ekos-cacau-tatil-1.webp",
+        "source": "https://cdn.prod.website-files.com/65cab9e59e016c07e631ac9b/6903650df7f995eb5b2258c1_tatil-natura-ekos-cacau-forest-products-display.webp"
+      }
+    ]
+  },
+  {
+    "id": "amsterdam-sinfonietta",
+    "title": "Amsterdam Sinfonietta · serie de afiches",
+    "studio": "Studio Dumbar/DEPT®",
+    "url": "https://studiodumbar.com/work/amsterdam-sinfonietta",
+    "description": "Una serie cultural en la que la música se convierte en campos de líneas, vibraciones y tensiones cromáticas. Cada temporada cambia el lenguaje y conserva una firma reconocible.",
+    "lookAt": "El contraste entre tramas densas, grandes zonas de color y la información del concierto. Mirar cómo una misma lógica produce afiches diferentes.",
+    "rivera": "Estudiar cómo las líneas pueden representar energía compartida y encuentros sin convertirse en una ilustración literal del territorio.",
+    "tags": [
+      "lineas",
+      "patrones",
+      "expansion",
+      "tipografia"
+    ],
+    "attributes": [
+      "En Auge",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "fluid",
+      "editorial"
+    ],
+    "images": [
+      {
+        "src": "assets/r3-s-amsterdam-sinfonietta-1.webp",
+        "source": "https://studiodumbar.com/media/pages/work/amsterdam-sinfonietta/03b5f556f3-1718356762/wanwai_shum_2023_1.jpg"
+      },
+      {
+        "src": "assets/r3-s-amsterdam-sinfonietta-2.webp",
+        "source": "https://studiodumbar.com/media/pages/work/amsterdam-sinfonietta/84b68252b9-1718356773/wanwai_shum_2023_2.jpg"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "priority": false
+  },
+  {
+    "id": "figlia-superunion",
+    "title": "Figlia · Feminine by Nature",
+    "studio": "Superunion · Hong Kong",
+    "url": "https://www.behance.net/gallery/94128351/Feminine-by-Nature",
+    "description": "Botellas de cerámica artesanal e identidad de aceite de oliva que construye rostros con formas orgánicas.",
+    "lookAt": "La síntesis de hojas y aceitunas en figuras humanas y su continuidad con los volúmenes de las botellas.",
+    "rivera": "Combinar módulos naturales para representar a las personas y sus vínculos con el territorio.",
+    "tags": [
+      "organico",
+      "patrones",
+      "texturas"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "behance": "https://www.behance.net/gallery/94128351/Feminine-by-Nature",
+    "images": [
+      {
+        "src": "assets/r3-n-figlia-superunion-extra-8.webp",
+        "source": "https://www.mr-cup.com/images/2020/07-05-oliveoil/mrcup-oliveoil-08.jpg"
+      },
+      {
+        "src": "assets/r3-n-figlia-superunion-extra-9.webp",
+        "source": "https://www.mr-cup.com/images/2020/07-05-oliveoil/mrcup-oliveoil-09.jpg"
+      }
+    ]
+  },
+  {
+    "id": "omlet",
+    "title": "Omlet · convivencia con carácter",
+    "studio": "Ragged Edge",
+    "url": "https://raggededge.com/partnerships/omlet",
+    "behance": "https://www.behance.net/gallery/189297115/OMLET",
+    "description": "La identidad de esta marca de productos para mascotas combina personajes de formas blandas, mensajes directos y tipografía de curvas amables. La fotografía, la ilustración y la voz de marca construyen un universo cercano.",
+    "lookAt": "Cómo las formas orgánicas de los personajes conviven con titulares compactos y una paleta intensa. Comparar el anuncio tipográfico con la aplicación ilustrada.",
+    "rivera": "Una referencia para hablar de vínculos cotidianos y naturaleza cercana con una voz gráfica accesible, personajes memorables y mensajes que invitan a participar.",
+    "tags": [
+      "organico",
+      "tipografia",
+      "fotografia"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "fluid",
+      "editorial"
+    ],
+    "images": [
+      {
+        "src": "assets/r3-s-omlet-1.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/1400/6e8b61189297115.67640d8c34546.jpg"
+      },
+      {
+        "src": "assets/r3-s-omlet-2.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/387425189297115.67640d8b72d27.png"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "priority": false
+  },
+  {
+    "id": "lbty-pentagram",
+    "title": "LBTY · Liberty Beauty",
+    "studio": "Pentagram · Reino Unido",
+    "url": "https://www.pentagram.com/work/lbty-liberty-beauty",
+    "description": "Identidad y packaging de fragancias con estampas botánicas del archivo Liberty sobre tapas de gran formato.",
+    "lookAt": "La combinación de tramas florales densas y etiquetas tipográficas muy controladas.",
+    "rivera": "Pensar cómo una textura naturalista puede ocupar toda una superficie y convivir con información legible.",
+    "tags": [
+      "naturalista",
+      "patrones",
+      "texturas",
+      "tipografia"
+    ],
+    "attributes": [
+      "Natural"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "priority": false,
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "images": [
+      {
+        "src": "assets/r3-n-lbty-pentagram-1.webp",
+        "source": "https://pentagram-production.imgix.net/e152f3de-0b01-40e8-8e14-9ca8aa28edb7/08_LBTY_Pentagram_Website.jpg?auto=compress%2Cformat&fit=min&fm=jpg&q=80&rect=0%2C0%2C3556%2C2222&w=640&crop=1&fit=crop&h=400&s=c5313ba70b14d78de41745fd250e0a4a"
+      },
+      {
+        "src": "assets/r3-n-lbty-pentagram-2.webp",
+        "source": "https://pentagram-production.imgix.net/e152f3de-0b01-40e8-8e14-9ca8aa28edb7/07_LBTY_Pentagram_Website.jpg?auto=compress%2Cformat&fit=min&fm=jpg&q=80&rect=0%2C0%2C3556%2C2222&w=640&crop=1&fit=crop&h=400&s=24f5da4cc227272e5f27166243a8841b"
+      }
+    ]
+  },
+  {
+    "id": "bafta-2026",
+    "title": "BAFTA 2026 · partículas en movimiento",
+    "studio": "Studio Kiln",
+    "url": "https://www.studio-kiln.com/project/bafta-awards-2026",
+    "description": "Un sistema de partículas que fluyen y se agrupan construye una identidad común para las cuatro ceremonias de BAFTA. El lenguaje pasa de movimiento a afiches, pantallas y espacios.",
+    "lookAt": "La densidad variable de las partículas, su dirección y la relación entre formas facetadas y tipografía editorial. El mismo comportamiento genera muchas composiciones.",
+    "rivera": "Pensar la expansión como una transformación colectiva: pequeñas unidades que se reúnen y forman una figura mayor, útil para comunidad, crecimiento y conexión.",
+    "tags": [
+      "expansion",
+      "patrones",
+      "geometria",
+      "tipografia"
+    ],
+    "attributes": [
+      "En Auge",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "fluid",
+      "editorial"
+    ],
+    "images": [
+      {
+        "src": "assets/r3-s-bafta-2026-1.webp",
+        "source": "https://cdn.prod.website-files.com/6450bd5a51a4509928f3d530/6a53a672d7ef7f7d889437c0_Studio-Kiln_Bafta_Film-Poster-p-1600.png"
+      },
+      {
+        "src": "assets/r3-s-bafta-2026-2.webp",
+        "source": "https://cdn.prod.website-files.com/6450bd5a51a4509928f3d530/6a53a33079f2ba3050165c85_Studio-Kiln_Bafta_Red_Carpet-Totem-TV.png"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "priority": false
+  },
+  {
+    "id": "erm-pentagram",
+    "title": "ERM · naturaleza refractada",
+    "studio": "Pentagram · Reino Unido",
+    "url": "https://www.pentagram.com/work/erm",
+    "description": "Identidad para una consultora de sostenibilidad que abstrae fotografías de naturaleza en patrones concéntricos.",
+    "lookAt": "Las lentes y repeticiones que conectan imágenes naturales, símbolo y composiciones editoriales.",
+    "rivera": "Traducir agua, vegetación y energía en recursos abstractos para expresar transformación e interconexión.",
+    "tags": [
+      "fotografia",
+      "patrones",
+      "lineas",
+      "organico"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "behance": "https://www.behance.net/gallery/221391715/ERM-created-at-Pentagram",
+    "images": [
+      {
+        "src": "assets/r3-n-erm-pentagram-1.webp",
+        "source": "https://pentagram-production.imgix.net/6cf9aee3-74f7-499f-a344-bf4a2a9b77be/ERM_CS_PBlog_03.jpg?auto=compress%2Cformat&fit=min&fm=jpg&q=80&rect=0%2C0%2C6250%2C4167&w=640&crop=1&fit=crop&h=427&s=e985188eb82ec6537025f12925599871"
+      },
+      {
+        "src": "assets/r3-n-erm-pentagram-2.webp",
+        "source": "https://pentagram-production.imgix.net/6cf9aee3-74f7-499f-a344-bf4a2a9b77be/ERM_CS_PBlog_09.jpg?auto=compress%2Cformat&fit=min&fm=jpg&q=80&rect=0%2C0%2C6250%2C3516&w=640&crop=1&fit=crop&h=360&s=30d215981d9029c01e90a74dd84e9f5b"
+      }
+    ]
+  },
+  {
+    "id": "numerik-games-2021",
+    "title": "Numerik Games Festival · programa 2021",
+    "studio": "Notter+Vigne + Monica Müller",
+    "url": "https://www.behance.net/gallery/218759433/Numerik-Festival-Visual-identity",
+    "behance": "https://www.behance.net/gallery/218759433/Numerik-Festival-Visual-identity",
+    "description": "Un sistema cultural de superficies cromáticas, retículas y tipografía para el festival de cultura digital de Yverdon. Notter+Vigne diseñó el afiche y colaboró con Monica Müller en el programa.",
+    "lookAt": "Cómo la retícula curva crea profundidad y movimiento, mientras una tipografía de gran peso ordena nombres, fechas y actividades.",
+    "rivera": "La trama puede expresar conexión y expansión territorial con una estructura consistente que cambia de escala entre afiche y programa.",
+    "tags": [
+      "geometria",
+      "patrones",
+      "lineas",
+      "tipografia"
+    ],
+    "attributes": [
+      "En Auge",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "images": [
+      {
+        "src": "assets/r3-s-numerik-games-2021-1.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/max_632_webp/75ac2b218759433.67a6654c09a4f.jpg"
+      },
+      {
+        "src": "assets/r3-s-numerik-games-2021-2.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/max_632_webp/934076218759433.67a6654c092ad.jpg"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "priority": false
+  },
+  {
+    "id": "adama-anagrama",
+    "title": "Adama",
+    "studio": "Anagrama · México",
+    "url": "https://www.behance.net/gallery/42488713/Adama",
+    "description": "Packaging de cosmética que usa raíces en relieve, negro y blanco y pequeños acentos dorados.",
+    "lookAt": "La ilustración de raíces como textura material y la jerarquía sobria de las etiquetas.",
+    "rivera": "Acercar la idea de origen natural mediante trazos y materialidad, manteniendo un orden editorial claro.",
+    "tags": [
+      "naturalista",
+      "texturas",
+      "tipografia"
+    ],
+    "attributes": [
+      "Natural"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "priority": false,
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "behance": "https://www.behance.net/gallery/42488713/Adama",
+    "images": [
+      {
+        "src": "assets/r3-n-adama-anagrama-1.webp",
+        "source": "https://anagrama-cdn.sfo2.cdn.digitaloceanspaces.com/assets/assets/assets/371/original/012.jpg?1509597594"
+      },
+      {
+        "src": "assets/r3-n-adama-anagrama-2.webp",
+        "source": "https://anagrama-cdn.sfo2.cdn.digitaloceanspaces.com/assets/assets/assets/372/original/013.jpg?1509597594"
+      }
+    ]
+  },
+  {
+    "id": "eurostar-spark-new",
+    "title": "Eurostar · Spark New",
+    "studio": "DesignStudio",
+    "url": "https://www.further.group/work/eurostar",
+    "behance": "https://www.behance.net/gallery/164317041/Eurostar-Paris",
+    "description": "La identidad que une Eurostar y Thalys utiliza una estrella expansiva como orientación, energía y conexión entre ciudades. La acompañan ilustraciones encargadas a artistas europeos; el enlace de Behance muestra París por Fagostudio y Senso Art.",
+    "lookAt": "Cómo la estrella se prolonga y cambia de escala para unir destinos, enmarcar imágenes o protagonizar una pieza. Mirar su convivencia con ilustraciones locales.",
+    "rivera": "La frontera se puede narrar como una red de posibilidades y experiencias. Un gesto gráfico común permite dar lugar a expresiones distintas de cada zona.",
+    "tags": [
+      "expansion",
+      "enlaces",
+      "lineas",
+      "geometria"
+    ],
+    "attributes": [
+      "Transfronteriza",
+      "En Auge",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "fluid",
+      "editorial"
+    ],
+    "images": [
+      {
+        "src": "assets/r3-s-eurostar-spark-new-1.webp",
+        "source": "https://i.vimeocdn.com/video/1595343060-5a75810d5d96239d46d74519fd40b2446344e9cba8bf06848534d113b064b263-d?f=webp"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "priority": false
+  },
+  {
+    "id": "maison-revka-vj",
+    "title": "Maison Revka",
+    "studio": "Violaine & Jérémy · Francia",
+    "url": "https://www.behance.net/gallery/179546445/Maison-Revka",
+    "description": "Identidad, menús y vajilla con ilustraciones inspiradas en los cardos esculpidos de una fachada parisina.",
+    "lookAt": "La traducción de un detalle arquitectónico vegetal a ornamentos, sellos y objetos de mesa.",
+    "rivera": "Explorar una especie o un detalle del lugar como hilo conductor entre piezas editoriales y objetos.",
+    "tags": [
+      "naturalista",
+      "patrones",
+      "tipografia"
+    ],
+    "attributes": [
+      "Natural"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "priority": false,
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "behance": "https://www.behance.net/gallery/179546445/Maison-Revka",
+    "images": [
+      {
+        "src": "assets/r3-n-maison-revka-vj-1.webp",
+        "source": "https://cdn.sanity.io/images/60kmv55h/production/015e932294730f95b4f8e7f2402e141a09f55444-2200x2661.jpg"
+      },
+      {
+        "src": "assets/r3-n-maison-revka-vj-2.webp",
+        "source": "https://cdn.sanity.io/images/60kmv55h/production/ac70b19b9e7b00f2e8324978e9da414320728f2d-1800x2177.jpg"
+      }
+    ]
+  },
+  {
+    "id": "storey-2017",
+    "title": "Storey · sistema modular 2017",
+    "studio": "DixonBaxi",
+    "url": "https://www.behance.net/gallery/61864209/Storey-for-British-Land",
+    "behance": "https://www.behance.net/gallery/61864209/Storey-for-British-Land",
+    "description": "La identidad original de Storey, la marca de espacios flexibles de British Land, convierte un pequeño repertorio geométrico en un sistema que representa colaboración, evolución y crecimiento.",
+    "lookAt": "Cómo los módulos rotan, se superponen y cambian de trama para expresar conceptos distintos. Comparar las composiciones del sistema con su uso en objetos y señalización.",
+    "rivera": "Construir una gramática de encuentros: las mismas piezas pueden representar barrios, actividades o comunidades conectadas y conservar unidad visual.",
+    "tags": [
+      "geometria",
+      "enlaces",
+      "patrones",
+      "expansion"
+    ],
+    "attributes": [
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "images": [
+      {
+        "src": "assets/r3-s-storey-2017-1.webp",
+        "source": "https://standfirst-designweek-production.imgix.net/uploads/2017/07/03163419/DixonBaxi_Storey_8.jpg?auto=compress%2Cformat&crop=faces&fit=crop&h=507&q=80&w=750"
+      },
+      {
+        "src": "assets/r3-s-storey-2017-2.webp",
+        "source": "https://d3faj0w6aqatyx.cloudfront.net/uploads/2017/07/03163424/DixonBaxi_Storey_11-740x500.jpg"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "priority": false
+  },
+  {
+    "id": "dahlia-vj",
+    "title": "Dahlia · espécimen tipográfico",
+    "studio": "VJ Type / Violaine & Jérémy · Francia",
+    "url": "https://www.behance.net/gallery/120900887/Dahlia-Typeface",
+    "description": "Espécimen de una familia tipográfica con ligaduras expresivas, ilustraciones florales y fotografías de Paul Rousteau.",
+    "lookAt": "Los terminales sinuosos de las letras, las flores planas y las composiciones que alternan texto y fotografía.",
+    "rivera": "Una referencia para introducir gestos de crecimiento y floración en títulos sin depender de un dibujo literal.",
+    "tags": [
+      "organico",
+      "tipografia",
+      "fotografia",
+      "patrones"
+    ],
+    "attributes": [
+      "Natural",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "behance": "https://www.behance.net/gallery/120900887/Dahlia-Typeface",
+    "images": [
+      {
+        "src": "assets/r3-n-dahlia-vj-1.webp",
+        "source": "https://cdn.sanity.io/images/60kmv55h/production/e33e8c15b92bbb42f605ae96138c44a0abfe6fad-2800x1705.jpg"
+      },
+      {
+        "src": "assets/r3-n-dahlia-vj-2.webp",
+        "source": "https://cdn.sanity.io/images/60kmv55h/production/9931648f835bbaba998028300c5b0350dbf42ba8-2800x1695.jpg"
+      }
+    ]
+  },
+  {
+    "id": "deezer-koto",
+    "title": "Deezer · un corazón que se expande",
+    "studio": "Koto + Deezer Design Studio",
+    "url": "https://koto.com/projects/deezer",
+    "description": "El corazón de Deezer funciona como un organismo rítmico: cambia de forma para generar pulsos, patrones y contenedores gráficos. La identidad conecta emoción, música y pertenencia.",
+    "lookAt": "La transformación del corazón en ondas y agrupaciones. Estudiar el uso de un único color protagonista y la tipografía contundente en aplicaciones reales.",
+    "rivera": "Un gesto reconocible puede convertirse en una familia de recursos para comunicar energía compartida, expansión y vínculos entre personas.",
+    "tags": [
+      "expansion",
+      "organico",
+      "patrones",
+      "tipografia"
+    ],
+    "attributes": [
+      "En Auge",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "fluid"
+    ],
+    "images": [
+      {
+        "src": "assets/r3-s-deezer-koto-1.webp",
+        "source": "https://uploads-eu-west-1.insided.com/deezer-fr/attachment/ba450d05-24b4-44d2-aeb8-ed4c12f8dc18.gif"
+      },
+      {
+        "src": "assets/r3-s-deezer-koto-2.webp",
+        "source": "https://cdn.sanity.io/images/sbsn7wuy/production/639385ed79c32108a11131682a089a9d14465572-2160x2700.jpg"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "priority": false
+  },
+  {
+    "id": "bobs-bar-vj",
+    "title": "Bob’s Bar · The Brando",
+    "studio": "Violaine & Jérémy · Francia",
+    "url": "https://www.violaineetjeremy.fr/project/bob-s-bar",
+    "description": "Menú artesanal concebido como diario de viaje, con fotografías, sellos, ilustraciones y notas de Tetiaroa.",
+    "lookAt": "La superposición de papeles y la manera de convertir un menú en un archivo narrativo del lugar.",
+    "rivera": "Una referencia directa para integrar naturaleza, memoria y recorrido en mapas, guías y piezas editoriales.",
+    "tags": [
+      "collage",
+      "fotografia",
+      "naturalista",
+      "texturas"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "priority": false,
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "images": [
+      {
+        "src": "assets/r3-n-bobs-bar-vj-1.webp",
+        "source": "https://cdn.sanity.io/images/60kmv55h/production/c7a6bfd7bf20879c4169f82ead03aff67349f778-1700x2107.jpg"
+      },
+      {
+        "src": "assets/r3-n-bobs-bar-vj-2.webp",
+        "source": "https://cdn.sanity.io/images/60kmv55h/production/64e970b13e7846d152dc5b0412f018751b1b684b-2800x2002.jpg"
+      }
+    ]
+  },
+  {
+    "id": "wise-platform",
+    "title": "Wise Platform · conexiones tejidas",
+    "studio": "Ragged Edge + Wise Design",
+    "url": "https://raggededge.com/partnerships/wise-platform",
+    "behance": "https://www.behance.net/gallery/219655841/Wise-Platform",
+    "description": "Una submarca para la infraestructura de pagos internacionales de Wise. Capas translúcidas y una trama verde representan integración, tecnología y una red compartida.",
+    "lookAt": "La relación entre trama, capas y jerarquía tipográfica. Las piezas pueden explicar una infraestructura compleja con pocos componentes repetibles.",
+    "rivera": "Una referencia directa para Transfronteriza e Interconectada: visualizar circulación y vínculos entre sistemas sin depender de mapas convencionales.",
+    "tags": [
+      "enlaces",
+      "patrones",
+      "geometria",
+      "texturas"
+    ],
+    "attributes": [
+      "Transfronteriza",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "images": [
+      {
+        "src": "assets/r3-s-wise-platform-1.webp",
+        "source": "https://nessgrixti.com/assets/images/portfolio/wise-multi-brand/wise-platform-intro.png"
+      },
+      {
+        "src": "assets/r3-s-wise-platform-2.webp",
+        "source": "https://nessgrixti.com/assets/images/portfolio/wise-multi-brand/wise-platform-colours.png"
+      }
+    ]
+  },
+  {
+    "id": "don-bonito-futura",
+    "title": "Don Bonito",
+    "studio": "Futura · México",
+    "url": "https://www.behance.net/gallery/72202867/Don-Bonito",
+    "description": "Identidad de hotel en Sayulita con fauna y flora tropical ilustradas en colores intensos.",
+    "lookAt": "Las aves, las hojas y los personajes como un repertorio que se adapta a papelería y objetos.",
+    "rivera": "Transformar biodiversidad local en un universo amable que acompañe experiencias y recorridos.",
+    "tags": [
+      "naturalista",
+      "organico",
+      "patrones"
+    ],
+    "attributes": [
+      "Natural"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "behance": "https://www.behance.net/gallery/72202867/Don-Bonito",
+    "images": [
+      {
+        "src": "assets/r3-n-don-bonito-futura-1.webp",
+        "source": "https://peopleofdesign.ru/obzors/2018/11/don-bonito-futura-dot-5.png"
+      },
+      {
+        "src": "assets/r3-n-don-bonito-futura-2.webp",
+        "source": "https://peopleofdesign.ru/obzors/2018/11/don-bonito-futura-dot-3.png"
+      }
+    ]
+  },
+  {
+    "id": "eden-project-someone",
+    "title": "Eden Project · transformación positiva",
+    "studio": "SomeOne · Reino Unido",
+    "url": "https://someoneinlondon.com/projects/in-a-sector-full-of-anger-finally-a-brand-full-of-action",
+    "description": "Identidad para el proyecto ambiental con lettering curvo, ilustraciones orgánicas y una campaña de titulares directos.",
+    "lookAt": "La continuidad de las curvas entre letras, ilustraciones y formas; el sistema de afiches y aplicaciones.",
+    "rivera": "Un vocabulario de curvas puede conectar naturaleza, mensaje y movimiento en una misma familia de piezas.",
+    "tags": [
+      "organico",
+      "tipografia",
+      "lineas",
+      "patrones"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "images": [
+      {
+        "src": "assets/r3-n-eden-project-someone-1.webp",
+        "source": "https://backend.someone.digital/wp-content/uploads/2023/09/EP—PR—1920x1080—BrandWorld2.png"
+      },
+      {
+        "src": "assets/r3-n-eden-project-someone-2.webp",
+        "source": "https://backend.someone.digital/wp-content/uploads/2023/09/08-—-Merch.jpg"
+      }
+    ]
+  },
+  {
     "id": "planta-futura",
     "title": "Planta",
     "studio": "Futura · México",
