@@ -90,11 +90,13 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   await page.selectOption('[data-camera-object-select]','0');
   const inspect=()=>page.locator('[data-camera-object-xyz]').textContent();
   const width=await page.evaluate(()=>document.querySelector('#preview').contentDocument.querySelector('.nw-sd-stage').clientWidth);
-  assert.ok((await inspect()).includes('X '+Math.round(width*.25+50))&&(await inspect()).includes('Z 550'),'Inspector follows actual wide-stage coordinates');
+  // Z de autoría = posición hacia ADELANTE = perspectiva − profundidad − movimiento = 1000 − 500 − 50 = 450
+  // (profundidad positiva = más cerca del ojo; convención de Cámara 2.0, ver docs/camara-2-0.md).
+  assert.ok((await inspect()).includes('X '+Math.round(width*.25+50))&&(await inspect()).includes('Z 450'),'Inspector follows actual wide-stage coordinates');
   await page.evaluate(()=>{document.querySelector('#preview').style.setProperty('width','600px','important');});
   await page.waitForFunction(()=>document.querySelector('#preview').contentDocument.querySelector('.nw-sd-stage').clientWidth===600);
   await page.evaluate(()=>renderPane());
-  assert.ok((await inspect()).includes('X 300')&&(await inspect()).includes('Z 550'),'Responsive inspector uses reference coordinates in narrow preview');
+  assert.ok((await inspect()).includes('X 300')&&(await inspect()).includes('Z 450'),'Responsive inspector uses reference coordinates in narrow preview');
   await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub(sec().id,0));
   assert.ok((await inspect()).includes('X 250')&&(await inspect()).includes('Z 500'),'Narrow inspector follows Director zero moment');
   // Full browser editor -> same-origin preview -> WebGL holder workflow.
@@ -207,7 +209,9 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   await page.locator('[data-camera-object-world-z]').fill('325');
   await page.locator('[data-camera-object-world-z]').press('Tab');
   const worldState=await page.evaluate(()=>({text:sec().elements.find(e=>e.id==='story-depth-text')?.sdCameraDepth,frames:JSON.stringify(sec().sdCameraFrames),history:history.length}));
-  assert.equal(worldState.text,325,'DOM layer Z persists into existing authored sdCameraDepth');
+  // El campo es la posición Z de mundo (hacia ADELANTE); se guarda sdCameraDepth = perspectiva − Z = 1000 − 325 = 675
+  // (profundidad guardada positiva = más cerca del ojo).
+  assert.equal(worldState.text,675,'DOM layer Z persists into existing authored sdCameraDepth');
   assert.equal(worldState.frames,cameraBeforeDepth,'Editing depth never changes camera frames');
   await page.evaluate(()=>undo());
   assert.equal(await page.evaluate(()=>sec().elements.find(e=>e.id==='story-depth-text')?.sdCameraDepth||0),0,'Undo restores DOM spatial depth');

@@ -571,12 +571,14 @@ assert.equal(C.targetEligible(targetScene.elements[1],targetScene),false);assert
 assert.equal(C.targetEligible(targetScene.elements[0],{...targetScene,layout:'stack'}),false);
 assert.equal(C.normalizeLook(targetScene.sdCameraLookFrames)[0].targetId,'focus','Look target binding survives normalization');
 const resolvedTarget=C.elementTarget(targetCfg,'focus',.5,M,'linear',{width:1000,height:800},targetCompiled);
-assert.deepEqual(JSON.parse(JSON.stringify(resolvedTarget)),{x:300,y:-175,z:125});
+// 2.0 convention (verified against rendered pixels, see tests/camera-look-centering.browser.cjs):
+// forward world Z of a DOM layer = perspective(1000) - fixed depth(100) - animated Z(25).
+assert.deepEqual(JSON.parse(JSON.stringify(resolvedTarget)),{x:300,y:-175,z:1000-100-25});
 const targetPose=C.pose(targetCfg,.5,M,'linear',false,targetCompiled,{width:1000,height:800});
 const expectedAngles=C.lookAngles({x:0,y:0,z:0},resolvedTarget);
 assert.ok(Math.abs(targetPose.rotateX-expectedAngles.rotateX)<1e-9&&Math.abs(targetPose.rotateY-expectedAngles.rotateY)<1e-9);
 const targetAtStart=C.elementTarget(targetCfg,'focus',0,M,'linear',{width:500,height:400},targetCompiled);
-assert.deepEqual(JSON.parse(JSON.stringify(targetAtStart)),{x:125,y:-100,z:100},'Percent target resolves against current scene size');
+assert.deepEqual(JSON.parse(JSON.stringify(targetAtStart)),{x:125,y:-100,z:1000-100},'Percent target resolves against current scene size');
 const fallbackCfg={...targetCfg,targets:[]};
 const fallback=C.lookTarget(fallbackCfg,.5,M,'linear',{width:1000,height:800},targetCompiled);
 assert.equal(fallback.x,0);assert.equal(fallback.z,1000,'Deleted target falls back to stored XYZ');

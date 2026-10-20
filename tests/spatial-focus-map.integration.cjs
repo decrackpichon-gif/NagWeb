@@ -464,7 +464,8 @@ const layersBefore=JSON.stringify(scene.sdCameraFrames),motionBefore=JSON.string
 const extraLayers=Array.from({length:20},(_,i)=>({id:'layer-'+i,type:'heading',text:'Plano '+i,x:45+i%6,y:42+i%4,sdCameraDepth:450-i*25}));
 scene.elements.push(...extraLayers);
 const bigMap=C.panel(scene);
-assert.match(bigMap,/Editar espacio 3D · Ver cámara y objetos/,'Spatial view entry is discoverable');
+assert.match(bigMap,/data-camera-workspace-open/,'Large 3D workspace entry is discoverable');
+assert.match(bigMap,/Editar espacio 3D en el mapa 2D del panel/,'Panel 2D map entry stays available');
 assert.match(bigMap,/data-camera-layer-list/,'Existing map gains a layered object list');
 assert.match(bigMap,/data-camera-scene-object="21"/,'The object map no longer silently truncates at 16');
 assert.match(bigMap,/data-camera-object-world-z/,'Selected model has a shared world-Z field');
@@ -478,7 +479,9 @@ const domPanel=C.panel(scene);
 assert.match(domPanel,/Profundidad del objeto · Z/,'DOM layer can be edited from the spatial inspector');
 const beforeDomUndo=undos,oldDepth=title.sdCameraDepth;
 handlers.change({target:{dataset:{cameraObjectWorldZ:'1'},value:'350'}});
-assert.equal(title.sdCameraDepth,350,'World depth is persisted into existing sdCameraDepth');
+// World Z 350 means 350 units ahead of the start; a DOM layer's stored depth is
+// measured toward the eye, so stored = perspective(1000) - 350.
+assert.equal(title.sdCameraDepth,650,'World depth is persisted into existing sdCameraDepth');
 assert.equal(undos,beforeDomUndo+1,'World Z edit adds exactly one undo');
 assert.equal(oldDepth,100);
 const objLayer={dataset:{cameraLayerPick:'0'}};
@@ -583,7 +586,9 @@ assert.equal(mapObj.captured,false,'Escape leaves no map pointer capture');
 assert.equal(outsideListeners.pointermove,undefined,'Escape cleans global map listeners');
 const keyMap=mapHandle(1),depthBeforeKey=title.sdCameraDepth,keyUndo=undos;
 handlers.keydown({target:keyMap.node,key:'ArrowUp',shiftKey:true,preventDefault(){},stopPropagation(){}});
-assert.ok(title.sdCameraDepth>depthBeforeKey,'Shift+ArrowUp edits fine DOM Z in overhead view');
+// Up in the overhead view is FORWARD (+world Z). A DOM layer's stored depth is measured
+// toward the eye, so moving it forward lowers sdCameraDepth.
+assert.ok(title.sdCameraDepth<depthBeforeKey,'Shift+ArrowUp edits fine DOM Z in overhead view');
 assert.equal(undos,keyUndo+1,'Keyboard map step uses one undo');
 assert.equal(JSON.stringify(scene.sdCameraFrames),cameraPathInvariant,'Camera remains untouched after all 3D layout changes');
 assert.equal(JSON.stringify(object.sdKeyframes),motionInvariant,'3D animation remains untouched after all layout changes');
@@ -607,7 +612,7 @@ scene.elements.push(journeyPhoto,journeyEnd);
 const journeyPlan=C.layerJourneyPlan(scene);
 assert.ok(!journeyPlan.error);
 assert.equal(JSON.stringify(journeyPlan.layers.map(x=>x.id)),JSON.stringify(['title','journey-photo','journey-end']));
-assert.equal(JSON.stringify(journeyPlan.layers.map(x=>x.z)),JSON.stringify([-300,200,700]));
+assert.equal(JSON.stringify(journeyPlan.layers.map(x=>x.z)),JSON.stringify([700,200,-300]));
 assert.equal(JSON.stringify(journeyPlan.frames.map(x=>x.at)),JSON.stringify([0,25,50,75,100]));
 assert.equal(JSON.stringify(journeyPlan.frames.map(x=>x.z)),JSON.stringify([-900,-240,270,780,1300]));
 assert.equal(journeyPlan.length,480);
@@ -625,14 +630,18 @@ assert.equal(scene.sdCameraOrientationMode,'manual');
 assert.equal(scene.sdLength,480);
 assert.equal(JSON.stringify(scene.sdCameraFrames.map(k=>k.z)),JSON.stringify(journeyPlan.frames.map(k=>k.z)));
 assert.equal(title.x,50);assert.equal(journeyPhoto.y,50);assert.equal(journeyEnd.x,50);
-assert.equal(title.sdCameraDepth,-300);assert.equal(journeyPhoto.sdCameraDepth,200);assert.equal(journeyEnd.sdCameraDepth,700);
+assert.equal(title.sdCameraDepth,700);assert.equal(journeyPhoto.sdCameraDepth,200);assert.equal(journeyEnd.sdCameraDepth,-300);
 assert.equal(title.sdEnter,'none');assert.equal(journeyPhoto.sdEnd,100);assert.equal(journeyEnd.sdExit,'keep');
 assert.equal(JSON.stringify(journeyPhoto.sdKeyframes),existingPhotoKeyframes,'Authoring preserves image animation keyframes');
 assert.equal(JSON.stringify(object),existingThree,'Unrelated GLB and its motion are unchanged');
 assert.equal(JSON.stringify(scene.sdCameraLookFrames),originalLookFrames,'Saved look frames remain untouched while manual orientation is active');
 const tripCfg=C.config(scene),tripStart=C.pose(tripCfg,0,window.NAGWEB_STORY_MODEL,'linear',false),tripEnd=C.pose(tripCfg,1,window.NAGWEB_STORY_MODEL,'linear',false);
 assert.equal(tripStart.z,-900);assert.equal(tripEnd.z,1300);
-assert.ok(tripStart.z<title.sdCameraDepth&&tripEnd.z>journeyEnd.sdCameraDepth,'Camera travels through all authored planes');
+// Independent reference: a DOM layer sits (perspective - storedDepth) ahead; the camera must
+// start behind the first plane, reach the last, and meet text A -> photo -> text B in that order.
+const fwd=e=>1000-e.sdCameraDepth;
+assert.ok(fwd(title)<fwd(journeyPhoto)&&fwd(journeyPhoto)<fwd(journeyEnd),'Visitor meets text A, photo, text B in reading order');
+assert.ok(tripStart.z<fwd(title)&&tripEnd.z>=fwd(journeyEnd),'Camera travels through all authored planes');
 assert.match(C.panel(scene),/data-camera-layer-list/,'Prepared trip remains editable in the existing map');
 const previewSteps=C.panel(scene);
 for(const mark of [0,25,50,75,100])assert.match(previewSteps,new RegExp('data-camera-journey-preview="'+mark+'"'),'Layer journey exposes a deterministic preview moment');
@@ -676,8 +685,9 @@ const sampleBeforeCount=scene.elements.length,sampleBeforeElements=scene.element
 const samplePlan=C.layerJourneyDemo(scene,ctx.mkEl);
 assert.ok(!samplePlan.error,'Self-contained example needs no existing ordered trio');
 assert.equal(scene.elements.length,sampleBeforeCount,'Demo planner never edits the scene');
-assert.equal(JSON.stringify(samplePlan.created.map(function(e){return e.type;})),JSON.stringify(['heading','img','heading']),'VM-produced arrays are compared across realms');
-assert.ok(samplePlan.created[1].src.startsWith('data:image/svg+xml;charset=utf-8,'),'Sample image is fully embedded');
+assert.equal(JSON.stringify(samplePlan.created.map(function(e){return e.type;})),JSON.stringify(['heading','image','heading']),'VM-produced arrays are compared across realms');
+assert.equal(samplePlan.created[1].assetId,samplePlan.asset.id,'Sample image points at a project asset (the type NagWeb really renders)');
+assert.ok(samplePlan.asset.data.startsWith('data:image/svg+xml;charset=utf-8,'),'Sample image is fully embedded');
 assert.equal(samplePlan.frames.length,5);
 const demoPanel=C.panel(scene);assert.match(demoPanel,/data-camera-journey-demo/);
 const sampleBeforeUndo=undos,sampleBeforeSave=saves;
@@ -686,6 +696,6 @@ assert.equal(undos,sampleBeforeUndo+1,'Sample journey uses one Undo snapshot');
 assert.equal(saves,sampleBeforeSave+1,'Sample journey saves once');
 assert.equal(scene.elements.length,sampleBeforeCount+3,'Sample journey inserts exactly three reusable elements');
 assert.equal(JSON.stringify(scene.elements.slice(0,sampleBeforeCount).map(function(e){return JSON.stringify(e);})),JSON.stringify(sampleBeforeElements),'Existing objects remain unchanged');
-assert.equal(JSON.stringify(scene.elements.slice(-3).map(function(e){return e.sdCameraDepth;})),JSON.stringify([-300,200,700]));
+assert.equal(JSON.stringify(scene.elements.slice(-3).map(function(e){return e.sdCameraDepth;})),JSON.stringify([700,200,-300]));
 assert.equal(scene.sdCameraFrames.length,5);
 console.log('PASS offline example: self-contained image, five camera stops, existing objects unchanged, one Undo/save');

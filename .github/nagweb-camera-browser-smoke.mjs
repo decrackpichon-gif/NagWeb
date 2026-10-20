@@ -1822,7 +1822,7 @@ export async function runCameraBrowserSmoke(page){
   await page.evaluate(()=>NAGWEB_SCROLL_DIRECTOR.scrub('camera-browser-scene',.5));
   await page.waitForFunction(x=>document.querySelector('[data-camera-object-xyz]')?.textContent.includes('X '+x),{},inspectorExpected.nextX);
   inspected=await inspectRead();
-  assert.ok(inspected.xyz.includes('X '+inspectorExpected.nextX)&&inspected.xyz.includes('Z 550'),'Inspector follows object animated X and Z');
+  assert.ok(inspected.xyz.includes('X '+inspectorExpected.nextX)&&inspected.xyz.includes('Z 450'),'Inspector follows object animated X and Z (Z hacia adelante = 1000 − profundidad 500 − movimiento 50)');
   assert.ok(inspected.distance&&!inspected.distance.includes(inspectorExpected.distance+' px'),'Inspector distance follows the current camera and object positions');
   assert.equal(inspected.history,inspectBase.history,'Scrubbing and inspecting adds no undo snapshot');
   assert.equal(inspected.elements,inspectBase.elements,'Inspection does not edit scene objects');

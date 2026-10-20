@@ -86,7 +86,7 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
     start:C.pose(cfg,0,window.NAGWEB_STORY_MODEL,'linear',false).z,
     end:C.pose(cfg,1,window.NAGWEB_STORY_MODEL,'linear',false).z};
   });
-  assert.equal(JSON.stringify(trip.depths),JSON.stringify([-300,200,700]));
+  assert.equal(JSON.stringify(trip.depths),JSON.stringify([700,200,-300]));
   assert.equal(JSON.stringify(trip.frames.map(k=>k.at)),JSON.stringify([0,25,50,75,100]));
   assert.equal(trip.start,-900);assert.equal(trip.end,1300);
   assert.equal(trip.look,'manual');assert.equal(trip.motion,'linear');
@@ -104,18 +104,36 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   await page.locator('[data-camera-journey-demo]').click();
   const afterDemo=await page.evaluate(()=>{const s=sec(),added=s.elements.slice(-3);return {
    count:s.elements.length,earlier:JSON.stringify(s.elements.slice(0,-3)),types:added.map(e=>e.type),
-   ids:added.map(e=>e.id),image:added[1].src,depths:added.map(e=>e.sdCameraDepth),
+   ids:added.map(e=>e.id),image:(((project.assets||{}).images||[]).find(a=>a.id===added[1].assetId)||{}).data,depths:added.map(e=>e.sdCameraDepth),
    frames:s.sdCameraFrames.length,undo:history.length};});
   assert.equal(afterDemo.count,beforeDemo.count+3,'Real editor creates three sample layers');
   assert.equal(afterDemo.earlier,beforeDemo.elements,'Real editor leaves existing layers unchanged');
-  assert.equal(JSON.stringify(afterDemo.types),JSON.stringify(['heading','img','heading']));
+  assert.equal(JSON.stringify(afterDemo.types),JSON.stringify(['heading','image','heading']));
   assert.equal(new Set(afterDemo.ids).size,3,'Each sample has a unique ID');
-  assert.ok(afterDemo.image.startsWith('data:image/svg+xml;charset=utf-8,'),'Sample loads offline');
-  assert.equal(JSON.stringify(afterDemo.depths),JSON.stringify([-300,200,700]));
+  assert.ok(afterDemo.image.startsWith('data:image/svg+xml;charset=utf-8,'),'Sample loads offline (stored as a real project image asset)');
+  assert.equal(JSON.stringify(afterDemo.depths),JSON.stringify([700,200,-300]));
   assert.equal(afterDemo.frames,5);assert.equal(afterDemo.undo,beforeDemo.undo+1);
   await page.evaluate(()=>undo());
   assert.equal(await page.evaluate(()=>JSON.stringify(sec().elements)),beforeDemo.elements,'One Undo removes the sample without altering existing content');
   assert.equal(await page.evaluate(()=>JSON.stringify(sec().sdCameraFrames)),beforeDemo.frames,'Undo restores camera path');
+
+  // Large workspace uses the very same scene, selection and Director controls.
+  await page.locator('[data-camera-space-open]').click();
+  const workspaceBefore=await page.evaluate(()=>({data:JSON.stringify(sec()),undo:history.length}));
+  await page.locator('[data-camera-map-expand]').click();
+  const wide=await page.locator('[data-camera-map]').boundingBox();
+  assert.ok(wide.width>700&&wide.height>500,'Expanded map has usable workspace dimensions: '+JSON.stringify(wide));
+  await page.locator('[data-camera-map-plane]').selectOption('side');
+  assert.equal(await page.locator('[data-camera-map-wide]').count(),1,'Wide layout survives inspector rerenders');
+  await page.locator('[data-camera-space-seek]').fill('37.5');
+  await page.waitForFunction(()=>Math.abs(NAGWEB_SCROLL_DIRECTOR.progress(sec().id)-37.5)<.01);
+  assert.equal(await page.locator('[data-camera-space-progress]').textContent(),'37.5%','Wide slider shares the Director progress');
+  await page.screenshot({path:'work/camera-workspace.png'});
+  await page.locator('[data-camera-map-expand]').focus();await page.keyboard.press('Escape');
+  assert.equal(await page.locator('[data-camera-map-wide]').count(),0,'Escape returns to compact panel');
+  assert.equal(await page.evaluate(()=>JSON.stringify(sec())),workspaceBefore.data,'Layout navigation never edits scene data');
+  assert.equal(await page.evaluate(()=>history.length),workspaceBefore.undo,'Layout navigation never creates Undo steps');
+  console.log('PASS wide spatial workspace: dimensions, views, Escape and unchanged authored scene');
 
   // V1.0 acceptance: Undo must persist, not just update in-memory state.
   // Reload the actual editor, then build the exported HTML from the recovered

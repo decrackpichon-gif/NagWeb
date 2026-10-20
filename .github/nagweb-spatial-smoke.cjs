@@ -12,11 +12,11 @@ const jobs=[];
 // renderer and editor suite. All other tests still run when this is green.
 // Include the isolated pointer regression alongside other editor tests, not before renderer.
 for(const group of chosen){
- if(group==='editor')jobs.push(['tests/spatial-map-drag.browser.cjs'],['.github/nagweb-camera-model-test.mjs'],['.github/nagweb-camera-runtime-test.mjs'],['tests/spatial-focus-map.integration.cjs'],['tests/camera-current-moment.browser.cjs']);
+ if(group==='editor')jobs.push(['tests/spatial-view.unit.cjs'],['tests/spatial-map-drag.browser.cjs'],['tests/camera-workspace.browser.cjs'],['.github/nagweb-camera-model-test.mjs'],['.github/nagweb-camera-runtime-test.mjs'],['tests/spatial-focus-map.integration.cjs'],['tests/camera-current-moment.browser.cjs']);
  else jobs.push(['tests/spatial-'+group+'.integration.cjs',three],['tests/spatial-'+group+'.browser.cjs']);
 }
-const syntax=['js/nagweb-spatial-renderer.js','js/nagweb-scroll-camera.js','js/nagweb-scroll-director-v16.js','.github/nagweb-camera-browser-smoke.mjs','.github/nagweb-spatial-smoke.cjs'];
-for(const file of fs.readdirSync('tests').filter(f=>/^(spatial-|camera-current-moment).*\.cjs$/.test(f)))syntax.push('tests/'+file);
+const syntax=['js/nagweb-spatial-view.js','js/nagweb-spatial-workspace.js','js/nagweb-spatial-renderer.js','js/nagweb-scroll-camera.js','js/nagweb-scroll-director-v16.js','.github/nagweb-camera-browser-smoke.mjs','.github/nagweb-spatial-smoke.cjs'];
+for(const file of fs.readdirSync('tests').filter(f=>/^(spatial-|camera-).*\.cjs$/.test(f)))syntax.push('tests/'+file);
 jobs.push(...syntax.map(file=>['--check',file]));
 const failures=[],started=Date.now();
 for(const args of jobs){

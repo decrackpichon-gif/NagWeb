@@ -1,0 +1,26 @@
+NAGWEB · CÁMARA 3D 2.0 · CÓMO PROBARLO EN WINDOWS
+==================================================
+
+Necesitás: Google Chrome e Internet (el producto carga Three.js, GSAP y las tipografías desde la red).
+
+OPCIÓN A (la más simple)
+  1. Descomprimí el ZIP.
+  2. Hacé doble clic en  INICIAR-WINDOWS.bat  (necesita Node.js LTS, https://nodejs.org).
+  3. Se abre NagWeb en el navegador. Para cortar, cerrá la ventana negra.
+
+OPCIÓN B (sin instalar nada)
+  1. Descomprimí el ZIP.
+  2. Abrí index.html con Chrome (clic derecho > Abrir con > Chrome).
+
+PROBAR LA ESCENA DE ACEPTACIÓN
+  1. En NagWeb: Abrir proyecto > elegí  acceptance\NagWeb-Camara-2-Aceptacion.json
+     (texto A, foto, texto B y un anillo 3D propio).
+  2. En el panel de la escena, sección Cámara: botón "◈ Abrir Espacio 3D · pantalla grande".
+  3. Elegí un objeto en la lista de la izquierda y arrastrá una flecha para moverlo.
+     Mirar (órbita con botón del medio, zoom con la rueda) NO cambia tu proyecto.
+     Esc cancela un gesto; "Deshacer" lo revierte de una vez.
+  4. Cerrá el espacio y mové el Director de Scroll de 0 a 100 %. Exportá el sitio y abrilo:
+     debe verse igual en los mismos porcentajes.
+
+Qué es automático y qué falta: ver AUDITORIA_DEVOLUCION.md. Lo que sólo vos podés confirmar
+(tu equipo HP Omen / GTX 1050 y iPhone/iPad) está marcado como "pendiente de aceptación real".
