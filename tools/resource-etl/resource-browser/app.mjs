@@ -828,7 +828,12 @@ function updateApplyReadiness(resource) {
     return;
   }
   if (hostKinds && !hostKinds.has(prepared.descriptor.kind) && !acceptsAutonomousHtml && !acceptsMagicCss && !acceptsCssShake) {
-    el.applyStatus.textContent = hostKinds.has("svg")
+    const kindNote = {
+      "react-component": "Los componentes React todavía no se pueden insertar en NagWeb: necesitan un motor React que el editor no tiene. Por ahora podés ver la vista previa y copiar su código.",
+      "three": "Las escenas de código Three.js todavía no se pueden insertar en NagWeb. Podés ver la foto oficial y copiar su código.",
+      "glsl-snippet": "Esta función GLSL no es una de las 9 de ruido que NagWeb puede insertar como shader. Podés copiar su código."
+    }[prepared.descriptor.kind];
+    el.applyStatus.textContent = kindNote ? kindNote : hostKinds.has("svg")
       ? "Este editor admite SVG y HTML/CSS autónomo verificado. Este recurso todavía no se puede insertar, pero podés explorar y copiar su código."
       : "Este editor todavía no admite insertar este tipo de recurso. Podés explorarlo y copiar su código.";
     return;

@@ -2609,7 +2609,7 @@ function wsSelection(s){
 function wsRound(n){return Math.round(Math.max(-4000,Math.min(4000,+n||0))*10)/10;}
 C.workspaceHost={
  snapshot:function(full){
-  var s=sec(),empty={enabled:false,sectionId:s&&s.id,layoutFree:!!s&&s.layout==='free',pct:s?progress(s):0,keys:[],looks:[],path:[],lookPath:[],objects:[],lookNow:null,
+  var s=sec(),empty={enabled:false,sectionId:s&&s.id,sectionName:s&&s.name||'',layoutFree:!!s&&s.layout==='free',pct:s?progress(s):0,keys:[],looks:[],path:[],lookPath:[],objects:[],lookNow:null,
    size:{width:1000,height:1000},perspective:1000,pose:{x:0,y:0,z:0,rotateX:0,rotateY:0,rotate:0},selection:null};
   if(!s)return empty;
   var cfg=C.config(s);if(!cfg)return empty;
@@ -2624,7 +2624,7 @@ C.workspaceHost={
     x:Math.round(row.point.x*10)/10,y:Math.round(row.point.y*10)/10,z:Math.round(row.point.z*10)/10,
     stored:is3d?(+e.offZ||0):(+e.sdCameraDepth||0),editable:true});
   });
-  var out={enabled:true,sectionId:s.id,layoutFree:s.layout==='free',pct:pct,size:size,perspective:cfg.spatialPerspective||1000,pose:pose,objects:objects,
+  var out={enabled:true,sectionId:s.id,sectionName:s.name||'',layoutFree:s.layout==='free',pct:pct,size:size,perspective:cfg.spatialPerspective||1000,pose:pose,objects:objects,
    lookNow:cfg.orientationMode==='lookAt'?C.lookTarget(cfg,pct/100,model,s.sdEase,size):null,selection:wsSelection(s)};
   if(full===false)return out;
   out.keys=list.map(function(k){return {at:k.at,x:k.x,y:k.y,z:k.z};});

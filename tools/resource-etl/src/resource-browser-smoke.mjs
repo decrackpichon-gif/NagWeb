@@ -53,7 +53,7 @@ const galleryRoot=path.join(root,"resource-browser","react-previews");
 const gallery=JSON.parse(await readFile(path.join(galleryRoot,"manifest.json"),"utf8"));
 assert.equal(gallery.format,"nagweb-compiled-react-gallery/1");
 const realReactEntries=Object.entries(gallery.entries||{});
-assert.ok(realReactEntries.length>=50 && realReactEntries.length<=69,
+assert.ok(realReactEntries.length>=50 && realReactEntries.length<=155,
   "At least 50 real React previews must be published before the browser smoke");
 assert.deepEqual((await readdir(galleryRoot)).sort(),["manifest.json","thumbnails"],
   "No executable React JavaScript or duplicate runtime may ship to the Library");

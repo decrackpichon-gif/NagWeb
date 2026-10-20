@@ -171,6 +171,7 @@ function render(){
  if(!sn||!sn.enabled){
   out.innerHTML='<p class="note">Activá la <b>Cámara 3D</b> en el panel de la escena para ver y editar su espacio.</p>';
  }else{
+  html+='<p class="note"><b>Escena:</b> '+esc(sn.sectionName||'sin nombre')+(sn.layoutFree?' · Lienzo libre':' · no es Lienzo libre')+'</p>';
   html+='<h3>Cámara · encuadres</h3>';
   html+=sn.keys.map(function(k){var on=ws.sel&&ws.sel.kind==='key'&&ws.sel.at===k.at;return '<button type="button" class="item'+(on?' on':'')+'" data-ws-pick="key:'+k.at+'"><span class="k" style="color:#ffb454">◆</span><span class="n">Encuadre '+fmt(k.at)+'%</span><span class="z">Z '+fmt(k.z)+'</span></button>';}).join('')||'<p class="note">Sin encuadres.</p>';
   if(sn.looks.length){
@@ -179,7 +180,7 @@ function render(){
   }
   html+='<h3>Contenido (de cerca a lejos)</h3>';
   var objs=sn.objects.slice().sort(function(a,b){return a.z-b.z;});
-  html+=objs.map(function(o){var r=ROLE[o.role]||ROLE.other,on=ws.sel&&ws.sel.kind==='object'&&String(ws.sel.id)===String(o.id);return '<button type="button" class="item'+(on?' on':'')+'" data-ws-pick="object:'+esc(o.id)+'"><span class="k" style="color:'+(on?'#14110a':r.color)+'">'+r.glyph+'</span><span class="n">'+esc(o.label)+'</span><span class="z">Z '+fmt(o.z)+'</span></button>';}).join('')||'<p class="note">'+(sn.layoutFree?'No hay contenido compatible.':'El contenido se muestra en Lienzo libre.')+'</p>';
+  html+=objs.map(function(o){var r=ROLE[o.role]||ROLE.other,on=ws.sel&&ws.sel.kind==='object'&&String(ws.sel.id)===String(o.id);return '<button type="button" class="item'+(on?' on':'')+'" data-ws-pick="object:'+esc(o.id)+'"><span class="k" style="color:'+(on?'#14110a':r.color)+'">'+r.glyph+'</span><span class="n">'+esc(o.label)+'</span><span class="z">Z '+fmt(o.z)+'</span></button>';}).join('')||'<p class="note" data-ws-empty>'+(sn.layoutFree?'Esta escena no tiene textos, imágenes u objetos 3D sueltos que la cámara pueda mover. No entran los que están dentro de un contenedor, fijos o en ventanas emergentes.':'Esta escena está en modo «Apilada» o «Galería», por eso no se ven acá sus textos ni objetos. Para verlos: en el panel de la escena, en «Disposición», elegí «Lienzo libre (a mano)». Ojo: los elementos pueden cambiar de lugar.')+'</p>';
   out.innerHTML=html;
  }
  renderInspector();renderTimeline();syncView();
