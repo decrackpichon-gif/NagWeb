@@ -137,12 +137,12 @@
     ],
     "compressedBytes": 4697869,
     "uncompressedBytes": 37963241,
-    "sha256": "fc622c5cf2bfb20a891fb27160f57cbe90b1a3e8ca2019deeb12eab17c8f38cc",
+    "sha256": "9522cad9639c0da7dedac71e05f68c0655e6bd425eb5b2abbdc18e586cb8f72c",
     "libraryPath": "all/library.json.gz",
     "manifestPath": "all/manifest.json",
     "browseIndexPath": "all/browse-index.json.gz",
-    "browseIndexBytes": 498638,
-    "browseIndexSha256": "560431fde6eecb2ecb1d3abde86b09be12278aeef2fd9be0dad05cbb1bc39abe"
+    "browseIndexBytes": 498641,
+    "browseIndexSha256": "ff270d5b10862a15248b60fb014a47d8a0aa46222bc131e1778266bca3d8db4b"
   },
   "detailShards": {
     "uiverse": {
