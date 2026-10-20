@@ -102,7 +102,7 @@ jobs:
             throw Error("Heroicons previews regressed");
           const lucide=index.resources.filter(r=>r.provider==="lucide" && r.previewShapes?.length).length;
           if(lucide<1800)throw Error("Lucide previews regressed: "+lucide);
-          const native=index.resources.filter(r=>["svg","uiverse-html","spinkit-html","magic-css","csshake","motion-preset","three-native"].includes(r.editorUse));
+          const native=index.resources.filter(r=>["svg","uiverse-html","spinkit-html","magic-css","csshake","motion-preset","three-native","shader-native"].includes(r.editorUse));
           const code=index.resources.filter(r=>r.editorUse==="code");
           const motion=native.filter(r=>r.editorUse==="motion-preset");
           if(!motion.length || motion.some(r=>r.provider!=="animxyz" || !r.id.startsWith("animxyz:preset:")))
@@ -116,15 +116,19 @@ jobs:
           if(threeNative.length!==allowedNativeIds.size ||
              threeNative.some(r=>!allowedNativeIds.has(r.id)))
             throw Error("Native Three.js adapters do not match the three source-verified geometries");
-          if(native.length!==6041+motion.length+allowedNativeIds.size ||
-             code.length!==721-motion.length-allowedNativeIds.size ||
+          const shaderNative=native.filter(r=>r.editorUse==="shader-native");
+          if(shaderNative.length!==9 ||
+             shaderNative.some(r=>r.provider!=="glsl-noise" || !/^glsl-noise:(?:classic|periodic|simplex):[234]d$/.test(r.id)))
+            throw Error("Native glsl-noise shaders must be exactly the nine pinned, verified functions");
+          if(native.length!==6041+motion.length+allowedNativeIds.size+shaderNative.length ||
+             code.length!==721-motion.length-allowedNativeIds.size-shaderNative.length ||
              native.filter(r=>r.editorUse==="svg").length!==2193 ||
              native.filter(r=>r.editorUse==="uiverse-html").length!==3761 ||
              native.filter(r=>r.editorUse==="spinkit-html").length!==12 ||
              native.filter(r=>r.editorUse==="magic-css").length!==65 ||
              native.filter(r=>r.editorUse==="csshake").length!==10)
             throw Error("Native/copy-only coverage disagrees with real editor adapters");
-          if (native.some(r=>!(["lucide","heroicons","uiverse","spinkit","magic-css","csshake","animxyz","threejs"].includes(r.provider))) ||
+          if (native.some(r=>!(["lucide","heroicons","uiverse","spinkit","magic-css","csshake","animxyz","threejs","glsl-noise"].includes(r.provider))) ||
               code.some(r=>r.provider==="heroicons" || r.provider==="lucide" || r.provider==="uiverse" || r.provider==="spinkit" || r.provider==="magic-css" || (r.provider==="csshake" && r.id!=="csshake:runtime")))
             throw Error("Unexpected native classification by provider");
           const shards=after.detailShards?.uiverse;

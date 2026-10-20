@@ -189,7 +189,8 @@ import { buildMagicCssBrowserPreview } from "./preview/magiccss-browser-preview.
 }
 // Generated editor block: up to date, pinned checksums, and the shim matches index.html.
 {
-  const html=readFileSync(new URL("../../../index.html",import.meta.url),"utf8");
+  // Windows checkouts may convert line endings: compare normalized text.
+  const html=readFileSync(new URL("../../../index.html",import.meta.url),"utf8").replace(/\r\n/g,"\n");
   const block=buildNoiseShaderBlock(loadNoiseSources());
   assert.ok(html.includes(block),"index.html embeds the generated noise block");
   assert.equal((block.match(/R\(\{id:/g)||[]).length,9);
