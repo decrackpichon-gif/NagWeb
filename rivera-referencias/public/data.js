@@ -1,5 +1,1166 @@
 window.REFERENCES = [
   {
+    "id": "planta-futura",
+    "title": "Planta",
+    "studio": "Futura · México",
+    "url": "https://www.behance.net/gallery/69504685/Planta",
+    "behance": "https://www.behance.net/gallery/69504685/Planta",
+    "description": "Identidad de un estudio botánico que combina fotografía vegetal, síntesis de un pavo real y papelería de tonos naturales.",
+    "lookAt": "El equilibrio entre imágenes de plantas, signos pequeños y blancos editoriales; la alternancia de verdes y terracotas.",
+    "rivera": "Una referencia para presentar naturaleza con un lenguaje contemporáneo en guías, afiches y fichas de experiencias.",
+    "tags": [
+      "organico",
+      "fotografia",
+      "tipografia"
+    ],
+    "attributes": [
+      "Natural"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "priority": false,
+    "images": [
+      {
+        "src": "assets/expansion-n-planta-futura-1.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/1400/45f87369504685.5b841256ec3f8.png"
+      },
+      {
+        "src": "assets/expansion-n-planta-futura-2.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/max_1200/b8bd7369504685.5b8412599dede.png"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20"
+  },
+  {
+    "id": "dropbox-collins",
+    "title": "Dropbox · Creative Energy",
+    "studio": "COLLINS · Dropbox Brand Studio y colaboradores",
+    "url": "https://wearecollins.com/case-studies/dropbox/",
+    "behance": "https://www.behance.net/gallery/60007239/Dropbox-Rebrand",
+    "description": "Un sistema de encuentros inesperados entre color, tipografía, fotografía, arte e ilustración que expresa colaboración creativa.",
+    "lookAt": "Las combinaciones de dos campos de color, los cambios de ancho tipográfico y el contraste entre imágenes detalladas y superficies planas.",
+    "rivera": "Articular los cuatro atributos mediante reglas comunes de composición y permitir que cada pieza cruce naturaleza, cultura, educación y trabajo.",
+    "tags": [
+      "geometria",
+      "tipografia",
+      "fotografia",
+      "collage"
+    ],
+    "attributes": [
+      "Transfronteriza",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "images": [
+      {
+        "src": "assets/expansion-s-dropbox-collins-1.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/max_1200/a524c160007239.5a4e5f0a9018d.jpg"
+      },
+      {
+        "src": "assets/expansion-s-dropbox-collins-2.webp",
+        "source": "https://cdn.sanity.io/images/fmzd4n68/production/0adee916e55ae81b9f046935be50f5fb099d875f-3000x2000.jpg?auto=format&h=1658&w=2488"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "priority": false
+  },
+  {
+    "id": "miro",
+    "title": "Miro · The future begins in Miro",
+    "studio": "AKQA · equipo de Miro",
+    "url": "https://www.akqa.com/work/miro/the-future-begins-in-miro/",
+    "description": "Sistema de identidad que convierte la M y otras formas del producto en portales para representar transformación y colaboración.",
+    "lookAt": "La convivencia entre ilustración figurativa, marcos geométricos y grandes titulares. Mirar las proporciones, los recortes y el uso del amarillo para ordenar escenas complejas.",
+    "rivera": "Explorar ventanas gráficas hacia paisajes, oficios y encuentros de Rivera: un mismo marco puede conectar historias diferentes sin volverlas idénticas.",
+    "tags": [
+      "geometria",
+      "enlaces",
+      "tipografia",
+      "collage"
+    ],
+    "attributes": [
+      "En Auge",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "priority": false,
+    "images": [
+      {
+        "src": "assets/expansion-r-miro-1.webp",
+        "source": "https://images.ctfassets.net/feazk3r7m969/1j0JFzbFnF2BLhinQLfowA/74286cbc271733aab5d56ade0343675a/MiroLayouts_posters.png?w=1200&fm=webp&q=70"
+      },
+      {
+        "src": "assets/expansion-r-miro-2.webp",
+        "source": "https://images.ctfassets.net/feazk3r7m969/YW8B3ANDk1PthjrdtyxIS/6ccc6291b4546bbb755ebd94b27e4c6c/UI_butterfly.png?w=1200&fm=webp&q=70"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "behance": "https://www.behance.net/gallery/210201393/Miro-Brand-Identity"
+  },
+  {
+    "id": "bodega-los-cedros",
+    "title": "Bodega Los Cedros",
+    "studio": "Anagrama · México",
+    "url": "https://www.behance.net/gallery/51630729/Bodega-Los-Cedros",
+    "behance": "https://www.behance.net/gallery/51630729/Bodega-Los-Cedros",
+    "description": "El paisaje montañoso de Coahuila se traduce en pinos dibujados, etiquetas con bordes de nube y packaging sobrio.",
+    "lookAt": "La repetición de los árboles como patrón y el contraste entre ilustración orgánica y composición tipográfica limpia.",
+    "rivera": "Pensar cómo un rasgo vegetal del territorio puede dar lugar a un módulo reconocible en distintos soportes.",
+    "tags": [
+      "naturalista",
+      "patrones",
+      "tipografia",
+      "texturas"
+    ],
+    "attributes": [
+      "Natural"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "priority": false,
+    "images": [
+      {
+        "src": "assets/expansion-n-bodega-los-cedros-1.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/1400/bfe23c51630729.58f511ecc587c.png"
+      },
+      {
+        "src": "assets/expansion-n-bodega-los-cedros-2.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/max_632_webp/6cafda51630729.58f511ecc85f3.png"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20"
+  },
+  {
+    "id": "stripe-sessions-posters",
+    "title": "Stripe Sessions · colección de afiches",
+    "studio": "Mercedes Bazan · Stripe Experiential Design con PORTO ROCHA",
+    "url": "https://www.behance.net/gallery/231012405/Stripe-Sessions-poster-collection",
+    "description": "Afiches para una conferencia de economía digital que exploran ritmo, curvas, gradaciones y movimiento a partir del sistema del evento.",
+    "lookAt": "Cómo un repertorio abstracto produce piezas muy diferentes conservando escala, composición y relación entre títulos e imagen.",
+    "rivera": "Crear una familia de afiches de En Auge donde crecimiento e innovación se expresen mediante expansiones, ondas y curvas.",
+    "tags": [
+      "geometria",
+      "patrones",
+      "expansion",
+      "lineas",
+      "tipografia"
+    ],
+    "attributes": [
+      "En Auge",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "images": [
+      {
+        "src": "assets/expansion-s-stripe-sessions-posters-1.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/max_1200_webp/5470a3231012405.688123c44c97f.png"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "priority": false
+  },
+  {
+    "id": "eventbrite",
+    "title": "Eventbrite · identidad para encontrarse",
+    "studio": "BUCK",
+    "url": "https://www.buck.co/work/eventbrite",
+    "description": "Identidad visual y verbal para una plataforma de eventos, con una marca de tres partes conectadas, color intenso y una expresión ampliada para campañas.",
+    "lookAt": "Los recorridos del símbolo, su cambio de grosor y su convivencia con fotos e ilustraciones. Los titulares resaltados permiten intervenir imágenes sin perder lectura.",
+    "rivera": "Pensar una familia de recorridos para la agenda cultural y los encuentros fronterizos. Unir fotografía cotidiana y gestos gráficos que expresen energía compartida.",
+    "tags": [
+      "lineas",
+      "enlaces",
+      "organico",
+      "tipografia",
+      "fotografia"
+    ],
+    "attributes": [
+      "Interconectada",
+      "Transfronteriza",
+      "En Auge"
+    ],
+    "moodboards": [
+      "fluid",
+      "editorial"
+    ],
+    "priority": false,
+    "images": [
+      {
+        "src": "assets/expansion-r-eventbrite-1.webp",
+        "source": "https://cdn.sanity.io/images/uk7b627p/production/20ddf7a9afe860abb703e905722b0bd4283eb60a-2880x1471.png?w=1200&q=85&auto=format&dpr=1"
+      },
+      {
+        "src": "assets/expansion-r-eventbrite-2.webp",
+        "source": "https://cdn.sanity.io/images/uk7b627p/production/c8d84ab6c7213cd2c5e8aafdbe0e018eaa399918-2774x1268.png?w=1200&q=85&auto=format&dpr=1"
+      },
+      {
+        "src": "assets/expansion-r-eventbrite-3.webp",
+        "source": "https://cdn.sanity.io/images/uk7b627p/production/d14888530cfd440993f3d9cf65bf5e91492ebf2c-4320x2430.png?w=1200&q=85&auto=format&dpr=1"
+      },
+      {
+        "src": "assets/expansion-r-eventbrite-4.webp",
+        "source": "https://cdn.sanity.io/images/uk7b627p/production/32177a17f43f3108105309935f0025ba926ba8ca-2880x1400.png?w=1200&q=85&auto=format&dpr=1"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20"
+  },
+  {
+    "id": "la-case-cheval-blanc",
+    "title": "La Case · Cheval Blanc St-Barth",
+    "studio": "Violaine & Jérémy · Francia",
+    "url": "https://www.behance.net/gallery/111947197/La-Case-Cheval-Blanc-St-Barth",
+    "behance": "https://www.behance.net/gallery/111947197/La-Case-Cheval-Blanc-St-Barth",
+    "description": "Ilustración tropical en azul, letras propias y piezas impresas para un restaurante de Saint-Barthélemy.",
+    "lookAt": "La delicadeza del dibujo de palmeras y su relación con arcos, bordes, títulos y soportes troquelados.",
+    "rivera": "Un modelo de convivencia entre ilustración naturalista y formas geométricas; útil para piezas de Conocé Rivera.",
+    "tags": [
+      "naturalista",
+      "tipografia",
+      "texturas"
+    ],
+    "attributes": [
+      "Natural"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "priority": false,
+    "images": [
+      {
+        "src": "assets/expansion-n-la-case-cheval-blanc-1.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/635bd5111947197.600b17333e2a7.png"
+      },
+      {
+        "src": "assets/expansion-n-la-case-cheval-blanc-2.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/fs/6c16f6111947197.600b173337615.png"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20"
+  },
+  {
+    "id": "luzerner-theater-feixen",
+    "title": "Luzerner Theater · sistema y programas",
+    "studio": "Studio Feixen · colaboración editorial Daniel Peter",
+    "url": "https://www.behance.net/gallery/54508753/LUZERNER-THEATER-Stueckheft-Done-with-Studio-Feixen",
+    "description": "Un lenguaje teatral de tipografía contundente, colores planos y exploración material que se extiende a afiches y programas.",
+    "lookAt": "La jerarquía tipográfica, las superficies de color y la traducción de pliegues o formas físicas en imágenes gráficas.",
+    "rivera": "Resolver agendas y piezas culturales con gran presencia visual y una estructura capaz de ordenar mucha información.",
+    "tags": [
+      "geometria",
+      "tipografia",
+      "patrones"
+    ],
+    "attributes": [
+      "Transfronteriza",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "images": [
+      {
+        "src": "assets/expansion-s-luzerner-theater-feixen-1.webp",
+        "source": "https://eyeondesign.aiga.org/wp-content/uploads/2017/03/LuzernerTheater-StudioFeixen-Box1.jpg"
+      },
+      {
+        "src": "assets/expansion-s-luzerner-theater-feixen-2.webp",
+        "source": "https://sgustokdesign.com/archive/Studio-Feixen-Luzerner-Theater-19.png"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "priority": false
+  },
+  {
+    "id": "understood",
+    "title": "Understood · shaping the world for difference",
+    "studio": "Wolff Olins · equipo de Understood · Ka Young Lee",
+    "url": "https://aksana.work/2026/03/09/understood-rebrand-2-2/",
+    "description": "Identidad para una organización dedicada a personas que aprenden y piensan de maneras distintas. Contrapone una U en negativo con una silueta orgánica.",
+    "lookAt": "Los contornos suaves, los vacíos y las diferencias entre formas. Revisar cómo la ilustración y la tipografía extienden el sistema a piezas editoriales y digitales.",
+    "rivera": "Ensayar encuentros entre dos formas distintas que conserven un espacio propio. Puede ayudar a pensar diversidad cultural y convivencia sin reducirlas a una única figura.",
+    "tags": [
+      "organico",
+      "enlaces",
+      "tipografia",
+      "geometria"
+    ],
+    "attributes": [
+      "Interconectada",
+      "Transfronteriza"
+    ],
+    "moodboards": [
+      "fluid"
+    ],
+    "priority": false,
+    "images": [
+      {
+        "src": "assets/expansion-r-understood-1.webp",
+        "source": "https://aksana.work/wp-content/uploads/2019/09/understood_poster_1.format-webp.width-2880_kwmikavvexiw2eix.webp?w=1200"
+      },
+      {
+        "src": "assets/expansion-r-understood-2.webp",
+        "source": "https://aksana.work/wp-content/uploads/2019/09/understood_tote_bag_2.format-webp.width-2880_n1r5rh5kbd3shlbx.webp?w=1200"
+      },
+      {
+        "src": "assets/expansion-r-understood-3.webp",
+        "source": "https://aksana.work/wp-content/uploads/2019/09/undertood-1.jpg"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20"
+  },
+  {
+    "id": "botanico-fagerstrom",
+    "title": "Botánico · concepto de packaging",
+    "studio": "Fagerström · España",
+    "url": "https://thedieline.com/a-nature-inspired-wine-concept-is-the-perfect-pair-for-your-next-picnic/",
+    "description": "Concepto profesional de etiquetas que superpone imágenes botánicas y figuras geométricas simples.",
+    "lookAt": "Los recortes, las transparencias y el diálogo entre hojas detalladas, círculos, cuadrados y otros módulos.",
+    "rivera": "Una coincidencia directa con el moodboard editorial: cruzar ilustraciones naturalistas con geometría y planos de color.",
+    "tags": [
+      "naturalista",
+      "collage",
+      "geometria"
+    ],
+    "attributes": [
+      "Natural"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "priority": false,
+    "images": [
+      {
+        "src": "assets/expansion-n-botanico-fagerstrom-1.webp",
+        "source": "https://thedieline.com/wp-content/uploads/2018/10/466c1754-e8c3-4c90-ac43-abe4c5cb9373_BOTANICO_03.jpg"
+      },
+      {
+        "src": "assets/expansion-n-botanico-fagerstrom-2.webp",
+        "source": "https://thedieline.com/wp-content/uploads/2018/10/5f8fc24d-0f7f-4a73-a385-0ef531c7a14e_BOTANICO_05.jpg"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20"
+  },
+  {
+    "id": "adi-awards-twopoints",
+    "title": "ADI Awards · sistema flexible",
+    "studio": "TwoPoints.Net",
+    "url": "https://www.behance.net/gallery/40501453/ADI-Awards",
+    "description": "Tres premios diferentes se reúnen mediante símbolos geométricos, tipografía modular y una paleta que admite variación entre ediciones.",
+    "lookAt": "El parentesco entre signos, los cambios de color y la manera en que una estructura común permite identidades particulares.",
+    "rivera": "Estudiar cómo distinguir los cuatro atributos sin fragmentar la identidad general de la ciudad.",
+    "tags": [
+      "geometria",
+      "patrones",
+      "tipografia"
+    ],
+    "attributes": [
+      "Interconectada",
+      "En Auge",
+      "Transfronteriza"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "images": [
+      {
+        "src": "assets/expansion-s-adi-awards-twopoints-1.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/1400/36189440501453.5782319576d51.jpg"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "priority": false
+  },
+  {
+    "id": "airbnb",
+    "title": "Airbnb · Belong Anywhere",
+    "studio": "DesignStudio — hoy Further",
+    "url": "https://www.further.group/work/airbnb",
+    "description": "Identidad histórica construida alrededor de la pertenencia: un símbolo de trazo continuo y una expresión que pone a las personas y los lugares en primer plano.",
+    "lookAt": "El recorrido continuo del Bélo, su reducción a una silueta simple y el contraste con fotografía cercana. Mirar también banderas y soportes físicos.",
+    "rivera": "Investigar cómo un gesto sencillo puede funcionar como señal de bienvenida, junto a relatos y fotografías de habitantes de ambos lados de la frontera.",
+    "tags": [
+      "lineas",
+      "enlaces",
+      "fotografia"
+    ],
+    "attributes": [
+      "Interconectada",
+      "Transfronteriza"
+    ],
+    "moodboards": [
+      "fluid"
+    ],
+    "priority": false,
+    "images": [
+      {
+        "src": "assets/expansion-r-airbnb-1.webp",
+        "source": "https://cdn.prod.website-files.com/6849da698cb78e39e81215c3/68aed602561af1be9ab4fb3a_6_Airbnb_people%2Bplaces%2Blove%2Bairbnb-min.jpg"
+      },
+      {
+        "src": "assets/expansion-r-airbnb-2.webp",
+        "source": "https://cdn.prod.website-files.com/6849da698cb78e39e81215c3/68aed4ceb84c10abf6c5acd9_4_Airbnb_Billboard-min.jpg"
+      },
+      {
+        "src": "assets/expansion-r-airbnb-3.webp",
+        "source": "https://cdn.prod.website-files.com/6849da698cb78e39e81215c3/68937dfa61e7a857ac35613e_14_Airbnb_flags%20RESIZED.jpg"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20"
+  },
+  {
+    "id": "leap-organics-moxie",
+    "title": "LEAP Organics",
+    "studio": "Moxie Sozo · Estados Unidos",
+    "url": "https://thedieline.com/leap-organics-html/",
+    "description": "Packaging que utiliza ilustración de naturaleza de gran detalle para construir un universo visual de marca.",
+    "lookAt": "La densidad de las escenas ilustradas, los contrastes de color y la jerarquía de la información sobre las imágenes.",
+    "rivera": "Estudiar hasta dónde puede crecer una ilustración naturalista en tramas y composiciones sin perder claridad de lectura.",
+    "tags": [
+      "naturalista",
+      "patrones",
+      "tipografia"
+    ],
+    "attributes": [
+      "Natural"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "priority": false,
+    "images": [
+      {
+        "src": "assets/expansion-n-leap-organics-moxie-1.webp",
+        "source": "https://thedieline.com/wp-content/uploads/2018/10/91a5d4d6-47de-48af-94b5-c96286a67bd8_6a00d8345250f069e20120a76d0435970b550wi.jpg"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20"
+  },
+  {
+    "id": "leap-dialogues",
+    "title": "LEAP Dialogues · diseño para la innovación social",
+    "studio": "TwoPoints.Net",
+    "url": "https://www.behance.net/gallery/42552211/LEAP-Dialogues-Career-Pathways-for-Designers-in-Social",
+    "description": "Una publicación y su comunicación se articulan mediante dos colores que dialogan, degradados y una tipografía de formas abiertas.",
+    "lookAt": "El encuentro entre rojo neón y azul petróleo, la repetición de campos y las letras que el lector completa visualmente.",
+    "rivera": "Explorar la convivencia binacional mediante mezclas y transiciones entre dos voces cromáticas, con continuidad entre libro, afiche y web.",
+    "tags": [
+      "patrones",
+      "tipografia",
+      "geometria"
+    ],
+    "attributes": [
+      "Transfronteriza",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "images": [
+      {
+        "src": "assets/expansion-s-leap-dialogues-1.webp",
+        "source": "https://cms.artcenter.edu/image/6396/b0/0.5%2C0.5/small"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "priority": false
+  },
+  {
+    "id": "webex",
+    "title": "Webex · The look of collaboration",
+    "studio": "AKQA",
+    "url": "https://www.akqa.com/work/webex/the-look-of-collaboration/",
+    "description": "Sistema de identidad centrado en una W formada por dos curvas que se encuentran. Combina anillos, gradientes, fotografía e iconografía.",
+    "lookAt": "La unión entre curvas y el espacio que queda entre ellas. Comparar el símbolo con los anillos y la grilla para entender cómo una idea se expande a todo el sistema.",
+    "rivera": "Explorar cruces y circuitos que representen intercambio. El espacio entre partes puede inspirar una frontera entendida como lugar de encuentro y circulación.",
+    "tags": [
+      "lineas",
+      "enlaces",
+      "expansion",
+      "geometria"
+    ],
+    "attributes": [
+      "Interconectada",
+      "Transfronteriza"
+    ],
+    "moodboards": [
+      "fluid",
+      "editorial"
+    ],
+    "priority": false,
+    "images": [
+      {
+        "src": "assets/expansion-r-webex-1.webp",
+        "source": "https://images.ctfassets.net/feazk3r7m969/2tejy2URXXA0Uvuaai52gR/a76ec3e19a6e74bffac8d773ba895712/Webex_11.jpg?w=1200&fm=webp&q=70"
+      },
+      {
+        "src": "assets/expansion-r-webex-2.webp",
+        "source": "https://images.ctfassets.net/feazk3r7m969/1lZtqgVH5TVOLUgxYZDxJr/168c40634708f3377a9a1437022d2d30/Webex_1920x1080.jpg?w=1200&h=630&fm=jpg&q=80&fit=fill"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20"
+  },
+  {
+    "id": "colima-cayaco-rio",
+    "title": "Colima · Cayaco y Río de Lumbre",
+    "studio": "Anagrama · México",
+    "url": "https://www.behance.net/gallery/132381035/Colima-Cayaco-Rio-de-lumbre",
+    "behance": "https://www.behance.net/gallery/132381035/Colima-Cayaco-Rio-de-lumbre",
+    "description": "Dos variantes de cerveza organizadas bajo una misma estructura tipográfica, con ilustraciones y colores propios de cada producto.",
+    "lookAt": "Qué reglas quedan fijas y cuáles cambian para caracterizar cada variedad y su relación con el trópico.",
+    "rivera": "Aplicar la lógica de familia a los atributos: composición común e imágenes, colores y recursos específicos.",
+    "tags": [
+      "naturalista",
+      "patrones",
+      "tipografia"
+    ],
+    "attributes": [
+      "Natural",
+      "Transfronteriza"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "priority": false,
+    "images": [
+      {
+        "src": "assets/expansion-n-colima-cayaco-rio-1.webp",
+        "source": "https://anagrama-cdn.sfo2.cdn.digitaloceanspaces.com/assets/assets/assets/6198/original/3.jpg"
+      },
+      {
+        "src": "assets/expansion-n-colima-cayaco-rio-2.webp",
+        "source": "https://anagrama-cdn.sfo2.cdn.digitaloceanspaces.com/assets/assets/assets/6199/original/1.jpg"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20"
+  },
+  {
+    "id": "malmo-festival-snask",
+    "title": "Malmö Festival 2014 · identidad a escala urbana",
+    "studio": "SNASK",
+    "url": "https://snask.com/case/malmofestivalen-2014/",
+    "behance": "https://www.behance.net/gallery/19548963/Malmoe-Festival-2014",
+    "description": "Letras y formas construidas físicamente se convierten en una imagen de festival y en una instalación urbana participativa.",
+    "lookAt": "El paso de la tipografía a volumen, los juegos de escala y cómo una composición fotografiada mantiene impacto en afiches.",
+    "rivera": "Imaginar activaciones de marca ciudad que puedan habitarse y fotografiarse: módulos y letras que se conviertan en puntos de encuentro.",
+    "tags": [
+      "tipografia",
+      "geometria",
+      "fotografia"
+    ],
+    "attributes": [
+      "Transfronteriza",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "images": [
+      {
+        "src": "assets/expansion-s-malmo-festival-snask-2.webp",
+        "source": "https://snask.com/wp-content/uploads/2014/09/malmofestivalen-2014_buildup-in-the-city_02_srgb-scaled.jpg.webp"
+      },
+      {
+        "src": "assets/expansion-s-malmo-festival-snask-1.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/fs/8fed2f19548963.562dd3bbee9ac.jpg"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "priority": false
+  },
+  {
+    "id": "certhon",
+    "title": "Certhon · Grow as one",
+    "studio": "AKQA",
+    "url": "https://www.akqa.com/work/certhon/grow-as-one/",
+    "description": "Identidad para horticultura y tecnología que combina círculos entrelazados, un símbolo inspirado en un brote y fotografía con tramas de puntos.",
+    "lookAt": "La relación entre estructura técnica y crecimiento orgánico. Seguir las curvas del símbolo y comparar su delicadeza con las fotografías de vegetación a gran escala.",
+    "rivera": "Una referencia especialmente útil para conectar Natural y En Auge: crecimiento vegetal, conocimiento y desarrollo pueden compartir una misma gramática de líneas y puntos.",
+    "tags": [
+      "lineas",
+      "organico",
+      "patrones",
+      "fotografia",
+      "expansion"
+    ],
+    "attributes": [
+      "Natural",
+      "En Auge",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "fluid",
+      "editorial"
+    ],
+    "priority": false,
+    "images": [
+      {
+        "src": "assets/expansion-r-certhon-1.webp",
+        "source": "https://images.ctfassets.net/feazk3r7m969/2V2VZ0zmqnAvAhHPEsZwYM/0548e03be8178336ee335648c09cd8d3/Grow_as_one_-_Businesscard.jpg?w=1200&fm=webp&q=70"
+      },
+      {
+        "src": "assets/expansion-r-certhon-2.webp",
+        "source": "https://images.ctfassets.net/feazk3r7m969/3r6wbGT4yGlkTM7lw6AwDq/85e0e36f4f735567f7260bcfa33120fd/Grow_as_one_-_Plant_Dots2.jpeg?w=1200&fm=webp&q=70"
+      },
+      {
+        "src": "assets/expansion-r-certhon-3.webp",
+        "source": "https://images.ctfassets.net/feazk3r7m969/741yIN9VDwTZ2LpaBnMvr9/e62b4da1a843db7dfcff7c0ac9eea87c/Grow_as_one_-_OOH.jpg?w=1200&fm=webp&q=70"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20"
+  },
+  {
+    "id": "mamie-vj",
+    "title": "Mamie",
+    "studio": "Violaine & Jérémy · Francia",
+    "url": "https://www.behance.net/gallery/79609995/Mamie",
+    "behance": "https://www.behance.net/gallery/79609995/Mamie",
+    "description": "Identidad, ilustraciones, menús y dos tipografías propias para el restaurante parisino de Jean Imbert.",
+    "lookAt": "Cómo el dibujo detallado y la tipografía expresiva construyen un universo impreso coherente y con oficio.",
+    "rivera": "Referencia para estudiar el tono de los grabados y su integración con títulos, marcos y piezas editoriales.",
+    "tags": [
+      "naturalista",
+      "tipografia",
+      "texturas"
+    ],
+    "attributes": [
+      "Natural"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "priority": false,
+    "images": [
+      {
+        "src": "assets/expansion-n-mamie-vj-1.webp",
+        "source": "https://cdn.sanity.io/images/60kmv55h/production/7e9f690579c1a4caaef317e455b098d9ca8a391a-761x500.jpg"
+      },
+      {
+        "src": "assets/expansion-n-mamie-vj-2.webp",
+        "source": "https://cdn.sanity.io/images/60kmv55h/production/07a8eca0f0358dc99825b92b5eeffd7c79184b6a-757x500.jpg"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20"
+  },
+  {
+    "id": "nyt-food-festival-base",
+    "title": "The New York Times · Food Festival 2022",
+    "studio": "Base Design · Min Lew, Tom Fethers, Jun Hong y equipo",
+    "url": "https://www.behance.net/gallery/164332969/New-York-Times-Food-Festival-2022",
+    "description": "Un festival gastronómico une fotografía, curvas, formas ilustradas y tipografía contundente, extendiendo la identidad a señalética y piezas editoriales.",
+    "lookAt": "Las formas que rodean contenidos, los motivos repetidos y la consistencia entre piezas promocionales y orientación en el evento.",
+    "rivera": "Aplicar curvas y módulos a agendas y encuentros gastronómicos binacionales, manteniendo claridad informativa.",
+    "tags": [
+      "lineas",
+      "patrones",
+      "tipografia",
+      "fotografia",
+      "organico"
+    ],
+    "attributes": [
+      "Transfronteriza",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "images": [
+      {
+        "src": "assets/expansion-s-nyt-food-festival-base-1.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/d413fa164332969.63f542b080e22.jpg"
+      },
+      {
+        "src": "assets/expansion-s-nyt-food-festival-base-2.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/c43725164332969.63f5155276c3a.jpg"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "priority": false
+  },
+  {
+    "id": "loving-earth-round",
+    "title": "Loving Earth · packaging 2015",
+    "studio": "Studio Round · Australia",
+    "url": "https://bpando.org/2015/08/19/package-design-loving-earth/",
+    "description": "Ilustraciones de cacao, vistas enteras y secciones se convierten en la base de un sistema de packaging de colores intensos.",
+    "lookAt": "La mezcla de observación del ingrediente y reducción geométrica, y el uso del color para ordenar variedades.",
+    "rivera": "Traducir formas naturales observadas a módulos simples, combinables y reconocibles en la identidad de Natural.",
+    "tags": [
+      "organico",
+      "patrones",
+      "geometria",
+      "tipografia"
+    ],
+    "attributes": [
+      "Natural"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "images": [
+      {
+        "src": "assets/expansion-n-loving-earth-round-1.webp",
+        "source": "https://bpando.org/wp-content/uploads/03-Loving-Earth-Package-Design-by-Studio-Round-on-BPO-HD.jpeg"
+      },
+      {
+        "src": "assets/expansion-n-loving-earth-round-2.webp",
+        "source": "https://bpando.org/wp-content/uploads/05-Loving-Earth-Package-Design-by-Studio-Round-on-BPO-HD.jpeg"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20"
+  },
+  {
+    "id": "atrak-dia",
+    "title": "A-Trak · sistema tipográfico",
+    "studio": "DIA Studio",
+    "url": "https://dia.tv/project/a-trak-identity/",
+    "behance": "https://www.behance.net/gallery/56116943/A-Trak",
+    "description": "Un sistema de parámetros tipográficos genera portadas, afiches y visuales que oscilan entre expresiones mínimas y composiciones intensas.",
+    "lookAt": "Las repeticiones de contornos, las deformaciones de letras y el equilibrio entre variedad y reconocimiento.",
+    "rivera": "Construir titulares de En Auge con expansión y ritmo, o una familia de afiches culturales cuyo comportamiento tenga reglas comunes.",
+    "tags": [
+      "tipografia",
+      "expansion",
+      "patrones",
+      "geometria"
+    ],
+    "attributes": [
+      "En Auge",
+      "Transfronteriza"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "images": [
+      {
+        "src": "assets/expansion-s-atrak-dia-1.webp",
+        "source": "https://images.squarespace-cdn.com/content/v1/52c974b2e4b03b30610c5c19/1504540548857-AT90Q8UZM5JXC7S9K7G7/A-Trak_DIA-goodfromyou-3.jpg"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "priority": false
+  },
+  {
+    "id": "stern-grove-mucho",
+    "title": "Stern Grove Festival",
+    "studio": "Mucho · Estados Unidos / España",
+    "url": "https://wearemucho.com/work/stern-grove-festival",
+    "description": "Un sistema para un festival entre eucaliptos que conecta la forma del árbol con ritmo, música y movimiento.",
+    "lookAt": "La síntesis del entorno natural, la repetición de las líneas y su adaptación a carteles y animación.",
+    "rivera": "Un puente entre Natural e Interconectada: formas de origen vegetal que también puedan expresar circulación y energía.",
+    "tags": [
+      "geometria",
+      "organico",
+      "lineas",
+      "patrones",
+      "tipografia"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "images": [
+      {
+        "src": "assets/expansion-n-stern-grove-mucho-2.webp",
+        "source": "https://dthpinvq4u09v.cloudfront.net/images/Stern-Grove/Mucho_SG_Visualizer_Poster.jpg"
+      },
+      {
+        "src": "assets/expansion-n-stern-grove-mucho-1.webp",
+        "source": "https://wearemucho.com/transforms/_1400xAUTO_fit_center-center_none/126452/stern-grove-festival-mucho.webp"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20"
+  },
+  {
+    "id": "vevo-porto-rocha",
+    "title": "Vevo · amplificación modular",
+    "studio": "PORTO ROCHA",
+    "url": "https://www.portorocha.com/vevo",
+    "description": "Un sistema de bloques que cambian de escala enmarca artistas, títulos e imágenes, llevando la idea de amplificación a composiciones estáticas y animadas.",
+    "lookAt": "Las proporciones variables, la relación de los bloques con el contenido y el uso de la escala como movimiento.",
+    "rivera": "Expresar En Auge mediante módulos que crecen y generar piezas flexibles para convocatorias, formación y empleo.",
+    "tags": [
+      "geometria",
+      "expansion",
+      "tipografia",
+      "fotografia"
+    ],
+    "attributes": [
+      "En Auge",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "images": [
+      {
+        "src": "assets/expansion-s-vevo-porto-rocha-1.webp",
+        "source": "https://images.prismic.io/portorocha/aQEhaLpReVYa3xbV_PortoRocha_VevoCaseStudy_02.jpg?auto=format%2Ccompress&v=dpl_8qPh8ueVJPNERoBe3epwb6jZrWXm"
+      },
+      {
+        "src": "assets/expansion-s-vevo-porto-rocha-2.webp",
+        "source": "https://images.prismic.io/portorocha/aQEi2rpReVYa3xcs_PortoRocha_VevoCaseStudy_25.jpg?auto=format%2Ccompress&v=dpl_8qPh8ueVJPNERoBe3epwb6jZrWXm"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "priority": false
+  },
+  {
+    "id": "cour-jardin-vj",
+    "title": "La Cour Jardin · Le Plaza Athénée",
+    "studio": "Violaine & Jérémy · Francia",
+    "url": "https://www.behance.net/gallery/161370667/La-Cour-Jardin-Le-Plaza-Athne",
+    "behance": "https://www.behance.net/gallery/161370667/La-Cour-Jardin-Le-Plaza-Athne",
+    "description": "Identidad y menús que trasladan la vegetación del patio a ilustraciones manuales y texturas de papel.",
+    "lookAt": "La hoja de parra que contiene la fachada, la escala del dibujo y el diálogo entre caligrafía y tipografía.",
+    "rivera": "Una forma de condensar paisaje y arquitectura en una pieza editorial vinculada al lugar.",
+    "tags": [
+      "naturalista",
+      "texturas",
+      "tipografia"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "priority": false,
+    "images": [
+      {
+        "src": "assets/expansion-n-cour-jardin-vj-1.webp",
+        "source": "https://cdn.sanity.io/images/60kmv55h/production/9432dc741f26dbf7e20056fb519e19b75cad7185-1700x2079.jpg"
+      },
+      {
+        "src": "assets/expansion-n-cour-jardin-vj-2.webp",
+        "source": "https://cdn.sanity.io/images/60kmv55h/production/6b4cedefb794b36d7b1a38ba1dad3eebd859ce36-1400x1712.jpg"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20"
+  },
+  {
+    "id": "squarespace-dia",
+    "title": "Squarespace · identidad cinética 2018",
+    "studio": "DIA · equipo Squarespace · François Rappo / Optimo",
+    "url": "https://www.a-g-i.org/design/squarespace-identity",
+    "description": "Una identidad que combina tipografía propia con un comportamiento de cuadrados y espacios, inspirado en el carácter visual de Nueva York.",
+    "lookAt": "El cuadrado como contenedor cambiante, los recortes de imagen y la economía de recursos en afiches.",
+    "rivera": "Conectar fotografía y geometría mediante ventanas y transiciones que tengan una misma lógica en piezas impresas y digitales.",
+    "tags": [
+      "geometria",
+      "tipografia",
+      "fotografia",
+      "expansion"
+    ],
+    "attributes": [
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "images": [
+      {
+        "src": "assets/expansion-s-squarespace-dia-1.webp",
+        "source": "https://i.vimeocdn.com/video/748120228-849cbd3df42d433cde4273c482172d3fda8723d377885b68b4c9ab0c7dbe9ff1-d?f=webp"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "priority": false
+  },
+  {
+    "id": "seedlip-pearlfisher",
+    "title": "Seedlip · The Art of Nature",
+    "studio": "Pearlfisher · Reino Unido",
+    "url": "https://pearlfisher.com/work/seedlip/",
+    "description": "Una identidad que compone los ingredientes botánicos del producto en ilustraciones y una S sutil.",
+    "lookAt": "Cómo las especies dibujadas pueden organizarse en una silueta mayor conservando detalle y legibilidad.",
+    "rivera": "Explorar composiciones de flora y fauna autóctona que formen figuras, iniciales o escenas vinculadas con el territorio.",
+    "tags": [
+      "naturalista",
+      "collage",
+      "tipografia"
+    ],
+    "attributes": [
+      "Natural"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "images": [
+      {
+        "src": "assets/expansion-r-seedlip-1.webp",
+        "source": "https://pearlfisher.com/wp-content/uploads/2025/03/Seedlip-lineup-1.png"
+      },
+      {
+        "src": "assets/expansion-r-seedlip-2.webp",
+        "source": "https://pearlfisher.com/wp-content/uploads/2025/03/Seedlip-7-1.png"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "priority": false
+  },
+  {
+    "id": "uoc-mucho",
+    "title": "UOC · ecosistema universitario",
+    "studio": "Mucho",
+    "url": "https://wearemucho.com/work/uoc",
+    "description": "Una arquitectura de marca modular permite que distintas áreas universitarias conserven personalidad y pertenezcan a un mismo ecosistema.",
+    "lookAt": "La construcción de las letras desde la O, la mezcla de tipografías y la relación entre marcas, fotografía y color.",
+    "rivera": "Referencia para Estudiá Rivera y para organizar los cuatro atributos con diferencias claras y una estructura compartida.",
+    "tags": [
+      "geometria",
+      "tipografia",
+      "fotografia",
+      "patrones"
+    ],
+    "attributes": [
+      "En Auge",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "images": [
+      {
+        "src": "assets/expansion-s-uoc-mucho-2.webp",
+        "source": "https://d31gqjnw4c0wci.cloudfront.net/eyJidWNrZXQiOiJtdWNoby1zZXJ2ZXJsZXNzLWltYWdlLWhhbmRsZXIiLCJrZXkiOiJpbWFnZXMvVU9DLzA3X2Jlcm11MDQxNC5qcGciLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjExNTIsImhlaWdodCI6NzY4LCJmaXQiOiJjb3ZlciJ9LCJ3aXRoTWV0YWRhdGEiOnRydWUsInRvRm9ybWF0Ijoid2VicCIsIndlYnAiOnsicXVhbGl0eSI6ODB9fX0="
+      },
+      {
+        "src": "assets/expansion-s-uoc-mucho-1.webp",
+        "source": "https://d31gqjnw4c0wci.cloudfront.net/eyJidWNrZXQiOiJtdWNoby1zZXJ2ZXJsZXNzLWltYWdlLWhhbmRsZXIiLCJrZXkiOiJpbWFnZXMvVU9DLzA0X2Jlcm11MDQyMy5qcGciLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjExNTIsImhlaWdodCI6NzY4LCJmaXQiOiJjb3ZlciJ9LCJ3aXRoTWV0YWRhdGEiOnRydWUsInRvRm9ybWF0Ijoid2VicCIsIndlYnAiOnsicXVhbGl0eSI6ODB9fX0="
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "priority": false
+  },
+  {
+    "id": "rhs-design-bridge",
+    "title": "RHS · The Limitless Wonder of Growth",
+    "studio": "Design Bridge and Partners · Reino Unido",
+    "url": "https://www.designbridge.com/news/the-rhs",
+    "description": "Una identidad que presenta el crecimiento como eje común para actividades de horticultura, educación y comunidad.",
+    "lookAt": "La consistencia entre tipografía, ilustración, color e imágenes en una institución con públicos y actividades diversos.",
+    "rivera": "Un caso para conectar Natural y En Auge mediante la idea de crecimiento, con un repertorio amplio que mantenga unidad.",
+    "tags": [
+      "organico",
+      "naturalista",
+      "tipografia",
+      "expansion"
+    ],
+    "attributes": [
+      "Natural",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "images": [
+      {
+        "src": "assets/expansion-r-rhs-1.webp",
+        "source": "https://storage.googleapis.com/designbridge-3c80-uploads/RHS_1920x1080_1_a76d4002b1/RHS_1920x1080_1_a76d4002b1.jpg"
+      },
+      {
+        "src": "assets/expansion-r-rhs-2.webp",
+        "source": "https://storage.googleapis.com/designbridge-3c80-uploads/RHS_1920x1080_2_c5317b7120/RHS_1920x1080_2_c5317b7120.jpg"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "priority": false
+  },
+  {
+    "id": "haus-der-kunst-borsche",
+    "title": "Haus der Kunst · identidad 2023",
+    "studio": "Bureau Borsche",
+    "url": "https://bureauborsche.com/projects/haus-der-kunst/visual-identity",
+    "description": "Una tipografía de trazos esbeltos y formas enlazadas desarrolla un lenguaje cultural propio sobre fotografías y campos cromáticos.",
+    "lookAt": "Cómo los caracteres se relacionan entre sí y cómo títulos e imágenes comparten el protagonismo.",
+    "rivera": "Explorar letras y signos que expresen encuentro y continuidad, especialmente en agendas y campañas culturales binacionales.",
+    "tags": [
+      "tipografia",
+      "lineas",
+      "enlaces",
+      "fotografia"
+    ],
+    "attributes": [
+      "Transfronteriza",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "images": [
+      {
+        "src": "assets/expansion-s-haus-der-kunst-borsche-1.webp",
+        "source": "https://bureauborsche.com/media/pages/projects/haus-der-kunst/visual-identity/3704a09964-1710154151/hdk_bb_spread_detail_02-1024x.webp"
+      },
+      {
+        "src": "assets/expansion-s-haus-der-kunst-borsche-2.webp",
+        "source": "https://bureauborsche.com/media/pages/projects/haus-der-kunst/visual-identity/99f8a3e38d-1711125510/hdk_rainbow_poster_kampagne-1024x.webp"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "priority": false
+  },
+  {
+    "id": "neuehouse-base",
+    "title": "NeueHouse · comunidad creativa",
+    "studio": "Base Design",
+    "url": "https://www.basedesign.com/projects/neuehouse",
+    "description": "Una grilla reconocible, márgenes de color y plantillas flexibles organizan la comunicación de una comunidad de trabajo y cultura.",
+    "lookAt": "La alternancia de módulos y contenidos, los márgenes como señal de identidad y el paso de la gráfica a señalética.",
+    "rivera": "Ordenar Estudiá, Trabajá y Conocé mediante una familia editorial flexible que conserve personalidad en cada plataforma.",
+    "tags": [
+      "geometria",
+      "tipografia",
+      "fotografia"
+    ],
+    "attributes": [
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "images": [
+      {
+        "src": "assets/expansion-s-neuehouse-base-2.webp",
+        "source": "https://basedesign2.imgix.net/images/base-design-neuehouse-case-3.jpg?auto=format,compress&fit=max&w=4040"
+      },
+      {
+        "src": "assets/expansion-s-neuehouse-base-1.webp",
+        "source": "https://basedesign2.imgix.net/images/base-design-neuehouse-case-4.jpg?auto=format,compress&fit=max&w=4040"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "priority": false
+  },
+  {
+    "id": "identity-digital-buck",
+    "title": "Identity Digital · universo de puntos",
+    "studio": "BUCK · agencia Cylndr",
+    "url": "https://buck.co/work/identity-digital",
+    "description": "Un punto se transforma en formas, objetos y recorridos dentro de un universo de color, texturas y sombras gráficas.",
+    "lookAt": "La variedad obtenida de una figura elemental y las relaciones entre punto, volumen aparente y composición.",
+    "rivera": "Profundizar el círculo con punto de En Auge: un motivo inicial que se expanda, se convierta en nodo o genere nuevos elementos.",
+    "tags": [
+      "geometria",
+      "expansion",
+      "patrones",
+      "texturas",
+      "organico"
+    ],
+    "attributes": [
+      "En Auge",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "images": [
+      {
+        "src": "assets/expansion-s-identity-digital-buck-1.webp",
+        "source": "https://cdn.sanity.io/images/uk7b627p/production/219d1366a974013305226e4dd568bf5e3b536476-1920x1080.png?w=600&q=85&auto=format&dpr=1"
+      },
+      {
+        "src": "assets/expansion-s-identity-digital-buck-2.webp",
+        "source": "https://cdn.sanity.io/images/uk7b627p/production/4c4d90dce2c217e5c3a1f865ce29ac4bc1be4be0-1920x1080.png?w=600&q=85&auto=format&dpr=1"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "priority": false
+  },
+  {
+    "id": "playgrounds-in-motion-buck",
+    "title": "Playgrounds · In Motion",
+    "studio": "BUCK",
+    "url": "https://buck.co/work/playgrounds-in-motion",
+    "description": "Una onda que nace de las letras N y M organiza una identidad de festival y puede reinterpretarse mediante distintas técnicas.",
+    "lookAt": "La onda como forma principal, su capacidad de estirarse y su uso como ventana para imágenes y videos.",
+    "rivera": "Construir un recurso continuo que conecte personas y contenidos: línea, marco y trama derivados de una misma forma.",
+    "tags": [
+      "lineas",
+      "organico",
+      "tipografia",
+      "enlaces",
+      "fotografia"
+    ],
+    "attributes": [
+      "Interconectada",
+      "Transfronteriza"
+    ],
+    "moodboards": [
+      "fluid",
+      "editorial"
+    ],
+    "images": [
+      {
+        "src": "assets/expansion-s-playgrounds-in-motion-buck-1.webp",
+        "source": "https://cdn.sanity.io/images/uk7b627p/production/594b21d003356216a862eb9f5ef1f530563e5078-2496x1400.png?w=600&q=85&auto=format&dpr=1"
+      },
+      {
+        "src": "assets/expansion-s-playgrounds-in-motion-buck-2.webp",
+        "source": "https://cdn.sanity.io/images/uk7b627p/production/15eef93658a04a12321b4b5421bf0d170595d9ab-2500x1254.png?w=600&q=85&auto=format&dpr=1"
+      }
+    ],
+    "verified": "2026-10-20",
+    "added": "2026-10-20",
+    "priority": false
+  },
+  {
     "title": "Kew Gardens",
     "studio": "Pentagram · Harry Pearce",
     "url": "https://www.pentagram.com/work/the-royal-botanical-gardens-kew",

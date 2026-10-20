@@ -18,7 +18,7 @@ Este banco es independiente de los cinco frentes de NagWeb. No modificar `main`,
 
 ## Contenido publicado el 20/10/2026
 
-47 referencias profesionales y 19 trabajos con enlace Behance, incluidos los nueve casos originales. Vistas previas optimizadas y almacenadas junto al sitio, con atribución y enlaces a las fuentes en cada ficha. Se descartaron fichas que no permitían mostrar aplicaciones útiles.
+80 referencias profesionales y 34 trabajos con enlace Behance, incluidos los nueve casos originales. Vistas previas optimizadas y almacenadas junto al sitio, con atribución y enlaces a las fuentes en cada ficha. Se descartaron fichas que no permitían mostrar aplicaciones útiles.
 
 Dos categorías de moodboard: editorial y modular / fluido y conectado. Once recursos gráficos, cuatro atributos de Rivera, búsqueda, filtro de fuentes, orden por estudio y nombre, fichas con galería ampliable y favoritos guardados localmente en el navegador.
 
@@ -43,3 +43,9 @@ Los favoritos pertenecen al navegador y dispositivo; no son una selección compa
 ## Corrección de acceso a todas las referencias · 20/10/2026
 
 Se eliminó la paginación que mostraba sólo 18 tarjetas. El catálogo completo se presenta al entrar; las imágenes siguen cargándose de forma diferida. Se agregó «Referencias de este chat» con los nueve casos de la primera selección: Kew, Garden Museum, Natural History Museum, Buff, Pen Store, Mind, Stride, Porto y MIT Media Lab. La navegación principal limpia filtros previos para evitar que «Explorar todo» mantenga resultados ocultos. Conservar todos los casos del chat al ampliar el banco.
+
+## Ampliación de la biblioteca · 20/10/2026
+
+33 casos nuevos; catálogo total de 80 referencias, 181 vistas previas y 34 trabajos con Behance. Se incorporaron estudios como COLLINS, Porto Rocha, Base Design, Mucho, Studio Feixen, TwoPoints.Net, DIA, SNASK, Bureau Borsche, BUCK, AKQA y otros. Los casos de botánica, ilustración y packaging amplían el eje Natural.
+
+La sección «Nuevas incorporaciones» corresponde a esta tanda y se abre con `?view=new`. Todas las referencias anteriores se conservan, con sus IDs y favoritos. Los proyectos conceptuales se identifican como tales en el título.
