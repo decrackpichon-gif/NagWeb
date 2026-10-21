@@ -2,7 +2,7 @@
  'use strict';
  const refs = window.REFERENCES || [];
  const moodLabels = {editorial:'Editorial y modular',fluid:'Fluido y conectado'};
- const labels = {naturalista:'Ilustración naturalista',organico:'Formas orgánicas',lineas:'Líneas y recorridos',enlaces:'Enlaces y encuentros',geometria:'Geometría modular',patrones:'Tramas y patrones',expansion:'Expansión y ondas',tipografia:'Tipografía',fotografia:'Fotografía',collage:'Collage',texturas:'Texturas'};
+ const labels = {naturalista:'Ilustración naturalista',organico:'Formas orgánicas',lineas:'Líneas y recorridos','lineas-rectas-fotos':'Líneas rectas sobre fotos',enlaces:'Enlaces y encuentros',geometria:'Geometría modular',patrones:'Tramas y patrones',expansion:'Expansión y ondas',tipografia:'Tipografía',fotografia:'Fotografía',collage:'Collage',texturas:'Texturas'};
  const colorFamily = d => d.blueFamily==='petroleo'?'Azul petróleo / azulado verdoso':'Azul oscuro cercano';
  const safeHex = h => /^#[0-9a-f]{6}$/i.test(h||'')?h:'#dddddd';
  const $ = s => document.querySelector(s);

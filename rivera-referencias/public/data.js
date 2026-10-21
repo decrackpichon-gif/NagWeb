@@ -1,5 +1,153 @@
 window.REFERENCES = [
   {
+    "id": "carlson-school-angular-grid",
+    "title": "Minnesota Carlson · diagonales sobre fotografía",
+    "studio": "Zeus Jones + Carlson Marketing Communications",
+    "url": "https://brand.carlsonschool.umn.edu/look-like/graphic-elements",
+    "sourceUrls": [
+      "https://www.case.org/awards/circle-excellence/2023/carlson-school-management-brand-refresh"
+    ],
+    "description": "Una retícula isométrica coordina líneas blancas, bloques de color y fotografías. Los ángulos se repiten en arquitectura, retratos y piezas de comunicación universitaria.",
+    "lookAt": "Comparar la foto intervenida con su retícula: las diagonales siguen una regla de 30° respecto de la horizontal. El trazo blanco cambia de dirección y continúa entre fotografía y bloques sin tapar la información principal.",
+    "rivera": "Para Estudiá o Trabajá, definir pocos ángulos y un grosor constante permitiría conectar personas, espacios y textos. La línea puede salir de la foto y organizar el resto de la pieza.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria"
+    ],
+    "attributes": [
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "images": [
+      {
+        "src": "assets/lines-r-carlson-2.webp",
+        "source": "https://brand.carlsonschool.umn.edu/sites/brand.carlsonschool.umn.edu/files/styles/folwell_full/public/2025-05/carlson-brand-graphic-elements-example.jpg.avif?itok=X9bVcM38"
+      },
+      {
+        "src": "assets/lines-r-carlson-1.webp",
+        "source": "https://brand.carlsonschool.umn.edu/sites/brand.carlsonschool.umn.edu/files/styles/folwell_full/public/2025-05/carlson-brand-isometric-grid-example.jpg.avif?itok=EkTtDAnH"
+      },
+      {
+        "src": "assets/lines-r-carlson-3.webp",
+        "source": "https://brand.carlsonschool.umn.edu/sites/brand.carlsonschool.umn.edu/files/styles/folwell_full/public/2025-05/carlson-brand-graphic-elements-example2_0.jpg.avif?itok=ILnFseK7"
+      }
+    ],
+    "verified": "2026-10-21",
+    "priority": false
+  },
+  {
+    "id": "suntera-photo-diagonals",
+    "title": "Suntera Global · cruces diagonales en retratos",
+    "studio": "Suntera Global · identidad: Ashgrove Marketing + Prodo Digital",
+    "url": "https://www.suntera.com/",
+    "sourceUrls": [
+      "https://palatinepe.com/smp-group-rebrands-to-suntera-global/"
+    ],
+    "description": "Aplicación publicada en la web de Suntera: una fotografía de equipo intervenida por rectas blancas finas y una diagonal naranja. La identidad de la compañía fue desarrollada con Ashgrove Marketing y Prodo Digital; se estudia aquí esta aplicación concreta.",
+    "lookAt": "El contraste entre líneas finas y una franja naranja recta, el cruce de direcciones y la ubicación de los trazos alrededor del rostro. El retrato sigue siendo protagonista.",
+    "rivera": "Probar una diagonal principal acompañada de una o dos rectas secundarias sobre fotos de personas. Ajustar los cruces a cada encuadre y evitar ojos, manos o información relevante.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia"
+    ],
+    "attributes": [
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "images": [
+      {
+        "src": "assets/lines-r-suntera-6.webp",
+        "source": "https://www.suntera.com/hubfs/Suntera/Website%20test%20items/Careers-Image-Homepage-v2.jpg"
+      }
+    ],
+    "verified": "2026-10-21",
+    "priority": false
+  },
+  {
+    "id": "wemage-nexainc",
+    "title": "Wemage · franjas diagonales y retratos",
+    "studio": "Morteza Deshmir · Nexainc · Parham Fazlali",
+    "url": "https://www.behance.net/gallery/219034891/wemage-Visual-brand-Identity",
+    "behance": "https://www.behance.net/gallery/219034891/wemage-Visual-brand-Identity",
+    "description": "Identidad para un estudio creativo con retratos monocromos y franjas rojas rectas. Las figuras recortadas pasan por delante de bandas diagonales, construyendo capas y profundidad en afiches y redes.",
+    "lookAt": "Las bandas rectas paralelas y el contraste entre su dirección inclinada y las poses. El sujeto recortado queda por delante del recurso: una variante de franjas anchas para comparar con los trazos finos de otros casos.",
+    "rivera": "Ensayar un recorrido angular de grosor estable sobre fotos locales. Los cambios de dirección pueden conectar actividades, señalar detalles o construir un gesto reconocible sin depender de curvas orgánicas.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "patrones"
+    ],
+    "attributes": [
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "images": [
+      {
+        "src": "assets/lines-r-wemage-1.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/fs/6ae4e9219034891.67ab657209a61.jpg"
+      }
+    ],
+    "verified": "2026-10-21",
+    "priority": false
+  },
+  {
+    "id": "mambu-ifour",
+    "title": "Mambu · diagonales sobre personas",
+    "studio": "ifour",
+    "url": "https://ifour.co.uk/work/mambu-branding/",
+    "description": "Evolución de identidad para una plataforma bancaria. Chevrones y bandas diagonales atraviesan fotografías de personas y se convierten en una capa común para campañas, newsletters y comunicación digital.",
+    "lookAt": "Las diagonales que cruzan los cuerpos en las cabeceras: qué segmentos quedan delante, cuáles se recortan y cómo varía el grosor. Comparar trama fina, franjas gruesas y chevrones.",
+    "rivera": "Usar rectas como vínculos entre personas y actividades. Una misma dirección puede conectar fotografías distintas, siempre dejando suficiente espacio para reconocer rostros y gestos.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "geometria",
+      "fotografia",
+      "patrones",
+      "enlaces"
+    ],
+    "attributes": [
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/lines-d-mambu-ifour-1.webp",
+        "source": "https://ifour.wp.ifourhosting.co.uk/wp-content/uploads/2022/07/News-letter-banners-1024x576.png"
+      },
+      {
+        "src": "assets/lines-d-mambu-ifour-2.webp",
+        "source": "https://ifour.wp.ifourhosting.co.uk/wp-content/uploads/2022/07/Artboard-1-copy-2.png"
+      },
+      {
+        "src": "assets/lines-d-mambu-ifour-3.webp",
+        "source": "https://ifour.wp.ifourhosting.co.uk/wp-content/uploads/2022/07/Artboard-1-copy.png"
+      }
+    ]
+  },
+  {
     "id": "peabody-essex-minelli",
     "title": "Peabody Essex Museum · identidad",
     "studio": "Minelli · EE. UU.",
@@ -1998,9 +2146,11 @@ window.REFERENCES = [
     "url": "https://www.further.group/work/eurostar",
     "behance": "https://www.behance.net/gallery/164317041/Eurostar-Paris",
     "description": "La identidad que une Eurostar y Thalys utiliza una estrella expansiva como orientación, energía y conexión entre ciudades. La acompañan ilustraciones encargadas a artistas europeos; el enlace de Behance muestra París por Fagostudio y Senso Art.",
-    "lookAt": "Cómo la estrella se prolonga y cambia de escala para unir destinos, enmarcar imágenes o protagonizar una pieza. Mirar su convivencia con ilustraciones locales.",
-    "rivera": "La frontera se puede narrar como una red de posibilidades y experiencias. Un gesto gráfico común permite dar lugar a expresiones distintas de cada zona.",
+    "lookAt": "Cómo la estrella se prolonga y cambia de escala para unir destinos, enmarcar imágenes o protagonizar una pieza. Mirar su convivencia con ilustraciones locales. En la aplicación de realidad aumentada del teléfono, mirar la estrella de rectas superpuesta a la imagen de la estación: sus ejes se prolongan sobre arquitectura y personas.",
+    "rivera": "La frontera se puede narrar como una red de posibilidades y experiencias. Un gesto gráfico común permite dar lugar a expresiones distintas de cada zona. Una estrella o intersección angular podría relacionar puntos de una foto; definir pocos ejes y controlar qué detalles quedan detrás del trazo.",
     "tags": [
+      "lineas-rectas-fotos",
+      "fotografia",
       "expansion",
       "enlaces",
       "lineas",
@@ -2016,6 +2166,10 @@ window.REFERENCES = [
       "editorial"
     ],
     "images": [
+      {
+        "src": "assets/lines-r-eurostar-ar.webp",
+        "source": "https://i.vimeocdn.com/video/2035435639-1eba07cf3522df8f9bb094330eb5a0c13d907ab2012f0f9bc52e10eba4e2ec63-d?f=webp"
+      },
       {
         "src": "assets/list-r-euro-1.webp",
         "source": "https://cdn.prod.website-files.com/6849da698cb78e39e81215c3/686be91c336756e5de231509_FeatureImage1_Eurostar_DesignStudio.jpg"

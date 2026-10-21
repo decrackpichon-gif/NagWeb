@@ -18,12 +18,12 @@ Este banco es independiente de los cinco frentes de NagWeb. No modificar `main`,
 
 ## Catálogo y clasificación · 21/10/2026
 
-128 referencias profesionales, 299 vistas previas locales y 53 trabajos con enlace Behance. Se mantienen los 118 casos previos, sus IDs y favoritos. La revisión del listado de 14 proyectos incorpora 10 casos nuevos y amplía Eurostar con tres aplicaciones. Porto, Helsinki, Eurostar y Natural History Museum ya estaban, sin duplicarlos.
+132 referencias profesionales, 308 vistas previas locales y 54 trabajos con enlace Behance. Se mantienen los 128 casos previos, sus IDs y favoritos. La ampliación de líneas rectas incorpora Minnesota Carlson, Suntera Global, Wemage y Mambu, y amplía Eurostar sin duplicarlo.
 
 Clasificación compartida por el equipo:
 
 - Según el moodboard: Editorial y modular / Fluido y conectado.
-- Recurso gráfico: Ilustración naturalista, Formas orgánicas, Líneas y recorridos, Enlaces y encuentros, Geometría modular, Tramas y patrones, Expansión y ondas, Tipografía, Fotografía, Collage y Texturas.
+- Recurso gráfico: Ilustración naturalista, Formas orgánicas, Líneas y recorridos, Líneas rectas sobre fotos, Enlaces y encuentros, Geometría modular, Tramas y patrones, Expansión y ondas, Tipografía, Fotografía, Collage y Texturas.
 - Atributos de Rivera: Natural, En Auge, Transfronteriza e Interconectada.
 - Según el color: Azul Petróleo, con 25 casos de petróleo azulado y azules oscuros cercanos. Enlace directo: ?color=azul-petroleo.
 
@@ -56,3 +56,9 @@ Servir public/ como carpeta estática. Datos e imágenes son locales; no requier
 Se verificaron los 14 proyectos concretos. Créditos corregidos: Peabody Essex Museum es de Minelli; la señalética de V&A Dundee es de Cartlidge Levene (imágenes y caso del fabricante Norsign). Nobel se cataloga en azul por Water Matters, sin generalizar esa paleta a toda la institución. Zendesk Baseline se identifica como una etapa histórica, distinta de los lineamientos actuales. Mailchimp 2018, Fouta Harissa, Wisl, Suupaa, PEM, Dundee y Milano entran por recursos gráficos, sin asumir un predominio de petróleo. Story Espresso utiliza azul más vivo, por lo que queda fuera de la categoría cromática.
 
 Los 11 enlaces genéricos de Behance, Dribbble y Awwwards no son proyectos individuales: no se incorporan como fichas ni se presupone que sus filtros HEX funcionen. El HEX 005F73 del listado no define el color oficial de Rivera. Las imágenes nuevas se guardan localmente con su procedencia exacta en cada ficha.
+
+## Líneas rectas sobre fotos · 21/10/2026
+
+Nueva dirección solicitada: intervenciones fotográficas con trazos rectos, diagonales, recorridos angulares y menor organicidad. Filtro `?resource=lineas-rectas-fotos`, dentro de recursos gráficos. Reúne cuatro casos nuevos y la aplicación de realidad aumentada de Eurostar (caso existente). Minnesota Carlson muestra retícula isométrica y diagonales blancas; Suntera, cruces finos con una diagonal de acento; Mambu, bandas y chevrones sobre personas; Wemage, franjas paralelas detrás del sujeto recortado. Se distinguen trazos finos de franjas anchas en las notas.
+
+No se eliminan las referencias curvas anteriores ni se asume que toda la nueva selección deba ser Azul Petróleo. No añadir al filtro un caso sólo por tener un logo angular o una foto al lado de una línea. Las imágenes seleccionadas deben mostrar la intervención. Las recomendaciones para Rivera son lecturas propias.
