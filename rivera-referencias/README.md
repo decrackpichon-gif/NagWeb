@@ -18,14 +18,14 @@ Este banco es independiente de los cinco frentes de NagWeb. No modificar `main`,
 
 ## Catálogo y clasificación · 21/10/2026
 
-118 referencias profesionales, 267 vistas previas locales y 53 trabajos con enlace Behance. Se mantienen todos los 98 casos previos, sus IDs y favoritos. Esta ampliación incorpora 20 nuevos proyectos.
+128 referencias profesionales, 299 vistas previas locales y 53 trabajos con enlace Behance. Se mantienen los 118 casos previos, sus IDs y favoritos. La revisión del listado de 14 proyectos incorpora 10 casos nuevos y amplía Eurostar con tres aplicaciones. Porto, Helsinki, Eurostar y Natural History Museum ya estaban, sin duplicarlos.
 
 Clasificación compartida por el equipo:
 
 - Según el moodboard: Editorial y modular / Fluido y conectado.
 - Recurso gráfico: Ilustración naturalista, Formas orgánicas, Líneas y recorridos, Enlaces y encuentros, Geometría modular, Tramas y patrones, Expansión y ondas, Tipografía, Fotografía, Collage y Texturas.
 - Atributos de Rivera: Natural, En Auge, Transfronteriza e Interconectada.
-- Según el color: Azul Petróleo, con 22 casos de petróleo azulado y azules oscuros cercanos. Enlace directo: ?color=azul-petroleo.
+- Según el color: Azul Petróleo, con 25 casos de petróleo azulado y azules oscuros cercanos. Enlace directo: ?color=azul-petroleo.
 
 El equipo definió Azul Petróleo como principal de Marca Ciudad. El naranja sigue en exploración. No fijar un HEX oficial de Rivera ni asumir que el naranja está aprobado. La interfaz conserva la identidad editorial existente: esta categoría es una herramienta de investigación cromática.
 
@@ -50,3 +50,9 @@ La configuración git.deploymentEnabled:false evita despliegues automáticos. No
 ## Uso local
 
 Servir public/ como carpeta estática. Datos e imágenes son locales; no requiere instalación. Los favoritos pertenecen al navegador y dispositivo. Copiar enlace conserva los filtros; ref abre una ficha.
+
+## Revisión del listado externo · 21/10/2026
+
+Se verificaron los 14 proyectos concretos. Créditos corregidos: Peabody Essex Museum es de Minelli; la señalética de V&A Dundee es de Cartlidge Levene (imágenes y caso del fabricante Norsign). Nobel se cataloga en azul por Water Matters, sin generalizar esa paleta a toda la institución. Zendesk Baseline se identifica como una etapa histórica, distinta de los lineamientos actuales. Mailchimp 2018, Fouta Harissa, Wisl, Suupaa, PEM, Dundee y Milano entran por recursos gráficos, sin asumir un predominio de petróleo. Story Espresso utiliza azul más vivo, por lo que queda fuera de la categoría cromática.
+
+Los 11 enlaces genéricos de Behance, Dribbble y Awwwards no son proyectos individuales: no se incorporan como fichas ni se presupone que sus filtros HEX funcionen. El HEX 005F73 del listado no define el color oficial de Rivera. Las imágenes nuevas se guardan localmente con su procedencia exacta en cada ficha.

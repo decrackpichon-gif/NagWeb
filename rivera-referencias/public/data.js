@@ -1,5 +1,449 @@
 window.REFERENCES = [
   {
+    "id": "peabody-essex-minelli",
+    "title": "Peabody Essex Museum · identidad",
+    "studio": "Minelli · EE. UU.",
+    "url": "https://www.minelli.com/work/peabody-essex-museum/",
+    "description": "Identidad para un museo de arte y cultura que combina las iniciales PEM, rojo institucional y composiciones editoriales con obras.",
+    "lookAt": "La firma de letras espaciadas, las franjas rojas y los cambios de escala entre cubierta, folleto y papelería.",
+    "rivera": "Estudiar cómo una estructura y una firma constantes permiten reunir fotografías, arte y relatos diversos.",
+    "tags": [
+      "tipografia",
+      "fotografia",
+      "collage"
+    ],
+    "attributes": [
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "added": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/list-i-peabody-essex-minelli-1.webp",
+        "source": "https://www.minelli.com/wp-content/uploads/2017/03/pem-site-10.jpg"
+      },
+      {
+        "src": "assets/list-i-peabody-essex-minelli-2.webp",
+        "source": "https://www.minelli.com/wp-content/uploads/2017/03/pem-site-09.jpg"
+      },
+      {
+        "src": "assets/list-i-peabody-essex-minelli-3.webp",
+        "source": "https://www.minelli.com/wp-content/uploads/2017/03/pem-site-14.jpg"
+      }
+    ]
+  },
+  {
+    "id": "nobel-prize-sdl",
+    "title": "The Nobel Prize · identidad y Water Matters",
+    "studio": "Stockholm Design Lab · Suecia",
+    "url": "https://www.stockholmdesignlab.se/work/the-nobel-prize",
+    "description": "Identidad institucional con tipografías Alfred y aplicaciones como Water Matters, campaña realizada con Wang & Söderström.",
+    "lookAt": "El afiche azul y el programa de Water Matters: títulos claros, render orgánico, marca dorada y módulos editoriales.",
+    "rivera": "Una base tipográfica estable puede reunir investigación, ciencia y naturaleza con imágenes expresivas en afiches y programas.",
+    "tags": [
+      "tipografia",
+      "organico",
+      "fotografia",
+      "collage"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "added": "2026-10-21",
+    "colorCategories": [
+      "azul-petroleo"
+    ],
+    "blueFamily": "azul-oscuro",
+    "palette": [
+      {
+        "hex": "#253F5C",
+        "label": "Azul oscuro"
+      },
+      {
+        "hex": "#4C9B9E",
+        "label": "Teal"
+      },
+      {
+        "hex": "#20B98A",
+        "label": "Verde de acento"
+      },
+      {
+        "hex": "#F0EFDD",
+        "label": "Blanco cálido"
+      },
+      {
+        "hex": "#AF955F",
+        "label": "Dorado"
+      }
+    ],
+    "colorUse": "En Water Matters, el azul oscuro ocupa el afiche y la portada del programa, detrás de tipografía clara y formas orgánicas en verde y teal. El dorado firma la institución y el interior combina blanco y verde. Esta lectura cromática corresponde a esa campaña; la identidad general del Nobel utiliza otras combinaciones. Valores aproximados observados.",
+    "images": [
+      {
+        "src": "assets/list-i-nobel-prize-sdl-1.webp",
+        "source": "https://cdn.sanity.io/images/6uvtz1ot/production/da528bfbeb1dc13e98c82f58fcf099a2568b0e31-2000x2800.jpg?w=1200&q=80&auto=format"
+      },
+      {
+        "src": "assets/list-i-nobel-prize-sdl-2.webp",
+        "source": "https://cdn.sanity.io/images/6uvtz1ot/production/e484c21b66241d80e3d5ed565ce65efedfd87319-4000x2507.jpg?w=1200&q=80&auto=format"
+      },
+      {
+        "src": "assets/list-i-nobel-prize-sdl-3.webp",
+        "source": "https://cdn.sanity.io/images/6uvtz1ot/production/669f7ef57b12b2fded4f5c8e2ad90c2b9684f21b-5400x3600.jpg?w=1200&q=80&auto=format"
+      }
+    ]
+  },
+  {
+    "id": "va-dundee-cartlidge",
+    "title": "V&A Dundee · señalética",
+    "studio": "Cartlidge Levene · Reino Unido",
+    "url": "https://www.norsign.co.uk/our-work/va-museum/",
+    "description": "Señalética y orientación del museo, diseñada por Cartlidge Levene y fabricada por Norsign.",
+    "lookAt": "Los números de planta, las bandas amarillas, las flechas y la jerarquía de textos sobre materiales del edificio.",
+    "rivera": "Una familia clara de números, señales y niveles de lectura puede acompañar recorridos y conectar información con espacio.",
+    "tags": [
+      "tipografia",
+      "lineas",
+      "geometria",
+      "enlaces"
+    ],
+    "attributes": [
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "added": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/list-i-va-dundee-cartlidge-1.webp",
+        "source": "https://www.norsign.co.uk/wp-content/uploads/2022/10/VA-Case-Study-Internal-Signs-13.jpg"
+      },
+      {
+        "src": "assets/list-i-va-dundee-cartlidge-2.webp",
+        "source": "https://www.norsign.co.uk/wp-content/uploads/2022/10/VA-Case-Study-Internal-Signs-9.jpg"
+      },
+      {
+        "src": "assets/list-i-va-dundee-cartlidge-3.webp",
+        "source": "https://www.norsign.co.uk/wp-content/uploads/2022/10/VA-Case-Study-Internal-Signs-7.jpg"
+      }
+    ]
+  },
+  {
+    "id": "sinfonica-milano-landor",
+    "title": "Orchestra Sinfonica di Milano",
+    "studio": "Landor & Fitch / Landor · Italia",
+    "url": "https://landor.com/en/our-work/milan-symphony-orchestra/",
+    "description": "Identidad inspirada en el futurismo milanés: símbolo que evoca el Duomo y una tipografía que se expande con el sonido.",
+    "lookAt": "El cambio de ancho de las letras TUMB TUMB, el símbolo M y la organización de afiches con fotografía y color.",
+    "rivera": "Usar ritmo, repetición y expansión tipográfica para comunicar una identidad activa en afiches y piezas digitales.",
+    "tags": [
+      "tipografia",
+      "expansion",
+      "geometria",
+      "lineas"
+    ],
+    "attributes": [
+      "En Auge",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "added": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/list-i-sinfonica-milano-landor-1.webp",
+        "source": "https://cms.landor.com/media/x3dnw4ms/landor_wl_visual_06_thubmnail_3840x2160px.jpg"
+      },
+      {
+        "src": "assets/list-i-sinfonica-milano-landor-2.webp",
+        "source": "https://cms.landor.com/media/vrihw0y0/landor_mos_hero_01_3840x2160px.jpg"
+      },
+      {
+        "src": "assets/list-i-sinfonica-milano-landor-3.webp",
+        "source": "https://cms.landor.com/media/btxbhpex/landor_wl_visual_01_thubmnail_3840x2160px.jpg"
+      }
+    ]
+  },
+  {
+    "id": "story-espresso",
+    "title": "Story Espresso · historias cotidianas",
+    "studio": "For The People",
+    "url": "https://www.forthepeople.agency/projects/story-cafe",
+    "description": "Una cafetería convierte vasos, menús, tarjetas y envases en soportes para relatos, poemas y pequeñas bifurcaciones narrativas. La identidad coordina varias voces tipográficas y una mascota reconocible. Su azul es más vivo que el petróleo; se incorpora por sus recursos editoriales y narrativos.",
+    "lookAt": "Los sistemas de lectura, la mezcla de tipografías y la manera en que los bordes del soporte guían una historia. Comparar el menú azul, los envases ilustrados y los textos breves.",
+    "rivera": "Pensar cada pieza como una invitación a descubrir historias del territorio y de su gente. Una estructura editorial común puede unir contribuciones de distintos autores e ilustradores.",
+    "tags": [
+      "tipografia",
+      "lineas",
+      "enlaces",
+      "patrones"
+    ],
+    "attributes": [
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "images": [
+      {
+        "src": "assets/list-d-story-espresso-1.webp",
+        "source": "https://framerusercontent.com/images/cYvqOgRrdmHldwQfokYBBpkoJws.jpg?scale-down-to=4096"
+      },
+      {
+        "src": "assets/list-d-story-espresso-2.webp",
+        "source": "https://framerusercontent.com/images/ZTuVZVu7upgbcnozOl7l7pDEoo.jpg?scale-down-to=4096"
+      },
+      {
+        "src": "assets/list-d-story-espresso-3.webp",
+        "source": "https://framerusercontent.com/images/VaObqwVAbaFHpmhM3hnaLQJciI.png?scale-down-to=4096"
+      }
+    ],
+    "verified": "2026-10-21",
+    "priority": false
+  },
+  {
+    "id": "fouta-harissa",
+    "title": "Fouta Harissa · marcos entre culturas",
+    "studio": "Sometimes Always · Solenn Robic + Renata Sá",
+    "url": "https://sometimes-always.com/projects/fouta-harissa/",
+    "description": "Una identidad para textiles artesanales vinculados a Túnez y Brasil. Conserva la escritura árabe, introduce una tipografía estrecha y construye marcos y composiciones inspirados en antiguas casetes árabes.",
+    "lookAt": "El juego de marcos rectangulares y bordes ondulados; la relación entre rojo, marrón, rosa y fotografía. El mismo lenguaje pasa de una etiqueta a un afiche y una postal.",
+    "rivera": "Estudiar cómo una identidad puede celebrar vínculos transfronterizos conservando rasgos culturales concretos. Los marcos pueden reunir imágenes e historias distintas sin uniformarlas.",
+    "tags": [
+      "tipografia",
+      "fotografia",
+      "lineas",
+      "geometria"
+    ],
+    "attributes": [
+      "Transfronteriza",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "images": [
+      {
+        "src": "assets/list-d-fouta-harissa-1.webp",
+        "source": "https://sometimes-always.com/wp-content/uploads/2025/12/sometimes-always-fouta-harissa-horizontal-5.jpg"
+      },
+      {
+        "src": "assets/list-d-fouta-harissa-2.webp",
+        "source": "https://sometimes-always.com/wp-content/uploads/2025/12/sometimes-always-fouta-harissa-horizontal-3.jpg"
+      },
+      {
+        "src": "assets/list-d-fouta-harissa-3.webp",
+        "source": "https://sometimes-always.com/wp-content/uploads/2025/12/sometimes-always-fouta-harissa-horizontal-2.jpg"
+      }
+    ],
+    "verified": "2026-10-21",
+    "priority": false
+  },
+  {
+    "id": "wisl",
+    "title": "Wisl · una letra que reúne equipos",
+    "studio": "andstudio",
+    "url": "https://byandstudio.com/work/inviting-to-join-local-sports-engine/",
+    "description": "Un sistema para una plataforma de deporte social. El logotipo sigue recorridos de pelota y esquemas de juego; su W se combina con piernas y gestos para construir una familia de personajes.",
+    "lookAt": "La continuidad entre letra, personaje y patrón. Observar cómo cambia de postura y actividad, y cómo se sostiene la lectura al repetir figuras en un afiche.",
+    "rivera": "Una misma forma puede representar encuentros distintos y convertirse en un vocabulario de comunidad. Es una referencia directa para vínculos, participación y energía compartida.",
+    "tags": [
+      "lineas",
+      "enlaces",
+      "patrones",
+      "tipografia",
+      "organico"
+    ],
+    "attributes": [
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "fluid",
+      "editorial"
+    ],
+    "images": [
+      {
+        "src": "assets/list-d-wisl-1.webp",
+        "source": "https://byandstudio.com/wp-content/uploads/2023/03/wisl_andstudio_branding_poster-scaled.jpg"
+      },
+      {
+        "src": "assets/list-d-wisl-2.webp",
+        "source": "https://byandstudio.com/wp-content/uploads/2023/03/wisl_andstudio_branding_logotype.jpg"
+      },
+      {
+        "src": "assets/list-d-wisl-3.webp",
+        "source": "https://byandstudio.com/wp-content/uploads/2023/05/wisl_andstudio_branding_app-1-2.jpg"
+      }
+    ],
+    "verified": "2026-10-21",
+    "priority": false
+  },
+  {
+    "id": "suupaa",
+    "title": "Suupaa · tipografía, textura y personaje",
+    "studio": "A Friend of Mine (AFOM)",
+    "url": "https://afom.com.au/projects/suupaa/",
+    "description": "Identidad para un konbini y restaurante japonés en Melbourne. Combina tipografía contundente, un pez globo como personaje, etiquetas de producto y tramas analógicas en un sistema predominantemente monocromo.",
+    "lookAt": "La jerarquía de etiquetas, la diferencia entre logotipo y tipografía de recibo y las tramas creadas al distorsionar degradados. Comparar la continuidad del sistema en productos con formatos distintos.",
+    "rivera": "Un vocabulario reducido puede dar coherencia a muchas actividades sin hacer que todas las piezas sean iguales. Las texturas y los personajes aportan cercanía dentro de una estructura ordenada.",
+    "tags": [
+      "tipografia",
+      "texturas",
+      "patrones",
+      "fotografia",
+      "organico"
+    ],
+    "attributes": [
+      "Transfronteriza",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/list-d-suupaa-1.webp",
+        "source": "https://cdn.sanity.io/images/ae7azigy/production/2e4d962ce0953cfc770cbf1aa02a7ae6b492a103-9167x6667.jpg?rect=1,0,9166,6667&w=1500&h=1091&q=75&fit=max&auto=format"
+      },
+      {
+        "src": "assets/list-d-suupaa-2.webp",
+        "source": "https://cdn.sanity.io/images/ae7azigy/production/3f2ae4f346bbc334c5a491f51162302ff0723c99-5000x6667.jpg?w=1500&h=2000&q=75&fit=max&auto=format"
+      },
+      {
+        "src": "assets/list-d-suupaa-3.webp",
+        "source": "https://cdn.sanity.io/images/ae7azigy/production/fa5aa080df80b2210db9f332b5939270ea421d48-5000x6667.jpg?w=1500&h=2000&q=75&fit=max&auto=format"
+      }
+    ]
+  },
+  {
+    "id": "mailchimp-collins-2018",
+    "title": "Mailchimp · identidad 2018",
+    "studio": "COLLINS + Mailchimp Design",
+    "url": "https://wearecollins.com/case-studies/mailchimp/",
+    "description": "La identidad de 2018 une amarillo, ilustración expresiva, fotografía y tipografía de carácter. El amarillo protagoniza el sistema; no es un caso de azul petróleo.",
+    "lookAt": "Cómo conviven el dibujo gestual, las formas abiertas y una estructura tipográfica estable. Mirar el contraste de la marca con imágenes y fondos muy diferentes.",
+    "rivera": "Una marca territorial puede dar espacio a distintas voces gráficas y conservar reconocimiento con color, tono y jerarquías comunes.",
+    "tags": [
+      "organico",
+      "lineas",
+      "tipografia",
+      "fotografia"
+    ],
+    "attributes": [
+      "En Auge",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "images": [
+      {
+        "src": "assets/list-r-mailchimp-1.webp",
+        "source": "https://image.mux.com/Gb3G004NC3P00bDwwmJl5sSbTCVGN4b00tQ14hu3hSWmNM/thumbnail.webp?time=0&width=1600&height=1067"
+      },
+      {
+        "src": "assets/list-r-mailchimp-2.webp",
+        "source": "https://image.mux.com/pvNKSTPNrx4hmh1sE3p58qxqMbwid4Ba3ZBUBNQYKTA/thumbnail.webp?time=0&width=1600&height=900"
+      },
+      {
+        "src": "assets/list-r-mailchimp-3.webp",
+        "source": "https://mailchimp.com/ctf/images/yzco4xsimv0y/4YgyP97XtSUu4oOWOKYEEC/2ab1da043a1a2c7a3d33714c58fb7681/ceate-inline.jpg"
+      }
+    ],
+    "verified": "2026-10-21",
+    "priority": false
+  },
+  {
+    "id": "zendesk-baseline-historico",
+    "title": "Zendesk · Baseline, paleta histórica",
+    "studio": "Claire Moore · Zendesk Brand Team",
+    "url": "https://dribbble.com/shots/15221707-Zendesk-Brand-Color-Palette",
+    "description": "Revisión histórica del sistema Baseline de Zendesk, presentada por Claire Moore: azules verdosos oscuros, neutros y acentos de producto. Corresponde a una etapa anterior de la marca, no a sus lineamientos actuales.",
+    "lookAt": "La relación entre el fondo petróleo, las variantes claras y los pequeños acentos que distinguen los productos. Comparar el cuadro de paleta con la familia de íconos.",
+    "rivera": "Un color base puede dar unidad a servicios distintos; los acentos y las formas permiten diferenciarlos sin fragmentar la identidad.",
+    "tags": [
+      "geometria",
+      "tipografia",
+      "enlaces"
+    ],
+    "attributes": [
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "images": [
+      {
+        "src": "assets/list-r-zendesk-2.webp",
+        "source": "https://cdn.dribbble.com/userupload/37148445/file/original-69a40c71183ffabe65e9d789cfc1c20e.png"
+      },
+      {
+        "src": "assets/list-r-zendesk-1.webp",
+        "source": "https://cdn.dribbble.com/userupload/37148444/file/original-290802311c1649af42163d4a0118e054.jpg"
+      }
+    ],
+    "verified": "2026-10-21",
+    "priority": false,
+    "colorCategories": [
+      "azul-petroleo"
+    ],
+    "blueFamily": "petroleo",
+    "palette": [
+      {
+        "hex": "#03363D",
+        "label": "Petróleo oscuro"
+      },
+      {
+        "hex": "#17494D",
+        "label": "Petróleo medio"
+      },
+      {
+        "hex": "#BDD9D7",
+        "label": "Teal claro"
+      },
+      {
+        "hex": "#F4CF68",
+        "label": "Amarillo"
+      },
+      {
+        "hex": "#EB9C66",
+        "label": "Naranja suave"
+      },
+      {
+        "hex": "#FFFFFF",
+        "label": "Blanco"
+      }
+    ],
+    "colorUse": "El azul verdoso oscuro unifica los íconos de la familia de productos. Variantes claras construyen superficies y los acentos cálidos, verdes y azules distinguen cada servicio. Es una paleta histórica del proyecto Baseline, no la paleta actual de Zendesk. Valores aproximados observados."
+  },
+  {
     "id": "blue-satchels",
     "title": "Satchels Coffee Roasters",
     "studio": "Anagrama · México",
@@ -1550,7 +1994,7 @@ window.REFERENCES = [
   {
     "id": "eurostar-spark-new",
     "title": "Eurostar · Spark New",
-    "studio": "DesignStudio",
+    "studio": "DesignStudio · hoy Further",
     "url": "https://www.further.group/work/eurostar",
     "behance": "https://www.behance.net/gallery/164317041/Eurostar-Paris",
     "description": "La identidad que une Eurostar y Thalys utiliza una estrella expansiva como orientación, energía y conexión entre ciudades. La acompañan ilustraciones encargadas a artistas europeos; el enlace de Behance muestra París por Fagostudio y Senso Art.",
@@ -1573,13 +2017,56 @@ window.REFERENCES = [
     ],
     "images": [
       {
+        "src": "assets/list-r-euro-1.webp",
+        "source": "https://cdn.prod.website-files.com/6849da698cb78e39e81215c3/686be91c336756e5de231509_FeatureImage1_Eurostar_DesignStudio.jpg"
+      },
+      {
+        "src": "assets/list-r-euro-3.webp",
+        "source": "https://cdn.prod.website-files.com/6849da698cb78e39e81215c3/68aee7a98e9f38519fe4e044_5%20Eurostar_casestudy_RESIZED-min.jpg"
+      },
+      {
+        "src": "assets/list-r-euro-5.webp",
+        "source": "https://cdn.prod.website-files.com/6849da698cb78e39e81215c3/68aee7f893e4a3be0751583f_14%20Eurostar_RESIZED-min.jpg"
+      },
+      {
         "src": "assets/r3-s-eurostar-spark-new-1.webp",
         "source": "https://i.vimeocdn.com/video/1595343060-5a75810d5d96239d46d74519fd40b2446344e9cba8bf06848534d113b064b263-d?f=webp"
       }
     ],
-    "verified": "2026-10-20",
+    "verified": "2026-10-21",
     "added": "2026-10-20",
-    "priority": false
+    "priority": false,
+    "colorCategories": [
+      "azul-petroleo"
+    ],
+    "blueFamily": "azul-oscuro",
+    "palette": [
+      {
+        "hex": "#152B50",
+        "label": "Azul noche"
+      },
+      {
+        "hex": "#1463ED",
+        "label": "Azul vivo"
+      },
+      {
+        "hex": "#F0EEDB",
+        "label": "Marfil"
+      },
+      {
+        "hex": "#EFCC42",
+        "label": "Amarillo"
+      },
+      {
+        "hex": "#A9245A",
+        "label": "Frambuesa"
+      },
+      {
+        "hex": "#006B59",
+        "label": "Verde profundo"
+      }
+    ],
+    "colorUse": "La identidad combina azul vivo y azul noche: el oscuro da cuerpo a la intervención del tren y el vivo activa la estrella y las piezas de comunicación. El marfil aporta contraste tipográfico, mientras una paleta secundaria amplía las campañas y las ilustraciones de destinos. Interesa como referencia de azul oscuro cercano, no como petróleo exacto. Valores aproximados observados."
   },
   {
     "id": "maison-revka-vj",
