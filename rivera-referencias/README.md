@@ -18,7 +18,7 @@ Este banco es independiente de los cinco frentes de NagWeb. No modificar `main`,
 
 ## Catálogo y clasificación · 21/10/2026
 
-132 referencias profesionales, 308 vistas previas locales y 54 trabajos con enlace Behance. Se mantienen los 128 casos previos, sus IDs y favoritos. La ampliación de líneas rectas incorpora Minnesota Carlson, Suntera Global, Wemage y Mambu, y amplía Eurostar sin duplicarlo.
+153 referencias profesionales, 357 vistas previas locales y 59 trabajos con enlace Behance. Se mantienen íntegros los 132 casos previos, sus IDs y favoritos. La ampliación profunda incorpora 21 nuevos proyectos a Líneas rectas sobre fotos, que pasa de 5 a 26 referencias.
 
 Clasificación compartida por el equipo:
 
@@ -62,3 +62,9 @@ Los 11 enlaces genéricos de Behance, Dribbble y Awwwards no son proyectos indiv
 Nueva dirección solicitada: intervenciones fotográficas con trazos rectos, diagonales, recorridos angulares y menor organicidad. Filtro `?resource=lineas-rectas-fotos`, dentro de recursos gráficos. Reúne cuatro casos nuevos y la aplicación de realidad aumentada de Eurostar (caso existente). Minnesota Carlson muestra retícula isométrica y diagonales blancas; Suntera, cruces finos con una diagonal de acento; Mambu, bandas y chevrones sobre personas; Wemage, franjas paralelas detrás del sujeto recortado. Se distinguen trazos finos de franjas anchas en las notas.
 
 No se eliminan las referencias curvas anteriores ni se asume que toda la nueva selección deba ser Azul Petróleo. No añadir al filtro un caso sólo por tener un logo angular o una foto al lado de una línea. Las imágenes seleccionadas deben mostrar la intervención. Las recomendaciones para Rivera son lecturas propias.
+
+## Ampliación profunda de líneas sobre fotos · 21/10/2026
+
+21 casos nuevos y 49 vistas previas, con fuente y autoría verificadas y notas de lectura propias. Se mantienen todos los casos anteriores sin cambios. El filtro `?resource=lineas-rectas-fotos` reúne ahora 26 trabajos. Incluye trazos finos angulares, cruces, marcos abiertos y cerrados, retículas, bandas y capas delante/detrás de sujetos recortados. Las variantes de franja ancha o refracción suave se explican como tales, sin confundirlas con un trazo fino.
+
+Se incorporan UCSD, temporada de Lituania en Francia/Taktika, Berghs/Kurppa Hosk, MK College/Fable&Co., RIT, Virginia Tech, Onward/Firebelly, Level Up/Barrigón, XP Investimentos/Marcel Bittencourt, HMF/UGAH!, Mosstroytransgaz/BrandLab, Borussia Dortmund/DesignStudio–Further, NorthMark, SignCut/Roxo, Pavel Kuznetsov/2Dots, Siemens Healthineers, CUPRA/Droga5, Fondo de Iniciativas del Sur de los Urales/Kolya Golovin, MERX/Heads, The Humane Space/Firebelly y Darktrace/Grizzly. Se seleccionan imágenes del proyecto, no retratos de autores ni imágenes de trabajos relacionados. No se agregan búsquedas genéricas ni aplicaciones no confirmadas.

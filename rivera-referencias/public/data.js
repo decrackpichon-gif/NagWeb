@@ -1,5 +1,795 @@
 window.REFERENCES = [
   {
+    "id": "lithuania-france-season-2024",
+    "title": "La Saison de la Lituanie en France 2024",
+    "studio": "Taktika",
+    "url": "https://english.lithuanianculture.lt/news/2024/03/11/highlights-of-the-lithuanias-season-in-france-2024-presented-in-paris/",
+    "description": "Identidad de la temporada cultural lituana en Francia: retratos de danza y segmentos verdes que conectan textos y cuerpos.",
+    "lookAt": "Los tramos rectos cruzan la foto y desaparecen detrás del cuerpo. Los vértices y los rótulos forman un recorrido continuo, adaptable al movimiento de cada retrato.",
+    "rivera": "Una referencia para conectar personas y territorios con un mismo recorrido gráfico. El intercambio cultural está expresado por enlaces visibles entre palabras y cuerpos.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "enlaces",
+      "fotografia",
+      "tipografia"
+    ],
+    "attributes": [
+      "Transfronteriza",
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/deep-i-lithuania-2.webp",
+        "source": "https://images.delfi.lt/media-api-image-cropper/v1/4d1c8570-eb96-45f7-aaba-376f3b0156fb.jpg?ch=0.8443&cw=1&cx=0&cy=0&fx=0.5&fy=0.25&h=711&noup=&r=16%3A9&w=1200"
+      },
+      {
+        "src": "assets/deep-i-lithuania-1.webp",
+        "source": "https://s1.15min.lt/images/photos/2024/04/15/original/lietuvos-kulturos-instituto-nuotr-661d0666315d5.jpg"
+      }
+    ]
+  },
+  {
+    "id": "berghs-school-kurppa-hosk",
+    "title": "Berghs · trazos sobre fotografía",
+    "studio": "Kurppa Hosk",
+    "url": "https://www.kurppahosk.com/work/berghs",
+    "description": "Actualización de la identidad de Berghs School of Communication: trazos rectos atraviesan fotografías en una serie de afiches.",
+    "lookAt": "Las barras azules, amarillas y rojas cruzan retratos y escenas; cambian de dirección y dejan interrupciones precisas para convivir con el titular.",
+    "rivera": "Un recurso directo para sumar dirección y energía a fotos de estudiantes y actividades, con pocos trazos de alto contraste y sin perder la lectura del sujeto.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria",
+      "tipografia"
+    ],
+    "attributes": [
+      "En Auge",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "images": [
+      {
+        "src": "assets/deep-i-berghs-1.webp",
+        "source": "https://cdn.sanity.io/images/0y14le4e/production/cf44b0bb4a567ab8519236c72647c767f9a37697-3000x1687.jpg"
+      },
+      {
+        "src": "assets/deep-i-berghs-2.webp",
+        "source": "https://cdn.sanity.io/images/0y14le4e/production/a53d63d5f60e1009a812fd8b8857ca26bdcf206b-3000x1687.jpg"
+      }
+    ],
+    "priority": false,
+    "verified": "2026-10-21"
+  },
+  {
+    "id": "xp-investimentos-bittencourt",
+    "title": "XP Investimentos · conexiones en X",
+    "studio": "Marcel Bittencourt / XP Inc.",
+    "url": "https://www.marcelbittencourt.com/xp-investimentos",
+    "description": "Identidad de 2017–2018 con una X abierta de trazos amarillos sobre fotografías. La misma regla conecta escenas de asesoramiento, publicaciones y campañas, con versiones que pasan delante y detrás de las personas.",
+    "lookAt": "El cruce de dos diagonales con distinto espesor, el tramo que desaparece detrás del cuerpo y la posición de la X respecto de las manos. Comparar la fotografía completa con la adaptación a una publicación y una pantalla.",
+    "rivera": "Una pareja de rectas puede representar encuentros entre las personas de Rivera. El contraste entre un tramo fino y otro grueso ayuda a crear profundidad y jerarquía sin añadir muchos elementos.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "enlaces",
+      "geometria"
+    ],
+    "attributes": [
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/deep-d-xp-investimentos-bittencourt-1.webp",
+        "source": "https://images.squarespace-cdn.com/content/v1/5cdc4e5b9d41495d02c7186d/1612712128780-YCHGHXR7PHM9DXQR7K03/xp-investimentos-photography-01.jpg"
+      },
+      {
+        "src": "assets/deep-d-xp-investimentos-bittencourt-2.webp",
+        "source": "https://images.squarespace-cdn.com/content/v1/5cdc4e5b9d41495d02c7186d/1597526069559-P7W11YSKLRN2AT0KD25Q/xp-investimentos-photography.jpg"
+      },
+      {
+        "src": "assets/deep-d-xp-investimentos-bittencourt-3.webp",
+        "source": "https://images.squarespace-cdn.com/content/v1/5cdc4e5b9d41495d02c7186d/1597685511682-EUIRALLACR0M3X221GQN/xp-investimentos-murilo-benicio-site-desktop.jpg"
+      }
+    ]
+  },
+  {
+    "id": "south-ural-civil-fund",
+    "title": "Fondo de Iniciativas del Sur de los Urales · trayectos rectos",
+    "studio": "Kolya Golovin",
+    "url": "https://dprofile.ru/slice/9930/aidentika-fonda-podderzki-grazdanskix-iniciativ-iuznogo-urala",
+    "description": "Identidad que representa un camino directo entre ideas y oportunidades. Una red amarilla de rectas cruza fotografías y continúa en objetos impresos.",
+    "lookAt": "Los puntos de encuentro de diagonales, el trazo fino uniforme y los segmentos que pasan alrededor del cuerpo. Comparar la fotografía intervenida con la bolsa para reconocer la regla común.",
+    "rivera": "Diseñar recorridos angulares que conecten actividades o lugares de Rivera. Un trazo fino podría atravesar una escena sin reemplazar la fotografía ni depender de ilustración orgánica.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "enlaces",
+      "geometria"
+    ],
+    "attributes": [
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "images": [
+      {
+        "src": "assets/deep-r-southural-1.webp",
+        "source": "https://cdn.dprofile.ru/files/3/2031/COVER/940f5c79-d49b-4dbf-acbe-1db6b21ecb8b_1195333858.jpg"
+      },
+      {
+        "src": "assets/deep-r-southural-2.webp",
+        "source": "https://cdn.dprofile.ru/files/3/2031/FRAGMENT/3d75a927-c8d7-4079-bfad-3f6d6fc1f7e9_1039479801.jpg"
+      }
+    ],
+    "verified": "2026-10-21",
+    "priority": false
+  },
+  {
+    "id": "hmf-ugah",
+    "title": "HMF · trazos angulares en fotografía técnica",
+    "studio": "Agência UGAH! + Pedro Garcia",
+    "url": "https://www.behance.net/gallery/167647507/HMF-Logo-Branding",
+    "description": "Identidad para una empresa de energía ininterrumpida. Un recorrido angular de color lima atraviesa la fotografía técnica en blanco y negro, mientras el sujeto recortado oculta parte del trazo.",
+    "lookAt": "La alternancia delante y detrás del técnico: el trazo entra desde un borde, cambia de dirección y reaparece a la derecha. Observar cómo se mantiene la legibilidad de manos, pantalla y rostro.",
+    "rivera": "En piezas sobre trabajo, una línea angular puede relacionar personas y herramientas. Usar pocos cambios de dirección y ocultar segmentos detrás del sujeto evita una trama excesiva.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria",
+      "enlaces"
+    ],
+    "attributes": [
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/deep-d-hmf-ugah-1.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/fs/efdd6a167647507.642c89b222fe7.png"
+      },
+      {
+        "src": "assets/deep-d-hmf-ugah-2.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/max_1200/fc558a167647507.642c89b21e8f8.png"
+      }
+    ],
+    "behance": "https://www.behance.net/gallery/167647507/HMF-Logo-Branding"
+  },
+  {
+    "id": "pavel-kuznetsov-2dots",
+    "title": "Pavel Kuznetsov · rectas finas sobre retratos",
+    "studio": "2Dots Studio",
+    "url": "https://2dots.studio/portfolio/kuznetsov",
+    "description": "Identidad y landing para un consultor que combinan retratos grises, naranja y una familia de líneas finas: verticales, radiales y diagonales. Las aplicaciones muestran trazos sobre el cuerpo y el encuadre.",
+    "lookAt": "Las rectas naranjas que bajan sobre el saco y las diagonales grises que se cruzan en el retrato inferior. Comparar un recorrido muy discreto con un patrón de varias líneas.",
+    "rivera": "Una intervención mínima puede conectar retratos sin competir con la expresión de cada persona. Probar un único color, un grosor fino y pocas direcciones repetidas.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "patrones"
+    ],
+    "attributes": [
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "images": [
+      {
+        "src": "assets/deep-p-pavel-1.webp",
+        "source": "https://static.tildacdn.com/tild3962-6631-4666-b364-343464316266/3.jpg"
+      }
+    ],
+    "verified": "2026-10-21",
+    "priority": false
+  },
+  {
+    "id": "level-up-barrigon",
+    "title": "Level Up · diagonales entre corredores",
+    "studio": "Barrigón Studio",
+    "url": "https://barrigon.studio/en/work/level-up/",
+    "description": "Sistema para un equipo de running de Monterrey. Un trazo rojo oblicuo entra en la fotografía y alterna delante y detrás de los corredores; en otras piezas el símbolo se amplía como bandas angulares.",
+    "lookAt": "La línea de la pieza nocturna se recorta al pasar por las piernas: observar qué partes quedan delante y cuáles desaparecen. La ampliación roja sobre la corredora muestra otra escala del mismo lenguaje.",
+    "rivera": "Para comunicar movimiento y crecimiento, conectar acciones fotografiadas con una dirección común. La oclusión por el cuerpo aporta profundidad y evita que la línea se sienta simplemente pegada encima.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria",
+      "expansion"
+    ],
+    "attributes": [
+      "En Auge",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/deep-d-level-up-barrigon-1.webp",
+        "source": "https://barrigon.studio/images/work/level-up/m2.webp"
+      },
+      {
+        "src": "assets/deep-d-level-up-barrigon-2.webp",
+        "source": "https://barrigon.studio/images/work/level-up/social-03.webp"
+      },
+      {
+        "src": "assets/deep-d-level-up-barrigon-3.webp",
+        "source": "https://barrigon.studio/images/work/level-up/social-02.webp"
+      }
+    ]
+  },
+  {
+    "id": "ucsd-portrait-campaign",
+    "title": "UC San Diego · Portrait Campaign 2022",
+    "studio": "Kremer Johnson · Jeff Whitlock · Charis Tsevis",
+    "url": "https://www.behance.net/gallery/152301179/UCSD-Portrait-Campaign",
+    "behance": "https://www.behance.net/gallery/152301179/UCSD-Portrait-Campaign",
+    "description": "Campaña de retratos para agradecer diez años de aportes a UC San Diego, con diagonales azules y doradas que atraviesan las siluetas.",
+    "lookAt": "Las franjas interrumpen y reconstruyen el retrato; alternan delante y detrás del cuerpo y conservan la misma inclinación entre piezas.",
+    "rivera": "Para Estudiá Rivera, las diagonales podrían enlazar historias de estudiantes con oportunidades: el retrato sigue siendo protagonista y el trazo aporta avance.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "collage",
+      "geometria"
+    ],
+    "attributes": [
+      "En Auge",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/deep-i-ucsd-1.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/max_3840/8f0544152301179.631b5e1176c58.jpg"
+      },
+      {
+        "src": "assets/deep-i-ucsd-2.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/max_3840/80818a152301179.631b5e1174c91.jpg"
+      },
+      {
+        "src": "assets/deep-i-ucsd-3.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/max_3840/e070ed152301179.631b5e117dba4.jpg"
+      }
+    ]
+  },
+  {
+    "id": "humane-space-firebelly",
+    "title": "The Humane Space · corchetes sobre fotos",
+    "studio": "Firebelly Design · Will Miller",
+    "url": "https://www.behance.net/gallery/138082641/The-Humane-Space",
+    "description": "Un par de corchetes angulares se amplía, rota y abre para envolver fotografías de personas y naturaleza. El mismo recurso se aplica a pantallas y piezas de marca.",
+    "lookAt": "Los cuatro segmentos que forman el encuadre incompleto, la rotación y la escala sobre cada foto. Las interrupciones del marco conservan aire y permiten que el recurso enlace con el contenido.",
+    "rivera": "Usar un marco abierto de pocos segmentos para señalar encuentros o detalles del territorio. Probar el mismo ángulo sobre personas, flora, arquitectura y actividades sin convertirlo en un contorno figurativo.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria",
+      "enlaces"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "images": [
+      {
+        "src": "assets/deep-r-humane-1.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/max_632_webp/50ebc8138082641.6216734f0643c.jpg"
+      },
+      {
+        "src": "assets/deep-r-humane-2.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/disp/4aa592138082641.62169d9b2e7d5.jpg"
+      }
+    ],
+    "verified": "2026-10-21",
+    "priority": false,
+    "behance": "https://www.behance.net/gallery/138082641/The-Humane-Space"
+  },
+  {
+    "id": "rit-graphic-frame-system",
+    "title": "RIT · marcos e intersecciones en fotos",
+    "studio": "RIT · Division of Marketing and Communications",
+    "url": "https://www.rit.edu/brandportal/graphic-elements",
+    "description": "Sistema institucional de Rochester Institute of Technology: marcos rectos, desplazamientos a 45° y bloques translúcidos sobre fotografías.",
+    "lookAt": "El marco naranja recorta un punto de interés dentro de una foto más amplia. Sus extensiones diagonales crean profundidad; los bloques transparentes permiten conservar la actividad visible.",
+    "rivera": "Una herramienta para destacar aprendizajes, oficios o descubrimientos concretos en fotos reales: señalar algo que sucede dentro del territorio y conectarlo con un mensaje.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "geometria",
+      "fotografia",
+      "enlaces"
+    ],
+    "attributes": [
+      "En Auge",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "images": [
+      {
+        "src": "assets/deep-i-rit-1.webp",
+        "source": "https://www.rit.edu/brandportal/sites/rit.edu.brandportal/files/inline-images/highlighting-photography_0.jpg"
+      },
+      {
+        "src": "assets/deep-i-rit-2.webp",
+        "source": "https://www.rit.edu/brandportal/sites/rit.edu.brandportal/files/inline-images/moving-cf-photography_0.png"
+      },
+      {
+        "src": "assets/deep-i-rit-3.webp",
+        "source": "https://www.rit.edu/brandportal/sites/rit.edu.brandportal/files/inline-images/moving-block-overlay.png"
+      }
+    ],
+    "sourceUrls": [
+      "https://www.rit.edu/news/rit-launches-new-brand-strategy-and-identity",
+      "https://www.rit.edu/brandportal/graphic-elements"
+    ],
+    "priority": false,
+    "verified": "2026-10-21"
+  },
+  {
+    "id": "siemens-healthineers-hub-photo",
+    "title": "Siemens Healthineers · circuitos sobre retrato",
+    "studio": "Siemens Healthineers · Brand Design Hub",
+    "url": "https://ux.siemens-healthineers.com/",
+    "description": "Imagen de cabecera del Brand Design Hub: un retrato en teal convive con líneas naranja de comportamiento técnico. Segmentos rectos, quiebres y ramificaciones enlazan la figura con un campo gráfico.",
+    "lookAt": "Los recorridos paralelos y sus encuentros junto al rostro, el equilibrio entre línea fina y fondo oscuro, y el contraste entre fotografía humana y estructura técnica.",
+    "rivera": "Para tecnología o servicios especializados, una red de rectas puede sugerir conexiones sin recurrir a una trama orgánica. Darle una función concreta a cada vínculo y dejar respirar la foto.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "enlaces"
+    ],
+    "attributes": [
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "images": [
+      {
+        "src": "assets/deep-p-siemens-1.webp",
+        "source": "https://ux.siemens-healthineers.com/assets/img/hero%402x.jpg"
+      }
+    ],
+    "verified": "2026-10-21",
+    "priority": false
+  },
+  {
+    "id": "northmark-studio-kocevar",
+    "title": "NorthMark · recorrido angular sobre figura",
+    "studio": "Aljaz Kocevar + Northmark Studio",
+    "url": "https://www.behance.net/gallery/236660207/NorthMark-Branding-Studio-Brand-Identity",
+    "behance": "https://www.behance.net/gallery/236660207/NorthMark-Branding-Studio-Brand-Identity",
+    "description": "Identidad de estudio que combina fotografía gris difuminada y un recorrido naranja de segmentos rectos. La figura humana actúa como fondo para una trama de dirección y orientación.",
+    "lookAt": "El grosor estable, las esquinas del recorrido y los cambios de dirección. El contraste entre la figura borrosa y el trazo preciso permite separar la información sin sumar muchos elementos.",
+    "rivera": "Explorar una línea angular como vínculo entre puntos de una escena. Controlar los cruces con las personas y evitar que la complejidad del recorrido compita con el mensaje.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria"
+    ],
+    "attributes": [
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "images": [
+      {
+        "src": "assets/deep-p-northmark-1.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/max_632_webp/b30be5236660207.68f0252a6a4c0.png"
+      }
+    ],
+    "verified": "2026-10-21",
+    "priority": false
+  },
+  {
+    "id": "darktrace-grizzly",
+    "title": "Darktrace · The Trace sobre imagen",
+    "studio": "Grizzly + Darktrace Brand Team",
+    "url": "https://brandhub.darktrace.com/visual-identity/trace",
+    "description": "La identidad creada con Grizzly utiliza un trazo que cambia de función. Las aplicaciones seleccionadas muestran recorridos angulares que rodean objetos e intervienen fotografías, con luz y pequeños puntos de atención.",
+    "lookAt": "El recorrido alrededor de la tableta y la red que contiene el edificio. La guía propone construir trazos con giros a 45° y 90°; algunas variantes del sistema incorporan curvas, por lo que aquí interesa su aplicación angular.",
+    "rivera": "Probar una línea técnica de grosor estable que conecte puntos dentro de fotos de estudio, trabajo o infraestructura. Los puntos de atención pueden señalar nodos, sin necesitar el resplandor tecnológico del caso.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria",
+      "enlaces"
+    ],
+    "attributes": [
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "images": [
+      {
+        "src": "assets/deep-r-darktrace-2.webp",
+        "source": "https://cdn.prod.website-files.com/62e3de3c93a3f82e39b780db/669115e518bc882adba0164c_trace_context-2.jpg"
+      },
+      {
+        "src": "assets/deep-r-darktrace-3.webp",
+        "source": "https://cdn.prod.website-files.com/62e3de3c93a3f82e39b780db/669115e52b75ae2c153d1404_trace_context-4.jpg"
+      }
+    ],
+    "verified": "2026-10-21",
+    "priority": false,
+    "sourceUrls": [
+      "https://grizzly.co/work/darktrace/"
+    ]
+  },
+  {
+    "id": "merx-heads",
+    "title": "MERX · diagonales de alto contraste",
+    "studio": "Heads",
+    "url": "https://dprofile.ru/case/113435/merx",
+    "description": "Identidad de herramientas eléctricas para Ozon. Franjas diagonales de alto contraste se superponen a imágenes urbanas y se extienden a packaging y fichas de producto.",
+    "lookAt": "La foto aérea gris y la banda amarilla diagonal: el patrón parece prolongar el paso peatonal y pasa de una observación del entorno a una capa gráfica. Distinguir esta intervención de las aplicaciones sobre fondo plano.",
+    "rivera": "Tomar direcciones o alineaciones de una foto local para prolongarlas mediante rectas. El grosor mayor puede usarse como acento de energía en piezas de En Auge.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "patrones",
+      "geometria"
+    ],
+    "attributes": [
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "images": [
+      {
+        "src": "assets/deep-r-merx-1.webp",
+        "source": "https://cdn.dprofile.ru/public/48682/113435/e21ac1220047167.67bc91f2e002a.jpg"
+      },
+      {
+        "src": "assets/deep-r-merx-2.webp",
+        "source": "https://cdn.dprofile.ru/public/48682/113435/b48f24220047167.67bc91f2e1256.jpg"
+      }
+    ],
+    "verified": "2026-10-21",
+    "priority": false
+  },
+  {
+    "id": "mk-college-fable-2018",
+    "title": "MK College · bandas sobre estudiantes",
+    "studio": "Fable&Co.",
+    "url": "https://fableco.uk/project/milton-keynes-college",
+    "behance": "https://www.behance.net/gallery/59994457/Milton-Keynes-College-Brand-Identity",
+    "description": "Identidad de Milton Keynes College que amplía segmentos del monograma como bandas azules y violetas sobre fotografías de estudiantes.",
+    "lookAt": "El recurso no queda confinado al logotipo: sus tramos verticales y diagonales atraviesan el retrato, alternan figura y fondo y se repiten en afiches, web y vía pública.",
+    "rivera": "Para Estudiá Rivera, un mismo gesto angular podría unir campañas y dar continuidad entre fotografías diversas, con la persona visible entre los tramos.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "geometria",
+      "fotografia",
+      "expansion"
+    ],
+    "attributes": [
+      "En Auge",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "images": [
+      {
+        "src": "assets/deep-i-mk-2.webp",
+        "source": "https://cms.fableco.uk/wp-content/uploads/2019/08/MKC-Brochure-Covers-scaled.jpg"
+      },
+      {
+        "src": "assets/deep-i-mk-1.webp",
+        "source": "https://cms.fableco.uk/wp-content/uploads/2019/08/MKC-Posters-scaled.jpg"
+      },
+      {
+        "src": "assets/deep-i-mk-3.webp",
+        "source": "https://cms.fableco.uk/wp-content/uploads/2019/08/Milton-Keynes-College-Street-Posters-01-scaled.jpg"
+      }
+    ],
+    "priority": false,
+    "verified": "2026-10-21"
+  },
+  {
+    "id": "virginia-tech-angled-photo-system",
+    "title": "Virginia Tech · composición diagonal con fotos",
+    "studio": "Virginia Tech · University Relations",
+    "url": "https://brand.vt.edu/identity/design-elements.html",
+    "description": "Guía institucional con contenedores diagonales, franjas de color y detalles rectos para organizar montajes fotográficos editoriales.",
+    "lookAt": "Las fotos se intercalan con bandas a 45° y planos de color. El retrato atraviesa varios niveles y los pequeños trazos refuerzan la inclinación de la composición.",
+    "rivera": "Sirve para estudiar cómo una dirección común puede ordenar fotos, datos y relatos de personas. La diagonal conecta las piezas sin exigir que todas las imágenes tengan el mismo encuadre.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "geometria",
+      "fotografia",
+      "collage"
+    ],
+    "attributes": [
+      "En Auge",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "images": [
+      {
+        "src": "assets/deep-i-vt-1.webp",
+        "source": "https://brand.vt.edu/content/brand_vt_edu/en/identity/design-elements/_jcr_content/content/vtmultitab/vt-items_0/adaptiveimage_copy.transform/m-medium/image.png"
+      },
+      {
+        "src": "assets/deep-i-vt-2.webp",
+        "source": "https://brand.vt.edu/content/brand_vt_edu/en/identity/design-elements/_jcr_content/content/vtmulticolumn_430700304/vt-items_1/adaptiveimage_copy.transform/m-medium/image.png"
+      },
+      {
+        "src": "assets/deep-i-vt-3.webp",
+        "source": "https://brand.vt.edu/content/brand_vt_edu/en/identity/design-elements/_jcr_content/content/vtmultitab/vt-items_3/adaptiveimage.transform/m-medium/image.png"
+      }
+    ],
+    "priority": false,
+    "verified": "2026-10-21"
+  },
+  {
+    "id": "onward-firebelly",
+    "title": "Onward · cintas diagonales y retratos",
+    "studio": "Firebelly",
+    "url": "https://firebellydesign.com/work/onward",
+    "description": "Identidad para una organización dedicada a la equidad racial. Una barra inclinada se convierte en cinta: atraviesa fotografías, enlaza mensajes y suma capas a carteles de fuerte presencia tipográfica.",
+    "lookAt": "La cinta naranja atraviesa la fotografía del cartel central sin ocultar los rostros; en los retratos, una diagonal sale del encuadre y conecta foto y fondo. Comparar esos trazos finales con el recorte inclinado.",
+    "rivera": "Una línea de vínculo puede funcionar como cinta editorial entre las personas de Rivera y sus mensajes. Repetir un ángulo y variar largo o espesor permite mantener el reconocimiento sin usar siempre la misma composición.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "tipografia",
+      "collage",
+      "enlaces"
+    ],
+    "attributes": [
+      "Interconectada",
+      "Transfronteriza"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/deep-d-onward-firebelly-1.webp",
+        "source": "https://firebelly--assets.nyc3.cdn.digitaloceanspaces.com/imager-avif/work/onward/38883/17-ONW_posters-0_3cdd4b2dc1c60531ae4e3ac2e75c2229.jpg"
+      },
+      {
+        "src": "assets/deep-d-onward-firebelly-2.webp",
+        "source": "https://firebelly--assets.nyc3.cdn.digitaloceanspaces.com/imager-avif/work/onward/51670/19-ONW_posters_cedf573a41d3719099acc0261fd3d878.jpg"
+      },
+      {
+        "src": "assets/deep-d-onward-firebelly-3.webp",
+        "source": "https://firebelly--assets.nyc3.cdn.digitaloceanspaces.com/imager-avif/work/onward/51669/18-ONW_posters_cedf573a41d3719099acc0261fd3d878.jpg"
+      }
+    ]
+  },
+  {
+    "id": "mosstroytransgaz-brandlab",
+    "title": "Mosstroytransgaz · franjas sobre fotografía corporativa",
+    "studio": "BrandLab",
+    "url": "https://brandlab.ru/portfolio/detail/rebranding-mosstroytransgaz/",
+    "description": "Un sistema corporativo usa bandas oblicuas para unificar fotografías de equipos, industria y construcción. En los folletos, las franjas cruzan las imágenes y continúan de una página a otra.",
+    "lookAt": "Las bandas azules se superponen a escenas de trabajo y se prolongan entre fotos distintas. Observar el ancho constante, la separación entre franjas y el modo en que los cortes diagonales articulan la doble página.",
+    "rivera": "Puede servir para organizar varias actividades de Rivera dentro de una misma pieza: una dirección gráfica común conecta personas y lugares, incluso cuando la fotografía proviene de situaciones diferentes.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria",
+      "enlaces",
+      "collage"
+    ],
+    "attributes": [
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/deep-d-mosstroytransgaz-brandlab-1.webp",
+        "source": "https://brandlab.ru/upload/medialibrary/b6f/b6f5cddc8261f21358eef4d55a76dae0.jpg"
+      },
+      {
+        "src": "assets/deep-d-mosstroytransgaz-brandlab-2.webp",
+        "source": "https://brandlab.ru/upload/medialibrary/d93/d937e0d453703ae1696b4e77d38db1ac.jpg"
+      },
+      {
+        "src": "assets/deep-d-mosstroytransgaz-brandlab-3.webp",
+        "source": "https://brandlab.ru/upload/medialibrary/8cd/8cdbd4aec1e0fcd282ebfe8480840096.jpg"
+      }
+    ]
+  },
+  {
+    "id": "borussia-dortmund-designstudio",
+    "title": "Borussia Dortmund · diagonales y refracción",
+    "studio": "DesignStudio / Further",
+    "url": "https://www.further.group/work/borussia-dortmund",
+    "description": "La identidad de 2023 toma el ángulo de 34° de la tribuna del estadio como regla. En la campaña, la fotografía del jugador se atraviesa con diagonales y refracciones que sugieren velocidad e intensidad.",
+    "lookAt": "El cartel panorámico muestra la aplicación sobre la foto: las franjas se suavizan y refractan el retrato, mientras la geometría de los paneles laterales mantiene el ángulo. Comparar con las diagonales de los carteles del metro.",
+    "rivera": "Para Rivera, una regla angular puede pasar de la línea nítida a una intervención fotográfica más expresiva. Conviene reservar ese efecto para imágenes de actividad y conservar áreas tranquilas para los textos.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria",
+      "texturas",
+      "tipografia"
+    ],
+    "attributes": [
+      "En Auge",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/deep-d-borussia-dortmund-designstudio-1.webp",
+        "source": "https://cdn.prod.website-files.com/6849da698cb78e39e81215c3/68aed92f6bcbbbede443a6e8_13_BVB_OOH-min.jpg"
+      },
+      {
+        "src": "assets/deep-d-borussia-dortmund-designstudio-2.webp",
+        "source": "https://cdn.prod.website-files.com/6849da698cb78e39e81215c3/68aed9252b23e834e9620953_12_BVB_OOH-min.jpg"
+      },
+      {
+        "src": "assets/deep-d-borussia-dortmund-designstudio-3.webp",
+        "source": "https://cdn.prod.website-files.com/6849da698cb78e39e81215c3/68aed8c7170733715d714b6a_07_BVB_CaseStudy_MC_05-25%20(1)-min.png"
+      }
+    ]
+  },
+  {
+    "id": "signcut-roxo-diagonal-photo",
+    "title": "SignCut · corte diagonal sobre producción",
+    "studio": "Estúdio Roxo · Brasil",
+    "url": "https://estudioroxo.com.br/cases/signcut/",
+    "description": "Rebranding de una empresa de señalización y adhesivos que traslada los cortes de 45° de su tipografía a las aplicaciones. Una fotografía de taller queda intervenida por una franja diagonal y zonas de azul.",
+    "lookAt": "El ancho de la franja que deja ver la actividad del taller y la convivencia del azul con la fotografía. El corte geométrico relaciona el recurso con el trabajo y las herramientas de la empresa.",
+    "rivera": "Probar franjas rectas que revelen escenas de trabajo o estudio dentro de una imagen más amplia. La dirección puede orientar hacia una persona, una acción o un título.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria"
+    ],
+    "attributes": [
+      "En Auge",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "images": [
+      {
+        "src": "assets/deep-p-signcut-7.webp",
+        "source": "https://estudioroxo.com.br/wp-content/uploads/2021/02/estudio-roxo-case-signcut-9.webp"
+      },
+      {
+        "src": "assets/deep-p-signcut-12.webp",
+        "source": "https://estudioroxo.com.br/wp-content/uploads/2021/02/estudio-roxo-case-signcut-12.webp"
+      }
+    ],
+    "verified": "2026-10-21",
+    "priority": false
+  },
+  {
+    "id": "cupra-another-way-droga5",
+    "title": "CUPRA · marcos poligonales sobre escenas",
+    "studio": "Droga5 London · fotografía Piczo",
+    "url": "https://www.adsoftheworld.com/campaigns/another-way",
+    "description": "Identidad y campaña Another Way de 2021 que dan a conductores y contextos un protagonismo similar al vehículo. Un contorno blanco de tramos rectos recorta y destaca a la persona dentro de la escena.",
+    "lookAt": "La forma angular que sigue el encuadre del conductor y las versiones de módulos recortados en las piezas finales. El marco incorpora pequeños cambios de dirección sin convertirse en un gesto orgánico libre.",
+    "rivera": "Usar contornos angulares para destacar una acción o una persona en fotografías del territorio. El módulo puede variar según la escena si conserva grosor, ángulos y criterios de recorte comunes.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria"
+    ],
+    "attributes": [
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "images": [
+      {
+        "src": "assets/deep-p-cupra-1.webp",
+        "source": "https://image.adsoftheworld.com/erdzmd7w0l6ic1byjow2pp34o210"
+      },
+      {
+        "src": "assets/deep-p-cupra-3.webp",
+        "source": "https://image.adsoftheworld.com/wroz9f613jw038oelfzcbiygs63b"
+      },
+      {
+        "src": "assets/deep-p-cupra-4.webp",
+        "source": "https://image.adsoftheworld.com/0gvie50jxq6o7lltji2n1vzin6ig"
+      }
+    ],
+    "verified": "2026-10-21",
+    "priority": false
+  },
+  {
     "id": "carlson-school-angular-grid",
     "title": "Minnesota Carlson · diagonales sobre fotografía",
     "studio": "Zeus Jones + Carlson Marketing Communications",
