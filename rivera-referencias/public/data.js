@@ -1,5 +1,81 @@
 window.REFERENCES = [
   {
+    "id": "visible-grid-nospoon",
+    "title": "Visible Grid · del margen a una costa",
+    "studio": "Serkan KÖSEMEK / Nospoon",
+    "url": "https://www.behance.net/gallery/236676215/Visible-Grid-8-Experimental-Poster-Collection-Free-AI",
+    "sourceUrls": [
+      "https://me.muz.li/nospoon/visible-grid-8-experimental-poster-collection-free-ai-2"
+    ],
+    "description": "Serie experimental de afiches, no una identidad institucional. En la pieza de Praia da Arrifana, Portugal, los contornos de flechas atraviesan el límite entre el margen blanco y la fotografía de costa. Una segunda pieza aplica trazos rojos a una escena urbana.",
+    "lookAt": "Cruce del borde: el dibujo negro ocupa el margen y entra en la foto; otros contornos se leen en blanco dentro de la imagen. Comparar el trazo fino con los bloques rojos transparentes. Las flechas combinan rectas, diagonales y pequeños sectores curvos: es una variante mixta, no un sistema enteramente rectilíneo. En la escena urbana, una línea roja baja desde la foto hasta el sector de texto. No reproduce el ocultamiento detrás del edificio de la referencia aportada por el equipo.",
+    "rivera": "Para probar líneas desde afuera de la foto hacia adentro, reservar un margen visible en la pieza y dejar que uno o dos recorridos lo atraviesen. La costa permite estudiar este recurso con paisaje natural. Traducir la operación a una geometría propia de Rivera, con menos elementos y sin copiar la flecha del afiche.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria",
+      "tipografia"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/margen-visible-1.webp",
+        "source": "https://files.muzli.cloud/102518191698604380825-1760860972637.png"
+      },
+      {
+        "src": "assets/margen-visible-2.webp",
+        "source": "https://files.muzli.cloud/102518191698604380825-1760860972631.png"
+      }
+    ]
+  },
+  {
+    "id": "cbre-line-of-sight",
+    "title": "CBRE · líneas delante y detrás del retrato",
+    "studio": "Landor · dirección de diseño: Erin Wilson",
+    "url": "https://www.erinwilsondesign.com/cbre",
+    "description": "Identidad corporativa articulada alrededor de “We See More” y el recurso Line of Sight. En el retrato seleccionado, una horizontal verde queda detrás de la cabeza y otra pasa delante de los brazos. Se acompaña con una composición de arquitectura y aplicaciones editoriales.",
+    "lookAt": "Profundidad por superposición: seguir dónde la línea superior se interrumpe por la cabeza y dónde la inferior tapa el cuerpo. Ambas siguen siendo rectas y conservan el espesor. El retrato está integrado a un campo gris de texto. Es una referencia para el juego delante/detrás; la imagen de arquitectura muestra una línea entre dos fotografías. No presenta el mismo cruce de un margen blanco y una foto rectangular que el ejemplo del equipo.",
+    "rivera": "Combinar esta regla de profundidad con el cruce del borde visible en Minnesota Carlson: una recta podría empezar en el margen, entrar en un paisaje y quedar detrás de una persona, un árbol o una roca. Empezar con una sola línea y resolver el punto de ocultamiento según cada fotografía.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "tipografia"
+    ],
+    "attributes": [
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/margen-cbre-1.webp",
+        "source": "https://images.squarespace-cdn.com/content/v1/52a50311e4b0509d04fd0b20/1643063957889-2RYMCRF2TOT3CX4Z838E/Frame_5-2435.png"
+      },
+      {
+        "src": "assets/margen-cbre-2.webp",
+        "source": "https://images.squarespace-cdn.com/content/v1/52a50311e4b0509d04fd0b20/1643160451220-1XNC425XGP7WM6CT1SVV/Frame_1-2413.png"
+      },
+      {
+        "src": "assets/margen-cbre-3.webp",
+        "source": "https://images.squarespace-cdn.com/content/v1/52a50311e4b0509d04fd0b20/1643070046411-08XZVKJ2Z3P6YXE1VMJ2/CBRE_Quarterly_Interior_Guidelines+copy.jpg"
+      }
+    ]
+  },
+  {
     "id": "maxxen-naturaleza-angular",
     "title": "Maxxen · recorridos angulares sobre bosques",
     "studio": "Maxxen · autoría gráfica no indicada",
@@ -1389,7 +1465,7 @@ window.REFERENCES = [
       "https://www.case.org/awards/circle-excellence/2023/carlson-school-management-brand-refresh"
     ],
     "description": "Una retícula isométrica coordina líneas blancas, bloques de color y fotografías. Los ángulos se repiten en arquitectura, retratos y piezas de comunicación universitaria.",
-    "lookAt": "Comparar la foto intervenida con su retícula: las diagonales siguen una regla de 30° respecto de la horizontal. El trazo blanco cambia de dirección y continúa entre fotografía y bloques sin tapar la información principal.",
+    "lookAt": "Comparar la foto intervenida con su retícula: las diagonales siguen una regla de 30° respecto de la horizontal. El trazo blanco cambia de dirección y continúa entre fotografía y bloques sin tapar la información principal. Cruce del borde: en la pieza del edificio, seguir la diagonal blanca desde el bloque celeste exterior hasta el interior de la foto. Es un ejemplo directo de continuidad entre margen y fotografía; no crea ocultamientos detrás de la arquitectura.",
     "rivera": "Para Estudiá o Trabajá, definir pocos ángulos y un grosor constante permitiría conectar personas, espacios y textos. La línea puede salir de la foto y organizar el resto de la pieza.",
     "tags": [
       "lineas-rectas-fotos",
@@ -1431,7 +1507,7 @@ window.REFERENCES = [
       "https://palatinepe.com/smp-group-rebrands-to-suntera-global/"
     ],
     "description": "Aplicación publicada en la web de Suntera: una fotografía de equipo intervenida por rectas blancas finas y una diagonal naranja. La identidad de la compañía fue desarrollada con Ashgrove Marketing y Prodo Digital; se estudia aquí esta aplicación concreta.",
-    "lookAt": "El contraste entre líneas finas y una franja naranja recta, el cruce de direcciones y la ubicación de los trazos alrededor del rostro. El retrato sigue siendo protagonista.",
+    "lookAt": "El contraste entre líneas finas y una franja naranja recta, el cruce de direcciones y la ubicación de los trazos alrededor del rostro. El retrato sigue siendo protagonista. Profundidad por superposición: las diagonales quedan detrás de la cabeza y reaparecen a ambos lados. En esta vista entran por el borde del encuadre; no hay un margen blanco exterior como en la referencia del equipo.",
     "rivera": "Probar una diagonal principal acompañada de una o dos rectas secundarias sobre fotos de personas. Ajustar los cruces a cada encuadre y evitar ojos, manos o información relevante.",
     "tags": [
       "lineas-rectas-fotos",

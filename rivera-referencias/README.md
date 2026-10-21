@@ -18,7 +18,7 @@ Este banco es independiente de los cinco frentes de NagWeb. No modificar `main`,
 
 ## Catálogo y clasificación · 21/10/2026
 
-169 referencias de diseño y fotografía artística, 396 vistas previas locales y 60 trabajos con enlace Behance. Se mantienen íntegros los 153 casos previos, sus IDs y favoritos. La ampliación de naturaleza incorpora 16 trabajos y 39 imágenes: Líneas rectas sobre fotos reúne 42 referencias, de las cuales 17 tienen el atributo Natural.
+171 referencias de diseño y fotografía artística, 401 vistas previas locales y 61 trabajos con enlace Behance. Se mantienen íntegros los 153 casos previos, sus IDs y favoritos. La ampliación de naturaleza incorpora 16 trabajos y 39 imágenes: Líneas rectas sobre fotos reúne 44 referencias, de las cuales 18 tienen el atributo Natural.
 
 Clasificación compartida por el equipo:
 
@@ -78,3 +78,12 @@ Se incorporan Maxxen, EY Malta Future Realised, IMDEX, Satisloh, CargoX, The Wan
 Las notas distinguen trazos finos, retículas, índices, marcos, franjas y recortes. Las variantes mixtas de Satisloh (círculo exterior), Norway’s National Parks (base del portal) y CargoX (esquinas redondeadas) están expresamente descritas. Los créditos gráficos no publicados por la fuente se indican sin atribuir la pieza a un estudio no confirmado. En IMDEX se distingue la identidad documentada de Rare/Taylor Evans de las aplicaciones oficiales seleccionadas.
 
 Cada imagen conserva su URL de procedencia. La selección visual se comprobó contra las piezas originales; se descartaron resultados que sólo tenían un logotipo sobre una foto o líneas que pertenecían físicamente a una baranda, sin intervención gráfica.
+
+
+## Precisión del criterio: líneas desde el margen hacia la foto · 21/10/2026
+
+El equipo aportó una imagen de arquitectura brutalista en blanco y negro, encuadrada sobre blanco y atravesada por líneas rojas finas y anchas. Archivo recibido: codex-clipboard-b2cff517-6716-45c2-beef-cadde0847134.png. Autoría y publicación de origen aún no identificadas; se usa como referencia de criterio, sin inventar atribución ni incorporarla como un proyecto verificado.
+
+La petición apunta a dos operaciones que pueden combinarse: (1) continuidad del trazo entre un margen visible exterior y el interior de una fotografía rectangular; (2) ocultamiento parcial de la línea detrás de un elemento fotografiado, que da profundidad. El color contrastante y la variación de espesor aportan jerarquía. No basta con que una línea toque el borde de una fotografía a sangre, ni con que aparezca un marco alrededor sin entrar en la escena. Priorizar trazos rectos y diagonales; mantener el interés por naturaleza, flora, fauna, paisajes y personas en la naturaleza.
+
+Se suman dos casos y cinco vistas: Visible Grid de Serkan KÖSEMEK / Nospoon, con una costa y una escena urbana; CBRE de Landor, documentado por Erin Wilson, para estudiar delante/detrás. Visible Grid se clasifica también como Natural por la costa. Sus notas aclaran los sectores curvos de las flechas y la falta de ocultamiento fotográfico. CBRE se presenta como referencia complementaria de profundidad, sin atribuirle un margen blanco que no aparece en esas aplicaciones. Se precisan las lecturas de Minnesota Carlson (cruce entre bloque exterior y foto) y Suntera (ocultamiento detrás del retrato). Se mantienen sus IDs e imágenes.
