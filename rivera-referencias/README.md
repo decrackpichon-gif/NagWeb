@@ -18,7 +18,7 @@ Este banco es independiente de los cinco frentes de NagWeb. No modificar `main`,
 
 ## Catálogo y clasificación · 21/10/2026
 
-153 referencias profesionales, 357 vistas previas locales y 59 trabajos con enlace Behance. Se mantienen íntegros los 132 casos previos, sus IDs y favoritos. La ampliación profunda incorpora 21 nuevos proyectos a Líneas rectas sobre fotos, que pasa de 5 a 26 referencias.
+169 referencias de diseño y fotografía artística, 396 vistas previas locales y 60 trabajos con enlace Behance. Se mantienen íntegros los 153 casos previos, sus IDs y favoritos. La ampliación de naturaleza incorpora 16 trabajos y 39 imágenes: Líneas rectas sobre fotos reúne 42 referencias, de las cuales 17 tienen el atributo Natural.
 
 Clasificación compartida por el equipo:
 
@@ -68,3 +68,13 @@ No se eliminan las referencias curvas anteriores ni se asume que toda la nueva s
 21 casos nuevos y 49 vistas previas, con fuente y autoría verificadas y notas de lectura propias. Se mantienen todos los casos anteriores sin cambios. El filtro `?resource=lineas-rectas-fotos` reúne ahora 26 trabajos. Incluye trazos finos angulares, cruces, marcos abiertos y cerrados, retículas, bandas y capas delante/detrás de sujetos recortados. Las variantes de franja ancha o refracción suave se explican como tales, sin confundirlas con un trazo fino.
 
 Se incorporan UCSD, temporada de Lituania en Francia/Taktika, Berghs/Kurppa Hosk, MK College/Fable&Co., RIT, Virginia Tech, Onward/Firebelly, Level Up/Barrigón, XP Investimentos/Marcel Bittencourt, HMF/UGAH!, Mosstroytransgaz/BrandLab, Borussia Dortmund/DesignStudio–Further, NorthMark, SignCut/Roxo, Pavel Kuznetsov/2Dots, Siemens Healthineers, CUPRA/Droga5, Fondo de Iniciativas del Sur de los Urales/Kolya Golovin, MERX/Heads, The Humane Space/Firebelly y Darktrace/Grizzly. Se seleccionan imágenes del proyecto, no retratos de autores ni imágenes de trabajos relacionados. No se agregan búsquedas genéricas ni aplicaciones no confirmadas.
+
+## Naturaleza y líneas rectas sobre fotos · 21/10/2026
+
+Se añaden 16 trabajos y 39 vistas previas locales al cruce `?resource=lineas-rectas-fotos&attribute=Natural`, conservando sin cambios las 153 fichas anteriores. Este cruce reúne 17 trabajos, incluido The Humane Space que ya estaba clasificado en ambos filtros.
+
+Se incorporan Maxxen, EY Malta Future Realised, IMDEX, Satisloh, CargoX, The Wandering Lens, National Geographic/Gretel, Norway’s National Parks/Snøhetta, Hoburne/Fable&Co., Silence Path/Loot Recordings, CV × Huerco S/Smalltown Supersound y Norton Rose Fulbright. Se complementan con cuatro casos de fotografía artística: James Tylor, Nicolas Rivals, Reuben Wu y Barry Underwood. Las instalaciones físicas y tomas de larga exposición se identifican como tales; no se presentan como campañas o capas digitales.
+
+Las notas distinguen trazos finos, retículas, índices, marcos, franjas y recortes. Las variantes mixtas de Satisloh (círculo exterior), Norway’s National Parks (base del portal) y CargoX (esquinas redondeadas) están expresamente descritas. Los créditos gráficos no publicados por la fuente se indican sin atribuir la pieza a un estudio no confirmado. En IMDEX se distingue la identidad documentada de Rare/Taylor Evans de las aplicaciones oficiales seleccionadas.
+
+Cada imagen conserva su URL de procedencia. La selección visual se comprobó contra las piezas originales; se descartaron resultados que sólo tenían un logotipo sobre una foto o líneas que pertenecían físicamente a una baranda, sin intervención gráfica.

@@ -1,5 +1,596 @@
 window.REFERENCES = [
   {
+    "id": "maxxen-naturaleza-angular",
+    "title": "Maxxen · recorridos angulares sobre bosques",
+    "studio": "Maxxen · autoría gráfica no indicada",
+    "url": "https://www.maxxen.com/tr/surdurulebilirlik",
+    "description": "Comunicación corporativa de energía que interviene una vista aérea de bosque, un valle y una escena de personas entre árboles con segmentos rectos y diagonales.",
+    "lookAt": "La repetición de quiebres a 45° y 90°, el espesor fino y el contraste del blanco o verde sobre la vegetación. Comparar el patrón horizontal del bosque con el recorrido que entra por un borde en las otras dos piezas.",
+    "rivera": "Probar un recorrido de pocos segmentos sobre fotos de las quebradas y montes de Rivera. Mantener un mismo grosor y una familia de ángulos permite unir paisajes y personas con una regla reconocible.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/natural-maxxen-naturaleza-angular-1.webp",
+        "source": "https://www.maxxen.com/upload/images/Frame 21 (1).png"
+      },
+      {
+        "src": "assets/natural-maxxen-naturaleza-angular-2.webp",
+        "source": "https://www.maxxen.com/upload/images/rev2026/sustainability-left.webp"
+      },
+      {
+        "src": "assets/natural-maxxen-naturaleza-angular-3.webp",
+        "source": "https://www.maxxen.com/upload/images/rev2026/sustainability-right.webp"
+      }
+    ]
+  },
+  {
+    "id": "ey-malta-future-realised",
+    "title": "EY Malta · malla angular sobre la costa",
+    "studio": "EY Malta · autoría gráfica no indicada",
+    "url": "https://www.ey.com/en_mt/newsroom/2022/09/local-and-international-experts-to-debate-malta-s-economy",
+    "description": "Imagen institucional del encuentro Malta Future Realised 2022. Una malla blanca de triángulos se superpone a un paisaje costero.",
+    "lookAt": "El contorno de la malla ocupa una zona de la roca y deja aire en el cielo y el mar. El trazo fino permite seguir leyendo la textura del terreno; no cubre toda la fotografía.",
+    "rivera": "Usar una red angular localizada para señalar un área de interés del paisaje de Rivera. Comparar una intervención parcial con una retícula completa, cuidando que el territorio conserve protagonismo.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/natural-ey-malta-future-realised-1.webp",
+        "source": "https://www.ey.com/content/dam/ey-unified-site/ey-com/en-mt/newsroom/2022/9/images/ey-malta-future-realised-2022.jpg"
+      }
+    ]
+  },
+  {
+    "id": "imdex-naturaleza-lineas",
+    "title": "IMDEX · una X de líneas sobre el territorio",
+    "studio": "IMDEX · identidad Rare / Taylor Evans",
+    "url": "https://www.imdex.com/industry-solutions/exploration-solutions/driving-sustainability-how-imdex-technology-leads-the-way",
+    "description": "Aplicaciones oficiales de IMDEX con una X construida con líneas paralelas sobre fotografías aéreas de bosque y campos. La identidad de Rare / Taylor Evans está documentada en su portafolio; la pieza web no acredita por separado a su realizador.",
+    "lookAt": "La figura diagonal se construye con muchas verticales finas. La fotografía continúa a ambos lados de la X y permanece visible dentro del tramado; comparar la escala en el bosque y en el campo.",
+    "rivera": "Explorar una forma angular propia de Rivera construida con líneas repetidas sobre fotos del territorio. La densidad del tramado puede cambiar sin reemplazar la escena por una superficie opaca.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/natural-imdex-naturaleza-lineas-1.webp",
+        "source": "https://www.imdex.com/getmedia/014334fa-33f8-4701-a17c-b66dfead778b/tree-X-overlay.png"
+      },
+      {
+        "src": "assets/natural-imdex-naturaleza-lineas-2.webp",
+        "source": "https://www.imdex.com/getmedia/55b2992d-e01b-4834-91a2-49619955c96f/Field-overlay-X.png"
+      }
+    ],
+    "behance": "https://www.behance.net/gallery/150858025/IMDEX-Rebrand"
+  },
+  {
+    "id": "satisloh-paisaje-geometria",
+    "title": "Satisloh · ejes y triangulación sobre un lago",
+    "studio": "Satisloh · autoría de la pieza no indicada",
+    "url": "https://www.satisloh.com/ophthalmic/hard-coating/hard-coat-processes-overview",
+    "description": "Imagen de comunicación técnica de Satisloh: un paisaje de lago y montañas se interviene con ejes, rectas y una triangulación blanca dentro de un círculo.",
+    "lookAt": "Las verticales, horizontales y diagonales contrastan con el paisaje. El círculo delimita el campo técnico: es una variante mixta, con contorno curvo y estructura interior de rectas.",
+    "rivera": "Comparar cuánto puede reducirse una retícula técnica sobre una foto natural. Para la dirección actual de Rivera, tomar la lógica de ejes y segmentos y ensayar también una versión sin el círculo exterior.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/natural-satisloh-paisaje-geometria-1.webp",
+        "source": "https://www.satisloh.com/fileadmin/user_upload/Images/01_Ophthalmic/01_Products/05_Coating/Coating_Processes/Satisloh_hard_coat_Lenses.jpg"
+      }
+    ]
+  },
+  {
+    "id": "cargox-bosque-documentos",
+    "title": "CargoX · estructura lineal sobre bosque",
+    "studio": "CargoX · autoría gráfica no indicada",
+    "url": "https://cargox.io/content-hub/going-paperless-cargox-plant-10000-trees-electronic-trade-documentation-takes-root",
+    "description": "Pieza editorial corporativa sobre reducción de papel y plantación de árboles. Sobre una vista de bosque aparecen contornos de documentos superpuestos.",
+    "lookAt": "Los lados rectos y las divisiones horizontales construyen una secuencia espacial. Las esquinas tienen pequeños redondeos; la estructura general conserva una lógica ortogonal y un trazo uniforme.",
+    "rivera": "Conectar una acción concreta con una fotografía del territorio mediante líneas simples. La superposición puede sugerir capas e intercambio, manteniendo el dibujo lo bastante liviano para leer la vegetación.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/natural-cargox-bosque-documentos-1.webp",
+        "source": "https://www.datocms-assets.com/91419/1684308509-cargox-to-plant-10000-trees.jpg?auto=format&fit=max&w=1200"
+      }
+    ]
+  },
+  {
+    "id": "travel-photography-club-marcos",
+    "title": "The Wandering Lens · marcos cruzados sobre dunas",
+    "studio": "The Wandering Lens / Lisa Michele Burns · autoría gráfica no indicada",
+    "url": "https://www.travelphotographycourses.com/courses",
+    "description": "Comunicación educativa de fotografía de viajes: dos rectángulos blancos se cruzan sobre una foto de dunas y reaparecen en la presentación de los cursos.",
+    "lookAt": "El desplazamiento entre los dos marcos, los cruces de sus lados y la relación de sus verticales con las curvas de las dunas. El mismo motivo pasa de imagen a portada de curso.",
+    "rivera": "Probar marcos desplazados sobre las curvas del paisaje de Rivera. Un recurso de rectas muy simple puede generar contraste y continuidad entre afiches, publicaciones y material institucional.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/natural-travel-photography-club-marcos-1.webp",
+        "source": "https://images.squarespace-cdn.com/content/v1/648bd37a0512cd2bde849802/477a95de-ca17-4bd5-88c0-17efd41e1898/COMPSAMPLE02+copy.jpg?format=1500w"
+      },
+      {
+        "src": "assets/natural-travel-photography-club-marcos-2.webp",
+        "source": "https://images.squarespace-cdn.com/content/v1/648bd37a0512cd2bde849802/e1d3f11c-8758-41cc-9f7d-4f24596a6bbc/PHOTOGRAPHY+BANNER%28117%29.jpg?format=1500w"
+      }
+    ]
+  },
+  {
+    "id": "natgeo-gretel-indice",
+    "title": "National Geographic · índice lineal sobre paisajes",
+    "studio": "Gretel + equipo de marca National Geographic",
+    "url": "https://gretelny.com/national-geographic",
+    "description": "Sistema de identidad Further con un índice de pequeños segmentos rectos y composición editorial sobre fotografías. Las vistas seleccionadas muestran un paisaje nevado y otro de montaña.",
+    "lookAt": "El índice usa marcas pequeñas que atraviesan horizontalmente la escena sin convertirse en una trama. Comparar su escala con las personas, la tipografía y el horizonte; es una intervención muy sutil.",
+    "rivera": "Construir una secuencia de hitos o conexiones mediante pequeñas marcas repetidas sobre fotos de Rivera. Sirve para comparar una intervención mínima con los recorridos angulares más protagonistas.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/natural-natgeo-gretel-indice-1.webp",
+        "source": "https://images.squarespace-cdn.com/content/v1/59317e12e58c620c430469b9/1519421844382-AC7KRIPMZCU1U2DY8QEV/Hero_Cover_2.1.jpg?format=1500w"
+      },
+      {
+        "src": "assets/natural-natgeo-gretel-indice-2.webp",
+        "source": "https://images.squarespace-cdn.com/content/v1/59317e12e58c620c430469b9/1518132177057-BYZ4YH33MWXBEHVYK85J/NG_Motion_06.png?format=1500w"
+      }
+    ]
+  },
+  {
+    "id": "norway-national-parks-portal",
+    "title": "Norway’s National Parks · portal detrás del paisaje",
+    "studio": "Snøhetta · fotografía Øivind Haug",
+    "url": "https://www.snohetta.com/projects/norways-national-parks",
+    "description": "Identidad territorial de 2015 que amplía un portal sobre el paisaje. La montaña interrumpe parte del signo y crea una lectura delante/detrás; las aplicaciones muestran su continuidad en piezas impresas.",
+    "lookAt": "Los laterales verticales y el travesaño horizontal forman un marco de gran escala. El sistema incluye una curva de paisaje en su base: es una referencia mixta, útil por la oclusión y el encuadre, no por una geometría exclusivamente recta.",
+    "rivera": "Ensayar un marco angular que desaparezca detrás de un cerro, una copa de árbol o una persona de Rivera. La relación entre primer plano y fondo puede hacer que el trazo pertenezca a la escena.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/natural-norway-national-parks-portal-1.webp",
+        "source": "https://snohetta.b-cdn.net/uploads/oa/norges-nasjonalparker/OS_2014055_N38_webimageland.jpg?width=1200&height=630&format=jpg&quality=85&crop=2048%2C1076%2C0%2C102"
+      },
+      {
+        "src": "assets/natural-norway-national-parks-portal-2.webp",
+        "source": "https://snohetta.b-cdn.net/uploads/oa/norges-nasjonalparker/OS_2014055_N44_webimageland.jpg?width=750&height=500&quality=85&crop=2000%2C1333%2C0%2C0"
+      }
+    ]
+  },
+  {
+    "id": "hoburne-fable-marcos",
+    "title": "Hoburne Holidays · marcos y personas en la naturaleza",
+    "studio": "Fable&Co.",
+    "url": "https://fableco.uk/project/hoburne-holidays",
+    "description": "Identidad de turismo familiar que usa marcos de color sobre fotografías de bosque y agua. Las aplicaciones seleccionadas muestran el recurso en folletos y publicidad.",
+    "lookAt": "El marco ligeramente girado se superpone a la imagen y a los títulos. Comparar la vegetación del folleto con la fotografía de agua: se mantiene una regla recta aunque cambien el contexto y el formato.",
+    "rivera": "Crear una familia de marcos para actividades y lugares de Rivera. Definir grosor, proporción y rotación evita que cada pieza parezca independiente; el color puede ayudar a organizar contenidos.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/natural-hoburne-fable-marcos-1.webp",
+        "source": "https://cms.fableco.uk/wp-content/uploads/2024/08/Hoburne-Ownership-Posters-1-2048x1274.jpg"
+      },
+      {
+        "src": "assets/natural-hoburne-fable-marcos-2.webp",
+        "source": "https://cms.fableco.uk/wp-content/uploads/2024/08/Hoburne-Ad-Holidays-1-2048x1362.jpg"
+      }
+    ]
+  },
+  {
+    "id": "loot-silence-path-diagonal",
+    "title": "Silence Path · una diagonal sobre el bosque",
+    "studio": "Loot Recordings · autoría gráfica no indicada",
+    "url": "https://www.lootrecordings.com/releases/silence-path-sunlight-trees-frequency-dawn/",
+    "description": "Portada de Sunlight Trees / Frequency Dawn, publicado por Loot Recordings en 2022. Una única diagonal blanca atraviesa una fotografía aérea de bosque.",
+    "lookAt": "El trazo fino, largo y continuo cruza de una zona oscura a otra clara sin seguir la forma de los árboles. Su posición deja márgenes y conserva casi toda la información de la foto.",
+    "rivera": "Probar una sola diagonal sobre fotos de monte o vegetación de Rivera antes de sumar redes más complejas. Comparar su dirección y ubicación con el punto de mayor interés de cada imagen.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/natural-loot-silence-path-diagonal-1.webp",
+        "source": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/83/fe/17/83fe17ae-0259-78df-a493-9fc4343db240/00_Cover_Art.jpg/632x632bb.webp"
+      }
+    ]
+  },
+  {
+    "id": "carmen-villain-cv-huerco-s",
+    "title": "CV × Huerco S · franjas sobre fotografía floral",
+    "studio": "Smalltown Supersound / Carmen Villain · autoría gráfica no indicada",
+    "url": "https://carmenvillain.bandcamp.com/album/cv-x-huerco-s",
+    "description": "Portada de la edición CV x Huerco S, publicada en 2022. Una fotografía floral en blanco y negro convive con franjas rectas translúcidas que convergen hacia la base.",
+    "lookAt": "Las diagonales, la transparencia y el punto de convergencia. Es una variante de franjas y planos de color, más ancha y atmosférica que un trazo fino.",
+    "rivera": "Comparar una intervención geométrica sobre flores con las de paisaje. En fotos de flora de Rivera, pocas franjas transparentes podrían aportar dirección sin ocultar los detalles botánicos.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/natural-carmen-villain-cv-huerco-s-1.webp",
+        "source": "https://f4.bcbits.com/img/a2644837854_5.jpg"
+      }
+    ]
+  },
+  {
+    "id": "nrf-transicion-energetica",
+    "title": "Norton Rose Fulbright · franjas sobre bosque y costa",
+    "studio": "Norton Rose Fulbright · autoría gráfica no indicada",
+    "url": "https://www.nortonrosefulbright.com/en-us/knowledge/resources-and-tools/locking-in-the-green-energy-transition",
+    "description": "Sistema de imágenes para una serie editorial sobre transición energética. Franjas diagonales y cortes paralelos atraviesan fotografías de bosque, carreteras y costa.",
+    "lookAt": "La inclinación constante, los espacios entre franjas y el desplazamiento vertical de sus extremos. Es una variante de bandas y recortes, más ancha que un trazo dibujado.",
+    "rivera": "Probar franjas paralelas sobre escenas de Rivera para comparar una intervención fuerte con una línea fina. Conservar continuidad en elementos clave de la foto ayuda a no fragmentar en exceso el territorio.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/natural-nrf-transicion-energetica-1.webp",
+        "source": "https://www.nortonrosefulbright.com/-/media/images/nrf/hero/renew-economy-energy-transition_publication-banner.png?revision=&revision=4611686018427387904"
+      },
+      {
+        "src": "assets/natural-nrf-transicion-energetica-2.webp",
+        "source": "https://www.nortonrosefulbright.com/-/media/images/nrf/news/au_55950_renew-economy-energy-transition__publication-banner_web-ed_3.png?h=1080&iar=0&w=1920&revision=,4611686018427387904&hash=573B9D1EBB0C7E28A5EA8AC43A353663"
+      },
+      {
+        "src": "assets/natural-nrf-transicion-energetica-3.webp",
+        "source": "https://www.nortonrosefulbright.com/-/media/images/nrf/energy-transition/au_57222_renew-economy-energy-transition_publication-banner_web-ed_4.png?h=1080&iar=0&w=1920&revision=,4611686018427387904&hash=370A89392239464E229D5F061B45F4DA"
+      }
+    ]
+  },
+  {
+    "id": "james-tylor-tapa-arra",
+    "title": "Tapa-arra · cortes rectos en el paisaje",
+    "studio": "James Tylor",
+    "url": "https://www.jamestylor.com/tapa-arra-through-the-landscape-new.html",
+    "description": "Serie de fotografía artística de 2024 que utiliza cortes y bandas blancas para hablar de caminos y conexiones del territorio Kaurna. Las imágenes muestran paisaje, vegetación y costa.",
+    "lookAt": "Cómo una banda diagonal o vertical interrumpe la continuidad de la foto sin dibujar el contorno de un objeto. Comparar el ancho, la dirección y la posición en escenas con árbol, horizonte y agua.",
+    "rivera": "Estudiar el efecto compositivo de una interrupción recta en un paisaje de Rivera. El significado cultural específico de Tylor pertenece a su obra y a su contexto; la lectura para Rivera se limita aquí al recurso formal.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/natural-james-tylor-tapa-arra-1.webp",
+        "source": "https://www.jamestylor.com/uploads/8/6/3/9/8639546/tapa-arra-through-the-landscape-1-2024-cut-through-photograph-50x55cm-copy.jpg"
+      },
+      {
+        "src": "assets/natural-james-tylor-tapa-arra-2.webp",
+        "source": "https://www.jamestylor.com/uploads/8/6/3/9/8639546/tapa-arra-through-the-landscape-2-2024-cut-through-photograph-50x55cm-copy.jpg"
+      },
+      {
+        "src": "assets/natural-james-tylor-tapa-arra-3.webp",
+        "source": "https://www.jamestylor.com/uploads/8/6/3/9/8639546/tapa-arra-through-the-landscape-4-2024-cut-through-photograph-50x55cm-copy-2.jpg"
+      },
+      {
+        "src": "assets/natural-james-tylor-tapa-arra-4.webp",
+        "source": "https://www.jamestylor.com/uploads/8/6/3/9/8639546/tapa-arra-through-the-landscape-6-2024-cut-through-photograph-50x55cm-copy.jpg"
+      },
+      {
+        "src": "assets/natural-james-tylor-tapa-arra-5.webp",
+        "source": "https://www.jamestylor.com/uploads/8/6/3/9/8639546/tapa-arra-through-the-landscape-11-2024-cut-through-photograph-50x55cm-copy.jpg"
+      }
+    ]
+  },
+  {
+    "id": "nicolas-rivals-linea-roja",
+    "title": "La Línea Roja · geometría entre árboles y rocas",
+    "studio": "Nicolas Rivals",
+    "url": "https://www.rivalsnicolas.com/la-linea-roja",
+    "description": "Serie de instalaciones luminosas fotografiadas en paisajes de España. Rectas rojas construyen triángulos, marcos y recorridos entre árboles, costa y rocas; son intervenciones realizadas en el lugar.",
+    "lookAt": "La alternancia entre luz visible y tramos ocultos por los árboles o las rocas. Los vértices aportan estructura y la luz colorea discretamente el entorno cercano.",
+    "rivera": "Tomar como estudio la oclusión de una línea angular por elementos de una foto de Rivera. Para una aplicación gráfica, probar segmentos que aparezcan y desaparezcan detrás de la vegetación, con una dirección coherente.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/natural-nicolas-rivals-linea-roja-1.webp",
+        "source": "https://static.wixstatic.com/media/b608d8_90628864ee5f45819f38b2d74e20d0d2~mv2.jpg"
+      },
+      {
+        "src": "assets/natural-nicolas-rivals-linea-roja-2.webp",
+        "source": "https://static.wixstatic.com/media/b608d8_e6a132352e6641308647609a6d9be915~mv2.jpg"
+      },
+      {
+        "src": "assets/natural-nicolas-rivals-linea-roja-3.webp",
+        "source": "https://static.wixstatic.com/media/b608d8_121d50a8a01843d4b566a32d31408146~mv2.jpg"
+      },
+      {
+        "src": "assets/natural-nicolas-rivals-linea-roja-4.webp",
+        "source": "https://static.wixstatic.com/media/b608d8_6448bd0fe7b84c05b32e41931fdfb1a5~mv2.jpg"
+      },
+      {
+        "src": "assets/natural-nicolas-rivals-linea-roja-5.webp",
+        "source": "https://static.wixstatic.com/media/b608d8_b2c61613c9bf434c938f30059eeca998~mv2.jpg"
+      },
+      {
+        "src": "assets/natural-nicolas-rivals-linea-roja-6.webp",
+        "source": "https://static.wixstatic.com/media/b608d8_4fe4d801c4534a1993582960db9b05f0~mv2.jpg"
+      }
+    ]
+  },
+  {
+    "id": "reuben-wu-aeroglyphs",
+    "title": "Aeroglyphs · rectas luminosas sobre paisajes",
+    "studio": "Reuben Wu",
+    "url": "https://reubenwu.com/selected-works/aeroglyphs/",
+    "description": "Fotografía artística que registra trazos de luz de drones durante largas exposiciones. La selección reúne rectángulos, una cruz, un triángulo y un segmento vertical sobre agua, playa y relieve.",
+    "lookAt": "La escala del trazo frente al horizonte, el aire alrededor de cada forma y su reflejo en el agua. Se seleccionan las variantes rectas del proyecto, que también incluye círculos en otras obras.",
+    "rivera": "Comparar un signo angular aislado con un recorrido que atraviesa toda la foto. Sobre imágenes de agua o cerros de Rivera, la escala y el espacio vacío pueden dar presencia al recurso sin multiplicar las líneas.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/natural-reuben-wu-aeroglyphs-1.webp",
+        "source": "https://reubenwu.com/wp-content/uploads/2025/06/Reuben_Wu_aeroglyph10-1500x1200.jpg"
+      },
+      {
+        "src": "assets/natural-reuben-wu-aeroglyphs-2.webp",
+        "source": "https://reubenwu.com/wp-content/uploads/2025/06/Reuben_Wu_aeroglyph1-1200x1200.jpg"
+      },
+      {
+        "src": "assets/natural-reuben-wu-aeroglyphs-3.webp",
+        "source": "https://reubenwu.com/wp-content/uploads/2025/06/Reuben_Wu_aeroglyph15-1600x1200.jpg"
+      },
+      {
+        "src": "assets/natural-reuben-wu-aeroglyphs-4.webp",
+        "source": "https://reubenwu.com/wp-content/uploads/2025/06/Reuben_Wu_aeroglyph7-1600x1200.jpg"
+      },
+      {
+        "src": "assets/natural-reuben-wu-aeroglyphs-5.webp",
+        "source": "https://reubenwu.com/wp-content/uploads/2025/06/Reuben_Wu_aeroglyph8-1600x1200.jpg"
+      }
+    ]
+  },
+  {
+    "id": "barry-underwood-geometria-bosque",
+    "title": "Barry Underwood · rectas entre troncos y vegetación",
+    "studio": "Barry Underwood",
+    "url": "https://www.lucidart.org/barry-underwood",
+    "description": "Fotografía de instalaciones luminosas en entornos naturales. Las vistas muestran una construcción angular entre troncos y una secuencia de segmentos diagonales cerca de la vegetación.",
+    "lookAt": "Los cambios de dirección, la repetición de diagonales y los tramos que desaparecen detrás de los troncos. Las luces fueron instaladas para la toma; no son una capa digital añadida a una foto.",
+    "rivera": "Observar cómo una línea puede ocupar distintos planos de un bosque. En una intervención gráfica sobre fotos de Rivera, ocultar algunos segmentos detrás de troncos o ramas puede aportar profundidad.",
+    "tags": [
+      "lineas-rectas-fotos",
+      "lineas",
+      "fotografia",
+      "geometria"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "images": [
+      {
+        "src": "assets/natural-barry-underwood-geometria-bosque-1.webp",
+        "source": "https://images.squarespace-cdn.com/content/v1/54401f44e4b089215d5525ef/21a9aa29-1c46-4c5b-9241-f5ca3f72d2a8/Screenshot+2023-05-09+at+3.34.18+PM+copy.png?format=1500w"
+      },
+      {
+        "src": "assets/natural-barry-underwood-geometria-bosque-2.webp",
+        "source": "https://images.squarespace-cdn.com/content/v1/54401f44e4b089215d5525ef/fef00a0c-e86f-46e8-b813-e0ab0d1bee9a/Screenshot+2023-05-09+at+1.15.49+PM.png?format=1500w"
+      }
+    ]
+  },
+  {
     "id": "lithuania-france-season-2024",
     "title": "La Saison de la Lituanie en France 2024",
     "studio": "Taktika",
