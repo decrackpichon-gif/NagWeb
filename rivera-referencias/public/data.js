@@ -1,5 +1,1236 @@
 window.REFERENCES = [
   {
+    "id": "blue-satchels",
+    "title": "Satchels Coffee Roasters",
+    "studio": "Anagrama · México",
+    "url": "https://www.behance.net/gallery/115325603/Satchels",
+    "description": "Sistema de café inspirado en boletos, pasaportes y viajes, con azul noche, naranja y materiales naturales.",
+    "lookAt": "El azul de las tarjetas y cajas, los números grandes y las líneas que ordenan información.",
+    "rivera": "Un azul oscuro puede organizar piezas de servicio; un acento cálido puede señalar una variante o un dato.",
+    "tags": [
+      "tipografia",
+      "lineas",
+      "patrones"
+    ],
+    "attributes": [
+      "Transfronteriza"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "colorCategories": [
+      "azul-petroleo"
+    ],
+    "blueFamily": "azul-oscuro",
+    "palette": [
+      {
+        "hex": "#202D48",
+        "label": "Azul noche"
+      },
+      {
+        "hex": "#D77D28",
+        "label": "Naranja tostado"
+      },
+      {
+        "hex": "#CDAA83",
+        "label": "Kraft"
+      },
+      {
+        "hex": "#F1EBDF",
+        "label": "Marfil"
+      },
+      {
+        "hex": "#FFFFFF",
+        "label": "Blanco"
+      }
+    ],
+    "colorUse": "El azul noche es la base institucional de tarjetas, cajas y sellos; el naranja marca información y detalles. Las bolsas kraft y los blancos aportan descanso, sin sustituir el azul en la papelería. La tipografía alterna claro sobre azul y oscuro sobre neutros. Paleta aproximada observada.",
+    "behance": "https://www.behance.net/gallery/115325603/Satchels",
+    "images": [
+      {
+        "src": "assets/blue-n-blue-satchels-1.webp",
+        "source": "https://anagrama-cdn.sfo2.cdn.digitaloceanspaces.com/assets/assets/assets/5985/original/M-min.jpg?1626733733"
+      },
+      {
+        "src": "assets/blue-n-blue-satchels-2.webp",
+        "source": "https://anagrama-cdn.sfo2.cdn.digitaloceanspaces.com/assets/assets/assets/5994/original/D-min.jpg?1626733743"
+      }
+    ]
+  },
+  {
+    "id": "matericostudio",
+    "title": "Matericostudio · arquitectura en petróleo",
+    "studio": "grucciadesign.",
+    "url": "https://grucciadesign.it/en/projects/matericostudio-identity/",
+    "description": "Un sistema de identidad para un estudio de arquitectura que combina geometría, precisión y un azul petróleo constante en papelería, objetos y comunicación.",
+    "lookAt": "El monograma geométrico, la convivencia de grandes campos azules con blanco y las pautas de margen en tarjetas y documentación.",
+    "rivera": "Estudiar una base cromática estable que pueda ordenar comunicaciones muy diversas. La geometría aporta estructura sin restarle calidez al azul.",
+    "tags": [
+      "geometria",
+      "tipografia"
+    ],
+    "attributes": [
+      "En Auge",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "blueFamily": "petroleo",
+    "palette": [
+      {
+        "hex": "#235262",
+        "label": "Azul petróleo aproximado"
+      },
+      {
+        "hex": "#527D88",
+        "label": "Azul grisáceo"
+      },
+      {
+        "hex": "#FFFFFF",
+        "label": "Blanco"
+      },
+      {
+        "hex": "#D7DADB",
+        "label": "Gris claro"
+      }
+    ],
+    "colorUse": "El petróleo ocupa superficies completas de tarjetas, cubiertas y bolsas; el blanco aparece en el monograma y los textos. En documentos claros, el mismo azul se conserva como tinta principal. La proporción cambia sin perder reconocimiento.",
+    "images": [
+      {
+        "src": "assets/blue-s-matericostudio-1.webp",
+        "source": "https://grucciadesign.it/wp-content/uploads/2024/05/04-Brand-book.jpg"
+      },
+      {
+        "src": "assets/blue-s-matericostudio-2.webp",
+        "source": "https://grucciadesign.it/wp-content/uploads/2024/05/01-Matericostudio-branding.jpg"
+      }
+    ],
+    "verified": "2026-10-21",
+    "priority": false,
+    "colorCategories": [
+      "azul-petroleo"
+    ],
+    "paletteNote": "Colores aproximados observados en las aplicaciones; no son valores oficiales ni una propuesta de paleta para Rivera."
+  },
+  {
+    "id": "the-hub-mallorca",
+    "title": "The Hub Mallorca · petróleo y blancos cálidos",
+    "studio": "Jorge Aleix",
+    "url": "https://www.jorgealeix.com/en/portfolio/the-hub",
+    "description": "Identidad de un espacio de coworking en Palma que utiliza un azul verdoso muy oscuro y blancos cálidos como base.",
+    "lookAt": "El marco geométrico blanco sobre el petróleo, la inversión en la taza y el paso de la identidad a papel con terminaciones metálicas.",
+    "rivera": "Estudiar una base contenida para comunicar trabajo, emprendimiento y comunidad; el color puede unificar piezas mientras las imágenes muestran personas y lugares.",
+    "tags": [
+      "geometria",
+      "patrones",
+      "tipografia"
+    ],
+    "attributes": [
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "priority": false,
+    "images": [
+      {
+        "src": "assets/blue-r-the-hub-mallorca-1.webp",
+        "source": "https://www.jorgealeix.com/_img/wp-media/2018/08/thumb-THEHUB-jorgealeix-1-960x750-1920.webp"
+      },
+      {
+        "src": "assets/blue-r-the-hub-mallorca-2.webp",
+        "source": "https://www.jorgealeix.com/_img/wp-media/2018/08/THEHUB-CreativeDesign-JorgeAleix_04-1920.webp"
+      },
+      {
+        "src": "assets/blue-r-the-hub-mallorca-3.webp",
+        "source": "https://www.jorgealeix.com/_img/wp-media/2018/08/THEHUB-CreativeDesign-JorgeAleix_05-1920.webp"
+      }
+    ],
+    "verified": "2026-10-21",
+    "colorCategories": [
+      "azul-petroleo"
+    ],
+    "blueFamily": "petroleo",
+    "palette": [
+      {
+        "hex": "#194756",
+        "label": "Petróleo"
+      },
+      {
+        "hex": "#F2EEE7",
+        "label": "Blanco cálido"
+      },
+      {
+        "hex": "#B4A074",
+        "label": "Dorado"
+      },
+      {
+        "hex": "#B49E7B",
+        "label": "Papel kraft"
+      }
+    ],
+    "colorUse": "El petróleo ocupa superficies completas y sostiene el nombre y el marco en blanco. La inversión mantiene el azul como tinta sobre objetos claros. El papel kraft y el dorado aportan calidez material sin introducir un segundo color saturado: conviene comparar esa economía con paletas de más acentos."
+  },
+  {
+    "id": "blue-covariant",
+    "title": "Covariant · formas y tecnología",
+    "studio": "Pentagram · Reino Unido",
+    "url": "https://www.pentagram.com/work/covariant",
+    "description": "Identidad para inteligencia artificial con formas orgánicas y una paleta que vincula azul petróleo, rosa, rojo y celeste.",
+    "lookAt": "La base petróleo y el contraste de las curvas de color, que pasan de fondos a elementos de una interfaz.",
+    "rivera": "Combinar un fondo oscuro estable con formas variables puede expresar actividad sin perder reconocimiento.",
+    "tags": [
+      "organico",
+      "geometria",
+      "expansion"
+    ],
+    "attributes": [
+      "En Auge",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "colorCategories": [
+      "azul-petroleo"
+    ],
+    "blueFamily": "petroleo",
+    "palette": [
+      {
+        "hex": "#254F60",
+        "label": "Azul petróleo"
+      },
+      {
+        "hex": "#F9B7AD",
+        "label": "Rosa claro"
+      },
+      {
+        "hex": "#F6656D",
+        "label": "Coral"
+      },
+      {
+        "hex": "#93E6F0",
+        "label": "Celeste"
+      },
+      {
+        "hex": "#FAF8EE",
+        "label": "Blanco cálido"
+      }
+    ],
+    "colorUse": "El petróleo es uno de los cuatro colores centrales y aporta la base oscura a logotipos, pantallas y composiciones de formas. El rosa, coral y celeste se recortan sobre él y también tienen fondos propios; la proporción cambia por pieza. Las fotos técnicas conviven con textos claros y curvas suaves. Valores aproximados de las vistas.",
+    "images": [
+      {
+        "src": "assets/blue-n-blue-covariant-1.webp",
+        "source": "https://pentagram-production.imgix.net/nullnulld0a24d7d-83cf-4b8d-9c6a-c618d97715ee/JHPLP_Covariant_06.jpg?auto=compress%2Cformat&fit=min&fm=jpg&q=80&rect=0%2C0%2C3000%2C1688&w=640&crop=1&fit=crop&h=360&s=33cd4effdfabc08c9d5f40d5bc09c9c8"
+      },
+      {
+        "src": "assets/blue-n-blue-covariant-2.webp",
+        "source": "https://pentagram-production.imgix.net/nullnullnulld0a24d7d-83cf-4b8d-9c6a-c618d97715ee/JHPLP_Covariant_07.jpg?auto=compress%2Cformat&fit=min&fm=jpg&q=80&rect=0%2C0%2C3000%2C1688&w=640&crop=1&fit=crop&h=360&s=b1a5fd67b35d63f167b91c865415b212"
+      },
+      {
+        "src": "assets/blue-n-blue-covariant-3.webp",
+        "source": "https://pentagram-production.imgix.net/nullnullnullnullnulld0a24d7d-83cf-4b8d-9c6a-c618d97715ee/JHPLP_Covariant_09.jpg?auto=compress%2Cformat&fit=min&fm=jpg&q=80&rect=0%2C0%2C3000%2C1688&w=640&crop=1&fit=crop&h=360&s=08ae3f17f7d712ff753344becaed6c7b"
+      }
+    ]
+  },
+  {
+    "id": "galapagos-for-life",
+    "title": "Galápagos for Life · conservación en azul",
+    "studio": "Stillewacht®",
+    "url": "https://www.stillewacht.de/en/projects/galapagos-for-life",
+    "description": "Identidad para una organización que retira residuos de las islas Galápagos. Un emblema de tortuga, tipografía expresiva y un sistema de dos azules relacionan protección ambiental y acción colectiva.",
+    "lookAt": "El dibujo de la tortuga como parte del lenguaje tipográfico, las superficies petróleo y los pequeños acentos turquesa. La campaña conecta identidad y materiales reciclados.",
+    "rivera": "Una referencia para vincular naturaleza y comunidad mediante un color principal que organiza fotografías, mensajes y símbolos, sin necesitar una paleta verde.",
+    "tags": [
+      "naturalista",
+      "organico",
+      "tipografia",
+      "fotografia"
+    ],
+    "attributes": [
+      "Natural",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "fluid",
+      "editorial"
+    ],
+    "blueFamily": "petroleo",
+    "palette": [
+      {
+        "hex": "#294F59",
+        "label": "Petróleo aproximado"
+      },
+      {
+        "hex": "#48D4D0",
+        "label": "Turquesa"
+      },
+      {
+        "hex": "#EEE9DE",
+        "label": "Arena clara"
+      },
+      {
+        "hex": "#FFFFFF",
+        "label": "Blanco"
+      }
+    ],
+    "colorUse": "El petróleo forma el fondo de la identidad y la tinta del mensaje; el turquesa ilumina el emblema, las tramas y detalles de campaña. El blanco y el arena abren áreas de lectura. Las fotos conservan sus colores y se encuadran junto a bloques azules.",
+    "images": [
+      {
+        "src": "assets/blue-s-galapagos-for-life-1.webp",
+        "source": "https://cdn.prod.website-files.com/69676f9bcce642d4aa1f0826/6a8c0b3b5e761793aa65fc5e_6a8c0a7d9983b773cf2be928_galapagos-for-life_vergleich.avif"
+      },
+      {
+        "src": "assets/blue-s-galapagos-for-life-2.webp",
+        "source": "https://cdn.prod.website-files.com/69676f9bcce642d4aa1f0826/6a86f3693160a76d454930a4_6a86f285594e670159df7f72_galapagos-for-life6.avif"
+      }
+    ],
+    "verified": "2026-10-21",
+    "priority": false,
+    "colorCategories": [
+      "azul-petroleo"
+    ],
+    "paletteNote": "Colores aproximados observados en las aplicaciones; no son valores oficiales ni una propuesta de paleta para Rivera."
+  },
+  {
+    "id": "sauce-bricks",
+    "title": "Sauce · petróleo, verde y amarillo",
+    "studio": "Bricks · Kuwait",
+    "url": "https://www.bricks.com.kw/projects/sauce",
+    "description": "Sistema de restaurante con letras y líneas continuas inspiradas en el movimiento de una salsa, aplicado a menús, packaging y objetos.",
+    "lookAt": "Las líneas verdes sobre el fondo petróleo y el uso puntual de amarillo en las letras y las uniones de la trama.",
+    "rivera": "Un ejemplo para investigar cómo recorridos, conexiones y tipografía pueden compartir una base cromática, con acentos que guían la lectura.",
+    "tags": [
+      "lineas",
+      "patrones",
+      "tipografia",
+      "organico"
+    ],
+    "attributes": [
+      "Interconectada"
+    ],
+    "moodboards": [
+      "fluid",
+      "editorial"
+    ],
+    "priority": false,
+    "images": [
+      {
+        "src": "assets/blue-r-sauce-bricks-1.webp",
+        "source": "https://www.bricks.com.kw/_img/case-studies/branding/sauce/03-1920.webp"
+      },
+      {
+        "src": "assets/blue-r-sauce-bricks-2.webp",
+        "source": "https://www.bricks.com.kw/_img/case-studies/branding/sauce/web-19-1920.webp"
+      },
+      {
+        "src": "assets/blue-r-sauce-bricks-3.webp",
+        "source": "https://www.bricks.com.kw/_img/case-studies/branding/sauce/01-1920.webp"
+      }
+    ],
+    "verified": "2026-10-21",
+    "colorCategories": [
+      "azul-petroleo"
+    ],
+    "blueFamily": "petroleo",
+    "palette": [
+      {
+        "hex": "#064C59",
+        "label": "Petróleo oscuro"
+      },
+      {
+        "hex": "#338775",
+        "label": "Verde"
+      },
+      {
+        "hex": "#D1BD62",
+        "label": "Amarillo suave"
+      },
+      {
+        "hex": "#343B3B",
+        "label": "Carbón"
+      },
+      {
+        "hex": "#F1EFE8",
+        "label": "Blanco cálido"
+      }
+    ],
+    "colorUse": "El petróleo funciona como campo principal para la trama; el verde conserva una relación cercana con él y el amarillo aparece en puntos y titulares. En la mesa, los neutros y la fotografía de comida equilibran las superficies oscuras. El contraste depende tanto del grosor de las líneas como de la elección de color."
+  },
+  {
+    "id": "blue-sofia",
+    "title": "Sofia · identidad y aplicaciones",
+    "studio": "Anagrama · México",
+    "url": "https://www.behance.net/gallery/3203081/Sofia-by-Pelli-Clarke-Pelli-Architects",
+    "description": "Identidad inmobiliaria con tipografía propia, escudo y un repertorio de impresos y objetos en azul oscuro y crema.",
+    "lookAt": "La forma de reservar el azul para cubiertas, bolsas y tarjetas, y usar crema para el contenido.",
+    "rivera": "Estudiar el contraste entre superficies oscuras y páginas claras para un sistema editorial con distintos niveles.",
+    "tags": [
+      "tipografia",
+      "geometria",
+      "patrones"
+    ],
+    "attributes": [
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "colorCategories": [
+      "azul-petroleo"
+    ],
+    "blueFamily": "azul-oscuro",
+    "palette": [
+      {
+        "hex": "#172744",
+        "label": "Azul oscuro"
+      },
+      {
+        "hex": "#EEE7D3",
+        "label": "Crema"
+      },
+      {
+        "hex": "#E9727C",
+        "label": "Coral"
+      },
+      {
+        "hex": "#BBA36C",
+        "label": "Dorado"
+      },
+      {
+        "hex": "#FFFFFF",
+        "label": "Blanco"
+      }
+    ],
+    "colorUse": "El azul oscuro estructura los soportes principales y funciona como tinta sobre crema. El coral aparece en piezas puntuales; el dorado destaca escudos y nombres. En los impresos domina la pareja azul/crema, mientras las fotografías conservan su color. Valores aproximados de las aplicaciones.",
+    "behance": "https://www.behance.net/gallery/3203081/Sofia-by-Pelli-Clarke-Pelli-Architects",
+    "images": [
+      {
+        "src": "assets/blue-n-blue-sofia-1.webp",
+        "source": "https://anagrama-cdn.sfo2.cdn.digitaloceanspaces.com/assets/assets/assets/1647/original/007.jpg?1509596801"
+      },
+      {
+        "src": "assets/blue-n-blue-sofia-2.webp",
+        "source": "https://anagrama-cdn.sfo2.cdn.digitaloceanspaces.com/assets/assets/assets/1642/original/002.jpg?1509596800"
+      },
+      {
+        "src": "assets/blue-n-blue-sofia-3.webp",
+        "source": "https://anagrama-cdn.sfo2.cdn.digitaloceanspaces.com/assets/assets/assets/1646/original/006.jpg?1509596801"
+      }
+    ]
+  },
+  {
+    "id": "innovus",
+    "title": "Innovus · un sistema que avanza",
+    "studio": "Davison Williams",
+    "url": "https://www.davisonwilliams.com/work/property-sector-branding/",
+    "description": "Actualización de una marca de servicios inmobiliarios a partir de chevrones de avance, esquinas recortadas y un azul petróleo común para sus distintas áreas de actividad.",
+    "lookAt": "Cómo una forma direccional se convierte en patrón, marco e icono. La jerarquía de color diferencia servicios sin desarmar la identidad general.",
+    "rivera": "Estudiar una marca paraguas donde el petróleo sostenga la unidad y los secundarios clasifiquen programas o iniciativas con códigos claros.",
+    "tags": [
+      "geometria",
+      "patrones",
+      "enlaces",
+      "tipografia"
+    ],
+    "attributes": [
+      "En Auge",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "blueFamily": "petroleo",
+    "palette": [
+      {
+        "hex": "#005169",
+        "label": "Petróleo aproximado"
+      },
+      {
+        "hex": "#43A9A4",
+        "label": "Turquesa"
+      },
+      {
+        "hex": "#AAA1C8",
+        "label": "Lavanda"
+      },
+      {
+        "hex": "#DCC663",
+        "label": "Mostaza suave"
+      },
+      {
+        "hex": "#FFFFFF",
+        "label": "Blanco"
+      }
+    ],
+    "colorUse": "El petróleo es la base institucional de cubiertas, piezas de información y títulos; el blanco mantiene la legibilidad. Turquesa, lavanda y mostaza distinguen servicios y aparecen en módulos menores. Los chevrones pueden reunir estos secundarios sobre el azul común.",
+    "images": [
+      {
+        "src": "assets/blue-s-innovus-1.webp",
+        "source": "https://www.davisonwilliams.com/wp-content/uploads/2025/05/Business-card-designs-for-property-client-.jpg"
+      },
+      {
+        "src": "assets/blue-s-innovus-2.webp",
+        "source": "https://www.davisonwilliams.com/wp-content/uploads/2025/05/Brand-guidelines-presentation-for-property-sector.jpg"
+      }
+    ],
+    "verified": "2026-10-21",
+    "priority": false,
+    "colorCategories": [
+      "azul-petroleo"
+    ],
+    "paletteNote": "Colores aproximados observados en las aplicaciones; no son valores oficiales ni una propuesta de paleta para Rivera."
+  },
+  {
+    "id": "amene-roxo",
+    "title": "Amene · petróleo y neutros cálidos",
+    "studio": "Estúdio Roxo · Brasil",
+    "url": "https://estudioroxo.com.br/en/cases/amene/",
+    "description": "Identidad de cuidado y estética que combina azul petróleo oscuro, una marca serif, patrones curvos e ilustración manual.",
+    "lookAt": "El dibujo celeste sobre el azul profundo; después, comparar esas piezas con los carteles beige y terracota del mismo sistema.",
+    "rivera": "Explorar un azul institucional que conviva con una expresión humana: ilustración lineal, fotos cercanas y una base clara para la información.",
+    "tags": [
+      "lineas",
+      "organico",
+      "patrones",
+      "fotografia",
+      "tipografia"
+    ],
+    "attributes": [
+      "Interconectada",
+      "Natural"
+    ],
+    "moodboards": [
+      "fluid",
+      "editorial"
+    ],
+    "priority": false,
+    "images": [
+      {
+        "src": "assets/blue-r-amene-roxo-1.webp",
+        "source": "https://estudioroxo.com.br/wp-content/uploads/2025/10/estudio-roxo-case-amene-5.webp"
+      },
+      {
+        "src": "assets/blue-r-amene-roxo-2.webp",
+        "source": "https://estudioroxo.com.br/wp-content/uploads/2025/10/estudio-roxo-case-amene-21.webp"
+      },
+      {
+        "src": "assets/blue-r-amene-roxo-3.webp",
+        "source": "https://estudioroxo.com.br/wp-content/uploads/2025/10/estudio-roxo-case-amene-9.webp"
+      }
+    ],
+    "verified": "2026-10-21",
+    "colorCategories": [
+      "azul-petroleo"
+    ],
+    "blueFamily": "petroleo",
+    "palette": [
+      {
+        "hex": "#042438",
+        "label": "Azul petróleo profundo"
+      },
+      {
+        "hex": "#B6C8D2",
+        "label": "Celeste grisáceo"
+      },
+      {
+        "hex": "#E6D6BA",
+        "label": "Arena"
+      },
+      {
+        "hex": "#A99787",
+        "label": "Beige tostado"
+      },
+      {
+        "hex": "#A85F3D",
+        "label": "Terracota"
+      }
+    ],
+    "colorUse": "El azul profundo sostiene tanto ilustraciones claras como fotografía recortada. Arena y beige amplían las superficies de descanso, mientras el terracota calienta algunas piezas con una presencia medida. La paleta muestra que un acento cálido puede acompañar al azul sin ocupar el mismo protagonismo."
+  },
+  {
+    "id": "blue-pupp",
+    "title": "Grandhotel Pupp",
+    "studio": "Studio Najbrt · Chequia",
+    "url": "https://www.najbrt.cz/en/work/grandhotel-pupp",
+    "description": "Sistema para el hotel de Karlovy Vary que combina azul oscuro, vainilla y una trama geométrica derivada del edificio.",
+    "lookAt": "El patrón azul y crema y la alternancia entre letras grandes y detalles pequeños.",
+    "rivera": "Un patrón territorial puede vincular menús, guías y objetos; el azul puede sostener esa continuidad.",
+    "tags": [
+      "patrones",
+      "tipografia",
+      "geometria"
+    ],
+    "attributes": [
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "colorCategories": [
+      "azul-petroleo"
+    ],
+    "blueFamily": "azul-oscuro",
+    "palette": [
+      {
+        "hex": "#061D43",
+        "label": "Azul profundo"
+      },
+      {
+        "hex": "#E9E0C4",
+        "label": "Vainilla"
+      },
+      {
+        "hex": "#FFFFFF",
+        "label": "Blanco"
+      },
+      {
+        "hex": "#B8B2A4",
+        "label": "Gris cálido"
+      }
+    ],
+    "colorUse": "El azul real oscuro define logotipo, textos, cubiertas y trama; el vainilla es su contraparte extensa. En algunas piezas el azul ocupa todo el fondo y en otras se concentra en la repetición del patrón. Los blancos ordenan la información y la fotografía del hotel se mantiene separada. Paleta observada, aproximada.",
+    "behance": "https://www.behance.net/gallery/105218155/Grandhotel-Pupp-visual-identity",
+    "images": [
+      {
+        "src": "assets/blue-n-blue-pupp-1.webp",
+        "source": "https://www.najbrt.cz/files/grandhotel-pupp-najbrt-155325250.jpg"
+      },
+      {
+        "src": "assets/blue-n-blue-pupp-2.webp",
+        "source": "https://www.najbrt.cz/files/grandhotel-pupp-najbrt-155335258.jpg"
+      },
+      {
+        "src": "assets/blue-n-blue-pupp-3.webp",
+        "source": "https://www.najbrt.cz/files/grandhotel-pupp-najbrt-155345251.jpg"
+      }
+    ]
+  },
+  {
+    "id": "the-diligence-company",
+    "title": "The Diligence Company · azul de exploración",
+    "studio": "Anagrama",
+    "url": "https://www.anagrama.com/project/branding/the-diligence-company",
+    "behance": "https://www.behance.net/gallery/54200975/The-Diligence-Company",
+    "description": "Identidad y web para una empresa que desarrolla proyectos de hospitalidad. La navegación y las vistas aéreas de archipiélagos inspiran un emblema y una trama que se apoyan en un azul muy oscuro.",
+    "lookAt": "El contraste entre campos marinos, papel claro, pequeños detalles dorados y el patrón de islas. La mezcla de serif y sans mantiene jerarquías legibles.",
+    "rivera": "Estudiar cómo un color oscuro puede sostener una identidad con relato territorial, mientras un patrón orgánico aporta diversidad y movimiento.",
+    "tags": [
+      "patrones",
+      "organico",
+      "tipografia"
+    ],
+    "attributes": [
+      "Natural",
+      "Transfronteriza",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "blueFamily": "azul-oscuro",
+    "palette": [
+      {
+        "hex": "#141F33",
+        "label": "Azul marino aproximado"
+      },
+      {
+        "hex": "#C8AB72",
+        "label": "Dorado suave"
+      },
+      {
+        "hex": "#F0EEE5",
+        "label": "Blanco cálido"
+      },
+      {
+        "hex": "#A6A2A1",
+        "label": "Gris piedra"
+      }
+    ],
+    "colorUse": "El azul marino ocupa la mayor superficie de tarjetas, cubiertas y soportes digitales. El papel claro funciona como contraste y el dorado se concentra en símbolos y detalles. El patrón orgánico puede aparecer con poco contraste sobre el propio azul.",
+    "images": [
+      {
+        "src": "assets/blue-s-the-diligence-company-1.webp",
+        "source": "https://anagrama-cdn.sfo2.cdn.digitaloceanspaces.com/assets/assets/assets/100/original/002.jpg?1509596831"
+      },
+      {
+        "src": "assets/blue-s-the-diligence-company-2.webp",
+        "source": "https://anagrama-cdn.sfo2.cdn.digitaloceanspaces.com/assets/assets/assets/104/original/006.jpg?1509596832"
+      }
+    ],
+    "verified": "2026-10-21",
+    "priority": false,
+    "colorCategories": [
+      "azul-petroleo"
+    ],
+    "paletteNote": "Colores aproximados observados en las aplicaciones; no son valores oficiales ni una propuesta de paleta para Rivera."
+  },
+  {
+    "id": "blue-la-creme",
+    "title": "La Crème Pâtisserie",
+    "studio": "Studio Maller · Rumania",
+    "url": "https://studiomaller.com/la-creme-patisserie-brand-identity",
+    "description": "Sistema de pastelería con azul oscuro, crema y formas orgánicas derivadas de las piezas de repostería.",
+    "lookAt": "Los patrones azules de tarjetas y packaging y el contraste con el papel crema y el dorado.",
+    "rivera": "Un azul constante puede sostener recursos orgánicos muy expresivos sin convertir cada pieza en una paleta distinta.",
+    "tags": [
+      "organico",
+      "patrones",
+      "tipografia"
+    ],
+    "attributes": [
+      "Natural",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "colorCategories": [
+      "azul-petroleo"
+    ],
+    "blueFamily": "azul-oscuro",
+    "palette": [
+      {
+        "hex": "#0B2043",
+        "label": "Azul profundo"
+      },
+      {
+        "hex": "#244D79",
+        "label": "Azul medio"
+      },
+      {
+        "hex": "#EEE7D8",
+        "label": "Crema"
+      },
+      {
+        "hex": "#C5A859",
+        "label": "Dorado"
+      }
+    ],
+    "colorUse": "El azul oscuro actúa como base extensa en tarjetas y piezas de marca, con patrones y letras en crema. El dorado funciona como acento y el azul medio crea una segunda intensidad. Las fotos de producto entran en ventanas o áreas claras; los motivos orgánicos mantienen el mismo contraste azul/crema. Paleta aproximada observada.",
+    "behance": "https://www.behance.net/gallery/198286723/La-Creme-Patisserie-Brand-Identity",
+    "images": [
+      {
+        "src": "assets/blue-n-blue-la-creme-1.webp",
+        "source": "https://cdn.myportfolio.com/f7f5a4db-a980-4ba3-9e45-3162826091b2/3fe962dd-6b5f-4b4d-992c-2d1489e09130_rw_1200.png?h=ce1138d94f37d2f1f73cf6511f6beb6b"
+      },
+      {
+        "src": "assets/blue-n-blue-la-creme-2.webp",
+        "source": "https://cdn.myportfolio.com/f7f5a4db-a980-4ba3-9e45-3162826091b2/48b9bc77-c90b-480a-8715-b6fc1d64cac0_rw_1200.png?h=3fde2be126763f5757b095128736dbc3"
+      },
+      {
+        "src": "assets/blue-n-blue-la-creme-3.webp",
+        "source": "https://cdn.myportfolio.com/f7f5a4db-a980-4ba3-9e45-3162826091b2/37d956c8-6a40-46af-b8ba-e477a0ac1ae6_rw_1200.png?h=490e2df5be983aab1044a3d18c312d7f"
+      }
+    ]
+  },
+  {
+    "id": "ever-moqo",
+    "title": "EVER · ciudad de día y de noche",
+    "studio": "MOQO",
+    "url": "https://www.behance.net/gallery/226231731/EVER-branding",
+    "behance": "https://www.behance.net/gallery/226231731/EVER-branding",
+    "description": "Identidad integral para un nuevo distrito urbano junto al río Leie, en Kortrijk. La V alude a dos torres y se transforma en un recurso gráfico común para la comunicación del proyecto.",
+    "lookAt": "Las grandes superficies azules del cerramiento y la convivencia de tipografía clara, ilustración arquitectónica e imágenes. La misma base une el relato urbano y la información comercial.",
+    "rivera": "Relacionar un color principal con distintas horas y modos de vivir una ciudad. Un símbolo de encuentro puede adaptarse a comunicación territorial y digital.",
+    "tags": [
+      "geometria",
+      "tipografia",
+      "fotografia"
+    ],
+    "attributes": [
+      "En Auge",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "blueFamily": "petroleo",
+    "palette": [
+      {
+        "hex": "#003E50",
+        "label": "Petróleo aproximado"
+      },
+      {
+        "hex": "#0E203C",
+        "label": "Azul nocturno"
+      },
+      {
+        "hex": "#7C9FA8",
+        "label": "Azul grisáceo"
+      },
+      {
+        "hex": "#F2F0E8",
+        "label": "Blanco cálido"
+      }
+    ],
+    "colorUse": "El petróleo domina el cerramiento de obra y la base de la identidad; los textos blancos y las líneas claras se leen sobre él. El azul nocturno y los degradados conectan el sistema con el día y la noche. Las fotos se insertan en módulos, sin teñir toda la imagen.",
+    "images": [
+      {
+        "src": "assets/blue-s-ever-moqo-1.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/5a1c6a226231731.682b3e8a34f5f.jpg"
+      },
+      {
+        "src": "assets/blue-s-ever-moqo-2.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/8b46de226231731.682b3e8a349a8.jpg"
+      }
+    ],
+    "verified": "2026-10-21",
+    "priority": false,
+    "colorCategories": [
+      "azul-petroleo"
+    ],
+    "paletteNote": "Colores aproximados observados en las aplicaciones; no son valores oficiales ni una propuesta de paleta para Rivera."
+  },
+  {
+    "id": "blue-fareleiros",
+    "title": "Fareleiros · textiles y packaging",
+    "studio": "Villae Studio · Portugal",
+    "url": "https://www.behance.net/gallery/69175139/Fareleiros",
+    "description": "Identidad textil con azul oscuro, símbolo geométrico y acentos dorados en etiquetas y envoltorios.",
+    "lookAt": "El azul de etiquetas y piezas de papel, el relieve y la combinación con un neutro cálido.",
+    "rivera": "Un fondo azul puede conectar objetos de distinta textura y dejar que un signo pequeño aporte reconocimiento.",
+    "tags": [
+      "geometria",
+      "texturas",
+      "tipografia"
+    ],
+    "attributes": [
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "colorCategories": [
+      "azul-petroleo"
+    ],
+    "blueFamily": "azul-oscuro",
+    "palette": [
+      {
+        "hex": "#1D2E47",
+        "label": "Azul oscuro"
+      },
+      {
+        "hex": "#CBB78E",
+        "label": "Dorado mate"
+      },
+      {
+        "hex": "#E5D6B2",
+        "label": "Arena"
+      },
+      {
+        "hex": "#F4F2EA",
+        "label": "Blanco cálido"
+      }
+    ],
+    "colorUse": "El azul oscuro funciona como fondo continuo en tarjetas, etiquetas y superficies de packaging. El dorado y el arena iluminan el símbolo y las piezas complementarias; los textiles conservan su textura. En las etiquetas el azul ocupa casi toda la cara y la tipografía se concentra en una firma pequeña. Paleta aproximada observada.",
+    "behance": "https://www.behance.net/gallery/69175139/Fareleiros",
+    "images": [
+      {
+        "src": "assets/blue-n-blue-fareleiros-3.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/1400/ba796a69175139.5b780a1984592.png"
+      },
+      {
+        "src": "assets/blue-n-blue-fareleiros-1.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/1400/7fce5269175139.5b780a197ebec.png"
+      },
+      {
+        "src": "assets/blue-n-blue-fareleiros-2.webp",
+        "source": "https://mir-s3-cdn-cf.behance.net/project_modules/1400/48bf1269175139.5b780a197d7ea.png"
+      }
+    ]
+  },
+  {
+    "id": "aeromexico-mucho",
+    "title": "Aeroméxico · un lenguaje para conectar",
+    "studio": "Mucho",
+    "url": "https://wearemucho.com/work/aerom%C3%A9xico-2",
+    "description": "Un lenguaje de marca que organiza valores, campañas, tipografía, interfaz y comunicación del viaje. Los símbolos geométricos y una familia de azules articulan la identidad de la aerolínea.",
+    "lookAt": "El azul oscuro como soporte de símbolos e información; la relación entre módulos, fotografía y texto. Mirar la traducción del mismo lenguaje a interfaces y publicidad.",
+    "rivera": "Una referencia para un sistema territorial que conecte destinos y experiencias con una base de color reconocible y recursos gráficos que puedan viajar entre formatos.",
+    "tags": [
+      "geometria",
+      "enlaces",
+      "tipografia",
+      "fotografia"
+    ],
+    "attributes": [
+      "Transfronteriza",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "blueFamily": "azul-oscuro",
+    "palette": [
+      {
+        "hex": "#080F62",
+        "label": "Azul oscuro aproximado"
+      },
+      {
+        "hex": "#1445EF",
+        "label": "Azul intenso"
+      },
+      {
+        "hex": "#F3F2E8",
+        "label": "Marfil"
+      },
+      {
+        "hex": "#423B36",
+        "label": "Gris cálido"
+      },
+      {
+        "hex": "#A6AFCE",
+        "label": "Azul claro"
+      }
+    ],
+    "colorUse": "El azul oscuro sostiene las láminas de valores y los símbolos, mientras el azul intenso destaca mensajes, módulos y acciones digitales. El marfil abre áreas de lectura. La fotografía mantiene sus colores y se combina con zonas planas azules; el color funciona como estructura, no como filtro.",
+    "images": [
+      {
+        "src": "assets/blue-s-aeromexico-mucho-1.webp",
+        "source": "https://d31gqjnw4c0wci.cloudfront.net/eyJidWNrZXQiOiJtdWNoby1zZXJ2ZXJsZXNzLWltYWdlLWhhbmRsZXIiLCJrZXkiOiJpbWFnZXMvQWVyb23DqXhpY28vNDQuLVZpc3VhbC1MYW5ndWFnZS12YWx1ZXMucG5nIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjoxMjAwLCJoZWlnaHQiOjU1NSwiZml0IjoiY292ZXIifSwid2l0aE1ldGFkYXRhIjp0cnVlLCJ0b0Zvcm1hdCI6IndlYnAiLCJ3ZWJwIjp7InF1YWxpdHkiOjgwfX19"
+      },
+      {
+        "src": "assets/blue-s-aeromexico-mucho-2.webp",
+        "source": "https://d31gqjnw4c0wci.cloudfront.net/eyJidWNrZXQiOiJtdWNoby1zZXJ2ZXJsZXNzLWltYWdlLWhhbmRsZXIiLCJrZXkiOiJpbWFnZXMvQWVyb23DqXhpY28vNDUuMi1WaXN1YWwtTGFuZ3VhZ2UtbWF0ZXJpYWxzLmpwZyIsImVkaXRzIjp7InJlc2l6ZSI6eyJ3aWR0aCI6MTIwMCwiaGVpZ2h0Ijo2NzYsImZpdCI6ImNvdmVyIn0sIndpdGhNZXRhZGF0YSI6dHJ1ZSwidG9Gb3JtYXQiOiJ3ZWJwIiwid2VicCI6eyJxdWFsaXR5Ijo4MH19fQ=="
+      }
+    ],
+    "verified": "2026-10-21",
+    "priority": false,
+    "colorCategories": [
+      "azul-petroleo"
+    ],
+    "paletteNote": "Colores aproximados observados en las aplicaciones; no son valores oficiales ni una propuesta de paleta para Rivera."
+  },
+  {
+    "id": "blue-sothebys",
+    "title": "Sotheby’s · identidad y packaging 2018",
+    "studio": "Sandra Burch + Liz Thorp / Sotheby’s Creative · EE. UU. y Reino Unido",
+    "url": "https://burchstudio.com/sothebys-packaging-branding",
+    "description": "Programa de identidad aplicado a bolsas, cajas, papelería y piezas digitales de la casa de subastas.",
+    "lookAt": "La continuidad del azul en superficies y materiales; el cambio de intensidad entre azul noche y azul vivo.",
+    "rivera": "Una familia de azules puede cubrir objetos y soportes editoriales y reservar el dorado para una firma pequeña.",
+    "tags": [
+      "tipografia",
+      "texturas"
+    ],
+    "attributes": [
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "colorCategories": [
+      "azul-petroleo"
+    ],
+    "blueFamily": "azul-oscuro",
+    "palette": [
+      {
+        "hex": "#152234",
+        "label": "Azul noche"
+      },
+      {
+        "hex": "#193899",
+        "label": "Azul intenso"
+      },
+      {
+        "hex": "#B8A474",
+        "label": "Dorado"
+      },
+      {
+        "hex": "#F6F4EE",
+        "label": "Blanco cálido"
+      }
+    ],
+    "colorUse": "El azul noche domina bolsas, cajas y papelería; el azul más vivo aparece en interiores y otros objetos. El logotipo dorado ocupa una superficie pequeña y el blanco facilita la lectura. El programa conserva ese ancla azul junto a imágenes de arte de muy distintos colores. Valores aproximados observados; wordmark original de Pentagram, programa aplicado del equipo de Sotheby’s.",
+    "images": [
+      {
+        "src": "assets/blue-n-blue-sothebys-1.webp",
+        "source": "https://images.squarespace-cdn.com/content/v1/5dfd1a1d82a4f4481da5154d/1612319619031-ZKR19FRY1SXH9YGB7PDL/Sothebys%2BBrand%2BPackagin.jpg"
+      },
+      {
+        "src": "assets/blue-n-blue-sothebys-2.webp",
+        "source": "https://images.squarespace-cdn.com/content/v1/5dfd1a1d82a4f4481da5154d/1612320443019-JZUL2NAQH09T88RCPSZG/Sothebys%2BJewelry%2BPackaging.jpg"
+      },
+      {
+        "src": "assets/blue-n-blue-sothebys-3.webp",
+        "source": "https://images.squarespace-cdn.com/content/v1/5dfd1a1d82a4f4481da5154d/1612318095427-N1X24DCXWPAS632DX8IR/Sothebys%2BShopping%2BBags%2Band%2BRibbon.jpg"
+      }
+    ]
+  },
+  {
+    "id": "scientific-ocean-drilling",
+    "title": "Scientific Ocean Drilling · capas de azul",
+    "studio": "C&G Partners",
+    "url": "https://www.cgpartnersllc.com/fresh/post/two-brands-for-ocean-science/",
+    "description": "Una identidad científica que relaciona la perforación oceánica con una línea tipográfica vertical y capas de color. El sistema organiza comunicación institucional, publicaciones y presentaciones.",
+    "lookAt": "La línea que nace del logotipo y puede cambiar de longitud en una composición editorial. La relación entre azul nocturno, capas luminosas y tipografía blanca.",
+    "rivera": "Una referencia para explicar un territorio complejo mediante estratos, recorridos y escalas. La familia azul puede diferenciar profundidad y niveles de información sin perder unidad.",
+    "tags": [
+      "lineas",
+      "geometria",
+      "expansion",
+      "tipografia"
+    ],
+    "attributes": [
+      "Natural",
+      "Transfronteriza",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial",
+      "fluid"
+    ],
+    "blueFamily": "azul-oscuro",
+    "palette": [
+      {
+        "hex": "#080630",
+        "label": "Azul nocturno aproximado"
+      },
+      {
+        "hex": "#09628F",
+        "label": "Azul profundo"
+      },
+      {
+        "hex": "#1687BC",
+        "label": "Azul medio"
+      },
+      {
+        "hex": "#33B9D3",
+        "label": "Cian"
+      },
+      {
+        "hex": "#FFFFFF",
+        "label": "Blanco"
+      }
+    ],
+    "colorUse": "El azul nocturno ocupa el fondo de publicaciones y piezas institucionales. Las capas avanzan hacia azules más claros y cian en áreas concentradas, mientras el texto queda en blanco. La fotografía inspira la geometría, pero las superficies de azul son parte del diseño gráfico.",
+    "images": [
+      {
+        "src": "assets/blue-s-scientific-ocean-drilling-1.webp",
+        "source": "https://www.cgpartnersllc.com/wp-content/uploads/2022/04/6_USSSP_IODP_Newsletter_Covers_Mockup_Cropped.png"
+      },
+      {
+        "src": "assets/blue-s-scientific-ocean-drilling-2.webp",
+        "source": "https://www.cgpartnersllc.com/wp-content/uploads/2022/04/1_USSSP_IODP_Cover_Image.png"
+      }
+    ],
+    "verified": "2026-10-21",
+    "priority": false,
+    "colorCategories": [
+      "azul-petroleo"
+    ],
+    "paletteNote": "Colores aproximados observados en las aplicaciones; no son valores oficiales ni una propuesta de paleta para Rivera."
+  },
+  {
+    "id": "blue-birdman",
+    "title": "Birdman · izakaya",
+    "studio": "Thinking*Room · Indonesia",
+    "url": "https://www.behance.net/gallery/67043567/Birdman",
+    "description": "Identidad de restaurante japonés con logotipo compacto azul oscuro, tarjetas, menús y piezas de servicio.",
+    "lookAt": "La tipografía que se pliega como personaje y la alternancia entre tarjetas azules y claras.",
+    "rivera": "El azul puede ser la tinta y el reverso constante de un sistema, mientras los menús utilizan papeles cálidos.",
+    "tags": [
+      "tipografia",
+      "geometria"
+    ],
+    "attributes": [
+      "Transfronteriza"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "priority": false,
+    "verified": "2026-10-21",
+    "colorCategories": [
+      "azul-petroleo"
+    ],
+    "blueFamily": "azul-oscuro",
+    "palette": [
+      {
+        "hex": "#334567",
+        "label": "Azul oscuro"
+      },
+      {
+        "hex": "#E6E4DB",
+        "label": "Gris cálido"
+      },
+      {
+        "hex": "#DFC5B4",
+        "label": "Rosa papel"
+      },
+      {
+        "hex": "#C9AF8D",
+        "label": "Kraft"
+      }
+    ],
+    "colorUse": "El azul oscuro es la tinta de marca y cubre las tarjetas en negativo; el gris cálido ofrece la variante clara. Los menús añaden rosa pálido y kraft con bloques tipográficos. El color azul organiza la firma, aunque en los menús ocupa menos superficie que los papeles. Valores aproximados de las aplicaciones.",
+    "behance": "https://www.behance.net/gallery/67043567/Birdman",
+    "images": [
+      {
+        "src": "assets/blue-n-blue-birdman-1.webp",
+        "source": "https://manual.co.id/wp-content/uploads/2018/11/A-Matter-of-Design-Birdman-2-980x719.jpg"
+      },
+      {
+        "src": "assets/blue-n-blue-birdman-2.webp",
+        "source": "https://manual.co.id/wp-content/uploads/2018/11/A-Matter-of-Design-Birdman-1-980x719.jpg"
+      },
+      {
+        "src": "assets/blue-n-blue-birdman-3.webp",
+        "source": "https://manual.co.id/wp-content/uploads/2018/11/A-Matter-of-Design-Birdman-8-980x719.jpg"
+      }
+    ]
+  },
+  {
+    "id": "umfc-design-office",
+    "title": "UMFC · tradición musical en azul profundo",
+    "studio": "Design Office · Gina Ferreira + Emidio Cardeira",
+    "url": "https://chopin.edu.pl/brand-book",
+    "description": "Sistema de identidad de la Universidad de Música Fryderyk Chopin, en Varsovia. Un acrónimo flexible, una retícula editorial y una paleta encabezada por azul profundo renuevan la comunicación de la institución.",
+    "lookAt": "Cómo el acrónimo cambia de disposición sin perder su estructura. La relación entre Canela, HK Grotesk, grandes márgenes y color en papelería y piezas culturales.",
+    "rivera": "Una base azul puede dar coherencia institucional a un sistema tipográfico flexible. Estudiar el equilibrio entre una presencia reconocible y espacio para actividades diversas.",
+    "tags": [
+      "tipografia",
+      "geometria",
+      "enlaces"
+    ],
+    "attributes": [
+      "En Auge",
+      "Interconectada"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "blueFamily": "petroleo",
+    "palette": [
+      {
+        "hex": "#002E46",
+        "label": "Azul profundo aproximado"
+      },
+      {
+        "hex": "#DBD6CD",
+        "label": "Gris cálido"
+      },
+      {
+        "hex": "#D6B1BC",
+        "label": "Rosa suave"
+      },
+      {
+        "hex": "#9E6B24",
+        "label": "Ocre"
+      },
+      {
+        "hex": "#FFFFFF",
+        "label": "Blanco"
+      }
+    ],
+    "colorUse": "El azul profundo es el color principal: aparece como gran campo en cubiertas y como tinta en documentos claros. El gris cálido equilibra la presencia del azul; rosa y ocre quedan en un nivel secundario. La paleta observada corresponde a las láminas oficiales del sistema.",
+    "images": [
+      {
+        "src": "assets/blue-s-umfc-design-office-1.webp",
+        "source": "https://chopin.edu.pl/uploaded_images/1686164351_1600972299-color1.png"
+      },
+      {
+        "src": "assets/blue-s-umfc-design-office-2.webp",
+        "source": "https://chopin.edu.pl/uploaded_images/1686159346_1601033145-siw-1.png"
+      },
+      {
+        "src": "assets/blue-s-umfc-design-office-3.webp",
+        "source": "https://chopin.edu.pl/uploaded_images/1686182721_1601056636-color10.png"
+      }
+    ],
+    "verified": "2026-10-21",
+    "priority": false,
+    "colorCategories": [
+      "azul-petroleo"
+    ],
+    "paletteNote": "Colores aproximados observados en las aplicaciones; no son valores oficiales ni una propuesta de paleta para Rivera."
+  },
+  {
+    "id": "stjohns-kit",
+    "title": "St John’s College · una identidad para perdurar",
+    "studio": "Kit Studio",
+    "url": "https://www.kit.studio/work/st-johns-college",
+    "description": "Revisión de la identidad del college de Durham a partir de su arquitectura, historia y comunidad. El sistema reúne escudo artesanal, monogramas, tipografía editorial e ilustraciones inspiradas en vitrales.",
+    "lookAt": "El uso del azul oscuro en papel, monogramas y aplicaciones; la relación entre serif, dibujo e identidad histórica. Mirar cómo se ajusta el contraste entre tinta, relieve y fondo.",
+    "rivera": "Una referencia para combinar identidad institucional y pertenencia local. El color estable permite que símbolos de distinta complejidad convivan en un mismo lenguaje.",
+    "tags": [
+      "tipografia",
+      "lineas",
+      "texturas"
+    ],
+    "attributes": [
+      "Interconectada",
+      "En Auge"
+    ],
+    "moodboards": [
+      "editorial"
+    ],
+    "blueFamily": "azul-oscuro",
+    "palette": [
+      {
+        "hex": "#11182C",
+        "label": "Azul marino aproximado"
+      },
+      {
+        "hex": "#374E89",
+        "label": "Azul medio"
+      },
+      {
+        "hex": "#E9E2D5",
+        "label": "Piedra clara"
+      },
+      {
+        "hex": "#C64B40",
+        "label": "Rojo de acento"
+      },
+      {
+        "hex": "#B7975E",
+        "label": "Dorado suave"
+      }
+    ],
+    "colorUse": "El marino funciona como base de soportes y monogramas, con azul medio en aplicaciones de marca como los posavasos. Piedra clara aporta áreas de lectura y rojo y dorado se reservan a detalles. Algunas piezas usan relieve o contraste tonal sobre azul: conviene estudiar su visibilidad según escala y soporte.",
+    "images": [
+      {
+        "src": "assets/blue-s-stjohns-kit-1.webp",
+        "source": "https://cdn.prod.website-files.com/68d25ac0a4d9c9b7172998d3/6a05dd07e11df303db3580f8_KS_St_Johns_College_Casestudy_04.jpg"
+      },
+      {
+        "src": "assets/blue-s-stjohns-kit-2.webp",
+        "source": "https://cdn.prod.website-files.com/68d25ac0a4d9c9b7172998d3/6a05d8ebd41e4b9775174141_KS_St_Johns_College_Casestudy_17.jpg"
+      },
+      {
+        "src": "assets/blue-s-stjohns-kit-3.webp",
+        "source": "https://cdn.prod.website-files.com/68d25ac0a4d9c9b7172998d3/6a05dbe482edc582d753a61e_KS_St_Johns_College_Casestudy_10.jpg"
+      }
+    ],
+    "verified": "2026-10-21",
+    "priority": false,
+    "colorCategories": [
+      "azul-petroleo"
+    ],
+    "paletteNote": "Colores aproximados observados en las aplicaciones; no son valores oficiales ni una propuesta de paleta para Rivera."
+  },
+  {
     "id": "ekos-cacau-tatil",
     "title": "Natura Ekos Cacau",
     "studio": "Tátil + Winny Tapajós · Brasil",
@@ -382,7 +1613,34 @@ window.REFERENCES = [
         "src": "assets/r3-n-maison-revka-vj-2.webp",
         "source": "https://cdn.sanity.io/images/60kmv55h/production/ac70b19b9e7b00f2e8324978e9da414320728f2d-1800x2177.jpg"
       }
-    ]
+    ],
+    "colorCategories": [
+      "azul-petroleo"
+    ],
+    "blueFamily": "azul-oscuro",
+    "palette": [
+      {
+        "hex": "#05263F",
+        "label": "Azul noche"
+      },
+      {
+        "hex": "#1681A9",
+        "label": "Azul vivo"
+      },
+      {
+        "hex": "#C8E7EC",
+        "label": "Celeste pálido"
+      },
+      {
+        "hex": "#F0EFE7",
+        "label": "Blanco cálido"
+      },
+      {
+        "hex": "#AAA6A0",
+        "label": "Metal plateado"
+      }
+    ],
+    "colorUse": "El azul oscuro domina las cubiertas y el packaging; los celestes distinguen etiquetas y pequeñas superficies. En los interiores claros se invierte la relación y el azul pasa a ser tinta para letras e ilustraciones. La terminación metálica suma contraste de material además de contraste cromático."
   },
   {
     "id": "storey-2017",
@@ -889,7 +2147,26 @@ window.REFERENCES = [
       }
     ],
     "verified": "2026-10-20",
-    "added": "2026-10-20"
+    "added": "2026-10-20",
+    "colorCategories": [
+      "azul-petroleo"
+    ],
+    "blueFamily": "azul-oscuro",
+    "palette": [
+      {
+        "hex": "#143973",
+        "label": "Azul profundo"
+      },
+      {
+        "hex": "#436F9E",
+        "label": "Azul de ilustración"
+      },
+      {
+        "hex": "#F0EFE5",
+        "label": "Papel marfil"
+      }
+    ],
+    "colorUse": "Una referencia cercana por el azul oscuro, con una combinación casi monocromática. El fondo y la tinta comparten familia, mientras el marfil aporta contraste. La ilustración tropical conserva detalle y personalidad sin necesitar muchos colores adicionales."
   },
   {
     "id": "luzerner-theater-feixen",
